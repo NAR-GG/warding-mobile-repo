@@ -4,9 +4,7 @@ class ApiConfig {
   static const String host = 'https://api.nar.kr';
   static const String apiBaseUrl = '$host/api';
 
-  static const String callbackScheme = 'warding';
-  static const String callbackUrl = '$callbackScheme://login-callback';
+  static const String kakaoNativeAppKey = 'YOUR_KAKAO_NATIVE_APP_KEY';
 
-  static String oauthAuthorizationUrl(String registrationId) =>
-      '$host/oauth2/authorization/$registrationId';
+  static String get kakaoLoginUrl => '$apiBaseUrl/auth/kakao';
 }
