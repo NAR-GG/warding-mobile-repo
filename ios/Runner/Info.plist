@@ -4,9 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- 카카오 로그인: 카카오톡 → 앱 복귀용 URL 스킴.
-	     TODO: "YOUR_KAKAO_NATIVE_APP_KEY" 부분을 ApiConfig.kakaoNativeAppKey 와
-	     동일한 네이티브 앱 키로 교체. -->
+	<!-- 카카오 로그인: 카카오톡 → 앱 복귀용 URL 스킴 -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -14,7 +12,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>kakaoYOUR_KAKAO_NATIVE_APP_KEY</string>
+				<string>kakao838b3def5acdd1dfbbe6b14e301ba05a</string>
 			</array>
 		</dict>
 	</array>

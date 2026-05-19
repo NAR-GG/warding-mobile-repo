@@ -1,4 +1,4 @@
-package com.example.warding
+package com.warding.app
 
 import io.flutter.embedding.android.FlutterActivity
 

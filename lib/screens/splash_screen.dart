@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../theme/app_colors.dart';
+import '../repository/auth/auth_service.dart';
+import '../styles/app_colors.dart';
+import 'home_screen.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,12 +17,22 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    });
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    final results = await Future.wait([
+      Future<void>.delayed(const Duration(seconds: 2)),
+      AuthService.instance.jwt,
+    ]);
+    if (!mounted) return;
+
+    final jwt = results[1] as String?;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => jwt == null ? const LoginScreen() : const HomeScreen(),
+      ),
+    );
   }
 
   @override

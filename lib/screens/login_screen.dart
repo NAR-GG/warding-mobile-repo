@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../services/auth_service.dart';
-import '../theme/app_colors.dart';
+import '../repository/auth/auth_service.dart';
+import '../styles/app_colors.dart';
+import 'home_screen.dart';
+import 'onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,11 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await AuthService.instance.signInWithKakao();
       if (!mounted) return;
-      // TODO: 온보딩 여부(result.isOnboarded)에 따라 다음 화면으로 이동
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.isOnboarded ? '로그인 성공' : '로그인 성공 (온보딩 필요)'),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => result.isOnboarded
+              ? const HomeScreen()
+              : const OnboardingScreen(),
         ),
+        (route) => false,
       );
     } on AuthCancelledException {
       // 사용자가 로그인을 취소함 — 별도 알림 없이 종료

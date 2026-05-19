@@ -4,7 +4,7 @@ class ApiConfig {
   static const String host = 'https://api.nar.kr';
   static const String apiBaseUrl = '$host/api';
 
-  static const String kakaoNativeAppKey = 'YOUR_KAKAO_NATIVE_APP_KEY';
+  static const String kakaoNativeAppKey = '838b3def5acdd1dfbbe6b14e301ba05a';
 
   static String get kakaoLoginUrl => '$apiBaseUrl/auth/kakao';
 }

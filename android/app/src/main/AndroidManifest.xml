@@ -25,9 +25,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀)
-             TODO: scheme 값의 "YOUR_KAKAO_NATIVE_APP_KEY" 부분을
-             ApiConfig.kakaoNativeAppKey 와 동일한 네이티브 앱 키로 교체. -->
+        <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀) -->
         <activity
             android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
             android:exported="true">
@@ -35,7 +33,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kakaoYOUR_KAKAO_NATIVE_APP_KEY" android:host="oauth"/>
+                <data android:scheme="kakao838b3def5acdd1dfbbe6b14e301ba05a" android:host="oauth"/>
             </intent-filter>
         </activity>
 
