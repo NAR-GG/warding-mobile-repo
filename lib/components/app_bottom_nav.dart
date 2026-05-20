@@ -50,34 +50,21 @@ class AppBottomNav extends StatelessWidget {
       label: '경기일정',
       tab: AppNavTab.schedule,
     ),
-    (
-      icon: 'assets/icons/layout-list.svg',
-      label: '경기리스트',
-      tab: AppNavTab.list,
-    ),
+    (icon: 'assets/icons/layout-list.svg', label: '경기리스트', tab: AppNavTab.list),
     (
       icon: 'assets/icons/stars.svg',
       label: '마이 구독',
       tab: AppNavTab.subscription,
     ),
-    (
-      icon: 'assets/icons/user.svg',
-      label: '마이페이지',
-      tab: AppNavTab.mypage,
-    ),
+    (icon: 'assets/icons/user.svg', label: '마이페이지', tab: AppNavTab.mypage),
   ];
 
-  /// 피그마 Glass 패널 값을 매핑한 리퀴드 글래스 설정.
-  ///
-  /// Depth 16 → thickness, Frost 15 → blur, Refraction 31 → refractiveIndex,
-  /// Light 37% → lightIntensity. (Dispersion·Splay 는 패키지 미지원)
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
     thickness: 16,
     blur: 12,
     refractiveIndex: 1.33,
     glassColor: AppColors.narNavBg,
-    lightIntensity: 1.37,
-    outlineIntensity: 0.4,
+    lightIntensity: 0.2,
     saturation: 1.1,
   );
 

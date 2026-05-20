@@ -11,11 +11,20 @@ class AppColors {
   static const Color narText = Color(0xFFFFFFFF);
   static const Color narText2 = Color(0xFFA6A7AB);
   static const Color narLine2 = Color(0xFF495057);
+  static const Color narLine = Color(0xFF343A40); // nar_line
 
   static const LinearGradient narBg = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [Color(0xFFE87558), Color(0xFFC865C9), Color(0xFF791BB8)],
+    stops: [0.0076, 0.5153, 1.0],
+  );
+
+  /// 오늘 날짜 칸 배경 — narBg 그라데이션을 8% 불투명도(0x14)로.
+  static const LinearGradient narTodayBg = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0x14E87558), Color(0x14C865C9), Color(0x14791BB8)],
     stops: [0.0076, 0.5153, 1.0],
   );
 
@@ -44,4 +53,8 @@ class AppColors {
   // schedule (경기 일정)
   static const Color narBgTertiary = Color(0xFF1F2024); // nar_BG_tertiary
   static const Color narTextGnbDefault = Color(0xFFCED4DA); // nar_text_GNB_default
+  static const Color narTextTertiary = Color(0xFFFCFDFE); // nar_text_tertiary
+  static const Color narText4 = Color(0xFFA6A7AB); // nar_text_4
+  static const Color narTextScore = Color(0xFFF03E3E); // nar_text_score
+  static const Color narTextRed = Color(0xFFFF6B6B); // nar_text_red
 }

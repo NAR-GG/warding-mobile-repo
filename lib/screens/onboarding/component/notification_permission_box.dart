@@ -36,14 +36,15 @@ class NotificationPermissionBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 227 * scale,
       padding: EdgeInsets.all(24 * scale),
       decoration: BoxDecoration(
         color: AppColors.narDark600,
         borderRadius: BorderRadius.circular(16 * scale),
       ),
+      // 고정 높이를 두지 않고 내용에 맞춰 늘어나게 한다 — 안내 문구가
+      // 줄바꿈으로 길어져도 세로 오버플로가 발생하지 않는다.
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             mainTitle,

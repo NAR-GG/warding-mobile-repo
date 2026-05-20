@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
+import 'component/schedule_calendar.dart';
 import 'component/schedule_header.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
@@ -27,6 +28,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
@@ -35,12 +39,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ListenableBuilder(
               listenable: _viewModel,
               builder: (context, _) {
+                // ViewModel 의 ScheduleMatch → 캘린더 칩용 (home, away) 변환.
+                final matchesByDay = <int, List<CalendarMatch>>{
+                  for (final entry in _viewModel.matchesByDay.entries)
+                    entry.key: [
+                      for (final m in entry.value)
+                        (home: m.teamA.teamCode, away: m.teamB.teamCode),
+                    ],
+                };
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 12),
                     ScheduleHeader(monthLabel: _viewModel.monthLabel),
-                    // TODO: 월간 캘린더 / 경기 목록
+                    // 캘린더가 남은 세로 공간을 채우되, 떠 있는 하단 네비에
+                    // 가리지 않도록 네비 footprint(72*scale + 바닥 26 + 간격 8)
+                    // 만큼 아래를 띄운다.
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 72 * scale + 34),
+                        child: ScheduleCalendar(
+                          month: _viewModel.displayMonth,
+                          matchesByDay: matchesByDay,
+                        ),
+                      ),
+                    ),
                   ],
                 );
               },
