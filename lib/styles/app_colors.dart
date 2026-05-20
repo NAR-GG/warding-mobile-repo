@@ -34,4 +34,14 @@ class AppColors {
   static const Color narButton2Bg = Color(0xFF5C5F66);
   static const Color narButton2Line = Color(0xFF373A40);
   static const Color narButton2Text = Color(0xFFFCFDFE);
+
+  // app_bottom_nav (공용 하단 네비게이션)
+  static const Color narNavBg = Color(0xB225262B); // #25262BB2
+  static const Color narNavSelectedBg = Color(0x80101113); // #10111380
+  static const Color narGray400 = Color(0xFFCED4DA); // 활성 아이콘
+  static const Color narDark200 = Color(0xFF909296); // 비활성 아이콘
+
+  // schedule (경기 일정)
+  static const Color narBgTertiary = Color(0xFF1F2024); // nar_BG_tertiary
+  static const Color narTextGnbDefault = Color(0xFFCED4DA); // nar_text_GNB_default
 }
