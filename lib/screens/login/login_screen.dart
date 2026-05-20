@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../repository/auth/auth_service.dart';
-import '../styles/app_colors.dart';
-import 'home_screen.dart';
-import 'onboarding_screen.dart';
+import '../../repository/auth/auth_service.dart';
+import '../../styles/app_colors.dart';
+import '../home/home_screen.dart';
+import '../onboarding/onboarding_screen.dart';
+import 'component/easy_login_divider.dart';
+import 'component/social_login_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -67,9 +69,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 44,
               ),
               const Spacer(flex: 140),
-              const SizedBox(width: 316, child: _EasyLoginDivider()),
+              const SizedBox(width: 316, child: EasyLoginDivider()),
               const SizedBox(height: 24),
-              _SocialLoginButton(
+              SocialLoginButton(
                 backgroundColor: AppColors.kakaoBg,
                 foregroundColor: AppColors.kakaoText,
                 icon: SvgPicture.asset(
@@ -81,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () => _signIn('kakao'),
               ),
               const SizedBox(height: 16),
-              _SocialLoginButton(
+              SocialLoginButton(
                 backgroundColor: AppColors.naverBg,
                 foregroundColor: AppColors.naverText,
                 icon: SvgPicture.asset(
@@ -93,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () => _signIn('naver'),
               ),
               const SizedBox(height: 16),
-              _SocialLoginButton(
+              SocialLoginButton(
                 backgroundColor: AppColors.googleBg,
                 foregroundColor: AppColors.gary100,
                 icon: SvgPicture.asset(
@@ -106,7 +108,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: _isLoading ? null : () {},
+                onPressed: _isLoading
+                    ? null
+                    : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const OnboardingScreen(),
+                        ),
+                      ),
                 child: const Text(
                   '비회원으로 시작하기',
                   style: TextStyle(color: AppColors.narText2, fontSize: 16),
@@ -114,81 +122,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const Spacer(flex: 48),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EasyLoginDivider extends StatelessWidget {
-  const _EasyLoginDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(
-          child: Divider(color: AppColors.narLine2, thickness: 1, height: 1),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 11.5),
-          child: Text(
-            '간편 로그인',
-            style: TextStyle(color: AppColors.narText, fontSize: 16),
-          ),
-        ),
-        const Expanded(
-          child: Divider(color: AppColors.narLine2, thickness: 1, height: 1),
-        ),
-      ],
-    );
-  }
-}
-
-class _SocialLoginButton extends StatelessWidget {
-  const _SocialLoginButton({
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final Color backgroundColor;
-  final Color foregroundColor;
-  final Widget icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 316,
-      height: 48,
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 11),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                icon,
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
