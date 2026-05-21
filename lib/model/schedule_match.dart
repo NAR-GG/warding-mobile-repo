@@ -1,0 +1,107 @@
+/// 특정 날짜의 경기 한 건.
+///
+/// `특정 날짜 경기 목록` API 응답의 `matches` 항목 하나에 대응한다.
+class ScheduleMatch {
+  const ScheduleMatch({
+    required this.matchId,
+    required this.scheduledTime,
+    required this.leagueInfo,
+    required this.matchTitle,
+    required this.matchStatus,
+    required this.isSynced,
+    required this.teamA,
+    required this.teamB,
+    this.liveStreamUrl,
+    this.sets = const [],
+  });
+
+  final String matchId;
+
+  /// 경기 예정 시각 (서버가 문자열로 내려준다).
+  final String scheduledTime;
+
+  /// 리그 정보 (예: 'LCK').
+  final String leagueInfo;
+
+  final String matchTitle;
+
+  /// 경기 상태 (예정/진행/종료 등).
+  final String matchStatus;
+
+  final bool isSynced;
+
+  /// 홈 팀.
+  final MatchTeam teamA;
+
+  /// 원정 팀.
+  final MatchTeam teamB;
+
+  /// 라이브 중계 URL. 없을 수 있다.
+  final String? liveStreamUrl;
+
+  /// 세트별 정보 (VOD 등).
+  final List<MatchSet> sets;
+
+  factory ScheduleMatch.fromJson(Map<String, dynamic> json) {
+    return ScheduleMatch(
+      matchId: json['matchId'] as String? ?? '',
+      scheduledTime: json['scheduledTime'] as String? ?? '',
+      leagueInfo: json['leagueInfo'] as String? ?? '',
+      matchTitle: json['matchTitle'] as String? ?? '',
+      matchStatus: json['matchStatus'] as String? ?? '',
+      isSynced: json['isSynced'] as bool? ?? false,
+      teamA: MatchTeam.fromJson(json['teamA'] as Map<String, dynamic>),
+      teamB: MatchTeam.fromJson(json['teamB'] as Map<String, dynamic>),
+      liveStreamUrl: json['liveStreamUrl'] as String?,
+      sets: (json['sets'] as List<dynamic>? ?? const [])
+          .map((e) => MatchSet.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// 경기에 출전하는 팀 한 쪽.
+class MatchTeam {
+  const MatchTeam({
+    required this.teamName,
+    required this.teamCode,
+    required this.teamImageUrl,
+    required this.score,
+  });
+
+  final String teamName;
+
+  /// 짧은 팀 코드 (예: 'T1', 'GEN'). 캘린더 칩에 표시한다.
+  final String teamCode;
+
+  final String teamImageUrl;
+
+  /// 현재 스코어.
+  final int score;
+
+  factory MatchTeam.fromJson(Map<String, dynamic> json) {
+    return MatchTeam(
+      teamName: json['teamName'] as String? ?? '',
+      teamCode: json['teamCode'] as String? ?? '',
+      teamImageUrl: json['teamImageUrl'] as String? ?? '',
+      score: json['score'] as int? ?? 0,
+    );
+  }
+}
+
+/// 경기 세트 한 개.
+class MatchSet {
+  const MatchSet({required this.setNumber, this.vodUrl});
+
+  final int setNumber;
+
+  /// 세트 VOD URL. 없을 수 있다.
+  final String? vodUrl;
+
+  factory MatchSet.fromJson(Map<String, dynamic> json) {
+    return MatchSet(
+      setNumber: json['setNumber'] as int? ?? 0,
+      vodUrl: json['vodUrl'] as String?,
+    );
+  }
+}

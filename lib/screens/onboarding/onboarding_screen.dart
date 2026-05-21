@@ -4,7 +4,7 @@ import '../../components/common_button.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/onboarding/onboarding_viewmodel.dart';
-import '../home/home_screen.dart';
+import '../schedule/schedule_screen.dart';
 import 'component/onboarding_header.dart';
 import 'component/onboarding_progress_bar.dart';
 import 'step/league_step.dart';
@@ -59,9 +59,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _finish() {
-    // TODO: 백엔드 온보딩 완료 / 비회원 로컬 저장 처리 후 이동
+    // 비회원 선호 팀 로컬 저장은 OnboardingViewModel 이 끝낸 뒤 호출한다.
+    // (회원 백엔드 온보딩 완료 API 연동은 추후)
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const ScheduleScreen()),
       (route) => false,
     );
   }
