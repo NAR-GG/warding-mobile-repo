@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/onboarding/onboarding_viewmodel.dart';
+import '../component/onboarding_load_error.dart';
 import '../component/onboarding_select_card.dart';
 import '../component/onboarding_title.dart';
 
@@ -31,6 +32,7 @@ class TeamStep extends StatelessWidget {
           subTitle: 'LCK 국내 팀 기준입니다.',
           scale: scale,
         ),
+        SizedBox(height: 32 * scale), // 타이틀 ↔ 그리드 고정 간격 (스크롤해도 유지)
         Expanded(child: _buildGrid()),
       ],
     );
@@ -41,38 +43,15 @@ class TeamStep extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.teamsError != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '팀 목록을 불러오지 못했어요',
-              style: TextStyle(color: AppColors.narText2),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                '${viewModel.teamsError}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.narText2,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: viewModel.loadTeams,
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
+      return OnboardingLoadError(
+        message: '팀 목록을 불러오지 못했어요',
+        error: viewModel.teamsError!,
+        onRetry: viewModel.loadTeams,
       );
     }
 
     return GridView.count(
-      padding: EdgeInsets.fromLTRB(60 * scale, 24 * scale, 60 * scale, 0),
+      padding: EdgeInsets.fromLTRB(60 * scale, 0, 60 * scale, 0),
       crossAxisCount: 2,
       childAspectRatio: 119 / 152,
       crossAxisSpacing: 16 * scale,

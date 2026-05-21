@@ -6,6 +6,7 @@ import '../styles/app_colors.dart';
 ///
 /// 높이 45·라운드 10 의 탭 가능한 박스. [trailing] 이 없으면 텍스트를
 /// 가운데에, 있으면 텍스트를 왼쪽·[trailing] 을 오른쪽 끝에 배치한다.
+/// 텍스트는 한 줄로, 박스를 넘치면 `...` 으로 줄인다.
 /// 보통 라벨과 함께 쓰려면 [LabeledField] 로 감싼다.
 class AppSelectBox extends StatelessWidget {
   const AppSelectBox({
@@ -35,6 +36,8 @@ class AppSelectBox extends StatelessWidget {
       text,
       // trailing 이 있으면 왼쪽 정렬, 없으면 가운데 정렬.
       textAlign: hasTrailing ? TextAlign.left : TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis, // 한 줄, 넘치면 ... 으로 줄임
       style: TextStyle(
         fontFamily: 'Pretendard',
         fontWeight: FontWeight.w400,
