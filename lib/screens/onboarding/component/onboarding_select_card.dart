@@ -23,7 +23,8 @@ class OnboardingSelectCard extends StatelessWidget {
   /// 큰 메인 타이틀 (18px 기준). 예: 'T1'.
   final String mainTitle;
 
-  /// 작은 서브 타이틀 (11px 기준). null 이면 표시하지 않는다.
+  /// 작은 서브 타이틀 (11px 기준). null 이면 빈 줄로 자리만 남겨,
+  /// 서브타이틀 유무와 상관없이 메인타이틀 위치가 고정된다.
   final String? subTitle;
 
   /// 카드 탭 콜백.
@@ -51,22 +52,21 @@ class OnboardingSelectCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: imageSize, height: imageSize, child: image),
-              if (subTitle != null) ...[
-                SizedBox(height: 6 * scale),
-                Text(
-                  subTitle!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11 * scale,
-                    height: 1.45,
-                    letterSpacing: 0.21 * scale,
-                    color: AppColors.narText2,
-                  ),
+              SizedBox(height: 6 * scale),
+              // 서브타이틀이 없어도 빈 줄로 자리를 남겨, 서브타이틀 유무와
+              // 상관없이 이미지·메인타이틀 위치를 고정한다.
+              Text(
+                subTitle ?? '',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11 * scale,
+                  height: 1.45,
+                  letterSpacing: 0.21 * scale,
+                  color: AppColors.narTextSecondary,
                 ),
-              ],
-              SizedBox(height: 16 * scale),
+              ),
               Text(
                 mainTitle,
                 textAlign: TextAlign.center,

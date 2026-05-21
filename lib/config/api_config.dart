@@ -6,12 +6,25 @@ class ApiConfig {
 
   static const String kakaoNativeAppKey = '838b3def5acdd1dfbbe6b14e301ba05a';
 
-  static String get kakaoLoginUrl => '$apiBaseUrl/auth/kakao';
+  /// 카카오 access token을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
+  static String get kakaoLoginUrl => '$apiBaseUrl/auth/mobile/kakao';
+
+  /// 온보딩용 리그 목록 조회 (인증 불필요).
+  static String get onboardingLeaguesUrl =>
+      '$apiBaseUrl/auth/onboarding/leagues';
 
   /// 온보딩용 LCK 팀 목록 조회 (인증 불필요).
   static String get onboardingTeamsUrl => '$apiBaseUrl/auth/onboarding/teams';
 
-  /// 온보딩 완료 — 로그인 사용자의 선호 팀 서버 저장 (인증 필요).
+  /// 온보딩용 선수 목록 조회 (인증 불필요).
+  /// [teamId] 를 주면 해당 팀 선수만 조회한다.
+  static String onboardingPlayersUrl({required int year, int? teamId}) {
+    final query = StringBuffer('year=$year');
+    if (teamId != null) query.write('&teamId=$teamId');
+    return '$apiBaseUrl/auth/onboarding/players?$query';
+  }
+
+  /// 온보딩 완료 — 로그인 사용자의 선호 리그·팀·선수 서버 저장 (인증 필요).
   static String get onboardingUrl => '$apiBaseUrl/auth/onboarding';
 
   /// 월별 경기 존재 날짜 조회 (달력 마킹용, 인증 불필요).

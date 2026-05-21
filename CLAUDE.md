@@ -77,13 +77,12 @@ lib/
 - 카카오 로그인 (네이티브 앱 키, 패키지명 `com.warding.app`, 릴리즈 키스토어 서명 설정)
 - 화면 폴더 구조 정리 (`screens/login·home·onboarding`)
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한) — MVVM 구조로 구현
+- 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
 
 ### 다음 작업
 - 경기 페이지
 
 ### 남은 TODO
-- 리그·선수 선택 그리드 미구현 — `league_step`, `player_step`은 타이틀만 있는 placeholder
 - `Pretendard` / `Open Sans` 폰트가 pubspec에 미등록 (현재 fallback 폰트로 렌더링)
-- 온보딩 팀 목록 API가 CORS로 막혀 `OnboardingRepository.useMock = true` (mock 데이터 사용 중) — 백엔드 CORS 허용 후 `false` 로 전환
-- 백엔드 온보딩 완료 API(`POST /api/auth/onboarding`) 연동, 비회원 선호 팀 로컬 저장 미구현
+- 비회원(JWT 없음)은 온보딩 완료 API를 호출하지 않음 — 선호 팀만 로컬 캐싱, 리그·선수 로컬 저장 미구현
 - 알림 권한 '허용' 시 실제 권한 요청은 연결됨 — iOS 배포 시 `permission_handler` Podfile 매크로 설정 필요

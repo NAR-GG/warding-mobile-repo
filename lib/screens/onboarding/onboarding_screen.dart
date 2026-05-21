@@ -128,11 +128,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Widget _buildStep(double scale) {
     switch (_viewModel.currentStep) {
       case OnboardingStep.league:
-        return LeagueStep(scale: scale);
+        return LeagueStep(viewModel: _viewModel, scale: scale);
       case OnboardingStep.team:
         return TeamStep(viewModel: _viewModel, scale: scale);
       case OnboardingStep.player:
-        return PlayerStep(scale: scale);
+        return PlayerStep(viewModel: _viewModel, scale: scale);
       case OnboardingStep.notification:
         return NotificationStep(viewModel: _viewModel, scale: scale);
     }
