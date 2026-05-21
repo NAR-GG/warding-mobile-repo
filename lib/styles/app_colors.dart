@@ -71,4 +71,9 @@ class AppColors {
   static const Color narText4 = Color(0xFFA6A7AB); // nar_text_4
   static const Color narTextScore = Color(0xFFF03E3E); // nar_text_score
   static const Color narTextRed = Color(0xFFFF6B6B); // nar_text_red
+
+  // search select box (공용 검색 선택 박스)
+  static const Color narRed500 = Color(0xFFFF6B6B); // nar_red_500
+  static const Color narTextTertiarySub = Color(0xFFA6A7AB); // nar_text_tertiary_sub
+  static const Color narSearchSelectShadow = Color(0x0A000000); // #0000000A
 }

@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../repository/auth/auth_service.dart';
 import '../styles/app_colors.dart';
-import 'home/home_screen.dart';
 import 'login/login_screen.dart';
+import 'schedule/schedule_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,7 +30,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final jwt = results[1] as String?;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => jwt == null ? const LoginScreen() : const HomeScreen(),
+        builder: (_) =>
+            jwt == null ? const LoginScreen() : const ScheduleScreen(),
       ),
     );
   }
