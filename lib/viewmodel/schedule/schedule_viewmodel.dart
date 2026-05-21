@@ -1,19 +1,28 @@
 import 'package:flutter/foundation.dart';
 
 import '../../model/schedule_match.dart';
+import '../../model/team.dart';
+import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
 /// 경기 일정 화면 ViewModel.
 ///
 /// 현재 표시 중인 '월'과, 그 달의 경기 캘린더(날짜별 경기 목록)를 들고 있다.
 class ScheduleViewModel extends ChangeNotifier {
-  ScheduleViewModel({DateTime? initialMonth, ScheduleRepository? repository})
-    : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
-      _repository = repository ?? ScheduleRepository.instance {
+  ScheduleViewModel({
+    DateTime? initialMonth,
+    ScheduleRepository? repository,
+    TeamPreferenceRepository? teamPreferences,
+  }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
+       _repository = repository ?? ScheduleRepository.instance,
+       _teamPreferences =
+           teamPreferences ?? TeamPreferenceRepository.instance {
     loadCalendar();
+    _loadPreferredTeam();
   }
 
   final ScheduleRepository _repository;
+  final TeamPreferenceRepository _teamPreferences;
 
   bool _disposed = false;
 
@@ -30,6 +39,19 @@ class ScheduleViewModel extends ChangeNotifier {
   Map<int, List<ScheduleMatch>> _matchesByDay = const {};
   Map<int, List<ScheduleMatch>> get matchesByDay => _matchesByDay;
 
+  /// 온보딩에서 고른 선호 팀. 없으면(건너뛰기 등) null.
+  Team? _preferredTeam;
+  Team? get preferredTeam => _preferredTeam;
+
+  /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
+  /// API 에 팀 필터 파라미터가 생기면 이 상태로 경기 필터링을 연결한다.
+  bool _teamSelected = false;
+  bool get teamSelected => _teamSelected;
+
+  /// 날짜 피커에서 고른 날짜. 캘린더에서 그 칸 배경을 강조한다.
+  DateTime? _selectedDate;
+  DateTime? get selectedDate => _selectedDate;
+
   /// 캘린더 조회 진행 중 여부.
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -45,6 +67,25 @@ class ScheduleViewModel extends ChangeNotifier {
     _displayMonth = normalized;
     notifyListeners();
     loadCalendar();
+  }
+
+  /// 표시 월을 [delta] 개월 이동한다. 캘린더 좌우 스와이프용.
+  /// DateTime 생성자가 12월 초과·0 이하 월을 연도까지 정규화한다.
+  void shiftMonth(int delta) {
+    displayMonth = DateTime(_displayMonth.year, _displayMonth.month + delta);
+  }
+
+  /// 헤더 팀 아이콘 선택 상태를 토글한다.
+  void toggleTeamSelected() {
+    _teamSelected = !_teamSelected;
+    _notify();
+  }
+
+  /// 날짜 피커에서 고른 날짜를 반영한다 — 그 달로 이동하고 칸을 강조한다.
+  void selectDate(DateTime date) {
+    _selectedDate = DateTime(date.year, date.month, date.day);
+    displayMonth = date; // 월이 다르면 정규화·통지·재조회한다.
+    _notify(); // 같은 달이면 위에서 통지 안 됐을 수 있어 한 번 더.
   }
 
   /// 현재 표시 월의 경기 캘린더를 불러온다.
@@ -88,6 +129,12 @@ class ScheduleViewModel extends ChangeNotifier {
       _isLoading = false;
       _notify();
     }
+  }
+
+  /// 로컬에 저장된 선호 팀을 불러온다.
+  Future<void> _loadPreferredTeam() async {
+    _preferredTeam = await _teamPreferences.loadPreferredTeam();
+    _notify();
   }
 
   void _notify() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/team.dart';
 import '../../../styles/app_colors.dart';
 
 /// 경기 일정 페이지 상단 헤더.
@@ -16,6 +17,9 @@ class ScheduleHeader extends StatelessWidget {
     this.summary = '월간 경기 일정 요약',
     this.onMonthTap,
     this.onFilterTap,
+    this.preferredTeam,
+    this.teamSelected = false,
+    this.onTeamTap,
   });
 
   /// 'yyyy.MM' 형식 월 라벨. 예: '2026.04'.
@@ -29,6 +33,15 @@ class ScheduleHeader extends StatelessWidget {
 
   /// 필터 버튼 탭 콜백. null 이면 비활성.
   final VoidCallback? onFilterTap;
+
+  /// 온보딩에서 고른 선호 팀. null 이면(건너뛰기 등) 팀 아이콘을 숨긴다.
+  final Team? preferredTeam;
+
+  /// 팀 아이콘 선택(2px 테두리) 상태.
+  final bool teamSelected;
+
+  /// 팀 아이콘 탭 콜백. null 이면 비활성.
+  final VoidCallback? onTeamTap;
 
   @override
   Widget build(BuildContext context) {
@@ -93,17 +106,11 @@ class ScheduleHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12 * scale),
-          // 오른쪽: 필터 버튼
+          // 오른쪽: 필터 버튼 + (온보딩에서 고른) 팀 아이콘
           GestureDetector(
             onTap: onFilterTap,
-            child: Container(
-              width: 44 * scale,
-              height: 44 * scale,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppColors.narBgTertiary,
-                shape: BoxShape.circle,
-              ),
+            child: _CircleSlot(
+              scale: scale,
               child: SvgPicture.asset(
                 'assets/icons/filter.svg',
                 width: 24 * scale,
@@ -111,7 +118,79 @@ class ScheduleHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (preferredTeam != null) ...[
+            SizedBox(width: 8 * scale), // 필터 버튼 ↔ 팀 아이콘 간격 8
+            GestureDetector(
+              onTap: onTeamTap,
+              child: _CircleSlot(
+                scale: scale,
+                bordered: teamSelected,
+                child: Image.network(
+                  preferredTeam!.imageUrl,
+                  width: 25 * scale,
+                  height: 25 * scale,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Icon(
+                    Icons.shield_outlined,
+                    size: 25 * scale,
+                    color: AppColors.narText2,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// 헤더 오른쪽 끝의 44×44 원형 슬롯. 필터 버튼·팀 아이콘이 공유한다.
+///
+/// [bordered] 면 2px narBg 그라데이션 테두리를 두른다. 전체 크기는 44 로
+/// 유지하고 안쪽 원을 40 으로 줄여, 선택/해제 시 레이아웃이 흔들리지 않는다.
+class _CircleSlot extends StatelessWidget {
+  const _CircleSlot({
+    required this.scale,
+    required this.child,
+    this.bordered = false,
+  });
+
+  final double scale;
+  final Widget child;
+  final bool bordered;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!bordered) {
+      return Container(
+        width: 44 * scale,
+        height: 44 * scale,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: AppColors.narBgTertiary,
+          shape: BoxShape.circle,
+        ),
+        child: child,
+      );
+    }
+    return Container(
+      width: 44 * scale,
+      height: 44 * scale,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        gradient: AppColors.narBg, // 2px narBg 테두리
+        shape: BoxShape.circle,
+      ),
+      child: Container(
+        width: 40 * scale, // 44 - 테두리 2px ×2
+        height: 40 * scale,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: AppColors.narBgTertiary,
+          shape: BoxShape.circle,
+        ),
+        child: child,
       ),
     );
   }

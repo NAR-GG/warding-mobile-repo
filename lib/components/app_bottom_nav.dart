@@ -4,32 +4,9 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 import '../styles/app_colors.dart';
 
-/// 서비스 페이지 공용 하단 네비게이션 탭.
 enum AppNavTab { schedule, list, subscription, mypage }
 
-/// 서비스 페이지 공용 하단 네비게이션 바.
-///
-/// 화면 하단에서 26px 띄운 글래스모피즘 플로팅 바. 배경에 BackdropFilter
-/// 블러가 걸려 뒤 콘텐츠가 비쳐 보이므로, 반드시 콘텐츠 위에 겹쳐 배치한다.
-/// Scaffold body 를 Stack 으로 감싸고 아래처럼 배치한다:
-/// ```dart
-/// Stack(
-///   children: [
-///     content,
-///     Positioned(
-///       left: 0,
-///       right: 0,
-///       bottom: 26,
-///       child: AppBottomNav(
-///         currentTab: _tab,
-///         onTabSelected: (tab) => setState(() => _tab = tab),
-///       ),
-///     ),
-///   ],
-/// )
-/// ```
-///
-/// 활성 탭만 라벨이 보이고, 나머지는 아이콘만 보인다. 기본값은 경기일정.
+
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,
@@ -119,7 +96,6 @@ class AppBottomNav extends StatelessWidget {
   }
 }
 
-/// 활성 탭: 어두운 알약 배경 + 아이콘 + 라벨.
 class _NavItemActive extends StatelessWidget {
   const _NavItemActive({
     required this.icon,

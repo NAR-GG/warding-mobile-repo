@@ -59,7 +59,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _finish() {
-    // TODO: 백엔드 온보딩 완료 / 비회원 로컬 저장 처리 후 이동
+    // 비회원 선호 팀 로컬 저장은 OnboardingViewModel 이 끝낸 뒤 호출한다.
+    // (회원 백엔드 온보딩 완료 API 연동은 추후)
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const ScheduleScreen()),
       (route) => false,

@@ -27,4 +27,12 @@ class Team {
       imageUrl: (json['imageUrl'] ?? '') as String,
     );
   }
+
+  /// JSON 직렬화 — 선호 팀 로컬 저장 등에 쓴다.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'code': code,
+    'imageUrl': imageUrl,
+  };
 }

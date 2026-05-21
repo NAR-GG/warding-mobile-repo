@@ -5,6 +5,7 @@ class AppColors {
   static const Color gary100 = Color(0xFF000000);
 
   static const Color narDark400 = Color(0xFF373A40);
+  static const Color narDark500 = Color(0xFF2C2E33); // nar_dark_500
   static const Color narDark300 = Color(0xFF5C5F66);
   static const Color narDark600 = Color(0xFF25262B);
   static const Color narDark800 = Color(0xFF141517);
@@ -45,10 +46,23 @@ class AppColors {
   static const Color narButton2Text = Color(0xFFFCFDFE);
 
   // app_bottom_nav (공용 하단 네비게이션)
-  static const Color narNavBg = Color(0xB225262B); // #25262BB2
+  static const Color narNavBg = Color(0xFF202125); // #202125
   static const Color narNavSelectedBg = Color(0x80101113); // #10111380
   static const Color narGray400 = Color(0xFFCED4DA); // 활성 아이콘
   static const Color narDark200 = Color(0xFF909296); // 비활성 아이콘
+
+  // bottom sheet (공용 바텀시트 모달)
+  static const Color narBgSecondary = Color(0xFF1A1B1E); // nar_BG_secondary
+  static const Color narBottomSheetShadow = Color(0x1F101113); // #1011131F
+
+  // month picker (날짜 피커 모달)
+  static const Color narButtonDisabledText = Color(0xFF5C5F66); // nar_button_disabled_text
+  static const Color narTextSecondary = Color(0xFFFFFFFF); // nar_text_secondary
+
+  // select box / labeled field (공용 입력)
+  static const Color narBgLast = Color(0xFF25262B); // nar_BG_last
+  static const Color narText3 = Color(0xFFC1C2C5); // nar_text_3
+  static const Color narRedOpacity25 = Color(0x40FA5252); // nar_red_opacity25
 
   // schedule (경기 일정)
   static const Color narBgTertiary = Color(0xFF1F2024); // nar_BG_tertiary
