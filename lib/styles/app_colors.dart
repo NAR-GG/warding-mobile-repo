@@ -9,6 +9,8 @@ class AppColors {
   static const Color narDark300 = Color(0xFF5C5F66);
   static const Color narDark600 = Color(0xFF25262B);
   static const Color narDark800 = Color(0xFF141517);
+  static const Color narGray500 = Color(0xFFADB5BD); // gray/5
+
   static const Color narText = Color(0xFFFFFFFF);
   static const Color narText2 = Color(0xFFA6A7AB);
   static const Color narLine2 = Color(0xFF495057);
@@ -46,9 +48,9 @@ class AppColors {
   static const Color narButton2Text = Color(0xFFFCFDFE);
 
   // app_bottom_nav (공용 하단 네비게이션)
-  static const Color narNavBg = Color(0xFF202125); // #202125
-  static const Color narNavSelectedBg = Color(0x80101113); // #10111380
-  static const Color narGray400 = Color(0xFFCED4DA); // 활성 아이콘
+  static const Color narNavBg = Color(0xB325262B); // rgba(37,38,43,0.7)
+  static const Color narNavSelectedBg = Color(0x80101113); // rgba(16,17,19,0.5)
+  static const Color narGray400 = Color(0xFFCED4DA); // 활성 아이콘·텍스트
   static const Color narDark200 = Color(0xFF909296); // 비활성 아이콘
 
   // bottom sheet (공용 바텀시트 모달)
@@ -76,4 +78,35 @@ class AppColors {
   static const Color narRed500 = Color(0xFFFF6B6B); // nar_red_500
   static const Color narTextTertiarySub = Color(0xFFA6A7AB); // nar_text_tertiary_sub
   static const Color narSearchSelectShadow = Color(0x0A000000); // #0000000A
+
+  // chip (공용 선택 칩)
+  static const Color narChipSelectedBg = Color(0x807048E8); // rgba(112,72,232,0.5)
+
+  // live match card (라이브 경기 카드 / 라이브 칩)
+  static const Color liveBadgeBg = Color(0x1AE03131); // rgba(224,49,49,0.1)
+  static const Color liveAccent = Color(0xFFE03131); // 점/LIVE 텍스트
+  static const Color liveSideBorder = Color(0xFFDB6F47); // 카드 왼쪽 3px
+  static const Color scoreWin = Color(0xFFFA5252); // 라이브 승자 스코어
+
+  // live badge — light (경기 상세 헤더용 LIVE 뱃지: red/0 배경 + red/3 보더)
+  static const Color liveBadgeLightBg = Color(0xFFFFF5F5); // red/0
+  static const Color liveBadgeLightBorder = Color(0xFFFFA8A8); // red/3
+
+  // side badge (진영 BLUE/RED 라이트 톤 보더 + 진한 텍스트)
+  static const Color sideBlueBorder = Color(0xFF91A7FF); // indigo/3
+  static const Color sideBlueText = Color(0xFF3B5BDB); // indigo/8
+  static const Color sideRedBorder = Color(0xFFFFA8A8); // red/3
+  static const Color sideRedText = Color(0xFFE03131); // red/8
+
+  // 경기 상세 스코어 (승자: red/7, 패자: gray/1, 콜론: narText2)
+  static const Color scoreTextSub = Color(0xFFF1F3F5); // gray/1
+
+  // 경기 상세 콘텐츠 영역 배경 (탭 콘텐츠 #101113)
+  static const Color narBgContent = Color(0xFF101113);
+
+  // 최근 상태 로드 버튼 (라이브 이벤트)
+  static const Color narGray100 = Color(0xFFF1F3F5); // gray/1
+
+  // 라이브 이벤트 타임라인 (가장 최근 이벤트 강조)
+  static const Color narPink700 = Color(0xFFD6336C); // mantine pink/7
 }
