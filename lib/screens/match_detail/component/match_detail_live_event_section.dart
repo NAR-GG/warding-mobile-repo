@@ -80,6 +80,7 @@ class _MatchDetailLiveEventSectionState
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
