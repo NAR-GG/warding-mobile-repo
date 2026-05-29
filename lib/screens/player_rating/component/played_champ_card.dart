@@ -1,0 +1,162 @@
+import 'package:flutter/material.dart';
+
+import '../../../styles/app_colors.dart';
+
+/// 선수 평점 상세 — '플레이한 챔프' 카드.
+///
+/// 흰 카드(라운드 10) + 하단 inset 그림자 근사 그라데이션.
+/// 선수 이미지(t1_페이커)와 챔피언 배경(image 261) 자리는 비워 둔다(추후 연결).
+/// 콘텐츠는 카드 하단에 정렬한다.
+/// - 좌측: 선수 이미지(62×62 빈 자리) + 'T1 Faker' / 포지션mini 아이콘 + 포지션명
+/// - 우측: 'KDA' / '4/1/7'
+class PlayedChampCard extends StatelessWidget {
+  const PlayedChampCard({
+    super.key,
+    required this.teamName,
+    required this.playerName,
+    required this.position,
+    required this.kda,
+    this.scale = 1,
+  });
+
+  /// 'T1 Faker' 표기에 쓰는 팀명/선수명.
+  final String teamName;
+  final String playerName;
+
+  /// 포지션명(예: '미드').
+  final String position;
+
+  /// KDA 표기(예: '4/1/7').
+  final String kda;
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+      child: Container(
+        height: 101 * scale,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: AppColors.narPlayedChampBg,
+          borderRadius: BorderRadius.circular(10 * scale),
+        ),
+        // TODO: 챔피언 배경 이미지(image 261) 연결 시 배경 레이어 추가.
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 하단 inset 그림자 근사(어두운 세로 그라데이션).
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: AppColors.narPlayedChampOverlay,
+              ),
+            ),
+            // 콘텐츠 — 카드 하단 정렬.
+            Padding(
+              padding: EdgeInsets.only(
+                left: 8 * scale,
+                right: 7 * scale,
+                bottom: 10 * scale,
+              ),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  height: 62 * scale,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 좌측: 선수 이미지(비움) + 선수명/포지션.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // TODO: 선수 이미지(t1_페이커) 연결 — 현재 62×62 빈 자리.
+                          SizedBox(width: 62 * scale, height: 62 * scale),
+                          SizedBox(width: 10 * scale),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '$teamName $playerName',
+                                style: TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18 * scale,
+                                  height: 1.45,
+                                  color: AppColors.narText,
+                                ),
+                              ),
+                              // 포지션 라인: mini 아이콘 + 포지션명.
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // TODO: 포지션mini 아이콘 자산 연결 — 현재 회색 placeholder.
+                                  Container(
+                                    width: 14 * scale,
+                                    height: 14 * scale,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.narDark200,
+                                      borderRadius: BorderRadius.circular(
+                                        3 * scale,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8 * scale),
+                                  Text(
+                                    position,
+                                    style: TextStyle(
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16 * scale,
+                                      height: 1.45,
+                                      color: AppColors.narText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      // 우측: KDA.
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'KDA',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14 * scale,
+                              height: 1.45,
+                              color: AppColors.narText,
+                            ),
+                          ),
+                          Text(
+                            kda,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16 * scale,
+                              height: 1.45,
+                              color: AppColors.narText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

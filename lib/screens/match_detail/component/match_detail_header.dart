@@ -4,16 +4,20 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/nar_dropdown.dart';
 import '../../../styles/app_colors.dart';
 
-/// 경기 상세 페이지 헤더. 왼쪽 뒤로가기 + 가운데 '경기 상세' 타이틀 + 오른쪽 세트 드롭다운.
+/// 경기 상세 페이지 헤더. 왼쪽 뒤로가기 + 가운데 타이틀 + 오른쪽 세트 드롭다운.
+/// 선수 평점 등 동일 레이아웃을 쓰는 화면에서 [title]만 바꿔 재사용한다.
 class MatchDetailHeader extends StatelessWidget {
   const MatchDetailHeader({
     super.key,
+    this.title = '경기 상세',
     this.onBack,
     required this.setLabel,
     this.onSetTap,
     this.scale = 1,
   });
 
+  /// 가운데 타이틀 텍스트. 기본 '경기 상세'.
+  final String title;
   final VoidCallback? onBack;
   final String setLabel;
   final VoidCallback? onSetTap;
@@ -35,7 +39,7 @@ class MatchDetailHeader extends StatelessWidget {
           children: [
             Center(
               child: Text(
-                '경기 상세',
+                title,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w700,

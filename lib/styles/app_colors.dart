@@ -31,6 +31,14 @@ class AppColors {
     stops: [0.0076, 0.5153, 1.0],
   );
 
+  /// 선수 평점 안내 배너 배경 — narBg 그라데이션을 20% 불투명도(0x33)로.
+  static const LinearGradient narRatingBannerBg = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0x33E87558), Color(0x33C865C9), Color(0x33791BB8)],
+    stops: [0.0076, 0.5153, 1.0],
+  );
+
   static const Color kakaoBg = Color(0xFFFEE500);
   static const Color kakaoText = Color(0xD9000000);
 
@@ -58,7 +66,9 @@ class AppColors {
   static const Color narBottomSheetShadow = Color(0x1F101113); // #1011131F
 
   // month picker (날짜 피커 모달)
-  static const Color narButtonDisabledText = Color(0xFF5C5F66); // nar_button_disabled_text
+  static const Color narButtonDisabledText = Color(
+    0xFF5C5F66,
+  ); // nar_button_disabled_text
   static const Color narTextSecondary = Color(0xFFFFFFFF); // nar_text_secondary
 
   // select box / labeled field (공용 입력)
@@ -68,7 +78,9 @@ class AppColors {
 
   // schedule (경기 일정)
   static const Color narBgTertiary = Color(0xFF1F2024); // nar_BG_tertiary
-  static const Color narTextGnbDefault = Color(0xFFCED4DA); // nar_text_GNB_default
+  static const Color narTextGnbDefault = Color(
+    0xFFCED4DA,
+  ); // nar_text_GNB_default
   static const Color narTextTertiary = Color(0xFFFCFDFE); // nar_text_tertiary
   static const Color narText4 = Color(0xFFA6A7AB); // nar_text_4
   static const Color narTextScore = Color(0xFFF03E3E); // nar_text_score
@@ -76,11 +88,15 @@ class AppColors {
 
   // search select box (공용 검색 선택 박스)
   static const Color narRed500 = Color(0xFFFF6B6B); // nar_red_500
-  static const Color narTextTertiarySub = Color(0xFFA6A7AB); // nar_text_tertiary_sub
+  static const Color narTextTertiarySub = Color(
+    0xFFA6A7AB,
+  ); // nar_text_tertiary_sub
   static const Color narSearchSelectShadow = Color(0x0A000000); // #0000000A
 
   // chip (공용 선택 칩)
-  static const Color narChipSelectedBg = Color(0x807048E8); // rgba(112,72,232,0.5)
+  static const Color narChipSelectedBg = Color(
+    0x807048E8,
+  ); // rgba(112,72,232,0.5)
 
   // live match card (라이브 경기 카드 / 라이브 칩)
   static const Color liveBadgeBg = Color(0x1AE03131); // rgba(224,49,49,0.1)
@@ -109,4 +125,19 @@ class AppColors {
 
   // 라이브 이벤트 타임라인 (가장 최근 이벤트 강조)
   static const Color narPink700 = Color(0xFFD6336C); // mantine pink/7
+
+  // 플레이한 챔프 카드 (선수 평점 상세)
+  static const Color narPlayedChampBg = Color(0xFFFFFFFF); // 카드 배경(선수 이미지 자리)
+
+  /// 플레이한 챔프 카드 하단 inset 그림자 — inset 0 -63px 60px rgba(20,21,23,0.62).
+  /// inset shadow를 표현 못 하므로 하단을 어둡게 덮는 세로 그라데이션으로 근사한다.
+  static const LinearGradient narPlayedChampOverlay = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0x00141517), Color(0x9E141517)],
+    stops: [0.15, 1.0],
+  );
+
+  // 평점 분포 (선수 평점 상세) — 별점·분포 바 채움 노랑.
+  static const Color narYellow6 = Color(0xFFFAB005); // yellow/6
 }
