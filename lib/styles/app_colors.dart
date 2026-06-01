@@ -39,6 +39,14 @@ class AppColors {
     stops: [0.0076, 0.5153, 1.0],
   );
 
+  /// 라이브 이벤트 타임라인 세로선 — narBg 색을 세로(위→아래) 방향으로.
+  static const LinearGradient narTimelineLine = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFE87558), Color(0xFFC865C9), Color(0xFF791BB8)],
+    stops: [0.0076, 0.5153, 1.0],
+  );
+
   static const Color kakaoBg = Color(0xFFFEE500);
   static const Color kakaoText = Color(0xD9000000);
 
@@ -97,6 +105,10 @@ class AppColors {
   static const Color narChipSelectedBg = Color(
     0x807048E8,
   ); // rgba(112,72,232,0.5)
+  static const Color narChipActive = Color(0xFF7048E8); // 활성 필터칩 보더·텍스트
+  static const Color narChipBadgeBg = Color(
+    0x4D7048E8,
+  ); // rgba(112,72,232,0.3) — 선택 수 배지 배경
 
   // live match card (라이브 경기 카드 / 라이브 칩)
   static const Color liveBadgeBg = Color(0x1AE03131); // rgba(224,49,49,0.1)

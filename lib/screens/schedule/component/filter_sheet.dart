@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/app_select_box.dart';
-import '../../../components/common_button.dart';
+import '../../../components/nar_filter_sheet.dart';
 import '../../../components/labeled_field.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/schedule/filter_viewmodel.dart';
@@ -37,138 +37,54 @@ class _FilterSheetState extends State<FilterSheet> {
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _FilterHeader(
-              scale: scale,
-              onReset: _viewModel.reset,
-              onClose: () => Navigator.of(context).pop(),
-            ),
-            // 셀렉트 박스 영역 — 좌우 24 들여쓰기.
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24 * scale),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LabeledField(
-                    label: '리그',
+        return NarFilterSheet(
+          title: '필터',
+          onReset: _viewModel.reset,
+          // 선택값이 이전 값과 같으면 비활성(null), 바뀌면 활성.
+          onApply: _viewModel.isApplyEnabled
+              ? () => Navigator.of(context).pop()
+              : null,
+          // 셀렉트 박스 영역 — 좌우 24 들여쓰기.
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24 * scale),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LabeledField(
+                  label: '리그',
+                  scale: scale,
+                  child: _SelectField(
+                    placeholder: '전체',
+                    selected: _viewModel.selectedLeague,
+                    options: FilterViewModel.leagues,
+                    isOpen: _viewModel.openDropdown == FilterDropdown.league,
+                    onTapBox: () =>
+                        _viewModel.toggleDropdown(FilterDropdown.league),
+                    onSelect: _viewModel.selectLeague,
                     scale: scale,
-                    child: _SelectField(
-                      placeholder: '전체',
-                      selected: _viewModel.selectedLeague,
-                      options: FilterViewModel.leagues,
-                      isOpen:
-                          _viewModel.openDropdown == FilterDropdown.league,
-                      onTapBox: () =>
-                          _viewModel.toggleDropdown(FilterDropdown.league),
-                      onSelect: _viewModel.selectLeague,
-                      scale: scale,
-                    ),
                   ),
-                  SizedBox(height: 24 * scale), // 리그 ↔ 팀 간격 24
-                  LabeledField(
-                    label: '팀',
+                ),
+                SizedBox(height: 24 * scale), // 리그 ↔ 팀 간격 24
+                LabeledField(
+                  label: '팀',
+                  scale: scale,
+                  child: _SelectField(
+                    placeholder: '전체',
+                    selected: _viewModel.selectedTeam,
+                    options: FilterViewModel.teams,
+                    isOpen: _viewModel.openDropdown == FilterDropdown.team,
+                    onTapBox: () =>
+                        _viewModel.toggleDropdown(FilterDropdown.team),
+                    onSelect: _viewModel.selectTeam,
                     scale: scale,
-                    child: _SelectField(
-                      placeholder: '전체',
-                      selected: _viewModel.selectedTeam,
-                      options: FilterViewModel.teams,
-                      isOpen:
-                          _viewModel.openDropdown == FilterDropdown.team,
-                      onTapBox: () =>
-                          _viewModel.toggleDropdown(FilterDropdown.team),
-                      onSelect: _viewModel.selectTeam,
-                      scale: scale,
-                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            SizedBox(height: 24 * scale), // 팀 ↔ 조회 버튼 간격 24
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8 * scale),
-              child:CommonButton(
-              label: '조회하기',
-              scale: scale,
-              // 선택값이 이전 값과 같으면 비활성(null), 바뀌면 활성.
-              onPressed: _viewModel.isApplyEnabled
-                  ? () => Navigator.of(context).pop()
-                  : null,
-              ),
-            ),
-          ],
+          ),
         );
       },
-    );
-  }
-}
-
-/// 필터 시트 헤더 — 위아래 24 간격, [초기화] · '필터' · [닫기].
-///
-/// 초기화·닫기 아이콘이 양옆 44×44 로 같은 크기라, space-between 만으로도
-/// 가운데 '필터' 텍스트가 정확히 중앙에 온다.
-class _FilterHeader extends StatelessWidget {
-  const _FilterHeader({
-    required this.scale,
-    required this.onClose,
-    this.onReset,
-  });
-
-  final double scale;
-  final VoidCallback onClose;
-  final VoidCallback? onReset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 24 * scale), // 위아래 24
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _IconButton(
-            icon: 'assets/icons/reset.svg',
-            scale: scale,
-            onTap: onReset,
-          ),
-          Text(
-            '필터',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontWeight: FontWeight.w700,
-              fontSize: 16 * scale,
-              height: 1.5, // line-height 150%
-              letterSpacing: 0,
-              color: AppColors.narTextGnbDefault, // #CED4DA
-            ),
-          ),
-          _IconButton(
-            icon: 'assets/icons/close.svg',
-            scale: scale,
-            onTap: onClose,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 헤더의 44×44 아이콘 버튼.
-class _IconButton extends StatelessWidget {
-  const _IconButton({required this.icon, required this.scale, this.onTap});
-
-  final String icon;
-  final double scale;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SvgPicture.asset(icon, width: 44 * scale, height: 44 * scale),
     );
   }
 }

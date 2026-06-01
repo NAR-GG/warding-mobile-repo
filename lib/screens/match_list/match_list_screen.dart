@@ -12,6 +12,7 @@ import '../../util/tab_route.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
 import '../match_detail/match_detail_screen.dart';
 import '../schedule/schedule_screen.dart';
+import '../subscription/subscription_screen.dart';
 import 'component/match_card.dart';
 import 'component/match_card_skeleton.dart';
 import 'component/match_date_header.dart';
@@ -42,11 +43,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
     super.dispose();
   }
 
-  /// 하단 네비 탭 선택. '경기일정'이면 해당 화면으로 전환한다.
-  /// '경기리스트'는 현재 화면, '마이 구독'·'마이페이지'는 화면 미구현.
+  /// 하단 네비 탭 선택. '경기일정'·'마이 구독'이면 해당 화면으로 전환한다.
+  /// '경기리스트'는 현재 화면, '마이페이지'는 화면 미구현.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+    } else if (tab == AppNavTab.subscription) {
+      Navigator.of(
+        context,
+      ).pushReplacement(tabRoute(const SubscriptionScreen()));
     }
   }
 

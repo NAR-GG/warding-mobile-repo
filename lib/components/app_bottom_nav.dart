@@ -29,7 +29,7 @@ class AppBottomNav extends StatelessWidget {
     ),
     (icon: 'assets/icons/layout-list.svg', label: '경기리스트', tab: AppNavTab.list),
     (
-      icon: 'assets/icons/stars.svg',
+      icon: 'assets/icons/empty-stars.svg',
       label: '마이 구독',
       tab: AppNavTab.subscription,
     ),

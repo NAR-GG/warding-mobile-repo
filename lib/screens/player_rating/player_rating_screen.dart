@@ -135,6 +135,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
             // 나머지 콘텐츠는 스크롤.
             Expanded(
               child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
