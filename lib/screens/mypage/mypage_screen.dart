@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/common_button.dart';
@@ -8,9 +9,11 @@ import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import 'component/subscription_alarm_section.dart';
 import '../match_list/match_list_screen.dart';
+import '../my_review/my_review_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
+import '../subscription/subscription_settings_screen.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.
 class MypageScreen extends StatefulWidget {
@@ -28,9 +31,23 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
   void _goToProfileEdit() {
     setState(() => _showTeamBanner = false);
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()));
+  }
+
+  /// 구독 관리 — 구독 설정 화면으로 이동.
+  void _goToSubscriptionSettings() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => const SubscriptionSettingsScreen(),
+      ),
     );
+  }
+
+  /// 외부 URL을 기본 브라우저(또는 앱)로 연다.
+  Future<void> _launchUrl(String url) async {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   /// 하단 네비 탭 선택. 다른 탭이면 해당 화면으로 전환한다.
@@ -64,7 +81,11 @@ class _MypageScreenState extends State<MypageScreen> {
                   _MypageHeader(
                     scale: scale,
                     onBellTap: () {
-                      // TODO: 알림 화면 연결
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SubscriptionScreen(),
+                        ),
+                      );
                     },
                   ),
                   SizedBox(height: 4 * scale),
@@ -85,9 +106,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   SizedBox(height: 20 * scale),
                   SubscriptionAlarmSection(
                     scale: scale,
-                    onManageTap: () {
-                      // TODO: 구독 관리 화면 연결
-                    },
+                    onManageTap: _goToSubscriptionSettings,
                   ),
                   SizedBox(height: 16 * scale),
                   _MypageLinkRow(
@@ -96,16 +115,27 @@ class _MypageScreenState extends State<MypageScreen> {
                     count: 3,
                     scale: scale,
                     onTap: () {
-                      // TODO: 내 리뷰/평점 화면 연결
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const MyReviewScreen(),
+                        ),
+                      );
                     },
                   ),
                   SizedBox(height: 16 * scale),
                   _MypageLinkRow(
                     title: '고객센터/문의',
                     scale: scale,
-                    onTap: () {
-                      // TODO: 고객센터/문의 화면 연결
-                    },
+                    onTap:
+                        () => _launchUrl(
+                          'https://discord.com/channels/1441277795945807874/1441304369470640138',
+                        ),
+                  ),
+                  SizedBox(height: 16 * scale),
+                  _MypageLinkRow(
+                    title: '나르지지 웹사이트',
+                    scale: scale,
+                    onTap: () => _launchUrl('https://nar.kr/'),
                   ),
                   SizedBox(height: 16 * scale),
                   _AppInfoRow(
@@ -354,8 +384,8 @@ class _MypageLinkRow extends StatelessWidget {
                   if (count != null) ...[
                     // 'N건' — narBg 그라데이션 텍스트.
                     ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.narBg.createShader(bounds),
+                      shaderCallback:
+                          (bounds) => AppColors.narBg.createShader(bounds),
                       child: Text(
                         '$count건',
                         style: TextStyle(

@@ -15,7 +15,10 @@ enum CommonButtonVariant {
   /// 로그아웃 — 다크 배경(narBgTertiary) + logout 아이콘, 내용 폭 컴팩트 버튼.
   logout,
 
-  /// 텍스트 — 배경 없는 컴팩트 텍스트 버튼 (예: 회원탈퇴).
+  /// 다크 — 다크 배경(narBgTertiary) + 흰 텍스트, 아이콘 없는 컴팩트 버튼 (예: 리뷰보기).
+  dark,
+
+  /// 텍스트 — 배경 없는 컴팩트 텍스트 버튼 (예: 회원탈퇴/리뷰삭제).
   text,
 }
 
@@ -62,6 +65,11 @@ class CommonButton extends StatelessWidget {
             width: 24 * scale,
             height: 24 * scale,
           ),
+        );
+      case CommonButtonVariant.dark:
+        return _buildCompact(
+          background: AppColors.narBgTertiary,
+          textColor: AppColors.narText,
         );
       case CommonButtonVariant.text:
         return _buildCompact(textColor: AppColors.narTextTertiary);
@@ -157,6 +165,8 @@ class CommonButton extends StatelessWidget {
           horizontal: 20 * scale,
           vertical: 5 * scale,
         ),
+        // 내용 폭일 땐 영향 없고, Expanded 로 늘렸을 땐 내용을 가운데 정렬.
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(10 * scale),

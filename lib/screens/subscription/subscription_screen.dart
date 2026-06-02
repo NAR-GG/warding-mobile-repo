@@ -6,6 +6,7 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -161,7 +162,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         dateTime: '2026-05-07 15:47',
                         relativeTime: '1시간 전',
                         onRatingTap: () {
-                          // TODO: 경기 평점 화면 연결
+                          // 경기 상세의 '선수 평점' 탭(index 2)으로 이동.
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (_) => const MatchDetailScreen(
+                                    initialTabIndex: 2,
+                                  ),
+                            ),
+                          );
                         },
                         scale: scale,
                       ),
