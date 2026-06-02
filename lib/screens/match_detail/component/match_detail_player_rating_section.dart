@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_badge.dart';
+import '../../../components/nar_banner.dart';
 import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
@@ -278,7 +279,7 @@ class _BannerSelectorStickyDelegate extends SliverPersistentHeaderDelegate {
 }
 
 /// 세트 종료 안내 배너. 좌측 24×24 별 아이콘 + 안내 문구.
-/// padding 10/16, gap 8, narBg 20% 불투명도 그라데이션 배경.
+/// 공용 [NarBanner] 로 렌더링한다.
 class _RatingBanner extends StatelessWidget {
   const _RatingBanner({required this.setText, required this.scale});
 
@@ -287,35 +288,14 @@ class _RatingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: 10 * scale,
-        horizontal: 16 * scale,
+    return NarBanner(
+      scale: scale,
+      icon: SvgPicture.asset(
+        'assets/icons/stars.svg',
+        width: 24 * scale,
+        height: 24 * scale,
       ),
-      decoration: const BoxDecoration(gradient: AppColors.narRatingBannerBg),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            'assets/icons/stars.svg',
-            width: 24 * scale,
-            height: 24 * scale,
-          ),
-          SizedBox(width: 8 * scale),
-          Expanded(
-            child: Text(
-              '$setText 경기가 끝났어요! 각 선수 평점을 남겨보세요',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
-                fontSize: 14 * scale,
-                height: 1.55,
-                color: AppColors.narText,
-              ),
-            ),
-          ),
-        ],
-      ),
+      text: '$setText 경기가 끝났어요! 각 선수 평점을 남겨보세요',
     );
   }
 }

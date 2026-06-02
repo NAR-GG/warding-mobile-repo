@@ -16,7 +16,10 @@ import 'component/match_detail_team_rating_section.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {
-  const MatchDetailScreen({super.key});
+  const MatchDetailScreen({super.key, this.initialTabIndex = 0});
+
+  /// 진입 시 선택할 탭 인덱스(0: 챔피언 픽, 1: 라이브 이벤트, 2: 선수 평점).
+  final int initialTabIndex;
 
   @override
   State<MatchDetailScreen> createState() => _MatchDetailScreenState();
@@ -24,7 +27,7 @@ class MatchDetailScreen extends StatefulWidget {
 
 class _MatchDetailScreenState extends State<MatchDetailScreen> {
   static const List<String> _tabs = ['챔피언 픽', '라이브 이벤트', '선수 평점'];
-  int _tabIndex = 0;
+  late int _tabIndex = widget.initialTabIndex;
 
   // TODO: API 연결 후 매치 데이터에서 세트 목록 동적 수신 (현재 Bo5 mock).
   static const List<String> _sets = ['세트 1', '세트 2', '세트 3', '세트 4', '세트 5'];

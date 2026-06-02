@@ -36,7 +36,7 @@ class _MatchDetailLiveEventSectionState
       source: _Actor.champion(name: 'Faker'),
       target: _Actor.objective(
         name: '바람드래곤',
-        asset: 'assets/icons/cloud-dragon.png',
+        asset: 'assets/images/cloud-dragon.png',
       ),
     ),
     _LiveEvent(
@@ -53,7 +53,7 @@ class _MatchDetailLiveEventSectionState
       time: '02:34',
       source: _Actor.objective(
         name: '바람드래곤',
-        asset: 'assets/icons/cloud-dragon.png',
+        asset: 'assets/images/cloud-dragon.png',
       ),
       target: _Actor.champion(name: 'ABCDEFG'),
     ),

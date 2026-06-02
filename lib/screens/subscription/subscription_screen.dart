@@ -6,7 +6,9 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
+import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import 'component/live_event_notification.dart';
 import 'component/match_end_notification.dart';
@@ -83,13 +85,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  /// 하단 네비 탭 선택. '경기일정'·'경기리스트'면 해당 화면으로 전환한다.
-  /// '마이 구독'은 현재 화면, '마이페이지'는 화면 미구현.
+  /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.mypage) {
+      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
     }
   }
 
@@ -159,7 +162,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         dateTime: '2026-05-07 15:47',
                         relativeTime: '1시간 전',
                         onRatingTap: () {
-                          // TODO: 경기 평점 화면 연결
+                          // 경기 상세의 '선수 평점' 탭(index 2)으로 이동.
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (_) => const MatchDetailScreen(
+                                    initialTabIndex: 2,
+                                  ),
+                            ),
+                          );
                         },
                         scale: scale,
                       ),
@@ -175,7 +186,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             source: LiveActor.champion(name: 'Faker'),
                             target: LiveActor.objective(
                               name: '드래곤',
-                              asset: 'assets/icons/cloud-dragon.png',
+                              asset: 'assets/images/cloud-dragon.png',
                             ),
                           ),
                           LiveEventData(
