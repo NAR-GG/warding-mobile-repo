@@ -155,4 +155,7 @@ class AppColors {
 
   // 구독 버튼 (미구독) — narButton1Bg(#DEE2E6) 의 90% 불투명도.
   static const Color narSubscribeBg = Color(0xE6DEE2E6);
+
+  // 공용 입력 필드 — 기본 테두리(#424242).
+  static const Color narInputBorder = Color(0xFF424242);
 }

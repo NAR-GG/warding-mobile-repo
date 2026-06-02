@@ -8,6 +8,10 @@ enum CommonButtonVariant {
   /// 기본 — 전체 폭 그라데이션 버튼.
   primary,
 
+  /// 라이트 — 전체 폭 솔리드 버튼(온보딩 '완료/다음' 등).
+  /// 활성: 밝은 배경(narButton1Bg) + 어두운 텍스트 / 비활성: 다크 배경 + 회색 텍스트.
+  light,
+
   /// 로그아웃 — 다크 배경(narBgTertiary) + logout 아이콘, 내용 폭 컴팩트 버튼.
   logout,
 
@@ -61,9 +65,46 @@ class CommonButton extends StatelessWidget {
         );
       case CommonButtonVariant.text:
         return _buildCompact(textColor: AppColors.narTextTertiary);
+      case CommonButtonVariant.light:
+        return _buildLight();
       case CommonButtonVariant.primary:
         return _buildPrimary();
     }
+  }
+
+  /// 라이트 — 전체 폭 솔리드 버튼.
+  /// 활성: narButton1Bg + narButton1Text / 비활성: narDark600 + narDark300.
+  Widget _buildLight() {
+    final enabled = onPressed != null;
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        height: 50 * scale,
+        padding: EdgeInsets.symmetric(
+          horizontal: 26 * scale,
+          vertical: 1 * scale,
+        ),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16 * scale),
+          color: enabled ? AppColors.narButton1Bg : AppColors.narDark600,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w400,
+            fontSize: 18 * scale,
+            height: 48 / 18,
+            letterSpacing: 0,
+            color: enabled ? AppColors.narButton1Text : AppColors.narDark300,
+          ),
+        ),
+      ),
+    );
   }
 
   /// 기본 — 전체 폭 그라데이션 버튼.

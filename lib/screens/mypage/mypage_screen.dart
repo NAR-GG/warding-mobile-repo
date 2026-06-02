@@ -8,6 +8,7 @@ import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import 'component/subscription_alarm_section.dart';
 import '../match_list/match_list_screen.dart';
+import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
 
@@ -27,7 +28,9 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
   void _goToProfileEdit() {
     setState(() => _showTeamBanner = false);
-    // TODO: 프로필 수정 화면 연결
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()),
+    );
   }
 
   /// 하단 네비 탭 선택. 다른 탭이면 해당 화면으로 전환한다.
