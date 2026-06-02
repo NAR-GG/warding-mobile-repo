@@ -36,4 +36,8 @@ class ApiConfig {
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
   static String scheduleByDateUrl(String date) =>
       '$apiBaseUrl/schedule?date=$date';
+
+  /// 카테고리 트리(리그 > 시즌 > 팀) 조회 (인증 불필요).
+  static String categoriesTreeUrl({required int year}) =>
+      '$apiBaseUrl/categories/tree?year=$year';
 }

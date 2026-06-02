@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../styles/app_colors.dart';
+import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
+import '../match_list/match_list_screen.dart';
+import '../subscription/subscription_screen.dart';
 import 'component/filter_sheet.dart';
 import 'component/month_picker_sheet.dart';
 import 'component/schedule_calendar.dart';
@@ -19,9 +22,6 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
   final ScheduleViewModel _viewModel = ScheduleViewModel();
-
-  /// 하단 네비 현재 탭. 다른 탭 화면 연결 전까지 상태만 보관한다.
-  AppNavTab _navTab = AppNavTab.schedule;
 
   @override
   void dispose() {
@@ -45,6 +45,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// 헤더 필터 버튼 탭 → 필터 바텀시트.
   void _openFilter() {
     showAppBottomSheet(context: context, child: const FilterSheet());
+  }
+
+  /// 하단 네비 탭 선택. '경기리스트'·'마이 구독'이면 해당 화면으로 전환한다.
+  /// '경기일정'은 현재 화면, '마이페이지'는 화면 미구현.
+  void _onTabSelected(AppNavTab tab) {
+    if (tab == AppNavTab.list) {
+      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.subscription) {
+      Navigator.of(
+        context,
+      ).pushReplacement(tabRoute(const SubscriptionScreen()));
+    }
   }
 
   @override
@@ -104,8 +116,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               right: 0,
               bottom: 26,
               child: AppBottomNav(
-                currentTab: _navTab,
-                onTabSelected: (tab) => setState(() => _navTab = tab),
+                currentTab: AppNavTab.schedule,
+                onTabSelected: _onTabSelected,
               ),
             ),
           ],

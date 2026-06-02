@@ -29,7 +29,7 @@ class AppBottomNav extends StatelessWidget {
     ),
     (icon: 'assets/icons/layout-list.svg', label: '경기리스트', tab: AppNavTab.list),
     (
-      icon: 'assets/icons/stars.svg',
+      icon: 'assets/icons/empty-stars.svg',
       label: '마이 구독',
       tab: AppNavTab.subscription,
     ),
@@ -63,12 +63,10 @@ class AppBottomNav extends StatelessWidget {
                 scale: scale,
                 onTap: () => onTabSelected(item.tab),
               )
-            : Expanded(
-                child: _NavItemInactive(
-                  icon: item.icon,
-                  scale: scale,
-                  onTap: () => onTabSelected(item.tab),
-                ),
+            : _NavItemInactive(
+                icon: item.icon,
+                scale: scale,
+                onTap: () => onTabSelected(item.tab),
               ),
       );
 
@@ -87,7 +85,10 @@ class AppBottomNav extends StatelessWidget {
             height: 72 * scale,
             child: Padding(
               padding: EdgeInsets.all(12 * scale),
-              child: Row(children: children),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: children,
+              ),
             ),
           ),
         ),
@@ -115,12 +116,14 @@ class _NavItemActive extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 48 * scale,
+        constraints: BoxConstraints(minWidth: 113 * scale),
         padding: EdgeInsets.symmetric(horizontal: 16 * scale),
         decoration: BoxDecoration(
           color: AppColors.narNavSelectedBg,
           borderRadius: BorderRadius.circular(26 * scale),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
@@ -139,9 +142,9 @@ class _NavItemActive extends StatelessWidget {
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,
                 fontSize: 14 * scale,
-                height: 1.0,
+                height: 24 / 14,
                 letterSpacing: 0,
-                color: AppColors.narText,
+                color: AppColors.narGray400,
               ),
             ),
           ],
@@ -151,7 +154,7 @@ class _NavItemActive extends StatelessWidget {
   }
 }
 
-/// 비활성 탭: 아이콘만 표시. 탭 영역은 남은 폭 전체.
+/// 비활성 탭: 44x44 고정 chip, 아이콘만 표시.
 class _NavItemInactive extends StatelessWidget {
   const _NavItemInactive({
     required this.icon,
@@ -168,14 +171,18 @@ class _NavItemInactive extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Center(
-        child: SvgPicture.asset(
-          icon,
-          width: 24 * scale,
-          height: 24 * scale,
-          colorFilter: const ColorFilter.mode(
-            AppColors.narDark200,
-            BlendMode.srcIn,
+      child: SizedBox(
+        width: 44 * scale,
+        height: 44 * scale,
+        child: Center(
+          child: SvgPicture.asset(
+            icon,
+            width: 24 * scale,
+            height: 24 * scale,
+            colorFilter: const ColorFilter.mode(
+              AppColors.narDark200,
+              BlendMode.srcIn,
+            ),
           ),
         ),
       ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../components/common_button.dart';
+import '../../components/nar_detail_header.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/onboarding/onboarding_viewmodel.dart';
 import '../schedule/schedule_screen.dart';
-import 'component/onboarding_header.dart';
 import 'component/onboarding_progress_bar.dart';
 import 'step/league_step.dart';
 import 'step/notification_step.dart';
@@ -90,10 +90,31 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                OnboardingHeader(
+                NarDetailHeader(
                   title: _headerTitle(_viewModel.currentStep),
                   onBack: _onBack,
-                  onSkip: _viewModel.skip,
+                  backIconAsset: 'assets/icons/chevron-left.svg',
+                  trailing: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _viewModel.skip,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8 * scale,
+                        vertical: 4 * scale,
+                      ),
+                      child: Text(
+                        '건너뛰기',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14 * scale,
+                          height: 1,
+                          color: AppColors.narText2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  scale: scale,
                 ),
                 const SizedBox(height: 4),
                 OnboardingProgressBar(

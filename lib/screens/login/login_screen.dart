@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
-import '../home/home_screen.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../schedule/schedule_screen.dart';
 import 'component/easy_login_divider.dart';
 import 'component/social_login_button.dart';
 
@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => result.isOnboarded
-              ? const HomeScreen()
+              ? const ScheduleScreen()
               : const OnboardingScreen(),
         ),
         (route) => false,
