@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
+import '../../../util/lane_asset.dart';
 
 /// 선수 평점 상세 — '플레이한 챔프' 카드.
 ///
@@ -94,17 +96,8 @@ class PlayedChampCard extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // TODO: 포지션mini 아이콘 자산 연결 — 현재 회색 placeholder.
-                                  Container(
-                                    width: 14 * scale,
-                                    height: 14 * scale,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.narDark200,
-                                      borderRadius: BorderRadius.circular(
-                                        3 * scale,
-                                      ),
-                                    ),
-                                  ),
+                                  // 포지션 mini 아이콘 — 라인별 svg. 매칭 라인이 없으면 회색 placeholder.
+                                  _buildLaneIcon(position, scale),
                                   SizedBox(width: 8 * scale),
                                   Text(
                                     position,
@@ -158,5 +151,22 @@ class PlayedChampCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 포지션명을 라인 svg 아이콘으로 렌더링. 매칭 라인이 없으면 회색 placeholder.
+  Widget _buildLaneIcon(String position, double scale) {
+    final asset = laneAssetPath(position);
+    final size = 14 * scale;
+    if (asset == null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppColors.narDark200,
+          borderRadius: BorderRadius.circular(3 * scale),
+        ),
+      );
+    }
+    return SvgPicture.asset(asset, width: size, height: size);
   }
 }

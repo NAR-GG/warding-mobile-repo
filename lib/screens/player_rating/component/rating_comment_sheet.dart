@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/common_button.dart';
 import '../../../components/nar_star_rating_input.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/lane_asset.dart';
 
 /// 평점·코멘트 남기기 바텀시트를 띄운다.
 /// 등록 시 입력된 (평점, 코멘트)를 반환하고, 닫으면 null 을 반환한다.
@@ -135,15 +136,8 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
                 ),
               ),
               SizedBox(width: 8 * scale),
-              // TODO: 포지션mini 아이콘 자산 연결 — 현재 회색 placeholder.
-              Container(
-                width: 14 * scale,
-                height: 14 * scale,
-                decoration: BoxDecoration(
-                  color: AppColors.narDark200,
-                  borderRadius: BorderRadius.circular(3 * scale),
-                ),
-              ),
+              // 포지션 mini 아이콘 — 라인별 svg. 매칭 라인이 없으면 회색 placeholder.
+              _buildLaneIcon(widget.position, scale),
               SizedBox(width: 8 * scale),
               Text(
                 widget.position,
@@ -251,5 +245,22 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
         ],
       ),
     );
+  }
+
+  /// 포지션명을 라인 svg 아이콘으로 렌더링. 매칭 라인이 없으면 회색 placeholder.
+  Widget _buildLaneIcon(String position, double scale) {
+    final asset = laneAssetPath(position);
+    final size = 14 * scale;
+    if (asset == null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppColors.narDark200,
+          borderRadius: BorderRadius.circular(3 * scale),
+        ),
+      );
+    }
+    return SvgPicture.asset(asset, width: size, height: size);
   }
 }
