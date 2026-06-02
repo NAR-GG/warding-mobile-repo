@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_badge.dart';
+import '../../components/nar_detail_header.dart';
+import '../../components/nar_dropdown.dart';
 import '../../styles/app_colors.dart';
-import '../match_detail/component/match_detail_header.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
 import 'component/my_comment_card.dart';
 import 'component/played_champ_card.dart';
@@ -15,7 +16,7 @@ import 'component/rating_distribution_section.dart';
 /// 선수 평점 상세 페이지.
 ///
 /// 경기 상세 → 선수 평점 탭에서 선수 행을 탭하면 진입한다.
-/// 헤더는 경기 상세와 동일한 레이아웃([MatchDetailHeader])을 쓰되 타이틀만 '선수 평점',
+/// 헤더는 공용 [NarDetailHeader] 로 '선수 평점' 타이틀,
 /// 우측 세트 드롭다운으로 세트를 전환할 수 있다.
 class PlayerRatingScreen extends StatefulWidget {
   const PlayerRatingScreen({
@@ -126,10 +127,14 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 헤더는 상단 고정.
-            MatchDetailHeader(
+            NarDetailHeader(
               title: '선수 평점',
-              setLabel: _currentSet,
-              onSetTap: _showSetSheet,
+              trailing: NarDropdown(
+                variant: NarDropdownVariant.round,
+                value: _currentSet,
+                onTap: _showSetSheet,
+                scale: scale,
+              ),
               scale: scale,
             ),
             // 나머지 콘텐츠는 스크롤.

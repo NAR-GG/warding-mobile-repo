@@ -152,4 +152,7 @@ class AppColors {
 
   // 평점 분포 (선수 평점 상세) — 별점·분포 바 채움 노랑.
   static const Color narYellow6 = Color(0xFFFAB005); // yellow/6
+
+  // 구독 버튼 (미구독) — narButton1Bg(#DEE2E6) 의 90% 불투명도.
+  static const Color narSubscribeBg = Color(0xE6DEE2E6);
 }

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_button.dart';
+import '../../components/nar_detail_header.dart';
+import '../../components/nar_dropdown.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../styles/app_colors.dart';
 import '../player_rating/player_rating_screen.dart';
 import 'component/match_detail_champion_pick_section.dart';
-import 'component/match_detail_header.dart';
 import 'component/match_detail_live_event_section.dart';
 import 'component/match_detail_player_rating_section.dart';
 import 'component/match_detail_score_section.dart';
@@ -103,9 +104,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  MatchDetailHeader(
-                    setLabel: _currentSet,
-                    onSetTap: _showSetSheet,
+                  NarDetailHeader(
+                    title: '경기 상세',
+                    trailing: NarDropdown(
+                      variant: NarDropdownVariant.round,
+                      value: _currentSet,
+                      onTap: _showSetSheet,
+                      scale: scale,
+                    ),
                     scale: scale,
                   ),
                   MatchDetailScoreSection(
@@ -122,7 +128,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   ),
                   SizedBox(height: 16 * scale),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+                    padding: EdgeInsets.symmetric(horizontal: 20 * scale),
                     child: NarButton(
                       variant: NarButtonVariant.set1,
                       label: '중계 보기',

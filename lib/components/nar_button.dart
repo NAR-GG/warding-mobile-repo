@@ -12,10 +12,19 @@ enum NarButtonVariant {
 
   /// nar_button_set1 — narDark300 배경, 테두리 없음, 부모 폭을 채움.
   set1,
+
+  /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 콘텐츠 폭(자동) 34 높이.
+  subscribe,
+
+  /// 구독중 — 구독 상태. 보라 50% 배경 + #FCFDFE 텍스트. 콘텐츠 폭(자동) 34 높이.
+  subscribed,
 }
 
 /// 앱 공용 버튼.
-/// [variant] 가 type1/type2 면 110.5×34 고정, set1 이면 부모 폭을 채우는 34 높이.
+/// [variant] 별 사이즈/스타일:
+/// - type1/type2: 110.5×34 고정, Open Sans 400, padding 10, radius 8.
+/// - set1: 부모 폭을 채우고 34 높이, Open Sans 400, padding 10, radius 8.
+/// - subscribe/subscribed: 콘텐츠 자동 폭 + 34 높이, Pretendard 500, padding 16, radius 10.
 class NarButton extends StatelessWidget {
   const NarButton({
     super.key,
@@ -30,6 +39,10 @@ class NarButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double scale;
 
+  bool get _isSubscribe =>
+      variant == NarButtonVariant.subscribe ||
+      variant == NarButtonVariant.subscribed;
+
   Color get _bgColor {
     switch (variant) {
       case NarButtonVariant.type1:
@@ -38,6 +51,10 @@ class NarButton extends StatelessWidget {
         return AppColors.narButton2Bg;
       case NarButtonVariant.set1:
         return AppColors.narDark300;
+      case NarButtonVariant.subscribe:
+        return AppColors.narSubscribeBg;
+      case NarButtonVariant.subscribed:
+        return AppColors.narChipSelectedBg;
     }
   }
 
@@ -49,6 +66,10 @@ class NarButton extends StatelessWidget {
         return AppColors.narButton2Text;
       case NarButtonVariant.set1:
         return AppColors.narText;
+      case NarButtonVariant.subscribe:
+        return AppColors.narLine2; // #495057
+      case NarButtonVariant.subscribed:
+        return AppColors.narTextTertiary; // #FCFDFE
     }
   }
 
@@ -56,9 +77,38 @@ class NarButton extends StatelessWidget {
       ? Border.all(color: AppColors.narButton2Line, width: 1.5 * scale)
       : null;
 
-  /// type1/type2 는 시안 폭 고정, set1 은 부모를 채운다.
-  double? _width(double scale) =>
-      variant == NarButtonVariant.set1 ? double.infinity : 110.5 * scale;
+  /// type1/type2 는 시안 폭 고정, set1 은 부모를 채우고, subscribe* 는 콘텐츠 자동 폭.
+  double? _width(double scale) {
+    switch (variant) {
+      case NarButtonVariant.type1:
+      case NarButtonVariant.type2:
+        return 110.5 * scale;
+      case NarButtonVariant.set1:
+        return double.infinity;
+      case NarButtonVariant.subscribe:
+      case NarButtonVariant.subscribed:
+        return null; // 콘텐츠 + 패딩에 맞춰 자동.
+    }
+  }
+
+  double get _radius => _isSubscribe ? 10 : 8;
+  double get _horizontalPadding => _isSubscribe ? 16 : 10;
+
+  TextStyle _textStyle(double scale) => _isSubscribe
+      ? TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w500,
+          fontSize: 14 * scale,
+          height: 1,
+          color: _textColor,
+        )
+      : TextStyle(
+          fontFamily: 'Open Sans',
+          fontWeight: FontWeight.w400,
+          fontSize: 14 * scale,
+          letterSpacing: 0,
+          color: _textColor,
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -67,23 +117,17 @@ class NarButton extends StatelessWidget {
       child: Container(
         width: _width(scale),
         height: 34 * scale,
-        padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+        padding: EdgeInsets.symmetric(horizontal: _horizontalPadding * scale),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: _bgColor,
-          borderRadius: BorderRadius.circular(8 * scale),
+          borderRadius: BorderRadius.circular(_radius * scale),
           border: _border(scale),
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Open Sans',
-            fontWeight: FontWeight.w400,
-            fontSize: 14 * scale,
-            letterSpacing: 0,
-            color: _textColor,
-          ),
+          style: _textStyle(scale),
         ),
       ),
     );

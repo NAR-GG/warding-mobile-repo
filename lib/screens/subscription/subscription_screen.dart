@@ -14,6 +14,7 @@ import 'component/match_start_notification.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/rank_start_notification.dart';
+import 'subscription_settings_screen.dart';
 
 /// 마이 구독 페이지. 하단 네비 '마이 구독' 탭에 해당한다.
 class SubscriptionScreen extends StatefulWidget {
@@ -105,7 +106,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _SubscriptionHeader(scale: scale),
+                _SubscriptionHeader(
+                  scale: scale,
+                  onSettingsTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SubscriptionSettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
                 SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                 NarChipMultiSelect(
                   options: _eventTypes,
@@ -207,9 +217,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
 /// 마이 구독 헤더. 좌측 타이틀 + 우측 설정 아이콘 (양옆 20 패딩).
 class _SubscriptionHeader extends StatelessWidget {
-  const _SubscriptionHeader({required this.scale});
+  const _SubscriptionHeader({required this.scale, this.onSettingsTap});
 
   final double scale;
+  final VoidCallback? onSettingsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -232,9 +243,7 @@ class _SubscriptionHeader extends StatelessWidget {
           ),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
-              // TODO: 설정 화면 연결
-            },
+            onTap: onSettingsTap,
             child: SvgPicture.asset(
               'assets/icons/settings.svg',
               width: 24 * scale,
