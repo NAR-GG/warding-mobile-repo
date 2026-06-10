@@ -43,15 +43,20 @@ class ScheduleMatch {
   final List<MatchSet> sets;
 
   factory ScheduleMatch.fromJson(Map<String, dynamic> json) {
+    // 모바일 API(`/api/mobile/schedules`)는 blueTeam/redTeam·leagueName 키를,
+    // 구 API는 teamA/teamB·leagueInfo 키를 쓴다. 둘 다 받아 준다.
+    final blue = (json['teamA'] ?? json['blueTeam']) as Map<String, dynamic>;
+    final red = (json['teamB'] ?? json['redTeam']) as Map<String, dynamic>;
     return ScheduleMatch(
       matchId: json['matchId'] as String? ?? '',
       scheduledTime: json['scheduledTime'] as String? ?? '',
-      leagueInfo: json['leagueInfo'] as String? ?? '',
+      leagueInfo:
+          (json['leagueInfo'] ?? json['leagueName']) as String? ?? '',
       matchTitle: json['matchTitle'] as String? ?? '',
       matchStatus: json['matchStatus'] as String? ?? '',
       isSynced: json['isSynced'] as bool? ?? false,
-      teamA: MatchTeam.fromJson(json['teamA'] as Map<String, dynamic>),
-      teamB: MatchTeam.fromJson(json['teamB'] as Map<String, dynamic>),
+      teamA: MatchTeam.fromJson(blue),
+      teamB: MatchTeam.fromJson(red),
       liveStreamUrl: json['liveStreamUrl'] as String?,
       sets: (json['sets'] as List<dynamic>? ?? const [])
           .map((e) => MatchSet.fromJson(e as Map<String, dynamic>))

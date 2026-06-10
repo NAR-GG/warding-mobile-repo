@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_search_bar.dart';
+import '../../model/player_subscription.dart';
+import '../../model/team_notification_subscription.dart';
 import '../../styles/app_colors.dart';
+import '../../viewmodel/subscription/subscription_settings_viewmodel.dart';
 import 'component/all_subscription_section.dart';
 import 'component/subscribed_section.dart';
 
 /// 구독 설정 페이지.
 ///
 /// 마이 구독 화면의 우상단 ⚙️ 아이콘에서 진입한다.
-/// 상단은 공용 [NarDetailHeader] 의 '구독 설정' 타이틀로 통일.
+/// 팀은 `notification-subscriptions`, 선수는 `player-subscriptions` API 로
+/// 구독 목록을 받아 토글한다. (팀 알림 세부 설정은 마이페이지에서 한다.)
 class SubscriptionSettingsScreen extends StatefulWidget {
   const SubscriptionSettingsScreen({super.key});
 
@@ -20,94 +24,103 @@ class SubscriptionSettingsScreen extends StatefulWidget {
 
 class _SubscriptionSettingsScreenState
     extends State<SubscriptionSettingsScreen> {
-  // TODO: API 연결 후 실제 구독 데이터로 교체 (현재 mock).
-  List<SubscribedItem> _allTeams = const [
-    SubscribedItem(name: 'T1', subscribed: true),
-    SubscribedItem(name: 'DN SOOPers', subscribed: false),
-    SubscribedItem(name: 'Hanwha Life Esports', subscribed: false),
-    SubscribedItem(name: 'Gen.G', subscribed: false),
-    SubscribedItem(name: 'HANJIN BRLON', subscribed: false),
-  ];
-  List<SubscribedItem> _allPlayers = const [
-    SubscribedItem(name: 'Faker', subscribed: true),
-    SubscribedItem(name: 'Chovy', subscribed: false),
-    SubscribedItem(name: 'Zeus', subscribed: false),
-    SubscribedItem(name: 'Keria', subscribed: false),
-  ];
+  final SubscriptionSettingsViewModel _viewModel =
+      SubscriptionSettingsViewModel();
+  final TextEditingController _searchController = TextEditingController();
 
-  /// [list] 의 index 행의 subscribed 를 토글한 새 리스트를 반환.
-  List<SubscribedItem> _toggleAt(List<SubscribedItem> list, int index) {
-    return [
-      for (var i = 0; i < list.length; i++)
-        if (i == index)
-          SubscribedItem(
-            name: list[i].name,
-            logoUrl: list[i].logoUrl,
-            subscribed: !list[i].subscribed,
-          )
-        else
-          list[i],
-    ];
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
+
+  /// 팀 → 섹션 행 데이터 변환.
+  SubscribedItem _teamItem(TeamNotificationSubscription t) => SubscribedItem(
+        name: t.teamName,
+        logoUrl: t.teamImageUrl,
+        subscribed: t.subscribed,
+      );
+
+  /// 선수 → 섹션 행 데이터 변환.
+  SubscribedItem _playerItem(PlayerSubscription p) => SubscribedItem(
+        name: p.playerName,
+        logoUrl: p.playerImageUrl,
+        subscribed: p.subscribed,
+      );
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
-    // 구독중인 항목만 필터링 — 상단 섹션들은 이걸 보여준다.
-    final subscribedTeams = _allTeams.where((t) => t.subscribed).toList();
-    final subscribedPlayers = _allPlayers.where((p) => p.subscribed).toList();
-
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            NarDetailHeader(title: '구독 설정', scale: scale),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 20 * scale,
-                vertical: 10 * scale,
-              ),
-              child: NarSearchBar(scale: scale),
-            ),
-            SizedBox(height: 7 * scale), // 검색바 ↔ 구독중인 팀 간격
-            SubscribedSection(
-              title: '구독중인 팀',
-              items: subscribedTeams,
-              // 구독중 섹션에서 토글하면 _allTeams 의 같은 이름 항목을 찾아 갱신.
-              onToggle: (i) => setState(() {
-                final target = subscribedTeams[i];
-                final idx = _allTeams.indexWhere((t) => t.name == target.name);
-                if (idx >= 0) _allTeams = _toggleAt(_allTeams, idx);
-              }),
-              scale: scale,
-            ),
-            SizedBox(height: 14 * scale), // 구독중인 팀 ↔ 구독중인 선수 간격
-            SubscribedSection(
-              title: '구독중인 선수',
-              items: subscribedPlayers,
-              onToggle: (i) => setState(() {
-                final target = subscribedPlayers[i];
-                final idx =
-                    _allPlayers.indexWhere((p) => p.name == target.name);
-                if (idx >= 0) _allPlayers = _toggleAt(_allPlayers, idx);
-              }),
-              scale: scale,
-            ),
-            SizedBox(height: 14 * scale), // 구독중인 선수 ↔ 전체 목록 간격
-            AllSubscriptionSection(
-              teams: _allTeams,
-              players: _allPlayers,
-              onTeamToggle: (i) =>
-                  setState(() => _allTeams = _toggleAt(_allTeams, i)),
-              onPlayerToggle: (i) =>
-                  setState(() => _allPlayers = _toggleAt(_allPlayers, i)),
-              scale: scale,
-            ),
-          ],
+        child: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, _) {
+            final subscribedTeams = _viewModel.subscribedTeams;
+            final subscribedPlayers = _viewModel.subscribedPlayers;
+            final allTeams = _viewModel.availableTeams;
+            final allPlayers = _viewModel.availablePlayers;
+
+            return ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                NarDetailHeader(title: '구독 설정', scale: scale),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20 * scale,
+                    vertical: 10 * scale,
+                  ),
+                  // 입력 후 검색(엔터/돋보기)하면 선수 목록을 다시 조회한다.
+                  child: NarSearchBar(
+                    controller: _searchController,
+                    scale: scale,
+                    onSubmitted: _viewModel.searchPlayers,
+                    onSearchTap: () =>
+                        _viewModel.searchPlayers(_searchController.text),
+                  ),
+                ),
+                SizedBox(height: 7 * scale),
+                SubscribedSection(
+                  title: '구독중인 팀',
+                  items: [for (final t in subscribedTeams) _teamItem(t)],
+                  onToggle: (i) {
+                    final t = subscribedTeams[i];
+                    _viewModel.toggleTeam(t.teamId, t.subscribed);
+                  },
+                  scale: scale,
+                ),
+                SizedBox(height: 14 * scale),
+                SubscribedSection(
+                  title: '구독중인 선수',
+                  items: [for (final p in subscribedPlayers) _playerItem(p)],
+                  onToggle: (i) {
+                    final p = subscribedPlayers[i];
+                    _viewModel.togglePlayer(p.playerId, p.subscribed);
+                  },
+                  scale: scale,
+                ),
+                SizedBox(height: 14 * scale),
+                AllSubscriptionSection(
+                  teams: [for (final t in allTeams) _teamItem(t)],
+                  players: [for (final p in allPlayers) _playerItem(p)],
+                  onTeamToggle: (i) {
+                    final t = allTeams[i];
+                    _viewModel.toggleTeam(t.teamId, t.subscribed);
+                  },
+                  onPlayerToggle: (i) {
+                    final p = allPlayers[i];
+                    _viewModel.togglePlayer(p.playerId, p.subscribed);
+                  },
+                  scale: scale,
+                ),
+                SizedBox(height: 20 * scale),
+              ],
+            );
+          },
         ),
       ),
     );

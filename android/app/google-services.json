@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "12814317442",
+    "project_id": "nargg-eb1f2",
+    "storage_bucket": "nargg-eb1f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12814317442:android:3f46edef7c7afe25b9419b",
+        "android_client_info": {
+          "package_name": "com.warding"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSPVd_hE82cmpU_FxaqR3bDPx1-lbirTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:12814317442:android:dd25333de3628996b9419b",
+        "android_client_info": {
+          "package_name": "com.warding.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSPVd_hE82cmpU_FxaqR3bDPx1-lbirTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

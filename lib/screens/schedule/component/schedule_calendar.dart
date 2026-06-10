@@ -70,6 +70,17 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
               duration: const Duration(milliseconds: 300),
               switchInCurve: Curves.easeOut,
               switchOutCurve: Curves.easeOut,
+              // 그리드가 화면보다 짧을 때 기본 center 정렬이면 요일 헤더와
+              // 사이가 떠 보인다. 위(top)에 붙도록 정렬을 바꾼다.
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                );
+              },
               transitionBuilder: (child, animation) {
                 // 들어오는 그리드는 _direction 쪽에서, 나가는 그리드는
                 // 그 반대쪽으로 슬라이드한다.
@@ -92,9 +103,11 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 month: month,
                 scale: scale,
                 selectedDate: widget.selectedDate,
-                matchesOf: (date) => date.month == month.month
-                    ? (matchesByDay[date.day] ?? const [])
-                    : const [],
+                matchesOf:
+                    (date) =>
+                        date.month == month.month
+                            ? (matchesByDay[date.day] ?? const [])
+                            : const [],
               ),
             ),
           ),

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../repository/auth/auth_service.dart';
+import '../../repository/fcm/fcm_service.dart';
 import '../../styles/app_colors.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -21,16 +24,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signIn(String registrationId) async {
     if (_isLoading) return;
 
-    if (registrationId != 'kakao') {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('준비중입니다')));
-      return;
-    }
-
     setState(() => _isLoading = true);
     try {
-      final result = await AuthService.instance.signInWithKakao();
+      final result = switch (registrationId) {
+        'naver' => await AuthService.instance.signInWithNaver(),
+        'google' => await AuthService.instance.signInWithGoogle(),
+        _ => await AuthService.instance.signInWithKakao(),
+      };
+      // 로그인 성공 직후 FCM 토큰을 백엔드에 등록한다 (실패해도 흐름은 계속).
+      unawaited(FcmService.instance.registerToken());
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(

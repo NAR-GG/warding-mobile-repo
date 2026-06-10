@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/schedule_match.dart';
+import '../../model/match_calendar_day.dart';
 import '../../model/team.dart';
+import '../../repository/auth/auth_service.dart';
+import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
@@ -13,16 +15,22 @@ class ScheduleViewModel extends ChangeNotifier {
     DateTime? initialMonth,
     ScheduleRepository? repository,
     TeamPreferenceRepository? teamPreferences,
+    AuthService? auth,
+    OnboardingRepository? onboarding,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
        _repository = repository ?? ScheduleRepository.instance,
        _teamPreferences =
-           teamPreferences ?? TeamPreferenceRepository.instance {
+           teamPreferences ?? TeamPreferenceRepository.instance,
+       _auth = auth ?? AuthService.instance,
+       _onboarding = onboarding ?? OnboardingRepository.instance {
     loadCalendar();
     _loadPreferredTeam();
   }
 
   final ScheduleRepository _repository;
   final TeamPreferenceRepository _teamPreferences;
+  final AuthService _auth;
+  final OnboardingRepository _onboarding;
 
   bool _disposed = false;
 
@@ -35,16 +43,24 @@ class ScheduleViewModel extends ChangeNotifier {
   String get monthLabel =>
       '${_displayMonth.year}.${_displayMonth.month.toString().padLeft(2, '0')}';
 
-  /// 현재 월의 경기 캘린더 — 일(day) → 그 날 경기 목록.
-  Map<int, List<ScheduleMatch>> _matchesByDay = const {};
-  Map<int, List<ScheduleMatch>> get matchesByDay => _matchesByDay;
+  /// 현재 월의 경기 캘린더 — 일(day) → 그 날 칸에 표시할 경기 칩 목록.
+  Map<int, List<CalendarMatchBrief>> _matchesByDay = const {};
+  Map<int, List<CalendarMatchBrief>> get matchesByDay => _matchesByDay;
 
   /// 온보딩에서 고른 선호 팀. 없으면(건너뛰기 등) null.
   Team? _preferredTeam;
   Team? get preferredTeam => _preferredTeam;
 
+  /// 캘린더 조회에 적용 중인 리그 코드 (기본 'LCK').
+  String _league = 'LCK';
+  String get filterLeague => _league;
+
+  /// 캘린더 조회에 적용 중인 팀 ID. null 이면 리그 전체.
+  int? _teamId;
+  int? get filterTeamId => _teamId;
+
   /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
-  /// API 에 팀 필터 파라미터가 생기면 이 상태로 경기 필터링을 연결한다.
+  /// 켜지면 선호 팀으로 캘린더를 필터링한다.
   bool _teamSelected = false;
   bool get teamSelected => _teamSelected;
 
@@ -76,9 +92,23 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   /// 헤더 팀 아이콘 선택 상태를 토글한다.
+  /// 켜지면 선호 팀으로, 끄면 리그 전체로 캘린더를 다시 조회한다.
   void toggleTeamSelected() {
     _teamSelected = !_teamSelected;
+    _teamId = _teamSelected ? _preferredTeam?.id : null;
     _notify();
+    loadCalendar();
+  }
+
+  /// 필터 모달에서 고른 리그·팀을 적용하고 캘린더를 다시 조회한다.
+  /// [teamId] 가 null 이면 리그 전체.
+  void applyFilter({String? league, int? teamId}) {
+    if (league != null && league.isNotEmpty) _league = league;
+    _teamId = teamId;
+    // 필터로 팀을 직접 골랐으면 헤더 선호팀 토글과 어긋나므로 해제해 둔다.
+    _teamSelected = false;
+    _notify();
+    loadCalendar();
   }
 
   /// 날짜 피커에서 고른 날짜를 반영한다 — 그 달로 이동하고 칸을 강조한다.
@@ -90,36 +120,25 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 현재 표시 월의 경기 캘린더를 불러온다.
   ///
-  /// 1) `/schedule/calendar` 로 경기가 있는 날짜를 받고,
-  /// 2) 그 날짜마다 경기 목록을 병렬로 조회한다.
+  /// `/api/mobile/schedules/calendar` 한 번으로 날짜별 칩 데이터까지 받는다.
   Future<void> loadCalendar() async {
-    debugPrint('[Schedule] loadCalendar 시작: $_displayMonth');
+    debugPrint('[Schedule] loadCalendar 시작: $_displayMonth '
+        '(league=$_league, teamId=$_teamId)');
     _isLoading = true;
     _error = null;
     _notify();
     try {
-      final days = await _repository.fetchCalendar(_displayMonth);
-      // 경기일마다 경기 목록을 병렬 조회. 일부 날짜가 실패해도
-      // 그 날만 빈 목록으로 두고 나머지는 살린다.
-      final entries = await Future.wait(
-        days.map((day) async {
-          try {
-            final matches = await _repository.fetchMatchesByDate(day.date);
-            return MapEntry(day.date.day, matches);
-          } catch (e) {
-            debugPrint('[Schedule] ${day.date} 경기 조회 실패: $e');
-            return MapEntry(day.date.day, <ScheduleMatch>[]);
-          }
-        }),
+      final days = await _repository.fetchCalendar(
+        _displayMonth,
+        league: _league,
+        teamId: _teamId,
       );
-      _matchesByDay = Map.fromEntries(entries);
+      _matchesByDay = {
+        for (final day in days) day.date.day: day.matches,
+      };
       final total =
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료: ${_matchesByDay.length}일, 총 $total경기');
-      for (final e in _matchesByDay.entries.take(3)) {
-        debugPrint('[Schedule]   ${e.key}일: '
-            '${e.value.map((m) => '${m.teamA.teamCode} vs ${m.teamB.teamCode}').toList()}');
-      }
     } catch (e, st) {
       _error = e;
       _matchesByDay = const {};
@@ -131,9 +150,30 @@ class ScheduleViewModel extends ChangeNotifier {
     }
   }
 
-  /// 로컬에 저장된 선호 팀을 불러온다.
+  /// 응원 팀을 불러온다.
+  ///
+  /// 로그인 회원은 서버(`/api/auth/me`)의 `favoriteTeamId` 를 기준으로 팀을
+  /// 매칭하고, 비로그인 등 실패 시 로컬 캐시로 폴백한다.
   Future<void> _loadPreferredTeam() async {
-    _preferredTeam = await _teamPreferences.loadPreferredTeam();
+    try {
+      final me = await _auth.fetchMe();
+      final teamId = me.favoriteTeamId;
+      Team? team;
+      if (teamId != null) {
+        final teams = await _onboarding.fetchTeams();
+        for (final t in teams) {
+          if (t.id == teamId) {
+            team = t;
+            break;
+          }
+        }
+      }
+      _preferredTeam = team;
+    } catch (e) {
+      // 비로그인 등은 로컬 캐시로 폴백.
+      debugPrint('[Schedule] 응원팀 서버 조회 실패, 로컬 폴백: $e');
+      _preferredTeam = await _teamPreferences.loadPreferredTeam();
+    }
     _notify();
   }
 

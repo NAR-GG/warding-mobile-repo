@@ -4,6 +4,7 @@ import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -43,9 +44,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  /// 헤더 필터 버튼 탭 → 필터 바텀시트.
-  void _openFilter() {
-    showAppBottomSheet(context: context, child: const FilterSheet());
+  /// 헤더 필터 버튼 탭 → 필터 바텀시트. 조회를 누르면 고른 리그·팀으로
+  /// 캘린더를 다시 불러온다.
+  Future<void> _openFilter() async {
+    final result = await showAppBottomSheet<FilterResult>(
+      context: context,
+      child: FilterSheet(
+        initialLeague: _viewModel.filterLeague,
+        initialTeamId: _viewModel.filterTeamId,
+      ),
+    );
+    if (result != null) {
+      _viewModel.applyFilter(league: result.league, teamId: result.teamId);
+    }
   }
 
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
@@ -74,12 +85,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ListenableBuilder(
               listenable: _viewModel,
               builder: (context, _) {
-                // ViewModel 의 ScheduleMatch → 캘린더 칩용 (home, away) 변환.
+                // ViewModel 의 캘린더 경기 → 칸 칩용 (home, away) 변환.
                 final matchesByDay = <int, List<CalendarMatch>>{
                   for (final entry in _viewModel.matchesByDay.entries)
                     entry.key: [
                       for (final m in entry.value)
-                        (home: m.teamA.teamCode, away: m.teamB.teamCode),
+                        (home: m.blueTeamCode, away: m.redTeamCode),
                     ],
                 };
                 return Column(
