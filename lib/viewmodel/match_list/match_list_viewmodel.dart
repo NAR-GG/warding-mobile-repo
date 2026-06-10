@@ -278,8 +278,15 @@ class MatchListViewModel extends ChangeNotifier {
       _pageDays,
       (i) => start.subtract(Duration(days: i)),
     );
+    // 리그는 서버에서 거르고(teamId 는 다중 선택이라 클라에서 필터한다).
+    final league = _selectedLeague;
     final results = await Future.wait(
-      dates.map(_scheduleRepository.fetchMatchesByDate),
+      dates.map(
+        (d) => _scheduleRepository.fetchMatchesByDate(
+          d,
+          league: (league != null && league.isNotEmpty) ? league : 'LCK',
+        ),
+      ),
     );
     final out = <ScheduleDay>[];
     for (var i = 0; i < dates.length; i++) {

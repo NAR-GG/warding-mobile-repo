@@ -5,9 +5,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/common_button.dart';
 import '../../components/nar_banner.dart';
+import '../../model/team.dart';
+import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../viewmodel/mypage/mypage_viewmodel.dart';
 import 'component/subscription_alarm_section.dart';
+import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_review/my_review_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
@@ -24,9 +28,17 @@ class MypageScreen extends StatefulWidget {
 }
 
 class _MypageScreenState extends State<MypageScreen> {
+  final MypageViewModel _viewModel = MypageViewModel();
+
   /// 응원팀 자동 설정 안내 배너 노출 여부.
   /// 초반에만 노출하고, 배너를 탭해 프로필 수정으로 이동하면 사라진다.
   bool _showTeamBanner = true;
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
   void _goToProfileEdit() {
@@ -34,6 +46,16 @@ class _MypageScreenState extends State<MypageScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()));
+  }
+
+  /// 로그아웃 — 소셜·자체 토큰을 정리하고 로그인 화면으로 되돌린다.
+  Future<void> _logout() async {
+    await AuthService.instance.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   /// 구독 관리 — 구독 설정 화면으로 이동.
@@ -89,7 +111,15 @@ class _MypageScreenState extends State<MypageScreen> {
                     },
                   ),
                   SizedBox(height: 4 * scale),
-                  _MypageProfile(scale: scale, onEditTap: _goToProfileEdit),
+                  ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (context, _) => _MypageProfile(
+                      scale: scale,
+                      onEditTap: _goToProfileEdit,
+                      nickname: _viewModel.nickname,
+                      favoriteTeam: _viewModel.favoriteTeam,
+                    ),
+                  ),
                   // 응원팀 자동 설정 안내 배너 — 초반에만 노출, 탭하면 프로필 수정으로
                   // 이동하며 사라진다.
                   if (_showTeamBanner)
@@ -153,9 +183,7 @@ class _MypageScreenState extends State<MypageScreen> {
                         label: '로그아웃',
                         variant: CommonButtonVariant.logout,
                         scale: scale,
-                        onPressed: () {
-                          // TODO: 로그아웃 처리
-                        },
+                        onPressed: _logout,
                       ),
                       SizedBox(width: 40 * scale),
                       CommonButton(
@@ -239,10 +267,21 @@ class _MypageHeader extends StatelessWidget {
 /// 좌측: 기본 프로필 이미지(59) + 닉네임/팀 뱃지 + 이메일.
 /// 우측: '프로필 수정' 텍스트 버튼.
 class _MypageProfile extends StatelessWidget {
-  const _MypageProfile({required this.scale, this.onEditTap});
+  const _MypageProfile({
+    required this.scale,
+    this.onEditTap,
+    this.nickname = '',
+    this.favoriteTeam,
+  });
 
   final double scale;
   final VoidCallback? onEditTap;
+
+  /// 회원 닉네임. 비어 있으면 placeholder 를 보인다.
+  final String nickname;
+
+  /// 응원 팀(로고 뱃지용). 없으면 회색 원 placeholder.
+  final Team? favoriteTeam;
 
   @override
   Widget build(BuildContext context) {
@@ -277,8 +316,7 @@ class _MypageProfile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        // TODO: 실제 닉네임으로 교체 (현재 mock).
-                        '닉네임',
+                        nickname.isEmpty ? '닉네임' : nickname,
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w600,
@@ -288,15 +326,8 @@ class _MypageProfile extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 8 * scale),
-                      // TODO: 팀 프로필 뱃지 이미지 연결 — 현재 원형 placeholder.
-                      Container(
-                        width: 23 * scale,
-                        height: 23 * scale,
-                        decoration: const BoxDecoration(
-                          color: AppColors.narDark200,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      // 응원 팀 로고 뱃지. 없으면 회색 원 placeholder.
+                      _TeamBadge(team: favoriteTeam, scale: scale),
                     ],
                   ),
                   // 이메일.
@@ -331,6 +362,38 @@ class _MypageProfile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 응원 팀 로고 뱃지 — 23×23 원형. 팀이 없으면 회색 원 placeholder.
+class _TeamBadge extends StatelessWidget {
+  const _TeamBadge({required this.team, required this.scale});
+
+  final Team? team;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 23 * scale;
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.narDark200,
+        shape: BoxShape.circle,
+      ),
+    );
+    final url = team?.imageUrl;
+    if (url == null || url.isEmpty) return placeholder;
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => placeholder,
       ),
     );
   }

@@ -14,14 +14,23 @@ import '../../../viewmodel/schedule/filter_viewmodel.dart';
 /// 열 때(이전 값)와 달라져야 조회 버튼이 활성된다.
 /// 자체 [FilterViewModel] 을 소유하며 [showAppBottomSheet] 의 child 로 띄운다.
 class FilterSheet extends StatefulWidget {
-  const FilterSheet({super.key});
+  const FilterSheet({super.key, this.initialLeague, this.initialTeamId});
+
+  /// 모달을 열 때 이미 적용 중이던 리그 코드.
+  final String? initialLeague;
+
+  /// 모달을 열 때 이미 적용 중이던 팀 ID.
+  final int? initialTeamId;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
 }
 
 class _FilterSheetState extends State<FilterSheet> {
-  final FilterViewModel _viewModel = FilterViewModel();
+  late final FilterViewModel _viewModel = FilterViewModel(
+    initialLeague: widget.initialLeague,
+    initialTeamId: widget.initialTeamId,
+  );
 
   @override
   void dispose() {
@@ -42,7 +51,7 @@ class _FilterSheetState extends State<FilterSheet> {
           onReset: _viewModel.reset,
           // 선택값이 이전 값과 같으면 비활성(null), 바뀌면 활성.
           onApply: _viewModel.isApplyEnabled
-              ? () => Navigator.of(context).pop()
+              ? () => Navigator.of(context).pop(_viewModel.result)
               : null,
           // 셀렉트 박스 영역 — 좌우 24 들여쓰기.
           child: Padding(
@@ -56,12 +65,12 @@ class _FilterSheetState extends State<FilterSheet> {
                   scale: scale,
                   child: _SelectField(
                     placeholder: '전체',
-                    selected: _viewModel.selectedLeague,
-                    options: FilterViewModel.leagues,
+                    selected: _viewModel.selectedLeagueName,
+                    options: _viewModel.leagueNames,
                     isOpen: _viewModel.openDropdown == FilterDropdown.league,
                     onTapBox: () =>
                         _viewModel.toggleDropdown(FilterDropdown.league),
-                    onSelect: _viewModel.selectLeague,
+                    onSelect: _viewModel.selectLeagueByName,
                     scale: scale,
                   ),
                 ),
@@ -71,12 +80,12 @@ class _FilterSheetState extends State<FilterSheet> {
                   scale: scale,
                   child: _SelectField(
                     placeholder: '전체',
-                    selected: _viewModel.selectedTeam,
-                    options: FilterViewModel.teams,
+                    selected: _viewModel.selectedTeamName,
+                    options: _viewModel.teamNames,
                     isOpen: _viewModel.openDropdown == FilterDropdown.team,
                     onTapBox: () =>
                         _viewModel.toggleDropdown(FilterDropdown.team),
-                    onSelect: _viewModel.selectTeam,
+                    onSelect: _viewModel.selectTeamByName,
                     scale: scale,
                   ),
                 ),
@@ -170,6 +179,11 @@ class _DropdownList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 항목 한 칸 높이 ≈ 위아래 패딩 11.5×2 + 줄높이 22 = 45.
+    // 약 5칸까지만 보이고 그보다 많으면 안에서 세로 스크롤한다.
+    const visibleItems = 5;
+    final maxHeight = 45.0 * scale * visibleItems;
+
     return Container(
       // 항목 배경이 라운드 모서리 밖으로 새지 않게 클리핑.
       clipBehavior: Clip.antiAlias,
@@ -177,18 +191,23 @@ class _DropdownList extends StatelessWidget {
         color: AppColors.narBgLast, // 셀렉트 박스와 같은 #25262B
         borderRadius: BorderRadius.circular(10 * scale),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final option in options)
-            _DropdownItem(
-              label: option,
-              isSelected: option == selected,
-              onTap: () => onSelect(option),
-              scale: scale,
-            ),
-        ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final option in options)
+                _DropdownItem(
+                  label: option,
+                  isSelected: option == selected,
+                  onTap: () => onSelect(option),
+                  scale: scale,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

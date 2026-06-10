@@ -9,6 +9,24 @@ class ApiConfig {
   /// 카카오 access token을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
   static String get kakaoLoginUrl => '$apiBaseUrl/auth/mobile/kakao';
 
+  /// Refresh Token으로 Access Token 재발급.
+  /// [refreshToken] 은 query 파라미터로 전달한다 (백엔드 명세).
+  static String refreshUrl(String refreshToken) =>
+      '$apiBaseUrl/auth/refresh?refreshToken=${Uri.encodeQueryComponent(refreshToken)}';
+
+  /// 로그인 회원 정보 조회 (인증 필요).
+  static String get meUrl => '$apiBaseUrl/auth/me';
+
+  /// 네이버 access token을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
+  static String get naverLoginUrl => '$apiBaseUrl/auth/mobile/naver';
+
+  /// 구글 idToken을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
+  static String get googleLoginUrl => '$apiBaseUrl/auth/mobile/google';
+
+  /// 구글 OAuth "웹" 클라이언트 ID. idToken의 audience(serverClientId)로 쓰이며,
+  /// 백엔드도 이 값으로 idToken을 검증한다. (Google Cloud Console에서 발급)
+  static const String googleServerClientId = 'YOUR_GOOGLE_SERVER_CLIENT_ID';
+
   /// 온보딩용 리그 목록 조회 (인증 불필요).
   static String get onboardingLeaguesUrl =>
       '$apiBaseUrl/auth/onboarding/leagues';
@@ -27,17 +45,115 @@ class ApiConfig {
   /// 온보딩 완료 — 로그인 사용자의 선호 리그·팀·선수 서버 저장 (인증 필요).
   static String get onboardingUrl => '$apiBaseUrl/auth/onboarding';
 
-  /// 월별 경기 존재 날짜 조회 (달력 마킹용, 인증 불필요).
+  /// 모바일 월별 캘린더 마킹용 조회 (인증 불필요).
+  /// 날짜별 경기 수와 칩에 쓸 대진 정보를 한 번에 내려준다.
   /// [month] 형식은 'yyyy-MM' (예: '2026-04').
-  static String scheduleCalendarUrl(String month) =>
-      '$apiBaseUrl/schedule/calendar?month=$month';
+  static String mobileScheduleCalendarUrl({
+    required String month,
+    String league = 'LCK',
+    int? teamId,
+  }) {
+    final query = StringBuffer('month=$month&league=$league');
+    if (teamId != null) query.write('&teamId=$teamId');
+    return '$apiBaseUrl/mobile/schedules/calendar?$query';
+  }
 
-  /// 특정 날짜의 경기 목록 조회 (인증 불필요).
+  /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
-  static String scheduleByDateUrl(String date) =>
-      '$apiBaseUrl/schedule?date=$date';
+  static String mobileSchedulesUrl({
+    required String date,
+    String league = 'LCK',
+    int? teamId,
+  }) {
+    final query = StringBuffer('date=$date&league=$league');
+    if (teamId != null) query.write('&teamId=$teamId');
+    return '$apiBaseUrl/mobile/schedules?$query';
+  }
+
+  /// 모바일 일정/리스트 화면의 리그·팀 필터 옵션 조회 (인증 불필요).
+  /// [league] 의 소속 팀 목록을 함께 내려준다.
+  static String mobileScheduleFiltersUrl({String league = 'LCK'}) =>
+      '$apiBaseUrl/mobile/schedules/filters?league=$league';
 
   /// 카테고리 트리(리그 > 시즌 > 팀) 조회 (인증 불필요).
   static String categoriesTreeUrl({required int year}) =>
       '$apiBaseUrl/categories/tree?year=$year';
+
+  // ── 선수 구독 (인증 필요) ─────────────────────────────────────────
+
+  /// 내 구독 선수 목록 조회 / 선수 구독 추가(POST {playerId}).
+  static String get playerSubscriptionsUrl =>
+      '$apiBaseUrl/mobile/me/player-subscriptions';
+
+  /// 선수 구독 해제 (DELETE).
+  static String playerSubscriptionUrl(int playerId) =>
+      '$apiBaseUrl/mobile/me/player-subscriptions/$playerId';
+
+  /// 구독 가능한 2026 LCK 선수 검색 (페이지네이션).
+  static String availablePlayersUrl({
+    String? query,
+    int? teamId,
+    int page = 0,
+    int size = 20,
+  }) {
+    final q = StringBuffer('page=$page&size=$size');
+    if (query != null && query.isNotEmpty) {
+      q.write('&query=${Uri.encodeQueryComponent(query)}');
+    }
+    if (teamId != null) q.write('&teamId=$teamId');
+    return '$apiBaseUrl/mobile/me/player-subscriptions/available-players?$q';
+  }
+
+  // ── 팀 알림 구독 (인증 필요) ───────────────────────────────────────
+
+  /// 내 팀 알림 구독 목록 조회 / 팀 알림 구독 추가(POST {teamId}).
+  static String get teamNotificationsUrl =>
+      '$apiBaseUrl/mobile/me/notification-subscriptions';
+
+  /// 팀별 알림 설정 변경(PUT) / 팀 알림 구독 삭제(DELETE).
+  static String teamNotificationUrl(int teamId) =>
+      '$apiBaseUrl/mobile/me/notification-subscriptions/$teamId';
+
+  /// 구독 가능한 LCK 팀 목록 조회.
+  static String get availableTeamsUrl =>
+      '$apiBaseUrl/mobile/me/notification-subscriptions/available-teams';
+
+  // ── 선수 평점 (인증 필요) ─────────────────────────────────────────
+
+  /// 세트(게임) 전체 선수 평점 목록.
+  static String gameRatingsUrl(String gameId, {String teamSide = 'ALL'}) =>
+      '$apiBaseUrl/mobile/live/games/$gameId/ratings?teamSide=$teamSide';
+
+  /// 선수 평점 상세 + 리뷰 (페이지네이션).
+  static String playerRatingUrl(
+    String gameId,
+    int participantId, {
+    int page = 0,
+    int size = 20,
+  }) =>
+      '$apiBaseUrl/mobile/live/games/$gameId/participants/$participantId/ratings'
+      '?page=$page&size=$size';
+
+  /// 내 평가 작성·수정(PUT) / 삭제(DELETE).
+  static String myRatingUrl(String gameId, int participantId) =>
+      '$apiBaseUrl/mobile/live/games/$gameId/participants/$participantId/my-rating';
+
+  /// 게임 상세(밴픽·선수 스탯·골드 차 등) 조회. gameId 는 정수.
+  static String gameRecordUrl(int gameId) =>
+      '$apiBaseUrl/games/$gameId/record';
+
+  // ── FCM 기기 토큰 (인증 필요) ──────────────────────────────────────
+
+  /// FCM 토큰 등록·갱신 (POST {fcmToken, platform}).
+  static String get devicesUrl => '$apiBaseUrl/mobile/me/devices';
+
+  /// 현재 기기 비활성화 (DELETE).
+  static String deviceUrl(String deviceId) =>
+      '$apiBaseUrl/mobile/me/devices/$deviceId';
+
+  /// 로그아웃 — Refresh Token 폐기. [deviceId] 전달 시 해당 FCM 기기도 비활성화.
+  static String logoutUrl({String? deviceId}) {
+    final base = '$apiBaseUrl/auth/logout';
+    return deviceId == null ? base : '$base?deviceId=$deviceId';
+  }
 }

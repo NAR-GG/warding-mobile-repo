@@ -19,9 +19,9 @@ class CalendarMatchChipStack extends StatelessWidget {
   Widget build(BuildContext context) {
     if (matches.isEmpty) return const SizedBox.shrink();
 
-    final chipHeight = 23.0 * scale;
+    final chipHeight = 18.0 * scale;
     const gap = 1.0; // 칩 사이 간격 1px
-    final dotsHeight = 12.0 * scale;
+    final dotsHeight = 15.0 * scale;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -37,11 +37,12 @@ class CalendarMatchChipStack extends StatelessWidget {
           return _stack(matches.length, showDots: false, gap: gap);
         }
 
-        // 넘침 → 하단 dots 자리를 빼고 들어가는 칩 수.
+        // 넘침 → 하단 dots 자리(높이)만 빼고 들어가는 칩 수.
+        // 칩과 dots 사이 간격은 _stack 의 Spacer 가 채우므로 여기선
+        // dotsHeight 만 빼면 된다. (gap 까지 빼면 칩이 한 개 덜 들어간다)
         var fitWithDots = 0;
         while ((fitWithDots + 1) * chipHeight +
                 fitWithDots * gap +
-                gap +
                 dotsHeight <=
             available) {
           fitWithDots++;

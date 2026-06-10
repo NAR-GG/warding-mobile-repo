@@ -25,17 +25,30 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀) -->
+        <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀).
+             SDK 2.x 부터 AuthCodeHandlerActivity 가 redirect 를 처리한다.
+             SDK 가 선언한 같은 액티비티에 앱별 redirect scheme intent-filter 만 머지한다. -->
         <activity
-            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
+            android:name="com.kakao.sdk.flutter.auth.AuthCodeHandlerActivity"
             android:exported="true">
-            <intent-filter android:label="flutter_web_auth">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="kakao838b3def5acdd1dfbbe6b14e301ba05a" android:host="oauth"/>
             </intent-filter>
         </activity>
+
+        <!-- 네이버 로그인 SDK 키 (strings.xml 참조) -->
+        <meta-data
+            android:name="com.naver.sdk.clientId"
+            android:value="@string/naver_client_id" />
+        <meta-data
+            android:name="com.naver.sdk.clientSecret"
+            android:value="@string/naver_client_secret" />
+        <meta-data
+            android:name="com.naver.sdk.clientName"
+            android:value="@string/naver_client_name" />
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

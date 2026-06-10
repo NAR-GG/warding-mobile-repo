@@ -23,7 +23,7 @@ class _CalendarTodayBadgeState extends State<CalendarTodayBadge> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 2), () {
+    _timer = Timer(const Duration(seconds: 4), () {
       if (mounted) setState(() => _visible = false);
     });
   }

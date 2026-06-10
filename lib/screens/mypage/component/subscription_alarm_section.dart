@@ -1,34 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_toggle.dart';
+import '../../../model/team_notification_subscription.dart';
 import '../../../styles/app_colors.dart';
-
-/// 구독 팀별 알림 설정값.
-/// 팀명/로고와 세트 시작·종료·라이브 이벤트 알림 ON/OFF 를 가진다.
-class TeamAlarmSetting {
-  TeamAlarmSetting({
-    required this.teamName,
-    this.logoAsset,
-    this.setStart = true,
-    this.setEnd = true,
-    this.liveEvent = true,
-  });
-
-  final String teamName;
-
-  /// 팀 로고 자산 경로. 없으면 placeholder 로 렌더링.
-  final String? logoAsset;
-
-  bool setStart;
-  bool setEnd;
-  bool liveEvent;
-}
+import '../../../viewmodel/subscription/team_alarm_viewmodel.dart';
 
 /// 마이페이지 — 구독 팀 알림 설정 섹션 (양옆 20 패딩).
 ///
 /// 상단: '구독 팀 알림 설정' 타이틀 + '구독 관리' 액션.
 /// 하단: narDark600 카드 안에 팀별 블록(로고/팀명 + 알림 토글 3개).
-/// 토글은 공용 [NarToggle] 을 사용한다.
+/// 구독중인 팀과 알림 설정은 `notification-subscriptions` API 로 받고,
+/// 토글하면 `PUT` 으로 서버에 반영한다.
 class SubscriptionAlarmSection extends StatefulWidget {
   const SubscriptionAlarmSection({
     super.key,
@@ -45,17 +27,29 @@ class SubscriptionAlarmSection extends StatefulWidget {
 }
 
 class _SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
-  // TODO: API 연결 후 실제 구독 팀·알림 설정으로 교체 (현재 mock).
-  final List<TeamAlarmSetting> _teams = [
-    TeamAlarmSetting(teamName: 'T1', liveEvent: false),
-    TeamAlarmSetting(teamName: 'DN SOOPers'),
-    TeamAlarmSetting(teamName: 'Hanwha Life Esports'),
-  ];
+  final TeamAlarmViewModel _viewModel = TeamAlarmViewModel();
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
 
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        // 비회원(JWT 없음)이면 섹션을 통째로 숨긴다.
+        if (!_viewModel.loggedIn) return const SizedBox.shrink();
+        return _buildSection(scale);
+      },
+    );
+  }
+
+  Widget _buildSection(double scale) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: Column(
@@ -93,27 +87,54 @@ class _SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
             ],
           ),
           SizedBox(height: 16 * scale),
-          // 카드: 팀별 블록을 8 간격으로 쌓는다.
-          Container(
-            padding: EdgeInsets.only(top: 10 * scale, bottom: 20 * scale),
-            decoration: BoxDecoration(
-              color: AppColors.narDark600,
-              borderRadius: BorderRadius.circular(10 * scale),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < _teams.length; i++) ...[
-                  if (i > 0) SizedBox(height: 8 * scale),
-                  _TeamAlarmBlock(
-                    team: _teams[i],
-                    onChanged: () => setState(() {}),
-                    scale: scale,
-                  ),
-                ],
-              ],
-            ),
-          ),
+          _buildCard(scale),
+        ],
+      ),
+    );
+  }
+
+  /// 구독중인 팀 알림 카드. 로딩/빈 상태/목록을 그린다.
+  Widget _buildCard(double scale) {
+    final teams = _viewModel.teams;
+    return Container(
+      padding: EdgeInsets.only(top: 10 * scale, bottom: 20 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narDark600,
+        borderRadius: BorderRadius.circular(10 * scale),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_viewModel.isLoading && teams.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24 * scale),
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (teams.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20 * scale,
+                vertical: 16 * scale,
+              ),
+              child: Text(
+                '구독중인 팀이 없어요.',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14 * scale,
+                  color: AppColors.narTextTertiarySub,
+                ),
+              ),
+            )
+          else
+            for (var i = 0; i < teams.length; i++) ...[
+              if (i > 0) SizedBox(height: 8 * scale),
+              _TeamAlarmBlock(
+                team: teams[i],
+                viewModel: _viewModel,
+                scale: scale,
+              ),
+            ],
         ],
       ),
     );
@@ -124,12 +145,12 @@ class _SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
 class _TeamAlarmBlock extends StatelessWidget {
   const _TeamAlarmBlock({
     required this.team,
-    required this.onChanged,
+    required this.viewModel,
     required this.scale,
   });
 
-  final TeamAlarmSetting team;
-  final VoidCallback onChanged;
+  final TeamNotificationSubscription team;
+  final TeamAlarmViewModel viewModel;
   final double scale;
 
   @override
@@ -147,15 +168,7 @@ class _TeamAlarmBlock extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // TODO: 팀 로고 이미지 연결 — 현재 원형 placeholder.
-              Container(
-                width: 33 * scale,
-                height: 33 * scale,
-                decoration: const BoxDecoration(
-                  color: AppColors.narDark200,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              _TeamLogo(url: team.teamImageUrl, scale: scale),
               SizedBox(width: 8 * scale),
               Text(
                 team.teamName,
@@ -174,32 +187,54 @@ class _TeamAlarmBlock extends StatelessWidget {
         // 알림 토글 3행.
         _AlarmRow(
           label: '세트 시작 알림',
-          value: team.setStart,
-          onChanged: (v) {
-            team.setStart = v;
-            onChanged();
-          },
+          value: team.setStartEnabled,
+          onChanged: (v) => viewModel.setSetStart(team.teamId, v),
           scale: scale,
         ),
         _AlarmRow(
           label: '세트 종료 알림',
-          value: team.setEnd,
-          onChanged: (v) {
-            team.setEnd = v;
-            onChanged();
-          },
+          value: team.setEndEnabled,
+          onChanged: (v) => viewModel.setSetEnd(team.teamId, v),
           scale: scale,
         ),
         _AlarmRow(
           label: '라이브 이벤트 알림',
-          value: team.liveEvent,
-          onChanged: (v) {
-            team.liveEvent = v;
-            onChanged();
-          },
+          value: team.liveEventEnabled,
+          onChanged: (v) => viewModel.setLiveEvent(team.teamId, v),
           scale: scale,
         ),
       ],
+    );
+  }
+}
+
+/// 팀 로고 33×33 원형. URL 없으면 회색 원 placeholder.
+class _TeamLogo extends StatelessWidget {
+  const _TeamLogo({required this.url, required this.scale});
+
+  final String url;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 33 * scale;
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.narDark200,
+        shape: BoxShape.circle,
+      ),
+    );
+    if (url.isEmpty) return placeholder;
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => placeholder,
+      ),
     );
   }
 }
