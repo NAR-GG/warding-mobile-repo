@@ -224,7 +224,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder:
+                                  // TODO: 목 알림이라 실제 matchId 없음 — 연동 시 알림 데이터에서 받기.
                                   (_) => const MatchDetailScreen(
+                                    matchId: '',
+                                    match: null,
                                     initialTabIndex: 2,
                                   ),
                             ),

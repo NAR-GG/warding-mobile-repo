@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.
@@ -10,9 +11,27 @@ import '../../../styles/app_colors.dart';
 class MatchDetailLiveEventSection extends StatefulWidget {
   const MatchDetailLiveEventSection({
     super.key,
+    this.events = const [],
+    this.blueTeamImageUrl,
+    this.redTeamImageUrl,
+    this.initialLoading = false,
+    this.errorMessage,
     this.scale = 1,
     this.onReload,
   });
+
+  /// 표시할 라이브 이벤트 (최신순). ViewModel 에서 주입.
+  final List<MatchLiveEvent> events;
+
+  /// 오브젝트 이벤트 출처 팀 로고용 — 응답 최상위의 양 팀 로고 URL (null 가능).
+  final String? blueTeamImageUrl;
+  final String? redTeamImageUrl;
+
+  /// 최초 로드 중(아직 이벤트 한 건도 못 받은 상태)인지.
+  final bool initialLoading;
+
+  /// 이벤트 로드 에러 메시지. null 이면 에러 없음.
+  final String? errorMessage;
 
   final double scale;
 
@@ -29,35 +48,43 @@ class _MatchDetailLiveEventSectionState
     extends State<MatchDetailLiveEventSection> {
   bool _loading = false;
 
-  // 데모용 샘플 이벤트. 추후 API 응답으로 교체.
-  static const List<_LiveEvent> _events = [
-    _LiveEvent(
-      time: '17:34',
-      source: _Actor.champion(name: 'Faker'),
-      target: _Actor.objective(
-        name: '바람드래곤',
-        asset: 'assets/images/cloud-dragon.png',
+  /// 백엔드 [MatchLiveEvent] → 표시용 [_LiveEvent] 매핑.
+  /// KILL 은 killer→victim, 오브젝트는 팀(또는 출처)→오브젝트 라벨로 표현.
+  _LiveEvent _toViewEvent(MatchLiveEvent e) {
+    if (e.isKill) {
+      return _LiveEvent(
+        time: e.gameTime,
+        source: _Actor.champion(
+          name: e.killer?.playerName ?? '',
+          championImageUrl: e.killer?.imageUrl,
+        ),
+        target: _Actor.champion(
+          name: e.victim?.playerName ?? '',
+          championImageUrl: e.victim?.imageUrl,
+        ),
+      );
+    }
+    // 오브젝트 이벤트: 출처(팀)에서 오브젝트를 처치/파괴.
+    final asset = e.objectiveAsset();
+    final objective = asset != null
+        ? _Actor.objective(name: e.objectiveLabel(), asset: asset)
+        : _Actor.objectiveLabel(e.objectiveLabel());
+    // teamSide('Blue'/'Red') 로 해당 팀 로고 URL 을 고른다.
+    final side = (e.teamSide ?? '').toLowerCase();
+    final teamLogoUrl = side == 'blue'
+        ? widget.blueTeamImageUrl
+        : side == 'red'
+            ? widget.redTeamImageUrl
+            : null;
+    return _LiveEvent(
+      time: e.gameTime,
+      source: _Actor.teamLogo(
+        name: e.teamName ?? '',
+        logoUrl: teamLogoUrl,
       ),
-    ),
-    _LiveEvent(
-      time: '10:34',
-      source: _Actor.champion(name: 'Faker'),
-      target: _Actor.champion(name: 'Chovy'),
-    ),
-    _LiveEvent(
-      time: '07:34',
-      source: _Actor.champion(name: 'XUN'),
-      target: _Actor.champion(name: 'ON'),
-    ),
-    _LiveEvent(
-      time: '02:34',
-      source: _Actor.objective(
-        name: '바람드래곤',
-        asset: 'assets/images/cloud-dragon.png',
-      ),
-      target: _Actor.champion(name: 'ABCDEFG'),
-    ),
-  ];
+      target: objective,
+    );
+  }
 
   Future<void> _handleReload() async {
     if (_loading) return;
@@ -77,6 +104,11 @@ class _MatchDetailLiveEventSectionState
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
+    final events = widget.events.map(_toViewEvent).toList();
+    // 최초 로드 중이거나 리로드 진행 중이면 로딩 상태로 본다.
+    final loading = _loading || widget.initialLoading;
+    final hasError = widget.errorMessage != null && events.isEmpty;
+
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
@@ -85,27 +117,59 @@ class _MatchDetailLiveEventSectionState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ReloadButton(
-            loading: _loading,
+            loading: loading,
             onTap: _handleReload,
             scale: scale,
           ),
           // 로딩 중이면 이벤트 리스트 맨 위에 스켈레톤 한 줄 추가. 카드는 그대로 보여준다.
-          if (_loading) _LoadingSkeleton(scale: scale),
-          for (var i = 0; i < _events.length; i++) ...[
-            _LiveEventRow(
-              event: _events[i],
-              isFirst: i == 0,
-              isLast: i == _events.length - 1,
-              isLatest: i == 0,
-              // 로딩 중에는 좌측 핑크 점·세로선(타임라인) 숨김.
-              showTimeline: !_loading,
-              scale: scale,
-            ),
-            // 카드 사이 4 gap. gap 영역에도 narPink700 세로선을 그려 점들이 끊김 없이 이어지도록.
-            if (i < _events.length - 1)
-              _LineConnector(scale: scale, showLine: !_loading),
-          ],
+          if (loading) _LoadingSkeleton(scale: scale),
+          if (hasError && !loading)
+            _EmptyState(message: widget.errorMessage!, scale: scale)
+          else if (events.isEmpty && !loading)
+            _EmptyState(message: '아직 라이브 이벤트가 없어요', scale: scale)
+          else
+            for (var i = 0; i < events.length; i++) ...[
+              _LiveEventRow(
+                event: events[i],
+                isFirst: i == 0,
+                isLast: i == events.length - 1,
+                isLatest: i == 0,
+                // 로딩 중에는 좌측 핑크 점·세로선(타임라인) 숨김.
+                showTimeline: !loading,
+                scale: scale,
+              ),
+              // 카드 사이 4 gap. gap 영역에도 narPink700 세로선을 그려 점들이 끊김 없이 이어지도록.
+              if (i < events.length - 1)
+                _LineConnector(scale: scale, showLine: !loading),
+            ],
         ],
+      ),
+    );
+  }
+}
+
+/// 이벤트가 없거나 에러일 때의 안내 문구.
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.message, required this.scale});
+
+  final String message;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 40 * scale),
+      child: Center(
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 14 * scale,
+            color: AppColors.narText2,
+          ),
+        ),
       ),
     );
   }
@@ -523,7 +587,33 @@ class _ActorIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = 38 * scale;
+    // 오브젝트 출처 팀: 38×38 라운드 박스에 팀 로고. URL 없으면 빈 박스(플레이스홀더).
+    if (actor.isTeamLogo) {
+      final hasLogo =
+          actor.teamLogoUrl != null && actor.teamLogoUrl!.isNotEmpty;
+      return Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(4 * scale),
+        decoration: BoxDecoration(
+          color: AppColors.narDark500,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: hasLogo
+            ? Image.network(
+                actor.teamLogoUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              )
+            : null,
+      );
+    }
     if (actor.isObjective) {
+      // 에셋 없는 오브젝트(라벨 전용)면 빈 38×38 자리만 둔다 (라벨 텍스트만 표시).
+      if (actor.objectiveAsset == null) {
+        return SizedBox(width: size, height: size);
+      }
       return SizedBox(
         width: size,
         height: size,
@@ -571,22 +661,53 @@ class _LiveEvent {
   final _Actor target;
 }
 
-/// 라이브 이벤트의 한 쪽 주체. 챔피언(선수) 또는 오브젝트 중 하나.
+/// 라이브 이벤트의 한 쪽 주체. 챔피언(선수)·오브젝트·팀(로고) 중 하나.
 class _Actor {
   const _Actor.champion({
     required this.name,
     this.championImageUrl,
-  }) : objectiveAsset = null;
+  })  : objectiveAsset = null,
+        teamLogoUrl = null,
+        isTeamLogo = false,
+        isObjectiveLabel = false;
+
+  /// 오브젝트 이벤트의 출처 팀 — 38×38 박스에 팀 로고(NetworkImage)를 표시.
+  const _Actor.teamLogo({
+    required this.name,
+    String? logoUrl,
+  })  : championImageUrl = null,
+        objectiveAsset = null,
+        teamLogoUrl = logoUrl,
+        isTeamLogo = true,
+        isObjectiveLabel = false;
 
   const _Actor.objective({
     required this.name,
     required String asset,
   })  : championImageUrl = null,
-        objectiveAsset = asset;
+        objectiveAsset = asset,
+        teamLogoUrl = null,
+        isTeamLogo = false,
+        isObjectiveLabel = false;
+
+  /// 로컬 에셋이 없는 오브젝트 — 라벨만 오브젝트 스타일로 표시.
+  const _Actor.objectiveLabel(this.name)
+      : championImageUrl = null,
+        objectiveAsset = null,
+        teamLogoUrl = null,
+        isTeamLogo = false,
+        isObjectiveLabel = true;
 
   final String name;
   final String? championImageUrl;
   final String? objectiveAsset;
 
-  bool get isObjective => objectiveAsset != null;
+  /// 팀 로고 URL (오브젝트 출처 팀). null/빈 문자열이면 플레이스홀더.
+  final String? teamLogoUrl;
+  final bool isTeamLogo;
+
+  /// 에셋 없는 오브젝트(라벨 전용) 여부.
+  final bool isObjectiveLabel;
+
+  bool get isObjective => objectiveAsset != null || isObjectiveLabel;
 }
