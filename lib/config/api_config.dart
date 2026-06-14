@@ -142,6 +142,20 @@ class ApiConfig {
   static String gameRecordUrl(int gameId) =>
       '$apiBaseUrl/games/$gameId/record';
 
+  // ── 경기 상세: 세트(게임)·챔피언 픽·라이브 이벤트 (인증 불필요) ──────────
+
+  /// 경기(matchId)의 세트별 게임 목록 조회. 세트 순서 → gameId 해석에 쓴다.
+  static String matchGamesUrl(String matchId) =>
+      '$apiBaseUrl/mobile/matches/$matchId/games';
+
+  /// 세트(게임)의 챔피언 밴·픽 조회.
+  static String gameChampionsUrl(String gameId) =>
+      '$apiBaseUrl/mobile/live/games/$gameId/champions';
+
+  /// 세트(게임)의 라이브 이벤트(킬·오브젝트) 조회. (최신순)
+  static String gameEventsUrl(String gameId) =>
+      '$apiBaseUrl/mobile/live/games/$gameId/events';
+
   // ── FCM 기기 토큰 (인증 필요) ──────────────────────────────────────
 
   /// FCM 토큰 등록·갱신 (POST {fcmToken, platform}).

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../model/schedule_match.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_button.dart';
@@ -7,6 +9,7 @@ import '../../components/nar_detail_header.dart';
 import '../../components/nar_dropdown.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../styles/app_colors.dart';
+import '../../viewmodel/match_detail/match_detail_viewmodel.dart';
 import '../player_rating/player_rating_screen.dart';
 import 'component/match_detail_champion_pick_section.dart';
 import 'component/match_detail_live_event_section.dart';
@@ -16,7 +19,18 @@ import 'component/match_detail_team_rating_section.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {
-  const MatchDetailScreen({super.key, this.initialTabIndex = 0});
+  const MatchDetailScreen({
+    super.key,
+    required this.matchId,
+    this.match,
+    this.initialTabIndex = 0,
+  });
+
+  /// 상세를 볼 경기 ID. 탭(챔피언/이벤트) 로드의 기준.
+  final String matchId;
+
+  /// 헤더에 표시할 경기 정보. null 이면 헤더는 플레이스홀더로 렌더한다.
+  final ScheduleMatch? match;
 
   /// 진입 시 선택할 탭 인덱스(0: 챔피언 픽, 1: 라이브 이벤트, 2: 선수 평점).
   final int initialTabIndex;
@@ -29,50 +43,146 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   static const List<String> _tabs = ['챔피언 픽', '라이브 이벤트', '선수 평점'];
   late int _tabIndex = widget.initialTabIndex;
 
-  // TODO: API 연결 후 매치 데이터에서 세트 목록 동적 수신 (현재 Bo5 mock).
-  static const List<String> _sets = ['세트 1', '세트 2', '세트 3', '세트 4', '세트 5'];
-  String _currentSet = '세트 1';
+  late final MatchDetailViewModel _viewModel =
+      MatchDetailViewModel(matchId: widget.matchId);
+
+  @override
+  void initState() {
+    super.initState();
+    // 세트 라벨·목록은 뷰모델 상태에서 파생되므로(스코어/선수평점 탭은
+    // ListenableBuilder 밖) 뷰모델 변경 시 화면을 다시 그린다.
+    _viewModel.addListener(_onViewModelChanged);
+    _viewModel.load();
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _viewModel.removeListener(_onViewModelChanged);
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  /// 세트 번호 → '세트 N' 라벨.
+  String _setLabelOf(int order) => '세트 $order';
+
+  /// 현재 선택된 세트의 '세트 N' 라벨. (뷰모델의 currentSet 기준)
+  String get _currentSet => _setLabelOf(_viewModel.currentSet);
+
+  /// 드롭다운·선수평점 탭에 쓸 세트 라벨 목록.
+  /// 로드된 게임 목록에서 만들고, 아직 비어있으면 현재 세트만 노출한다.
+  List<String> get _sets {
+    if (_viewModel.games.isEmpty) return [_currentSet];
+    return _viewModel.games.map((g) => _setLabelOf(g.gameOrder)).toList();
+  }
+
+  /// '세트 N' 라벨 → 세트 번호(1부터).
+  int _setNumber(String label) =>
+      int.tryParse(label.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
+
+  /// scheduledTime 을 'YY.MM.DD' 로 포맷한다. 파싱 불가면 원문 그대로.
+  String _formatDate(String raw) {
+    if (raw.isEmpty) return '';
+    final dt = DateTime.tryParse(raw);
+    if (dt == null) return raw;
+    final yy = (dt.year % 100).toString().padLeft(2, '0');
+    final mm = dt.month.toString().padLeft(2, '0');
+    final dd = dt.day.toString().padLeft(2, '0');
+    return '$yy.$mm.$dd';
+  }
+
+  /// matchStatus 가 라이브를 의미하는지. 'LIVE'/'inProgress'/'진행' 등 포함이면 true.
+  bool _isLiveStatus(String status) {
+    final s = status.toLowerCase();
+    return s.contains('live') ||
+        s.contains('inprogress') ||
+        s.contains('in_progress') ||
+        s.contains('ongoing') ||
+        status.contains('진행');
+  }
+
+  /// 라이브 경기의 스코어 아래 라벨. matchStatus 가 이미 'SET'/'진행' 형태면 그대로,
+  /// 아니면 현재 선택된 세트로 'SET N 진행중' 라벨을 만든다.
+  String _setLabel(String status) {
+    if (status.contains('진행') || status.toUpperCase().contains('SET')) {
+      return status;
+    }
+    return 'SET ${_setNumber(_currentSet)} 진행중';
+  }
+
+  /// '중계 보기' 탭. liveStreamUrl 을 외부 브라우저/앱으로 연다.
+  Future<void> _openLiveStream() async {
+    final url = widget.match?.liveStreamUrl;
+    if (url == null || url.isEmpty) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
 
   /// 헤더의 세트 드롭다운 탭 시 호출. 세트 목록 바텀시트를 띄우고 선택값으로 갱신.
+  /// 세트 목록은 로드된 games 에서 만든다. (LIVE 세트엔 마커 표시)
   Future<void> _showSetSheet() async {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
-    final selected = await showAppBottomSheet<String>(
+    // games 가 있으면 그걸로, 없으면 현재 세트만 노출.
+    final games = _viewModel.games;
+    final orders = games.isEmpty
+        ? [_viewModel.currentSet]
+        : games.map((g) => g.gameOrder).toList();
+    final liveOrders = games.where((g) => g.isLive).map((g) => g.gameOrder).toSet();
+    final selected = await showAppBottomSheet<int>(
       context: context,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final setLabel in _sets)
+          for (final order in orders)
             InkWell(
-              onTap: () => Navigator.of(context).pop(setLabel),
+              onTap: () => Navigator.of(context).pop(order),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: 8 * scale,
                   vertical: 14 * scale,
                 ),
-                child: Text(
-                  setLabel,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight:
-                        setLabel == _currentSet
+                child: Row(
+                  children: [
+                    Text(
+                      _setLabelOf(order),
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: order == _viewModel.currentSet
                             ? FontWeight.w600
                             : FontWeight.w400,
-                    fontSize: 16 * scale,
-                    color:
-                        setLabel == _currentSet
+                        fontSize: 16 * scale,
+                        color: order == _viewModel.currentSet
                             ? AppColors.narText
                             : AppColors.narText2,
-                  ),
+                      ),
+                    ),
+                    if (liveOrders.contains(order)) ...[
+                      SizedBox(width: 8 * scale),
+                      Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11 * scale,
+                          color: AppColors.liveAccent,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
         ],
       ),
     );
-    if (selected != null && selected != _currentSet) {
-      setState(() => _currentSet = selected);
+    if (selected != null && selected != _viewModel.currentSet) {
+      // 챔피언 픽·라이브 이벤트를 선택 세트로 다시 로드. (선수 평점 탭은 mock 유지)
+      // currentSet 은 뷰모델 상태라 selectSet 의 notify 로 헤더가 갱신된다.
+      _viewModel.selectSet(_setNumber(_setLabelOf(selected)));
     }
   }
 
@@ -109,35 +219,31 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 children: [
                   NarDetailHeader(
                     title: '경기 상세',
-                    trailing: NarDropdown(
-                      variant: NarDropdownVariant.round,
-                      value: _currentSet,
-                      onTap: _showSetSheet,
-                      scale: scale,
+                    // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
+                    // 상태라 ListenableBuilder 로 라벨을 갱신한다.
+                    trailing: ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, _) => NarDropdown(
+                        variant: NarDropdownVariant.round,
+                        value: _currentSet,
+                        onTap: _showSetSheet,
+                        scale: scale,
+                      ),
                     ),
                     scale: scale,
                   ),
-                  MatchDetailScoreSection(
-                    leagueName: 'LCK 2025 스프링',
-                    dateText: '25.04.13',
-                    isLive: true,
-                    time: '17:00',
-                    blueTeamName: 'DNS',
-                    redTeamName: 'T1',
-                    blueTeamScore: 2,
-                    redTeamScore: 1,
-                    setLabel: 'SET 1 진행중',
-                    scale: scale,
-                  ),
+                  _buildScoreSection(scale),
                   SizedBox(height: 16 * scale),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20 * scale),
                     child: NarButton(
                       variant: NarButtonVariant.set1,
                       label: '중계 보기',
-                      onPressed: () {
-                        // TODO: 중계 영상/링크 연결
-                      },
+                      // liveStreamUrl 이 있을 때만 활성화.
+                      onPressed: (widget.match?.liveStreamUrl != null &&
+                              widget.match!.liveStreamUrl!.isNotEmpty)
+                          ? _openLiveStream
+                          : null,
                       scale: scale,
                     ),
                   ),
@@ -153,34 +259,33 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             ),
             if (_tabIndex == 0)
               SliverToBoxAdapter(
-                child: MatchDetailChampionPickSection(
-                  blueTeamName: 'DNS',
-                  redTeamName: 'T1',
-                  blueBans: const [null, null, null, null, null],
-                  redBans: const [null, null, null, null, null],
-                  bluePicks: const [null, null, null, null, null],
-                  redPicks: const [null, null, null, null, null],
-                  bluePlayerNames: const ['bin', 'XUN', 'Knight', 'ELK', 'ON'],
-                  redPlayerNames: const [
-                    'Doran',
-                    'Oner',
-                    'Faker',
-                    'Gumayusi',
-                    'Keria',
-                  ],
-                  scale: scale,
+                child: ListenableBuilder(
+                  listenable: _viewModel,
+                  builder: (context, _) => _buildChampionPickTab(scale),
                 ),
               ),
             if (_tabIndex == 1)
               SliverToBoxAdapter(
-                child: MatchDetailLiveEventSection(scale: scale),
+                child: ListenableBuilder(
+                  listenable: _viewModel,
+                  builder: (context, _) => MatchDetailLiveEventSection(
+                    events: _viewModel.liveEvents,
+                    blueTeamImageUrl: _viewModel.blueTeamImageUrl,
+                    redTeamImageUrl: _viewModel.redTeamImageUrl,
+                    initialLoading: _viewModel.loadingEvents &&
+                        _viewModel.liveEvents.isEmpty,
+                    errorMessage: _viewModel.eventsError,
+                    onReload: _viewModel.reloadLiveEvents,
+                    scale: scale,
+                  ),
+                ),
               ),
             // 선수 평점 탭: 배너+멀티셀렉터가 pinned 되는 슬리버 묶음을 직접 넣는다.
             if (_tabIndex == 2)
               MatchDetailPlayerRatingSection(
                 setLabel: _currentSet,
-                blueTeamName: 'DNS',
-                redTeamName: 'T1',
+                blueTeamName: widget.match?.teamA.teamName ?? 'DNS',
+                redTeamName: widget.match?.teamB.teamName ?? 'T1',
                 // TODO: API 연결 후 실제 선수별 평점 데이터로 교체 (현재 mock).
                 bluePlayers: const [
                   PlayerRating(
@@ -250,6 +355,95 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 scale: scale,
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 헤더 스코어 칸. match 가 있으면 실데이터로, 없으면 플레이스홀더로 렌더한다.
+  Widget _buildScoreSection(double scale) {
+    final m = widget.match;
+    final isLive = m != null && _isLiveStatus(m.matchStatus);
+    return MatchDetailScoreSection(
+      leagueName: m?.leagueInfo ?? '',
+      dateText: m != null ? _formatDate(m.scheduledTime) : '',
+      isLive: isLive,
+      // 라이브가 아니면 LIVE 자리에 표시할 시간 라벨. 날짜와 동일 소스에서 시각 추출은
+      // 별도 포맷이 없어 빈 값(예정 시각 미가공) — 추후 시각 포맷 추가 시 교체.
+      time: '',
+      blueTeamName: m?.teamA.teamName ?? '',
+      redTeamName: m?.teamB.teamName ?? '',
+      blueTeamScore: m?.teamA.score ?? 0,
+      redTeamScore: m?.teamB.score ?? 0,
+      blueTeamLogoUrl: m?.teamA.teamImageUrl,
+      redTeamLogoUrl: m?.teamB.teamImageUrl,
+      setLabel: isLive ? _setLabel(m.matchStatus) : null,
+      scale: scale,
+    );
+  }
+
+  /// 챔피언 픽 탭 본문. ViewModel 데이터로 렌더링하되 로딩·에러 상태를 처리한다.
+  Widget _buildChampionPickTab(double scale) {
+    // 최초 로드 중(아직 데이터 없음)이면 플레이스홀더 픽으로 스켈레톤 렌더.
+    if (_viewModel.loadingChampion && _viewModel.championPick == null) {
+      return MatchDetailChampionPickSection(
+        blueTeamName: '',
+        redTeamName: '',
+        blueBans: const [null, null, null, null, null],
+        redBans: const [null, null, null, null, null],
+        bluePicks: const [null, null, null, null, null],
+        redPicks: const [null, null, null, null, null],
+        bluePlayerNames: const ['', '', '', '', ''],
+        redPlayerNames: const ['', '', '', '', ''],
+        scale: scale,
+      );
+    }
+    final pick = _viewModel.championPick;
+    if (pick == null) {
+      return _ChampionPickMessage(
+        message: _viewModel.championError ?? '챔피언 픽을 불러오지 못했어요',
+        scale: scale,
+      );
+    }
+    final blue = pick.blueTeam;
+    final red = pick.redTeam;
+    return MatchDetailChampionPickSection(
+      blueTeamName: blue.teamName,
+      redTeamName: red.teamName,
+      blueBans: blue.banImageUrls(),
+      redBans: red.banImageUrls(),
+      bluePicks: blue.pickImageUrls(),
+      redPicks: red.pickImageUrls(),
+      bluePlayerNames: blue.pickPlayerNames(),
+      redPlayerNames: red.pickPlayerNames(),
+      scale: scale,
+    );
+  }
+}
+
+/// 챔피언 픽 탭 에러·빈 상태 안내.
+class _ChampionPickMessage extends StatelessWidget {
+  const _ChampionPickMessage({required this.message, required this.scale});
+
+  final String message;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.narBgContent,
+      padding: EdgeInsets.symmetric(vertical: 80 * scale),
+      child: Center(
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 14 * scale,
+            color: AppColors.narText2,
+          ),
         ),
       ),
     );
