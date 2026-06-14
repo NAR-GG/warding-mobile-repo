@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../config/app_globals.dart';
+import '../../screens/subscription/subscription_screen.dart';
 import '../device/device_repository.dart';
+import '../notification/solo_rank_notification_store.dart';
 
 /// FCM(푸시) 초기화·토큰 등록·메시지 핸들링을 담당한다.
 ///
@@ -108,6 +111,8 @@ class FcmService {
   /// 중복을 막기 위해 Android 에서만 직접 표시한다.
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     debugPrint('[FCM] 포그라운드 메시지: ${message.notification?.title}');
+    // 솔랭 알림이면 마이구독 피드용으로 기기에 저장.
+    await SoloRankNotificationStore.instance.addFromFcmData(message.data);
     if (!Platform.isAndroid) return;
     final notification = message.notification;
     if (notification == null) return;
@@ -154,9 +159,13 @@ class FcmService {
   /// 현재 선수 화면(PlayerRatingScreen)은 경기 컨텍스트가 필요해 연결을 보류한다.
   void _navigateFromData(Map<String, dynamic> data) {
     final type = data['type'];
-    final playerId = data['playerId'];
-    debugPrint('[FCM] 알림 탭 → type=$type, playerId=$playerId');
-    // 예: navigatorKey.currentState?.push(
-    //   MaterialPageRoute(builder: (_) => PlayerDetailScreen(playerId: ...)));
+    debugPrint('[FCM] 알림 탭 → type=$type');
+    // 탭한 알림이 피드에 빠짐없이 들어가도록 저장(중복은 무시됨).
+    SoloRankNotificationStore.instance.addFromFcmData(data);
+    if (type == 'PLAYER_SOLO_RANK_STARTED') {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
+      );
+    }
   }
 }
