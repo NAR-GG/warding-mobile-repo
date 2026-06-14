@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
 import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -26,7 +28,52 @@ class SubscriptionScreen extends StatefulWidget {
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
-class _SubscriptionScreenState extends State<SubscriptionScreen> {
+class _SubscriptionScreenState extends State<SubscriptionScreen>
+    with WidgetsBindingObserver {
+  /// 기기에 저장된 솔랭 알림 피드.
+  final SubscriptionFeedViewModel _feedViewModel = SubscriptionFeedViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _feedViewModel.dispose();
+    super.dispose();
+  }
+
+  /// 백그라운드에서 받은 푸시가 있을 수 있으니 앱 복귀 시 피드를 다시 읽는다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _feedViewModel.load();
+    }
+  }
+
+  /// OP.GG 등 외부 URL을 기본 브라우저로 연다.
+  Future<void> _launchUrl(String url) async {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  /// 절대 시각 'yyyy-MM-dd HH:mm'.
+  String _formatAbsolute(DateTime t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
+  }
+
+  /// 상대 시각 ('방금 전', 'N분 전', 'N시간 전', 'N일 전').
+  String _formatRelative(DateTime t) {
+    final diff = DateTime.now().difference(t);
+    if (diff.inMinutes < 1) return '방금 전';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
+    if (diff.inHours < 24) return '${diff.inHours}시간 전';
+    return '${diff.inDays}일 전';
+  }
+
   /// 이벤트 타입 필터 옵션. 첫 항목 '전체'는 나머지와 배타적으로 동작한다.
   static const List<String> _eventTypes = ['전체', '세트 시작', '세트 종료'];
 
@@ -145,17 +192,28 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
                 // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
                 Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.only(bottom: 120 * scale),
-                    children: [
-                      RankStartNotification(
-                        playerName: 'Faker',
-                        champion: '아지르',
-                        dateTime: '2026-05-07 15:47',
-                        relativeTime: '30분 전',
-                        scale: scale,
-                      ),
-                      MatchEndNotification(
+                  child: ListenableBuilder(
+                    listenable: _feedViewModel,
+                    builder: (context, _) => ListView(
+                      padding: EdgeInsets.only(bottom: 120 * scale),
+                      children: [
+                        // 실제 수신한 솔랭 알림 (기기 로컬 저장).
+                        for (final n in _feedViewModel.notifications)
+                          RankStartNotification(
+                            playerName: n.playerName,
+                            champion: n.championName,
+                            queueType: n.queueType,
+                            championImageUrl: n.championImageUrl,
+                            opggUrl: n.opggUrl,
+                            onOpggTap: n.opggUrl == null
+                                ? null
+                                : () => _launchUrl(n.opggUrl!),
+                            dateTime: _formatAbsolute(n.receivedAt),
+                            relativeTime: _formatRelative(n.receivedAt),
+                            scale: scale,
+                          ),
+                        // 아래는 아직 목 데이터(다른 알림 유형).
+                        MatchEndNotification(
                         teamA: 'T1',
                         teamB: 'GEN',
                         season: 'LCK 2026 시즌',
@@ -205,7 +263,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         relativeTime: '3시간 전',
                         scale: scale,
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -15,12 +15,16 @@ class NotificationCard extends StatelessWidget {
     required this.body,
     required this.dateTime,
     required this.relativeTime,
+    this.iconOverride,
     this.action,
     this.scale = 1,
   });
 
-  /// 좌측 아이콘 svg 경로.
+  /// 좌측 아이콘 svg 경로. [iconOverride] 가 있으면 무시된다.
   final String icon;
+
+  /// 좌측 아이콘을 직접 지정할 때 쓴다(예: 챔피언 이미지). null 이면 [icon] svg 를 쓴다.
+  final Widget? iconOverride;
 
   /// 제목 (강조 텍스트, 600/16).
   final String title;
@@ -48,15 +52,16 @@ class NotificationCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SvgPicture.asset(
-            icon,
-            width: 44 * scale,
-            height: 44 * scale,
-            colorFilter: const ColorFilter.mode(
-              AppColors.narText,
-              BlendMode.srcIn,
-            ),
-          ),
+          iconOverride ??
+              SvgPicture.asset(
+                icon,
+                width: 44 * scale,
+                height: 44 * scale,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.narText,
+                  BlendMode.srcIn,
+                ),
+              ),
           SizedBox(width: 16 * scale), // gap 16
           Expanded(
             child: Column(
