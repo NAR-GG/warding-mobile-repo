@@ -25,14 +25,14 @@ class MatchListViewModel extends ChangeNotifier {
   /// 화면 진입 시 우선 선택할 리그 이름. 옵션에 없으면 첫 항목으로 fallback.
   static const String defaultLeague = 'LCK';
 
-  /// 한 번에 fetch 하는 날짜 범위 (최신부터 과거로 7일씩).
-  static const int _pageDays = 7;
+  /// 커서 페이지 한 번에 받는 경기 수.
+  static const int _pageSize = 20;
 
   /// 한 번의 reload/loadMore 호출에서 최소로 모아야 하는 매치 수.
-  /// 필터링 결과가 적어 화면이 안 차고 스크롤이 안 트리거되는 걸 방지한다.
+  /// 클라 팀 필터 결과가 적어 화면이 안 차고 스크롤이 안 트리거되는 걸 방지한다.
   static const int _minMatchesPerLoad = 5;
 
-  /// 자동 prefetch 최대 시도 횟수 (5 × 7일 = 5주). 시즌 비활성 구간에서 무한 fetch 방지.
+  /// 자동 prefetch 최대 시도 횟수. 결과가 적을 때 추가 페이지를 커서로 더 받는다.
   static const int _maxPrefetchPages = 5;
 
   /// 선택 가능한 시즌 목록.
@@ -81,11 +81,10 @@ class MatchListViewModel extends ChangeNotifier {
     _sortOrder == sortOrders[1] ? _schedule.reversed : _schedule,
   );
 
-  /// 다음 fetch 시작 날짜 (이 날짜 기준으로 과거로 [_pageDays] 일을 받는다).
-  /// 첫 페이지 시작은 오늘.
-  late DateTime _nextStart;
+  /// 다음 페이지 커서. 첫 페이지는 null (커서 생략).
+  String? _cursor;
 
-  /// 더 받을 페이지가 있는지. 너무 과거까지 가지 않도록 시즌 시작 즈음에서 멈춘다.
+  /// 더 받을 페이지가 있는지. 서버 응답의 `hasNext` 로 갱신한다.
   bool _hasMore = true;
   bool get hasMore => _hasMore;
 
@@ -129,8 +128,8 @@ class MatchListViewModel extends ChangeNotifier {
     _reloadSchedule();
   }
 
-  /// 무한 스크롤이 끝에 도달했을 때 호출. 이전 7일을 추가로 가져온다.
-  /// 결과가 [_minMatchesPerLoad] 미만이면 자동으로 다음 페이지까지 prefetch.
+  /// 무한 스크롤이 끝에 도달했을 때 호출. 커서로 다음 페이지를 가져온다.
+  /// 클라 팀 필터 결과가 [_minMatchesPerLoad] 미만이면 자동으로 다음 페이지까지 prefetch.
   Future<void> loadMoreMatches() async {
     if (_loadingMatches || _loadingMore || !_hasMore) return;
     _loadingMore = true;
@@ -141,11 +140,7 @@ class MatchListViewModel extends ChangeNotifier {
       while (_hasMore &&
           newMatches < _minMatchesPerLoad &&
           attempts < _maxPrefetchPages) {
-        final days = await _fetchPage(_nextStart);
-        _schedule.addAll(days);
-        _nextStart = _nextStart.subtract(const Duration(days: _pageDays));
-        _checkMoreBoundary();
-        newMatches += days.fold<int>(0, (sum, d) => sum + d.matches.length);
+        newMatches += await _fetchNextPage();
         attempts++;
         _notify(); // 매 페이지마다 즉시 반영해 점진 표시.
       }
@@ -225,22 +220,17 @@ class MatchListViewModel extends ChangeNotifier {
     _selectedTeams = {allTeamsLabel};
   }
 
-  /// 필터(시즌/리그/팀) 변경 시 오늘부터 다시 시작.
+  /// 필터(시즌/리그/팀) 변경 시 커서를 초기화하고 첫 페이지부터 다시 받는다.
   /// 첫 페이지를 받자마자 카드를 보여주고, 부족하면 자동 prefetch 로 더 채운다.
   Future<void> _reloadSchedule() async {
     _loadingMatches = true;
     _schedule.clear();
-    final now = DateTime.now();
-    _nextStart = DateTime(now.year, now.month, now.day);
+    _cursor = null;
     _hasMore = true;
     _notify();
     try {
       // 1) 첫 페이지 — spinner 가린 채로.
-      final first = await _fetchPage(_nextStart);
-      _schedule.addAll(first);
-      _nextStart = _nextStart.subtract(const Duration(days: _pageDays));
-      _checkMoreBoundary();
-      var newMatches = first.fold<int>(0, (sum, d) => sum + d.matches.length);
+      var newMatches = await _fetchNextPage();
       _loadingMatches = false;
       _notify();
 
@@ -252,11 +242,7 @@ class MatchListViewModel extends ChangeNotifier {
         while (_hasMore &&
             newMatches < _minMatchesPerLoad &&
             attempts < _maxPrefetchPages) {
-          final more = await _fetchPage(_nextStart);
-          _schedule.addAll(more);
-          _nextStart = _nextStart.subtract(const Duration(days: _pageDays));
-          _checkMoreBoundary();
-          newMatches += more.fold<int>(0, (sum, d) => sum + d.matches.length);
+          newMatches += await _fetchNextPage();
           attempts++;
           _notify();
         }
@@ -271,38 +257,85 @@ class MatchListViewModel extends ChangeNotifier {
     }
   }
 
-  /// [start] 부터 과거로 [_pageDays] 일치 일별 조회를 병렬 fetch 한 뒤
-  /// 빈 날짜는 제외하고 최신순으로 정렬한 [ScheduleDay] 리스트를 반환한다.
-  Future<List<ScheduleDay>> _fetchPage(DateTime start) async {
-    final dates = List.generate(
-      _pageDays,
-      (i) => start.subtract(Duration(days: i)),
-    );
-    // 리그는 서버에서 거르고(teamId 는 다중 선택이라 클라에서 필터한다).
+  /// 현재 커서로 한 페이지를 받아 [_schedule] 에 날짜별로 누적한다.
+  /// 커서·hasNext 를 갱신하고, 누적된(필터 통과) 매치 수를 반환한다.
+  Future<int> _fetchNextPage() async {
     final league = _selectedLeague;
-    final results = await Future.wait(
-      dates.map(
-        (d) => _scheduleRepository.fetchMatchesByDate(
-          d,
-          league: (league != null && league.isNotEmpty) ? league : 'LCK',
-        ),
-      ),
+    final page = await _scheduleRepository.fetchMatches(
+      cursor: _cursor,
+      size: _pageSize,
+      league: (league != null && league.isNotEmpty) ? league : defaultLeague,
     );
-    final out = <ScheduleDay>[];
-    for (var i = 0; i < dates.length; i++) {
-      final filtered = _applyFilters(results[i]);
-      if (filtered.isEmpty) continue;
-      out.add(ScheduleDay(date: dates[i], matches: filtered));
+    _cursor = page.nextCursor;
+    _hasMore = page.hasNext && page.nextCursor != null;
+    final filtered = _applyFilters(page.matches);
+    _mergeIntoSchedule(filtered);
+    return filtered.length;
+  }
+
+  /// 새 페이지 매치(최신→과거 순)를 날짜별 그룹으로 묶어 [_schedule] 뒤에 붙인다.
+  /// 페이지 경계에서 같은 날짜가 걸치면 마지막 기존 그룹에 머지한다.
+  void _mergeIntoSchedule(List<ScheduleMatch> matches) {
+    final groups = _groupByDate(matches);
+    if (groups.isEmpty) return;
+    if (_schedule.isNotEmpty &&
+        _isSameDate(_schedule.last.date, groups.first.date)) {
+      final last = _schedule.removeLast();
+      _schedule.add(ScheduleDay(
+        date: last.date,
+        matches: [...last.matches, ...groups.first.matches],
+      ));
+      _schedule.addAll(groups.skip(1));
+    } else {
+      _schedule.addAll(groups);
     }
+  }
+
+  /// 매치 목록(최신→과거 순)을 같은 날짜끼리 [ScheduleDay] 로 묶는다. 순서 보존.
+  /// `date` 가 null 인 매치는 직전 그룹에 합쳐(없으면 epoch 날짜로) 표시한다.
+  List<ScheduleDay> _groupByDate(List<ScheduleMatch> matches) {
+    final out = <ScheduleDay>[];
+    DateTime? currentDate;
+    var current = <ScheduleMatch>[];
+    void flush() {
+      if (current.isNotEmpty) {
+        out.add(ScheduleDay(
+          date: currentDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+          matches: current,
+        ));
+      }
+    }
+
+    for (final m in matches) {
+      final d = m.date;
+      if (current.isEmpty || _isSameDate(currentDate, d)) {
+        currentDate ??= d;
+        current.add(m);
+      } else {
+        flush();
+        currentDate = d;
+        current = [m];
+      }
+    }
+    flush();
     return out;
   }
 
-  /// 클라이언트 필터: 리그(leagueInfo)·팀(teamA/teamB.teamName).
+  bool _isSameDate(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return a == null && b == null;
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// 클라이언트 팀 필터: teamA/teamB.teamName. 리그는 서버 파라미터로 거른다
+  /// (안전망으로 leagueInfo 도 확인).
   List<ScheduleMatch> _applyFilters(List<ScheduleMatch> matches) {
     final league = _selectedLeague;
     final allTeams = _selectedTeams.contains(allTeamsLabel);
     return matches.where((m) {
-      if (league != null && league.isNotEmpty && m.leagueInfo != league) {
+      if (league != null &&
+          league.isNotEmpty &&
+          m.leagueInfo.isNotEmpty &&
+          m.leagueInfo != league) {
         return false;
       }
       if (!allTeams) {
@@ -312,15 +345,6 @@ class MatchListViewModel extends ChangeNotifier {
       }
       return true;
     }).toList();
-  }
-
-  /// 시즌 연도 시작점을 넘어가면 더 fetch 하지 않는다.
-  void _checkMoreBoundary() {
-    final year = int.tryParse(_selectedSeason) ?? DateTime.now().year;
-    final cutoff = DateTime(year, 1, 1);
-    if (_nextStart.isBefore(cutoff)) {
-      _hasMore = false;
-    }
   }
 
   bool _disposed = false;

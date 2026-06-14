@@ -70,6 +70,26 @@ class ApiConfig {
     return '$apiBaseUrl/mobile/schedules?$query';
   }
 
+  /// 모바일 경기 리스트 커서 페이지 조회 (인증 불필요).
+  /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. [cursor] 는 첫 페이지에서 생략.
+  static String matchesUrl({
+    required String league,
+    int size = 20,
+    String? cursor,
+    int? teamId,
+    int? seasonYear,
+    String? split,
+  }) {
+    final query = StringBuffer('league=$league&size=$size');
+    if (cursor != null && cursor.isNotEmpty) {
+      query.write('&cursor=${Uri.encodeQueryComponent(cursor)}');
+    }
+    if (teamId != null) query.write('&teamId=$teamId');
+    if (seasonYear != null) query.write('&seasonYear=$seasonYear');
+    if (split != null && split.isNotEmpty) query.write('&split=$split');
+    return '$apiBaseUrl/mobile/matches?$query';
+  }
+
   /// 모바일 일정/리스트 화면의 리그·팀 필터 옵션 조회 (인증 불필요).
   /// [league] 의 소속 팀 목록을 함께 내려준다.
   static String mobileScheduleFiltersUrl({String league = 'LCK'}) =>
