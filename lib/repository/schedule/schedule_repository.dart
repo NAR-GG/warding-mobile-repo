@@ -8,6 +8,19 @@ import '../../model/match_calendar_day.dart';
 import '../../model/schedule_filter_options.dart';
 import '../../model/schedule_match.dart';
 
+/// 커서 페이지네이션 경기 리스트 한 페이지 결과.
+class MatchPage {
+  const MatchPage({
+    required this.matches,
+    required this.nextCursor,
+    required this.hasNext,
+  });
+
+  final List<ScheduleMatch> matches;
+  final String? nextCursor;
+  final bool hasNext;
+}
+
 /// 경기 일정 관련 API (`/api/mobile/schedules`).
 class ScheduleRepository {
   ScheduleRepository._();
@@ -73,6 +86,46 @@ class ScheduleRepository {
     return matches
         .map((e) => ScheduleMatch.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// 경기 리스트를 커서 페이지 단위로 조회한다 (인증 불필요).
+  ///
+  /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
+  /// `nextCursor` 를 [cursor] 로 넘겨 이어 받는다 (첫 페이지는 cursor 생략).
+  Future<MatchPage> fetchMatches({
+    String? cursor,
+    int size = 20,
+    required String league,
+    int? teamId,
+    int? seasonYear,
+    String? split,
+  }) async {
+    final url = ApiConfig.matchesUrl(
+      league: league,
+      size: size,
+      cursor: cursor,
+      teamId: teamId,
+      seasonYear: seasonYear,
+      split: split,
+    );
+    debugPrint('[Schedule] GET $url');
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('경기 목록 조회 실패 (${response.statusCode})');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final matches = (data['matches'] as List<dynamic>? ?? const [])
+        .map((e) => ScheduleMatch.fromJson(e as Map<String, dynamic>))
+        .toList();
+    debugPrint('[Schedule] matches ← ${response.statusCode} '
+        '(${matches.length} matches)');
+    return MatchPage(
+      matches: matches,
+      nextCursor: data['nextCursor'] as String?,
+      hasNext: data['hasNext'] as bool? ?? false,
+    );
   }
 
   /// 필터 모달의 리그·팀 옵션을 조회한다 (인증 불필요).

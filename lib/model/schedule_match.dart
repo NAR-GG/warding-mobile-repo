@@ -11,11 +11,16 @@ class ScheduleMatch {
     required this.isSynced,
     required this.teamA,
     required this.teamB,
+    this.date,
     this.liveStreamUrl,
     this.sets = const [],
   });
 
   final String matchId;
+
+  /// 경기 날짜 (yyyy-MM-dd). 커서 페이지 응답에 포함되며, 날짜별 그룹핑에 쓴다.
+  /// 날짜별 조회 응답에는 없을 수 있어 null 을 허용한다.
+  final DateTime? date;
 
   /// 경기 예정 시각 (서버가 문자열로 내려준다).
   final String scheduledTime;
@@ -55,6 +60,7 @@ class ScheduleMatch {
       matchTitle: json['matchTitle'] as String? ?? '',
       matchStatus: json['matchStatus'] as String? ?? '',
       isSynced: json['isSynced'] as bool? ?? false,
+      date: _parseDate(json['date'] as String?),
       teamA: MatchTeam.fromJson(blue),
       teamB: MatchTeam.fromJson(red),
       liveStreamUrl: json['liveStreamUrl'] as String?,
@@ -62,6 +68,14 @@ class ScheduleMatch {
           .map((e) => MatchSet.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  /// 'yyyy-MM-dd' 문자열을 자정 기준 [DateTime] 으로 파싱한다. 실패·null 이면 null.
+  static DateTime? _parseDate(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return null;
+    return DateTime(parsed.year, parsed.month, parsed.day);
   }
 }
 
