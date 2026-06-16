@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+import '../../model/game_rating.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
 import '../../repository/match/match_detail_repository.dart';
+import '../../repository/rating/rating_repository.dart';
 
 /// 경기 상세 화면(챔피언 픽 · 라이브 이벤트 탭) 상태·로직.
 ///
@@ -13,10 +15,13 @@ class MatchDetailViewModel extends ChangeNotifier {
   MatchDetailViewModel({
     required this.matchId,
     MatchDetailRepository? repository,
-  }) : _repository = repository ?? MatchDetailRepository.instance;
+    RatingRepository? ratingRepository,
+  })  : _repository = repository ?? MatchDetailRepository.instance,
+        _ratingRepository = ratingRepository ?? RatingRepository.instance;
 
   final String matchId;
   final MatchDetailRepository _repository;
+  final RatingRepository _ratingRepository;
 
   /// 세트 목록 (gameOrder 오름차순).
   List<MatchGame> _games = const [];
@@ -53,6 +58,14 @@ class MatchDetailViewModel extends ChangeNotifier {
   bool get loadingEvents => _loadingEvents;
   String? _eventsError;
   String? get eventsError => _eventsError;
+
+  // ── 선수 평점 ──────────────────────────────
+  GameRatings? _ratings;
+  GameRatings? get ratings => _ratings;
+  bool _loadingRatings = false;
+  bool get loadingRatings => _loadingRatings;
+  String? _ratingsError;
+  String? get ratingsError => _ratingsError;
 
   bool _disposed = false;
 
@@ -112,6 +125,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     // 이전 세트 데이터 비우고 로딩 표시.
     _championPick = null;
     _liveEventsData = null;
+    _ratings = null;
     _safeNotify();
     await _loadCurrentSet();
   }
@@ -120,6 +134,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     await Future.wait([
       _loadChampionPick(),
       _loadLiveEvents(),
+      _loadRatings(),
     ]);
   }
 
@@ -163,6 +178,31 @@ class MatchDetailViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadRatings() async {
+    final gameId = currentGameId;
+    _loadingRatings = true;
+    _ratingsError = null;
+    _safeNotify();
+    try {
+      if (gameId == null || gameId.isEmpty) {
+        _ratings = null;
+      } else {
+        _ratings = await _ratingRepository.fetchGameRatings(gameId);
+      }
+    } catch (e) {
+      debugPrint('[MatchDetailVM] load ratings failed: $e');
+      _ratingsError = '선수 평점을 불러오지 못했어요';
+      _ratings = null;
+    } finally {
+      _loadingRatings = false;
+      _safeNotify();
+    }
+  }
+
   /// 라이브 이벤트 리로드 버튼용. 현재 세트의 이벤트만 다시 가져온다.
   Future<void> reloadLiveEvents() => _loadLiveEvents();
+
+  /// 선수 평점 상세에서 평가 작성/수정/삭제 후 돌아왔을 때 현재 세트의
+  /// 평점(평균·내 평점)을 다시 가져온다.
+  Future<void> reloadRatings() => _loadRatings();
 }

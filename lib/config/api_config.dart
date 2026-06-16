@@ -158,6 +158,10 @@ class ApiConfig {
   static String myRatingUrl(String gameId, int participantId) =>
       '$apiBaseUrl/mobile/live/games/$gameId/participants/$participantId/my-rating';
 
+  /// 내가 작성한 평가 전체 목록 (페이지네이션, 인증 필요).
+  static String myRatingsUrl({int page = 0, int size = 20}) =>
+      '$apiBaseUrl/mobile/me/ratings?page=$page&size=$size';
+
   /// 게임 상세(밴픽·선수 스탯·골드 차 등) 조회. gameId 는 정수.
   static String gameRecordUrl(int gameId) =>
       '$apiBaseUrl/games/$gameId/record';
