@@ -210,10 +210,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   /// 선수 평점 행 탭 시 호출. 선수 평점 상세 페이지로 이동한다.
-  void _openPlayerRating(PlayerRating player, String teamName, BadgeSide side) {
+  Future<void> _openPlayerRating(
+      PlayerRating player, String teamName, BadgeSide side) async {
     final gameId = _viewModel.currentGameId;
     if (gameId == null || gameId.isEmpty || player.participantId == 0) return;
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayerRatingScreen(
           player: player,
@@ -229,6 +230,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ),
       ),
     );
+    // 상세에서 평가를 작성/수정/삭제했을 수 있으므로 평점 탭을 갱신한다.
+    if (mounted) _viewModel.reloadRatings();
   }
 
   @override

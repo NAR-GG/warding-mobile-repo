@@ -45,6 +45,27 @@ void main() {
     expect(vm.ratingsError, isNull);
   });
 
+  test('reloadRatings(): 현재 세트 평점을 다시 가져온다', () async {
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => const [
+          MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
+        ]);
+    when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
+        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+
+    final vm = MatchDetailViewModel(
+      matchId: 'm-1',
+      repository: match,
+      ratingRepository: rating,
+    );
+    await vm.load();
+    await vm.reloadRatings();
+
+    expect(vm.ratings!.gameId, 'g1');
+    // 최초 load + reloadRatings = 2회 호출
+    verify(() => rating.fetchGameRatings('g1', teamSide: any(named: 'teamSide')))
+        .called(2);
+  });
+
   test('selectSet(): 세트 전환 시 평점을 비우고 새 세트로 다시 로드', () async {
     when(() => match.fetchGames('m-1')).thenAnswer((_) async => const [
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),

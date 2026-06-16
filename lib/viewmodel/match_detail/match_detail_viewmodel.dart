@@ -201,4 +201,8 @@ class MatchDetailViewModel extends ChangeNotifier {
 
   /// 라이브 이벤트 리로드 버튼용. 현재 세트의 이벤트만 다시 가져온다.
   Future<void> reloadLiveEvents() => _loadLiveEvents();
+
+  /// 선수 평점 상세에서 평가 작성/수정/삭제 후 돌아왔을 때 현재 세트의
+  /// 평점(평균·내 평점)을 다시 가져온다.
+  Future<void> reloadRatings() => _loadRatings();
 }

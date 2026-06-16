@@ -64,9 +64,10 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
             : null,
       );
 
-  /// 리뷰보기 — 선수 평점 상세로 이동.
-  void _openPlayerRating(MyRatingItem item) {
-    Navigator.of(context).push(
+  /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다
+  /// (상세에서 평가를 수정·삭제했을 수 있으므로).
+  Future<void> _openPlayerRating(MyRatingItem item) async {
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayerRatingScreen(
           player: PlayerRating(
@@ -89,6 +90,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         ),
       ),
     );
+    if (mounted) _vm.load();
   }
 
   /// 리뷰삭제 — 확인 후 VM 삭제.
