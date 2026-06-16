@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
 import '../../model/game_rating.dart';
+import '../../model/my_rating_list.dart';
 import '../auth/auth_service.dart';
 
 /// 라이브 경기 선수 평점 API (`/api/mobile/live/games/...`).
@@ -22,16 +23,25 @@ class RatingRepository {
         'Authorization': 'Bearer $token',
       };
 
+  /// 토큰이 있으면 인증 헤더를 실어 보내고(만료 시 자동 갱신), 없으면 무토큰 GET.
+  /// 비회원도 조회할 수 있게 한다. (myRating/mine 은 토큰이 있을 때만 채워짐)
+  Future<http.Response> _optionalAuthGet(String url) async {
+    final token = await _auth.jwt;
+    if (token == null || token.isEmpty) {
+      return http.get(Uri.parse(url));
+    }
+    return _auth.authorizedRequest(
+      (t) => http.get(Uri.parse(url), headers: _headers(t)),
+    );
+  }
+
   /// 세트(게임) 전체 선수 평점 목록을 조회한다.
   Future<GameRatings> fetchGameRatings(
     String gameId, {
     String teamSide = 'ALL',
   }) async {
-    final response = await _auth.authorizedRequest(
-      (token) => http.get(
-        Uri.parse(ApiConfig.gameRatingsUrl(gameId, teamSide: teamSide)),
-        headers: _headers(token),
-      ),
+    final response = await _optionalAuthGet(
+      ApiConfig.gameRatingsUrl(gameId, teamSide: teamSide),
     );
     debugPrint('[Rating] 세트평점 ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -47,16 +57,8 @@ class RatingRepository {
     int page = 0,
     int size = 20,
   }) async {
-    final response = await _auth.authorizedRequest(
-      (token) => http.get(
-        Uri.parse(ApiConfig.playerRatingUrl(
-          gameId,
-          participantId,
-          page: page,
-          size: size,
-        )),
-        headers: _headers(token),
-      ),
+    final response = await _optionalAuthGet(
+      ApiConfig.playerRatingUrl(gameId, participantId, page: page, size: size),
     );
     debugPrint('[Rating] 선수상세 ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -100,5 +102,22 @@ class RatingRepository {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('내 평가 삭제 실패 (${response.statusCode})');
     }
+  }
+
+  /// 내가 작성한 평가 전체 목록을 조회한다 (인증 필요, 페이지네이션).
+  Future<MyRatingList> fetchMyRatings({int page = 0, int size = 20}) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.get(
+        Uri.parse(ApiConfig.myRatingsUrl(page: page, size: size)),
+        headers: _headers(token),
+      ),
+    );
+    debugPrint('[Rating] 내평가목록 ← ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('내 평가 목록 조회 실패 (${response.statusCode})');
+    }
+    return MyRatingList.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 }
