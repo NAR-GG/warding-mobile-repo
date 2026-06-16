@@ -61,6 +61,12 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // 디슈가링으로 R8 가 도는데, okhttp 의 선택적 TLS 클래스 누락 경고로
+            // 빌드가 실패하므로 proguard 규칙으로 억제한다.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
