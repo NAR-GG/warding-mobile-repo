@@ -310,52 +310,46 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 ),
               ),
             // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
-            // (배너+멀티셀렉터가 pinned 되는 슬리버 묶음을 nested CustomScrollView 로 감싼다.)
-            if (_tabIndex == 2)
-              SliverToBoxAdapter(
-                child: ListenableBuilder(
-                  listenable: _viewModel,
-                  builder: (context, _) {
-                    final r = _viewModel.ratings;
-                    final blue = _teamSummary(r, 'BLUE');
-                    final red = _teamSummary(r, 'RED');
-                    final bluePlayers = (r?.players ?? const <RatingPlayer>[])
-                        .where((p) => p.teamSide.toUpperCase() == 'BLUE')
-                        .map(_toPlayerRating)
-                        .toList();
-                    final redPlayers = (r?.players ?? const <RatingPlayer>[])
-                        .where((p) => p.teamSide.toUpperCase() == 'RED')
-                        .map(_toPlayerRating)
-                        .toList();
-                    return CustomScrollView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      slivers: [
-                        MatchDetailPlayerRatingSection(
-                          setLabel: _currentSet,
-                          blueTeamName: blue.teamName.isNotEmpty
-                              ? blue.teamName
-                              : (widget.match?.teamA.teamName ?? 'BLUE'),
-                          redTeamName: red.teamName.isNotEmpty
-                              ? red.teamName
-                              : (widget.match?.teamB.teamName ?? 'RED'),
-                          blueRating: blue.averageRating,
-                          redRating: red.averageRating,
-                          blueRaterCount: blue.ratingCount,
-                          redRaterCount: red.ratingCount,
-                          bluePlayers: bluePlayers,
-                          redPlayers: redPlayers,
-                          onPlayerTap: _openPlayerRating,
-                          scale: scale,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
+            // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
+            // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
+            // sticky collapse 가 동작하도록 한다.
+            if (_tabIndex == 2) _buildRatingTab(scale),
           ],
         ),
       ),
+    );
+  }
+
+  /// 선수 평점 탭. 슬리버(MatchDetailPlayerRatingSection)를 그대로 반환해
+  /// 외부 CustomScrollView 의 slivers 에 직접 배치한다. (pinned 헤더 sticky 유지)
+  Widget _buildRatingTab(double scale) {
+    final r = _viewModel.ratings;
+    final blue = _teamSummary(r, 'BLUE');
+    final red = _teamSummary(r, 'RED');
+    final bluePlayers = (r?.players ?? const [])
+        .where((p) => p.teamSide.toUpperCase() == 'BLUE')
+        .map(_toPlayerRating)
+        .toList();
+    final redPlayers = (r?.players ?? const [])
+        .where((p) => p.teamSide.toUpperCase() == 'RED')
+        .map(_toPlayerRating)
+        .toList();
+    return MatchDetailPlayerRatingSection(
+      setLabel: _currentSet,
+      blueTeamName: blue.teamName.isNotEmpty
+          ? blue.teamName
+          : (widget.match?.teamA.teamName ?? 'BLUE'),
+      redTeamName: red.teamName.isNotEmpty
+          ? red.teamName
+          : (widget.match?.teamB.teamName ?? 'RED'),
+      blueRating: blue.averageRating,
+      redRating: red.averageRating,
+      blueRaterCount: blue.ratingCount,
+      redRaterCount: red.ratingCount,
+      bluePlayers: bluePlayers,
+      redPlayers: redPlayers,
+      onPlayerTap: _openPlayerRating,
+      scale: scale,
     );
   }
 

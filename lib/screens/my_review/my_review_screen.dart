@@ -24,15 +24,23 @@ class MyReviewScreen extends StatefulWidget {
 
 class _MyReviewScreenState extends State<MyReviewScreen> {
   final MyReviewViewModel _vm = MyReviewViewModel();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _vm.load();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        _vm.loadMore();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _vm.dispose();
     super.dispose();
   }
@@ -93,7 +101,14 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       confirmLabel: '삭제',
     );
     if (ok != true) return;
-    await _vm.deleteRating(item);
+    try {
+      await _vm.deleteRating(item);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제에 실패했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
   }
 
   @override
@@ -118,6 +133,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
                 builder: (context, _) {
                   final groups = _vm.grouped;
                   return SingleChildScrollView(
+                    controller: _scrollController,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

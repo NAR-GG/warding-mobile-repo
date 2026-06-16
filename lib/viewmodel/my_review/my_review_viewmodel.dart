@@ -96,7 +96,12 @@ class MyReviewViewModel extends ChangeNotifier {
 
   /// 평가 삭제. 성공 시 목록에서 제거하고 누적 건수를 1 줄인다.
   Future<void> deleteRating(MyRatingItem item) async {
-    await _repository.deleteMyRating(item.gameId, item.participantId);
+    try {
+      await _repository.deleteMyRating(item.gameId, item.participantId);
+    } catch (e) {
+      debugPrint('[MyReviewVM] delete failed: $e');
+      rethrow;
+    }
     _items.removeWhere((e) => e.ratingId == item.ratingId);
     if (_totalElements > 0) _totalElements--;
     _safeNotify();

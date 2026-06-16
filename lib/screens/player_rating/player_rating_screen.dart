@@ -64,6 +64,7 @@ class PlayerRatingScreen extends StatefulWidget {
 
 class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
   late String _currentSet = widget.initialSet;
+  final ScrollController _scrollController = ScrollController();
 
   late final PlayerRatingViewModel _vm = PlayerRatingViewModel(
     gameId: widget.gameId,
@@ -77,10 +78,17 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
   void initState() {
     super.initState();
     _vm.load();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        _vm.loadMoreReviews();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _vm.dispose();
     super.dispose();
   }
@@ -150,7 +158,14 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       position: widget.player.position,
     );
     if (result == null) return;
-    await _vm.saveMyRating(result.rating.round(), result.comment);
+    try {
+      await _vm.saveMyRating(result.rating.round(), result.comment);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('평점 저장에 실패했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
   }
 
   /// 내 댓글 삭제 확인 알럿을 띄운다.
@@ -163,7 +178,14 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       confirmLabel: '삭제',
     );
     if (ok != true) return;
-    await _vm.deleteMyRating();
+    try {
+      await _vm.deleteMyRating();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('평점 삭제에 실패했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
   }
 
   /// 분포를 5→1점 순 정수 퍼센트 리스트로. 미로드 시 0 채움.
@@ -215,6 +237,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                   final d = _vm.detail;
                   final my = d?.myRating;
                   return SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
