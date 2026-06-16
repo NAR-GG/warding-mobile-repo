@@ -12,6 +12,9 @@ class PlayerRating {
     required this.rating,
     required this.raterCount,
     this.championImageUrl,
+    this.participantId = 0,
+    this.playerId = 0,
+    this.playerImageUrl,
   });
 
   /// 선수명(예: 'DuDu').
@@ -26,6 +29,11 @@ class PlayerRating {
 
   /// 사용 챔피언 이미지 URL. 없으면 빈 박스.
   final String? championImageUrl;
+
+  /// 평점 상세 진입에 필요한 식별자(목업 기본값 0).
+  final int participantId;
+  final int playerId;
+  final String? playerImageUrl;
 }
 
 /// 경기 상세 — 선수 평점 탭의 팀별 선수 평점 리스트.

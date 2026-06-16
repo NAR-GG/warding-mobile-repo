@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../model/game_rating.dart';
 import '../../model/schedule_match.dart';
+import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_button.dart';
@@ -186,18 +188,45 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     }
   }
 
+  /// 평점목록 응답의 선수를 UI 행 모델로 변환한다.
+  PlayerRating _toPlayerRating(RatingPlayer p) => PlayerRating(
+        name: p.playerName,
+        position: positionFromRole(p.role),
+        rating: p.averageRating,
+        raterCount: p.ratingCount,
+        playerImageUrl: p.playerImageUrl,
+        participantId: p.participantId,
+        playerId: p.playerId,
+      );
+
+  /// 특정 진영의 팀 요약을 찾는다(없으면 0값).
+  TeamRatingSummary _teamSummary(GameRatings? r, String side) {
+    final teams = r?.teams ?? const <TeamRatingSummary>[];
+    for (final t in teams) {
+      if (t.teamSide.toUpperCase() == side) return t;
+    }
+    return TeamRatingSummary(
+        teamSide: side, teamName: '', averageRating: 0, ratingCount: 0);
+  }
+
   /// 선수 평점 행 탭 시 호출. 선수 평점 상세 페이지로 이동한다.
   void _openPlayerRating(PlayerRating player, String teamName, BadgeSide side) {
+    final gameId = _viewModel.currentGameId;
+    if (gameId == null || gameId.isEmpty || player.participantId == 0) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder:
-            (_) => PlayerRatingScreen(
-              player: player,
-              teamName: teamName,
-              side: side,
-              sets: _sets,
-              initialSet: _currentSet,
-            ),
+      MaterialPageRoute<void>(
+        builder: (_) => PlayerRatingScreen(
+          player: player,
+          teamName: teamName,
+          side: side,
+          sets: _sets,
+          initialSet: _currentSet,
+          gameId: gameId,
+          participantId: player.participantId,
+          playerId: player.playerId,
+          games: _viewModel.games,
+          currentSetNumber: _viewModel.currentSet,
+        ),
       ),
     );
   }
@@ -280,79 +309,49 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   ),
                 ),
               ),
-            // 선수 평점 탭: 배너+멀티셀렉터가 pinned 되는 슬리버 묶음을 직접 넣는다.
+            // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
+            // (배너+멀티셀렉터가 pinned 되는 슬리버 묶음을 nested CustomScrollView 로 감싼다.)
             if (_tabIndex == 2)
-              MatchDetailPlayerRatingSection(
-                setLabel: _currentSet,
-                blueTeamName: widget.match?.teamA.teamName ?? 'DNS',
-                redTeamName: widget.match?.teamB.teamName ?? 'T1',
-                // TODO: API 연결 후 실제 선수별 평점 데이터로 교체 (현재 mock).
-                bluePlayers: const [
-                  PlayerRating(
-                    name: 'DuDu',
-                    position: '탑',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Pyosik',
-                    position: '정글',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Clozer',
-                    position: '미드',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'deokdam',
-                    position: '원딜',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Peter',
-                    position: '서폿',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                ],
-                redPlayers: const [
-                  PlayerRating(
-                    name: 'Doran',
-                    position: '탑',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Oner',
-                    position: '정글',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Faker',
-                    position: '미드',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Gumayusi',
-                    position: '원딜',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                  PlayerRating(
-                    name: 'Keria',
-                    position: '서폿',
-                    rating: 4.5,
-                    raterCount: 23,
-                  ),
-                ],
-                onPlayerTap: _openPlayerRating,
-                scale: scale,
+              SliverToBoxAdapter(
+                child: ListenableBuilder(
+                  listenable: _viewModel,
+                  builder: (context, _) {
+                    final r = _viewModel.ratings;
+                    final blue = _teamSummary(r, 'BLUE');
+                    final red = _teamSummary(r, 'RED');
+                    final bluePlayers = (r?.players ?? const <RatingPlayer>[])
+                        .where((p) => p.teamSide.toUpperCase() == 'BLUE')
+                        .map(_toPlayerRating)
+                        .toList();
+                    final redPlayers = (r?.players ?? const <RatingPlayer>[])
+                        .where((p) => p.teamSide.toUpperCase() == 'RED')
+                        .map(_toPlayerRating)
+                        .toList();
+                    return CustomScrollView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      slivers: [
+                        MatchDetailPlayerRatingSection(
+                          setLabel: _currentSet,
+                          blueTeamName: blue.teamName.isNotEmpty
+                              ? blue.teamName
+                              : (widget.match?.teamA.teamName ?? 'BLUE'),
+                          redTeamName: red.teamName.isNotEmpty
+                              ? red.teamName
+                              : (widget.match?.teamB.teamName ?? 'RED'),
+                          blueRating: blue.averageRating,
+                          redRating: red.averageRating,
+                          blueRaterCount: blue.ratingCount,
+                          redRaterCount: red.ratingCount,
+                          bluePlayers: bluePlayers,
+                          redPlayers: redPlayers,
+                          onPlayerTap: _openPlayerRating,
+                          scale: scale,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
           ],
         ),
