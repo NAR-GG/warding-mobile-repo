@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_detail_header.dart';
+import '../../model/my_rating_list.dart';
 import '../../styles/app_colors.dart';
+import '../../util/rating_mapping.dart';
+import '../../viewmodel/my_review/my_review_viewmodel.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
 import '../player_rating/player_rating_screen.dart';
 import 'component/review_card.dart';
@@ -12,79 +15,76 @@ import 'component/review_card.dart';
 ///
 /// 마이페이지 '내 리뷰/평점' 행에서 진입한다.
 /// 헤더는 공용 [NarDetailHeader] 로 chevron-left 뒤로가기 + '내 리뷰/평점' 타이틀.
-class MyReviewScreen extends StatelessWidget {
+class MyReviewScreen extends StatefulWidget {
   const MyReviewScreen({super.key});
 
-  // TODO: API 연결 후 실제 리뷰 목록으로 교체 (현재 mock). 날짜별 그룹.
-  static const List<({String date, List<MyReview> reviews})> _groups = [
-    (
-      date: '2025.04.20',
-      reviews: [
-        MyReview(
-          league: 'LCK 2025 스프링',
-          teamName: 'T1',
-          playerName: 'Faker',
-          position: '미드',
-          side: BadgeSide.blue,
-          username: '전데요',
-          timeAgo: '방금',
-          rating: 5,
-          raterCount: 23,
-        ),
-      ],
-    ),
-    (
-      date: '2025.04.19',
-      reviews: [
-        MyReview(
-          league: 'LCK 2025 스프링',
-          teamName: 'T1',
-          playerName: 'Faker',
-          position: '미드',
-          side: BadgeSide.blue,
-          username: '전데요',
-          timeAgo: '방금',
-          rating: 5,
-          raterCount: 23,
-          comment: '역시 페이커 갈리오.',
-        ),
-        MyReview(
-          league: 'LCK 2025 스프링',
-          teamName: 'T1',
-          playerName: 'Faker',
-          position: '미드',
-          side: BadgeSide.blue,
-          username: '전데요',
-          timeAgo: '방금',
-          rating: 5,
-          raterCount: 23,
-          comment: '역시 페이커 갈리오.',
-        ),
-      ],
-    ),
-  ];
+  @override
+  State<MyReviewScreen> createState() => _MyReviewScreenState();
+}
 
-  /// 리뷰보기 — 선수 평점 페이지로 이동.
-  void _openPlayerRating(BuildContext context, MyReview review) {
+class _MyReviewScreenState extends State<MyReviewScreen> {
+  final MyReviewViewModel _vm = MyReviewViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    _vm.load();
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  /// 응답 항목을 기존 ReviewCard 입력(MyReview)으로 변환.
+  MyReview _toReview(MyRatingItem item) => MyReview(
+        league: item.match?.leagueName ?? '',
+        teamName: item.match == null
+            ? ''
+            : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
+                ? item.match!.blueTeamCode
+                : item.match!.redTeamCode),
+        playerName: item.playerName,
+        position: positionFromRole(item.role),
+        side: sideFromTeamSide(item.teamSide),
+        username: '나',
+        timeAgo: ratingTimeAgo(item.createdAt),
+        rating: item.rating.toDouble(),
+        comment: (item.comment != null && item.comment!.isNotEmpty)
+            ? item.comment
+            : null,
+      );
+
+  /// 리뷰보기 — 선수 평점 상세로 이동.
+  void _openPlayerRating(MyRatingItem item) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (_) => PlayerRatingScreen(
-              player: PlayerRating(
-                name: review.playerName,
-                position: review.position,
-                rating: review.rating,
-                raterCount: review.raterCount,
-              ),
-              teamName: review.teamName,
-              side: review.side,
-            ),
+        builder: (_) => PlayerRatingScreen(
+          player: PlayerRating(
+            name: item.playerName,
+            position: positionFromRole(item.role),
+            rating: item.rating.toDouble(),
+            raterCount: 0,
+            participantId: item.participantId,
+            playerId: item.playerId,
+          ),
+          teamName: item.match == null
+              ? ''
+              : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
+                  ? item.match!.blueTeamCode
+                  : item.match!.redTeamCode),
+          side: sideFromTeamSide(item.teamSide),
+          gameId: item.gameId,
+          participantId: item.participantId,
+          playerId: item.playerId,
+        ),
       ),
     );
   }
 
-  /// 리뷰삭제 — 선수 평점의 '내 평점 삭제' 확인 팝업(공용 컴포넌트 재사용).
-  Future<void> _confirmDelete(BuildContext context) async {
+  /// 리뷰삭제 — 확인 후 VM 삭제.
+  Future<void> _confirmDelete(MyRatingItem item) async {
     final ok = await showNarConfirmDialog(
       context: context,
       title: '내 평점을 삭제하시겠습니까?',
@@ -93,7 +93,7 @@ class MyReviewScreen extends StatelessWidget {
       confirmLabel: '삭제',
     );
     if (ok != true) return;
-    // TODO: API 연결 후 리뷰 삭제 요청.
+    await _vm.deleteRating(item);
   }
 
   @override
@@ -113,34 +113,36 @@ class MyReviewScreen extends StatelessWidget {
               scale: scale,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 누적 리뷰/평점 바 — 타이틀 + 건수(그라데이션 텍스트).
-                    _CumulativeReviewBar(
-                      // TODO: 실제 누적 건수로 교체 (현재 mock).
-                      count: 3,
-                      scale: scale,
-                    ),
-                    // 날짜별 그룹 — 그룹 사이 16 간격.
-                    for (var g = 0; g < _groups.length; g++) ...[
-                      SizedBox(height: 16 * scale),
-                      // 그룹 내부: 일자 헤더 + 카드들, 사이 2 간격.
-                      ReviewDateHeader(date: _groups[g].date, scale: scale),
-                      for (final review in _groups[g].reviews) ...[
-                        SizedBox(height: 2 * scale),
-                        ReviewCard(
-                          review: review,
+              child: ListenableBuilder(
+                listenable: _vm,
+                builder: (context, _) {
+                  final groups = _vm.grouped;
+                  return SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _CumulativeReviewBar(
+                          count: _vm.totalElements,
                           scale: scale,
-                          onView: () => _openPlayerRating(context, review),
-                          onDelete: () => _confirmDelete(context),
                         ),
+                        for (final entry in groups.entries) ...[
+                          SizedBox(height: 16 * scale),
+                          ReviewDateHeader(date: entry.key, scale: scale),
+                          for (final item in entry.value) ...[
+                            SizedBox(height: 2 * scale),
+                            ReviewCard(
+                              review: _toReview(item),
+                              scale: scale,
+                              onView: () => _openPlayerRating(item),
+                              onDelete: () => _confirmDelete(item),
+                            ),
+                          ],
+                        ],
+                        SizedBox(height: 24 * scale),
                       ],
-                    ],
-                    SizedBox(height: 24 * scale),
-                  ],
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
