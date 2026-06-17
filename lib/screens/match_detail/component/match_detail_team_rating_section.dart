@@ -125,13 +125,13 @@ class _PlayerRatingRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 좌측: 챔피언 미니 + 선수명/포지션.
+            // 좌측: 선수 사진 + 선수명/포지션.
             Flexible(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _ChampionMini(
-                    imageUrl: player.championImageUrl,
+                  _PlayerMini(
+                    imageUrl: player.playerImageUrl,
                     scale: scale,
                   ),
                   SizedBox(width: 6 * scale),
@@ -196,9 +196,9 @@ class _PlayerRatingRow extends StatelessWidget {
   }
 }
 
-/// 챔피언 미니 (38×38 라운드 8). 이미지 없으면 narDark500 빈 박스.
-class _ChampionMini extends StatelessWidget {
-  const _ChampionMini({required this.imageUrl, required this.scale});
+/// 선수 사진 미니 (38×38 라운드 8). 이미지 없으면 narDark500 빈 박스.
+class _PlayerMini extends StatelessWidget {
+  const _PlayerMini({required this.imageUrl, required this.scale});
 
   final String? imageUrl;
   final double scale;
