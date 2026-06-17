@@ -7,6 +7,7 @@ import 'config/api_config.dart';
 import 'config/app_globals.dart';
 import 'firebase_options.dart';
 import 'repository/fcm/fcm_service.dart';
+import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
@@ -18,10 +19,15 @@ import 'styles/app_colors.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM] 백그라운드 메시지: ${message.messageId}');
-  // 백그라운드/종료 상태에서 받은 솔랭 알림도 마이구독 피드에 남긴다.
+  // 백그라운드/종료 상태에서 받은 솔랭·라이브 경기 알림도 마이구독 피드에 남긴다.
   try {
     WidgetsFlutterBinding.ensureInitialized();
     await SoloRankNotificationStore.instance.addFromFcmData(message.data);
+    await LiveMatchNotificationStore.instance.addFromFcmData(
+      message.data,
+      title: message.notification?.title,
+      body: message.notification?.body,
+    );
   } catch (e) {
     debugPrint('[FCM] 백그라운드 저장 실패: $e');
   }
