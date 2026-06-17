@@ -248,6 +248,10 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           playerName: widget.player.name,
                           position: widget.player.position,
                           kda: d?.player.kda ?? '-',
+                          playerImageUrl: (d?.player.playerImageUrl.isNotEmpty ??
+                                  false)
+                              ? d!.player.playerImageUrl
+                              : widget.player.playerImageUrl,
                           scale: scale,
                         ),
                         SizedBox(height: 16 * scale),

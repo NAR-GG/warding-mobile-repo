@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../util/lane_asset.dart';
 
 /// 선수 평점 상세 — '플레이한 챔프' 카드.
@@ -18,12 +19,16 @@ class PlayedChampCard extends StatelessWidget {
     required this.playerName,
     required this.position,
     required this.kda,
+    this.playerImageUrl,
     this.scale = 1,
   });
 
   /// 'T1 Faker' 표기에 쓰는 팀명/선수명.
   final String teamName;
   final String playerName;
+
+  /// 선수 사진 URL(상대경로면 호스트 부착). 없으면 빈 자리.
+  final String? playerImageUrl;
 
   /// 포지션명(예: '미드').
   final String position;
@@ -74,8 +79,27 @@ class PlayedChampCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // TODO: 선수 이미지(t1_페이커) 연결 — 현재 62×62 빈 자리.
-                          SizedBox(width: 62 * scale, height: 62 * scale),
+                          // 선수 사진 62×62. 없거나 로드 실패 시 빈 자리 유지.
+                          SizedBox(
+                            width: 62 * scale,
+                            height: 62 * scale,
+                            child:
+                                (playerImageUrl != null &&
+                                        playerImageUrl!.isNotEmpty)
+                                    ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        8 * scale,
+                                      ),
+                                      child: Image.network(
+                                        resolveImageUrl(playerImageUrl)!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (_, _, _) =>
+                                                const SizedBox.shrink(),
+                                      ),
+                                    )
+                                    : null,
+                          ),
                           SizedBox(width: 10 * scale),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
