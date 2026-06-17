@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../components/nar_badge.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 경기 상세 — 챔피언 픽 탭 콘텐츠.
 ///
@@ -289,7 +290,7 @@ class _ChampionBan extends StatelessWidget {
                           0, 0, 0, 1, 0,
                         ]),
                         child: Image.network(
-                          imageUrl!,
+                          resolveImageUrl(imageUrl)!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, _, _) => const SizedBox.shrink(),
                         ),
@@ -348,7 +349,7 @@ class _ChampionPick extends StatelessWidget {
           if (hasImage)
             Positioned.fill(
               child: Image.network(
-                imageUrl!,
+                resolveImageUrl(imageUrl)!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../components/nar_button.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 구독 섹션의 한 행 데이터 (팀 또는 선수 공용).
 class SubscribedItem {
@@ -174,7 +175,7 @@ class _ItemLogo extends StatelessWidget {
       width: size,
       height: size,
       child: Image.network(
-        url!,
+        resolveImageUrl(url)!,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => const SizedBox.shrink(),
       ),

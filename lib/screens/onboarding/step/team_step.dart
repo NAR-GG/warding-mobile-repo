@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../viewmodel/onboarding/onboarding_viewmodel.dart';
 import '../component/onboarding_load_error.dart';
 import '../component/onboarding_select_card.dart';
@@ -62,7 +63,7 @@ class TeamStep extends StatelessWidget {
             scale: scale,
             selected: team.id == viewModel.selectedTeamId,
             image: Image.network(
-              team.imageUrl,
+              resolveImageUrl(team.imageUrl)!,
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => const Icon(
                 Icons.shield_outlined,

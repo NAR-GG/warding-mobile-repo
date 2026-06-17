@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../model/match_game.dart';
 import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.
 ///
@@ -625,7 +626,7 @@ class _ActorIcon extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: hasLogo
             ? Image.network(
-                actor.teamLogoUrl!,
+                resolveImageUrl(actor.teamLogoUrl)!,
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               )
@@ -662,7 +663,7 @@ class _ActorIcon extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: hasImage
           ? Image.network(
-              actor.championImageUrl!,
+              resolveImageUrl(actor.championImageUrl)!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => const SizedBox.shrink(),
             )

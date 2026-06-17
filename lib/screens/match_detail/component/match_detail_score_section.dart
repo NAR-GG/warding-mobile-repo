@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../components/nar_badge.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 경기 상세 페이지 스코어 칸.
 ///
@@ -149,7 +150,7 @@ class _TeamColumn extends StatelessWidget {
           ),
           child: hasLogo
               ? Image.network(
-                  logoUrl!,
+                  resolveImageUrl(logoUrl)!,
                   width: 60 * scale,
                   height: 60 * scale,
                   fit: BoxFit.contain,
