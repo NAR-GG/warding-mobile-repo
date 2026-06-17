@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../model/solo_rank_notification.dart';
+import '../fcm/fcm_notification_types.dart';
 
 /// 수신한 '선수 솔랭 시작' 푸시를 기기에 로컬 저장한다.
 ///
@@ -50,7 +51,7 @@ class SoloRankNotificationStore {
 
   /// FCM data 페이로드로부터 저장한다(타입이 솔랭일 때만).
   Future<void> addFromFcmData(Map<String, dynamic> data) async {
-    if (data['type'] != 'PLAYER_SOLO_RANK_STARTED') return;
+    if (data['type'] != FcmNotificationType.playerSoloRankStarted) return;
     await add(SoloRankNotification.fromFcmData(data));
   }
 

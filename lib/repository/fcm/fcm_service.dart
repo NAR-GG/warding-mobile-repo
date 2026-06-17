@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../config/app_globals.dart';
+import '../../screens/match_detail/match_detail_screen.dart';
 import '../../screens/subscription/subscription_screen.dart';
 import '../device/device_repository.dart';
+import '../notification/live_match_notification_store.dart';
 import '../notification/solo_rank_notification_store.dart';
+import 'fcm_notification_types.dart';
 
 /// FCM(푸시) 초기화·토큰 등록·메시지 핸들링을 담당한다.
 ///
@@ -111,8 +114,13 @@ class FcmService {
   /// 중복을 막기 위해 Android 에서만 직접 표시한다.
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     debugPrint('[FCM] 포그라운드 메시지: ${message.notification?.title}');
-    // 솔랭 알림이면 마이구독 피드용으로 기기에 저장.
+    // 솔랭/라이브 경기 알림이면 마이구독 피드용으로 기기에 저장.
     await SoloRankNotificationStore.instance.addFromFcmData(message.data);
+    await LiveMatchNotificationStore.instance.addFromFcmData(
+      message.data,
+      title: message.notification?.title,
+      body: message.notification?.body,
+    );
     if (!Platform.isAndroid) return;
     final notification = message.notification;
     if (notification == null) return;
@@ -150,22 +158,45 @@ class FcmService {
     _navigateFromData(message.data);
   }
 
-  /// 푸시 데이터로 화면을 이동한다.
+  /// 푸시 데이터로 화면을 이동한다(알림 탭 딥링크).
   ///
-  /// 백엔드 페이로드 예: type=PLAYER_SOLO_RANK_STARTED, playerId, gameId.
-  /// 딥링크: nar://players/{playerId}
+  /// 백엔드 페이로드 type 별 라우팅:
+  /// - PLAYER_SOLO_RANK_STARTED (playerId, gameId) → 마이구독([SubscriptionScreen]).
+  /// - SET_START / SET_END / LIVE_EVENT (matchId, setNumber?) → 경기 상세의
+  ///   '라이브 이벤트' 탭(index 1)을 matchId 로 연다.
   ///
-  /// TODO: playerId 단독으로 여는 선수 상세 화면이 생기면 navigatorKey 로 push 한다.
-  /// 현재 선수 화면(PlayerRatingScreen)은 경기 컨텍스트가 필요해 연결을 보류한다.
+  /// 솔랭 선수 상세는 화면이 경기 컨텍스트를 요구해 아직 연결 보류(피드 저장만).
   void _navigateFromData(Map<String, dynamic> data) {
     final type = data['type'];
     debugPrint('[FCM] 알림 탭 → type=$type');
     // 탭한 알림이 피드에 빠짐없이 들어가도록 저장(중복은 무시됨).
     SoloRankNotificationStore.instance.addFromFcmData(data);
-    if (type == 'PLAYER_SOLO_RANK_STARTED') {
+    LiveMatchNotificationStore.instance.addFromFcmData(data);
+
+    if (type == FcmNotificationType.playerSoloRankStarted) {
       navigatorKey.currentState?.push(
         MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
       );
+      return;
+    }
+
+    if (FcmNotificationType.isLiveMatch(type)) {
+      final matchId = (data['matchId'] ?? '').toString();
+      if (matchId.isEmpty) {
+        debugPrint('[FCM] 라이브 경기 푸시에 matchId 가 없어 딥링크 생략');
+        return;
+      }
+      // 경기 상세를 '라이브 이벤트' 탭(index 1)으로 연다. 헤더용 match 객체는
+      // 푸시에 없으므로 null 로 두면 상세 화면이 matchId 로 데이터를 로드한다.
+      navigatorKey.currentState?.push(
+        MaterialPageRoute<void>(
+          builder: (_) => MatchDetailScreen(
+            matchId: matchId,
+            initialTabIndex: 1,
+          ),
+        ),
+      );
+      return;
     }
   }
 }
