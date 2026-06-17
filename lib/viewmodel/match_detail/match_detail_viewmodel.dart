@@ -39,6 +39,14 @@ class MatchDetailViewModel extends ChangeNotifier {
     return null;
   }
 
+  /// 현재 선택된 세트의 진행 상태("LIVE"|"ENDED"|"SCHEDULED"). 미해석이면 SCHEDULED.
+  String get currentSetStatus {
+    for (final g in _games) {
+      if (g.gameOrder == _currentSet) return g.status;
+    }
+    return MatchGameStatus.scheduled;
+  }
+
   // ── 챔피언 픽 ──────────────────────────────
   MatchChampionPick? _championPick;
   MatchChampionPick? get championPick => _championPick;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/match_game.dart';
 import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
 
@@ -18,6 +19,7 @@ class MatchDetailLiveEventSection extends StatefulWidget {
     this.errorMessage,
     this.scale = 1,
     this.onReload,
+    this.status = MatchGameStatus.live,
   });
 
   /// 표시할 라이브 이벤트 (최신순). ViewModel 에서 주입.
@@ -38,6 +40,10 @@ class MatchDetailLiveEventSection extends StatefulWidget {
   /// 리로드 버튼을 눌렀을 때 호출. 로딩 상태(아이콘/문구 변경) 동안 외부에서
   /// 라이브 이벤트를 가져온 뒤, 완료되면 다시 idle 로 돌아가도록 반환을 기다린다.
   final Future<void> Function()? onReload;
+
+  /// 현재 세트 상태("LIVE"|"ENDED"|"SCHEDULED"). 리로드 버튼 라벨 분기에 쓴다.
+  /// 미지정 시 LIVE(기존 동작 유지).
+  final String status;
 
   @override
   State<MatchDetailLiveEventSection> createState() =>
@@ -119,6 +125,7 @@ class _MatchDetailLiveEventSectionState
           _ReloadButton(
             loading: loading,
             onTap: _handleReload,
+            status: widget.status,
             scale: scale,
           ),
           // 로딩 중이면 이벤트 리스트 맨 위에 스켈레톤 한 줄 추가. 카드는 그대로 보여준다.
@@ -183,11 +190,13 @@ class _ReloadButton extends StatelessWidget {
   const _ReloadButton({
     required this.loading,
     required this.onTap,
+    required this.status,
     required this.scale,
   });
 
   final bool loading;
   final VoidCallback onTap;
+  final String status;
   final double scale;
 
   @override
@@ -195,7 +204,21 @@ class _ReloadButton extends StatelessWidget {
     final iconColor =
         loading ? AppColors.narText3 : AppColors.narTextTertiary;
     final textColor = loading ? AppColors.narText3 : AppColors.narTextTertiary;
-    final label = loading ? '라이브 이벤트를 가져오는 중이에요...' : '경기 진행 중';
+    final String label;
+    if (loading) {
+      label = '라이브 이벤트를 가져오는 중이에요...';
+    } else {
+      switch (status) {
+        case MatchGameStatus.ended:
+          label = '경기 종료';
+          break;
+        case MatchGameStatus.scheduled:
+          label = '경기 예정';
+          break;
+        default: // LIVE
+          label = '경기 진행 중';
+      }
+    }
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
