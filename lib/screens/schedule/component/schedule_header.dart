@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../model/team.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 경기 일정 페이지 상단 헤더.
 ///
@@ -126,7 +127,7 @@ class ScheduleHeader extends StatelessWidget {
                 scale: scale,
                 bordered: teamSelected,
                 child: Image.network(
-                  preferredTeam!.imageUrl,
+                  resolveImageUrl(preferredTeam!.imageUrl)!,
                   width: 25 * scale,
                   height: 25 * scale,
                   fit: BoxFit.contain,

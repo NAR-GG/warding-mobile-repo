@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../components/notification_card.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 선수 랭크 시작 감지 알림. headset 아이콘 + 선수/챔피언/큐 정보.
 /// [opggUrl] 이 있으면 'OP.GG 바로가기' 링크를 노출한다.
@@ -90,7 +91,7 @@ class RankStartNotification extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8 * scale),
       child: Image.network(
-        url,
+        resolveImageUrl(url)!,
         width: size,
         height: size,
         fit: BoxFit.cover,

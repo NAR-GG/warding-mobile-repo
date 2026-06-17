@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 한 선수의 평점 행 데이터.
 class PlayerRating {
@@ -217,7 +218,7 @@ class _ChampionMini extends StatelessWidget {
       child:
           hasImage
               ? Image.network(
-                imageUrl!,
+                resolveImageUrl(imageUrl)!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               )

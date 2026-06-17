@@ -4,6 +4,7 @@ import '../../../components/app_select_box.dart';
 import '../../../components/labeled_field.dart';
 import '../../../model/team.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../viewmodel/onboarding/onboarding_viewmodel.dart';
 import '../component/onboarding_load_error.dart';
 import '../component/onboarding_select_card.dart';
@@ -111,7 +112,7 @@ class _PlayerStepState extends State<PlayerStep> {
             scale: scale,
             selected: _viewModel.isPlayerSelected(player.id),
             image: Image.network(
-              player.imageUrl,
+              resolveImageUrl(player.imageUrl)!,
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => const Icon(
                 Icons.person_outline,

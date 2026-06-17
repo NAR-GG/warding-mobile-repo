@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_live_badge.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 경기 한 건 카드. 헤더(시간/LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
 /// [isLive] 가 true 면 카드 배경/왼쪽 보더/LIVE 칩/스코어 색 분기.
@@ -168,7 +169,7 @@ class _TeamColumn extends StatelessWidget {
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    logoUrl!,
+                    resolveImageUrl(logoUrl)!,
                     width: 40 * scale,
                     height: 40 * scale,
                     fit: BoxFit.contain,

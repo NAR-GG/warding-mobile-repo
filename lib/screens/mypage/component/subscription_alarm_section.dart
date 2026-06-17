@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../components/nar_toggle.dart';
 import '../../../model/team_notification_subscription.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../viewmodel/subscription/team_alarm_viewmodel.dart';
 
 /// 마이페이지 — 구독 팀 알림 설정 섹션 (양옆 20 패딩).
@@ -229,7 +230,7 @@ class _TeamLogo extends StatelessWidget {
     if (url.isEmpty) return placeholder;
     return ClipOval(
       child: Image.network(
-        url,
+        resolveImageUrl(url)!,
         width: size,
         height: size,
         fit: BoxFit.cover,

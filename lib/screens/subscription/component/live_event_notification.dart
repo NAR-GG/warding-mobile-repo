@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 라이브 이벤트의 한 쪽 주체 (챔피언/선수 또는 오브젝트).
 class LiveActor {
@@ -456,7 +457,7 @@ class _ActorIcon extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: hasImage
           ? Image.network(
-              actor.imageUrl!,
+              resolveImageUrl(actor.imageUrl)!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => const SizedBox.shrink(),
             )
