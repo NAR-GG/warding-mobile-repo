@@ -308,6 +308,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                         _viewModel.liveEvents.isEmpty,
                     errorMessage: _viewModel.eventsError,
                     onReload: _viewModel.reloadLiveEvents,
+                    status: _viewModel.currentSetStatus,
                     scale: scale,
                   ),
                 ),
