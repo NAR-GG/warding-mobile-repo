@@ -25,6 +25,14 @@ class AuthCancelledException implements Exception {
   const AuthCancelledException();
 }
 
+/// `PUT /api/auth/me` 가 409 를 반환할 때 — 다른 회원이 같은 닉네임 사용 중.
+class NicknameConflictException implements Exception {
+  const NicknameConflictException();
+
+  @override
+  String toString() => '이미 사용 중인 닉네임입니다';
+}
+
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
@@ -161,6 +169,39 @@ class AuthService {
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('회원 정보 조회 실패 (${response.statusCode})');
+    }
+    return UserProfile.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  /// 로그인 회원의 닉네임·응원 팀·프로필 이미지를 수정한다
+  /// (`PUT /api/auth/me`). 다른 회원이 사용 중인 닉네임이면
+  /// 409 → [NicknameConflictException].
+  Future<UserProfile> updateProfile({
+    required String nickname,
+    required int favoriteTeamId,
+    String? profileImageUrl,
+  }) async {
+    final response = await authorizedRequest(
+      (token) => http.put(
+        Uri.parse(ApiConfig.meUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'nickname': nickname,
+          'favoriteTeamId': favoriteTeamId,
+          'profileImageUrl': profileImageUrl,
+        }),
+      ),
+    );
+    if (response.statusCode == 409) {
+      throw const NicknameConflictException();
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('프로필 수정 실패 (${response.statusCode})');
     }
     return UserProfile.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,

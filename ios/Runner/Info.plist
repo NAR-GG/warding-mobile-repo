@@ -37,6 +37,9 @@
 	<!-- 구글 로그인 iOS 클라이언트 ID (Google Cloud Console에서 발급) -->
 	<key>GIDClientID</key>
 	<string>YOUR_GOOGLE_IOS_CLIENT_ID</string>
+	<!-- 프로필 사진 변경: 사진 라이브러리 접근 사유 (image_picker) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진을 변경하려면 사진 라이브러리 접근이 필요합니다.</string>
 	<!-- 카카오톡/네이버앱 설치 여부 확인 및 호출에 필요한 스킴 화이트리스트 -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>

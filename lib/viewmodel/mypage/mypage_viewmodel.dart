@@ -28,6 +28,9 @@ class MypageViewModel extends ChangeNotifier {
   /// 회원 닉네임. 로딩 전이면 빈 문자열.
   String get nickname => _profile?.nickname ?? '';
 
+  /// 회원 이메일. 로딩 전 또는 소셜에서 받지 못한 경우 null.
+  String? get email => _profile?.email;
+
   /// 응원 팀(이름·로고 포함). 없으면 null.
   Team? _favoriteTeam;
   Team? get favoriteTeam => _favoriteTeam;

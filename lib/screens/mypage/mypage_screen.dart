@@ -41,11 +41,15 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
-  void _goToProfileEdit() {
+  /// 수정 화면이 `true` 로 pop 하면 회원 정보(닉네임·응원팀)를 새로고침한다.
+  Future<void> _goToProfileEdit() async {
     setState(() => _showTeamBanner = false);
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileEditScreen()));
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => const ProfileEditScreen()),
+    );
+    if (updated == true) {
+      await _viewModel.load();
+    }
   }
 
   /// 로그아웃 — 소셜·자체 토큰을 정리하고 로그인 화면으로 되돌린다.
@@ -117,6 +121,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       scale: scale,
                       onEditTap: _goToProfileEdit,
                       nickname: _viewModel.nickname,
+                      email: _viewModel.email,
                       favoriteTeam: _viewModel.favoriteTeam,
                     ),
                   ),
@@ -271,6 +276,7 @@ class _MypageProfile extends StatelessWidget {
     required this.scale,
     this.onEditTap,
     this.nickname = '',
+    this.email,
     this.favoriteTeam,
   });
 
@@ -279,6 +285,9 @@ class _MypageProfile extends StatelessWidget {
 
   /// 회원 닉네임. 비어 있으면 placeholder 를 보인다.
   final String nickname;
+
+  /// 회원 이메일. 없으면 빈 줄.
+  final String? email;
 
   /// 응원 팀(로고 뱃지용). 없으면 회색 원 placeholder.
   final Team? favoriteTeam;
@@ -330,10 +339,9 @@ class _MypageProfile extends StatelessWidget {
                       _TeamBadge(team: favoriteTeam, scale: scale),
                     ],
                   ),
-                  // 이메일.
+                  // 이메일 — `GET /api/auth/me` 의 email 필드.
                   Text(
-                    // TODO: 실제 이메일로 교체 (현재 mock).
-                    'faker99@email.com',
+                    email ?? '',
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w500,
