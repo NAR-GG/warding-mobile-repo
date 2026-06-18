@@ -265,56 +265,59 @@ class _ChampionBan extends StatelessWidget {
     return SizedBox(
       width: 36.4 * scale,
       height: 36.4 * scale,
-      child: ClipRRect(
-        // 박스의 둥근 모양으로 클립 — 슬래시가 박스 밖으로 삐져나가지 않도록.
-        borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 챔피언 박스 — 테두리 + 챔피언 이미지(그레이스케일). Positioned.fill 로 Stack 채움.
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.narDark400,
-                  border:
-                      Border.all(color: AppColors.narGray500, width: 1.2 * scale),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: hasImage
-                    ? ColorFiltered(
-                        colorFilter: const ColorFilter.matrix(<double>[
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0, 0, 0, 1, 0,
-                        ]),
-                        child: Image.network(
-                          resolveImageUrl(imageUrl)!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                        ),
-                      )
-                    : null,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 이미지 + 슬래시는 둥근 모양으로 클립. 테두리는 이 클립 밖(아래 별도 레이어)에서
+          // 그려서 모서리가 깎이지 않게 한다.
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 챔피언 박스 — 배경 + 챔피언 이미지(풀컬러).
+                  Positioned.fill(
+                    child: Container(
+                      color: AppColors.narDark400,
+                      child: hasImage
+                          ? Image.network(
+                              resolveImageUrl(imageUrl)!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                            )
+                          : null,
+                    ),
+                  ),
+                  // 대각선 슬래시(회색) — 36.4 박스 대각선(=√2배) 길이. OverflowBox 로 Stack 의
+                  // max 제약(36.4)을 해제해 본래 51.5 폭으로 그려지게 한다. ClipRRect 가 둥근
+                  // 모양으로 잘라서 슬래시는 박스 안에서만 그려진다.
+                  OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: Transform.rotate(
+                      angle: math.pi / 4,
+                      child: Container(
+                        width: 36.4 * scale * math.sqrt2,
+                        height: 2 * scale,
+                        color: AppColors.narGray500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            // 대각선 슬래시 — 36.4 박스 대각선(=√2배) 길이. OverflowBox 로 Stack 의 max
-            // 제약(36.4)을 해제해 본래 51.5 폭으로 그려지게 한다. 바깥의 ClipRRect 가
-            // 둥근 모양으로 잘라서, 슬래시는 박스 안에서만 그려지고 테두리는 안 벗어난다.
-            OverflowBox(
-              maxWidth: double.infinity,
-              maxHeight: double.infinity,
-              child: Transform.rotate(
-                angle: math.pi / 4,
-                child: Container(
-                  width: 36.4 * scale * math.sqrt2,
-                  height: 2 * scale,
-                  color: AppColors.narGray500,
-                ),
+          ),
+          // 회색 테두리 — 클립 밖에서 그려 모서리가 잘리지 않는다.
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.narGray500, width: 2 * scale),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
