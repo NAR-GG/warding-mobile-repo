@@ -17,12 +17,31 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   final SubscriptionRepository _repo;
   bool _disposed = false;
 
+  /// 한 페이지에 받을 선수 수. 백엔드 상한(100)에 맞춰 현재 LCK 로스터(약 60여 명)를
+  /// 한 번에 받는다. 로스터가 100을 넘어가면 [loadMorePlayers] 무한 스크롤로 이어 받는다.
+  static const int _pageSize = 100;
+
   List<PlayerSubscription> _subscribedPlayers = const [];
   List<PlayerSubscription> get subscribedPlayers => _subscribedPlayers;
 
-  /// 전체 목록 '선수' 탭 — 검색 결과(구독 여부 포함).
+  /// 전체 목록 '선수' 탭 — 검색 결과(구독 여부 포함). 페이지네이션으로 누적된다.
   List<PlayerSubscription> _availablePlayers = const [];
   List<PlayerSubscription> get availablePlayers => _availablePlayers;
+
+  /// 현재까지 받은 '선수' 페이지(0-based)와 전체 페이지/인원.
+  int _availPage = 0;
+  int _availTotalPages = 1;
+  int _availTotalElements = 0;
+
+  /// 검색 조건에 맞는 전체 선수 수(현재 화면에 보이는 수가 아니라 총합).
+  int get availablePlayersTotal => _availTotalElements;
+
+  /// 더 불러올 선수 페이지가 남아있는지.
+  bool get hasMorePlayers => _availPage + 1 < _availTotalPages;
+
+  /// 다음 페이지를 불러오는 중인지. (하단 로딩 인디케이터용)
+  bool _loadingMorePlayers = false;
+  bool get loadingMorePlayers => _loadingMorePlayers;
 
   /// 전체 목록 '팀' 탭 — 구독 여부 포함. 구독중 팀은 여기서 필터한다.
   List<TeamNotificationSubscription> _availableTeams = const [];
@@ -63,8 +82,13 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
       _availableTeams = v;
       _notify();
     });
-    final available = _repo.searchAvailablePlayers(query: _query).then((v) {
+    final available = _repo
+        .searchAvailablePlayers(query: _query, page: 0, size: _pageSize)
+        .then((v) {
       _availablePlayers = v.content;
+      _availPage = v.page;
+      _availTotalPages = v.totalPages;
+      _availTotalElements = v.totalElements;
       _loadingAvailablePlayers = false;
       _notify();
     });
@@ -81,15 +105,44 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     }
   }
 
-  /// 검색어로 전체 선수 목록을 다시 조회한다.
+  /// 검색어로 전체 선수 목록을 다시 조회한다. 첫 페이지부터 다시 시작한다.
   Future<void> searchPlayers(String query) async {
     _query = query;
     try {
-      _availablePlayers =
-          (await _repo.searchAvailablePlayers(query: query)).content;
+      final v = await _repo.searchAvailablePlayers(
+          query: query, page: 0, size: _pageSize);
+      _availablePlayers = v.content;
+      _availPage = v.page;
+      _availTotalPages = v.totalPages;
+      _availTotalElements = v.totalElements;
       _notify();
     } catch (e) {
       debugPrint('[Subscription] searchPlayers 에러: $e');
+    }
+  }
+
+  /// 다음 페이지 선수를 이어 붙인다. (무한 스크롤)
+  ///
+  /// 더 받을 페이지가 없거나 이미 로딩 중이면 아무것도 하지 않는다.
+  Future<void> loadMorePlayers() async {
+    if (!hasMorePlayers || _loadingMorePlayers) return;
+    _loadingMorePlayers = true;
+    _notify();
+    try {
+      final v = await _repo.searchAvailablePlayers(
+        query: _query,
+        page: _availPage + 1,
+        size: _pageSize,
+      );
+      _availablePlayers = [..._availablePlayers, ...v.content];
+      _availPage = v.page;
+      _availTotalPages = v.totalPages;
+      _availTotalElements = v.totalElements;
+    } catch (e) {
+      debugPrint('[Subscription] loadMorePlayers 에러: $e');
+    } finally {
+      _loadingMorePlayers = false;
+      _notify();
     }
   }
 

@@ -16,6 +16,8 @@ class AllSubscriptionSection extends StatefulWidget {
     required this.players,
     this.onTeamToggle,
     this.onPlayerToggle,
+    this.playersLoading = false,
+    this.playersLoadingMore = false,
     this.scale = 1,
   });
 
@@ -30,6 +32,12 @@ class AllSubscriptionSection extends StatefulWidget {
 
   /// 선수 탭의 구독 토글 콜백.
   final void Function(int index)? onPlayerToggle;
+
+  /// 선수 목록 최초 로딩 중인지 (목록이 비어있는 동안 스피너 표시).
+  final bool playersLoading;
+
+  /// 선수 다음 페이지를 이어 받는 중인지 (목록 하단 스피너 표시).
+  final bool playersLoadingMore;
 
   /// 비율 스케일. 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
@@ -68,6 +76,19 @@ class _AllSubscriptionSectionState extends State<AllSubscriptionSection> {
             backgroundColor: i.isEven ? AppColors.narBgSecondary : null,
             onToggle: onToggle == null ? null : () => onToggle(i),
             scale: scale,
+          ),
+        // 선수 탭: 최초 로딩(목록 빔) 또는 다음 페이지 로딩 중 스피너.
+        if (!isTeams && ((widget.playersLoading && items.isEmpty) ||
+            widget.playersLoadingMore))
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 16 * scale),
+            child: Center(
+              child: SizedBox(
+                width: 22 * scale,
+                height: 22 * scale,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
           ),
       ],
     );
