@@ -27,9 +27,23 @@ class _SubscriptionSettingsScreenState
   final SubscriptionSettingsViewModel _viewModel =
       SubscriptionSettingsViewModel();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // 끝에 가까워지면 다음 선수 페이지를 이어 붙인다. (전체 목록 '선수' 무한 스크롤)
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        _viewModel.loadMorePlayers();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _viewModel.dispose();
     _searchController.dispose();
     super.dispose();
@@ -66,6 +80,7 @@ class _SubscriptionSettingsScreenState
             final allPlayers = _viewModel.availablePlayers;
 
             return ListView(
+              controller: _scrollController,
               padding: EdgeInsets.zero,
               children: [
                 NarDetailHeader(title: '구독 설정', scale: scale),
@@ -115,6 +130,8 @@ class _SubscriptionSettingsScreenState
                     final p = allPlayers[i];
                     _viewModel.togglePlayer(p.playerId, p.subscribed);
                   },
+                  playersLoading: _viewModel.loadingAvailablePlayers,
+                  playersLoadingMore: _viewModel.loadingMorePlayers,
                   scale: scale,
                 ),
                 SizedBox(height: 20 * scale),
