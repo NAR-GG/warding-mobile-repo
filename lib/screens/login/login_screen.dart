@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               SocialLoginButton(
                 backgroundColor: AppColors.googleBg,
-                foregroundColor: AppColors.gary100,
+                foregroundColor: AppColors.gray100,
                 icon: SvgPicture.asset(
                   'assets/icons/google.svg',
                   width: 20,
