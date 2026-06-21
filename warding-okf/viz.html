@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warding OKF — OKF</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#2f81f7;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,"Apple SD Gothic Neo","Pretendard",sans-serif;height:100vh;overflow:hidden}
+  #app{display:flex;height:100vh}
+  #left{flex:1;position:relative;min-width:0}
+  #right{width:420px;max-width:46vw;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:20px}
+  canvas{display:block;width:100%;height:100%}
+  #topbar{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;align-items:center;z-index:5;flex-wrap:wrap}
+  #topbar .title{font-weight:700;font-size:15px;margin-right:8px}
+  input,select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:6px 10px;font-size:13px}
+  input{width:200px}
+  .legend{position:absolute;bottom:12px;left:12px;z-index:5;background:rgba(22,27,34,.85);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;max-width:60%}
+  .legend span{display:inline-flex;align-items:center;margin:2px 8px 2px 0}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px}
+  .kicker{color:var(--accent);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+  #right h1{font-size:20px;margin:6px 0 4px}
+  #right .desc{color:var(--muted);margin-bottom:12px}
+  #right .meta{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin:2px 4px 2px 0;font-size:11px;color:var(--muted)}
+  .body{border-top:1px solid var(--line);padding-top:14px;font-size:13px}
+  .body h1,.body h2{font-size:15px;margin:14px 0 6px;border:0}
+  .body h1{font-size:16px}
+  .body table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12px;display:block;overflow-x:auto}
+  .body th,.body td{border:1px solid var(--line);padding:4px 8px;text-align:left}
+  .body code{background:#21262d;padding:1px 5px;border-radius:4px;font-size:12px}
+  .body pre{background:#21262d;padding:10px;border-radius:6px;overflow-x:auto;margin:8px 0}
+  .body pre code{background:none;padding:0}
+  .body ul,.body ol{padding-left:20px;margin:6px 0}
+  .body a,.backlinks a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .body a:hover,.backlinks a:hover{text-decoration:underline}
+  .backlinks{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+  .backlinks h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .backlinks li{list-style:none;margin:3px 0;font-size:13px}
+  .empty{color:var(--muted);padding:40px 0;text-align:center}
+</style></head>
+<body><div id="app">
+  <div id="left">
+    <div id="topbar">
+      <span class="title">Warding OKF</span>
+      <input id="search" placeholder="검색 (제목·id·태그)">
+      <select id="typeFilter"><option value="">모든 타입</option></select>
+      <span id="count" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <canvas id="cv"></canvas>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div id="right"><div class="empty">노드를 클릭하면 상세가 표시됩니다.</div></div>
+</div>
+<script>
+const DATA = {"name": "Warding OKF", "nodes": [{"id": "overview", "title": "Warding 모바일 앱", "type": "Project Overview", "description": "LCK 등 e스포츠 팬을 위한 Flutter 모바일 앱.", "resource": "https://github.com/NAR-GG/warding-mobile-repo", "tags": ["flutter", "esports", "lck", "mobile"], "body": "# 개요\n\n`warding`은 LCK를 비롯한 e스포츠 팬을 위한 **Flutter 모바일 앱**이다. 경기 일정·상세, 라이브 경기 알림, 선수 평점, 솔로랭크 알림, 마이페이지 등을 제공한다. 저장소는 `NAR-GG/warding-mobile-repo`(GitHub).\n\n# 기술 스택\n\n| 항목 | 내용 |\n|------|------|\n| 프레임워크 | Flutter (Dart) |\n| 아키텍처 | [MVVM](/architecture/mvvm.md) |\n| 패키지명 | `com.warding.app` |\n| 인증 | [카카오 로그인](/features/kakao-login.md) (네이티브 앱 키, 릴리즈 키스토어 서명) |\n| 푸시 | FCM — [라이브 알림](/features/live-notifications.md) |\n\n# 핵심 규칙 (요약)\n\n- 상태·로직은 ViewModel에, UI는 View에 둔다 → [MVVM](/architecture/mvvm.md)\n- 종류별 파일 위치가 정해져 있다 → [폴더 구조](/architecture/folder-structure.md), [파일 생성 규칙](/architecture/file-conventions.md)\n- 색은 하드코딩 금지, 항상 `AppColors` 참조 → [색상 토큰](/design/color-tokens.md)\n- 디자인 시안 폭 375 기준 비율 스케일 적용 → [UI 스케일](/design/ui-scaling.md)\n\n# 기능 영역\n\n기능별 상세는 [Features](/features/) 참조. 주요 영역: [온보딩](/features/onboarding.md), [경기](/features/matches.md), [라이브 알림](/features/live-notifications.md), [선수 평점](/features/player-ratings.md), [솔랭 알림](/features/solo-rank-alarm.md), [프로필](/features/profile.md).\n\n# 진행 상황\n\n최신 진행 상황과 남은 작업은 [CLAUDE.md](/references/claude-md.md)의 \"진행 상황\" 섹션과 [GitHub 프로젝트 보드](/references/github-project.md)를 단일 출처로 본다.\n\n# Citations\n\n[1] [warding-mobile-repo (GitHub)](https://github.com/NAR-GG/warding-mobile-repo)\n[2] [CLAUDE.md](/references/claude-md.md)\n"}, {"id": "design/color-tokens", "title": "색상 / 디자인 토큰", "type": "Design Convention", "description": "모든 색은 AppColors에 정의하고 위젯에 하드코딩하지 않는다.", "resource": "https://github.com/NAR-GG/warding-mobile-repo/blob/main/lib/styles/app_colors.dart", "tags": ["design", "colors", "tokens"], "body": "# 규칙\n\n모든 색은 `lib/styles/app_colors.dart`의 `AppColors` 클래스에 정의한다.\n\n- 위젯에 색을 **하드코딩하지 않는다.** 항상 `AppColors.xxx`를 참조한다.\n- 디자인 시안의 토큰 이름을 그대로 쓴다 (`narText`, `narDark800`, `narButton1Bg` 등).\n- 필요한 색이 없으면 위젯에 박지 말고 **먼저 `AppColors`에 추가한 뒤** 참조한다.\n\n# 예시\n\n```dart\n// 단색\nstatic const Color narText = Color(0xFFFFFFFF);\n\n// 그라데이션\nstatic const LinearGradient narBg = LinearGradient(...);\n```\n\n# 관련\n\n- 크기·간격·폰트 스케일링은 [UI 스케일](/design/ui-scaling.md) 참조.\n- 토큰 정의 위치(`styles/`)는 [폴더 구조](/architecture/folder-structure.md) 참조.\n\n# Citations\n\n[1] [CLAUDE.md — 색상 / 디자인 토큰](/references/claude-md.md)\n"}, {"id": "design/ui-scaling", "title": "UI 비율 스케일 / 폰트", "type": "Design Convention", "description": "디자인 시안 폭 375 기준으로 크기·간격·폰트를 비율 스케일한다.", "resource": "", "tags": ["design", "responsive", "scaling", "fonts"], "body": "# 비율 스케일\n\n디자인 시안 기준 폭은 **375**. 화면 폭을 모바일 범위(320~430)로 clamp 한 뒤 375로 나눈 `scale` 값을 크기·간격·폰트 등 수치에 곱한다.\n\n```dart\nfinal width = MediaQuery.of(context).size.width;\nfinal scale = width.clamp(320.0, 430.0) / 375;\n```\n\n재사용 컴포넌트는 `scale` 파라미터를 받아 내부 수치에 곱한다.\n\n# 폰트\n\n- 기본 `Pretendard`, 일부 `Open Sans`.\n- ⚠️ 현재 두 폰트가 **pubspec에 미등록**이라 fallback 폰트로 렌더링됨 → 미해결 (GitHub 이슈 #10, [프로젝트 보드](/references/github-project.md) 참조).\n- `line-height`가 폰트 크기보다 많이 작으면 `height` 대신 부모의 `alignment`로 정렬한다.\n\n# 관련\n\n- 색 토큰은 [색상 토큰](/design/color-tokens.md) 참조.\n\n# Citations\n\n[1] [CLAUDE.md — UI 작성 규칙](/references/claude-md.md)\n"}, {"id": "references/github-project", "title": "GitHub 프로젝트 보드", "type": "Reference", "description": "NAR-GG/warding 보드 기반 작업 현황. GitHub에서 자동 동기화됨.", "resource": "https://github.com/orgs/NAR-GG/projects/1", "tags": ["reference", "project-board", "issues", "status", "synced"], "body": "# 개요\n\n`gh`로 NAR-GG `warding` 보드에서 자동 생성됨 (최종 동기화: **2026-06-21**). GitHub이 진실(source of truth)이며 이 문서는 단방향 미러다. `python3 warding-okf/sync_github.py`로 갱신한다.\n\n# 🟡 진행 중 (In Progress) (1)\n\n- #21 → [라이브 알림 연동](/features/live-notifications.md)\n\n# 🔴 할 일 (Todo) (7)\n\n- #35 → [프로필 수정 화면 Flutter 연동 (이미지 업로드 + name/tag)](/features/profile.md)\n- #34 → [경기 상세 진행도에 따른 스코어 및 뱃지 UI 수정](/features/matches.md)\n- #33 → [경기일정 필터 리그 전체 선택 추가](/features/matches.md)\n- #29 → [선수 이미지: epromatch 소스 대체 + 번들 외 선수 커버리지 + mypage 팀로고 host prepend](/features/player-ratings.md)\n- #16 → [라이브 탭 자동 새로고침 도입 검토](/features/matches.md)\n- #12 → [iOS permission_handler Podfile 매크로 설정](/features/onboarding.md)\n- #11 → [비회원 온보딩 로컬 저장](/features/onboarding.md)\n\n# ✅ 완료 (Done) (11)\n\n- #28 → [선수 이미지 표시 복구 (epromatch 소스 dead → 번들 이미지 + 서빙/매칭/호스트 수정)](/features/player-ratings.md)\n- #24 → [라이브 이벤트 탭 '경기 진행 중' 라벨이 종료 경기에도 고정 표시됨](/features/matches.md)\n- #23 → [경기상세 챔피언픽 탭: 밴 챔피언이 회색으로 표시됨](/features/matches.md)\n- #20 → [프로필 저장 연동](/features/profile.md)\n- #19 → [perf: 경기 리스트 커서 페이지네이션 단일 호출로 교체](/features/matches.md)\n- #18 📘 [팀 공유] LCK 라이브 경기상세 연동 개요\n- #17 → [Flutter 라이브 기능 배포 (백엔드 prod 선행)](/features/live-notifications.md)\n- #15 → [선수 평점 탭 실데이터 연동](/features/player-ratings.md)\n- #14 → [경기 상세 헤더 스코어/세트를 라이브 기준으로 연동](/features/matches.md)\n- #9 → [솔랭 알림 기능 마무리](/features/solo-rank-alarm.md)\n- #8 → [경기 페이지 구현](/features/matches.md)\n\n# Citations\n\n[1] [NAR-GG / warding 보드](https://github.com/orgs/NAR-GG/projects/1)\n[2] [NAR-GG/warding-mobile-repo 이슈](https://github.com/NAR-GG/warding-mobile-repo/issues)\n"}, {"id": "references/claude-md", "title": "CLAUDE.md (개발 가이드)", "type": "Reference", "description": "저장소 루트의 개발 가이드 원본. 아키텍처·규칙·진행 상황의 1차 출처.", "resource": "https://github.com/NAR-GG/warding-mobile-repo/blob/main/CLAUDE.md", "tags": ["reference", "guide", "source-of-truth"], "body": "# 개요\n\n`CLAUDE.md`는 저장소 루트의 개발 가이드다. 이 번들의 아키텍처·디자인·진행 상황 개념들은 모두 이 문서를 1차 출처로 한다.\n\n# 다루는 내용\n\n- 아키텍처(MVVM) → [MVVM 패턴](/architecture/mvvm.md)\n- 폴더 구조 → [폴더 구조](/architecture/folder-structure.md)\n- 파일 생성 규칙 → [파일 생성 규칙](/architecture/file-conventions.md)\n- 색상/디자인 토큰 → [색상 토큰](/design/color-tokens.md)\n- UI 작성 규칙 → [UI 스케일](/design/ui-scaling.md)\n- 진행 상황(완료/다음 작업/남은 TODO) → [개요](/overview.md), [GitHub 프로젝트 보드](/references/github-project.md)\n\n# 주의\n\n코드 구조·규칙이 바뀌면 **CLAUDE.md를 먼저 갱신**하고, 이 번들 개념들을 그에 맞춰 동기화한다. 번들은 CLAUDE.md를 대체하지 않고 탐색·연결을 보강한다.\n\n# Citations\n\n[1] [CLAUDE.md (repo)](https://github.com/NAR-GG/warding-mobile-repo/blob/main/CLAUDE.md)\n"}, {"id": "features/player-ratings", "title": "선수 평점", "type": "Feature", "description": "선수 평점 탭 실데이터 연동 및 선수 사진 표시.", "resource": "", "tags": ["players", "ratings", "images"], "body": "# 상태\n\n✅ 실데이터 연동 완료(#15). 이미지 소스 안정화는 후속.\n\n# 구현됨\n\n- 선수 평점 탭 **실데이터 연동** (#15).\n- 평점 상세 헤더에 선수 사진 렌더 (#28).\n- 평점 리스트 행에 선수 사진 표시 (#31).\n- 상대경로 이미지 URL에 API 호스트 prepend (선수/팀 이미지 표시, #27).\n\n# 후속 작업\n\n- 선수 이미지: `epromatch` 소스가 dead → 번들 이미지로 대체 + 서빙/매칭/호스트 수정 (#28 완료분), 번들 외 선수 커버리지 + mypage 팀로고 host prepend (#29, 열림).\n- 상세는 [GitHub 프로젝트 보드](/references/github-project.md).\n\n# 관련\n\n- 경기 상세와 연계 → [경기](/features/matches.md).\n\n# Citations\n\n[1] [GitHub 이슈 #15/#27/#28/#29/#31](/references/github-project.md)\n"}, {"id": "features/matches", "title": "경기 (일정·상세·라이브)", "type": "Feature", "description": "경기 일정/상세 화면, 라이브 기준 스코어·세트 연동, 챔피언 픽/밴 탭.", "resource": "", "tags": ["matches", "live", "schedule"], "body": "# 상태\n\n✅ 경기 페이지 구현 완료(이슈 #8). 일부 UI·필터 후속 작업 진행 중.\n\n# 구현됨\n\n- 경기 페이지 구현 (#8).\n- 경기 상세 헤더 **스코어/세트를 라이브 기준으로 연동** (#14).\n- 경기 리스트 **커서 페이지네이션을 단일 호출로 교체** (성능, #19).\n- 챔피언 픽 탭: 밴 챔피언 컬러·테두리 표시 수정 (#23, #32).\n- 라이브 이벤트 탭 '경기 진행 중' 라벨이 종료 경기에 고정 표시되던 버그 수정 (#24).\n\n# 후속 작업 (열린 이슈)\n\n- 경기 상세 진행도에 따른 스코어·뱃지 UI 수정 (#34).\n- 경기일정 필터에 '리그 전체 선택' 추가 (#33).\n- 라이브 탭 자동 새로고침 도입 검토 (#16).\n\n# 관련\n\n- 라이브 경기 알림은 [라이브 알림](/features/live-notifications.md).\n- 선수 평점은 [선수 평점](/features/player-ratings.md).\n- 현황은 [GitHub 프로젝트 보드](/references/github-project.md).\n\n# Citations\n\n[1] [GitHub 프로젝트 보드 / 이슈](/references/github-project.md)\n[2] [CLAUDE.md](/references/claude-md.md)\n"}, {"id": "features/live-notifications", "title": "라이브 알림 (FCM)", "type": "Feature", "description": "라이브 경기 FCM 수신 및 딥링크. 백엔드 prod 선행 후 배포.", "resource": "", "tags": ["fcm", "push", "live", "notifications", "in-progress"], "body": "# 상태\n\n🟡 진행 중 (이슈 #21 — 보드 In Progress). 모바일 수신·딥링크는 구현됨.\n\n# 구현됨\n\n- 라이브 경기 **FCM 수신 + 딥링크** (모바일, #21).\n- 관련 코드: `repository/fcm/fcm_service.dart`.\n- Flutter 라이브 기능 배포는 백엔드 prod 선행 후 진행 (#17).\n\n# 관련\n\n- 라이브 경기 화면·스코어는 [경기](/features/matches.md).\n- 솔로랭크 알림은 별도 → [솔랭 알림](/features/solo-rank-alarm.md).\n- 현황은 [GitHub 프로젝트 보드](/references/github-project.md).\n\n# Citations\n\n[1] [GitHub 이슈 #21 — 라이브 알림 연동](/references/github-project.md)\n"}, {"id": "features/solo-rank-alarm", "title": "솔로랭크 알림", "type": "Feature", "description": "솔로랭크 알림 구독 기능. 마이페이지 내 알림 섹션.", "resource": "", "tags": ["solo-rank", "alarm", "subscription"], "body": "# 상태\n\n✅ 기능 마무리 완료 (이슈 #9).\n\n# 구현됨 / 관련 코드\n\n- 솔랭 알림 기능 마무리 (#9).\n- `repository/notification/solo_rank_alarm_repository.dart`\n- `viewmodel/subscription/solo_rank_alarm_viewmodel.dart`\n- `screens/mypage/component/solo_rank_alarm_section.dart`\n\n> 위 파일들은 [파일 생성 규칙](/architecture/file-conventions.md)의 위치 규약을 따른다.\n\n# 관련\n\n- 라이브 경기 알림(FCM)과는 별개 → [라이브 알림](/features/live-notifications.md).\n- 마이페이지/프로필 → [프로필](/features/profile.md).\n\n# Citations\n\n[1] [GitHub 이슈 #9 — 솔랭 알림 기능 마무리](/references/github-project.md)\n"}, {"id": "features/onboarding", "title": "온보딩", "type": "Feature", "description": "선호 리그·팀·선수·알림 권한 4단계 온보딩. MVVM 구조로 구현.", "resource": "", "tags": ["onboarding", "mvvm", "done"], "body": "# 상태\n\n✅ 4단계 구현 완료. 일부 비회원 처리 미완(아래 참조).\n\n# 내용\n\n선호 **리그 · 팀 · 선수 · 알림 권한** 4단계로 구성.\n\n- [MVVM](/architecture/mvvm.md) 구조: `OnboardingViewModel`(ChangeNotifier)이 단계 이동·선택·권한 상태를 갖고, `onboarding_screen.dart`와 `step/*` 위젯은 구독해 렌더링만 한다.\n- 리그·선수 선택은 그리드 UI.\n- 완료 시 `POST /api/auth/onboarding`에 리그·팀·선수를 연동.\n- 알림 권한 '허용' 시 실제 권한 요청 연결됨.\n\n# 미해결 / 후속\n\n- **비회원(JWT 없음)** 은 온보딩 완료 API를 호출하지 않음. 선호 팀만 로컬 캐싱하고, 리그·선수 로컬 저장은 미구현 (이슈 #11).\n- iOS 배포 시 `permission_handler` Podfile 매크로 설정 필요 (이슈 #12).\n- 상세는 [GitHub 프로젝트 보드](/references/github-project.md) 참조.\n\n# Citations\n\n[1] [CLAUDE.md — 진행 상황 / 남은 TODO](/references/claude-md.md)\n"}, {"id": "features/kakao-login", "title": "카카오 로그인", "type": "Feature", "description": "카카오 네이티브 앱 키 기반 로그인. 릴리즈 키스토어 서명 설정 완료.", "resource": "", "tags": ["auth", "kakao", "login", "done"], "body": "# 상태\n\n✅ 완료.\n\n# 내용\n\n- 카카오 **네이티브 앱 키** 사용.\n- 패키지명 `com.warding.app`.\n- 릴리즈 키스토어 서명 설정 완료.\n\n# 관련\n\n- 로그인 후 신규 사용자는 [온보딩](/features/onboarding.md)으로 진입.\n- 화면은 `screens/login/`에 위치 → [파일 생성 규칙](/architecture/file-conventions.md).\n\n# Citations\n\n[1] [CLAUDE.md — 진행 상황: 완료](/references/claude-md.md)\n"}, {"id": "features/profile", "title": "프로필 (마이페이지)", "type": "Feature", "description": "마이페이지 프로필 저장 연동 및 프로필 수정 화면.", "resource": "", "tags": ["profile", "mypage", "in-progress"], "body": "# 상태\n\n✅ 프로필 저장 연동 완료(#20). 🟡 프로필 수정 화면(이미지 업로드 + name/tag) Flutter 연동 진행 중(#35).\n\n# 구현됨\n\n- 프로필 저장 연동 (#20).\n- 관련 화면: `screens/mypage/mypage_screen.dart`, `screens/profile_edit/profile_edit_screen.dart`.\n- 모델: `model/user_profile.dart`.\n\n# 진행 중 (#35)\n\n- 프로필 수정 화면 Flutter 연동: **이미지 업로드 + name/tag**.\n- 현재 작업 브랜치에 미커밋 변경 다수 (`profile_edit_screen.dart`, `user_profile.dart`, `repository/profile/` 등).\n\n# 관련\n\n- 마이페이지의 솔랭 알림 섹션 → [솔랭 알림](/features/solo-rank-alarm.md).\n- mypage 팀로고 이미지 host prepend는 [선수 평점](/features/player-ratings.md) #29와 연관.\n- 현황은 [GitHub 프로젝트 보드](/references/github-project.md).\n\n# Citations\n\n[1] [GitHub 이슈 #20 / #35](/references/github-project.md)\n"}, {"id": "playbooks/add-feature", "title": "새 기능 추가", "type": "Playbook", "description": "MVVM 규칙과 파일 위치 규약을 지키며 새 기능을 추가하는 절차.", "resource": "", "tags": ["playbook", "how-to", "mvvm"], "body": "# 목적\n\nwarding에 새 화면/기능을 추가할 때 일관성을 유지하는 절차.\n\n# 단계\n\n1. **모델 정의** — 필요한 데이터 모델을 `model/{이름}.dart`에 추가.\n2. **리포지토리 작성** — API 통신을 `repository/{기능}/{기능}_repository.dart`에 둔다.\n3. **ViewModel 작성** — `viewmodel/{기능}/{기능}_viewmodel.dart`에 `ChangeNotifier` 상속 클래스. 상태·로직을 담고 `notifyListeners()`로 통지. **`BuildContext` 의존 금지**, 화면 전환은 콜백으로 위임. → [MVVM](/architecture/mvvm.md)\n4. **View 작성** — `screens/{기능}/{기능}_screen.dart`. `ListenableBuilder`로 ViewModel 구독, 이벤트는 ViewModel 메서드로 위임, `Navigator`만 직접 처리.\n5. **위젯 분리** — 화면 전용 위젯은 `screens/{기능}/component/`, 공용 위젯은 `components/`. → [파일 생성 규칙](/architecture/file-conventions.md)\n6. **색·치수** — 색은 [`AppColors`](/design/color-tokens.md) 토큰만 사용(하드코딩 금지). 크기·폰트는 [비율 스케일](/design/ui-scaling.md) 적용.\n\n# 체크리스트\n\n- [ ] 파일명 `snake_case`, 클래스명 `PascalCase`\n- [ ] ViewModel이 `BuildContext`를 참조하지 않음\n- [ ] 하드코딩된 색이 없음 (`AppColors`만 참조)\n- [ ] `scale` 적용된 치수\n\n# Citations\n\n[1] [CLAUDE.md — 아키텍처 / 파일 생성 규칙 / UI 작성 규칙](/references/claude-md.md)\n"}, {"id": "architecture/file-conventions", "title": "파일 생성 규칙", "type": "Architecture Reference", "description": "새 기능 추가 시 종류별 파일 위치와 네이밍 규칙.", "resource": "", "tags": ["architecture", "conventions", "naming"], "body": "# 종류별 위치\n\n| 종류 | 위치 | 예 |\n|------|------|-----|\n| 화면 | `screens/{기능}/{기능}_screen.dart` | `screens/onboarding/onboarding_screen.dart` |\n| 화면 전용 위젯 | `screens/{기능}/component/` | `screens/onboarding/component/onboarding_header.dart` |\n| 단계별 화면(멀티 스텝) | `screens/{기능}/step/` | `screens/onboarding/step/team_step.dart` |\n| 앱 공용 위젯 | `components/` | `components/common_button.dart` |\n| ViewModel | `viewmodel/{기능}/{기능}_viewmodel.dart` | `viewmodel/onboarding/onboarding_viewmodel.dart` |\n| 모델 | `model/{이름}.dart` | `model/team.dart` |\n| 리포지토리 | `repository/{기능}/{기능}_repository.dart` | `repository/onboarding/onboarding_repository.dart` |\n\n# 네이밍\n\n- 파일명은 `snake_case`, 클래스명은 `PascalCase`.\n- 한 화면에서만 쓰는 위젯 → 그 화면 폴더의 `component/`.\n- 여러 화면에서 쓰는 위젯 → `lib/components/`.\n\n# 관련\n\n- 디렉토리 역할: [폴더 구조](/architecture/folder-structure.md)\n- 계층 책임: [MVVM 패턴](/architecture/mvvm.md)\n- 새 기능을 처음부터 만드는 절차: [새 기능 추가 플레이북](/playbooks/add-feature.md)\n\n# Citations\n\n[1] [CLAUDE.md — 파일 생성 규칙](/references/claude-md.md)\n"}, {"id": "architecture/mvvm", "title": "MVVM 패턴", "type": "Architecture Pattern", "description": "상태와 로직은 ViewModel에, UI는 View에 두는 warding의 핵심 아키텍처.", "resource": "", "tags": ["architecture", "mvvm", "state-management"], "body": "# 원칙\n\n상태와 로직은 **ViewModel**에, UI는 **View**에 둔다.\n\n# 구성 요소\n\n| 계층 | 위치 | 역할 |\n|------|------|------|\n| **Model** | `model/`, `repository/` | 데이터 모델 클래스, 데이터 소스(API) |\n| **ViewModel** | `viewmodel/` | `ChangeNotifier` 상속. 화면 상태·비즈니스 로직 담당, `notifyListeners()`로 변경 통지 |\n| **View** | `screens/` | UI만 담당 |\n\n자세한 위치 규칙은 [폴더 구조](/architecture/folder-structure.md)와 [파일 생성 규칙](/architecture/file-conventions.md) 참조.\n\n# ViewModel 규칙\n\n- `ChangeNotifier`를 상속한다.\n- **`BuildContext`에 의존하지 않는다.**\n- 화면 전환은 생성 시 주입받은 콜백(`onFinish` 등)으로 View에 위임한다.\n\n# View 규칙\n\n- `ListenableBuilder`로 ViewModel을 구독한다.\n- 사용자 이벤트는 ViewModel 메서드 호출로 위임한다.\n- 화면 전환(`Navigator`)만 View에서 직접 처리한다.\n\n# 예시: 온보딩\n\n`OnboardingViewModel`(ChangeNotifier)이 단계 이동·선택·권한 상태를 갖고, `onboarding_screen.dart`와 `step/*` 위젯은 이를 구독해 렌더링만 한다. → [온보딩 기능](/features/onboarding.md)\n\n# Citations\n\n[1] [CLAUDE.md — 아키텍처: MVVM](/references/claude-md.md)\n"}, {"id": "architecture/folder-structure", "title": "폴더 구조", "type": "Architecture Reference", "description": "lib/ 하위 디렉토리별 역할 정의.", "resource": "https://github.com/NAR-GG/warding-mobile-repo/tree/main/lib", "tags": ["architecture", "structure"], "body": "# lib/ 구조\n\n```\nlib/\n├── config/       앱 설정 (API URL, 키 등)\n├── model/        데이터 모델 클래스\n├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)\n├── viewmodel/    ViewModel (기능별 하위 폴더)\n├── screens/      화면 (기능별 폴더)\n├── components/   앱 전역 공용 위젯\n├── styles/       디자인 토큰 (app_colors 등)\n└── util/         유틸리티\n```\n\n# 비고\n\n- `repository/`·`viewmodel/`은 **기능별 하위 폴더**로 나눈다.\n- 한 화면에서만 쓰는 위젯은 그 화면 폴더의 `component/`에, 여러 화면에서 쓰면 `components/`에 둔다.\n- 디자인 토큰은 `styles/`에 모은다 → [색상 토큰](/design/color-tokens.md).\n- 계층별 책임은 [MVVM 패턴](/architecture/mvvm.md), 새 파일 위치는 [파일 생성 규칙](/architecture/file-conventions.md) 참조.\n\n# Citations\n\n[1] [CLAUDE.md — 폴더 구조](/references/claude-md.md)\n"}], "edges": [{"source": "overview", "target": "architecture/mvvm"}, {"source": "overview", "target": "features/kakao-login"}, {"source": "overview", "target": "features/live-notifications"}, {"source": "overview", "target": "architecture/folder-structure"}, {"source": "overview", "target": "architecture/file-conventions"}, {"source": "overview", "target": "design/color-tokens"}, {"source": "overview", "target": "design/ui-scaling"}, {"source": "overview", "target": "features/onboarding"}, {"source": "overview", "target": "features/matches"}, {"source": "overview", "target": "features/player-ratings"}, {"source": "overview", "target": "features/solo-rank-alarm"}, {"source": "overview", "target": "features/profile"}, {"source": "overview", "target": "references/claude-md"}, {"source": "overview", "target": "references/github-project"}, {"source": "design/color-tokens", "target": "design/ui-scaling"}, {"source": "design/color-tokens", "target": "architecture/folder-structure"}, {"source": "design/color-tokens", "target": "references/claude-md"}, {"source": "design/ui-scaling", "target": "references/github-project"}, {"source": "design/ui-scaling", "target": "design/color-tokens"}, {"source": "design/ui-scaling", "target": "references/claude-md"}, {"source": "references/github-project", "target": "features/live-notifications"}, {"source": "references/github-project", "target": "features/profile"}, {"source": "references/github-project", "target": "features/matches"}, {"source": "references/github-project", "target": "features/player-ratings"}, {"source": "references/github-project", "target": "features/onboarding"}, {"source": "references/github-project", "target": "features/solo-rank-alarm"}, {"source": "references/claude-md", "target": "architecture/mvvm"}, {"source": "references/claude-md", "target": "architecture/folder-structure"}, {"source": "references/claude-md", "target": "architecture/file-conventions"}, {"source": "references/claude-md", "target": "design/color-tokens"}, {"source": "references/claude-md", "target": "design/ui-scaling"}, {"source": "references/claude-md", "target": "overview"}, {"source": "references/claude-md", "target": "references/github-project"}, {"source": "features/player-ratings", "target": "references/github-project"}, {"source": "features/player-ratings", "target": "features/matches"}, {"source": "features/matches", "target": "features/live-notifications"}, {"source": "features/matches", "target": "features/player-ratings"}, {"source": "features/matches", "target": "references/github-project"}, {"source": "features/matches", "target": "references/claude-md"}, {"source": "features/live-notifications", "target": "features/matches"}, {"source": "features/live-notifications", "target": "features/solo-rank-alarm"}, {"source": "features/live-notifications", "target": "references/github-project"}, {"source": "features/solo-rank-alarm", "target": "architecture/file-conventions"}, {"source": "features/solo-rank-alarm", "target": "features/live-notifications"}, {"source": "features/solo-rank-alarm", "target": "features/profile"}, {"source": "features/solo-rank-alarm", "target": "references/github-project"}, {"source": "features/onboarding", "target": "architecture/mvvm"}, {"source": "features/onboarding", "target": "references/github-project"}, {"source": "features/onboarding", "target": "references/claude-md"}, {"source": "features/kakao-login", "target": "features/onboarding"}, {"source": "features/kakao-login", "target": "architecture/file-conventions"}, {"source": "features/kakao-login", "target": "references/claude-md"}, {"source": "features/profile", "target": "features/solo-rank-alarm"}, {"source": "features/profile", "target": "features/player-ratings"}, {"source": "features/profile", "target": "references/github-project"}, {"source": "playbooks/add-feature", "target": "architecture/mvvm"}, {"source": "playbooks/add-feature", "target": "architecture/file-conventions"}, {"source": "playbooks/add-feature", "target": "design/color-tokens"}, {"source": "playbooks/add-feature", "target": "design/ui-scaling"}, {"source": "playbooks/add-feature", "target": "references/claude-md"}, {"source": "architecture/file-conventions", "target": "architecture/folder-structure"}, {"source": "architecture/file-conventions", "target": "architecture/mvvm"}, {"source": "architecture/file-conventions", "target": "playbooks/add-feature"}, {"source": "architecture/file-conventions", "target": "references/claude-md"}, {"source": "architecture/mvvm", "target": "architecture/folder-structure"}, {"source": "architecture/mvvm", "target": "architecture/file-conventions"}, {"source": "architecture/mvvm", "target": "features/onboarding"}, {"source": "architecture/mvvm", "target": "references/claude-md"}, {"source": "architecture/folder-structure", "target": "design/color-tokens"}, {"source": "architecture/folder-structure", "target": "architecture/mvvm"}, {"source": "architecture/folder-structure", "target": "architecture/file-conventions"}, {"source": "architecture/folder-structure", "target": "references/claude-md"}]};
+const PALETTE = ["#2f81f7","#3fb950","#db61a2","#d29922","#a371f7","#f0883e","#56d4dd","#e34c4c","#8b949e"];
+const types=[...new Set(DATA.nodes.map(n=>n.type))];
+const typeColor={}; types.forEach((t,i)=>typeColor[t]=PALETTE[i%PALETTE.length]);
+const byId={}; DATA.nodes.forEach(n=>byId[n.id]=n);
+// backlinks
+const backlinks={}; DATA.nodes.forEach(n=>backlinks[n.id]=[]);
+DATA.edges.forEach(e=>{ if(backlinks[e.target]) backlinks[e.target].push(e.source); });
+// adjacency for highlight
+const adj={}; DATA.nodes.forEach(n=>adj[n.id]=new Set());
+DATA.edges.forEach(e=>{adj[e.source]&&adj[e.source].add(e.target);adj[e.target]&&adj[e.target].add(e.source);});
+
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+let W,H,DPR=window.devicePixelRatio||1;
+function resize(){const r=cv.parentElement.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+"px";cv.style.height=H+"px";ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener("resize",resize);resize();
+
+// init positions on a circle
+const N=DATA.nodes.length;
+DATA.nodes.forEach((n,i)=>{const a=2*Math.PI*i/N;n.x=W/2+Math.cos(a)*Math.min(W,H)*0.3;n.y=H/2+Math.sin(a)*Math.min(W,H)*0.3;n.vx=0;n.vy=0;n.deg=adj[n.id].size;});
+let selected=null, hover=null, dragging=null, query="", typeF="";
+
+function visible(n){
+  if(typeF && n.type!==typeF) return false;
+  if(query){const q=query.toLowerCase();
+    return n.title.toLowerCase().includes(q)||n.id.toLowerCase().includes(q)||(n.tags||[]).some(t=>t.toLowerCase().includes(q));}
+  return true;
+}
+
+function tick(){
+  // repulsion
+  for(let i=0;i<N;i++){const a=DATA.nodes[i];
+    for(let j=i+1;j<N;j++){const b=DATA.nodes[j];
+      let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||0.01,d=Math.sqrt(d2);
+      let f=4200/d2; let fx=dx/d*f,fy=dy/d*f;
+      a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;}}
+  // springs
+  DATA.edges.forEach(e=>{const a=byId[e.source],b=byId[e.target];if(!a||!b)return;
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||0.01,f=(d-110)*0.015;
+    let fx=dx/d*f,fy=dy/d*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;});
+  // centering + integrate
+  DATA.nodes.forEach(n=>{n.vx+=(W/2-n.x)*0.0012;n.vy+=(H/2-n.y)*0.0012;
+    if(n===dragging)return;
+    n.vx*=0.86;n.vy*=0.86;n.x+=n.vx;n.y+=n.vy;
+    n.x=Math.max(20,Math.min(W-20,n.x));n.y=Math.max(40,Math.min(H-20,n.y));});
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const hl=selected||hover;
+  // edges
+  ctx.lineWidth=1;
+  DATA.edges.forEach(e=>{const a=byId[e.source],b=byId[e.target];if(!a||!b)return;
+    const dim = hl && !(hl===a||hl===b);
+    const va=visible(a),vb=visible(b);
+    ctx.strokeStyle=dim?"rgba(120,130,145,.07)":(va&&vb?"rgba(139,148,158,.35)":"rgba(139,148,158,.08)");
+    ctx.beginPath();ctx.moveTo(a.x,a.y);
+    // arrowhead
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+    let ex=b.x-dx/d*(7+Math.sqrt(b.deg)*1.5),ey=b.y-dy/d*(7+Math.sqrt(b.deg)*1.5);
+    ctx.lineTo(ex,ey);ctx.stroke();});
+  // nodes
+  DATA.nodes.forEach(n=>{
+    const r=5+Math.sqrt(n.deg)*1.6;
+    const vis=visible(n);
+    const dim=hl&&!(hl===n||adj[hl.id].has(n.id));
+    ctx.globalAlpha=vis?(dim?0.25:1):0.12;
+    ctx.beginPath();ctx.arc(n.x,n.y,r,0,7);
+    ctx.fillStyle=typeColor[n.type]||"#888";ctx.fill();
+    if(n===selected){ctx.lineWidth=2.5;ctx.strokeStyle="#fff";ctx.stroke();}
+    // label
+    if(vis&&(r>7||n===hl||hl===null&&query)){
+      ctx.globalAlpha=vis?(dim?0.3:0.92):0.12;
+      ctx.fillStyle="#e6edf3";ctx.font="11px -apple-system,sans-serif";ctx.textAlign="center";
+      ctx.fillText(n.title.length>18?n.title.slice(0,17)+"…":n.title,n.x,n.y+r+12);}
+  });
+  ctx.globalAlpha=1;
+}
+function loop(){tick();draw();requestAnimationFrame(loop);}
+loop();
+
+function nodeAt(mx,my){let best=null,bd=1e9;
+  DATA.nodes.forEach(n=>{const r=5+Math.sqrt(n.deg)*1.6+4;const d=(n.x-mx)**2+(n.y-my)**2;if(d<r*r&&d<bd){bd=d;best=n;}});return best;}
+function rel(ev){const r=cv.getBoundingClientRect();return[ev.clientX-r.left,ev.clientY-r.top];}
+cv.addEventListener("mousemove",e=>{const[x,y]=rel(e);if(dragging){dragging.x=x;dragging.y=y;dragging.vx=0;dragging.vy=0;return;}hover=nodeAt(x,y);cv.style.cursor=hover?"pointer":"default";});
+cv.addEventListener("mousedown",e=>{const[x,y]=rel(e);const n=nodeAt(x,y);if(n){dragging=n;}});
+window.addEventListener("mouseup",e=>{if(dragging){const[x,y]=rel(e);const n=nodeAt(x,y);if(n===dragging)select(n);}dragging=null;});
+
+// ---- markdown (minimal) ----
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function inline(s){
+  s=esc(s);
+  s=s.replace(/`([^`]+)`/g,(m,c)=>"<code>"+c+"</code>");
+  s=s.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(m,t,h)=>{
+    if(/\.md$/.test(h)){let id=h.startsWith("/")?h.slice(1,-3):h.replace(/^\.\//,"").slice(0,-3);
+      return '<a data-nav="'+id+'">'+t+'</a>';}
+    return '<a href="'+h+'" target="_blank" rel="noopener">'+t+'</a>';});
+  return s;
+}
+function mdToHtml(md){
+  const lines=md.split("\n");let out=[],i=0;
+  while(i<lines.length){let l=lines[i];
+    if(/^#{1,6}\s/.test(l)){const lv=l.match(/^#+/)[0].length;out.push("<h"+Math.min(lv,2)+">"+inline(l.replace(/^#+\s*/,""))+"</h"+Math.min(lv,2)+">");i++;continue;}
+    if(/^```/.test(l)){let buf=[];i++;while(i<lines.length&&!/^```/.test(lines[i])){buf.push(esc(lines[i]));i++;}i++;out.push("<pre><code>"+buf.join("\n")+"</code></pre>");continue;}
+    if(/^\s*\|.*\|/.test(l)){let buf=[];while(i<lines.length&&/^\s*\|.*\|/.test(lines[i])){buf.push(lines[i]);i++;}
+      const rows=buf.filter(r=>!/^\s*\|[\s|:-]+\|\s*$/.test(r)).map(r=>r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim()));
+      if(rows.length){let t="<table><tr>"+rows[0].map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr>";
+        for(let r=1;r<rows.length;r++)t+="<tr>"+rows[r].map(c=>"<td>"+inline(c)+"</td>").join("")+"</tr>";out.push(t+"</table>");}continue;}
+    if(/^\s*[-*]\s/.test(l)){let buf=[];while(i<lines.length&&/^\s*[-*]\s/.test(lines[i])){buf.push("<li>"+inline(lines[i].replace(/^\s*[-*]\s/,""))+"</li>");i++;}out.push("<ul>"+buf.join("")+"</ul>");continue;}
+    if(/^\s*\d+\.\s/.test(l)){let buf=[];while(i<lines.length&&/^\s*\d+\.\s/.test(lines[i])){buf.push("<li>"+inline(lines[i].replace(/^\s*\d+\.\s/,""))+"</li>");i++;}out.push("<ol>"+buf.join("")+"</ol>");continue;}
+    if(l.trim()===""){i++;continue;}
+    out.push("<p>"+inline(l)+"</p>");i++;}
+  return out.join("\n");
+}
+
+function select(n){selected=n;render();}
+function render(){
+  const p=document.getElementById("right");
+  if(!selected){p.innerHTML='<div class="empty">노드를 클릭하면 상세가 표시됩니다.</div>';return;}
+  const n=selected;
+  let html='<div class="kicker" style="color:'+(typeColor[n.type]||'#888')+'">'+esc(n.type)+'</div>';
+  html+='<h1>'+esc(n.title)+'</h1>';
+  if(n.description)html+='<div class="desc">'+esc(n.description)+'</div>';
+  html+='<div class="meta">id: <code>'+esc(n.id)+'</code>';
+  if(n.resource)html+=' · <a href="'+esc(n.resource)+'" target="_blank" rel="noopener">resource ↗</a>';
+  html+='</div>';
+  if(n.tags&&n.tags.length)html+='<div>'+n.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join("")+'</div>';
+  html+='<div class="body">'+mdToHtml(n.body)+'</div>';
+  const bl=backlinks[n.id]||[];
+  if(bl.length){html+='<div class="backlinks"><h3>Cited by ('+bl.length+')</h3><ul>';
+    bl.forEach(s=>{html+='<li><a data-nav="'+s+'">'+esc(byId[s]?byId[s].title:s)+'</a></li>';});
+    html+='</ul></div>';}
+  p.innerHTML=html;p.scrollTop=0;
+  p.querySelectorAll("[data-nav]").forEach(a=>a.addEventListener("click",()=>{const t=byId[a.getAttribute("data-nav")];if(t)select(t);}));
+}
+
+// controls
+const tf=document.getElementById("typeFilter");
+types.forEach(t=>{const o=document.createElement("option");o.value=t;o.textContent=t;tf.appendChild(o);});
+tf.addEventListener("change",e=>{typeF=e.target.value;updateCount();});
+document.getElementById("search").addEventListener("input",e=>{query=e.target.value;updateCount();});
+function updateCount(){const v=DATA.nodes.filter(visible).length;document.getElementById("count").textContent=v+" / "+N+" 노드, "+DATA.edges.length+" 링크";}
+updateCount();
+// legend
+document.getElementById("legend").innerHTML=types.map(t=>'<span><span class="dot" style="background:'+typeColor[t]+'"></span>'+esc(t)+'</span>').join("");
+</script></body></html>
