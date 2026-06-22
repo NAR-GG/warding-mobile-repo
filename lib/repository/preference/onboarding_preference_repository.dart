@@ -1,0 +1,46 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../model/onboarding_selection.dart';
+
+/// 비회원 온보딩 선택값을 기기에 로컬 저장한다.
+///
+/// 로그인 시 [OnboardingSyncService] 가 읽어 서버로 1회 동기화한 뒤 지운다.
+/// 헤더가 읽는 전체 팀 캐시([TeamPreferenceRepository])와 책임을 분리한다.
+/// 민감 정보는 아니지만 이미 설치된 [FlutterSecureStorage] 를 재사용한다.
+class OnboardingPreferenceRepository {
+  OnboardingPreferenceRepository({FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage();
+
+  static final OnboardingPreferenceRepository instance =
+      OnboardingPreferenceRepository();
+
+  static const _key = 'onboarding_selection';
+
+  final FlutterSecureStorage _storage;
+
+  /// 온보딩 선택값을 저장한다.
+  Future<void> saveSelection(OnboardingSelection selection) async {
+    await _storage.write(key: _key, value: jsonEncode(selection.toJson()));
+  }
+
+  /// 저장된 선택값을 읽는다. 없거나 손상됐으면 null.
+  Future<OnboardingSelection?> loadSelection() async {
+    final raw = await _storage.read(key: _key);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return OnboardingSelection.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('[OnboardingPreference] 저장값 파싱 실패: $e');
+      return null;
+    }
+  }
+
+  /// 저장된 선택값을 지운다 (동기화 완료·온보딩 건너뛰기 시).
+  Future<void> clear() async {
+    await _storage.delete(key: _key);
+  }
+}
