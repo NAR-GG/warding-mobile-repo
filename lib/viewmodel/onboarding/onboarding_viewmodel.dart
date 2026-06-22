@@ -166,11 +166,11 @@ class OnboardingViewModel extends ChangeNotifier {
           favoritePlayerIds: _selectedPlayerIds.toList(),
           jwt: jwt,
         );
+        // 서버 저장 성공 시에만 로컬 selection 제거(실패 시 보존, 다음 로그인에 재시도).
+        await _onboardingPreferences.clear();
       } catch (e) {
         debugPrint('[Onboarding] 서버 온보딩 저장 실패: $e');
       }
-      // 혹시 비회원 시절 남아 있던 로컬 selection 제거.
-      await _onboardingPreferences.clear();
     } else {
       // 비회원: 로그인 시 동기화할 selection 을 로컬에 저장.
       await _onboardingPreferences.saveSelection(

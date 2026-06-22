@@ -38,7 +38,8 @@ void main() {
     auth = MockAuthService();
 
     when(() => repo.fetchLeagues()).thenAnswer((_) async => const []);
-    when(() => repo.fetchTeams()).thenAnswer((_) async => const []);
+    when(() => repo.fetchTeams()).thenAnswer(
+        (_) async => const [Team(id: 1, name: 'T1', code: 'T1', imageUrl: '')]);
     when(() => repo.fetchPlayers(
           year: any(named: 'year'),
           teamId: any(named: 'teamId'),
@@ -87,6 +88,7 @@ void main() {
           favoritePlayerIds: any(named: 'favoritePlayerIds'),
           jwt: any(named: 'jwt'),
         ));
+    verify(() => teamPrefs.savePreferredTeam(any())).called(1);
   });
 
   test('회원이면 서버 저장하고 로컬 selection을 지운다', () async {
@@ -108,6 +110,23 @@ void main() {
           jwt: 'jwt-token',
         )).called(1);
     verify(() => onboardingPrefs.clear()).called(1);
+    verifyNever(() => onboardingPrefs.saveSelection(any()));
+    verify(() => teamPrefs.savePreferredTeam(any())).called(1);
+  });
+
+  test('회원이고 서버 저장 실패하면 로컬 selection을 지우지 않는다', () async {
+    when(() => auth.jwt).thenAnswer((_) async => 'jwt-token');
+    when(() => repo.completeOnboarding(
+          favoriteLeagueName: any(named: 'favoriteLeagueName'),
+          favoriteTeamId: any(named: 'favoriteTeamId'),
+          favoritePlayerIds: any(named: 'favoritePlayerIds'),
+          jwt: any(named: 'jwt'),
+        )).thenThrow(Exception('network'));
+
+    final vm = build();
+    await completeFlow(vm);
+
+    verifyNever(() => onboardingPrefs.clear());
     verifyNever(() => onboardingPrefs.saveSelection(any()));
   });
 
