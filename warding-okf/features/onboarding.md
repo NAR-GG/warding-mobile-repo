@@ -3,12 +3,12 @@ type: Feature
 title: 온보딩
 description: 선호 리그·팀·선수·알림 권한 4단계 온보딩. MVVM 구조로 구현.
 tags: [onboarding, mvvm, done]
-timestamp: 2026-06-21T00:00:00Z
+timestamp: 2026-06-22T00:00:00Z
 ---
 
 # 상태
 
-✅ 4단계 구현 완료. 일부 비회원 처리 미완(아래 참조).
+✅ 4단계 구현 완료. 비회원 로컬 저장·로그인 동기화 완료 (#11).
 
 # 내용
 
@@ -19,9 +19,14 @@ timestamp: 2026-06-21T00:00:00Z
 - 완료 시 `POST /api/auth/onboarding`에 리그·팀·선수를 연동.
 - 알림 권한 '허용' 시 실제 권한 요청 연결됨.
 
+# 비회원 처리 (이슈 #11 — 완료)
+
+**비회원(JWT 없음)** 은 온보딩 완료 API를 호출하지 않고, 리그·팀·선수를 `OnboardingSelection`으로 로컬에 저장한다(`OnboardingPreferenceRepository`).
+로그인 성공 직후 `OnboardingSyncService.syncOnLogin`이 로컬 selection이 있으면 `POST /api/auth/onboarding`으로 1회 동기화하고 로컬을 비운다(서버 저장 성공 시에만).
+`login_screen`은 반환값(`isOnboarded`)으로 온보딩·일정 화면을 분기한다.
+
 # 미해결 / 후속
 
-- **비회원(JWT 없음)** 은 온보딩 완료 API를 호출하지 않음. 선호 팀만 로컬 캐싱하고, 리그·선수 로컬 저장은 미구현 (이슈 #11).
 - iOS 배포 시 `permission_handler` Podfile 매크로 설정 필요 (이슈 #12).
 - 상세는 [GitHub 프로젝트 보드](/references/github-project.md) 참조.
 

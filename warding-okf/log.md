@@ -1,5 +1,8 @@
 # Bundle Update Log
 
+## 2026-06-22
+* **#11 완료**: 비회원 온보딩 로컬 저장 + 로그인 동기화. `OnboardingSelection` 모델·`OnboardingPreferenceRepository`·`OnboardingSyncService` 추가, `OnboardingViewModel`·`login_screen` 연동.
+
 ## 2026-06-21
 * **Initialization**: warding 프로젝트 지식 번들 생성 (OKF v0.1).
 * **Creation**: [개요](/overview.md), [아키텍처](/architecture/), [디자인](/design/), [기능](/features/), [플레이북](/playbooks/), [레퍼런스](/references/) 디렉토리 구성.

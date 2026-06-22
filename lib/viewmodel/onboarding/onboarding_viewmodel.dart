@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../model/league.dart';
+import '../../model/onboarding_selection.dart';
 import '../../model/player.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
+import '../../repository/preference/onboarding_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 
 /// 온보딩 단계.
@@ -20,11 +22,14 @@ class OnboardingViewModel extends ChangeNotifier {
     required OnboardingRepository repository,
     required VoidCallback onFinish,
     TeamPreferenceRepository? teamPreferences,
+    OnboardingPreferenceRepository? onboardingPreferences,
     AuthService? authService,
   })  : _repository = repository,
         _onFinish = onFinish,
         _teamPreferences =
             teamPreferences ?? TeamPreferenceRepository.instance,
+        _onboardingPreferences =
+            onboardingPreferences ?? OnboardingPreferenceRepository.instance,
         _authService = authService ?? AuthService.instance {
     loadLeagues();
     loadTeams();
@@ -33,6 +38,7 @@ class OnboardingViewModel extends ChangeNotifier {
   final OnboardingRepository _repository;
   final VoidCallback _onFinish;
   final TeamPreferenceRepository _teamPreferences;
+  final OnboardingPreferenceRepository _onboardingPreferences;
   final AuthService _authService;
 
   // ── 단계 ──────────────────────────────────────────────
@@ -133,24 +139,24 @@ class OnboardingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 온보딩 건너뛰기. 선호 팀을 저장하지 않고, 혹시 남아 있던 이전
-  /// 저장값도 지운 뒤 완료한다.
+  /// 온보딩 건너뛰기. 선호 팀·온보딩 selection 로컬 저장값을 지운 뒤 완료한다.
   Future<void> skip() async {
     await _teamPreferences.clearPreferredTeam();
+    await _onboardingPreferences.clear();
     _onFinish();
   }
 
   /// 선택한 선호 리그·팀·선수를 저장하고 온보딩을 마무리한다.
   ///
-  /// 회원(JWT 보유)은 서버에도 저장하고(`POST /api/auth/onboarding`),
-  /// 회원·비회원 모두 선호 팀을 로컬에 캐싱해 경기 일정 헤더가 바로 읽게 한다.
+  /// 회원(JWT 보유)은 서버에 저장하고(`POST /api/auth/onboarding`) 로컬
+  /// selection 을 지운다. 비회원은 selection 을 로컬에 저장해 두었다가 로그인
+  /// 시 동기화한다. 회원·비회원 모두 선호 팀은 로컬에 캐싱해 헤더가 읽게 한다.
   Future<void> _savePreferences() async {
     final teamId = _selectedTeamId;
     if (teamId == null) return;
 
     final team = selectedTeam;
 
-    // 회원이면 서버에 저장.
     final jwt = await _authService.jwt;
     if (jwt != null) {
       try {
@@ -160,12 +166,23 @@ class OnboardingViewModel extends ChangeNotifier {
           favoritePlayerIds: _selectedPlayerIds.toList(),
           jwt: jwt,
         );
+        // 서버 저장 성공 시에만 로컬 selection 제거(실패 시 보존, 다음 로그인에 재시도).
+        await _onboardingPreferences.clear();
       } catch (e) {
         debugPrint('[Onboarding] 서버 온보딩 저장 실패: $e');
       }
+    } else {
+      // 비회원: 로그인 시 동기화할 selection 을 로컬에 저장.
+      await _onboardingPreferences.saveSelection(
+        OnboardingSelection(
+          leagueName: _selectedLeagueName,
+          teamId: teamId,
+          playerIds: _selectedPlayerIds.toList(),
+        ),
+      );
     }
 
-    // 회원·비회원 모두 로컬에 캐싱 (헤더가 로컬에서 읽음).
+    // 회원·비회원 모두 로컬에 팀 캐싱 (헤더가 로컬에서 읽음).
     if (team != null) {
       await _teamPreferences.savePreferredTeam(team);
     }
