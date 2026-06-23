@@ -17,6 +17,12 @@ class ApiConfig {
   /// 로그인 회원 정보 조회 (인증 필요).
   static String get meUrl => '$apiBaseUrl/auth/me';
 
+  /// 프로필 이미지 Cloudinary 서명 업로드용 파라미터 발급 (POST, 인증 필요).
+  /// 응답값으로 Cloudinary 에 직접 업로드한 뒤 받은 secure_url 을
+  /// [meUrl] PUT 의 profileImageUrl 로 저장한다.
+  static String get profileImageSignatureUrl =>
+      '$apiBaseUrl/auth/me/profile-image/signature';
+
   /// 네이버 access token을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
   static String get naverLoginUrl => '$apiBaseUrl/auth/mobile/naver';
 

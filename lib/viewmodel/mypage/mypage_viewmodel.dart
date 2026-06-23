@@ -31,6 +31,9 @@ class MypageViewModel extends ChangeNotifier {
   /// 회원 이메일. 로딩 전 또는 소셜에서 받지 못한 경우 null.
   String? get email => _profile?.email;
 
+  /// 프로필 이미지 URL. 미설정이면 null (기본 이미지로 대체).
+  String? get profileImageUrl => _profile?.profileImageUrl;
+
   /// 응원 팀(이름·로고 포함). 없으면 null.
   Team? _favoriteTeam;
   Team? get favoriteTeam => _favoriteTeam;

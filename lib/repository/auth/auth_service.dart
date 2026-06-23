@@ -175,11 +175,12 @@ class AuthService {
     );
   }
 
-  /// 로그인 회원의 닉네임·응원 팀·프로필 이미지를 수정한다
-  /// (`PUT /api/auth/me`). 다른 회원이 사용 중인 닉네임이면
+  /// 로그인 회원의 닉네임(이름·태그)·응원 팀·프로필 이미지를 수정한다
+  /// (`PUT /api/auth/me`). 닉네임이 다른 회원과 겹치면
   /// 409 → [NicknameConflictException].
   Future<UserProfile> updateProfile({
-    required String nickname,
+    required String name,
+    required String tag,
     required int favoriteTeamId,
     String? profileImageUrl,
   }) async {
@@ -191,7 +192,8 @@ class AuthService {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'nickname': nickname,
+          'name': name,
+          'tag': tag,
           'favoriteTeamId': favoriteTeamId,
           'profileImageUrl': profileImageUrl,
         }),

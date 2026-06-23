@@ -24,32 +24,35 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final ProfileEditViewModel _viewModel = ProfileEditViewModel();
-  final TextEditingController _nicknameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
 
-  /// 초기 닉네임을 컨트롤러에 단 1회만 채우기 위한 가드.
-  bool _initializedNickname = false;
+  /// 초기 이름·태그를 컨트롤러에 단 1회만 채우기 위한 가드.
+  bool _initializedFields = false;
 
   @override
   void initState() {
     super.initState();
-    _viewModel.addListener(_syncNicknameOnce);
+    _viewModel.addListener(_syncFieldsOnce);
   }
 
   @override
   void dispose() {
-    _viewModel.removeListener(_syncNicknameOnce);
-    _nicknameController.dispose();
+    _viewModel.removeListener(_syncFieldsOnce);
+    _nameController.dispose();
+    _tagController.dispose();
     _viewModel.dispose();
     super.dispose();
   }
 
-  /// 프로필이 로드되면 닉네임 텍스트 컨트롤러를 채운다(이후 사용자 입력 보호).
-  void _syncNicknameOnce() {
-    if (_initializedNickname) return;
+  /// 프로필이 로드되면 이름·태그 컨트롤러를 채운다(이후 사용자 입력 보호).
+  void _syncFieldsOnce() {
+    if (_initializedFields) return;
     final profile = _viewModel.profile;
     if (profile == null) return;
-    _nicknameController.text = profile.nickname;
-    _initializedNickname = true;
+    _nameController.text = profile.name;
+    _tagController.text = profile.tag;
+    _initializedFields = true;
   }
 
   Future<void> _onDone() async {
@@ -108,13 +111,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           padding: EdgeInsets.symmetric(
                             horizontal: 20 * scale,
                           ),
-                          child: NarInput(
-                            controller: _nicknameController,
-                            label: '닉네임',
-                            hintText: '닉네임을 입력하세요',
-                            errorText: _viewModel.nicknameError,
-                            onChanged: _viewModel.updateNickname,
-                            scale: scale,
+                          // 닉네임 = 이름 + 태그(영문/숫자 2~5자) 분리 입력.
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: NarInput(
+                                  controller: _nameController,
+                                  label: '이름',
+                                  hintText: '이름을 입력하세요',
+                                  errorText: _viewModel.nameError,
+                                  onChanged: _viewModel.updateName,
+                                  scale: scale,
+                                ),
+                              ),
+                              SizedBox(width: 12 * scale),
+                              SizedBox(
+                                width: 120 * scale,
+                                child: NarInput(
+                                  controller: _tagController,
+                                  label: '태그',
+                                  hintText: '#태그',
+                                  errorText: _viewModel.tagError,
+                                  onChanged: _viewModel.updateTag,
+                                  scale: scale,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(height: 16 * scale),

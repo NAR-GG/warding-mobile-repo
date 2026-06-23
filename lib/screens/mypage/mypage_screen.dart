@@ -123,6 +123,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       nickname: _viewModel.nickname,
                       email: _viewModel.email,
                       favoriteTeam: _viewModel.favoriteTeam,
+                      profileImageUrl: _viewModel.profileImageUrl,
                     ),
                   ),
                   // 응원팀 자동 설정 안내 배너 — 초반에만 노출, 탭하면 프로필 수정으로
@@ -278,6 +279,7 @@ class _MypageProfile extends StatelessWidget {
     this.nickname = '',
     this.email,
     this.favoriteTeam,
+    this.profileImageUrl,
   });
 
   final double scale;
@@ -292,6 +294,9 @@ class _MypageProfile extends StatelessWidget {
   /// 응원 팀(로고 뱃지용). 없으면 회색 원 placeholder.
   final Team? favoriteTeam;
 
+  /// 프로필 이미지 URL. 없으면 기본 이미지(person.png).
+  final String? profileImageUrl;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -305,15 +310,8 @@ class _MypageProfile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 기본 프로필 이미지.
-              ClipOval(
-                child: Image.asset(
-                  'assets/images/person.png',
-                  width: 59 * scale,
-                  height: 59 * scale,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              // 프로필 이미지 — 없으면 기본 이미지(person.png).
+              _ProfileImage(url: profileImageUrl, scale: scale),
               SizedBox(width: 16 * scale),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,6 +369,37 @@ class _MypageProfile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 프로필 이미지 — 59×59 원형. [url] 이 없거나 로드 실패 시 기본 이미지.
+class _ProfileImage extends StatelessWidget {
+  const _ProfileImage({required this.url, required this.scale});
+
+  final String? url;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 59 * scale;
+    final fallback = Image.asset(
+      'assets/images/person.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+    );
+    final hasUrl = url != null && url!.isNotEmpty;
+    return ClipOval(
+      child: hasUrl
+          ? Image.network(
+              url!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => fallback,
+            )
+          : fallback,
     );
   }
 }

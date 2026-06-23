@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -5,26 +7,33 @@ import '../../model/team.dart';
 import '../../model/user_profile.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
+import '../../repository/profile/profile_image_repository.dart';
 
 /// 프로필 수정 화면 ViewModel.
 ///
-/// `GET /api/auth/me` 로 현재 회원 정보를 불러와 폼을 채우고,
-/// 응원 팀 선택지는 온보딩 팀 목록으로 채운다. 갤러리에서 고른 사진은
-/// 화면 안에서만 미리보기로 보여 주고, 저장 시에는 닉네임·응원 팀만
-/// `PUT /api/auth/me` 로 반영한다 (사진 서버 업로드는 미연결 상태).
+/// `GET /api/auth/me` 로 현재 회원 정보를 불러와 폼(이름·태그·응원 팀·프로필
+/// 이미지)을 채우고, 응원 팀 선택지는 온보딩 팀 목록으로 채운다.
+/// 저장 시 새 사진을 골랐다면 Cloudinary 에 먼저 업로드해 `secure_url` 을 얻고,
+/// 이름·태그·응원 팀·이미지 URL 을 `PUT /api/auth/me` 로 반영한다.
 class ProfileEditViewModel extends ChangeNotifier {
   ProfileEditViewModel({
     AuthService? auth,
     OnboardingRepository? onboarding,
+    ProfileImageRepository? imageRepo,
     ImagePicker? picker,
-  }) : _auth = auth ?? AuthService.instance,
-       _onboarding = onboarding ?? OnboardingRepository.instance,
-       _picker = picker ?? ImagePicker() {
+  })  : _auth = auth ?? AuthService.instance,
+        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _imageRepo = imageRepo ?? ProfileImageRepository.instance,
+        _picker = picker ?? ImagePicker() {
     load();
   }
 
+  /// 태그 규칙 — 영문/숫자 2~5자.
+  static final RegExp _tagPattern = RegExp(r'^[A-Za-z0-9]{2,5}$');
+
   final AuthService _auth;
   final OnboardingRepository _onboarding;
+  final ProfileImageRepository _imageRepo;
   final ImagePicker _picker;
   bool _disposed = false;
 
@@ -37,20 +46,26 @@ class ProfileEditViewModel extends ChangeNotifier {
   List<Team> _teams = const [];
   List<Team> get teams => _teams;
 
-  String _nickname = '';
-  String get nickname => _nickname;
+  String _name = '';
+  String get name => _name;
+
+  String _tag = '';
+  String get tag => _tag;
 
   int? _favoriteTeamId;
   int? get favoriteTeamId => _favoriteTeamId;
 
-  /// 갤러리에서 고른 로컬 미리보기 경로. 서버 업로드를 하지 않으므로
-  /// 화면 안에서만 보인다. 화면을 벗어나면 사라진다.
+  /// 갤러리에서 고른 로컬 미리보기 경로. 저장 시 Cloudinary 로 업로드된다.
   String? _pendingImagePath;
   String? get pendingImagePath => _pendingImagePath;
 
-  /// 닉네임 옆 에러 메시지. null 이면 정상.
-  String? _nicknameError;
-  String? get nicknameError => _nicknameError;
+  /// 이름 옆 에러 메시지. null 이면 정상.
+  String? _nameError;
+  String? get nameError => _nameError;
+
+  /// 태그 옆 에러 메시지. null 이면 정상.
+  String? _tagError;
+  String? get tagError => _tagError;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -58,21 +73,25 @@ class ProfileEditViewModel extends ChangeNotifier {
   bool _isSaving = false;
   bool get isSaving => _isSaving;
 
-  /// 서버에 실제로 반영되는 변경만 dirty 로 본다. 사진은 미리보기만
-  /// 되므로 dirty 에 포함하지 않는다(사진만 골라도 완료 버튼은 비활성).
+  /// 서버에 실제로 반영되는 변경만 dirty 로 본다. 새 사진을 고른 경우도
+  /// 업로드 후 저장되므로 dirty 에 포함한다.
   bool get _dirty {
     final p = _profile;
     if (p == null) return false;
-    return _nickname.trim() != p.nickname ||
-        _favoriteTeamId != p.favoriteTeamId;
+    return _name.trim() != p.name ||
+        _tag.trim() != p.tag ||
+        _favoriteTeamId != p.favoriteTeamId ||
+        _pendingImagePath != null;
   }
 
   /// 완료 버튼 활성 조건.
   bool get canSubmit {
     if (_isSaving) return false;
     return _dirty &&
-        _nickname.trim().isNotEmpty &&
-        _nicknameError == null &&
+        _name.trim().isNotEmpty &&
+        _tagPattern.hasMatch(_tag.trim()) &&
+        _nameError == null &&
+        _tagError == null &&
         _favoriteTeamId != null;
   }
 
@@ -86,9 +105,11 @@ class ProfileEditViewModel extends ChangeNotifier {
       ]);
       _profile = results[0] as UserProfile;
       _teams = results[1] as List<Team>;
-      _nickname = _profile!.nickname;
+      _name = _profile!.name;
+      _tag = _profile!.tag;
       _favoriteTeamId = _profile!.favoriteTeamId;
-      _nicknameError = null;
+      _nameError = null;
+      _tagError = null;
     } catch (e, st) {
       debugPrint('[ProfileEdit] load 에러: $e\n$st');
     } finally {
@@ -97,9 +118,22 @@ class ProfileEditViewModel extends ChangeNotifier {
     }
   }
 
-  void updateNickname(String value) {
-    _nickname = value;
-    _nicknameError = value.trim().isEmpty ? '필수 입력 항목입니다.' : null;
+  void updateName(String value) {
+    _name = value;
+    _nameError = value.trim().isEmpty ? '필수 입력 항목입니다.' : null;
+    _notify();
+  }
+
+  void updateTag(String value) {
+    _tag = value;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      _tagError = '필수 입력 항목입니다.';
+    } else if (!_tagPattern.hasMatch(trimmed)) {
+      _tagError = '영문/숫자 2~5자로 입력하세요.';
+    } else {
+      _tagError = null;
+    }
     _notify();
   }
 
@@ -110,13 +144,15 @@ class ProfileEditViewModel extends ChangeNotifier {
   }
 
   /// 갤러리를 열어 새 프로필 사진을 고른다. 사용자가 취소하면 아무 일도
-  /// 하지 않는다. 고른 파일은 [pendingImagePath] 에 미리보기로만 보관된다.
+  /// 하지 않는다. 고른 파일은 [pendingImagePath] 에 미리보기로 보관되고
+  /// 저장 시 Cloudinary 로 업로드된다. (512px 로 리사이즈)
   Future<void> pickProfileImage() async {
     try {
       final picked = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
-        maxWidth: 1024,
+        maxWidth: 512,
+        maxHeight: 512,
       );
       if (picked == null) return;
       _pendingImagePath = picked.path;
@@ -126,27 +162,36 @@ class ProfileEditViewModel extends ChangeNotifier {
     }
   }
 
-  /// 저장. 닉네임·응원 팀만 PUT 한다. 프로필 이미지 URL 은
-  /// 기존 값(서버가 알고 있는 값)을 그대로 다시 보낸다.
+  /// 저장. 새 사진을 골랐다면 먼저 Cloudinary 에 업로드해 URL 을 얻고,
+  /// 이름·태그·응원 팀·이미지 URL 을 PUT 한다. 사진을 안 골랐다면 기존
+  /// 이미지 URL 을 그대로 다시 보낸다.
   Future<bool> save() async {
     if (!canSubmit) return false;
     _isSaving = true;
-    _nicknameError = null;
+    _nameError = null;
+    _tagError = null;
     _notify();
     try {
+      var imageUrl = _profile?.profileImageUrl;
+      final pending = _pendingImagePath;
+      if (pending != null && pending.isNotEmpty) {
+        imageUrl = await _imageRepo.upload(File(pending));
+      }
       final updated = await _auth.updateProfile(
-        nickname: _nickname.trim(),
+        name: _name.trim(),
+        tag: _tag.trim(),
         favoriteTeamId: _favoriteTeamId!,
-        profileImageUrl: _profile?.profileImageUrl,
+        profileImageUrl: imageUrl,
       );
       _profile = updated;
+      _pendingImagePath = null;
       return true;
     } on NicknameConflictException {
-      _nicknameError = '이미 사용 중인 닉네임입니다';
+      _tagError = '이미 사용 중인 닉네임입니다.';
       return false;
     } catch (e, st) {
       debugPrint('[ProfileEdit] save 에러: $e\n$st');
-      _nicknameError = '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      _nameError = '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
       return false;
     } finally {
       _isSaving = false;
