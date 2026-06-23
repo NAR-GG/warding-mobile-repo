@@ -42,6 +42,15 @@ post_install do |installer|
     # Firebase 등 의존성이 iOS 15 이상을 요구하므로 모든 Pod 타겟을 맞춘다.
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+
+      # permission_handler: 앱이 실제로 쓰는 권한만 컴파일에 포함한다.
+      # 미설정 시 모든 권한 코드가 빌드돼 App Store 심사에서 문제될 수 있다.
+      # 현재 사용 권한은 알림(Permission.notification)뿐이라 그것만 활성화한다.
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        ## dart: PermissionGroup.notification
+        'PERMISSION_NOTIFICATIONS=1',
+      ]
     end
   end
 end
