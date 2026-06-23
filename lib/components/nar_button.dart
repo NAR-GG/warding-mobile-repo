@@ -13,6 +13,10 @@ enum NarButtonVariant {
   /// nar_button_set1 — narDark300 배경, 테두리 없음, 부모 폭을 채움.
   set1,
 
+  /// set1 비활성 — narDark600 배경 + narDark300 테두리·텍스트, 부모 폭을 채움.
+  /// (예: 경기 상세 '준비중'·'경기 종료')
+  set1Disabled,
+
   /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 콘텐츠 폭(자동) 34 높이.
   subscribe,
 
@@ -51,6 +55,8 @@ class NarButton extends StatelessWidget {
         return AppColors.narButton2Bg;
       case NarButtonVariant.set1:
         return AppColors.narDark300;
+      case NarButtonVariant.set1Disabled:
+        return AppColors.narDark600;
       case NarButtonVariant.subscribe:
         return AppColors.narSubscribeBg;
       case NarButtonVariant.subscribed:
@@ -66,6 +72,8 @@ class NarButton extends StatelessWidget {
         return AppColors.narButton2Text;
       case NarButtonVariant.set1:
         return AppColors.narText;
+      case NarButtonVariant.set1Disabled:
+        return AppColors.narDark300; // #5C5F66
       case NarButtonVariant.subscribe:
         return AppColors.narLine2; // #495057
       case NarButtonVariant.subscribed:
@@ -73,9 +81,15 @@ class NarButton extends StatelessWidget {
     }
   }
 
-  BoxBorder? _border(double scale) => variant == NarButtonVariant.type2
-      ? Border.all(color: AppColors.narButton2Line, width: 1.5 * scale)
-      : null;
+  BoxBorder? _border(double scale) {
+    if (variant == NarButtonVariant.type2) {
+      return Border.all(color: AppColors.narButton2Line, width: 1.5 * scale);
+    }
+    if (variant == NarButtonVariant.set1Disabled) {
+      return Border.all(color: AppColors.narDark300, width: 1.5 * scale);
+    }
+    return null;
+  }
 
   /// type1/type2 는 시안 폭 고정, set1 은 부모를 채우고, subscribe* 는 콘텐츠 자동 폭.
   double? _width(double scale) {
@@ -84,6 +98,7 @@ class NarButton extends StatelessWidget {
       case NarButtonVariant.type2:
         return 110.5 * scale;
       case NarButtonVariant.set1:
+      case NarButtonVariant.set1Disabled:
         return double.infinity;
       case NarButtonVariant.subscribe:
       case NarButtonVariant.subscribed:

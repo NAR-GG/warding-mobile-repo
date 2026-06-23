@@ -85,14 +85,20 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   int _setNumber(String label) =>
       int.tryParse(label.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
 
-  /// scheduledTime 을 'YY.MM.DD' 로 포맷한다. 파싱 불가면 원문 그대로.
-  String _formatDate(String raw) {
-    if (raw.isEmpty) return '';
-    final dt = DateTime.tryParse(raw);
-    if (dt == null) return raw;
-    final yy = (dt.year % 100).toString().padLeft(2, '0');
-    final mm = dt.month.toString().padLeft(2, '0');
-    final dd = dt.day.toString().padLeft(2, '0');
+  /// matchTitle('스테이지 | 팀A vs 팀B')에서 앞쪽 스테이지/라운드명만 추출한다.
+  /// 예: '토너먼트 스테이지 | T1 vs GEN' → '토너먼트 스테이지'.
+  String _stageOf(String matchTitle) {
+    final idx = matchTitle.indexOf('|');
+    return (idx >= 0 ? matchTitle.substring(0, idx) : matchTitle).trim();
+  }
+
+  /// 경기 날짜(date)를 'YY.MM.DD' 로 포맷한다. date 가 없으면 빈 문자열.
+  String _formatMatchDate(ScheduleMatch m) {
+    final d = m.date;
+    if (d == null) return '';
+    final yy = (d.year % 100).toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
     return '$yy.$mm.$dd';
   }
 
@@ -104,6 +110,17 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         s.contains('in_progress') ||
         s.contains('ongoing') ||
         status.contains('진행');
+  }
+
+  /// matchStatus 가 경기 종료를 의미하는지. 'completed'/'ended'/'종료' 등 포함이면 true.
+  bool _isCompletedStatus(String status) {
+    final s = status.toLowerCase();
+    return s.contains('complet') ||
+        s.contains('end') ||
+        s.contains('done') ||
+        s.contains('finish') ||
+        status.contains('종료') ||
+        status.contains('완료');
   }
 
   /// 라이브 경기의 스코어 아래 라벨. matchStatus 가 이미 'SET'/'진행' 형태면 그대로,
@@ -266,19 +283,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   ),
                   _buildScoreSection(scale),
                   SizedBox(height: 16 * scale),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                    child: NarButton(
-                      variant: NarButtonVariant.set1,
-                      label: '중계 보기',
-                      // liveStreamUrl 이 있을 때만 활성화.
-                      onPressed: (widget.match?.liveStreamUrl != null &&
-                              widget.match!.liveStreamUrl!.isNotEmpty)
-                          ? _openLiveStream
-                          : null,
-                      scale: scale,
-                    ),
-                  ),
+                  _buildActionButton(scale),
                   SizedBox(height: 16 * scale),
                   NarTabBar(
                     tabs: _tabs,
@@ -357,17 +362,58 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
+  /// 상태별 액션 버튼.
+  /// - 라이브: '중계 보기' (liveStreamUrl 이 있으면 활성, 없으면 비활성)
+  /// - 완료: '경기 종료' (비활성)
+  /// - 그 외(예정 등): '준비중' (비활성)
+  Widget _buildActionButton(double scale) {
+    final m = widget.match;
+    final status = m?.matchStatus ?? '';
+    final hasStream =
+        m?.liveStreamUrl != null && m!.liveStreamUrl!.isNotEmpty;
+    final String label;
+    final VoidCallback? onPressed;
+    if (_isLiveStatus(status)) {
+      label = '중계 보기';
+      onPressed = hasStream ? _openLiveStream : null;
+    } else if (_isCompletedStatus(status)) {
+      label = '경기 종료';
+      onPressed = null;
+    } else {
+      label = '준비중';
+      onPressed = null;
+    }
+    final enabled = onPressed != null;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      child: NarButton(
+        // 활성(중계 보기)은 set1, 비활성(준비중·경기 종료)은 set1Disabled.
+        variant: enabled
+            ? NarButtonVariant.set1
+            : NarButtonVariant.set1Disabled,
+        label: label,
+        onPressed: onPressed,
+        scale: scale,
+      ),
+    );
+  }
+
   /// 헤더 스코어 칸. match 가 있으면 실데이터로, 없으면 플레이스홀더로 렌더한다.
   Widget _buildScoreSection(double scale) {
     final m = widget.match;
     final isLive = m != null && _isLiveStatus(m.matchStatus);
+    // 좌측 라벨: '리그 + 스테이지'. 예: 'LCK 토너먼트 스테이지'.
+    final stage = m != null ? _stageOf(m.matchTitle) : '';
+    final leagueLabel = m == null
+        ? ''
+        : (stage.isEmpty ? m.leagueInfo : '${m.leagueInfo} $stage');
     return MatchDetailScoreSection(
-      leagueName: m?.leagueInfo ?? '',
-      dateText: m != null ? _formatDate(m.scheduledTime) : '',
+      leagueName: leagueLabel,
+      // 좌측: '리그 스테이지' 옆에 점 + 경기 날짜('YY.MM.DD').
+      dateText: m != null ? _formatMatchDate(m) : '',
       isLive: isLive,
-      // 라이브가 아니면 LIVE 자리에 표시할 시간 라벨. 날짜와 동일 소스에서 시각 추출은
-      // 별도 포맷이 없어 빈 값(예정 시각 미가공) — 추후 시각 포맷 추가 시 교체.
-      time: '',
+      // 라이브가 아니면 우측에 경기 시각(scheduledTime, 'HH:mm')을 표시한다.
+      time: m?.scheduledTime ?? '',
       blueTeamName: m?.teamA.teamName ?? '',
       redTeamName: m?.teamB.teamName ?? '',
       blueTeamScore: m?.teamA.score ?? 0,
