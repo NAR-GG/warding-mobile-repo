@@ -195,6 +195,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           options: _viewModel.teams,
                           selectedValues: _viewModel.selectedTeams,
                           onChanged: _viewModel.updateSelectedTeams,
+                          // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
+                          pinned: const {MatchListViewModel.allTeamsLabel},
                           scale: scale,
                         ),
                       ),
