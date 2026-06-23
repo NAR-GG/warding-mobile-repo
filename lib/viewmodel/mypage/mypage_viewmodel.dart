@@ -4,6 +4,7 @@ import '../../model/team.dart';
 import '../../model/user_profile.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
+import '../../repository/rating/rating_repository.dart';
 
 /// 마이페이지 ViewModel.
 ///
@@ -13,13 +14,16 @@ class MypageViewModel extends ChangeNotifier {
   MypageViewModel({
     AuthService? auth,
     OnboardingRepository? onboarding,
+    RatingRepository? rating,
   })  : _auth = auth ?? AuthService.instance,
-        _onboarding = onboarding ?? OnboardingRepository.instance {
+        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _rating = rating ?? RatingRepository.instance {
     load();
   }
 
   final AuthService _auth;
   final OnboardingRepository _onboarding;
+  final RatingRepository _rating;
   bool _disposed = false;
 
   UserProfile? _profile;
@@ -37,6 +41,10 @@ class MypageViewModel extends ChangeNotifier {
   /// 응원 팀(이름·로고 포함). 없으면 null.
   Team? _favoriteTeam;
   Team? get favoriteTeam => _favoriteTeam;
+
+  /// 내 리뷰/평점 누적 건수. 로딩 전 또는 조회 실패 시 null('N건' 미표시).
+  int? _reviewCount;
+  int? get reviewCount => _reviewCount;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -72,6 +80,19 @@ class MypageViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       _notify();
+    }
+    await _loadReviewCount();
+  }
+
+  /// 내 리뷰/평점 누적 건수만 가볍게 조회한다(첫 페이지 메타의 totalElements).
+  /// 프로필 로딩과 독립적이라 실패해도 화면 나머지에 영향이 없다.
+  Future<void> _loadReviewCount() async {
+    try {
+      final ratings = await _rating.fetchMyRatings(page: 0, size: 1);
+      _reviewCount = ratings.totalElements;
+      _notify();
+    } catch (e) {
+      debugPrint('[Mypage] 리뷰 건수 로드 에러: $e');
     }
   }
 

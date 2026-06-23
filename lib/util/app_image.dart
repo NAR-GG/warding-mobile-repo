@@ -11,3 +11,14 @@ String? resolveImageUrl(String? url) {
   if (url.startsWith('/')) return '${ApiConfig.host}$url';
   return url;
 }
+
+/// 챔피언 영문 키로 Data Dragon 스플래시 아트 URL 을 만든다(배경용).
+/// 스플래시 경로는 버전이 없어 패치와 무관하게 동작한다.
+///
+/// 예) 'Vayne' → 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Vayne_0.jpg'
+/// 이름이 비어 있으면 null 을 반환한다.
+String? championSplashUrl(String championName) {
+  if (championName.isEmpty) return null;
+  return 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/'
+      '${championName}_0.jpg';
+}

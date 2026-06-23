@@ -31,6 +31,7 @@ class MatchDetailScoreSection extends StatelessWidget {
   final bool isLive;
 
   /// 예정/종료 경기에서 LIVE 자리에 표시할 시간 라벨. 예: '17:00'.
+  /// 비어 있으면 뱃지를 표시하지 않는다.
   final String time;
 
   final String blueTeamName;
@@ -66,22 +67,32 @@ class MatchDetailScoreSection extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(leagueName, style: metaTextStyle),
-              SizedBox(width: 8 * scale),
-              Container(
-                width: 4 * scale,
-                height: 4 * scale,
-                decoration: const BoxDecoration(
-                  color: AppColors.narTextTertiary,
-                  shape: BoxShape.circle,
+              Flexible(
+                child: Text(
+                  leagueName,
+                  style: metaTextStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(width: 8 * scale),
-              Text(dateText, style: metaTextStyle),
+              // dateText 가 있을 때만 점 구분자 + 날짜를 함께 표시한다.
+              if (dateText.isNotEmpty) ...[
+                SizedBox(width: 8 * scale),
+                Container(
+                  width: 4 * scale,
+                  height: 4 * scale,
+                  decoration: const BoxDecoration(
+                    color: AppColors.narTextTertiary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 8 * scale),
+                Text(dateText, style: metaTextStyle),
+              ],
               const Spacer(),
               if (isLive)
                 NarBadgeLive(scale: scale)
-              else
+              else if (time.isNotEmpty)
                 NarBadge(label: time, scale: scale),
             ],
           ),

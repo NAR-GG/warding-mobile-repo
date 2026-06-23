@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../model/game_rating.dart';
 import '../../model/match_game.dart';
+import '../../repository/auth/auth_service.dart';
+import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/rating/rating_repository.dart';
 
 /// 선수 평점 상세 화면 상태·로직.
@@ -17,14 +19,22 @@ class PlayerRatingViewModel extends ChangeNotifier {
     required this.games,
     required int currentSet,
     RatingRepository? repository,
+    AuthService? auth,
+    OnboardingRepository? onboarding,
   })  : _gameId = gameId,
         _participantId = participantId,
         _currentSet = currentSet,
-        _repository = repository ?? RatingRepository.instance;
+        _repository = repository ?? RatingRepository.instance,
+        _auth = auth ?? AuthService.instance,
+        _onboarding = onboarding ?? OnboardingRepository.instance {
+    _loadMyProfile();
+  }
 
   final int playerId;
   final List<MatchGame> games;
   final RatingRepository _repository;
+  final AuthService _auth;
+  final OnboardingRepository _onboarding;
 
   String _gameId;
   int _participantId;
@@ -34,6 +44,12 @@ class PlayerRatingViewModel extends ChangeNotifier {
 
   PlayerRatingDetail? _detail;
   PlayerRatingDetail? get detail => _detail;
+
+  /// 내 댓글 카드에 표시할 현재 유저 프로필 이미지·응원팀 로고. 없으면 null.
+  String? _myProfileImageUrl;
+  String? get myProfileImageUrl => _myProfileImageUrl;
+  String? _myTeamImageUrl;
+  String? get myTeamImageUrl => _myTeamImageUrl;
 
   final List<Review> _reviews = [];
   List<Review> get reviews => List.unmodifiable(_reviews);
@@ -59,6 +75,28 @@ class PlayerRatingViewModel extends ChangeNotifier {
   }
 
   bool get hasMore => _detail?.hasMore ?? false;
+
+  /// 내 댓글 카드용 — 현재 유저 프로필 이미지·응원팀 로고를 로드한다.
+  /// 평점 로딩과 독립이라 실패해도 화면 나머지에 영향이 없다.
+  Future<void> _loadMyProfile() async {
+    try {
+      final me = await _auth.fetchMe();
+      _myProfileImageUrl = me.profileImageUrl;
+      final teamId = me.favoriteTeamId;
+      if (teamId != null) {
+        final teams = await _onboarding.fetchTeams();
+        for (final t in teams) {
+          if (t.id == teamId) {
+            _myTeamImageUrl = t.imageUrl;
+            break;
+          }
+        }
+      }
+      _safeNotify();
+    } catch (e) {
+      debugPrint('[PlayerRatingVM] 내 프로필 로드 실패: $e');
+    }
+  }
 
   /// 첫 페이지 로드(또는 세트 전환 후 재로드).
   Future<void> load() async {
