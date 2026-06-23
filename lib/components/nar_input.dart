@@ -91,48 +91,40 @@ class NarInput extends StatelessWidget {
       ),
     );
 
-    // 필드(+에러 메시지)를 묶은 콘텐츠.
-    final content =
-        hasError
-            ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                field,
-                SizedBox(height: 4 * scale),
-                Text(
-                  errorText!,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12 * scale,
-                    height: 1.45,
-                    color: AppColors.narTextRed,
-                  ),
-                ),
-              ],
-            )
-            : field;
-
-    if (label == null) return content;
-
-    // 라벨 + 8 간격 + 콘텐츠.
+    // 라벨·에러 메시지가 토글돼도 [field](TextField)가 트리에서 항상 같은
+    // 위치를 유지하도록 단일 Column 구조로 그린다. 구조가 바뀌면 입력 중
+    // TextField Element 와 FocusNode 가 재생성되어 커서/포커스를 잃는다.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label!,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-            fontSize: 16 * scale,
-            height: 1.3,
-            color: AppColors.narText,
+        if (label != null) ...[
+          Text(
+            label!,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+              fontSize: 16 * scale,
+              height: 1.3,
+              color: AppColors.narText,
+            ),
           ),
-        ),
-        SizedBox(height: 8 * scale),
-        content,
+          SizedBox(height: 8 * scale),
+        ],
+        field,
+        if (hasError) ...[
+          SizedBox(height: 4 * scale),
+          Text(
+            errorText!,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w400,
+              fontSize: 12 * scale,
+              height: 1.45,
+              color: AppColors.narTextRed,
+            ),
+          ),
+        ],
       ],
     );
   }

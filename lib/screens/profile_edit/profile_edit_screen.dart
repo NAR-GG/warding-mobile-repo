@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -5,12 +7,14 @@ import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_input.dart';
 import '../../styles/app_colors.dart';
+import '../../viewmodel/profile_edit/profile_edit_viewmodel.dart';
 import 'component/cheer_team_section.dart';
 
 /// 프로필 수정 화면.
 ///
 /// 마이페이지 프로필 섹션의 '프로필 수정' 또는 응원팀 안내 배너에서 진입한다.
 /// 헤더는 공용 [NarDetailHeader] 로 chevron-left 뒤로가기 + '프로필 수정' 타이틀.
+/// 저장 성공 시 pop 결과로 `true` 를 반환해 호출자가 새로고침할 수 있게 한다.
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -19,68 +23,42 @@ class ProfileEditScreen extends StatefulWidget {
 }
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
-  // TODO: API 연결 후 실제 닉네임으로 초기화 (현재 mock).
-  final TextEditingController _nicknameController = TextEditingController();
+  final ProfileEditViewModel _viewModel = ProfileEditViewModel();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
 
-  /// 닉네임 에러 메시지. null 이면 정상.
-  String? _nicknameError;
+  /// 초기 이름·태그를 컨트롤러에 단 1회만 채우기 위한 가드.
+  bool _initializedFields = false;
 
-  // TODO: API 연결 후 실제 구독 팀 목록·로고로 교체 (현재 mock).
-  final List<CheerTeam> _teams = const [
-    CheerTeam(name: 'T1'),
-    CheerTeam(name: 'DN SOOPers'),
-    CheerTeam(name: 'Hanwha Life Esports'),
-    CheerTeam(name: 'Gen.G'),
-    CheerTeam(name: 'KT Rolster'),
-    CheerTeam(name: 'Dplus KIA'),
-    CheerTeam(name: 'Nongshim RedForce'),
-    CheerTeam(name: 'DRX'),
-    CheerTeam(name: 'BNK FEARX'),
-    CheerTeam(name: 'HANJIN BRLON'),
-  ];
-
-  /// 현재 응원(선택) 팀 인덱스. null 이면 미설정.
-  int? _cheerTeamIndex;
-
-  /// 사용자가 무언가 변경했는지 여부(변경 없으면 완료 비활성).
-  bool _dirty = false;
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.addListener(_syncFieldsOnce);
+  }
 
   @override
   void dispose() {
-    _nicknameController.dispose();
+    _viewModel.removeListener(_syncFieldsOnce);
+    _nameController.dispose();
+    _tagController.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
-  /// 닉네임 유효성 검사. 비어 있으면 에러 메시지를 세팅한다.
-  void _validateNickname(String value) {
-    setState(() {
-      _dirty = true;
-      _nicknameError = value.trim().isEmpty ? '필수 입력 항목입니다.' : null;
-    });
+  /// 프로필이 로드되면 이름·태그 컨트롤러를 채운다(이후 사용자 입력 보호).
+  void _syncFieldsOnce() {
+    if (_initializedFields) return;
+    final profile = _viewModel.profile;
+    if (profile == null) return;
+    _nameController.text = profile.name;
+    _tagController.text = profile.tag;
+    _initializedFields = true;
   }
 
-  /// 응원 팀 선택.
-  void _selectTeam(int index) {
-    setState(() {
-      _dirty = true;
-      _cheerTeamIndex = index;
-    });
-  }
-
-  /// 완료 가능 여부.
-  /// 변경사항이 있고 + 닉네임이 유효하고 + 응원 팀이 설정돼 있어야 한다.
-  bool get _canSubmit {
-    final nickname = _nicknameController.text.trim();
-    return _dirty &&
-        nickname.isNotEmpty &&
-        _nicknameError == null &&
-        _cheerTeamIndex != null;
-  }
-
-  /// 완료 — 프로필 저장.
-  void _onDone() {
-    // TODO: API 연결 후 닉네임·응원 팀 저장 요청 후 뒤로가기.
-    Navigator.of(context).maybePop();
+  Future<void> _onDone() async {
+    final ok = await _viewModel.save();
+    if (!ok || !mounted) return;
+    Navigator.of(context).pop(true);
   }
 
   @override
@@ -91,120 +69,206 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    NarDetailHeader(
-                      title: '프로필 수정',
-                      backIconAsset: 'assets/icons/chevron-left.svg',
-                      scale: scale,
-                    ),
-                    SizedBox(height: 39 * scale),
-                    // 기본 프로필 이미지(113) + 우측 하단 사진 수정 버튼.
-                    Center(
-                      child: SizedBox(
-                        width: 113 * scale,
-                        height: 113 * scale,
-                        child: Stack(
-                          children: [
-                            ClipOval(
-                              child: Image.asset(
-                                'assets/images/person.png',
-                                width: 113 * scale,
-                                height: 113 * scale,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  // TODO: 프로필 사진 변경(갤러리/카메라) 연결
-                                },
-                                child: Container(
-                                  width: 35 * scale,
-                                  height: 35 * scale,
-                                  alignment: Alignment.center,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.narGray100,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: SvgPicture.asset(
-                                    'assets/icons/photo-edit.svg',
-                                    width: 20 * scale,
-                                    height: 20 * scale,
-                                  ),
+        child: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, _) {
+            // API 팀 → 컴포넌트용 CheerTeam.
+            final cheerTeams = [
+              for (final t in _viewModel.teams)
+                CheerTeam(name: t.name, imageUrl: t.imageUrl),
+            ];
+            // favoriteTeamId → 리스트 인덱스 매핑.
+            int? selectedIndex;
+            final favId = _viewModel.favoriteTeamId;
+            if (favId != null) {
+              final idx = _viewModel.teams.indexWhere((t) => t.id == favId);
+              if (idx >= 0) selectedIndex = idx;
+            }
+
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        NarDetailHeader(
+                          title: '프로필 수정',
+                          backIconAsset: 'assets/icons/chevron-left.svg',
+                          scale: scale,
+                        ),
+                        SizedBox(height: 39 * scale),
+                        Center(
+                          child: _ProfileAvatar(
+                            scale: scale,
+                            imageUrl: _viewModel.profile?.profileImageUrl,
+                            localPath: _viewModel.pendingImagePath,
+                            onEditTap: _viewModel.pickProfileImage,
+                          ),
+                        ),
+                        SizedBox(height: 55 * scale),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20 * scale,
+                          ),
+                          // 닉네임 = 이름 + 태그(영문/숫자 2~5자) 분리 입력.
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: NarInput(
+                                  controller: _nameController,
+                                  label: '이름',
+                                  hintText: '이름을 입력하세요',
+                                  errorText: _viewModel.nameError,
+                                  onChanged: _viewModel.updateName,
+                                  scale: scale,
                                 ),
                               ),
-                            ),
-                          ],
+                              SizedBox(width: 12 * scale),
+                              SizedBox(
+                                width: 120 * scale,
+                                child: NarInput(
+                                  controller: _tagController,
+                                  label: '태그',
+                                  hintText: '#태그',
+                                  errorText: _viewModel.tagError,
+                                  onChanged: _viewModel.updateTag,
+                                  scale: scale,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 55 * scale),
-                    // 닉네임 입력 박스 (라벨 + 필드, 양옆 20 패딩).
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                      child: NarInput(
-                        controller: _nicknameController,
-                        label: '닉네임',
-                        hintText: '닉네임을 입력하세요',
-                        errorText: _nicknameError,
-                        onChanged: _validateNickname,
-                        scale: scale,
-                      ),
-                    ),
-                    SizedBox(height: 16 * scale),
-                    // 응원 팀 설정 요약 행 (양옆 20 패딩).
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                      child: CheerTeamSettingRow(
-                        selectedTeam:
-                            _cheerTeamIndex == null
+                        SizedBox(height: 16 * scale),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20 * scale,
+                          ),
+                          child: CheerTeamSettingRow(
+                            selectedTeam: selectedIndex == null
                                 ? null
-                                : _teams[_cheerTeamIndex!],
-                        scale: scale,
-                      ),
+                                : cheerTeams[selectedIndex],
+                            scale: scale,
+                          ),
+                        ),
+                        SizedBox(height: 16 * scale),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20 * scale,
+                          ),
+                          child: CheerTeamList(
+                            teams: cheerTeams,
+                            selectedIndex: selectedIndex,
+                            onSelect: (i) =>
+                                _viewModel.selectTeam(_viewModel.teams[i].id),
+                            scale: scale,
+                          ),
+                        ),
+                        SizedBox(height: 40 * scale),
+                      ],
                     ),
-                    SizedBox(height: 16 * scale),
-                    // 응원 팀 선택 리스트 (하트 토글, 양옆 20 패딩).
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                      child: CheerTeamList(
-                        teams: _teams,
-                        selectedIndex: _cheerTeamIndex,
-                        onSelect: _selectTeam,
-                        scale: scale,
-                      ),
-                    ),
-                    SizedBox(height: 40 * scale),
-                  ],
+                  ),
+                ),
+                // 하단 완료 버튼 (온보딩과 동일 — 좌우 24, 하단 32).
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 24 * scale,
+                    right: 24 * scale,
+                    top: 16 * scale,
+                    bottom: 32 * scale,
+                  ),
+                  child: CommonButton(
+                    label: '완료',
+                    variant: CommonButtonVariant.light,
+                    scale: scale,
+                    onPressed: _viewModel.canSubmit ? _onDone : null,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// 프로필 이미지(113) + 우측 하단 사진 수정 버튼.
+///
+/// 우선순위: [localPath] (갤러리에서 방금 고른 파일) > [imageUrl] > placeholder.
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.scale,
+    this.imageUrl,
+    this.localPath,
+    this.onEditTap,
+  });
+
+  final double scale;
+  final String? imageUrl;
+  final String? localPath;
+  final VoidCallback? onEditTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 113 * scale;
+    final fallback = Image.asset(
+      'assets/images/person.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+    );
+    final Widget avatar;
+    if (localPath != null && localPath!.isNotEmpty) {
+      avatar = Image.file(
+        File(localPath!),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    } else if (imageUrl != null && imageUrl!.isNotEmpty) {
+      avatar = Image.network(
+        imageUrl!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    } else {
+      avatar = fallback;
+    }
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          ClipOval(child: avatar),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onEditTap,
+              child: Container(
+                width: 35 * scale,
+                height: 35 * scale,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: AppColors.narGray100,
+                  shape: BoxShape.circle,
+                ),
+                child: SvgPicture.asset(
+                  'assets/icons/photo-edit.svg',
+                  width: 20 * scale,
+                  height: 20 * scale,
                 ),
               ),
             ),
-            // 하단 완료 버튼 (온보딩과 동일 — 좌우 24, 하단 32).
-            Padding(
-              padding: EdgeInsets.only(
-                left: 24 * scale,
-                right: 24 * scale,
-                top: 16 * scale,
-                bottom: 32 * scale,
-              ),
-              child: CommonButton(
-                label: '완료',
-                variant: CommonButtonVariant.light,
-                scale: scale,
-                onPressed: _canSubmit ? _onDone : null,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

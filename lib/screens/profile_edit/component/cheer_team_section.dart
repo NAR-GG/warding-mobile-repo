@@ -5,12 +5,12 @@ import '../../../styles/app_colors.dart';
 
 /// 응원 팀 항목.
 class CheerTeam {
-  const CheerTeam({required this.name, this.logoAsset});
+  const CheerTeam({required this.name, this.imageUrl});
 
   final String name;
 
-  /// 팀 로고 자산 경로. 없으면 placeholder.
-  final String? logoAsset;
+  /// 팀 로고 이미지 URL (네트워크). 없거나 로드 실패 시 placeholder.
+  final String? imageUrl;
 }
 
 /// 응원 팀 설정 요약 행 (양옆 0, padding 상하 10, 높이 70).
@@ -210,7 +210,7 @@ class _CheerTeamRow extends StatelessWidget {
   }
 }
 
-/// 팀 로고 — 자산이 있으면 이미지, 없으면 원형 placeholder.
+/// 팀 로고 — URL 이 있으면 네트워크 이미지, 없거나 실패 시 원형 placeholder.
 class _TeamLogo extends StatelessWidget {
   const _TeamLogo({required this.team, required this.size});
 
@@ -219,20 +219,24 @@ class _TeamLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = team?.logoAsset;
-    if (asset == null) {
-      // TODO: 팀 로고 이미지 연결 — 현재 원형 placeholder.
-      return Container(
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.narDark200,
+        shape: BoxShape.circle,
+      ),
+    );
+    final url = team?.imageUrl;
+    if (url == null || url.isEmpty) return placeholder;
+    return ClipOval(
+      child: Image.network(
+        url,
         width: size,
         height: size,
-        decoration: const BoxDecoration(
-          color: AppColors.narDark200,
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-    return ClipOval(
-      child: Image.asset(asset, width: size, height: size, fit: BoxFit.cover),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => placeholder,
+      ),
     );
   }
 }
