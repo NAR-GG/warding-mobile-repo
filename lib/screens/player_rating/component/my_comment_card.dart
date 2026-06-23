@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 선수 평점 상세 — 내가 남긴 평점·댓글 카드.
 ///
@@ -14,6 +15,8 @@ class MyCommentCard extends StatelessWidget {
     required this.username,
     required this.timeAgo,
     required this.rating,
+    this.profileImageUrl,
+    this.teamImageUrl,
     this.onEdit,
     this.onDelete,
     this.scale = 1,
@@ -22,6 +25,12 @@ class MyCommentCard extends StatelessWidget {
   final String username;
   final String timeAgo;
   final double rating;
+
+  /// 현재 유저 프로필 이미지 URL. 없으면 원형 placeholder.
+  final String? profileImageUrl;
+
+  /// 현재 유저 응원팀 로고 URL. 없으면 원형 placeholder.
+  final String? teamImageUrl;
 
   /// 수정(pencil)·삭제(x) 아이콘 탭 콜백.
   final VoidCallback? onEdit;
@@ -102,15 +111,8 @@ class MyCommentCard extends StatelessWidget {
                       Expanded(
                         child: Row(
                           children: [
-                            // TODO: 프로필 이미지 연결 — 현재 37×37 원형 placeholder.
-                            Container(
-                              width: 37 * scale,
-                              height: 37 * scale,
-                              decoration: const BoxDecoration(
-                                color: AppColors.narDark500,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
+                            // 프로필 이미지 37×37. 없으면 원형 placeholder.
+                            _CircleImage(url: profileImageUrl, size: 37 * scale),
                             SizedBox(width: 5 * scale),
                             Flexible(
                               child: Text(
@@ -127,15 +129,8 @@ class MyCommentCard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(width: 5 * scale),
-                            // TODO: 구독뱃지(팀 이미지) 연결 — 현재 21×21 원형 placeholder.
-                            Container(
-                              width: 21 * scale,
-                              height: 21 * scale,
-                              decoration: const BoxDecoration(
-                                color: AppColors.narDark500,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
+                            // 응원팀 로고 21×21. 없으면 원형 placeholder.
+                            _CircleImage(url: teamImageUrl, size: 21 * scale),
                           ],
                         ),
                       ),
@@ -159,6 +154,37 @@ class MyCommentCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 원형 이미지(없거나 로드 실패 시 narDark500 원 placeholder).
+class _CircleImage extends StatelessWidget {
+  const _CircleImage({required this.url, required this.size});
+
+  final String? url;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.narDark500,
+        shape: BoxShape.circle,
+      ),
+    );
+    final resolved = resolveImageUrl(url);
+    if (resolved == null || resolved.isEmpty) return placeholder;
+    return ClipOval(
+      child: Image.network(
+        resolved,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => placeholder,
       ),
     );
   }

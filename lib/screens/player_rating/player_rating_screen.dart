@@ -247,6 +247,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           teamName: widget.teamName,
                           playerName: widget.player.name,
                           position: widget.player.position,
+                          championName: d?.player.championName ?? '',
                           kda: d?.player.kda ?? '-',
                           playerImageUrl: (d?.player.playerImageUrl.isNotEmpty ??
                                   false)
@@ -270,6 +271,8 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                                   username: '나',
                                   timeAgo: '',
                                   rating: my.rating,
+                                  profileImageUrl: _vm.myProfileImageUrl,
+                                  teamImageUrl: _vm.myTeamImageUrl,
                                   onEdit: _openRatingSheet,
                                   onDelete: _confirmDeleteComment,
                                   scale: scale,
