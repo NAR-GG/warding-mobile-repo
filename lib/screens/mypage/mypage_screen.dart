@@ -145,18 +145,22 @@ class _MypageScreenState extends State<MypageScreen> {
                     onManageTap: _goToSubscriptionSettings,
                   ),
                   SizedBox(height: 16 * scale),
-                  _MypageLinkRow(
-                    title: '내 리뷰/평점',
-                    // TODO: 실제 리뷰/평점 건수로 교체 (현재 mock).
-                    count: 3,
-                    scale: scale,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const MyReviewScreen(),
-                        ),
-                      );
-                    },
+                  ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (context, _) => _MypageLinkRow(
+                      title: '내 리뷰/평점',
+                      count: _viewModel.reviewCount,
+                      scale: scale,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const MyReviewScreen(),
+                          ),
+                        );
+                        // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
+                        await _viewModel.load();
+                      },
+                    ),
                   ),
                   SizedBox(height: 16 * scale),
                   _MypageLinkRow(
