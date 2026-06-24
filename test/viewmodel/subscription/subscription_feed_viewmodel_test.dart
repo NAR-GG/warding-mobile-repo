@@ -1,0 +1,75 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:warding/model/member_notification.dart';
+import 'package:warding/repository/notification/member_notification_repository.dart';
+import 'package:warding/viewmodel/subscription/subscription_feed_viewmodel.dart';
+
+class MockRepo extends Mock implements MemberNotificationRepository {}
+
+MemberNotification _n(int id, {bool read = false}) =>
+    MemberNotification.fromJson({
+      'id': id,
+      'type': 'SET_START',
+      'read': read,
+      'createdAt': '2026-06-24T10:00:00',
+    });
+
+MemberNotificationPage _page(List<MemberNotification> items, int unread) =>
+    MemberNotificationPage(
+      notifications: items,
+      unreadCount: unread,
+      page: 0,
+      size: 50,
+      totalElements: items.length,
+      totalPages: 1,
+    );
+
+void main() {
+  late MockRepo repo;
+  setUp(() => repo = MockRepo());
+
+  test('load: 서버 피드와 미읽음 수를 반영', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenAnswer((_) async => _page([_n(1), _n(2, read: true)], 1));
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+
+    expect(vm.notifications, hasLength(2));
+    expect(vm.unreadCount, 1);
+    expect(vm.error, isNull);
+  });
+
+  test('markRead: 낙관적 read=true + 미읽음 감소 + 서버 호출', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenAnswer((_) async => _page([_n(1)], 1));
+    when(() => repo.markRead(any())).thenAnswer((_) async {});
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+    expect(vm.unreadCount, 1);
+
+    await vm.markRead(vm.notifications.first);
+
+    expect(vm.notifications.first.read, isTrue);
+    expect(vm.unreadCount, 0);
+    verify(() => repo.markRead(1)).called(1);
+  });
+
+  test('load 실패: error 세팅, 빈 목록 유지', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenThrow(Exception('boom'));
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+
+    expect(vm.error, isNotNull);
+    expect(vm.notifications, isEmpty);
+  });
+}

@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_chip_multi_select.dart';
+import '../../components/notification_card.dart';
+import '../../model/member_notification.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
@@ -13,9 +15,6 @@ import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
-import 'component/live_event_notification.dart';
-import 'component/match_end_notification.dart';
-import 'component/match_start_notification.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/rank_start_notification.dart';
@@ -31,7 +30,7 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen>
     with WidgetsBindingObserver {
-  /// 기기에 저장된 솔랭 알림 피드.
+  /// 서버 알림 피드(`/api/mobile/me/notifications`).
   final SubscriptionFeedViewModel _feedViewModel = SubscriptionFeedViewModel();
 
   @override
@@ -91,6 +90,136 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   /// 이벤트 타입 필터 옵션. 첫 항목 '전체'는 나머지와 배타적으로 동작한다.
   static const List<String> _eventTypes = ['전체', '세트 시작', '세트 종료'];
+
+  /// 칩 라벨 → 서버 알림 타입. '전체'는 null.
+  MemberNotificationType? _chipToType(String chip) {
+    switch (chip) {
+      case '세트 시작':
+        return MemberNotificationType.setStart;
+      case '세트 종료':
+        return MemberNotificationType.setEnd;
+      default:
+        return null;
+    }
+  }
+
+  /// 선택된 칩/선수 필터에 알림 한 건이 걸리는지(클라이언트 필터링).
+  /// 아무것도 안 골랐으면('전체') 모두 통과. 타입·선수는 OR 로 합친다.
+  bool _matchesFilter(MemberNotification n) {
+    final typeFilters = _selectedTypes
+        .map(_chipToType)
+        .whereType<MemberNotificationType>()
+        .toSet();
+    final hasType = typeFilters.isNotEmpty;
+    final hasPlayer = _selectedPlayers.isNotEmpty;
+    if (!hasType && !hasPlayer) return true;
+    if (hasType && typeFilters.contains(n.type)) return true;
+    if (hasPlayer &&
+        n.type == MemberNotificationType.playerSoloRank &&
+        _selectedPlayers.contains(n.playerName)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// 타입별 카드 아이콘.
+  String _iconFor(MemberNotificationType type) {
+    switch (type) {
+      case MemberNotificationType.setStart:
+        return 'assets/icons/play.svg';
+      case MemberNotificationType.setEnd:
+        return 'assets/icons/closing.svg';
+      case MemberNotificationType.liveEvent:
+        return 'assets/icons/pause.svg';
+      case MemberNotificationType.playerSoloRank:
+      case MemberNotificationType.unknown:
+        return 'assets/icons/headset.svg';
+    }
+  }
+
+  /// 알림 탭 — 읽음 처리 후 딥링크 이동.
+  /// 솔랭은 OP.GG 링크로 이동하므로 카드 탭은 읽음만, 팀 이벤트는 경기 상세로.
+  void _onNotificationTap(MemberNotification n) {
+    _feedViewModel.markRead(n);
+    if (n.type == MemberNotificationType.playerSoloRank) return;
+    final matchId = n.matchId;
+    if (matchId == null) return;
+    // 경기 상세의 '라이브 이벤트' 탭(index 1). match 객체는 matchId 로 로드된다.
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MatchDetailScreen(matchId: matchId, initialTabIndex: 1),
+      ),
+    );
+  }
+
+  /// 알림 한 건을 타입에 맞는 카드로 그린다(미읽음 점 + 탭 핸들러 포함).
+  Widget _buildNotification(MemberNotification n, double scale) {
+    final Widget card;
+    if (n.type == MemberNotificationType.playerSoloRank) {
+      card = RankStartNotification(
+        playerName: n.playerName,
+        champion: n.championName,
+        queueType: n.queueType,
+        championImageUrl: n.championImageUrl,
+        opggUrl: n.opggUrl,
+        onOpggTap: n.opggUrl == null ? null : () => _launchUrl(n.opggUrl!),
+        dateTime: _formatAbsolute(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt),
+        scale: scale,
+      );
+    } else {
+      // 팀 이벤트(세트 시작·종료·라이브) — 서버 title/body 를 공용 카드로.
+      card = NotificationCard(
+        icon: _iconFor(n.type),
+        title: n.title,
+        body: n.body,
+        dateTime: _formatAbsolute(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt),
+        scale: scale,
+      );
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _onNotificationTap(n),
+      child: _withUnreadDot(card, n.read, scale),
+    );
+  }
+
+  /// 미읽음이면 카드 우상단에 빨간 점을 얹는다.
+  Widget _withUnreadDot(Widget card, bool read, double scale) {
+    if (read) return card;
+    return Stack(
+      children: [
+        card,
+        Positioned(
+          top: 8 * scale,
+          right: 16 * scale,
+          child: Container(
+            width: 8 * scale,
+            height: 8 * scale,
+            decoration: const BoxDecoration(
+              color: AppColors.liveAccent,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 비어있음·에러 안내 문구.
+  Widget _centerMessage(String text, double scale) {
+    return Center(
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontSize: 14 * scale,
+          color: AppColors.narTextSecondary,
+        ),
+      ),
+    );
+  }
 
   /// 구독한 선수 목록 — 진입 시 `/api/mobile/me/player-subscriptions`에서 채운다.
   List<String> _players = const [];
@@ -202,80 +331,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 Expanded(
                   child: ListenableBuilder(
                     listenable: _feedViewModel,
-                    builder: (context, _) => ListView(
-                      padding: EdgeInsets.only(bottom: 120 * scale),
-                      children: [
-                        // 실제 수신한 솔랭 알림 (기기 로컬 저장).
-                        for (final n in _feedViewModel.notifications)
-                          RankStartNotification(
-                            playerName: n.playerName,
-                            champion: n.championName,
-                            queueType: n.queueType,
-                            championImageUrl: n.championImageUrl,
-                            opggUrl: n.opggUrl,
-                            onOpggTap: n.opggUrl == null
-                                ? null
-                                : () => _launchUrl(n.opggUrl!),
-                            dateTime: _formatAbsolute(n.receivedAt),
-                            relativeTime: _formatRelative(n.receivedAt),
-                            scale: scale,
-                          ),
-                        // 아래는 아직 목 데이터(다른 알림 유형).
-                        MatchEndNotification(
-                        teamA: 'T1',
-                        teamB: 'GEN',
-                        season: 'LCK 2026 시즌',
-                        dateTime: '2026-05-07 15:47',
-                        relativeTime: '1시간 전',
-                        onRatingTap: () {
-                          // 경기 상세의 '선수 평점' 탭(index 2)으로 이동.
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder:
-                                  // TODO: 목 알림이라 실제 matchId 없음 — 연동 시 알림 데이터에서 받기.
-                                  (_) => const MatchDetailScreen(
-                                    matchId: '',
-                                    match: null,
-                                    initialTabIndex: 2,
-                                  ),
-                            ),
-                          );
-                        },
-                        scale: scale,
-                      ),
-                      LiveEventNotification(
-                        teamA: 'T1',
-                        teamB: 'GEN',
-                        season: 'LCK 2026 시즌',
-                        dateTime: '2026-05-07',
-                        relativeTime: '2시간 전',
-                        events: const [
-                          LiveEventData(
-                            time: '17:34',
-                            source: LiveActor.champion(name: 'Faker'),
-                            target: LiveActor.objective(
-                              name: '드래곤',
-                              asset: 'assets/images/cloud-dragon.png',
-                            ),
-                          ),
-                          LiveEventData(
-                            time: '10:34',
-                            source: LiveActor.champion(name: 'Faker'),
-                            target: LiveActor.champion(name: 'Chovy'),
-                          ),
-                        ],
-                        scale: scale,
-                      ),
-                      MatchStartNotification(
-                        teamA: 'T1',
-                        teamB: 'GEN',
-                        season: 'LCK 2026 시즌',
-                        dateTime: '2026-05-07 15:47',
-                        relativeTime: '3시간 전',
-                        scale: scale,
-                      ),
-                      ],
-                    ),
+                    builder: (context, _) {
+                      final vm = _feedViewModel;
+                      if (vm.isLoading && vm.notifications.isEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (vm.error != null && vm.notifications.isEmpty) {
+                        return _centerMessage(vm.error!, scale);
+                      }
+                      final items =
+                          vm.notifications.where(_matchesFilter).toList();
+                      return RefreshIndicator(
+                        onRefresh: vm.load,
+                        child: items.isEmpty
+                            ? ListView(
+                                // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: 120 * scale),
+                                  _centerMessage('받은 알림이 없습니다.', scale),
+                                ],
+                              )
+                            : ListView.builder(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.only(bottom: 120 * scale),
+                                itemCount: items.length,
+                                itemBuilder: (context, i) =>
+                                    _buildNotification(items[i], scale),
+                              ),
+                      );
+                    },
                   ),
                 ),
               ],
