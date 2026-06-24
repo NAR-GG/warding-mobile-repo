@@ -28,7 +28,9 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  # Firebase 등 static 라이브러리가 use_frameworks!(dynamic)와 함께 modulemap 을
+  # 중복 정의(redefinition of module 'Firebase')하는 문제를 피하려 static linkage 사용.
+  use_frameworks! :linkage => :static
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -42,15 +44,22 @@ post_install do |installer|
     # Firebase 등 의존성이 iOS 15 이상을 요구하므로 모든 Pod 타겟을 맞춘다.
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
 
-      # permission_handler: 앱이 실제로 쓰는 권한만 컴파일에 포함한다.
-      # 미설정 시 모든 권한 코드가 빌드돼 App Store 심사에서 문제될 수 있다.
-      # 현재 사용 권한은 알림(Permission.notification)뿐이라 그것만 활성화한다.
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
-        '$(inherited)',
-        ## dart: PermissionGroup.notification
-        'PERMISSION_NOTIFICATIONS=1',
-      ]
+    # permission_handler: 앱이 실제로 쓰는 권한만 컴파일에 포함한다.
+    # 미설정 시 모든 권한 코드가 빌드돼 App Store 심사에서 문제될 수 있다.
+    # 현재 사용 권한은 알림(Permission.notification)뿐이라 그것만 활성화한다.
+    # 매크로는 permission_handler_apple 타겟에만 적용한다 — 모든 Pod 의
+    # GCC_PREPROCESSOR_DEFINITIONS 를 건드리면 다른 Pod(Firebase 등) 빌드가
+    # 깨질 수 있다.
+    if target.name == 'permission_handler_apple'
+      target.build_configurations.each do |config|
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+          '$(inherited)',
+          ## dart: PermissionGroup.notification
+          'PERMISSION_NOTIFICATIONS=1',
+        ]
+      end
     end
   end
 end

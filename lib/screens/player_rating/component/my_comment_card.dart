@@ -15,6 +15,7 @@ class MyCommentCard extends StatelessWidget {
     required this.username,
     required this.timeAgo,
     required this.rating,
+    this.comment,
     this.profileImageUrl,
     this.teamImageUrl,
     this.onEdit,
@@ -25,6 +26,9 @@ class MyCommentCard extends StatelessWidget {
   final String username;
   final String timeAgo;
   final double rating;
+
+  /// 내가 남긴 코멘트 내용. 없으면 표시하지 않는다.
+  final String? comment;
 
   /// 현재 유저 프로필 이미지 URL. 없으면 원형 placeholder.
   final String? profileImageUrl;
@@ -149,6 +153,20 @@ class MyCommentCard extends StatelessWidget {
                   ),
                   SizedBox(height: 8 * scale),
                   NarStarRating(rating: rating, scale: scale),
+                  // 내가 남긴 코멘트 내용(있을 때만).
+                  if (comment != null && comment!.isNotEmpty) ...[
+                    SizedBox(height: 10 * scale),
+                    Text(
+                      comment!,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14 * scale,
+                        height: 1.45,
+                        color: AppColors.narText,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

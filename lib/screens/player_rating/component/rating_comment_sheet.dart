@@ -8,11 +8,14 @@ import '../../../util/lane_asset.dart';
 
 /// 평점·코멘트 남기기 바텀시트를 띄운다.
 /// 등록 시 입력된 (평점, 코멘트)를 반환하고, 닫으면 null 을 반환한다.
+/// [initialRating]·[initialComment] 를 주면 수정 모드로 기존 값을 채워 연다.
 Future<({double rating, String comment})?> showRatingCommentSheet({
   required BuildContext context,
   required String teamName,
   required String playerName,
   required String position,
+  double initialRating = 0,
+  String? initialComment,
 }) {
   return showModalBottomSheet<({double rating, String comment})>(
     context: context,
@@ -28,6 +31,8 @@ Future<({double rating, String comment})?> showRatingCommentSheet({
             teamName: teamName,
             playerName: playerName,
             position: position,
+            initialRating: initialRating,
+            initialComment: initialComment,
           ),
         ),
   );
@@ -44,11 +49,17 @@ class RatingCommentSheet extends StatefulWidget {
     required this.teamName,
     required this.playerName,
     required this.position,
+    this.initialRating = 0,
+    this.initialComment,
   });
 
   final String teamName;
   final String playerName;
   final String position;
+
+  /// 수정 모드에서 미리 채울 기존 평점·코멘트.
+  final double initialRating;
+  final String? initialComment;
 
   @override
   State<RatingCommentSheet> createState() => _RatingCommentSheetState();
@@ -57,9 +68,10 @@ class RatingCommentSheet extends StatefulWidget {
 class _RatingCommentSheetState extends State<RatingCommentSheet> {
   static const int _maxLength = 150;
 
-  final TextEditingController _controller = TextEditingController();
-  double _rating = 0;
-  int _length = 0;
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialComment ?? '');
+  late double _rating = widget.initialRating;
+  late int _length = (widget.initialComment ?? '').characters.length;
 
   // 별점만 있어도 등록 가능, 코멘트만은 불가 — 평점이 있어야 활성.
   bool get _canSubmit => _rating > 0;

@@ -151,11 +151,15 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       );
       return;
     }
+    // 내 평점이 이미 있으면(수정) 기존 값을 채워 연다.
+    final my = _vm.detail?.myRating;
     final result = await showRatingCommentSheet(
       context: context,
       teamName: widget.teamName,
       playerName: widget.player.name,
       position: widget.player.position,
+      initialRating: my?.rating ?? 0,
+      initialComment: my?.comment,
     );
     if (result == null) return;
     try {
@@ -271,6 +275,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                                   username: '나',
                                   timeAgo: '',
                                   rating: my.rating,
+                                  comment: my.comment,
                                   profileImageUrl: _vm.myProfileImageUrl,
                                   teamImageUrl: _vm.myTeamImageUrl,
                                   onEdit: _openRatingSheet,
