@@ -144,6 +144,26 @@ class ApiConfig {
   static String get availableTeamsUrl =>
       '$apiBaseUrl/mobile/me/notification-subscriptions/available-teams';
 
+  // ── 마이구독 알림 피드 (인증 필요) ────────────────────────────────
+
+  /// 받은 알림 리스트 (type 필터·페이징). type 미지정 시 전체.
+  static String notificationsUrl({String? type, int page = 0, int size = 20}) {
+    final params = <String, String>{'page': '$page', 'size': '$size'};
+    if (type != null) params['type'] = type;
+    final query = params.entries
+        .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
+        .join('&');
+    return '$apiBaseUrl/mobile/me/notifications?$query';
+  }
+
+  /// 알림 전체 읽음 처리(POST).
+  static String get notificationsReadAllUrl =>
+      '$apiBaseUrl/mobile/me/notifications/read';
+
+  /// 알림 단건 읽음 처리(POST).
+  static String notificationReadUrl(int id) =>
+      '$apiBaseUrl/mobile/me/notifications/$id/read';
+
   // ── 선수 평점 (인증 필요) ─────────────────────────────────────────
 
   /// 세트(게임) 전체 선수 평점 목록.
