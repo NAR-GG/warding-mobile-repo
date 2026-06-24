@@ -157,15 +157,11 @@ class MatchListViewModel extends ChangeNotifier {
     _notify();
     try {
       final year = int.parse(_selectedSeason);
-      final tree = await _categoryRepository.fetchTree(year: year);
-      _tree = tree;
-      final season = tree.seasons.firstWhere(
-        (s) => s.year == year,
-        orElse: () => tree.seasons.isNotEmpty
-            ? tree.seasons.first
-            : const CategorySeason(year: 0, leagues: []),
-      );
-      _leagues = season.leagues.map((l) => l.name).toList();
+      // 리그 목록은 경기일정 페이지와 동일하게 필터 옵션(ALLOWED_LEAGUES)에서 받는다.
+      final options = await _scheduleRepository.fetchFilterOptions();
+      _leagues = options.leagues.map((l) => l.name).toList();
+      // 팀 목록은 연도별 카테고리 트리에서 받는다.
+      _tree = await _categoryRepository.fetchTree(year: year);
       if (_leagues.isEmpty) {
         _selectedLeague = null;
       } else if (_selectedLeague == null ||
@@ -265,6 +261,7 @@ class MatchListViewModel extends ChangeNotifier {
       cursor: _cursor,
       size: _pageSize,
       league: (league != null && league.isNotEmpty) ? league : defaultLeague,
+      seasonYear: int.tryParse(_selectedSeason),
     );
     _cursor = page.nextCursor;
     _hasMore = page.hasNext && page.nextCursor != null;

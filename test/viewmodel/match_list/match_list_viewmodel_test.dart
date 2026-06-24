@@ -1,0 +1,77 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:warding/model/category_tree.dart';
+import 'package:warding/model/schedule_filter_options.dart';
+import 'package:warding/repository/category/category_repository.dart';
+import 'package:warding/repository/schedule/schedule_repository.dart';
+import 'package:warding/viewmodel/match_list/match_list_viewmodel.dart';
+
+class MockCategoryRepository extends Mock implements CategoryRepository {}
+
+class MockScheduleRepository extends Mock implements ScheduleRepository {}
+
+void main() {
+  late MockCategoryRepository cat;
+  late MockScheduleRepository sched;
+
+  setUp(() {
+    cat = MockCategoryRepository();
+    sched = MockScheduleRepository();
+
+    when(() => sched.fetchFilterOptions(league: any(named: 'league')))
+        .thenAnswer((_) async => const ScheduleFilterOptions(
+              defaultLeague: 'LCK',
+              leagues: [
+                FilterLeague(code: 'LCK', name: 'LCK'),
+                FilterLeague(code: 'MSI', name: 'MSI'),
+              ],
+              teams: [],
+            ));
+    when(() => cat.fetchTree(year: any(named: 'year')))
+        .thenAnswer((_) async => const CategoryTree(seasons: []));
+    when(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer(
+        (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
+  });
+
+  test('리그 목록은 경기일정 필터 옵션(ALLOWED_LEAGUES)에서 온다', () async {
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    expect(vm.leagues, ['LCK', 'MSI']);
+  });
+
+  test('경기 조회 시 선택 시즌(연도)을 seasonYear 로 넘긴다', () async {
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    final captured = verify(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: captureAny(named: 'seasonYear'),
+        )).captured;
+    // 기본 시즌은 seasons.last = '2026'.
+    expect(captured, contains(2026));
+  });
+
+  test('시즌 변경 시 해당 연도를 seasonYear 로 넘긴다', () async {
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    vm.selectSeason('2025');
+    await pumpEventQueue();
+
+    final captured = verify(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: captureAny(named: 'seasonYear'),
+        )).captured;
+    expect(captured, contains(2025));
+  });
+}
