@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_chip_multi_select.dart';
+import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
@@ -37,6 +38,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadPlayers();
+  }
+
+  /// 구독한 선수 목록을 불러와 필터 칩/시트에 반영한다.
+  /// 실패하면 빈 목록을 유지한다(가짜 placeholder 노출 방지).
+  Future<void> _loadPlayers() async {
+    try {
+      final players =
+          await SubscriptionRepository.instance.fetchSubscribedPlayers();
+      if (!mounted) return;
+      setState(() => _players = players.map((p) => p.playerName).toList());
+    } catch (e) {
+      debugPrint('[Subscription] 구독선수 로드 실패: $e');
+    }
   }
 
   @override
@@ -77,15 +92,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 이벤트 타입 필터 옵션. 첫 항목 '전체'는 나머지와 배타적으로 동작한다.
   static const List<String> _eventTypes = ['전체', '세트 시작', '세트 종료'];
 
-  /// 구독한 선수 목록 (추후 구독 데이터 API 연동).
-  static const List<String> _players = [
-    'Faker',
-    '선수2',
-    '선수3',
-    '선수4',
-    '선수5',
-    '선수6',
-  ];
+  /// 구독한 선수 목록 — 진입 시 `/api/mobile/me/player-subscriptions`에서 채운다.
+  List<String> _players = const [];
 
   // 초기 상태 — 필터 없음('전체'만 활성).
   Set<String> _selectedTypes = {'전체'};
