@@ -72,4 +72,51 @@ void main() {
     expect(vm.error, isNotNull);
     expect(vm.notifications, isEmpty);
   });
+
+  test('delete: 낙관적 제거 + 서버 호출', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenAnswer((_) async => _page([_n(1), _n(2)], 0));
+    when(() => repo.delete(any())).thenAnswer((_) async {});
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+
+    await vm.delete(vm.notifications.first);
+
+    expect(vm.notifications.map((n) => n.id), [2]);
+    verify(() => repo.delete(1)).called(1);
+  });
+
+  test('delete 실패: 항목 원위치 복구 + rethrow', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenAnswer((_) async => _page([_n(1), _n(2)], 0));
+    when(() => repo.delete(any())).thenThrow(Exception('fail'));
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+
+    await expectLater(vm.delete(_n(1)), throwsException);
+    expect(vm.notifications.map((n) => n.id), [1, 2]);
+  });
+
+  test('deleteAll: 목록 비우고 미읽음 0', () async {
+    when(() => repo.fetchNotifications(
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        )).thenAnswer((_) async => _page([_n(1), _n(2)], 2));
+    when(() => repo.deleteAll()).thenAnswer((_) async => 2);
+
+    final vm = SubscriptionFeedViewModel(repository: repo);
+    await vm.load();
+
+    await vm.deleteAll();
+
+    expect(vm.notifications, isEmpty);
+    expect(vm.unreadCount, 0);
+    verify(() => repo.deleteAll()).called(1);
+  });
 }
