@@ -10,6 +10,8 @@ class PlayerComment {
     required this.timeAgo,
     required this.rating,
     this.comment,
+    this.profileImageUrl,
+    this.teamImageUrl,
   });
 
   /// 작성자 닉네임(예: 'Faker_팬티도둑').
@@ -23,6 +25,12 @@ class PlayerComment {
 
   /// 코멘트 본문. 없으면 별점만 노출.
   final String? comment;
+
+  /// 작성자 프로필 이미지 URL. 없으면 placeholder.
+  final String? profileImageUrl;
+
+  /// 작성자 응원팀 이미지 URL(구독뱃지). 없으면 placeholder.
+  final String? teamImageUrl;
 }
 
 /// 선수 평점 상세 — 평점/코멘트 헤더 + 코멘트 리스트.
@@ -108,15 +116,7 @@ class _CommentTile extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    // TODO: 프로필 이미지 연결 — 현재 37×37 원형 placeholder.
-                    Container(
-                      width: 37 * scale,
-                      height: 37 * scale,
-                      decoration: const BoxDecoration(
-                        color: AppColors.narDark500,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    _circleImage(comment.profileImageUrl, 37 * scale),
                     SizedBox(width: 5 * scale),
                     Flexible(
                       child: Text(
@@ -133,15 +133,7 @@ class _CommentTile extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 5 * scale),
-                    // TODO: 구독뱃지(팀 이미지) 연결 — 현재 21×21 원형 placeholder.
-                    Container(
-                      width: 21 * scale,
-                      height: 21 * scale,
-                      decoration: const BoxDecoration(
-                        color: AppColors.narDark500,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    _circleImage(comment.teamImageUrl, 21 * scale),
                   ],
                 ),
               ),
@@ -177,4 +169,26 @@ class _CommentTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 원형 이미지. [url] 이 없거나 로드 실패하면 narDark500 원형 placeholder 로 폴백.
+Widget _circleImage(String? url, double size) {
+  final placeholder = Container(
+    width: size,
+    height: size,
+    decoration: const BoxDecoration(
+      color: AppColors.narDark500,
+      shape: BoxShape.circle,
+    ),
+  );
+  if (url == null || url.isEmpty) return placeholder;
+  return ClipOval(
+    child: Image.network(
+      url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => placeholder,
+    ),
+  );
 }

@@ -209,6 +209,8 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
         timeAgo: ratingTimeAgo(r.createdAt),
         rating: r.rating,
         comment: (r.comment != null && r.comment!.isNotEmpty) ? r.comment : null,
+        profileImageUrl: r.profileImageUrl,
+        teamImageUrl: r.teamImageUrl,
       );
 
   @override
