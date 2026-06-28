@@ -62,6 +62,8 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         comment: (item.comment != null && item.comment!.isNotEmpty)
             ? item.comment
             : null,
+        profileImageUrl: item.profileImageUrl,
+        teamImageUrl: item.teamImageUrl,
       );
 
   /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다

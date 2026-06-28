@@ -252,6 +252,8 @@ class Review {
   const Review({
     required this.ratingId,
     required this.nickname,
+    this.profileImageUrl,
+    this.teamImageUrl,
     required this.rating,
     this.comment,
     required this.mine,
@@ -261,6 +263,13 @@ class Review {
 
   final int ratingId;
   final String nickname;
+
+  /// 작성자 프로필 이미지 URL. 없으면 placeholder.
+  final String? profileImageUrl;
+
+  /// 작성자 응원팀 이미지 URL(구독뱃지용). 없으면 placeholder.
+  final String? teamImageUrl;
+
   final double rating;
   final String? comment;
 
@@ -274,6 +283,8 @@ class Review {
     return Review(
       ratingId: json['ratingId'] as int? ?? 0,
       nickname: json['nickname'] as String? ?? '',
+      profileImageUrl: json['profileImageUrl'] as String?,
+      teamImageUrl: json['teamImageUrl'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       comment: json['comment'] as String?,
       mine: json['mine'] as bool? ?? false,

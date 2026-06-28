@@ -164,6 +164,14 @@ class ApiConfig {
   static String notificationReadUrl(int id) =>
       '$apiBaseUrl/mobile/me/notifications/$id/read';
 
+  /// 알림 단건 삭제(DELETE).
+  static String notificationDeleteUrl(int id) =>
+      '$apiBaseUrl/mobile/me/notifications/$id';
+
+  /// 알림 전체 삭제(DELETE).
+  static String get notificationsDeleteAllUrl =>
+      '$apiBaseUrl/mobile/me/notifications';
+
   // ── 선수 평점 (인증 필요) ─────────────────────────────────────────
 
   /// 세트(게임) 전체 선수 평점 목록.

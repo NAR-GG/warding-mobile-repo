@@ -65,6 +65,43 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     }
   }
 
+  /// 단건 삭제(낙관적 제거 후 서버 호출, 실패 시 원위치 복구).
+  Future<void> delete(MemberNotification n) async {
+    final idx = _notifications.indexWhere((x) => x.id == n.id);
+    if (idx < 0) return;
+    final removed = _notifications[idx];
+    _notifications = [..._notifications]..removeAt(idx);
+    if (!removed.read && _unreadCount > 0) _unreadCount--;
+    _notify();
+    try {
+      await _repo.delete(n.id);
+    } catch (e) {
+      debugPrint('[Feed] delete 실패, 복구: $e');
+      _notifications = [..._notifications]..insert(idx, removed);
+      if (!removed.read) _unreadCount++;
+      _notify();
+      rethrow;
+    }
+  }
+
+  /// 전체 삭제(낙관적 비움 후 서버 호출, 실패 시 복구).
+  Future<void> deleteAll() async {
+    final backup = _notifications;
+    final backupUnread = _unreadCount;
+    _notifications = const [];
+    _unreadCount = 0;
+    _notify();
+    try {
+      await _repo.deleteAll();
+    } catch (e) {
+      debugPrint('[Feed] 전체삭제 실패, 복구: $e');
+      _notifications = backup;
+      _unreadCount = backupUnread;
+      _notify();
+      rethrow;
+    }
+  }
+
   void _notify() {
     if (_disposed) return;
     notifyListeners();

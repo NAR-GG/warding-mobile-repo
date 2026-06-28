@@ -157,11 +157,12 @@ class MatchListViewModel extends ChangeNotifier {
     _notify();
     try {
       final year = int.parse(_selectedSeason);
-      // 리그 목록은 경기일정 페이지와 동일하게 필터 옵션(ALLOWED_LEAGUES)에서 받는다.
+      final tree = await _categoryRepository.fetchTree(year: year);
+      _tree = tree;
+      // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
+      // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
       final options = await _scheduleRepository.fetchFilterOptions();
       _leagues = options.leagues.map((l) => l.name).toList();
-      // 팀 목록은 연도별 카테고리 트리에서 받는다.
-      _tree = await _categoryRepository.fetchTree(year: year);
       if (_leagues.isEmpty) {
         _selectedLeague = null;
       } else if (_selectedLeague == null ||
