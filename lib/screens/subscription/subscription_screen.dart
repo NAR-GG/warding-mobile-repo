@@ -152,7 +152,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  /// 알림 한 건을 타입에 맞는 카드로 그린다(미읽음 점 + 탭 핸들러 포함).
+  /// 알림 한 건을 타입에 맞는 카드로 그린다. 좌스와이프로 삭제, 탭으로 이동.
   Widget _buildNotification(MemberNotification n, double scale) {
     final Widget card;
     if (n.type == MemberNotificationType.playerSoloRank) {
@@ -178,33 +178,89 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         scale: scale,
       );
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _onNotificationTap(n),
-      child: _withUnreadDot(card, n.read, scale),
+    // ponytail: 스와이프는 의도적 동작이라 즉시 삭제(undo 없음). 전체 삭제만 확인 다이얼로그.
+    return Dismissible(
+      key: ValueKey<int>(n.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _deleteOne(n),
+      background: _swipeDeleteBackground(scale),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onNotificationTap(n),
+        child: card,
+      ),
     );
   }
 
-  /// 미읽음이면 카드 우상단에 빨간 점을 얹는다.
-  Widget _withUnreadDot(Widget card, bool read, double scale) {
-    if (read) return card;
-    return Stack(
-      children: [
-        card,
-        Positioned(
-          top: 8 * scale,
-          right: 16 * scale,
-          child: Container(
-            width: 8 * scale,
-            height: 8 * scale,
-            decoration: const BoxDecoration(
-              color: AppColors.liveAccent,
-              shape: BoxShape.circle,
+  /// 좌스와이프 시 뒤에 드러나는 빨간 삭제 배경.
+  Widget _swipeDeleteBackground(double scale) {
+    return Container(
+      color: AppColors.liveAccent,
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 24 * scale),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.delete_outline, color: AppColors.narText, size: 22 * scale),
+          SizedBox(width: 4 * scale),
+          Text(
+            '삭제',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14 * scale,
+              color: AppColors.narText,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  /// 단건 삭제 실행. 실패 시 스낵바(뷰모델이 항목 복구).
+  Future<void> _deleteOne(MemberNotification n) async {
+    try {
+      await _feedViewModel.delete(n);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제하지 못했습니다.')),
+      );
+    }
+  }
+
+  /// '비우기' — 전체 삭제 확인 후 실행.
+  Future<void> _confirmClearAll() async {
+    if (_feedViewModel.notifications.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.narDark800,
+        title: const Text('알림 모두 삭제', style: TextStyle(color: AppColors.narText)),
+        content: const Text(
+          '받은 알림을 모두 삭제할까요?',
+          style: TextStyle(color: AppColors.narTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('삭제', style: TextStyle(color: AppColors.liveAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _feedViewModel.deleteAll();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제하지 못했습니다.')),
+      );
+    }
   }
 
   /// 비어있음·에러 안내 문구.
@@ -295,6 +351,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               children: [
                 _SubscriptionHeader(
                   scale: scale,
+                  onClearTap: _confirmClearAll,
                   onSettingsTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -383,12 +440,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 }
 
-/// 마이 구독 헤더. 좌측 타이틀 + 우측 설정 아이콘 (양옆 20 패딩).
+/// 마이 구독 헤더. 좌측 타이틀 + 우측 [비우기, 설정] 아이콘 (양옆 20 패딩).
 class _SubscriptionHeader extends StatelessWidget {
-  const _SubscriptionHeader({required this.scale, this.onSettingsTap});
+  const _SubscriptionHeader({
+    required this.scale,
+    this.onSettingsTap,
+    this.onClearTap,
+  });
 
   final double scale;
   final VoidCallback? onSettingsTap;
+
+  /// '비우기'(알림 모두 삭제) 탭 콜백.
+  final VoidCallback? onClearTap;
 
   @override
   Widget build(BuildContext context) {
@@ -409,18 +473,33 @@ class _SubscriptionHeader extends StatelessWidget {
               color: AppColors.narText,
             ),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onSettingsTap,
-            child: SvgPicture.asset(
-              'assets/icons/settings.svg',
-              width: 24 * scale,
-              height: 24 * scale,
-              colorFilter: const ColorFilter.mode(
-                AppColors.narText,
-                BlendMode.srcIn,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onClearTap,
+                child: Icon(
+                  Icons.delete_outline,
+                  size: 24 * scale,
+                  color: AppColors.narText,
+                ),
               ),
-            ),
+              SizedBox(width: 16 * scale),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onSettingsTap,
+                child: SvgPicture.asset(
+                  'assets/icons/settings.svg',
+                  width: 24 * scale,
+                  height: 24 * scale,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.narText,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
