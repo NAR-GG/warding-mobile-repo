@@ -18,6 +18,8 @@ class MyReview {
     required this.rating,
     this.raterCount = 0,
     this.comment,
+    this.profileImageUrl,
+    this.teamImageUrl,
     this.teamBadgeAsset,
   });
 
@@ -51,7 +53,13 @@ class MyReview {
   /// 리뷰 본문. null 이면 별점만.
   final String? comment;
 
-  /// 작성자 구독 팀 뱃지 자산. 없으면 placeholder.
+  /// 작성자(나) 프로필 이미지 URL. 없으면 기본 아바타.
+  final String? profileImageUrl;
+
+  /// 작성자(나) 응원팀 로고 URL. 없으면 placeholder.
+  final String? teamImageUrl;
+
+  /// (구) 작성자 구독 팀 뱃지 로컬 자산. teamImageUrl 우선, 둘 다 없으면 placeholder.
   final String? teamBadgeAsset;
 
   /// 표시용 '팀 선수' (예: 'T1 Faker').
@@ -137,14 +145,7 @@ class ReviewCard extends StatelessWidget {
           // 작성자 라인: 아바타 + 닉네임 + 뱃지 ... 시각.
           Row(
             children: [
-              ClipOval(
-                child: Image.asset(
-                  'assets/images/person.png',
-                  width: 37 * scale,
-                  height: 37 * scale,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              _Avatar(url: review.profileImageUrl, size: 37 * scale),
               SizedBox(width: 5 * scale),
               Text(
                 review.username,
@@ -158,7 +159,11 @@ class ReviewCard extends StatelessWidget {
               ),
               SizedBox(width: 5 * scale),
               // 구독 뱃지 (팀 로고) — 없으면 placeholder.
-              _SubscribeBadge(asset: review.teamBadgeAsset, scale: scale),
+              _SubscribeBadge(
+                url: review.teamImageUrl,
+                asset: review.teamBadgeAsset,
+                scale: scale,
+              ),
               const Spacer(),
               Text(
                 review.timeAgo,
@@ -221,29 +226,70 @@ class ReviewCard extends StatelessWidget {
   }
 }
 
-/// 구독 뱃지 (21×21) — 팀 로고가 있으면 이미지, 없으면 원형 placeholder.
-class _SubscribeBadge extends StatelessWidget {
-  const _SubscribeBadge({required this.asset, required this.scale});
+/// 작성자 아바타 (37×37) — 프로필 URL 있으면 네트워크 이미지, 없거나 실패 시 기본 person 자산.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.url, required this.size});
 
+  final String? url;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Image.asset(
+      'assets/images/person.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+    );
+    return ClipOval(
+      child: (url == null || url!.isEmpty)
+          ? fallback
+          : Image.network(
+              url!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
+    );
+  }
+}
+
+/// 구독 뱃지 (21×21) — 팀 로고 URL > 로컬 자산 > 원형 placeholder 순.
+class _SubscribeBadge extends StatelessWidget {
+  const _SubscribeBadge({this.url, required this.asset, required this.scale});
+
+  final String? url;
   final String? asset;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     final size = 21 * scale;
-    if (asset == null) {
-      // TODO: 구독 팀 뱃지 이미지 연결 — 현재 원형 placeholder.
-      return Container(
-        width: size,
-        height: size,
-        decoration: const BoxDecoration(
-          color: AppColors.narDark200,
-          shape: BoxShape.circle,
+    final placeholder = Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: AppColors.narDark200,
+        shape: BoxShape.circle,
+      ),
+    );
+    if (url != null && url!.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          url!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => placeholder,
         ),
       );
     }
-    return ClipOval(
-      child: Image.asset(asset!, width: size, height: size, fit: BoxFit.cover),
-    );
+    if (asset != null) {
+      return ClipOval(
+        child: Image.asset(asset!, width: size, height: size, fit: BoxFit.cover),
+      );
+    }
+    return placeholder;
   }
 }

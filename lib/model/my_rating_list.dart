@@ -47,6 +47,8 @@ class MyRatingItem {
     this.comment,
     this.createdAt,
     this.updatedAt,
+    this.profileImageUrl,
+    this.teamImageUrl,
     this.match,
   });
 
@@ -63,6 +65,13 @@ class MyRatingItem {
   final String? comment;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// 작성자(나) 프로필 이미지 URL. 없으면 placeholder.
+  final String? profileImageUrl;
+
+  /// 작성자(나) 응원팀 로고 URL. 없으면 placeholder.
+  final String? teamImageUrl;
+
   final MatchInfo? match;
 
   factory MyRatingItem.fromJson(Map<String, dynamic> json) {
@@ -81,6 +90,8 @@ class MyRatingItem {
       comment: json['comment'] as String?,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
+      profileImageUrl: json['profileImageUrl'] as String?,
+      teamImageUrl: json['teamImageUrl'] as String?,
       match: m == null ? null : MatchInfo.fromJson(m as Map<String, dynamic>),
     );
   }
