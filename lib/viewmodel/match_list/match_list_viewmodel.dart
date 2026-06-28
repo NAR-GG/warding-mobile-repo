@@ -262,6 +262,7 @@ class MatchListViewModel extends ChangeNotifier {
       cursor: _cursor,
       size: _pageSize,
       league: (league != null && league.isNotEmpty) ? league : defaultLeague,
+      seasonYear: int.tryParse(_selectedSeason),
     );
     _cursor = page.nextCursor;
     _hasMore = page.hasNext && page.nextCursor != null;
