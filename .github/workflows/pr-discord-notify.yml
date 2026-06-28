@@ -1,0 +1,49 @@
+name: PR Discord 알림
+
+# PR이 열리거나 머지되면 Discord 전용 채널로 알림을 보낸다.
+# 머지 없이 닫힌 PR은 알림하지 않는다.
+on:
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord 알림 전송
+        # 신뢰할 수 없는 입력(PR 제목 등)은 env로 전달해 스크립트 인젝션을 막고,
+        # JSON 조립은 jq로 처리해 따옴표/개행 이스케이프를 보장한다.
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          ACTION: ${{ github.event.action }}
+          MERGED: ${{ github.event.pull_request.merged }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_USER: ${{ github.event.pull_request.user.login }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # 머지 없이 닫힌 PR은 생략
+          if [ "$ACTION" = "closed" ] && [ "$MERGED" != "true" ]; then
+            echo "머지되지 않은 닫힌 PR — 알림 생략"
+            exit 0
+          fi
+          if [ "$ACTION" = "opened" ]; then
+            TITLE="🟢 PR 열림"; COLOR=3066993
+          else
+            TITLE="🟣 PR 머지됨"; COLOR=10181046
+          fi
+          jq -n \
+            --arg t "$TITLE — $REPO #$PR_NUM" \
+            --arg d "[$PR_TITLE]($PR_URL)" \
+            --argjson c "$COLOR" \
+            --arg u "$PR_USER" \
+            --arg b "$HEAD_REF → $BASE_REF" \
+            '{embeds:[{title:$t,description:$d,color:$c,fields:[
+              {name:"작성자",value:$u,inline:true},
+              {name:"브랜치",value:$b,inline:true}
+            ]}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
