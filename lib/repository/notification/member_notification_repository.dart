@@ -54,4 +54,33 @@ class MemberNotificationRepository {
       throw Exception('읽음 처리 실패 (${response.statusCode})');
     }
   }
+
+  /// 단건 삭제.
+  Future<void> delete(int notificationId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.delete(
+        Uri.parse(ApiConfig.notificationDeleteUrl(notificationId)),
+        headers: _headers(token),
+      ),
+    );
+    debugPrint('[Notification] 삭제 $notificationId → ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('삭제 실패 (${response.statusCode})');
+    }
+  }
+
+  /// 전체 삭제. 삭제 건수를 반환한다.
+  Future<int> deleteAll() async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.delete(
+        Uri.parse(ApiConfig.notificationsDeleteAllUrl),
+        headers: _headers(token),
+      ),
+    );
+    debugPrint('[Notification] 전체삭제 → ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('전체 삭제 실패 (${response.statusCode})');
+    }
+    return int.tryParse(response.body.trim()) ?? 0;
+  }
 }
