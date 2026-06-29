@@ -23,7 +23,7 @@ class MatchListViewModel extends ChangeNotifier {
   static const String allTeamsLabel = '전체';
 
   /// 화면 진입 시 우선 선택할 리그 이름. 옵션에 없으면 첫 항목으로 fallback.
-  static const String defaultLeague = 'LCK';
+  static const String defaultLeague = 'MSI';
 
   /// 커서 페이지 한 번에 받는 경기 수.
   static const int _pageSize = 20;
