@@ -67,29 +67,40 @@ class MatchDetailScoreSection extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(
-                child: Text(
-                  leagueName,
-                  style: metaTextStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              // 리그명 + 날짜를 하나의 Expanded 로 묶어 남는 공간을 모두 차지하게 한다.
+              // (Flexible 과 Spacer 를 따로 두면 둘이 flex 를 반씩 나눠 가져,
+              //  리그명이 짧을 때 남는 몫이 뱃지 뒤 빈 공간으로 깔려 뱃지가 우측 끝에서
+              //  밀려나 아래 버튼과 라인이 어긋난다.)
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        leagueName,
+                        style: metaTextStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // dateText 가 있을 때만 점 구분자 + 날짜를 함께 표시한다.
+                    if (dateText.isNotEmpty) ...[
+                      SizedBox(width: 8 * scale),
+                      Container(
+                        width: 4 * scale,
+                        height: 4 * scale,
+                        decoration: const BoxDecoration(
+                          color: AppColors.narTextTertiary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 8 * scale),
+                      Text(dateText, style: metaTextStyle),
+                    ],
+                  ],
                 ),
               ),
-              // dateText 가 있을 때만 점 구분자 + 날짜를 함께 표시한다.
-              if (dateText.isNotEmpty) ...[
-                SizedBox(width: 8 * scale),
-                Container(
-                  width: 4 * scale,
-                  height: 4 * scale,
-                  decoration: const BoxDecoration(
-                    color: AppColors.narTextTertiary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 8 * scale),
-                Text(dateText, style: metaTextStyle),
-              ],
-              const Spacer(),
+              SizedBox(width: 8 * scale),
               if (isLive)
                 NarBadgeLive(scale: scale)
               else if (time.isNotEmpty)
