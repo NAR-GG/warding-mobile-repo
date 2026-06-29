@@ -30,18 +30,82 @@ class _MatchListScreenState extends State<MatchListScreen> {
   final MatchListViewModel _viewModel = MatchListViewModel();
   final ScrollController _scrollController = ScrollController();
 
+  /// 첫 로드 후 '오늘(없으면 가장 가까운 과거)' 그룹으로 한 번만 자동 스크롤하기 위한 상태.
+  final GlobalKey _todayHeaderKey = GlobalKey();
+  bool _didInitialScroll = false;
+  DateTime? _targetDate;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _viewModel.addListener(_maybeInitialScroll);
   }
 
   @override
   void dispose() {
+    _viewModel.removeListener(_maybeInitialScroll);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _viewModel.dispose();
     super.dispose();
+  }
+
+  /// 첫 스케줄 로드가 끝나면 한 번만 오늘 날짜 그룹으로 스크롤한다.
+  void _maybeInitialScroll() {
+    if (_didInitialScroll ||
+        _viewModel.loadingMatches ||
+        _viewModel.schedule.isEmpty) {
+      return;
+    }
+    _didInitialScroll = true;
+    _targetDate = _findTargetDate();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTarget());
+  }
+
+  /// 최신→과거 순 목록에서 오늘 이하(=오늘 또는 가장 가까운 과거)인 첫 그룹의 날짜.
+  /// 전부 미래면 가장 가까운(마지막) 그룹으로 폴백한다.
+  DateTime? _findTargetDate() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final schedule = _viewModel.schedule;
+    for (final day in schedule) {
+      final d = DateTime(day.date.year, day.date.month, day.date.day);
+      if (!d.isAfter(today)) return day.date;
+    }
+    return schedule.isNotEmpty ? schedule.last.date : null;
+  }
+
+  bool _isSameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// 대상 그룹 헤더를 리스트 맨 위로 보낸다.
+  /// 1) 항목 높이를 어림해 jumpTo 로 근처까지 이동(대상 헤더가 빌드되도록),
+  /// 2) 다음 프레임에 GlobalKey 로 정확히 맞춘다.
+  // ponytail: 높이 상수는 어림값(헤더 38·카드 140·scale). 정밀도는 2)의
+  // ensureVisible 가 보정한다. 대상이 한참 아래라 한 번에 안 잡히면
+  // scrollable_positioned_list 도입 고려.
+  void _scrollToTarget() {
+    final target = _targetDate;
+    if (!mounted || target == null || !_scrollController.hasClients) return;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    const headerH = 38.0;
+    const cardH = 140.0;
+    var offset = 0.0;
+    for (final day in _viewModel.schedule) {
+      if (_isSameDate(day.date, target)) break;
+      offset += headerH * scale + day.matches.length * cardH * scale;
+    }
+    _scrollController.jumpTo(
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _todayHeaderKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx, duration: Duration.zero);
+      }
+    });
   }
 
   /// 하단 네비 탭 선택. '경기리스트'를 제외한 탭이면 해당 화면으로 전환한다.
@@ -259,14 +323,20 @@ class _MatchListScreenState extends State<MatchListScreen> {
         if (index == items.length) return _buildFooter(scale);
         final item = items[index];
         if (item is _HeaderItem) {
+          // 자동 스크롤 대상 헤더에 GlobalKey 를 달아 정확히 맞춘다.
+          final key = (_targetDate != null && _isSameDate(item.date, _targetDate!))
+              ? _todayHeaderKey
+              : null;
           final header = MatchDateHeader(
             label: _relativeLabel(item.date),
             dateText: _formatDate(item.date),
             scale: scale,
           );
-          if (!item.isFirst) return header;
+          if (!item.isFirst) return KeyedSubtree(key: key, child: header);
           // 첫 헤더 — 우측에 정렬 드롭다운 같이 배치.
-          return Row(
+          return KeyedSubtree(
+            key: key,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: header),
@@ -282,6 +352,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 ),
               ),
             ],
+            ),
           );
         }
         final m = (item as _CardItem).match;
