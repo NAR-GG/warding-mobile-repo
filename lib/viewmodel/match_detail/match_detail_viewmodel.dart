@@ -51,6 +51,14 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 보고 있으면 false (예: 1세트 종료 후 2세트 시작 전 1세트 선택).
   bool get isCurrentSetLive => currentSetStatus == MatchGameStatus.live;
 
+  /// 현재 선택된 세트의 다시보기 VOD URL. 없으면 null.
+  String? get currentSetVodUrl {
+    for (final g in _games) {
+      if (g.gameOrder == _currentSet) return g.vodUrl;
+    }
+    return null;
+  }
+
   // ── 챔피언 픽 ──────────────────────────────
   MatchChampionPick? _championPick;
   MatchChampionPick? get championPick => _championPick;
