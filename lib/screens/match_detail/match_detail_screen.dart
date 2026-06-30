@@ -362,23 +362,32 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
+  /// 선택된 세트의 다시보기 VOD 를 외부 브라우저/앱으로 연다.
+  Future<void> _openVod() async {
+    final url = _viewModel.currentSetVodUrl;
+    if (url == null || url.isEmpty) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
   /// 상태별 액션 버튼.
   /// - 라이브: '중계 보기' (liveStreamUrl 이 있으면 활성, 없으면 비활성)
-  /// - 완료: '경기 종료' (비활성)
+  /// - 완료: 선택 세트에 VOD 가 있으면 '다시보기'(활성), 없으면 '경기 종료'(비활성)
   /// - 그 외(예정 등): '준비중' (비활성)
   Widget _buildActionButton(double scale) {
     final m = widget.match;
     final status = m?.matchStatus ?? '';
     final hasStream =
         m?.liveStreamUrl != null && m!.liveStreamUrl!.isNotEmpty;
+    final vodUrl = _viewModel.currentSetVodUrl;
+    final hasVod = vodUrl != null && vodUrl.isNotEmpty;
     final String label;
     final VoidCallback? onPressed;
     if (_isLiveStatus(status)) {
       label = '중계 보기';
       onPressed = hasStream ? _openLiveStream : null;
     } else if (_isCompletedStatus(status)) {
-      label = '경기 종료';
-      onPressed = null;
+      label = hasVod ? '다시보기' : '경기 종료';
+      onPressed = hasVod ? _openVod : null;
     } else {
       label = '준비중';
       onPressed = null;
