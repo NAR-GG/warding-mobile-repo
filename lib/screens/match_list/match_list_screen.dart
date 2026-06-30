@@ -103,7 +103,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _todayHeaderKey.currentContext;
       if (ctx != null) {
-        Scrollable.ensureVisible(ctx, duration: Duration.zero);
+        // alignment 0.35: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
+        Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
       }
     });
   }
