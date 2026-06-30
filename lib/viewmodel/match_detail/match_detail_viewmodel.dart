@@ -47,6 +47,14 @@ class MatchDetailViewModel extends ChangeNotifier {
     return MatchGameStatus.scheduled;
   }
 
+  /// 현재 선택된 세트의 다시보기 VOD URL. 없으면 null.
+  String? get currentSetVodUrl {
+    for (final g in _games) {
+      if (g.gameOrder == _currentSet) return g.vodUrl;
+    }
+    return null;
+  }
+
   // ── 챔피언 픽 ──────────────────────────────
   MatchChampionPick? _championPick;
   MatchChampionPick? get championPick => _championPick;

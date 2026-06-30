@@ -15,6 +15,7 @@ class MatchGame {
     required this.gameId,
     required this.gameOrder,
     this.status = MatchGameStatus.scheduled,
+    this.vodUrl,
   });
 
   final String gameId;
@@ -24,6 +25,9 @@ class MatchGame {
 
   /// 세트 진행 상태 ("LIVE" | "ENDED" | "SCHEDULED"). 미지정 시 "SCHEDULED".
   final String status;
+
+  /// 세트 다시보기 VOD URL. 없으면 null.
+  final String? vodUrl;
 
   bool get isLive => status == MatchGameStatus.live;
   bool get isEnded => status == MatchGameStatus.ended;
@@ -40,6 +44,11 @@ class MatchGame {
     final status = rawStatus == null
         ? MatchGameStatus.scheduled
         : rawStatus.toString().toUpperCase();
-    return MatchGame(gameId: gameId, gameOrder: order, status: status);
+    return MatchGame(
+      gameId: gameId,
+      gameOrder: order,
+      status: status,
+      vodUrl: json['vodUrl'] as String?,
+    );
   }
 }
