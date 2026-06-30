@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
 import '../../model/member_notification.dart';
@@ -18,6 +19,7 @@ import '../schedule/schedule_screen.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/rank_start_notification.dart';
+import 'component/subscription_date_sheet.dart';
 import 'subscription_settings_screen.dart';
 
 /// 마이 구독 페이지. 하단 네비 '마이 구독' 탭에 해당한다.
@@ -32,6 +34,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     with WidgetsBindingObserver {
   /// 서버 알림 피드(`/api/mobile/me/notifications`).
   final SubscriptionFeedViewModel _feedViewModel = SubscriptionFeedViewModel();
+
+  /// 날짜 점프용. 날짜 헤더 위치로 ensureVisible 하려면 직접 잡아야 한다.
+  final ScrollController _scrollController = ScrollController();
+
+  /// 날짜 헤더 GlobalKey 맵 (DateTime(y,m,d) → key). build 마다 다시 채운다.
+  final Map<DateTime, GlobalKey> _dateHeaderKeys = {};
 
   @override
   void initState() {
@@ -57,6 +65,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _feedViewModel.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -188,6 +197,47 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         behavior: HitTestBehavior.opaque,
         onTap: () => _onNotificationTap(n),
         child: card,
+      ),
+    );
+  }
+
+  /// 필터된 알림을 날짜별로 묶어 [날짜 헤더 + 카드들] 위젯 리스트로 만든다.
+  /// 날짜가 바뀌는 첫 항목 앞에 헤더를 끼우고, 그 헤더에 점프용 GlobalKey 를 단다.
+  /// (items 는 최신순이라 같은 날짜가 연속으로 모여 있다.)
+  List<Widget> _buildFeedChildren(
+    List<MemberNotification> items,
+    double scale,
+  ) {
+    _dateHeaderKeys.clear();
+    final children = <Widget>[];
+    DateTime? lastDay;
+    for (final n in items) {
+      final day = _dayOf(n.createdAt);
+      if (day != lastDay) {
+        final key = GlobalKey();
+        _dateHeaderKeys[day] = key;
+        children.add(_dateHeader(day, scale, key));
+        lastDay = day;
+      }
+      children.add(_buildNotification(n, scale));
+    }
+    return children;
+  }
+
+  /// 날짜 구분 헤더 — 'M월 D일'.
+  Widget _dateHeader(DateTime day, double scale, Key key) {
+    return Padding(
+      key: key,
+      padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 8 * scale),
+      child: Text(
+        '${day.month}월 ${day.day}일',
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          fontSize: 14 * scale,
+          height: 1.4,
+          color: AppColors.narTextSecondary,
+        ),
       ),
     );
   }
@@ -325,6 +375,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     }
   }
 
+  /// 날짜만 떼어낸 키 (시·분 무시).
+  DateTime _dayOf(DateTime t) => DateTime(t.year, t.month, t.day);
+
+  /// 주어진 월에서 점을 찍을 일자 — 현재 필터를 통과한 알림 기준.
+  /// ponytail: 로드된 알림(첫 페이지)만 본다. 더 과거는 점이 안 찍힘.
+  Set<int> _markedDaysOf(DateTime month) {
+    return _feedViewModel.notifications
+        .where(_matchesFilter)
+        .where((n) =>
+            n.createdAt.year == month.year && n.createdAt.month == month.month)
+        .map((n) => n.createdAt.day)
+        .toSet();
+  }
+
+  /// 날짜 칩 탭 → 캘린더 바텀시트. 고른 날짜의 헤더 위치로 스크롤한다.
+  Future<void> _openDatePicker() async {
+    final items = _feedViewModel.notifications.where(_matchesFilter).toList();
+    final initialMonth = items.isNotEmpty ? items.first.createdAt : DateTime.now();
+    final picked = await showAppBottomSheet<DateTime>(
+      context: context,
+      child: SubscriptionDateSheet(
+        initialMonth: initialMonth,
+        markedDaysOf: _markedDaysOf,
+      ),
+    );
+    if (picked == null || !mounted) return;
+    // 시트가 닫히고 리스트가 다시 빌드된 뒤에 헤더 위치를 잡는다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToDate(picked));
+  }
+
+  /// 해당 날짜 헤더로 부드럽게 스크롤. 키가 없으면(점프 대상 없음) 무시.
+  void _scrollToDate(DateTime date) {
+    final ctx = _dateHeaderKeys[_dayOf(date)]?.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      alignment: 0, // 화면 상단에 맞춤
+    );
+  }
+
   /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.schedule) {
@@ -382,6 +474,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       // 선택되면(보라 활성) 앞으로 정렬에 참여.
                       selected: _selectedPlayers.isNotEmpty,
                     ),
+                    // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
+                    (
+                      widget: NarChip.dropdown(
+                        label: '날짜',
+                        scale: scale,
+                        onTap: _openDatePicker,
+                      ),
+                      selected: false,
+                    ),
                   ],
                 ),
                 // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
@@ -410,13 +511,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                   _centerMessage('받은 알림이 없습니다.', scale),
                                 ],
                               )
-                            : ListView.builder(
+                            // ponytail: ListView(children) 으로 전부 빌드 — 날짜 헤더로
+                            // ensureVisible(점프) 하려면 화면 밖 항목도 빌드돼 있어야 한다.
+                            // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
+                            : ListView(
+                                controller: _scrollController,
                                 physics:
                                     const AlwaysScrollableScrollPhysics(),
                                 padding: EdgeInsets.only(bottom: 120 * scale),
-                                itemCount: items.length,
-                                itemBuilder: (context, i) =>
-                                    _buildNotification(items[i], scale),
+                                children: _buildFeedChildren(items, scale),
                               ),
                       );
                     },
