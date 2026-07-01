@@ -22,8 +22,11 @@ class MatchListViewModel extends ChangeNotifier {
   /// 팀 멀티 셀렉트의 '전체' 가상 옵션 라벨. 단독 선택을 의미한다.
   static const String allTeamsLabel = '전체';
 
-  /// 화면 진입 시 우선 선택할 리그 이름. 옵션에 없으면 첫 항목으로 fallback.
-  static const String defaultLeague = 'MSI';
+  /// 리그 필터의 '전체' 가상 옵션 라벨. 화면 진입 시 기본 선택된다.
+  static const String allLeagueLabel = '전체';
+
+  /// '전체' 리그로 조회할 때 서버에 보낼 리그 코드.
+  static const String allLeagueCode = 'ALL';
 
   /// 커서 페이지 한 번에 받는 경기 수.
   static const int _pageSize = 20;
@@ -58,10 +61,10 @@ class MatchListViewModel extends ChangeNotifier {
   /// 마지막으로 받아온 카테고리 트리. 리그 변경 시 재요청 없이 팀을 갱신한다.
   CategoryTree? _tree;
 
-  List<String> _leagues = const [];
+  List<String> _leagues = const [allLeagueLabel];
   List<String> get leagues => _leagues;
 
-  String? _selectedLeague;
+  String? _selectedLeague = allLeagueLabel;
   String? get selectedLeague => _selectedLeague;
 
   bool _loadingLeagues = false;
@@ -162,20 +165,19 @@ class MatchListViewModel extends ChangeNotifier {
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
       final options = await _scheduleRepository.fetchFilterOptions();
+      // 서버가 이미 맨 앞에 '전체'(code ALL) 옵션을 포함해 내려준다.
       _leagues = options.leagues.map((l) => l.name).toList();
-      if (_leagues.isEmpty) {
-        _selectedLeague = null;
-      } else if (_selectedLeague == null ||
-          !_leagues.contains(_selectedLeague)) {
-        _selectedLeague = _leagues.contains(defaultLeague)
-            ? defaultLeague
-            : _leagues.first;
+      if (_selectedLeague == null || !_leagues.contains(_selectedLeague)) {
+        _selectedLeague = _leagues.contains(allLeagueLabel)
+            ? allLeagueLabel // 기본 '전체'.
+            : (_leagues.isNotEmpty ? _leagues.first : null);
       }
       _updateTeams();
     } catch (_) {
+      // 옵션 로드 실패 시에도 '전체'(ALL)로는 조회할 수 있게 유지한다.
       _tree = null;
-      _leagues = const [];
-      _selectedLeague = null;
+      _leagues = const [allLeagueLabel];
+      _selectedLeague = allLeagueLabel;
       _teams = const [allTeamsLabel];
       _selectedTeams = {allTeamsLabel};
     } finally {
@@ -188,7 +190,8 @@ class MatchListViewModel extends ChangeNotifier {
   void _updateTeams() {
     final tree = _tree;
     final league = _selectedLeague;
-    if (tree == null || league == null) {
+    // '전체'(ALL) 리그는 특정 리그 팀 스코프가 없어 팀 필터를 '전체'만 둔다.
+    if (tree == null || league == null || league == allLeagueLabel) {
       _teams = const [allTeamsLabel];
       _selectedTeams = {allTeamsLabel};
       return;
@@ -258,10 +261,15 @@ class MatchListViewModel extends ChangeNotifier {
   /// 커서·hasNext 를 갱신하고, 누적된(필터 통과) 매치 수를 반환한다.
   Future<int> _fetchNextPage() async {
     final league = _selectedLeague;
+    // '전체' 선택(또는 미선택)이면 서버에 'ALL' 을 보내 모든 리그를 조회한다.
+    final leagueParam =
+        (league == null || league.isEmpty || league == allLeagueLabel)
+        ? allLeagueCode
+        : league;
     final page = await _scheduleRepository.fetchMatches(
       cursor: _cursor,
       size: _pageSize,
-      league: (league != null && league.isNotEmpty) ? league : defaultLeague,
+      league: leagueParam,
       seasonYear: int.tryParse(_selectedSeason),
     );
     _cursor = page.nextCursor;
@@ -328,10 +336,12 @@ class MatchListViewModel extends ChangeNotifier {
   /// (안전망으로 leagueInfo 도 확인).
   List<ScheduleMatch> _applyFilters(List<ScheduleMatch> matches) {
     final league = _selectedLeague;
+    // '전체'(ALL) 는 리그로 거르지 않는다.
+    final isAllLeagues =
+        league == null || league.isEmpty || league == allLeagueLabel;
     final allTeams = _selectedTeams.contains(allTeamsLabel);
     return matches.where((m) {
-      if (league != null &&
-          league.isNotEmpty &&
+      if (!isAllLeagues &&
           m.leagueInfo.isNotEmpty &&
           m.leagueInfo != league) {
         return false;

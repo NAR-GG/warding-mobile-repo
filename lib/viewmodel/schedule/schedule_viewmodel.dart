@@ -51,8 +51,8 @@ class ScheduleViewModel extends ChangeNotifier {
   Team? _preferredTeam;
   Team? get preferredTeam => _preferredTeam;
 
-  /// 캘린더 조회에 적용 중인 리그 코드 (기본 'LCK').
-  String _league = 'LCK';
+  /// 캘린더 조회에 적용 중인 리그 코드 (기본 'ALL' = 전체 리그).
+  String _league = 'ALL';
   String get filterLeague => _league;
 
   /// 캘린더 조회에 적용 중인 팀 ID. null 이면 리그 전체.
