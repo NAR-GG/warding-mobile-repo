@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
+import '../../model/match_game.dart';
 import '../../model/schedule_match.dart';
 import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
@@ -15,6 +16,7 @@ import '../../viewmodel/match_detail/match_detail_viewmodel.dart';
 import '../player_rating/player_rating_screen.dart';
 import 'component/match_detail_champion_pick_section.dart';
 import 'component/match_detail_live_event_section.dart';
+import 'component/match_detail_locked_empty.dart';
 import 'component/match_detail_player_rating_section.dart';
 import 'component/match_detail_score_section.dart';
 import 'component/match_detail_team_rating_section.dart';
@@ -305,17 +307,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               SliverToBoxAdapter(
                 child: ListenableBuilder(
                   listenable: _viewModel,
-                  builder: (context, _) => MatchDetailLiveEventSection(
-                    events: _viewModel.liveEvents,
-                    blueTeamImageUrl: _viewModel.blueTeamImageUrl,
-                    redTeamImageUrl: _viewModel.redTeamImageUrl,
-                    initialLoading: _viewModel.loadingEvents &&
-                        _viewModel.liveEvents.isEmpty,
-                    errorMessage: _viewModel.eventsError,
-                    onReload: _viewModel.reloadLiveEvents,
-                    status: _viewModel.currentSetStatus,
-                    scale: scale,
-                  ),
+                  builder: (context, _) => _buildLiveEventTab(scale),
                 ),
               ),
             // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
@@ -332,6 +324,19 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   /// 선수 평점 탭. 슬리버(MatchDetailPlayerRatingSection)를 그대로 반환해
   /// 외부 CustomScrollView 의 slivers 에 직접 배치한다. (pinned 헤더 sticky 유지)
   Widget _buildRatingTab(double scale) {
+    // 선수 평점은 세트 종료 후에만 남길 수 있다. 종료 전에는 배너·평점 대신
+    // 잠금(lock-off) 빈 상태를 보여준다. (배너도 자연히 종료 후에만 노출)
+    if (_viewModel.currentSetStatus != MatchGameStatus.ended) {
+      return SliverToBoxAdapter(
+        child: ColoredBox(
+          color: AppColors.narBgContent,
+          child: MatchDetailLockedEmpty(
+            message: '선수 평점은 경기 종료 후 남길 수 있어요!',
+            scale: scale,
+          ),
+        ),
+      );
+    }
     final r = _viewModel.ratings;
     final blue = _teamSummary(r, 'BLUE');
     final red = _teamSummary(r, 'RED');
@@ -437,8 +442,42 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
+  /// 라이브 이벤트 탭 본문. 경기 전(SCHEDULED)이면 잠금 안내, 아니면 이벤트 섹션.
+  Widget _buildLiveEventTab(double scale) {
+    if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(
+          message: '라이브 이벤트는 경기 시작 후 볼 수 있어요!',
+          scale: scale,
+        ),
+      );
+    }
+    return MatchDetailLiveEventSection(
+      events: _viewModel.liveEvents,
+      blueTeamImageUrl: _viewModel.blueTeamImageUrl,
+      redTeamImageUrl: _viewModel.redTeamImageUrl,
+      initialLoading:
+          _viewModel.loadingEvents && _viewModel.liveEvents.isEmpty,
+      errorMessage: _viewModel.eventsError,
+      onReload: _viewModel.reloadLiveEvents,
+      status: _viewModel.currentSetStatus,
+      scale: scale,
+    );
+  }
+
   /// 챔피언 픽 탭 본문. ViewModel 데이터로 렌더링하되 로딩·에러 상태를 처리한다.
   Widget _buildChampionPickTab(double scale) {
+    // 경기 전(SCHEDULED)이면 잠금(lock-off) 안내를 보여준다.
+    if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(
+          message: '챔피언 픽은 경기 시작 후 볼 수 있어요!',
+          scale: scale,
+        ),
+      );
+    }
     // 최초 로드 중(아직 데이터 없음)이면 플레이스홀더 픽으로 스켈레톤 렌더.
     if (_viewModel.loadingChampion && _viewModel.championPick == null) {
       return MatchDetailChampionPickSection(
@@ -455,9 +494,13 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     }
     final pick = _viewModel.championPick;
     if (pick == null) {
-      return _ChampionPickMessage(
-        message: _viewModel.championError ?? '챔피언 픽을 불러오지 못했어요',
-        scale: scale,
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(
+          message:
+              _viewModel.championError ?? '챔피언 픽은 경기 시작 후 확인할 수 있어요!',
+          scale: scale,
+        ),
       );
     }
     final blue = pick.blueTeam;
@@ -472,35 +515,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       bluePlayerNames: blue.pickPlayerNames(),
       redPlayerNames: red.pickPlayerNames(),
       scale: scale,
-    );
-  }
-}
-
-/// 챔피언 픽 탭 에러·빈 상태 안내.
-class _ChampionPickMessage extends StatelessWidget {
-  const _ChampionPickMessage({required this.message, required this.scale});
-
-  final String message;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.narBgContent,
-      padding: EdgeInsets.symmetric(vertical: 80 * scale),
-      child: Center(
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w500,
-            fontSize: 14 * scale,
-            color: AppColors.narText2,
-          ),
-        ),
-      ),
     );
   }
 }
