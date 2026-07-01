@@ -29,16 +29,24 @@ class _SubscriptionSettingsScreenState
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  /// '전체 목록' 섹션 탭. 0: 팀, 1: 선수. 검색 시 '선수'로 전환한다.
+  /// '전체 목록' 섹션 탭. 0: 팀, 1: 선수.
   int _allTab = 0;
 
-  /// 검색을 실행한다. 검색 대상은 선수이므로 '선수' 탭으로 전환해
-  /// (build 에서) 검색 결과 섹션이 최상단에 노출되도록 한다.
-  void _onSearch(String query) {
-    if (query.trim().isNotEmpty && _allTab != 1) {
-      setState(() => _allTab = 1);
-    }
-    _viewModel.searchPlayers(query);
+  /// 팀명이 [query] 를 포함하면(대소문자 무시) true. 빈 검색어면 항상 true.
+  bool _teamMatches(TeamNotificationSubscription t, String query) =>
+      query.isEmpty || t.teamName.toLowerCase().contains(query);
+
+  /// 검색을 실행한다. 선수는 서버 조회, 팀은 이미 받아둔 목록을 클라에서 거른다.
+  /// 검색 후에는 결과가 있는 탭으로 전환해 (build 에서) 결과 섹션을 최상단에 노출한다.
+  Future<void> _onSearch(String query) async {
+    await _viewModel.searchPlayers(query);
+    if (!mounted) return;
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return;
+    final hasPlayers = _viewModel.availablePlayers.isNotEmpty;
+    final hasTeams = _viewModel.availableTeams.any((t) => _teamMatches(t, q));
+    // 선수 결과가 있으면 '선수', 없고 팀만 있으면 '팀' 탭으로.
+    setState(() => _allTab = hasPlayers ? 1 : (hasTeams ? 0 : 1));
   }
 
   @override
@@ -88,10 +96,15 @@ class _SubscriptionSettingsScreenState
           builder: (context, _) {
             final subscribedTeams = _viewModel.subscribedTeams;
             final subscribedPlayers = _viewModel.subscribedPlayers;
-            final allTeams = _viewModel.availableTeams;
+            final query = _viewModel.query.trim().toLowerCase();
+            // 팀은 클라에서 검색어로 거른다(선수는 서버가 이미 걸러 내려준다).
+            final allTeams = [
+              for (final t in _viewModel.availableTeams)
+                if (_teamMatches(t, query)) t,
+            ];
             final allPlayers = _viewModel.availablePlayers;
             // 검색어가 있으면 검색 결과(전체 목록) 섹션을 최상단으로 올린다.
-            final hasQuery = _viewModel.query.trim().isNotEmpty;
+            final hasQuery = query.isNotEmpty;
 
             final subscribedSections = <Widget>[
               SubscribedSection(
