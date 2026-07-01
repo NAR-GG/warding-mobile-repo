@@ -9,11 +9,16 @@ import 'subscribed_section.dart';
 /// 상단 narBgLast 헤더 바 + 8 gap + 콤팩트 탭바([팀]/[선수]) + 8 gap + 행 리스트.
 /// 행은 [SubscribedItemRow] 를 재사용하며 짝수 index 행만 narBgSecondary 배경으로
 /// 알록달록 띠를 입힌다.
-class AllSubscriptionSection extends StatefulWidget {
+///
+/// 선택 탭은 부모가 제어한다([selectedTab]·[onTabChanged]). 검색 시 부모가
+/// '선수' 탭으로 전환하고 이 섹션을 최상단으로 올리기 위함이다.
+class AllSubscriptionSection extends StatelessWidget {
   const AllSubscriptionSection({
     super.key,
     required this.teams,
     required this.players,
+    required this.selectedTab,
+    required this.onTabChanged,
     this.onTeamToggle,
     this.onPlayerToggle,
     this.playersLoading = false,
@@ -26,6 +31,12 @@ class AllSubscriptionSection extends StatefulWidget {
 
   /// 전체 선수 목록 (구독 여부 포함).
   final List<SubscribedItem> players;
+
+  /// 현재 선택된 탭. 0: 팀, 1: 선수.
+  final int selectedTab;
+
+  /// 탭 변경 콜백.
+  final ValueChanged<int> onTabChanged;
 
   /// 팀 탭의 구독 토글 콜백.
   final void Function(int index)? onTeamToggle;
@@ -43,19 +54,10 @@ class AllSubscriptionSection extends StatefulWidget {
   final double scale;
 
   @override
-  State<AllSubscriptionSection> createState() => _AllSubscriptionSectionState();
-}
-
-class _AllSubscriptionSectionState extends State<AllSubscriptionSection> {
-  /// 0: 팀, 1: 선수.
-  int _tab = 0;
-
-  @override
   Widget build(BuildContext context) {
-    final scale = widget.scale;
-    final isTeams = _tab == 0;
-    final items = isTeams ? widget.teams : widget.players;
-    final onToggle = isTeams ? widget.onTeamToggle : widget.onPlayerToggle;
+    final isTeams = selectedTab == 0;
+    final items = isTeams ? teams : players;
+    final onToggle = isTeams ? onTeamToggle : onPlayerToggle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,8 +67,8 @@ class _AllSubscriptionSectionState extends State<AllSubscriptionSection> {
         NarTabBar(
           variant: NarTabBarVariant.compact,
           tabs: const ['팀', '선수'],
-          selectedIndex: _tab,
-          onChanged: (i) => setState(() => _tab = i),
+          selectedIndex: selectedTab,
+          onChanged: onTabChanged,
           scale: scale,
         ),
         for (var i = 0; i < items.length; i++)
@@ -78,8 +80,8 @@ class _AllSubscriptionSectionState extends State<AllSubscriptionSection> {
             scale: scale,
           ),
         // 선수 탭: 최초 로딩(목록 빔) 또는 다음 페이지 로딩 중 스피너.
-        if (!isTeams && ((widget.playersLoading && items.isEmpty) ||
-            widget.playersLoadingMore))
+        if (!isTeams &&
+            ((playersLoading && items.isEmpty) || playersLoadingMore))
           Padding(
             padding: EdgeInsets.symmetric(vertical: 16 * scale),
             child: Center(

@@ -150,7 +150,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 솔랭은 OP.GG 링크로 이동하므로 카드 탭은 읽음만, 팀 이벤트는 경기 상세로.
   void _onNotificationTap(MemberNotification n) {
     _feedViewModel.markRead(n);
-    if (n.type == MemberNotificationType.playerSoloRank) return;
+    // 솔랭 알림은 카드 전체 탭으로 OP.GG 소환사 페이지 이동.
+    if (n.type == MemberNotificationType.playerSoloRank) {
+      final url = n.opggUrl;
+      if (url != null && url.isNotEmpty) _launchUrl(url);
+      return;
+    }
     final matchId = n.matchId;
     if (matchId == null) return;
     // 경기 상세의 '라이브 이벤트' 탭(index 1). match 객체는 matchId 로 로드된다.
@@ -169,9 +174,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         playerName: n.playerName,
         champion: n.championName,
         queueType: n.queueType,
-        championImageUrl: n.championImageUrl,
-        opggUrl: n.opggUrl,
-        onOpggTap: n.opggUrl == null ? null : () => _launchUrl(n.opggUrl!),
         dateTime: _formatAbsolute(n.createdAt),
         relativeTime: _formatRelative(n.createdAt),
         scale: scale,
