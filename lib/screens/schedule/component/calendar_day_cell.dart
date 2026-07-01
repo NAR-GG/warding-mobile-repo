@@ -16,6 +16,7 @@ class CalendarDayCell extends StatelessWidget {
     required this.isToday,
     required this.isSelected,
     required this.scale,
+    this.onTap,
   });
 
   final DateTime date;
@@ -28,10 +29,13 @@ class CalendarDayCell extends StatelessWidget {
   final bool isSelected;
   final double scale;
 
+  /// 칸을 탭했을 때 콜백. null 이면 탭 비활성(경기 없는 날·다른 달 칸 등).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     const side = BorderSide(color: AppColors.narText4, width: 0.5);
-    return Container(
+    final cell = Container(
       decoration: BoxDecoration(
         // 선택 칸은 narDark500 단색, 아니면 오늘 칸만 그라데이션.
         color: isSelected ? AppColors.narDark500 : null,
@@ -73,6 +77,13 @@ class CalendarDayCell extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    if (onTap == null) return cell;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: cell,
     );
   }
 }

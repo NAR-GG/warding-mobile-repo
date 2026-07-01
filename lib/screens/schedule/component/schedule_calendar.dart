@@ -19,6 +19,7 @@ class ScheduleCalendar extends StatefulWidget {
     required this.matchesByDay,
     this.onMonthShift,
     this.selectedDate,
+    this.onDateTap,
   });
 
   /// 표시할 월 (1일 0시로 정규화된 DateTime).
@@ -33,6 +34,9 @@ class ScheduleCalendar extends StatefulWidget {
 
   /// 날짜 피커에서 고른 날짜. 그 칸 배경을 강조한다. null 이면 강조 없음.
   final DateTime? selectedDate;
+
+  /// 경기가 있는 날짜 칸을 탭하면 그 날짜로 호출한다. null 이면 탭 비활성.
+  final ValueChanged<DateTime>? onDateTap;
 
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
@@ -103,6 +107,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 month: month,
                 scale: scale,
                 selectedDate: widget.selectedDate,
+                onDateTap: widget.onDateTap,
                 matchesOf:
                     (date) =>
                         date.month == month.month
