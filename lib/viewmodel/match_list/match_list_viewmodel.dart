@@ -165,10 +165,12 @@ class MatchListViewModel extends ChangeNotifier {
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
       final options = await _scheduleRepository.fetchFilterOptions();
-      // 맨 앞에 '전체' 가상 옵션을 두고, 이어서 서버 리그 목록을 붙인다.
-      _leagues = [allLeagueLabel, ...options.leagues.map((l) => l.name)];
+      // 서버가 이미 맨 앞에 '전체'(code ALL) 옵션을 포함해 내려준다.
+      _leagues = options.leagues.map((l) => l.name).toList();
       if (_selectedLeague == null || !_leagues.contains(_selectedLeague)) {
-        _selectedLeague = allLeagueLabel; // 기본 '전체'.
+        _selectedLeague = _leagues.contains(allLeagueLabel)
+            ? allLeagueLabel // 기본 '전체'.
+            : (_leagues.isNotEmpty ? _leagues.first : null);
       }
       _updateTeams();
     } catch (_) {

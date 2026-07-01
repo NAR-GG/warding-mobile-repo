@@ -59,8 +59,8 @@ class FilterViewModel extends ChangeNotifier {
   FilterDropdown _openDropdown = FilterDropdown.none;
   FilterDropdown get openDropdown => _openDropdown;
 
-  /// 드롭다운에 보여줄 리그 이름 목록. 맨 앞에 '전체'를 둔다.
-  List<String> get leagueNames => [allLeagueLabel, ..._leagues.map((l) => l.name)];
+  /// 드롭다운에 보여줄 리그 이름 목록. 서버가 이미 맨 앞에 '전체'를 포함해 준다.
+  List<String> get leagueNames => _leagues.map((l) => l.name).toList();
 
   /// 드롭다운에 보여줄 팀 이름 목록.
   List<String> get teamNames => _teams.map((t) => t.teamName).toList();

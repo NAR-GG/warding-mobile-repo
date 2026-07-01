@@ -22,6 +22,8 @@ void main() {
         .thenAnswer((_) async => const ScheduleFilterOptions(
               defaultLeague: 'LCK',
               leagues: [
+                // 서버가 맨 앞에 '전체'(ALL)를 포함해 내려준다.
+                FilterLeague(code: 'ALL', name: '전체'),
                 FilterLeague(code: 'LCK', name: 'LCK'),
                 FilterLeague(code: 'MSI', name: 'MSI'),
               ],
