@@ -32,8 +32,14 @@ class FilterViewModel extends ChangeNotifier {
         _initialTeamId = initialTeamId,
         _selectedLeagueCode = initialLeague,
         _selectedTeamId = initialTeamId {
-    _load(initialLeague ?? 'LCK');
+    _load(initialLeague ?? allLeagueCode);
   }
+
+  /// 리그 필터의 '전체' 가상 옵션 라벨. 선택 시 모든 리그를 조회한다.
+  static const String allLeagueLabel = '전체';
+
+  /// '전체' 리그로 조회할 때 서버에 보낼 리그 코드.
+  static const String allLeagueCode = 'ALL';
 
   final ScheduleRepository _repository;
 
@@ -53,8 +59,8 @@ class FilterViewModel extends ChangeNotifier {
   FilterDropdown _openDropdown = FilterDropdown.none;
   FilterDropdown get openDropdown => _openDropdown;
 
-  /// 드롭다운에 보여줄 리그 이름 목록.
-  List<String> get leagueNames => _leagues.map((l) => l.name).toList();
+  /// 드롭다운에 보여줄 리그 이름 목록. 맨 앞에 '전체'를 둔다.
+  List<String> get leagueNames => [allLeagueLabel, ..._leagues.map((l) => l.name)];
 
   /// 드롭다운에 보여줄 팀 이름 목록.
   List<String> get teamNames => _teams.map((t) => t.teamName).toList();
@@ -63,6 +69,7 @@ class FilterViewModel extends ChangeNotifier {
   String? get selectedLeagueName {
     final code = _selectedLeagueCode;
     if (code == null) return null;
+    if (code == allLeagueCode) return allLeagueLabel;
     for (final l in _leagues) {
       if (l.code == code) return l.name;
     }
@@ -86,7 +93,7 @@ class FilterViewModel extends ChangeNotifier {
 
   /// 조회 버튼을 눌렀을 때 화면에 돌려줄 결과.
   FilterResult get result => FilterResult(
-        league: _selectedLeagueCode ?? 'LCK',
+        league: _selectedLeagueCode ?? allLeagueCode,
         teamId: _selectedTeamId,
       );
 
@@ -98,6 +105,20 @@ class FilterViewModel extends ChangeNotifier {
 
   /// 이름으로 리그를 선택하고, 그 리그의 팀 목록을 다시 받아 온다.
   void selectLeagueByName(String name) {
+    // '전체' — 모든 리그 조회. 팀 스코프가 없어 팀 선택·목록을 비운다.
+    if (name == allLeagueLabel) {
+      if (_selectedLeagueCode == allLeagueCode) {
+        _openDropdown = FilterDropdown.none;
+        notifyListeners();
+        return;
+      }
+      _selectedLeagueCode = allLeagueCode;
+      _selectedTeamId = null;
+      _teams = const [];
+      _openDropdown = FilterDropdown.none;
+      notifyListeners();
+      return;
+    }
     final league = _leagues.firstWhere(
       (l) => l.name == name,
       orElse: () => const FilterLeague(code: '', name: ''),
@@ -138,16 +159,20 @@ class FilterViewModel extends ChangeNotifier {
   }
 
   /// [league] 의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 온다.
+  /// [league] 가 '전체'(ALL)면 특정 리그 팀 스코프가 없으므로, 리그 목록만
+  /// 얻기 위해 기본 리그로 옵션을 받되 팀 목록은 비운다.
   Future<void> _load(String league) async {
+    final isAll = league == allLeagueCode;
     _loading = true;
     notifyListeners();
     try {
-      final options = await _repository.fetchFilterOptions(league: league);
+      final options = await _repository.fetchFilterOptions(
+        league: isAll ? 'LCK' : league,
+      );
       _leagues = options.leagues;
-      _teams = options.teams;
-      // 첫 로드에서 리그가 아직 안 정해졌으면 서버 기본값을 따른다.
-      _selectedLeagueCode ??=
-          options.defaultLeague.isNotEmpty ? options.defaultLeague : league;
+      _teams = isAll ? const [] : options.teams;
+      // 첫 로드에서 리그가 아직 안 정해졌으면 '전체'를 기본으로 둔다.
+      _selectedLeagueCode ??= allLeagueCode;
     } catch (_) {
       // 옵션 로드 실패 시 빈 목록 유지 — 모달은 떠 있되 항목만 비어 있다.
     } finally {

@@ -38,11 +38,25 @@ void main() {
         (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
   });
 
-  test('리그 목록은 경기일정 필터 옵션(ALLOWED_LEAGUES)에서 온다', () async {
+  test('리그 목록은 맨 앞 전체 + 경기일정 필터 옵션(ALLOWED_LEAGUES)에서 온다', () async {
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
 
-    expect(vm.leagues, ['LCK', 'MSI']);
+    expect(vm.leagues, ['전체', 'LCK', 'MSI']);
+  });
+
+  test('기본 선택 리그는 전체이고 첫 조회에 ALL 을 보낸다', () async {
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    expect(vm.selectedLeague, '전체');
+    final captured = verify(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: captureAny(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).captured;
+    expect(captured, contains('ALL'));
   });
 
   test('경기 조회 시 선택 시즌(연도)을 seasonYear 로 넘긴다', () async {
