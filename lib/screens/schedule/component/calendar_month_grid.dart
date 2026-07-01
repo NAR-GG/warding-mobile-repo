@@ -16,6 +16,7 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.scale,
     required this.matchesOf,
     this.selectedDate,
+    this.onDateTap,
   });
 
   final DateTime month;
@@ -26,6 +27,9 @@ class CalendarMonthGrid extends StatelessWidget {
 
   /// 강조할 선택 날짜. null 이면 강조 없음.
   final DateTime? selectedDate;
+
+  /// 경기가 있는 날짜 칸을 탭하면 그 날짜로 호출한다. null 이면 탭 비활성.
+  final ValueChanged<DateTime>? onDateTap;
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +76,15 @@ class CalendarMonthGrid extends StatelessWidget {
                         month.month,
                         1 - leadingDays + week * 7 + dow,
                       );
+                      final dayMatches = matchesOf(date);
                       return Expanded(
                         child: CalendarDayCell(
                           date: date,
-                          matches: matchesOf(date),
+                          matches: dayMatches,
+                          // 경기가 있는 날만 탭 가능(다른 달·빈 날은 matchesOf 가 [] 라 비활성).
+                          onTap: (onDateTap != null && dayMatches.isNotEmpty)
+                              ? () => onDateTap!(date)
+                              : null,
                           // 마지막 열(일요일) 오른쪽엔 세로 테두리 없음.
                           showRightBorder: dow != 6,
                           // 첫 주만 위쪽 테두리. 이후 행은 윗 행의 아래

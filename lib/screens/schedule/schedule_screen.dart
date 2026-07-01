@@ -6,6 +6,7 @@ import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
+import '../match_day/match_day_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -57,6 +58,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (result != null) {
       _viewModel.applyFilter(league: result.league, teamId: result.teamId);
     }
+  }
+
+  /// 캘린더에서 경기가 있는 날짜를 탭 → 그 날의 경기 리스트 화면을 새로 띄운다.
+  /// 캘린더에 적용 중인 리그·팀 필터를 그대로 넘겨 같은 경기 집합을 보여준다.
+  void _openDay(DateTime date) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MatchDayScreen(
+          date: date,
+          league: _viewModel.filterLeague,
+          teamId: _viewModel.filterTeamId,
+        ),
+      ),
+    );
   }
 
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
@@ -116,6 +131,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           matchesByDay: matchesByDay,
                           onMonthShift: _viewModel.shiftMonth,
                           selectedDate: _viewModel.selectedDate,
+                          onDateTap: _openDay,
                         ),
                       ),
                     ),
