@@ -499,15 +499,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                   _centerMessage('받은 알림이 없습니다.', scale),
                                 ],
                               )
-                            // ponytail: ListView(children) 으로 전부 빌드 — 날짜 헤더로
-                            // ensureVisible(점프) 하려면 화면 밖 항목도 빌드돼 있어야 한다.
+                            // ponytail: SingleChildScrollView+Column 으로 모든 항목을
+                            // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
+                            // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
                             // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
-                            : ListView(
+                            : SingleChildScrollView(
                                 controller: _scrollController,
                                 physics:
                                     const AlwaysScrollableScrollPhysics(),
                                 padding: EdgeInsets.only(bottom: 120 * scale),
-                                children: _buildFeedChildren(items, scale),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: _buildFeedChildren(items, scale),
+                                ),
                               ),
                       );
                     },
