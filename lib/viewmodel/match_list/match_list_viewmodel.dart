@@ -38,6 +38,11 @@ class MatchListViewModel extends ChangeNotifier {
   /// 자동 prefetch 최대 시도 횟수. 결과가 적을 때 추가 페이지를 커서로 더 받는다.
   static const int _maxPrefetchPages = 5;
 
+  /// 초기 진입 시 '오늘' 그룹으로 스크롤하려면 오늘 이하 경기가 최소 한 건은
+  /// 로드돼 있어야 한다. '전체'(ALL) 리그는 최신 페이지가 전부 미래(예정) 경기라
+  /// 오늘 이하가 나올 때까지 더 당겨야 하므로 catch-up 최대 페이지를 넉넉히 둔다.
+  static const int _maxCatchUpPages = 10;
+
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
 
@@ -229,19 +234,27 @@ class MatchListViewModel extends ChangeNotifier {
     _hasMore = true;
     _notify();
     try {
-      // 1) 첫 페이지 — spinner 가린 채로.
+      // 1) 첫 페이지.
       var newMatches = await _fetchNextPage();
+
+      // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
+      //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
+      //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
+      final needPrefetch =
+          (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded()) &&
+          _hasMore;
+
+      // 첫 페이지는 즉시 노출하되, prefetch 가 필요하면 loadingMore 를 같은 프레임에
+      // 켜서 View 의 초기 '오늘로 스크롤' 이 prefetch(오늘 데이터 도착)까지 기다리게 한다.
       _loadingMatches = false;
+      _loadingMore = needPrefetch;
       _notify();
 
-      // 2) 부족하면 prefetch — loadingMore 인디케이터로 점진 표시.
-      if (newMatches < _minMatchesPerLoad && _hasMore) {
-        _loadingMore = true;
-        _notify();
+      if (needPrefetch) {
         var attempts = 1;
         while (_hasMore &&
-            newMatches < _minMatchesPerLoad &&
-            attempts < _maxPrefetchPages) {
+            attempts < _maxCatchUpPages &&
+            (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded())) {
           newMatches += await _fetchNextPage();
           attempts++;
           _notify();
@@ -330,6 +343,19 @@ class MatchListViewModel extends ChangeNotifier {
   bool _isSameDate(DateTime? a, DateTime? b) {
     if (a == null || b == null) return a == null && b == null;
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// [_schedule] 에 오늘(이하) 날짜 경기가 하나라도 로드됐는지.
+  /// 초기 '오늘로 스크롤' 이 동작하려면 이 조건이 참이어야 한다.
+  /// (schedule 은 최신→과거 순이라 마지막 그룹이 오늘 이하면 참.)
+  bool _hasTodayOrPastLoaded() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final day in _schedule) {
+      final d = DateTime(day.date.year, day.date.month, day.date.day);
+      if (!d.isAfter(today)) return true;
+    }
+    return false;
   }
 
   /// 클라이언트 팀 필터: teamA/teamB.teamName. 리그는 서버 파라미터로 거른다
