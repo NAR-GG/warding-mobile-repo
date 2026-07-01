@@ -430,7 +430,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       blueTeamLogoUrl: m?.teamA.teamImageUrl,
       redTeamLogoUrl: m?.teamB.teamImageUrl,
       // 세트 라벨('진행중')은 경기 전체가 아니라 선택된 세트가 LIVE일 때만.
-      setLabel: _viewModel.isCurrentSetLive ? _setLabel(m.matchStatus) : null,
+      setLabel: (m != null && _viewModel.isCurrentSetLive)
+          ? _setLabel(m.matchStatus)
+          : null,
       scale: scale,
     );
   }
