@@ -29,6 +29,18 @@ class _SubscriptionSettingsScreenState
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  /// '전체 목록' 섹션 탭. 0: 팀, 1: 선수. 검색 시 '선수'로 전환한다.
+  int _allTab = 0;
+
+  /// 검색을 실행한다. 검색 대상은 선수이므로 '선수' 탭으로 전환해
+  /// (build 에서) 검색 결과 섹션이 최상단에 노출되도록 한다.
+  void _onSearch(String query) {
+    if (query.trim().isNotEmpty && _allTab != 1) {
+      setState(() => _allTab = 1);
+    }
+    _viewModel.searchPlayers(query);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +90,48 @@ class _SubscriptionSettingsScreenState
             final subscribedPlayers = _viewModel.subscribedPlayers;
             final allTeams = _viewModel.availableTeams;
             final allPlayers = _viewModel.availablePlayers;
+            // 검색어가 있으면 검색 결과(전체 목록) 섹션을 최상단으로 올린다.
+            final hasQuery = _viewModel.query.trim().isNotEmpty;
+
+            final subscribedSections = <Widget>[
+              SubscribedSection(
+                title: '구독중인 팀',
+                items: [for (final t in subscribedTeams) _teamItem(t)],
+                onToggle: (i) {
+                  final t = subscribedTeams[i];
+                  _viewModel.toggleTeam(t.teamId, t.subscribed);
+                },
+                scale: scale,
+              ),
+              SizedBox(height: 14 * scale),
+              SubscribedSection(
+                title: '구독중인 선수',
+                items: [for (final p in subscribedPlayers) _playerItem(p)],
+                onToggle: (i) {
+                  final p = subscribedPlayers[i];
+                  _viewModel.togglePlayer(p.playerId, p.subscribed);
+                },
+                scale: scale,
+              ),
+            ];
+
+            final allSection = AllSubscriptionSection(
+              teams: [for (final t in allTeams) _teamItem(t)],
+              players: [for (final p in allPlayers) _playerItem(p)],
+              selectedTab: _allTab,
+              onTabChanged: (i) => setState(() => _allTab = i),
+              onTeamToggle: (i) {
+                final t = allTeams[i];
+                _viewModel.toggleTeam(t.teamId, t.subscribed);
+              },
+              onPlayerToggle: (i) {
+                final p = allPlayers[i];
+                _viewModel.togglePlayer(p.playerId, p.subscribed);
+              },
+              playersLoading: _viewModel.loadingAvailablePlayers,
+              playersLoadingMore: _viewModel.loadingMorePlayers,
+              scale: scale,
+            );
 
             return ListView(
               controller: _scrollController,
@@ -93,47 +147,21 @@ class _SubscriptionSettingsScreenState
                   child: NarSearchBar(
                     controller: _searchController,
                     scale: scale,
-                    onSubmitted: _viewModel.searchPlayers,
-                    onSearchTap: () =>
-                        _viewModel.searchPlayers(_searchController.text),
+                    onSubmitted: _onSearch,
+                    onSearchTap: () => _onSearch(_searchController.text),
                   ),
                 ),
                 SizedBox(height: 7 * scale),
-                SubscribedSection(
-                  title: '구독중인 팀',
-                  items: [for (final t in subscribedTeams) _teamItem(t)],
-                  onToggle: (i) {
-                    final t = subscribedTeams[i];
-                    _viewModel.toggleTeam(t.teamId, t.subscribed);
-                  },
-                  scale: scale,
-                ),
-                SizedBox(height: 14 * scale),
-                SubscribedSection(
-                  title: '구독중인 선수',
-                  items: [for (final p in subscribedPlayers) _playerItem(p)],
-                  onToggle: (i) {
-                    final p = subscribedPlayers[i];
-                    _viewModel.togglePlayer(p.playerId, p.subscribed);
-                  },
-                  scale: scale,
-                ),
-                SizedBox(height: 14 * scale),
-                AllSubscriptionSection(
-                  teams: [for (final t in allTeams) _teamItem(t)],
-                  players: [for (final p in allPlayers) _playerItem(p)],
-                  onTeamToggle: (i) {
-                    final t = allTeams[i];
-                    _viewModel.toggleTeam(t.teamId, t.subscribed);
-                  },
-                  onPlayerToggle: (i) {
-                    final p = allPlayers[i];
-                    _viewModel.togglePlayer(p.playerId, p.subscribed);
-                  },
-                  playersLoading: _viewModel.loadingAvailablePlayers,
-                  playersLoadingMore: _viewModel.loadingMorePlayers,
-                  scale: scale,
-                ),
+                // 검색 중이면 결과(전체 목록) 섹션을 검색창 바로 아래에 둔다.
+                if (hasQuery) ...[
+                  allSection,
+                  SizedBox(height: 14 * scale),
+                  ...subscribedSections,
+                ] else ...[
+                  ...subscribedSections,
+                  SizedBox(height: 14 * scale),
+                  allSection,
+                ],
                 SizedBox(height: 20 * scale),
               ],
             );
