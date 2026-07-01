@@ -105,7 +105,7 @@ class FilterViewModel extends ChangeNotifier {
 
   /// 이름으로 리그를 선택하고, 그 리그의 팀 목록을 다시 받아 온다.
   void selectLeagueByName(String name) {
-    // '전체' — 모든 리그 조회. 팀 스코프가 없어 팀 선택·목록을 비운다.
+    // '전체' — 모든 리그 조회. 팀 목록은 전 리그 합집합을 서버에서 받아 온다.
     if (name == allLeagueLabel) {
       if (_selectedLeagueCode == allLeagueCode) {
         _openDropdown = FilterDropdown.none;
@@ -113,10 +113,10 @@ class FilterViewModel extends ChangeNotifier {
         return;
       }
       _selectedLeagueCode = allLeagueCode;
-      _selectedTeamId = null;
-      _teams = const [];
+      _selectedTeamId = null; // 리그가 바뀌면 팀 선택은 초기화.
       _openDropdown = FilterDropdown.none;
       notifyListeners();
+      _load(allLeagueCode);
       return;
     }
     final league = _leagues.firstWhere(
@@ -159,18 +159,14 @@ class FilterViewModel extends ChangeNotifier {
   }
 
   /// [league] 의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 온다.
-  /// [league] 가 '전체'(ALL)면 특정 리그 팀 스코프가 없으므로, 리그 목록만
-  /// 얻기 위해 기본 리그로 옵션을 받되 팀 목록은 비운다.
+  /// [league] 가 '전체'(ALL)면 서버가 전 리그 팀 합집합을 내려준다.
   Future<void> _load(String league) async {
-    final isAll = league == allLeagueCode;
     _loading = true;
     notifyListeners();
     try {
-      final options = await _repository.fetchFilterOptions(
-        league: isAll ? 'LCK' : league,
-      );
+      final options = await _repository.fetchFilterOptions(league: league);
       _leagues = options.leagues;
-      _teams = isAll ? const [] : options.teams;
+      _teams = options.teams;
       // 첫 로드에서 리그가 아직 안 정해졌으면 '전체'를 기본으로 둔다.
       _selectedLeagueCode ??= allLeagueCode;
     } catch (_) {
