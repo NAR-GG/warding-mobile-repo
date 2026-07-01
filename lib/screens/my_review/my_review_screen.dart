@@ -69,6 +69,9 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
   /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다
   /// (상세에서 평가를 수정·삭제했을 수 있으므로).
   Future<void> _openPlayerRating(MyRatingItem item) async {
+    // 리뷰가 남겨진 세트 번호(gameOrder)로 헤더 세트 라벨('세트 N')을 채운다.
+    final setNumber = item.match?.gameOrder ?? 0;
+    final setLabel = setNumber > 0 ? '세트 $setNumber' : '';
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayerRatingScreen(
@@ -86,6 +89,9 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
                   ? item.match!.blueTeamCode
                   : item.match!.redTeamCode),
           side: sideFromTeamSide(item.teamSide),
+          sets: setLabel.isEmpty ? const [] : [setLabel],
+          initialSet: setLabel,
+          currentSetNumber: setNumber > 0 ? setNumber : 1,
           gameId: item.gameId,
           participantId: item.participantId,
           playerId: item.playerId,

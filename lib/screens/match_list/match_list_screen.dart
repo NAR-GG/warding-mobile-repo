@@ -52,9 +52,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// 첫 스케줄 로드가 끝나면 한 번만 오늘 날짜 그룹으로 스크롤한다.
+  /// loadingMore(오늘까지 당기는 prefetch) 도 끝나야 오늘 그룹이 로드돼 있으므로
+  /// prefetch 완료까지 기다린다. ('전체' 필터는 최신 페이지가 전부 미래 경기)
+  ///
+  /// VM notify 뿐 아니라 build 후에도 호출되므로(화면 재생성·notify 유실 대비)
+  /// 조건이 충족되는 첫 시점에 딱 한 번만 스크롤한다(_didInitialScroll 가드).
   void _maybeInitialScroll() {
     if (_didInitialScroll ||
         _viewModel.loadingMatches ||
+        _viewModel.loadingMore ||
         _viewModel.schedule.isEmpty) {
       return;
     }
@@ -79,15 +85,31 @@ class _MatchListScreenState extends State<MatchListScreen> {
   bool _isSameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  /// 대상 그룹 헤더를 리스트 맨 위로 보낸다.
-  /// 1) 항목 높이를 어림해 jumpTo 로 근처까지 이동(대상 헤더가 빌드되도록),
-  /// 2) 다음 프레임에 GlobalKey 로 정확히 맞춘다.
-  // ponytail: 높이 상수는 어림값(헤더 38·카드 140·scale). 정밀도는 2)의
-  // ensureVisible 가 보정한다. 대상이 한참 아래라 한 번에 안 잡히면
-  // scrollable_positioned_list 도입 고려.
-  void _scrollToTarget() {
+  /// 대상 그룹 헤더로 스크롤한다.
+  ///
+  /// ListView.builder 는 lazy 라 아직 안 그려진 항목의 높이를 몰라
+  /// maxScrollExtent 가 실제보다 훨씬 작게 잡힌다(예: 실제 14000인데 2900).
+  /// 그래서 한 번의 jumpTo 로는 한참 아래의 대상까지 못 간다. 대신:
+  /// 1) 대상까지 높이를 어림해 jumpTo(현재 max 로 clamp) → 더 아래 항목이 렌더되며
+  ///    maxScrollExtent 가 늘어난다.
+  /// 2) 다음 프레임에 반복 → 점진적으로 대상에 접근.
+  /// 3) 대상 헤더가 렌더(GlobalKey attach)되면 ensureVisible 로 정밀 정렬 후 종료.
+  void _scrollToTarget({int attempt = 0}) {
     final target = _targetDate;
     if (!mounted || target == null || !_scrollController.hasClients) return;
+
+    // 대상 헤더가 그려졌으면 정밀 정렬하고 끝낸다.
+    // alignment 0.35: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
+    final ctx = _todayHeaderKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
+      return;
+    }
+
+    // 무한 반복 방지.
+    const maxAttempts = 40;
+    if (attempt >= maxAttempts) return;
+
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
     const headerH = 38.0;
@@ -97,16 +119,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
       if (_isSameDate(day.date, target)) break;
       offset += headerH * scale + day.matches.length * cardH * scale;
     }
-    _scrollController.jumpTo(
-      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _todayHeaderKey.currentContext;
-      if (ctx != null) {
-        // alignment 0.35: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
-        Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
-      }
-    });
+    final max = _scrollController.position.maxScrollExtent;
+    _scrollController.jumpTo(offset.clamp(0.0, max));
+    // 다음 프레임에 다시 시도(렌더 확장으로 max 가 늘어나 점점 아래로 접근).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _scrollToTarget(attempt: attempt + 1));
   }
 
   /// 하단 네비 탭 선택. '경기리스트'를 제외한 탭이면 해당 화면으로 전환한다.
@@ -177,6 +194,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
+
+    // notify 유실(화면 재생성 중 VM dispose 등)에 대비해 build 후에도 스크롤을
+    // 재시도한다. _didInitialScroll 가드로 실제 실행은 딱 한 번뿐이다.
+    if (!_didInitialScroll) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeInitialScroll());
+    }
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,

@@ -5,6 +5,7 @@ import '../../../model/match_game.dart';
 import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import 'match_detail_locked_empty.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.
 ///
@@ -134,7 +135,10 @@ class _MatchDetailLiveEventSectionState
           if (hasError && !loading)
             _EmptyState(message: widget.errorMessage!, scale: scale)
           else if (events.isEmpty && !loading)
-            _EmptyState(message: '아직 라이브 이벤트가 없어요', scale: scale)
+            MatchDetailLockedEmpty(
+              message: '이벤트는 경기 중에 확인할 수 있어요!',
+              scale: scale,
+            )
           else
             for (var i = 0; i < events.length; i++) ...[
               _LiveEventRow(
