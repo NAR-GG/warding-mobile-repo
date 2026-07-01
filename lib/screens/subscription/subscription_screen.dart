@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
@@ -283,26 +284,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// '비우기' — 전체 삭제 확인 후 실행.
   Future<void> _confirmClearAll() async {
     if (_feedViewModel.notifications.isEmpty) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showNarConfirmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.narDark800,
-        title: const Text('알림 모두 삭제', style: TextStyle(color: AppColors.narText)),
-        content: const Text(
-          '받은 알림을 모두 삭제할까요?',
-          style: TextStyle(color: AppColors.narTextSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('삭제', style: TextStyle(color: AppColors.liveAccent)),
-          ),
-        ],
-      ),
+      title: '알림 모두 삭제',
+      message: '받은 알림을 모두 삭제할까요?',
+      confirmLabel: '삭제',
     );
     if (confirmed != true) return;
     try {
