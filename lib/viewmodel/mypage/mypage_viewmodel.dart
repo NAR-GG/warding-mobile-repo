@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../model/team.dart';
 import '../../model/user_profile.dart';
@@ -19,12 +20,42 @@ class MypageViewModel extends ChangeNotifier {
         _onboarding = onboarding ?? OnboardingRepository.instance,
         _rating = rating ?? RatingRepository.instance {
     load();
+    _loadTeamBanner();
   }
 
   final AuthService _auth;
   final OnboardingRepository _onboarding;
   final RatingRepository _rating;
   bool _disposed = false;
+
+  /// 로컬 저장(응원팀 자동설정 안내 배너 노출 여부 등). 이미 설치된
+  /// [FlutterSecureStorage] 를 재사용한다(패키지 추가 불필요).
+  final _storage = const FlutterSecureStorage();
+
+  /// '설문 기반 응원팀 자동설정' 안내 배너를 한 번이라도 노출했는지 저장하는 키.
+  static const _teamBannerSeenKey = 'mypage_team_banner_seen';
+
+  /// 응원팀 자동설정 안내 배너 노출 여부.
+  /// 최초 진입 시 한 번만 노출하고, 노출과 동시에 '봤음'으로 저장해 다시 뜨지 않는다.
+  bool _showTeamBanner = false;
+  bool get showTeamBanner => _showTeamBanner;
+
+  /// 저장된 '봤음' 플래그를 확인해 배너 노출 여부를 정한다.
+  /// 아직 안 봤으면 이번에 노출하고, 즉시 '봤음'으로 저장한다(다음 진입부턴 숨김).
+  Future<void> _loadTeamBanner() async {
+    final seen = await _storage.read(key: _teamBannerSeenKey);
+    if (seen == 'true') return;
+    _showTeamBanner = true;
+    _notify();
+    await _storage.write(key: _teamBannerSeenKey, value: 'true');
+  }
+
+  /// 배너를 탭/닫아 즉시 숨긴다. (노출 시 이미 '봤음' 저장되어 재진입에도 안 뜬다.)
+  void dismissTeamBanner() {
+    if (!_showTeamBanner) return;
+    _showTeamBanner = false;
+    _notify();
+  }
 
   UserProfile? _profile;
   UserProfile? get profile => _profile;

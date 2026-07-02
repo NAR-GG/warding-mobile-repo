@@ -31,7 +31,8 @@ class ApiConfig {
 
   /// 구글 OAuth "웹" 클라이언트 ID. idToken의 audience(serverClientId)로 쓰이며,
   /// 백엔드도 이 값으로 idToken을 검증한다. (Google Cloud Console에서 발급)
-  static const String googleServerClientId = 'YOUR_GOOGLE_SERVER_CLIENT_ID';
+  static const String googleServerClientId =
+      '12814317442-egra6e1lni0dmepp793sj5389qpsf1r0.apps.googleusercontent.com';
 
   /// 온보딩용 리그 목록 조회 (인증 불필요).
   static String get onboardingLeaguesUrl =>

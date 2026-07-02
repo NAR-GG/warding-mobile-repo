@@ -5,6 +5,7 @@ import '../../model/match_game.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/rating/rating_repository.dart';
+import '../../repository/subscription/subscription_repository.dart';
 
 /// 선수 평점 상세 화면 상태·로직.
 ///
@@ -21,13 +22,16 @@ class PlayerRatingViewModel extends ChangeNotifier {
     RatingRepository? repository,
     AuthService? auth,
     OnboardingRepository? onboarding,
+    SubscriptionRepository? subscription,
   })  : _gameId = gameId,
         _participantId = participantId,
         _currentSet = currentSet,
         _repository = repository ?? RatingRepository.instance,
         _auth = auth ?? AuthService.instance,
-        _onboarding = onboarding ?? OnboardingRepository.instance {
+        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _subscription = subscription ?? SubscriptionRepository.instance {
     _loadMyProfile();
+    _loadSubscription();
   }
 
   final int playerId;
@@ -35,6 +39,23 @@ class PlayerRatingViewModel extends ChangeNotifier {
   final RatingRepository _repository;
   final AuthService _auth;
   final OnboardingRepository _onboarding;
+  final SubscriptionRepository _subscription;
+
+  /// 이 선수를 구독 중인지. 구독 배너 노출 여부 판단에 쓴다.
+  bool _isSubscribed = false;
+  bool get isSubscribed => _isSubscribed;
+
+  /// 구독 선수 목록을 받아 현재 [playerId] 포함 여부로 구독 상태를 정한다.
+  /// 평점 로딩과 독립이라 실패해도 화면 나머지에 영향이 없다(구독 아님으로 둠).
+  Future<void> _loadSubscription() async {
+    try {
+      final players = await _subscription.fetchSubscribedPlayers();
+      _isSubscribed = players.any((p) => p.playerId == playerId);
+      _safeNotify();
+    } catch (e) {
+      debugPrint('[PlayerRatingVM] 구독 여부 로드 실패: $e');
+    }
+  }
 
   String _gameId;
   int _participantId;

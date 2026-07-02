@@ -348,8 +348,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         .where((p) => p.teamSide.toUpperCase() == 'RED')
         .map(_toPlayerRating)
         .toList();
+    // 이 세트의 어떤 선수에게든 내 평점(myRating>0)이 있으면 상단 배너를 숨긴다.
+    final hasMyRating =
+        (r?.players ?? const <RatingPlayer>[]).any((p) => p.myRating > 0);
     return MatchDetailPlayerRatingSection(
       setLabel: _currentSet,
+      showBanner: !hasMyRating,
       blueTeamName: blue.teamName.isNotEmpty
           ? blue.teamName
           : (widget.match?.teamA.teamName ?? 'BLUE'),
