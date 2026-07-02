@@ -51,3 +51,5 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+# 빌드 시 주입되는 시크릿 (Secrets.xcconfig.example 참고)
+ios/Flutter/Secrets.xcconfig

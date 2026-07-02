@@ -21,7 +21,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<!-- 네이버 콘솔에 등록한 URL Scheme -->
-				<string>YOUR_NAVER_URL_SCHEME</string>
+				<string>wardinglogin</string>
 			</array>
 		</dict>
 		<dict>
@@ -48,14 +48,17 @@
 		<string>naversearchapp</string>
 		<string>naversearchthirdlogin</string>
 	</array>
-	<!-- 네이버 로그인 SDK 키 (네이버 개발자센터에서 발급) -->
-	<key>naverServiceAppUrlScheme</key>
-	<string>YOUR_NAVER_URL_SCHEME</string>
-	<key>naverConsumerKey</key>
-	<string>YOUR_NAVER_CLIENT_ID</string>
-	<key>naverConsumerSecret</key>
-	<string>YOUR_NAVER_CLIENT_SECRET</string>
-	<key>naverServiceAppName</key>
+	<!-- 네이버 로그인 SDK 키 (네이버 개발자센터에서 발급).
+	     flutter_naver_login 2.x(NidOAuth)는 Nid* 키만 읽는다 — 구버전 naver* 키는 인식 안 됨.
+	     Secret은 공개 레포에 커밋하지 않는다: ios/Flutter/Secrets.xcconfig(gitignore)에서 빌드 시 주입.
+	     로컬 세팅: Secrets.xcconfig.example 복사 → Secrets.xcconfig 만들고 실값 입력 -->
+	<key>NidUrlScheme</key>
+	<string>wardinglogin</string>
+	<key>NidClientID</key>
+	<string>gD4mBxHBbCcz3w4q58C1</string>
+	<key>NidClientSecret</key>
+	<string>$(NAVER_CLIENT_SECRET)</string>
+	<key>NidAppName</key>
 	<string>와딩</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
