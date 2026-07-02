@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../model/category_tree.dart';
 import '../../model/schedule_match.dart';
 import '../../repository/category/category_repository.dart';
+import '../../repository/preference/filter_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
 /// 경기 리스트 화면의 상태·로직.
@@ -10,14 +13,53 @@ class MatchListViewModel extends ChangeNotifier {
   MatchListViewModel({
     CategoryRepository? categoryRepository,
     ScheduleRepository? scheduleRepository,
+    FilterPreferenceRepository? filterPreferences,
   }) : _categoryRepository = categoryRepository ?? CategoryRepository.instance,
        _scheduleRepository =
-           scheduleRepository ?? ScheduleRepository.instance {
-    _loadLeagues();
+           scheduleRepository ?? ScheduleRepository.instance,
+       _filterPreferences =
+           filterPreferences ?? FilterPreferenceRepository.instance {
+    _init();
   }
 
   final CategoryRepository _categoryRepository;
   final ScheduleRepository _scheduleRepository;
+  final FilterPreferenceRepository _filterPreferences;
+
+  /// 복원됐지만 아직 리그 목록 검증 전인 팀 선택. [_updateTeams] 가 1회 소비한다.
+  Set<String>? _pendingRestoredTeams;
+
+  /// 마지막 사용 필터(시즌/리그/팀)를 복원한 뒤 리그 목록을 불러온다.
+  /// 리그는 [_loadLeagues] 가 서버 목록과 대조해 없으면 '전체'로 되돌리고,
+  /// 팀은 [_updateTeams] 가 현재 리그 팀 목록과 교집합만 살린다.
+  Future<void> _init() async {
+    final saved =
+        await _filterPreferences.load(FilterPreferenceRepository.matchListKey);
+    if (saved != null) {
+      final season = saved['season'] as String?;
+      if (season != null && seasons.contains(season)) {
+        _selectedSeason = season;
+      }
+      final league = saved['league'] as String?;
+      if (league != null && league.isNotEmpty) {
+        _selectedLeague = league;
+      }
+      final teams = (saved['teams'] as List?)?.cast<String>();
+      if (teams != null && teams.isNotEmpty) {
+        _pendingRestoredTeams = teams.toSet();
+      }
+    }
+    await _loadLeagues();
+  }
+
+  /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
+  void _persistFilter() {
+    unawaited(_filterPreferences.save(FilterPreferenceRepository.matchListKey, {
+      'season': _selectedSeason,
+      'league': _selectedLeague,
+      'teams': _selectedTeams.toList(),
+    }));
+  }
 
   /// 팀 멀티 셀렉트의 '전체' 가상 옵션 라벨. 단독 선택을 의미한다.
   static const String allTeamsLabel = '전체';
@@ -105,6 +147,7 @@ class MatchListViewModel extends ChangeNotifier {
   void selectSeason(String season) {
     if (_selectedSeason == season) return;
     _selectedSeason = season;
+    _persistFilter();
     notifyListeners();
     _loadLeagues();
   }
@@ -113,6 +156,7 @@ class MatchListViewModel extends ChangeNotifier {
     if (_selectedLeague == league) return;
     _selectedLeague = league;
     _updateTeams();
+    _persistFilter();
     notifyListeners();
     _reloadSchedule();
   }
@@ -132,6 +176,7 @@ class MatchListViewModel extends ChangeNotifier {
     }
     if (setEquals(_selectedTeams, result)) return;
     _selectedTeams = result;
+    _persistFilter();
     notifyListeners();
     _reloadSchedule();
   }
@@ -193,6 +238,10 @@ class MatchListViewModel extends ChangeNotifier {
   }
 
   void _updateTeams() {
+    // 앱 재시작 복원분은 1회만 소비한다. 리그가 '전체'라 팀 스코프가 없으면 버린다.
+    final pendingRestored = _pendingRestoredTeams;
+    _pendingRestoredTeams = null;
+
     final tree = _tree;
     final league = _selectedLeague;
     // '전체'(ALL) 리그는 특정 리그 팀 스코프가 없어 팀 필터를 '전체'만 둔다.
@@ -223,6 +272,13 @@ class MatchListViewModel extends ChangeNotifier {
     }
     _teams = [allTeamsLabel, ...names];
     _selectedTeams = {allTeamsLabel};
+
+    // 복원된 팀 선택 중 현재 리그 팀 목록에 남아 있는 것만 되살린다.
+    // (시즌이 바뀌어 팀이 사라졌으면 자연스럽게 '전체'로 남는다.)
+    if (pendingRestored != null) {
+      final valid = pendingRestored.where(_teams.contains).toSet();
+      if (valid.isNotEmpty) _selectedTeams = valid;
+    }
   }
 
   /// 필터(시즌/리그/팀) 변경 시 커서를 초기화하고 첫 페이지부터 다시 받는다.

@@ -3,12 +3,16 @@ import 'package:mocktail/mocktail.dart';
 import 'package:warding/model/category_tree.dart';
 import 'package:warding/model/schedule_filter_options.dart';
 import 'package:warding/repository/category/category_repository.dart';
+import 'package:warding/repository/preference/filter_preference_repository.dart';
 import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/viewmodel/match_list/match_list_viewmodel.dart';
 
 class MockCategoryRepository extends Mock implements CategoryRepository {}
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
+
+class MockFilterPreferenceRepository extends Mock
+    implements FilterPreferenceRepository {}
 
 void main() {
   late MockCategoryRepository cat;
@@ -89,5 +93,68 @@ void main() {
           seasonYear: captureAny(named: 'seasonYear'),
         )).captured;
     expect(captured, contains(2025));
+  });
+
+  group('필터 저장·복원', () {
+    late MockFilterPreferenceRepository prefs;
+
+    setUp(() {
+      prefs = MockFilterPreferenceRepository();
+      when(() => prefs.save(any(), any())).thenAnswer((_) async {});
+    });
+
+    MatchListViewModel buildVm() => MatchListViewModel(
+          categoryRepository: cat,
+          scheduleRepository: sched,
+          filterPreferences: prefs,
+        );
+
+    test('저장된 리그를 복원해 첫 조회에 반영한다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => {
+                'season': '2026',
+                'league': 'LCK',
+                'teams': ['전체'],
+              });
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'LCK');
+      final captured = verify(() => sched.fetchMatches(
+            cursor: any(named: 'cursor'),
+            size: any(named: 'size'),
+            league: captureAny(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+          )).captured;
+      expect(captured, contains('LCK'));
+    });
+
+    test('저장된 리그가 현재 목록에 없으면 전체로 폴백한다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => {'league': 'LJL'});
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, '전체');
+    });
+
+    test('리그 변경 시 필터를 저장한다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => null);
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      vm.selectLeague('LCK');
+      await pumpEventQueue();
+
+      final saved = verify(() =>
+              prefs.save(FilterPreferenceRepository.matchListKey, captureAny()))
+          .captured
+          .last as Map<String, dynamic>;
+      expect(saved['league'], 'LCK');
+    });
   });
 }

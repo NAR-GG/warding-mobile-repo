@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../model/match_calendar_day.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
+import '../../repository/preference/filter_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
@@ -15,22 +18,48 @@ class ScheduleViewModel extends ChangeNotifier {
     DateTime? initialMonth,
     ScheduleRepository? repository,
     TeamPreferenceRepository? teamPreferences,
+    FilterPreferenceRepository? filterPreferences,
     AuthService? auth,
     OnboardingRepository? onboarding,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
        _repository = repository ?? ScheduleRepository.instance,
        _teamPreferences =
            teamPreferences ?? TeamPreferenceRepository.instance,
+       _filterPreferences =
+           filterPreferences ?? FilterPreferenceRepository.instance,
        _auth = auth ?? AuthService.instance,
        _onboarding = onboarding ?? OnboardingRepository.instance {
-    loadCalendar();
+    _init();
     _loadPreferredTeam();
   }
 
   final ScheduleRepository _repository;
   final TeamPreferenceRepository _teamPreferences;
+  final FilterPreferenceRepository _filterPreferences;
   final AuthService _auth;
   final OnboardingRepository _onboarding;
+
+  /// 마지막 사용 필터를 복원한 뒤 첫 캘린더를 조회한다.
+  /// 저장값이 없으면(첫 실행) 기본값 그대로 '전체'.
+  Future<void> _init() async {
+    final saved =
+        await _filterPreferences.load(FilterPreferenceRepository.scheduleKey);
+    if (saved != null) {
+      _league = (saved['league'] as String?) ?? 'ALL';
+      _teamId = saved['teamId'] as int?;
+      _teamSelected = (saved['teamSelected'] as bool?) ?? false;
+    }
+    loadCalendar();
+  }
+
+  /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
+  void _persistFilter() {
+    unawaited(_filterPreferences.save(FilterPreferenceRepository.scheduleKey, {
+      'league': _league,
+      'teamId': _teamId,
+      'teamSelected': _teamSelected,
+    }));
+  }
 
   bool _disposed = false;
 
@@ -96,6 +125,7 @@ class ScheduleViewModel extends ChangeNotifier {
   void toggleTeamSelected() {
     _teamSelected = !_teamSelected;
     _teamId = _teamSelected ? _preferredTeam?.id : null;
+    _persistFilter();
     _notify();
     loadCalendar();
   }
@@ -107,6 +137,7 @@ class ScheduleViewModel extends ChangeNotifier {
     _teamId = teamId;
     // 필터로 팀을 직접 골랐으면 헤더 선호팀 토글과 어긋나므로 해제해 둔다.
     _teamSelected = false;
+    _persistFilter();
     _notify();
     loadCalendar();
   }
