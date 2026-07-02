@@ -26,8 +26,13 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
     this.bluePlayers = const [],
     this.redPlayers = const [],
     this.onPlayerTap,
+    this.showBanner = true,
     this.scale = 1,
   });
+
+  /// 상단 '세트 종료 → 평점 남기기' 배너 노출 여부.
+  /// 이미 이 세트에 평점을 남긴 사용자에겐 숨긴다(false).
+  final bool showBanner;
 
   /// 현재 선택된 세트 라벨. 예) '세트 1'. 배너 문구의 '1세트', 요약 제목의 'SET 1' 에 쓴다.
   final String setLabel;
@@ -67,18 +72,20 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 배너는 상단에 고정(pinned)하고, 그 아래로 요약·팀별 리스트가 스크롤된다.
+    // 이미 이 세트에 평점을 남긴 사용자에겐 배너를 숨긴다.
     return SliverMainAxisGroup(
       slivers: [
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _BannerStickyDelegate(
-            bannerHeight: 44 * scale,
-            banner: ColoredBox(
-              color: AppColors.narBgContent,
-              child: _RatingBanner(setText: _setText, scale: scale),
+        if (showBanner)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _BannerStickyDelegate(
+              bannerHeight: 44 * scale,
+              banner: ColoredBox(
+                color: AppColors.narBgContent,
+                child: _RatingBanner(setText: _setText, scale: scale),
+              ),
             ),
           ),
-        ),
         // 요약 + 팀 리스트 — 배너 아래로 스크롤.
         SliverToBoxAdapter(
           child: ColoredBox(

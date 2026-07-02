@@ -30,10 +30,6 @@ class MypageScreen extends StatefulWidget {
 class _MypageScreenState extends State<MypageScreen> {
   final MypageViewModel _viewModel = MypageViewModel();
 
-  /// 응원팀 자동 설정 안내 배너 노출 여부.
-  /// 초반에만 노출하고, 배너를 탭해 프로필 수정으로 이동하면 사라진다.
-  bool _showTeamBanner = true;
-
   @override
   void dispose() {
     _viewModel.dispose();
@@ -43,7 +39,7 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
   /// 수정 화면이 `true` 로 pop 하면 회원 정보(닉네임·응원팀)를 새로고침한다.
   Future<void> _goToProfileEdit() async {
-    setState(() => _showTeamBanner = false);
+    _viewModel.dismissTeamBanner();
     final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => const ProfileEditScreen()),
     );
@@ -126,19 +122,24 @@ class _MypageScreenState extends State<MypageScreen> {
                       profileImageUrl: _viewModel.profileImageUrl,
                     ),
                   ),
-                  // 응원팀 자동 설정 안내 배너 — 초반에만 노출, 탭하면 프로필 수정으로
-                  // 이동하며 사라진다.
-                  if (_showTeamBanner)
-                    NarBanner(
-                      scale: scale,
-                      onTap: _goToProfileEdit,
-                      icon: SvgPicture.asset(
-                        'assets/icons/heart.svg',
-                        width: 24 * scale,
-                        height: 24 * scale,
-                      ),
-                      text: '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!',
-                    ),
+                  // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
+                  // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
+                  // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
+                  ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (context, _) => _viewModel.showTeamBanner
+                        ? NarBanner(
+                            scale: scale,
+                            onTap: _goToProfileEdit,
+                            icon: SvgPicture.asset(
+                              'assets/icons/heart.svg',
+                              width: 24 * scale,
+                              height: 24 * scale,
+                            ),
+                            text: '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!',
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                   SizedBox(height: 20 * scale),
                   SubscriptionAlarmSection(
                     scale: scale,

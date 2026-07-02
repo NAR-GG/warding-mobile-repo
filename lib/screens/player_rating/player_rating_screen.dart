@@ -19,6 +19,7 @@ import 'component/played_champ_card.dart';
 import 'component/player_comment_section.dart';
 import 'component/rating_comment_sheet.dart';
 import 'component/rating_distribution_section.dart';
+import 'component/subscribed_rating_banner.dart';
 
 /// 선수 평점 상세 페이지.
 ///
@@ -269,30 +270,48 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           scale: scale,
                         ),
                         SizedBox(height: 16 * scale),
-                        // 내 평점이 있으면 내 댓글 카드, 없으면 '평점 남기기' 버튼 — 양옆 10 패딩.
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10 * scale),
-                          child: my != null
-                              ? MyCommentCard(
-                                  username: '나',
-                                  timeAgo: '',
-                                  rating: my.rating,
-                                  comment: my.comment,
-                                  profileImageUrl: _vm.myProfileImageUrl,
-                                  teamImageUrl: _vm.myTeamImageUrl,
-                                  onEdit: _openRatingSheet,
-                                  onDelete: _confirmDeleteComment,
-                                  scale: scale,
-                                )
-                              : NarButton(
-                                  variant: NarButtonVariant.set1,
-                                  label: '평점 남기기',
-                                  onPressed: (d?.rateable ?? false)
-                                      ? _openRatingSheet
-                                      : null,
-                                  scale: scale,
-                                ),
-                        ),
+                        // 평점 상태별 노출:
+                        // - 내 평점 있음 → 내 댓글 카드
+                        // - 없음 + 구독 선수 → 구독 평점 유도 배너
+                        // - 없음 + 비구독 → '평점 남기기' 버튼
+                        if (my != null)
+                          Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 10 * scale),
+                            child: MyCommentCard(
+                              username: '나',
+                              timeAgo: '',
+                              rating: my.rating,
+                              comment: my.comment,
+                              profileImageUrl: _vm.myProfileImageUrl,
+                              teamImageUrl: _vm.myTeamImageUrl,
+                              onEdit: _openRatingSheet,
+                              onDelete: _confirmDeleteComment,
+                              scale: scale,
+                            ),
+                          )
+                        else if (_vm.isSubscribed)
+                          SubscribedRatingBanner(
+                            teamName: widget.teamName,
+                            playerName: widget.player.name,
+                            onRate: (d?.rateable ?? false)
+                                ? _openRatingSheet
+                                : null,
+                            scale: scale,
+                          )
+                        else
+                          Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 10 * scale),
+                            child: NarButton(
+                              variant: NarButtonVariant.set1,
+                              label: '평점 남기기',
+                              onPressed: (d?.rateable ?? false)
+                                  ? _openRatingSheet
+                                  : null,
+                              scale: scale,
+                            ),
+                          ),
                         // 평점·코멘트 리스트 — 양옆 19.5 패딩.
                         Padding(
                           padding:
