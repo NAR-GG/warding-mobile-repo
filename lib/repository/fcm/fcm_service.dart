@@ -38,7 +38,15 @@ class FcmService {
   String get _platform => Platform.isIOS ? 'IOS' : 'ANDROID';
 
   /// 앱 시작 시: 로컬 알림 초기화 + 메시지 리스너 등록.
+  /// (알림 권한은 온보딩 알림 단계에서 요청한다.)
   Future<void> initMessaging() async {
+    // 포그라운드에서도 배너/사운드가 뜨도록 표시 옵션 설정(iOS).
+    await _messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     // 1) 로컬 알림(포그라운드 표시용) 초기화.
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
@@ -66,16 +74,9 @@ class FcmService {
     }
   }
 
-  /// 로그인 직후: 알림 권한 요청 → 토큰 발급·등록 → 갱신 리스너 연결.
+  /// 로그인 직후: 토큰 발급·등록 → 갱신 리스너 연결.
+  /// (알림 권한은 앱 시작 시 [initMessaging] 에서 이미 요청한다.)
   Future<void> registerToken() async {
-    await _messaging.requestPermission(alert: true, badge: true, sound: true);
-    // iOS 포그라운드에서도 배너/사운드가 뜨도록.
-    await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
     // iOS 시뮬레이터는 APNs 토큰이 없어 getToken 이 예외를 던진다.
     // 실패해도 앱 흐름을 막지 않고, 아래 onTokenRefresh 로 이후 토큰을 잡는다.
     String? token;
