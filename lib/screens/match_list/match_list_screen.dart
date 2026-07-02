@@ -265,29 +265,34 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           ],
                         ),
                       ),
-                      SizedBox(height: 12 * scale),
-                      Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                              color: AppColors.narLine,
-                              width: 1,
-                            ),
-                            bottom: BorderSide(
-                              color: AppColors.narLine,
-                              width: 1,
+                      // 리그 '전체'(ALL)는 팀 스코프가 없어 팀 목록이 '전체'뿐이므로
+                      // 팀 멀티셀렉트 필터를 숨긴다.
+                      if (_viewModel.selectedLeague !=
+                          MatchListViewModel.allLeagueLabel) ...[
+                        SizedBox(height: 12 * scale),
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: AppColors.narLine,
+                                width: 1,
+                              ),
+                              bottom: BorderSide(
+                                color: AppColors.narLine,
+                                width: 1,
+                              ),
                             ),
                           ),
+                          child: NarChipMultiSelect(
+                            options: _viewModel.teams,
+                            selectedValues: _viewModel.selectedTeams,
+                            onChanged: _viewModel.updateSelectedTeams,
+                            // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
+                            pinned: const {MatchListViewModel.allTeamsLabel},
+                            scale: scale,
+                          ),
                         ),
-                        child: NarChipMultiSelect(
-                          options: _viewModel.teams,
-                          selectedValues: _viewModel.selectedTeams,
-                          onChanged: _viewModel.updateSelectedTeams,
-                          // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
-                          pinned: const {MatchListViewModel.allTeamsLabel},
-                          scale: scale,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
