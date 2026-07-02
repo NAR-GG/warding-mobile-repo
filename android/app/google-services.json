@@ -7,31 +7,33 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:12814317442:android:3f46edef7c7afe25b9419b",
-        "android_client_info": {
-          "package_name": "com.warding"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCSPVd_hE82cmpU_FxaqR3bDPx1-lbirTY"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:12814317442:android:dd25333de3628996b9419b",
         "android_client_info": {
           "package_name": "com.warding.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "12814317442-7220sb0ff1l3t7c0q6t62eadbikpas1i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warding.app",
+            "certificate_hash": "22698d927fdd323c7ac6cd410d416075a68ed1d9"
+          }
+        },
+        {
+          "client_id": "12814317442-bchonidmie13krcae3i7mhp3c1nfk8ig.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warding.app",
+            "certificate_hash": "0cd7205551e80383a34d91f3fa150a94e04520d5"
+          }
+        },
+        {
+          "client_id": "12814317442-egra6e1lni0dmepp793sj5389qpsf1r0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCSPVd_hE82cmpU_FxaqR3bDPx1-lbirTY"
@@ -39,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "12814317442-egra6e1lni0dmepp793sj5389qpsf1r0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "12814317442-hp6ch65kon7n914t9188c6d2pogu22ha.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.warding.app"
+              }
+            }
+          ]
         }
       }
     }

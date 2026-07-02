@@ -30,13 +30,13 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<!-- 구글 iOS 클라이언트 ID의 REVERSED_CLIENT_ID (com.googleusercontent.apps.XXXX) -->
-				<string>YOUR_GOOGLE_REVERSED_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.12814317442-hp6ch65kon7n914t9188c6d2pogu22ha</string>
 			</array>
 		</dict>
 	</array>
 	<!-- 구글 로그인 iOS 클라이언트 ID (Google Cloud Console에서 발급) -->
 	<key>GIDClientID</key>
-	<string>YOUR_GOOGLE_IOS_CLIENT_ID</string>
+	<string>12814317442-hp6ch65kon7n914t9188c6d2pogu22ha.apps.googleusercontent.com</string>
 	<!-- 프로필 사진 변경: 사진 라이브러리 접근 사유 (image_picker) -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>프로필 사진을 변경하려면 사진 라이브러리 접근이 필요합니다.</string>
