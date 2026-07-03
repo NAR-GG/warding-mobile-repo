@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC4S2qwKCorX19MylfBH828m8o56-EIaA0',
-    appId: '1:12814317442:ios:f79bfda81b9bc81bb9419b',
+    appId: '1:12814317442:ios:46d43dc0a19d4cd1b9419b',
     messagingSenderId: '12814317442',
     projectId: 'nargg-eb1f2',
     storageBucket: 'nargg-eb1f2.firebasestorage.app',
-    iosBundleId: 'com.warding.app',
+    iosBundleId: 'com.nar.wardingapp',
   );
 }

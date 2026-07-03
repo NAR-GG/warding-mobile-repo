@@ -54,6 +54,11 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.4
 
+# path_provider_foundation 2.6.0 이 objective_c(9.x)를 끌어와 arm64e-only 프레임워크를 만들어
+# App Store 검증(409)이 실패한다. objective_c 미사용 버전으로 고정해 arm64e 프레임워크를 제거한다.
+dependency_overrides:
+  path_provider_foundation: 2.4.1
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

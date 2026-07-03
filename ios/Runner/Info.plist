@@ -4,62 +4,6 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- 카카오/네이버/구글 로그인: 앱 → 앱 복귀용 URL 스킴 -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>kakao838b3def5acdd1dfbbe6b14e301ba05a</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<!-- 네이버 콘솔에 등록한 URL Scheme -->
-				<string>wardinglogin</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<!-- 구글 iOS 클라이언트 ID의 REVERSED_CLIENT_ID (com.googleusercontent.apps.XXXX) -->
-				<string>com.googleusercontent.apps.12814317442-hp6ch65kon7n914t9188c6d2pogu22ha</string>
-			</array>
-		</dict>
-	</array>
-	<!-- 구글 로그인 iOS 클라이언트 ID (Google Cloud Console에서 발급) -->
-	<key>GIDClientID</key>
-	<string>12814317442-hp6ch65kon7n914t9188c6d2pogu22ha.apps.googleusercontent.com</string>
-	<!-- 프로필 사진 변경: 사진 라이브러리 접근 사유 (image_picker) -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>프로필 사진을 변경하려면 사진 라이브러리 접근이 필요합니다.</string>
-	<!-- 카카오톡/네이버앱 설치 여부 확인 및 호출에 필요한 스킴 화이트리스트 -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>kakaokompassauth</string>
-		<string>kakaolink</string>
-		<string>naversearchapp</string>
-		<string>naversearchthirdlogin</string>
-	</array>
-	<!-- 네이버 로그인 SDK 키 (네이버 개발자센터에서 발급).
-	     flutter_naver_login 2.x(NidOAuth)는 Nid* 키만 읽는다 — 구버전 naver* 키는 인식 안 됨.
-	     Secret은 공개 레포에 커밋하지 않는다: ios/Flutter/Secrets.xcconfig(gitignore)에서 빌드 시 주입.
-	     로컬 세팅: Secrets.xcconfig.example 복사 → Secrets.xcconfig 만들고 실값 입력 -->
-	<key>NidUrlScheme</key>
-	<string>wardinglogin</string>
-	<key>NidClientID</key>
-	<string>gD4mBxHBbCcz3w4q58C1</string>
-	<key>NidClientSecret</key>
-	<string>$(NAVER_CLIENT_SECRET)</string>
-	<key>NidAppName</key>
-	<string>와딩</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -78,16 +22,56 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakao838b3def5acdd1dfbbe6b14e301ba05a</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wardinglogin</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.12814317442-gtpqohjmq89b89ra3u2d676pdhgth0m9</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>12814317442-gtpqohjmq89b89ra3u2d676pdhgth0m9.apps.googleusercontent.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+		<string>kakaolink</string>
+		<string>naversearchapp</string>
+		<string>naversearchthirdlogin</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<!-- FCM 푸시: 백그라운드에서 원격 알림 수신 -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진을 변경하려면 사진 라이브러리 접근이 필요합니다.</string>
+	<key>NidAppName</key>
+	<string>와딩</string>
+	<key>NidClientID</key>
+	<string>gD4mBxHBbCcz3w4q58C1</string>
+	<key>NidClientSecret</key>
+	<string>$(NAVER_CLIENT_SECRET)</string>
+	<key>NidUrlScheme</key>
+	<string>wardinglogin</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -111,6 +95,11 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

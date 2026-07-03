@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>12814317442-hp6ch65kon7n914t9188c6d2pogu22ha.apps.googleusercontent.com</string>
+	<string>12814317442-gtpqohjmq89b89ra3u2d676pdhgth0m9.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.12814317442-hp6ch65kon7n914t9188c6d2pogu22ha</string>
+	<string>com.googleusercontent.apps.12814317442-gtpqohjmq89b89ra3u2d676pdhgth0m9</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>12814317442-7220sb0ff1l3t7c0q6t62eadbikpas1i.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyC4S2qwKCorX19MylfBH828m8o56-EIaA0</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.warding.app</string>
+	<string>com.nar.wardingapp</string>
 	<key>PROJECT_ID</key>
 	<string>nargg-eb1f2</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:12814317442:ios:f79bfda81b9bc81bb9419b</string>
+	<string>1:12814317442:ios:46d43dc0a19d4cd1b9419b</string>
 </dict>
 </plist>
