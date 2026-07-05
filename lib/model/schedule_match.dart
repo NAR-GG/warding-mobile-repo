@@ -13,6 +13,7 @@ class ScheduleMatch {
     required this.teamB,
     this.date,
     this.liveStreamUrl,
+    this.streamLinks = const [],
     this.sets = const [],
   });
 
@@ -41,8 +42,20 @@ class ScheduleMatch {
   /// 원정 팀.
   final MatchTeam teamB;
 
-  /// 라이브 중계 URL. 없을 수 있다.
+  /// 라이브 중계 URL. 없을 수 있다. (하위호환 — streamLinks 첫 번째와 동일)
   final String? liveStreamUrl;
+
+  /// 라이브 중계 채널 목록. 복수면 유저가 플랫폼을 고른다(치지직/SOOP 등).
+  final List<StreamLink> streamLinks;
+
+  /// 실제로 열 수 있는 중계 링크 목록. streamLinks 가 비어 있으면
+  /// (구버전 서버 응답) liveStreamUrl 하나로 폴백한다.
+  List<StreamLink> get effectiveStreamLinks {
+    if (streamLinks.isNotEmpty) return streamLinks;
+    final url = liveStreamUrl;
+    if (url == null || url.isEmpty) return const [];
+    return [StreamLink(provider: 'default', label: '중계 보기', description: '', url: url)];
+  }
 
   /// 세트별 정보 (VOD 등).
   final List<MatchSet> sets;
@@ -64,6 +77,9 @@ class ScheduleMatch {
       teamA: MatchTeam.fromJson(blue),
       teamB: MatchTeam.fromJson(red),
       liveStreamUrl: json['liveStreamUrl'] as String?,
+      streamLinks: (json['streamLinks'] as List<dynamic>? ?? const [])
+          .map((e) => StreamLink.fromJson(e as Map<String, dynamic>))
+          .toList(),
       sets: (json['sets'] as List<dynamic>? ?? const [])
           .map((e) => MatchSet.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -76,6 +92,36 @@ class ScheduleMatch {
     final parsed = DateTime.tryParse(raw);
     if (parsed == null) return null;
     return DateTime(parsed.year, parsed.month, parsed.day);
+  }
+}
+
+/// 라이브 중계 채널 하나 (플랫폼 + 링크).
+class StreamLink {
+  const StreamLink({
+    required this.provider,
+    required this.label,
+    required this.description,
+    required this.url,
+  });
+
+  /// 플랫폼 식별자 (chzzk/soop/twitch 등).
+  final String provider;
+
+  /// 표시 이름 (치지직/SOOP 등).
+  final String label;
+
+  /// 부가 설명 (예: 'LCK 공식 채널 · 한국어').
+  final String description;
+
+  final String url;
+
+  factory StreamLink.fromJson(Map<String, dynamic> json) {
+    return StreamLink(
+      provider: json['provider'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+    );
   }
 }
 

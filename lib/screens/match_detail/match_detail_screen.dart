@@ -134,11 +134,156 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     return 'SET ${_setNumber(_currentSet)} 진행중';
   }
 
-  /// '중계 보기' 탭. liveStreamUrl 을 외부 브라우저/앱으로 연다.
+  /// '중계 보기' 탭. 중계 채널이 복수(치지직/SOOP)면 선택 시트를 띄우고,
+  /// 하나뿐이면 바로 외부 브라우저/앱으로 연다.
   Future<void> _openLiveStream() async {
-    final url = widget.match?.liveStreamUrl;
-    if (url == null || url.isEmpty) return;
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final links = widget.match?.effectiveStreamLinks ?? const [];
+    if (links.isEmpty) return;
+    if (links.length == 1) {
+      await launchUrl(Uri.parse(links.first.url),
+          mode: LaunchMode.externalApplication);
+      return;
+    }
+    final selected = await _showStreamPickerSheet(links);
+    if (selected == null) return;
+    await launchUrl(Uri.parse(selected.url),
+        mode: LaunchMode.externalApplication);
+  }
+
+  /// 중계 채널 선택 바텀시트. 플랫폼별 로고 칩 + 이름/설명, 공식 채널엔 뱃지.
+  Future<StreamLink?> _showStreamPickerSheet(List<StreamLink> links) {
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    return showAppBottomSheet<StreamLink>(
+      context: context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, 2 * scale),
+            child: Text(
+              '중계 채널 선택',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 16 * scale,
+                color: AppColors.narText,
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(8 * scale, 0, 8 * scale, 12 * scale),
+            child: Text(
+              '보고 싶은 플랫폼에서 이어서 시청하세요',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 12.5 * scale,
+                color: AppColors.narText2,
+              ),
+            ),
+          ),
+          for (final link in links)
+            Padding(
+              padding: EdgeInsets.fromLTRB(8 * scale, 0, 8 * scale, 8 * scale),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12 * scale),
+                onTap: () => Navigator.of(context).pop(link),
+                child: Container(
+                  padding: EdgeInsets.all(13 * scale),
+                  decoration: BoxDecoration(
+                    color: AppColors.narDark600,
+                    borderRadius: BorderRadius.circular(12 * scale),
+                    border: Border.all(color: AppColors.narLine),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38 * scale,
+                        height: 38 * scale,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _brandColorOf(link.provider).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10 * scale),
+                        ),
+                        child: Text(
+                          link.provider.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w900,
+                            fontSize: 9 * scale,
+                            color: _brandColorOf(link.provider),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              link.label,
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14.5 * scale,
+                                color: AppColors.narText,
+                              ),
+                            ),
+                            if (link.description.isNotEmpty)
+                              Text(
+                                link.description,
+                                style: TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 12 * scale,
+                                  color: AppColors.narText2,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (link.description.contains('공식'))
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 8 * scale, vertical: 3 * scale),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: AppColors.chzzkBrand.withValues(alpha: 0.35)),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '공식',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10.5 * scale,
+                              color: AppColors.chzzkBrand,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          SizedBox(height: 8 * scale),
+        ],
+      ),
+    );
+  }
+
+  /// 플랫폼별 브랜드색. 미지정 플랫폼은 기본 회색.
+  Color _brandColorOf(String provider) {
+    switch (provider) {
+      case 'chzzk':
+        return AppColors.chzzkBrand;
+      case 'soop':
+        return AppColors.soopBrand;
+      default:
+        return AppColors.narGray500;
+    }
   }
 
   /// 헤더의 세트 드롭다운 탭 시 호출. 세트 목록 바텀시트를 띄우고 선택값으로 갱신.
@@ -385,8 +530,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   Widget _buildActionButton(double scale) {
     final m = widget.match;
     final status = m?.matchStatus ?? '';
-    final hasStream =
-        m?.liveStreamUrl != null && m!.liveStreamUrl!.isNotEmpty;
+    final hasStream = (m?.effectiveStreamLinks ?? const []).isNotEmpty;
     final vodUrl = _viewModel.currentSetVodUrl;
     final hasVod = vodUrl != null && vodUrl.isNotEmpty;
     final String label;

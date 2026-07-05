@@ -52,6 +52,10 @@ class AppColors {
 
   static const Color naverBg = Color(0xFF03C75A);
   static const Color naverText = Color(0xFFFFFFFF);
+
+  /// 중계 플랫폼 브랜드색 — 중계 채널 선택 시트의 로고 칩에 쓴다.
+  static const Color chzzkBrand = Color(0xFF00FFA3);
+  static const Color soopBrand = Color(0xFF6E9BFF);
   static const Color googleBg = Color(0xFFFFFFFF);
 
   // nar_button_1 (밝은 버튼)
