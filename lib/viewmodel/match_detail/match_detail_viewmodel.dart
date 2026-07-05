@@ -119,23 +119,32 @@ class MatchDetailViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadGames() async {
+    // games 로드와 matchInfo 로드를 분리해 fetchGames 실패 시에도 matchInfo 로드를 시도한다.
     try {
-      final games = await _repository.fetchGames(matchId);
+      final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
       _games = games;
       // 진입 시 기본 세트: LIVE → 최신 ENDED → 1세트.
       _currentSet = _computeInitialSet(games);
 
-      // initialMatch 없이 진입한 경우(마이구독 등) 경기 정보를 별도로 로드한다.
+      // games 응답에 팀 정보가 없고 initialMatch도 없으면 별도 API 시도.
       if (_matchInfo == null) {
-        final info = await _repository.fetchMatch(matchId);
-        if (info != null) _matchInfo = info;
+        _matchInfo = matchInfoFromGames;
+        if (_matchInfo == null) {
+          final info = await _repository.fetchMatch(matchId);
+          if (info != null) _matchInfo = info;
+        }
       }
-
-      _safeNotify();
     } catch (e) {
       debugPrint('[MatchDetailVM] load games failed: $e');
-      // 세트 목록 실패 시에도 세트별 로드에서 개별 에러를 노출한다.
+      // fetchGames 실패 시에도 matchInfo 로드는 이어서 시도한다.
+      if (_matchInfo == null) {
+        try {
+          final info = await _repository.fetchMatch(matchId);
+          if (info != null) _matchInfo = info;
+        } catch (_) {}
+      }
     }
+    _safeNotify();
   }
 
   /// 진입 시 기본 선택 세트를 정한다.

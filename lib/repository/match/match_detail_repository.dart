@@ -36,7 +36,8 @@ class MatchDetailRepository {
 
   /// 경기(matchId)의 세트별 게임 목록을 조회한다 (인증 불필요).
   /// 세트 순서 → gameId 해석에 쓴다.
-  Future<List<MatchGame>> fetchGames(String matchId) async {
+  /// 응답 최상위에 팀 정보(teamA/blueTeam)가 있으면 [ScheduleMatch]도 파싱해 함께 반환한다.
+  Future<(List<MatchGame>, ScheduleMatch?)> fetchGames(String matchId) async {
     final url = ApiConfig.matchGamesUrl(matchId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
@@ -50,8 +51,23 @@ class MatchDetailRepository {
     final decoded = jsonDecode(response.body);
     // 응답이 { "games": [...] } 또는 배열 자체일 수 있어 둘 다 처리.
     final List<dynamic> rawGames;
+    ScheduleMatch? matchInfo;
     if (decoded is Map<String, dynamic>) {
       rawGames = decoded['games'] as List<dynamic>? ?? const [];
+      // 응답 최상위에 팀 정보(teamA/blueTeam)가 있으면 ScheduleMatch 파싱 시도.
+      if (decoded.containsKey('teamA') || decoded.containsKey('blueTeam')) {
+        try {
+          final matchJson = Map<String, dynamic>.from(decoded);
+          matchJson.putIfAbsent('matchId', () => matchId);
+          matchInfo = ScheduleMatch.fromJson(matchJson);
+          debugPrint('[MatchDetail] matchInfo from games: '
+              '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}');
+        } catch (e) {
+          debugPrint('[MatchDetail] matchInfo parse from games failed: $e');
+        }
+      } else {
+        debugPrint('[MatchDetail] games top-level keys: ${decoded.keys.toList()}');
+      }
     } else if (decoded is List) {
       rawGames = decoded;
     } else {
@@ -62,7 +78,7 @@ class MatchDetailRepository {
         .toList()
       ..sort((a, b) => a.gameOrder.compareTo(b.gameOrder));
     debugPrint('[MatchDetail] games: ${games.length}');
-    return games;
+    return (games, matchInfo);
   }
 
   /// 세트(gameId)의 챔피언 밴·픽을 조회한다 (인증 불필요).
