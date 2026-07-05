@@ -24,11 +24,15 @@ class SubscriptionAlarmSection extends StatefulWidget {
 
   @override
   State<SubscriptionAlarmSection> createState() =>
-      _SubscriptionAlarmSectionState();
+      SubscriptionAlarmSectionState();
 }
 
-class _SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
+class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
   final TeamAlarmViewModel _viewModel = TeamAlarmViewModel();
+
+  /// 구독 팀 알림 목록을 다시 불러온다.
+  /// 구독 관리 화면에서 팀 구독을 변경하고 돌아왔을 때 호출한다.
+  Future<void> reload() => _viewModel.load();
 
   @override
   void dispose() {
