@@ -30,9 +30,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
   final MatchListViewModel _viewModel = MatchListViewModel();
   final ScrollController _scrollController = ScrollController();
 
-  /// 첫 로드 후 '오늘(없으면 가장 가까운 과거)' 그룹으로 한 번만 자동 스크롤하기 위한 상태.
+  /// '오늘(없으면 가장 가까운 과거)' 그룹으로 자동 스크롤하기 위한 상태.
+  /// 스크롤은 스케줄이 새로 조회될 때(초기 진입 및 필터 변경 재조회)마다 한 번씩 수행하며,
+  /// [_scrolledForVersion] 으로 이미 스크롤한 [MatchListViewModel.scheduleVersion] 을 기억해
+  /// 같은 조회 결과에 대해 중복 실행되는 것만 막는다.
   final GlobalKey _todayHeaderKey = GlobalKey();
-  bool _didInitialScroll = false;
+  int? _scrolledForVersion;
   DateTime? _targetDate;
 
   @override
@@ -51,20 +54,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
     super.dispose();
   }
 
-  /// 첫 스케줄 로드가 끝나면 한 번만 오늘 날짜 그룹으로 스크롤한다.
+  /// 스케줄 로드(초기 진입 또는 필터 변경 재조회)가 끝나면 오늘 날짜 그룹으로 스크롤한다.
   /// loadingMore(오늘까지 당기는 prefetch) 도 끝나야 오늘 그룹이 로드돼 있으므로
   /// prefetch 완료까지 기다린다. ('전체' 필터는 최신 페이지가 전부 미래 경기)
   ///
   /// VM notify 뿐 아니라 build 후에도 호출되므로(화면 재생성·notify 유실 대비)
-  /// 조건이 충족되는 첫 시점에 딱 한 번만 스크롤한다(_didInitialScroll 가드).
+  /// 같은 [MatchListViewModel.scheduleVersion] 에 대해서는 딱 한 번만 스크롤한다.
+  /// 필터 변경으로 버전이 올라가면(=_reloadSchedule 재실행) 다시 스크롤을 수행해,
+  /// 필터를 바꿔 리스트를 다시 조회할 때도 오늘 날짜로 이동한다.
   void _maybeInitialScroll() {
-    if (_didInitialScroll ||
+    if (_scrolledForVersion == _viewModel.scheduleVersion ||
         _viewModel.loadingMatches ||
         _viewModel.loadingMore ||
         _viewModel.schedule.isEmpty) {
       return;
     }
-    _didInitialScroll = true;
+    _scrolledForVersion = _viewModel.scheduleVersion;
     _targetDate = _findTargetDate();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTarget());
   }
@@ -196,8 +201,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     final scale = width.clamp(320.0, 430.0) / 375;
 
     // notify 유실(화면 재생성 중 VM dispose 등)에 대비해 build 후에도 스크롤을
-    // 재시도한다. _didInitialScroll 가드로 실제 실행은 딱 한 번뿐이다.
-    if (!_didInitialScroll) {
+    // 재시도한다. _scrolledForVersion 가드로 같은 조회 결과에 대한 실행은 한 번뿐이다.
+    if (_scrolledForVersion != _viewModel.scheduleVersion) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _maybeInitialScroll());
     }
 

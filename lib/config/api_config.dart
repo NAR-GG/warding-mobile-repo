@@ -203,6 +203,10 @@ class ApiConfig {
 
   // ── 경기 상세: 세트(게임)·챔피언 픽·라이브 이벤트 (인증 불필요) ──────────
 
+  /// 단일 경기 정보 조회 (인증 불필요).
+  static String matchUrl(String matchId) =>
+      '$apiBaseUrl/mobile/matches/$matchId';
+
   /// 경기(matchId)의 세트별 게임 목록 조회. 세트 순서 → gameId 해석에 쓴다.
   static String matchGamesUrl(String matchId) =>
       '$apiBaseUrl/mobile/matches/$matchId/games';

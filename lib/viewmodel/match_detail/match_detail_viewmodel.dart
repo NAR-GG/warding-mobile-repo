@@ -4,6 +4,7 @@ import '../../model/game_rating.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
+import '../../model/schedule_match.dart';
 import '../../repository/match/match_detail_repository.dart';
 import '../../repository/rating/rating_repository.dart';
 
@@ -14,12 +15,24 @@ import '../../repository/rating/rating_repository.dart';
 class MatchDetailViewModel extends ChangeNotifier {
   MatchDetailViewModel({
     required this.matchId,
+    this.initialMatch,
     MatchDetailRepository? repository,
     RatingRepository? ratingRepository,
-  })  : _repository = repository ?? MatchDetailRepository.instance,
+  })  : _matchInfo = initialMatch,
+        _repository = repository ?? MatchDetailRepository.instance,
         _ratingRepository = ratingRepository ?? RatingRepository.instance;
 
   final String matchId;
+
+  /// Screen 이 주입한 초기 경기 정보 (경기 목록에서 진입할 때).
+  /// 마이구독처럼 matchId 만 가지고 진입하면 null 이므로 _loadGames 에서 별도 로드한다.
+  final ScheduleMatch? initialMatch;
+
+  ScheduleMatch? _matchInfo;
+
+  /// 스코어 카드에 쓸 경기 정보. null 이면 플레이스홀더 렌더링.
+  ScheduleMatch? get matchInfo => _matchInfo;
+
   final MatchDetailRepository _repository;
   final RatingRepository _ratingRepository;
 
@@ -111,6 +124,13 @@ class MatchDetailViewModel extends ChangeNotifier {
       _games = games;
       // 진입 시 기본 세트: LIVE → 최신 ENDED → 1세트.
       _currentSet = _computeInitialSet(games);
+
+      // initialMatch 없이 진입한 경우(마이구독 등) 경기 정보를 별도로 로드한다.
+      if (_matchInfo == null) {
+        final info = await _repository.fetchMatch(matchId);
+        if (info != null) _matchInfo = info;
+      }
+
       _safeNotify();
     } catch (e) {
       debugPrint('[MatchDetailVM] load games failed: $e');
