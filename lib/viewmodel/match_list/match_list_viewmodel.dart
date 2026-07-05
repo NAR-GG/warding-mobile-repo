@@ -144,6 +144,11 @@ class MatchListViewModel extends ChangeNotifier {
   bool _loadingMore = false;
   bool get loadingMore => _loadingMore;
 
+  /// [_reloadSchedule] 이 새로 시작할 때마다 증가. View 는 이 값이 바뀔 때마다
+  /// '오늘로 스크롤'을 다시 수행해, 필터 변경으로 재조회될 때도 오늘 날짜로 이동한다.
+  int _scheduleVersion = 0;
+  int get scheduleVersion => _scheduleVersion;
+
   void selectSeason(String season) {
     if (_selectedSeason == season) return;
     _selectedSeason = season;
@@ -284,6 +289,7 @@ class MatchListViewModel extends ChangeNotifier {
   /// 필터(시즌/리그/팀) 변경 시 커서를 초기화하고 첫 페이지부터 다시 받는다.
   /// 첫 페이지를 받자마자 카드를 보여주고, 부족하면 자동 prefetch 로 더 채운다.
   Future<void> _reloadSchedule() async {
+    _scheduleVersion++;
     _loadingMatches = true;
     _schedule.clear();
     _cursor = null;
