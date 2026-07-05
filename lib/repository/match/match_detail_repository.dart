@@ -7,12 +7,32 @@ import '../../config/api_config.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
+import '../../model/schedule_match.dart';
 
 /// 경기 상세 관련 API (`/api/mobile/matches/{matchId}/games`,
 /// `/api/mobile/live/games/{gameId}/{champions,events}`). 모두 인증 불필요.
 class MatchDetailRepository {
   MatchDetailRepository._();
   static final MatchDetailRepository instance = MatchDetailRepository._();
+
+  /// 단일 경기 정보를 조회한다. 실패 시 null 을 반환한다.
+  Future<ScheduleMatch?> fetchMatch(String matchId) async {
+    final url = ApiConfig.matchUrl(matchId);
+    debugPrint('[MatchDetail] GET $url');
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('[MatchDetail] match ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        return ScheduleMatch.fromJson(data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[MatchDetail] fetchMatch failed: $e');
+      return null;
+    }
+  }
 
   /// 경기(matchId)의 세트별 게임 목록을 조회한다 (인증 불필요).
   /// 세트 순서 → gameId 해석에 쓴다.

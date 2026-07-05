@@ -48,7 +48,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   late int _tabIndex = widget.initialTabIndex;
 
   late final MatchDetailViewModel _viewModel =
-      MatchDetailViewModel(matchId: widget.matchId);
+      MatchDetailViewModel(matchId: widget.matchId, initialMatch: widget.match);
+
+  /// widget.match 가 있으면 그것을, 없으면 뷰모델이 API 로 로드한 정보를 사용한다.
+  ScheduleMatch? get _effectiveMatch => widget.match ?? _viewModel.matchInfo;
 
   @override
   void initState() {
@@ -137,7 +140,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   /// '중계 보기' 탭. 중계 채널이 복수(치지직/SOOP)면 선택 시트를 띄우고,
   /// 하나뿐이면 바로 외부 브라우저/앱으로 연다.
   Future<void> _openLiveStream() async {
-    final links = widget.match?.effectiveStreamLinks ?? const [];
+    final links = _effectiveMatch?.effectiveStreamLinks ?? const [];
     if (links.isEmpty) return;
     if (links.length == 1) {
       await launchUrl(Uri.parse(links.first.url),
@@ -501,10 +504,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       showBanner: !hasMyRating,
       blueTeamName: blue.teamName.isNotEmpty
           ? blue.teamName
-          : (widget.match?.teamA.teamName ?? 'BLUE'),
+          : (_effectiveMatch?.teamA.teamName ?? 'BLUE'),
       redTeamName: red.teamName.isNotEmpty
           ? red.teamName
-          : (widget.match?.teamB.teamName ?? 'RED'),
+          : (_effectiveMatch?.teamB.teamName ?? 'RED'),
       blueRating: blue.averageRating,
       redRating: red.averageRating,
       blueRaterCount: blue.ratingCount,
@@ -528,7 +531,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   /// - 완료: 선택 세트에 VOD 가 있으면 '다시보기'(활성), 없으면 '경기 종료'(비활성)
   /// - 그 외(예정 등): '준비중' (비활성)
   Widget _buildActionButton(double scale) {
-    final m = widget.match;
+    final m = _effectiveMatch;
     final status = m?.matchStatus ?? '';
     final hasStream = (m?.effectiveStreamLinks ?? const []).isNotEmpty;
     final vodUrl = _viewModel.currentSetVodUrl;
@@ -562,7 +565,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   /// 헤더 스코어 칸. match 가 있으면 실데이터로, 없으면 플레이스홀더로 렌더한다.
   Widget _buildScoreSection(double scale) {
-    final m = widget.match;
+    final m = _effectiveMatch;
     final isLive = m != null && _isLiveStatus(m.matchStatus);
     // 좌측 라벨: '리그 + 스테이지'. 예: 'LCK 토너먼트 스테이지'.
     final stage = m != null ? _stageOf(m.matchTitle) : '';
