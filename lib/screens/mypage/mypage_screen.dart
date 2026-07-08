@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/common_button.dart';
+import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
@@ -99,121 +100,123 @@ class _MypageScreenState extends State<MypageScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _MypageHeader(
-                    scale: scale,
-                    onBellTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SubscriptionScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  SizedBox(height: 4 * scale),
-                  ListenableBuilder(
-                    listenable: _viewModel,
-                    builder: (context, _) => _MypageProfile(
+            GuestLockOverlay(
+              scale: scale,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _MypageHeader(
                       scale: scale,
-                      onEditTap: _goToProfileEdit,
-                      nickname: _viewModel.nickname,
-                      email: _viewModel.email,
-                      favoriteTeam: _viewModel.favoriteTeam,
-                      profileImageUrl: _viewModel.profileImageUrl,
-                    ),
-                  ),
-                  // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
-                  // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
-                  // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
-                  ListenableBuilder(
-                    listenable: _viewModel,
-                    builder: (context, _) => _viewModel.showTeamBanner
-                        ? NarBanner(
-                            scale: scale,
-                            onTap: _goToProfileEdit,
-                            icon: SvgPicture.asset(
-                              'assets/icons/heart.svg',
-                              width: 24 * scale,
-                              height: 24 * scale,
-                            ),
-                            text: '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!',
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                  SizedBox(height: 20 * scale),
-                  SubscriptionAlarmSection(
-                    key: _subscriptionAlarmKey,
-                    scale: scale,
-                    onManageTap: _goToSubscriptionSettings,
-                  ),
-                  SizedBox(height: 16 * scale),
-                  ListenableBuilder(
-                    listenable: _viewModel,
-                    builder: (context, _) => _MypageLinkRow(
-                      title: '내 리뷰/평점',
-                      count: _viewModel.reviewCount,
-                      scale: scale,
-                      onTap: () async {
-                        await Navigator.of(context).push(
+                      onBellTap: () {
+                        Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const MyReviewScreen(),
+                            builder: (_) => const SubscriptionScreen(),
                           ),
                         );
-                        // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
-                        await _viewModel.load();
                       },
                     ),
-                  ),
-                  SizedBox(height: 16 * scale),
-                  _MypageLinkRow(
-                    title: '고객센터/문의',
-                    scale: scale,
-                    onTap:
-                        () => _launchUrl(
-                          'https://discord.com/channels/1441277795945807874/1441304369470640138',
-                        ),
-                  ),
-                  SizedBox(height: 16 * scale),
-                  _MypageLinkRow(
-                    title: '나르지지 웹사이트',
-                    scale: scale,
-                    onTap: () => _launchUrl('https://nar.kr/'),
-                  ),
-                  SizedBox(height: 16 * scale),
-                  _AppInfoRow(
-                    // TODO: 실제 버전 정보로 교체 (현재 mock).
-                    versionStatus: '최신 버전입니다.',
-                    versionLabel: '(현재 버전 1.1.0)',
-                    scale: scale,
-                  ),
-                  // 맨 아래 로그아웃/회원탈퇴 — 80 간격 후, 가운데 정렬·40 간격.
-                  SizedBox(height: 80 * scale),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CommonButton(
-                        label: '로그아웃',
-                        variant: CommonButtonVariant.logout,
+                    SizedBox(height: 4 * scale),
+                    ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, _) => _MypageProfile(
                         scale: scale,
-                        onPressed: _logout,
+                        onEditTap: _goToProfileEdit,
+                        nickname: _viewModel.nickname,
+                        email: _viewModel.email,
+                        favoriteTeam: _viewModel.favoriteTeam,
+                        profileImageUrl: _viewModel.profileImageUrl,
                       ),
-                      SizedBox(width: 40 * scale),
-                      CommonButton(
-                        label: '회원탈퇴',
-                        variant: CommonButtonVariant.text,
+                    ),
+                    // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
+                    // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
+                    // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
+                    ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, _) => _viewModel.showTeamBanner
+                          ? NarBanner(
+                              scale: scale,
+                              onTap: _goToProfileEdit,
+                              icon: SvgPicture.asset(
+                                'assets/icons/heart.svg',
+                                width: 24 * scale,
+                                height: 24 * scale,
+                              ),
+                              text: '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!',
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    SizedBox(height: 20 * scale),
+                    SubscriptionAlarmSection(
+                      key: _subscriptionAlarmKey,
+                      scale: scale,
+                      onManageTap: _goToSubscriptionSettings,
+                    ),
+                    SizedBox(height: 16 * scale),
+                    ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, _) => _MypageLinkRow(
+                        title: '내 리뷰/평점',
+                        count: _viewModel.reviewCount,
                         scale: scale,
-                        onPressed: () {
-                          // TODO: 회원탈퇴 처리
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const MyReviewScreen(),
+                            ),
+                          );
+                          // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
+                          await _viewModel.load();
                         },
                       ),
-                    ],
-                  ),
-                  // 하단 네비에 가리지 않도록 여백.
-                  SizedBox(height: 166 * scale),
-                ],
+                    ),
+                    SizedBox(height: 16 * scale),
+                    _MypageLinkRow(
+                      title: '고객센터/문의',
+                      scale: scale,
+                      onTap: () => _launchUrl(
+                        'https://discord.com/channels/1441277795945807874/1441304369470640138',
+                      ),
+                    ),
+                    SizedBox(height: 16 * scale),
+                    _MypageLinkRow(
+                      title: '나르지지 웹사이트',
+                      scale: scale,
+                      onTap: () => _launchUrl('https://nar.kr/'),
+                    ),
+                    SizedBox(height: 16 * scale),
+                    _AppInfoRow(
+                      // TODO: 실제 버전 정보로 교체 (현재 mock).
+                      versionStatus: '최신 버전입니다.',
+                      versionLabel: '(현재 버전 1.1.0)',
+                      scale: scale,
+                    ),
+                    // 맨 아래 로그아웃/회원탈퇴 — 80 간격 후, 가운데 정렬·40 간격.
+                    SizedBox(height: 80 * scale),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CommonButton(
+                          label: '로그아웃',
+                          variant: CommonButtonVariant.logout,
+                          scale: scale,
+                          onPressed: _logout,
+                        ),
+                        SizedBox(width: 40 * scale),
+                        CommonButton(
+                          label: '회원탈퇴',
+                          variant: CommonButtonVariant.text,
+                          scale: scale,
+                          onPressed: () {
+                            // TODO: 회원탈퇴 처리
+                          },
+                        ),
+                      ],
+                    ),
+                    // 하단 네비에 가리지 않도록 여백.
+                    SizedBox(height: 166 * scale),
+                  ],
+                ),
               ),
             ),
             Positioned(
@@ -493,8 +496,8 @@ class _MypageLinkRow extends StatelessWidget {
                   if (count != null) ...[
                     // 'N건' — narBg 그라데이션 텍스트.
                     ShaderMask(
-                      shaderCallback:
-                          (bounds) => AppColors.narBg.createShader(bounds),
+                      shaderCallback: (bounds) =>
+                          AppColors.narBg.createShader(bounds),
                       child: Text(
                         '$count건',
                         style: TextStyle(

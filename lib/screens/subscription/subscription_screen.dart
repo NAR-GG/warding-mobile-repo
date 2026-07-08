@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
@@ -55,8 +56,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 실패하면 빈 목록을 유지한다(가짜 placeholder 노출 방지).
   Future<void> _loadPlayers() async {
     try {
-      final players =
-          await SubscriptionRepository.instance.fetchSubscribedPlayers();
+      final players = await SubscriptionRepository.instance
+          .fetchSubscribedPlayers();
       if (!mounted) return;
       setState(() => _players = players.map((p) => p.playerName).toList());
     } catch (e) {
@@ -165,8 +166,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     // 알림 생성 날짜로 일정 API를 조회해 ScheduleMatch를 찾아 스코어 카드에 넘긴다.
     ScheduleMatch? match;
     try {
-      final matches =
-          await ScheduleRepository.instance.fetchMatchesByDate(n.createdAt);
+      final matches = await ScheduleRepository.instance.fetchMatchesByDate(
+        n.createdAt,
+      );
       final found = matches.where((m) => m.matchId == matchId);
       if (found.isNotEmpty) match = found.first;
     } catch (_) {}
@@ -247,7 +249,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   Widget _dateHeader(DateTime day, double scale, Key key) {
     return Padding(
       key: key,
-      padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 8 * scale),
+      padding: EdgeInsets.fromLTRB(
+        20 * scale,
+        16 * scale,
+        20 * scale,
+        8 * scale,
+      ),
       child: Text(
         '${day.month}월 ${day.day}일',
         style: TextStyle(
@@ -270,7 +277,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.delete_outline, color: AppColors.narText, size: 22 * scale),
+          Icon(
+            Icons.delete_outline,
+            color: AppColors.narText,
+            size: 22 * scale,
+          ),
           SizedBox(width: 4 * scale),
           Text(
             '삭제',
@@ -291,9 +302,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       await _feedViewModel.delete(n);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('삭제하지 못했습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('삭제하지 못했습니다.')));
     }
   }
 
@@ -311,9 +322,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       await _feedViewModel.deleteAll();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('삭제하지 못했습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('삭제하지 못했습니다.')));
     }
   }
 
@@ -387,8 +398,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   Set<int> _markedDaysOf(DateTime month) {
     return _feedViewModel.notifications
         .where(_matchesFilter)
-        .where((n) =>
-            n.createdAt.year == month.year && n.createdAt.month == month.month)
+        .where(
+          (n) =>
+              n.createdAt.year == month.year &&
+              n.createdAt.month == month.month,
+        )
         .map((n) => n.createdAt.day)
         .toSet();
   }
@@ -396,7 +410,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 날짜 칩 탭 → 캘린더 바텀시트. 고른 날짜의 헤더 위치로 스크롤한다.
   Future<void> _openDatePicker() async {
     final items = _feedViewModel.notifications.where(_matchesFilter).toList();
-    final initialMonth = items.isNotEmpty ? items.first.createdAt : DateTime.now();
+    final initialMonth = items.isNotEmpty
+        ? items.first.createdAt
+        : DateTime.now();
     final picked = await showAppBottomSheet<DateTime>(
       context: context,
       child: SubscriptionDateSheet(
@@ -442,99 +458,105 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _SubscriptionHeader(
-                  scale: scale,
-                  onClearTap: _confirmClearAll,
-                  onSettingsTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SubscriptionSettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
-                NarChipMultiSelect(
-                  options: _eventTypes,
-                  selectedValues: _selectedTypes,
-                  onChanged: _onTypesChanged,
-                  pinned: const {'전체'}, // '전체'는 항상 맨 앞 고정
-                  scale: scale,
-                  trailing: [
-                    (
-                      widget: PlayerFilterChip(
-                        players: _players,
-                        selected: _selectedPlayers,
-                        scale: scale,
-                        onTap: _openPlayerSelect,
-                        onClear: () => setState(() {
-                          _selectedPlayers = {};
-                          _syncAll();
-                        }),
-                      ),
-                      // 선택되면(보라 활성) 앞으로 정렬에 참여.
-                      selected: _selectedPlayers.isNotEmpty,
-                    ),
-                    // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
-                    (
-                      widget: NarChip.dropdown(
-                        label: '날짜',
-                        scale: scale,
-                        onTap: _openDatePicker,
-                      ),
-                      selected: false,
-                    ),
-                  ],
-                ),
-                // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
-                Expanded(
-                  child: ListenableBuilder(
-                    listenable: _feedViewModel,
-                    builder: (context, _) {
-                      final vm = _feedViewModel;
-                      if (vm.isLoading && vm.notifications.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (vm.error != null && vm.notifications.isEmpty) {
-                        return _centerMessage(vm.error!, scale);
-                      }
-                      final items =
-                          vm.notifications.where(_matchesFilter).toList();
-                      return RefreshIndicator(
-                        onRefresh: vm.load,
-                        child: items.isEmpty
-                            ? ListView(
-                                // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(height: 120 * scale),
-                                  _centerMessage('받은 알림이 없습니다.', scale),
-                                ],
-                              )
-                            // ponytail: SingleChildScrollView+Column 으로 모든 항목을
-                            // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
-                            // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
-                            // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
-                            : SingleChildScrollView(
-                                controller: _scrollController,
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
-                                padding: EdgeInsets.only(bottom: 120 * scale),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: _buildFeedChildren(items, scale),
-                                ),
-                              ),
+            GuestLockOverlay(
+              scale: scale,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SubscriptionHeader(
+                    scale: scale,
+                    onClearTap: _confirmClearAll,
+                    onSettingsTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SubscriptionSettingsScreen(),
+                        ),
                       );
                     },
                   ),
-                ),
-              ],
+                  SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
+                  NarChipMultiSelect(
+                    options: _eventTypes,
+                    selectedValues: _selectedTypes,
+                    onChanged: _onTypesChanged,
+                    pinned: const {'전체'}, // '전체'는 항상 맨 앞 고정
+                    scale: scale,
+                    trailing: [
+                      (
+                        widget: PlayerFilterChip(
+                          players: _players,
+                          selected: _selectedPlayers,
+                          scale: scale,
+                          onTap: _openPlayerSelect,
+                          onClear: () => setState(() {
+                            _selectedPlayers = {};
+                            _syncAll();
+                          }),
+                        ),
+                        // 선택되면(보라 활성) 앞으로 정렬에 참여.
+                        selected: _selectedPlayers.isNotEmpty,
+                      ),
+                      // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
+                      (
+                        widget: NarChip.dropdown(
+                          label: '날짜',
+                          scale: scale,
+                          onTap: _openDatePicker,
+                        ),
+                        selected: false,
+                      ),
+                    ],
+                  ),
+                  // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
+                  Expanded(
+                    child: ListenableBuilder(
+                      listenable: _feedViewModel,
+                      builder: (context, _) {
+                        final vm = _feedViewModel;
+                        if (vm.isLoading && vm.notifications.isEmpty) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (vm.error != null && vm.notifications.isEmpty) {
+                          return _centerMessage(vm.error!, scale);
+                        }
+                        final items = vm.notifications
+                            .where(_matchesFilter)
+                            .toList();
+                        return RefreshIndicator(
+                          onRefresh: vm.load,
+                          child: items.isEmpty
+                              ? ListView(
+                                  // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  children: [
+                                    SizedBox(height: 120 * scale),
+                                    _centerMessage('받은 알림이 없습니다.', scale),
+                                  ],
+                                )
+                              // ponytail: SingleChildScrollView+Column 으로 모든 항목을
+                              // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
+                              // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
+                              // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
+                              : SingleChildScrollView(
+                                  controller: _scrollController,
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: EdgeInsets.only(bottom: 120 * scale),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: _buildFeedChildren(items, scale),
+                                  ),
+                                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             Positioned(
               left: 0,
