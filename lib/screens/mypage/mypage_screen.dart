@@ -29,6 +29,7 @@ class MypageScreen extends StatefulWidget {
 
 class _MypageScreenState extends State<MypageScreen> {
   final MypageViewModel _viewModel = MypageViewModel();
+  final _subscriptionAlarmKey = GlobalKey<SubscriptionAlarmSectionState>();
 
   @override
   void dispose() {
@@ -59,12 +60,14 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 
   /// 구독 관리 — 구독 설정 화면으로 이동.
-  void _goToSubscriptionSettings() {
-    Navigator.of(context).push(
+  /// 돌아오면 팀 구독이 바뀌었을 수 있으니 구독 팀 알림 설정을 새로고침한다.
+  Future<void> _goToSubscriptionSettings() async {
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const SubscriptionSettingsScreen(),
       ),
     );
+    await _subscriptionAlarmKey.currentState?.reload();
   }
 
   /// 외부 URL을 기본 브라우저(또는 앱)로 연다.
@@ -142,6 +145,7 @@ class _MypageScreenState extends State<MypageScreen> {
                   ),
                   SizedBox(height: 20 * scale),
                   SubscriptionAlarmSection(
+                    key: _subscriptionAlarmKey,
                     scale: scale,
                     onManageTap: _goToSubscriptionSettings,
                   ),

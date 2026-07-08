@@ -9,6 +9,8 @@ import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
 import '../../model/member_notification.dart';
+import '../../model/schedule_match.dart';
+import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
@@ -149,7 +151,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   /// 알림 탭 — 읽음 처리 후 딥링크 이동.
   /// 솔랭은 OP.GG 링크로 이동하므로 카드 탭은 읽음만, 팀 이벤트는 경기 상세로.
-  void _onNotificationTap(MemberNotification n) {
+  Future<void> _onNotificationTap(MemberNotification n) async {
     _feedViewModel.markRead(n);
     // 솔랭 알림은 카드 전체 탭으로 OP.GG 소환사 페이지 이동.
     if (n.type == MemberNotificationType.playerSoloRank) {
@@ -159,10 +161,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     }
     final matchId = n.matchId;
     if (matchId == null) return;
-    // 경기 상세의 '라이브 이벤트' 탭(index 1). match 객체는 matchId 로 로드된다.
+
+    // 알림 생성 날짜로 일정 API를 조회해 ScheduleMatch를 찾아 스코어 카드에 넘긴다.
+    ScheduleMatch? match;
+    try {
+      final matches =
+          await ScheduleRepository.instance.fetchMatchesByDate(n.createdAt);
+      final found = matches.where((m) => m.matchId == matchId);
+      if (found.isNotEmpty) match = found.first;
+    } catch (_) {}
+
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => MatchDetailScreen(matchId: matchId, initialTabIndex: 1),
+        builder: (_) => MatchDetailScreen(
+          matchId: matchId,
+          match: match,
+          initialTabIndex: 1,
+        ),
       ),
     );
   }
