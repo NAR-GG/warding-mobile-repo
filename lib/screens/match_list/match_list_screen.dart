@@ -5,6 +5,7 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/labeled_field.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/nar_dropdown.dart';
+import '../../components/scroll_to_top_button.dart';
 import '../../components/search_select_box.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
@@ -309,6 +310,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 ),
               ],
             ),
+            // 하단 네비(bottom 26 + 높이 72) 위로 띄운다.
+            ScrollToTopButton(
+              scrollController: _scrollController,
+              scale: scale,
+              bottom: 110,
+            ),
             Positioned(
               left: 0,
               right: 0,
@@ -391,6 +398,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
         }
         final m = (item as _CardItem).match;
         return MatchCard(
+          key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
           time: m.scheduledTime,
           label: m.matchTitle,

@@ -100,6 +100,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
         }
         final m = matches[index - 1];
         return MatchCard(
+          key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
           time: m.scheduledTime,
           label: m.matchTitle,
