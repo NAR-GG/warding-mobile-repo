@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_search_bar.dart';
+import '../../components/scroll_to_top_button.dart';
 import '../../model/player_subscription.dart';
 import '../../model/team_notification_subscription.dart';
 import '../../styles/app_colors.dart';
@@ -146,36 +147,44 @@ class _SubscriptionSettingsScreenState
               scale: scale,
             );
 
-            return ListView(
-              controller: _scrollController,
-              padding: EdgeInsets.zero,
+            return Stack(
               children: [
-                NarDetailHeader(title: '구독 설정', scale: scale),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20 * scale,
-                    vertical: 10 * scale,
-                  ),
-                  // 입력 후 검색(엔터/돋보기)하면 선수 목록을 다시 조회한다.
-                  child: NarSearchBar(
-                    controller: _searchController,
-                    scale: scale,
-                    onSubmitted: _onSearch,
-                    onSearchTap: () => _onSearch(_searchController.text),
-                  ),
+                ListView(
+                  controller: _scrollController,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    NarDetailHeader(title: '구독 설정', scale: scale),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20 * scale,
+                        vertical: 10 * scale,
+                      ),
+                      // 입력 후 검색(엔터/돋보기)하면 선수 목록을 다시 조회한다.
+                      child: NarSearchBar(
+                        controller: _searchController,
+                        scale: scale,
+                        onSubmitted: _onSearch,
+                        onSearchTap: () => _onSearch(_searchController.text),
+                      ),
+                    ),
+                    SizedBox(height: 7 * scale),
+                    // 검색 중이면 결과(전체 목록) 섹션을 검색창 바로 아래에 둔다.
+                    if (hasQuery) ...[
+                      allSection,
+                      SizedBox(height: 14 * scale),
+                      ...subscribedSections,
+                    ] else ...[
+                      ...subscribedSections,
+                      SizedBox(height: 14 * scale),
+                      allSection,
+                    ],
+                    SizedBox(height: 20 * scale),
+                  ],
                 ),
-                SizedBox(height: 7 * scale),
-                // 검색 중이면 결과(전체 목록) 섹션을 검색창 바로 아래에 둔다.
-                if (hasQuery) ...[
-                  allSection,
-                  SizedBox(height: 14 * scale),
-                  ...subscribedSections,
-                ] else ...[
-                  ...subscribedSections,
-                  SizedBox(height: 14 * scale),
-                  allSection,
-                ],
-                SizedBox(height: 20 * scale),
+                ScrollToTopButton(
+                  scrollController: _scrollController,
+                  scale: scale,
+                ),
               ],
             );
           },
