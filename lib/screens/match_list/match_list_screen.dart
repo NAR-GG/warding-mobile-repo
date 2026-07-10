@@ -391,6 +391,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
         }
         final m = (item as _CardItem).match;
         return MatchCard(
+          matchId: m.matchId,
           time: m.scheduledTime,
           label: m.matchTitle,
           homeName: _shortName(m.teamA),

@@ -145,6 +145,16 @@ class ApiConfig {
   static String get availableTeamsUrl =>
       '$apiBaseUrl/mobile/me/notification-subscriptions/available-teams';
 
+  // ── 경기 예약 구독 (인증 필요) ─────────────────────────────────────
+
+  /// 내 경기 예약 구독 목록 조회(GET, matchId 배열) / 구독 추가(POST {matchId}).
+  static String get matchSubscriptionsUrl =>
+      '$apiBaseUrl/mobile/me/match-subscriptions';
+
+  /// 경기 예약 구독 해제(DELETE).
+  static String matchSubscriptionUrl(String matchId) =>
+      '$apiBaseUrl/mobile/me/match-subscriptions/$matchId';
+
   // ── 마이구독 알림 피드 (인증 필요) ────────────────────────────────
 
   /// 받은 알림 리스트 (type 필터·페이징). type 미지정 시 전체.
