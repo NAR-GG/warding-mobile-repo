@@ -17,10 +17,10 @@ enum NarButtonVariant {
   /// (예: 경기 상세 '준비중'·'경기 종료')
   set1Disabled,
 
-  /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 콘텐츠 폭(자동) 34 높이.
+  /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 64×34 고정.
   subscribe,
 
-  /// 구독중 — 구독 상태. 보라 50% 배경 + #FCFDFE 텍스트. 콘텐츠 폭(자동) 34 높이.
+  /// 구독중 — 구독 상태. 보라 50% 배경 + #FCFDFE 텍스트. 64×34 고정.
   subscribed,
 }
 
@@ -28,7 +28,7 @@ enum NarButtonVariant {
 /// [variant] 별 사이즈/스타일:
 /// - type1/type2: 110.5×34 고정, Open Sans 400, padding 10, radius 8.
 /// - set1: 부모 폭을 채우고 34 높이, Open Sans 400, padding 10, radius 8.
-/// - subscribe/subscribed: 콘텐츠 자동 폭 + 34 높이, Pretendard 500, padding 16, radius 10.
+/// - subscribe/subscribed: 64×34 고정, Pretendard 500, padding 16, radius 10.
 class NarButton extends StatelessWidget {
   const NarButton({
     super.key,
@@ -102,7 +102,8 @@ class NarButton extends StatelessWidget {
         return double.infinity;
       case NarButtonVariant.subscribe:
       case NarButtonVariant.subscribed:
-        return null; // 콘텐츠 + 패딩에 맞춰 자동.
+        // 라벨 길이('구독' vs '구독중')에 따라 폭이 달라지지 않도록 고정.
+        return 64 * scale;
     }
   }
 
