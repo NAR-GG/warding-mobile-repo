@@ -9,6 +9,7 @@ import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
+import '../../components/scroll_to_top_button.dart';
 import '../../model/member_notification.dart';
 import '../../model/schedule_match.dart';
 import '../../repository/schedule/schedule_repository.dart';
@@ -557,6 +558,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   ),
                 ],
               ),
+            ),
+            // 하단 네비(bottom 26 + 높이 72) 위로 띄운다.
+            ScrollToTopButton(
+              scrollController: _scrollController,
+              scale: scale,
+              bottom: 110,
             ),
             Positioned(
               left: 0,
