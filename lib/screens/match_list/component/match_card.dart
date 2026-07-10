@@ -5,14 +5,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_live_badge.dart';
+import '../../../repository/auth/auth_service.dart';
+import '../../../repository/match/match_subscription_repository.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import 'match_alarm_sheet.dart';
 
-/// 경기 한 건 카드. 헤더(시간/LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
+/// 경기 한 건 카드. 헤더(알림 벨/시간·LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
 /// [isLive] 가 true 면 카드 배경/왼쪽 보더/LIVE 칩/스코어 색 분기.
 class MatchCard extends StatelessWidget {
   const MatchCard({
     super.key,
+    required this.matchId,
     required this.time,
     required this.label,
     required this.homeName,
@@ -27,6 +31,8 @@ class MatchCard extends StatelessWidget {
     this.scale = 1,
   });
 
+  /// 경기 예약 알림 구독 API(`/match-subscriptions`)에 쓰는 경기 ID.
+  final String matchId;
   final String time;
   final String label;
   final String homeName;
@@ -75,6 +81,15 @@ class MatchCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                _AlarmBell(
+                  matchId: matchId,
+                  homeName: homeName,
+                  homeLogoUrl: homeLogoUrl,
+                  awayName: awayName,
+                  awayLogoUrl: awayLogoUrl,
+                  scale: scale,
+                ),
+                SizedBox(width: 8 * scale),
                 if (isLive)
                   NarLiveBadge(scale: scale)
                 else
@@ -136,6 +151,98 @@ class MatchCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 헤더 좌측 알림 벨. 미구독이면 bell-plus, 구독 중이면 bell-check.
+///
+/// 탭하면: 구독 중이면 즉시 구독 해제, 미구독이면 [showMatchAlarmSheet] 로
+/// 알림 설정 시트를 띄우고 '확인'으로 닫히면 구독을 등록한다.
+/// 비회원(JWT 없음)은 조회·등록을 시도하지 않고 정적인 bell-plus 로만 남는다.
+class _AlarmBell extends StatefulWidget {
+  const _AlarmBell({
+    required this.matchId,
+    required this.homeName,
+    required this.homeLogoUrl,
+    required this.awayName,
+    required this.awayLogoUrl,
+    required this.scale,
+  });
+
+  final String matchId;
+  final String homeName;
+  final String? homeLogoUrl;
+  final String awayName;
+  final String? awayLogoUrl;
+  final double scale;
+
+  @override
+  State<_AlarmBell> createState() => _AlarmBellState();
+}
+
+class _AlarmBellState extends State<_AlarmBell> {
+  final _repo = MatchSubscriptionRepository.instance;
+  bool _subscribed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialState();
+  }
+
+  Future<void> _loadInitialState() async {
+    try {
+      final jwt = await AuthService.instance.jwt;
+      if (jwt == null || jwt.isEmpty) return; // 비회원은 정적 상태로 둔다.
+      final ids = await _repo.subscribedMatchIds();
+      if (mounted && ids.contains(widget.matchId)) {
+        setState(() => _subscribed = true);
+      }
+    } catch (_) {
+      // 조회 실패 시 기본값(미구독) 유지.
+    }
+  }
+
+  Future<void> _handleTap() async {
+    if (_subscribed) {
+      setState(() => _subscribed = false);
+      try {
+        await _repo.unsubscribeMatch(widget.matchId);
+      } catch (_) {
+        if (mounted) setState(() => _subscribed = true);
+      }
+      return;
+    }
+
+    final confirmed = await showMatchAlarmSheet(
+      context: context,
+      homeName: widget.homeName,
+      homeLogoUrl: widget.homeLogoUrl,
+      awayName: widget.awayName,
+      awayLogoUrl: widget.awayLogoUrl,
+    );
+    if (confirmed != true) return;
+
+    setState(() => _subscribed = true);
+    try {
+      await _repo.subscribeMatch(widget.matchId);
+    } catch (_) {
+      if (mounted) setState(() => _subscribed = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      key: const Key('matchCardAlarmBell'),
+      behavior: HitTestBehavior.opaque,
+      onTap: _handleTap,
+      child: SvgPicture.asset(
+        _subscribed ? 'assets/icons/bell-check.svg' : 'assets/icons/bell-plus.svg',
+        width: 24 * widget.scale,
+        height: 24 * widget.scale,
       ),
     );
   }
