@@ -102,9 +102,21 @@ class NarButton extends StatelessWidget {
         return double.infinity;
       case NarButtonVariant.subscribe:
       case NarButtonVariant.subscribed:
-        // 라벨 길이('구독' vs '구독중')에 따라 폭이 달라지지 않도록 고정.
-        return 64 * scale;
+        // 라벨 길이('구독' vs '구독중')에 따라 폭이 달라지지 않도록, 더 긴 라벨
+        // '구독중' 기준으로 폭을 고정한다(짧은 '구독'은 같은 폭 안에서 가운데 정렬).
+        return _measureText('구독중', _textStyle(scale)).width +
+            _horizontalPadding * scale * 2;
     }
+  }
+
+  /// [text] 를 [style] 로 한 줄 렌더링했을 때 크기를 잰다(줄바꿈 폭 계산용).
+  Size _measureText(String text, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    return painter.size;
   }
 
   double get _radius => _isSubscribe ? 10 : 8;
@@ -143,6 +155,9 @@ class NarButton extends StatelessWidget {
         child: Text(
           label,
           textAlign: TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.visible,
           style: _textStyle(scale),
         ),
       ),
