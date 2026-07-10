@@ -24,6 +24,26 @@ void main() {
     );
 
     expect(subscribeSize.width, subscribedSize.width);
-    expect(subscribeSize.width, 64);
+  });
+
+  testWidgets('구독중 라벨은 한 줄로 표시되고 버튼 밖으로 줄바꿈되지 않는다', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: NarButton(
+              label: '구독중',
+              variant: NarButtonVariant.subscribed,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final textSize = tester.getSize(find.text('구독중'));
+    // 한 줄 높이(폰트 14, line-height 1) 근처여야 한다. 줄바꿈되면 2배 가까이 커진다.
+    expect(textSize.height, lessThan(20));
   });
 }
