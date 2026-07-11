@@ -55,7 +55,12 @@ class OnboardingRepository {
     final list = jsonDecode(response.body) as List<dynamic>;
     return list
         .map((e) => Player.fromJson(e as Map<String, dynamic>))
-        .toList();
+        .toList()
+      // 서버는 이름순으로 주므로 포지션순(탑→정글→미드→바텀→서포터)으로 재정렬. (#97)
+      ..sort((a, b) {
+        final byRole = a.roleOrder.compareTo(b.roleOrder);
+        return byRole != 0 ? byRole : a.name.compareTo(b.name);
+      });
   }
 
   /// 온보딩 완료 — 로그인 사용자의 선호 리그·팀·선수를 서버에 저장한다.

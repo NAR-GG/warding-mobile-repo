@@ -21,6 +21,18 @@ class Player {
   /// 포지션. 예: 'mid'.
   final String role;
 
+  /// 포지션 정렬 순서(탑→정글→미드→바텀→서포터). 미상은 맨 뒤.
+  static const _roleOrder = {
+    'top': 1,
+    'jungle': 2,
+    'mid': 3,
+    'adc': 4,
+    'bottom': 4,
+    'support': 5,
+  };
+
+  int get roleOrder => _roleOrder[role.toLowerCase()] ?? 6;
+
   factory Player.fromJson(Map<String, dynamic> json) {
     return Player(
       id: json['id'] as int,
