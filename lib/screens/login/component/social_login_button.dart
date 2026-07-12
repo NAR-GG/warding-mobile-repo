@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 소셜 로그인(카카오/네이버/구글) 버튼.
+/// 소셜 로그인(카카오/네이버/구글/애플) 버튼.
 class SocialLoginButton extends StatelessWidget {
   const SocialLoginButton({
     super.key,
