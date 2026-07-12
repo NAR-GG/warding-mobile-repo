@@ -152,7 +152,7 @@ class AuthService {
   }
 
   /// 소셜 토큰을 백엔드로 보내 자체 JWT를 교환하고 저장한다.
-  /// 카카오·네이버는 access token, 구글은 idToken을 보내므로 [bodyKey]로 구분한다.
+  /// 카카오·네이버는 access token, 구글·애플은 idToken을 보내므로 [bodyKey]로 구분한다.
   Future<AuthResult> _exchangeWithBackend(
     String loginUrl,
     String socialToken, {
