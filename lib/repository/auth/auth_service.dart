@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../config/api_config.dart';
 import '../../model/user_profile.dart';
@@ -104,6 +105,37 @@ class AuthService {
     );
   }
 
+  /// 애플 ID로 로그인 → 받은 identityToken을 백엔드로 전달 → 자체 JWT 저장.
+  /// iOS 전용 (호출 측에서 Platform.isIOS 분기).
+  Future<AuthResult> signInWithApple() async {
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+    } on SignInWithAppleAuthorizationException catch (error) {
+      if (error.code == AuthorizationErrorCode.canceled) {
+        throw const AuthCancelledException();
+      }
+      rethrow;
+    }
+
+    final identityToken = credential.identityToken;
+    if (identityToken == null || identityToken.isEmpty) {
+      throw Exception('애플 로그인 응답에 identityToken이 없습니다');
+    }
+
+    // 애플은 access token이 아닌 identityToken을 백엔드가 검증한다 (구글과 동일 방식).
+    return _exchangeWithBackend(
+      ApiConfig.appleLoginUrl,
+      identityToken,
+      bodyKey: 'idToken',
+    );
+  }
+
   Future<OAuthToken> _loginWithKakao() async {
     if (await isKakaoTalkInstalled()) {
       try {
@@ -120,7 +152,7 @@ class AuthService {
   }
 
   /// 소셜 토큰을 백엔드로 보내 자체 JWT를 교환하고 저장한다.
-  /// 카카오·네이버는 access token, 구글은 idToken을 보내므로 [bodyKey]로 구분한다.
+  /// 카카오·네이버는 access token, 구글·애플은 idToken을 보내므로 [bodyKey]로 구분한다.
   Future<AuthResult> _exchangeWithBackend(
     String loginUrl,
     String socialToken, {

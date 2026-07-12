@@ -57,6 +57,7 @@ class AppColors {
   static const Color chzzkBrand = Color(0xFF00FFA3);
   static const Color soopBrand = Color(0xFF6E9BFF);
   static const Color googleBg = Color(0xFFFFFFFF);
+  static const Color appleBg = Color(0xFFFFFFFF);
 
   // nar_button_1 (밝은 버튼)
   static const Color narButton1Bg = Color(0xFFDEE2E6);

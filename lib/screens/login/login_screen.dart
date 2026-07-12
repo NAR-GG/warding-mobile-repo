@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final result = switch (registrationId) {
         'naver' => await AuthService.instance.signInWithNaver(),
         'google' => await AuthService.instance.signInWithGoogle(),
+        'apple' => await AuthService.instance.signInWithApple(),
         _ => await AuthService.instance.signInWithKakao(),
       };
       // 로그인 성공 직후 FCM 토큰을 백엔드에 등록한다 (실패해도 흐름은 계속).
@@ -76,6 +78,20 @@ class _LoginScreenState extends State<LoginScreen> {
               const Spacer(flex: 140),
               const SizedBox(width: 316, child: EasyLoginDivider()),
               const SizedBox(height: 24),
+              if (Platform.isIOS) ...[
+                SocialLoginButton(
+                  backgroundColor: AppColors.appleBg,
+                  foregroundColor: AppColors.gray100,
+                  icon: const Icon(
+                    Icons.apple,
+                    size: 20,
+                    color: AppColors.gray100,
+                  ),
+                  label: 'Apple 로그인',
+                  onTap: () => _signIn('apple'),
+                ),
+                const SizedBox(height: 16),
+              ],
               SocialLoginButton(
                 backgroundColor: AppColors.kakaoBg,
                 foregroundColor: AppColors.kakaoText,
