@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../styles/app_colors.dart';
@@ -61,10 +62,11 @@ class LeagueStep extends StatelessWidget {
           OnboardingSelectCard(
             scale: scale,
             selected: league.name == viewModel.selectedLeagueName,
-            image: Image.network(
-              resolveImageUrl(league.imageUrl)!,
+            image: CachedNetworkImage(
+              imageUrl: resolveImageUrl(league.imageUrl)!,
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const Icon(
                 Icons.emoji_events_outlined,
                 color: AppColors.narText2,
               ),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_button.dart';
@@ -174,10 +175,11 @@ class _ItemLogo extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Image.network(
-        resolveImageUrl(url)!,
+      child: CachedNetworkImage(
+        imageUrl: resolveImageUrl(url)!,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        fadeInDuration: const Duration(milliseconds: 150),
+        errorWidget: (_, _, _) => const SizedBox.shrink(),
       ),
     );
   }

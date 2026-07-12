@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_badge.dart';
@@ -281,10 +282,11 @@ class _ChampionBan extends StatelessWidget {
                     child: Container(
                       color: AppColors.narDark400,
                       child: hasImage
-                          ? Image.network(
-                              resolveImageUrl(imageUrl)!,
+                          ? CachedNetworkImage(
+                              imageUrl: resolveImageUrl(imageUrl)!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                              fadeInDuration: const Duration(milliseconds: 150),
+                              errorWidget: (_, _, _) => const SizedBox.shrink(),
                             )
                           : null,
                     ),
@@ -351,10 +353,11 @@ class _ChampionPick extends StatelessWidget {
         children: [
           if (hasImage)
             Positioned.fill(
-              child: Image.network(
-                resolveImageUrl(imageUrl)!,
+              child: CachedNetworkImage(
+                imageUrl: resolveImageUrl(imageUrl)!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                fadeInDuration: const Duration(milliseconds: 150),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
             ),
           // 인셋 섀도우 근사 — 중앙부터 하단까지 narDark800 62% 그라데이션.

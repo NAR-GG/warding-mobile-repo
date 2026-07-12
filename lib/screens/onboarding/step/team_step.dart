@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../styles/app_colors.dart';
@@ -62,10 +63,11 @@ class TeamStep extends StatelessWidget {
           OnboardingSelectCard(
             scale: scale,
             selected: team.id == viewModel.selectedTeamId,
-            image: Image.network(
-              resolveImageUrl(team.imageUrl)!,
+            image: CachedNetworkImage(
+              imageUrl: resolveImageUrl(team.imageUrl)!,
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const Icon(
                 Icons.shield_outlined,
                 color: AppColors.narText2,
               ),

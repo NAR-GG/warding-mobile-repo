@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_select_box.dart';
@@ -111,10 +112,11 @@ class _PlayerStepState extends State<PlayerStep> {
           OnboardingSelectCard(
             scale: scale,
             selected: _viewModel.isPlayerSelected(player.id),
-            image: Image.network(
-              resolveImageUrl(player.imageUrl)!,
+            image: CachedNetworkImage(
+              imageUrl: resolveImageUrl(player.imageUrl)!,
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const Icon(
                 Icons.person_outline,
                 color: AppColors.narText2,
               ),
