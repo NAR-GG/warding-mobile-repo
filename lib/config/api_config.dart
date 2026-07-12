@@ -29,6 +29,11 @@ class ApiConfig {
   /// 구글 idToken을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용).
   static String get googleLoginUrl => '$apiBaseUrl/auth/mobile/google';
 
+  /// 애플 identityToken을 백엔드로 보내 검증·자체 JWT 발급 (모바일 전용, iOS 전용).
+  /// 구글과 동일하게 idToken 키로 전달한다: `{ "idToken": "<identityToken>" }`.
+  /// 백엔드에 아직 이 엔드포인트가 없다면, 팀과 계약을 맞춘 뒤 이 URL/키를 조정한다.
+  static String get appleLoginUrl => '$apiBaseUrl/auth/mobile/apple';
+
   /// 구글 OAuth "웹" 클라이언트 ID. idToken의 audience(serverClientId)로 쓰이며,
   /// 백엔드도 이 값으로 idToken을 검증한다. (Google Cloud Console에서 발급)
   static const String googleServerClientId =
