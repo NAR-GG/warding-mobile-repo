@@ -40,6 +40,9 @@ class _SplashScreenState extends State<SplashScreen> {
             jwt == null ? const LoginScreen() : const ScheduleScreen(),
       ),
     );
+    // 콜드 스타트(종료 상태에서 알림 탭) 딥링크는 initMessaging() 시점엔
+    // navigatorKey 가 아직 비어 있어 보류돼 있었다 — 첫 화면 분기 위에 push.
+    FcmService.instance.consumePendingDeepLink();
   }
 
   @override
