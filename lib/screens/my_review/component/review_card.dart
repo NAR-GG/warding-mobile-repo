@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/common_button.dart';
@@ -244,12 +245,13 @@ class _Avatar extends StatelessWidget {
     return ClipOval(
       child: (url == null || url!.isEmpty)
           ? fallback
-          : Image.network(
-              url!,
+          : CachedNetworkImage(
+              imageUrl: url!,
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => fallback,
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, __, ___) => fallback,
             ),
     );
   }
@@ -276,12 +278,13 @@ class _SubscribeBadge extends StatelessWidget {
     );
     if (url != null && url!.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
-          url!,
+        child: CachedNetworkImage(
+          imageUrl: url!,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => placeholder,
+          fadeInDuration: const Duration(milliseconds: 150),
+          errorWidget: (_, __, ___) => placeholder,
         ),
       );
     }

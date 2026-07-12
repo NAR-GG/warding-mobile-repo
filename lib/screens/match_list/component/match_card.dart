@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -275,12 +276,13 @@ class _TeamColumn extends StatelessWidget {
           child: hasLogo
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    resolveImageUrl(logoUrl)!,
+                  child: CachedNetworkImage(
+                    imageUrl: resolveImageUrl(logoUrl)!,
                     width: 40 * scale,
                     height: 40 * scale,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    fadeInDuration: const Duration(milliseconds: 150),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
                   ),
                 )
               : null,

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -229,12 +230,13 @@ class _ProfileAvatar extends StatelessWidget {
         errorBuilder: (_, _, _) => fallback,
       );
     } else if (imageUrl != null && imageUrl!.isNotEmpty) {
-      avatar = Image.network(
-        imageUrl!,
+      avatar = CachedNetworkImage(
+        imageUrl: imageUrl!,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => fallback,
+        fadeInDuration: const Duration(milliseconds: 150),
+        errorWidget: (_, _, _) => fallback,
       );
     } else {
       avatar = fallback;

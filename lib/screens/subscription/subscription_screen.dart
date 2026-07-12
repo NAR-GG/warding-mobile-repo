@@ -6,7 +6,6 @@ import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
-import '../../components/nar_chip.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
 import '../../components/scroll_to_top_button.dart';
@@ -21,6 +20,7 @@ import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
+import 'component/date_filter_chip.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/rank_start_notification.dart';
@@ -45,6 +45,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   /// 날짜 헤더 GlobalKey 맵 (DateTime(y,m,d) → key). build 마다 다시 채운다.
   final Map<DateTime, GlobalKey> _dateHeaderKeys = {};
+
+  /// 날짜 칩에 표시할, 캘린더에서 마지막으로 고른 날짜. null 이면 미선택.
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -422,6 +425,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       ),
     );
     if (picked == null || !mounted) return;
+    setState(() => _selectedDate = picked);
     // 시트가 닫히고 리스트가 다시 빌드된 뒤에 헤더 위치를 잡는다.
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToDate(picked));
   }
@@ -499,12 +503,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ),
                       // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
                       (
-                        widget: NarChip.dropdown(
-                          label: '날짜',
+                        widget: DateFilterChip(
+                          selectedDate: _selectedDate,
                           scale: scale,
                           onTap: _openDatePicker,
+                          onClear: () => setState(() => _selectedDate = null),
                         ),
-                        selected: false,
+                        // 선택되면(보라 활성) 앞으로 정렬에 참여.
+                        selected: _selectedDate != null,
                       ),
                     ],
                   ),

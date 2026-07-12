@@ -68,10 +68,27 @@ class FcmService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
 
     // 4) 종료 상태에서 알림 탭으로 앱이 시작됐을 때.
+    //
+    // 이 시점은 main() 이 runApp() 을 호출하기 전이라 navigatorKey 에 아직
+    // NavigatorState 가 붙어 있지 않다 — 여기서 바로 push 하면 조용히 무시된다.
+    // 그래서 데이터만 보관해두고, 스플래시가 첫 화면 분기를 마친 뒤
+    // [consumePendingDeepLink] 로 그 위에 push 하게 한다.
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
-      _handleMessageNavigation(initial);
+      debugPrint('[FCM] 종료 상태에서 알림으로 시작 → 딥링크 보류');
+      _pendingInitialData = initial.data;
     }
+  }
+
+  /// 콜드 스타트 딥링크로 보류해 둔 알림 데이터. 스플래시가 소비한다.
+  Map<String, dynamic>? _pendingInitialData;
+
+  /// 스플래시가 첫 화면(로그인/홈) 분기 내비게이션을 마친 직후 호출한다.
+  /// 보류된 콜드 스타트 딥링크가 있으면 그 위에 push 하고 비운다.
+  void consumePendingDeepLink() {
+    final data = _pendingInitialData;
+    _pendingInitialData = null;
+    if (data != null) _navigateFromData(data);
   }
 
   /// 로그인 직후: 토큰 발급·등록 → 갱신 리스너 연결.

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -212,12 +213,13 @@ class _TeamBadge extends StatelessWidget {
       children: [
         hasLogo
             ? ClipOval(
-                child: Image.network(
-                  resolveImageUrl(logoUrl)!,
+                child: CachedNetworkImage(
+                  imageUrl: resolveImageUrl(logoUrl)!,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => placeholder,
+                  fadeInDuration: const Duration(milliseconds: 150),
+                  errorWidget: (_, _, _) => placeholder,
                 ),
               )
             : placeholder,

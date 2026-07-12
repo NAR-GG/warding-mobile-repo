@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:flutter_naver_login/interface/types/naver_login_result.dart';
@@ -12,7 +12,9 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../config/api_config.dart';
+import '../../config/app_globals.dart';
 import '../../model/user_profile.dart';
+import '../../screens/login/login_screen.dart';
 import '../device/device_repository.dart';
 
 class AuthResult {
@@ -302,9 +304,35 @@ class AuthService {
     if (_isAuthExpired(response)) {
       debugPrint('[Auth] 인증 만료 감지 → 토큰 재발급 시도');
       final newToken = await refreshAccessToken();
-      if (newToken != null) response = await send(newToken);
+      if (newToken != null) {
+        response = await send(newToken);
+      } else {
+        // Refresh Token도 만료/무효화된 상태 — 더 이상 재시도해도 로그인
+        // 상태를 복구할 수 없으므로 세션을 정리하고 로그인 화면으로 보낸다.
+        await _forceLogout();
+      }
     }
     return response;
+  }
+
+  /// 재발급까지 실패했을 때(리프레시 토큰도 만료) 로컬 세션을 정리하고
+  /// 로그인 화면으로 되돌린다. 동시에 여러 API가 감지해도 1회만 수행한다.
+  bool _forcingLogout = false;
+
+  Future<void> _forceLogout() async {
+    if (_forcingLogout) return;
+    _forcingLogout = true;
+    debugPrint('[Auth] 세션 만료 → 자동 로그아웃');
+    try {
+      await _storage.delete(key: _jwtKey);
+      await _storage.delete(key: _refreshKey);
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } finally {
+      _forcingLogout = false;
+    }
   }
 
   /// 응답이 '인증 만료'를 의미하는지. 백엔드가 만료 시 로그인 페이지(HTML)로

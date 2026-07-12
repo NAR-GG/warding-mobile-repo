@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -404,12 +405,13 @@ class _ProfileImage extends StatelessWidget {
     final hasUrl = url != null && url!.isNotEmpty;
     return ClipOval(
       child: hasUrl
-          ? Image.network(
-              url!,
+          ? CachedNetworkImage(
+              imageUrl: url!,
               width: size,
               height: size,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => fallback,
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => fallback,
             )
           : fallback,
     );
@@ -437,12 +439,13 @@ class _TeamBadge extends StatelessWidget {
     final url = team?.imageUrl;
     if (url == null || url.isEmpty) return placeholder;
     return ClipOval(
-      child: Image.network(
-        url,
+      child: CachedNetworkImage(
+        imageUrl: url,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => placeholder,
+        fadeInDuration: const Duration(milliseconds: 150),
+        errorWidget: (_, _, _) => placeholder,
       ),
     );
   }

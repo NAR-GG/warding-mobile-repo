@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -126,12 +127,13 @@ class ScheduleHeader extends StatelessWidget {
               child: _CircleSlot(
                 scale: scale,
                 bordered: teamSelected,
-                child: Image.network(
-                  resolveImageUrl(preferredTeam!.imageUrl)!,
+                child: CachedNetworkImage(
+                  imageUrl: resolveImageUrl(preferredTeam!.imageUrl)!,
                   width: 25 * scale,
                   height: 25 * scale,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Icon(
+                  fadeInDuration: const Duration(milliseconds: 150),
+                  errorWidget: (_, _, _) => Icon(
                     Icons.shield_outlined,
                     size: 25 * scale,
                     color: AppColors.narText2,

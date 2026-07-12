@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -58,11 +59,13 @@ class PlayedChampCard extends StatelessWidget {
           children: [
             // 배경: 챔피언 스플래시 아트(있으면). 캐릭터가 잘 보이게 상단 쪽 정렬.
             if (championSplashUrl(championName) != null)
-              Image.network(
-                championSplashUrl(championName)!,
+              CachedNetworkImage(
+                imageUrl: championSplashUrl(championName)!,
                 fit: BoxFit.cover,
                 alignment: const Alignment(0, -0.2),
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                memCacheWidth: 480,
+                fadeInDuration: const Duration(milliseconds: 150),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
             // 배경 위 어두운 세로 그라데이션(콘텐츠 가독성 + 하단 inset 그림자 근사).
             const DecoratedBox(
@@ -101,10 +104,15 @@ class PlayedChampCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(
                                         8 * scale,
                                       ),
-                                      child: Image.network(
-                                        resolveImageUrl(playerImageUrl)!,
+                                      child: CachedNetworkImage(
+                                        imageUrl: resolveImageUrl(
+                                          playerImageUrl,
+                                        )!,
                                         fit: BoxFit.cover,
-                                        errorBuilder:
+                                        fadeInDuration: const Duration(
+                                          milliseconds: 150,
+                                        ),
+                                        errorWidget:
                                             (_, _, _) =>
                                                 const SizedBox.shrink(),
                                       ),

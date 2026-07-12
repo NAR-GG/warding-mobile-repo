@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_star_rating.dart';
@@ -183,12 +184,13 @@ Widget _circleImage(String? url, double size) {
   );
   if (url == null || url.isEmpty) return placeholder;
   return ClipOval(
-    child: Image.network(
-      url,
+    child: CachedNetworkImage(
+      imageUrl: url,
       width: size,
       height: size,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => placeholder,
+      fadeInDuration: const Duration(milliseconds: 150),
+      errorWidget: (_, __, ___) => placeholder,
     ),
   );
 }

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_badge.dart';
@@ -217,10 +218,11 @@ class _PlayerMini extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child:
           hasImage
-              ? Image.network(
-                resolveImageUrl(imageUrl)!,
+              ? CachedNetworkImage(
+                imageUrl: resolveImageUrl(imageUrl)!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                fadeInDuration: const Duration(milliseconds: 150),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               )
               : null,
     );
