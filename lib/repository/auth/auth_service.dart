@@ -343,12 +343,30 @@ class AuthService {
     return contentType.contains('text/html');
   }
 
-  Future<void> signOut() async {
+  /// 회원 탈퇴 (`DELETE /api/auth/me`). 서버가 계정과 연관 데이터를 모두
+  /// 삭제하므로, 성공하면 소셜 SDK 세션과 로컬 토큰만 정리한다
+  /// (기기 비활성화는 서버 cascade 삭제에 이미 포함).
+  Future<void> withdraw() async {
+    final response = await authorizedRequest(
+      (token) => http.delete(
+        Uri.parse(ApiConfig.meUrl),
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('회원 탈퇴 실패 (${response.statusCode}): ${response.body}');
+    }
+    await signOut(deactivateDevice: false);
+  }
+
+  Future<void> signOut({bool deactivateDevice = true}) async {
     // JWT 가 아직 살아있을 때 FCM 기기를 먼저 비활성화한다.
-    try {
-      await DeviceRepository.instance.deactivateDevice();
-    } catch (_) {
-      // 기기 비활성화 실패가 로그아웃을 막지 않도록 무시한다.
+    if (deactivateDevice) {
+      try {
+        await DeviceRepository.instance.deactivateDevice();
+      } catch (_) {
+        // 기기 비활성화 실패가 로그아웃을 막지 않도록 무시한다.
+      }
     }
     try {
       await UserApi.instance.logout();
