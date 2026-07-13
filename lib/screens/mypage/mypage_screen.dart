@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/common_button.dart';
 import '../../components/guest_lock_overlay.dart';
+import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
@@ -54,6 +55,31 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 로그아웃 — 소셜·자체 토큰을 정리하고 로그인 화면으로 되돌린다.
   Future<void> _logout() async {
     await AuthService.instance.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  /// 회원탈퇴 — 확인 다이얼로그 후 계정 삭제, 로그인 화면으로 이동.
+  Future<void> _withdraw() async {
+    final confirmed = await showNarConfirmDialog(
+      context: context,
+      title: '회원탈퇴',
+      message: '계정과 구독·알림·평점 등 모든 데이터가\n삭제되며 되돌릴 수 없습니다.',
+      confirmLabel: '탈퇴',
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await AuthService.instance.withdraw();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.')),
+      );
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
@@ -208,9 +234,7 @@ class _MypageScreenState extends State<MypageScreen> {
                           label: '회원탈퇴',
                           variant: CommonButtonVariant.text,
                           scale: scale,
-                          onPressed: () {
-                            // TODO: 회원탈퇴 처리
-                          },
+                          onPressed: _withdraw,
                         ),
                       ],
                     ),
