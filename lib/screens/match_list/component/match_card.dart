@@ -206,13 +206,40 @@ class _AlarmBellState extends State<_AlarmBell> {
     }
   }
 
+  void _showFeedback(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: AppColors.narText,
+            ),
+          ),
+          backgroundColor: AppColors.narDark600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
   Future<void> _handleTap() async {
     if (_subscribed) {
       setState(() => _subscribed = false);
       try {
         await _repo.unsubscribeMatch(widget.matchId);
+        _showFeedback('경기 알림이 해제되었어요');
       } catch (_) {
         if (mounted) setState(() => _subscribed = true);
+        _showFeedback('알림 해제에 실패했어요. 다시 시도해주세요');
       }
       return;
     }
@@ -229,8 +256,10 @@ class _AlarmBellState extends State<_AlarmBell> {
     setState(() => _subscribed = true);
     try {
       await _repo.subscribeMatch(widget.matchId);
+      _showFeedback('경기 알림이 등록되었어요');
     } catch (_) {
       if (mounted) setState(() => _subscribed = false);
+      _showFeedback('알림 등록에 실패했어요. 다시 시도해주세요');
     }
   }
 
