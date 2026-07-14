@@ -343,52 +343,62 @@ class _MypageProfile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 좌측: 프로필 이미지 + 닉네임/이메일.
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 프로필 이미지 — 없으면 기본 이미지(person.png).
-              _ProfileImage(url: profileImageUrl, scale: scale),
-              SizedBox(width: 16 * scale),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 닉네임 + 팀 프로필 뱃지.
-                  Row(
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 프로필 이미지 — 없으면 기본 이미지(person.png).
+                _ProfileImage(url: profileImageUrl, scale: scale),
+                SizedBox(width: 16 * scale),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      // 닉네임 + 팀 프로필 뱃지.
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              nickname.isEmpty ? '닉네임' : nickname,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16 * scale,
+                                height: 1.55,
+                                color: AppColors.narText,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8 * scale),
+                          // 응원 팀 로고 뱃지. 없으면 회색 원 placeholder.
+                          _TeamBadge(team: favoriteTeam, scale: scale),
+                        ],
+                      ),
+                      // 이메일 — `GET /api/auth/me` 의 email 필드.
                       Text(
-                        nickname.isEmpty ? '닉네임' : nickname,
+                        email ?? '',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         style: TextStyle(
                           fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16 * scale,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14 * scale,
                           height: 1.55,
-                          color: AppColors.narText,
+                          color: AppColors.narText2,
                         ),
                       ),
-                      SizedBox(width: 8 * scale),
-                      // 응원 팀 로고 뱃지. 없으면 회색 원 placeholder.
-                      _TeamBadge(team: favoriteTeam, scale: scale),
                     ],
                   ),
-                  // 이메일 — `GET /api/auth/me` 의 email 필드.
-                  Text(
-                    email ?? '',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14 * scale,
-                      height: 1.55,
-                      color: AppColors.narText2,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
+          SizedBox(width: 8 * scale),
           // 우측: 프로필 수정.
           GestureDetector(
             behavior: HitTestBehavior.opaque,
