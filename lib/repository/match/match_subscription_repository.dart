@@ -58,12 +58,23 @@ class MatchSubscriptionRepository {
   }
 
   /// 경기를 구독(예약)한다. 이미 구독 중이면 멱등하게 통과한다.
-  Future<void> subscribeMatch(String matchId) async {
+  /// 알림 종류별 토글(세트 시작/종료·라이브 이벤트)을 함께 보낸다.
+  Future<void> subscribeMatch(
+    String matchId, {
+    bool setStartEnabled = true,
+    bool setEndEnabled = true,
+    bool liveEventEnabled = true,
+  }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
         Uri.parse(ApiConfig.matchSubscriptionsUrl),
         headers: _headers(token),
-        body: jsonEncode({'matchId': matchId}),
+        body: jsonEncode({
+          'matchId': matchId,
+          'setStartEnabled': setStartEnabled,
+          'setEndEnabled': setEndEnabled,
+          'liveEventEnabled': liveEventEnabled,
+        }),
       ),
     );
     debugPrint('[MatchSubscription] 구독 → $matchId ← ${response.statusCode}');

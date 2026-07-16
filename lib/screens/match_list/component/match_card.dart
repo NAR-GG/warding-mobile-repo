@@ -244,18 +244,23 @@ class _AlarmBellState extends State<_AlarmBell> {
       return;
     }
 
-    final confirmed = await showMatchAlarmSheet(
+    final result = await showMatchAlarmSheet(
       context: context,
       homeName: widget.homeName,
       homeLogoUrl: widget.homeLogoUrl,
       awayName: widget.awayName,
       awayLogoUrl: widget.awayLogoUrl,
     );
-    if (confirmed != true) return;
+    if (result == null) return;
 
     setState(() => _subscribed = true);
     try {
-      await _repo.subscribeMatch(widget.matchId);
+      await _repo.subscribeMatch(
+        widget.matchId,
+        setStartEnabled: result.setStart,
+        setEndEnabled: result.setEnd,
+        liveEventEnabled: result.liveEvent,
+      );
       _showFeedback('경기 알림이 등록되었어요');
     } catch (_) {
       if (mounted) setState(() => _subscribed = false);
