@@ -8,16 +8,19 @@ import '../../../components/nar_toggle.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 
+/// 경기 알림 설정 결과 — 켠 알림 종류. 확인으로 닫혀야만 반환된다.
+typedef MatchAlarmResult = ({bool setStart, bool setEnd, bool liveEvent});
+
 /// 경기 카드의 벨 아이콘을 탭했을 때 뜨는 '경기 알림 설정' 바텀시트를 띄운다.
-/// 하단 확인 버튼으로 닫히면 true, 닫기(X)나 바깥 탭으로 닫히면 null 을 반환한다.
-Future<bool?> showMatchAlarmSheet({
+/// 하단 확인으로 닫히면 선택한 토글값을, 닫기(X)나 바깥 탭으로 닫히면 null 을 반환한다.
+Future<MatchAlarmResult?> showMatchAlarmSheet({
   required BuildContext context,
   required String homeName,
   String? homeLogoUrl,
   required String awayName,
   String? awayLogoUrl,
 }) {
-  return showAppBottomSheet<bool>(
+  return showAppBottomSheet<MatchAlarmResult>(
     context: context,
     child: MatchAlarmSheet(
       homeName: homeName,
@@ -31,7 +34,7 @@ Future<bool?> showMatchAlarmSheet({
 /// 경기 알림 설정 시트 본문.
 /// 상단 [타이틀 + 대진 표시] · 닫기 버튼, 알림 토글 3행, 하단 확인 버튼.
 ///
-/// 토글은 현재 화면 안에서만 유지되는 로컬 상태다(서버 연동 없음).
+/// 3종 모두 끄면 구독할 알림이 없으므로 확인 버튼을 비활성화한다.
 class MatchAlarmSheet extends StatefulWidget {
   const MatchAlarmSheet({
     super.key,
@@ -95,7 +98,14 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
         CommonButton(
           label: '확인',
           scale: scale,
-          onPressed: () => Navigator.of(context).pop(true),
+          // 3종 모두 꺼져 있으면 구독 의미가 없어 비활성(onPressed=null).
+          onPressed: (_setStart || _setEnd || _liveEvent)
+              ? () => Navigator.of(context).pop((
+                    setStart: _setStart,
+                    setEnd: _setEnd,
+                    liveEvent: _liveEvent,
+                  ))
+              : null,
         ),
       ],
     );
