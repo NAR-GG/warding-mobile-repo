@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 네이버 로그인 SDK 키 (네이버 개발자센터에서 발급) -->
-    <string name="naver_client_id">YOUR_NAVER_CLIENT_ID</string>
-    <string name="naver_client_secret">YOUR_NAVER_CLIENT_SECRET</string>
+    <!-- 네이버 로그인 SDK. 시크릿은 naver_secrets.xml(gitignore)에 분리. -->
+    <string name="naver_client_id">gD4mBxHBbCcz3w4q58C1</string>
     <string name="naver_client_name">와딩</string>
 </resources>

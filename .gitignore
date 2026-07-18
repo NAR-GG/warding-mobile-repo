@@ -53,3 +53,4 @@ app.*.map.json
 .fvm/
 # 빌드 시 주입되는 시크릿 (Secrets.xcconfig.example 참고)
 ios/Flutter/Secrets.xcconfig
+android/app/src/main/res/values/naver_secrets.xml
