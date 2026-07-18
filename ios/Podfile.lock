@@ -26,10 +26,10 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_naver_login: 965ca284c1a64f0185dfaf9dfd1b8f69f34e6c11
+  flutter_naver_login: 6e80dabbf52e2715e734c2606734654fd385a111
   NidThirdPartyLogin: ed291a543cc60a433bcad522b6bf7d3126ad4fdc
-  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
 
 PODFILE CHECKSUM: 0307d9c9bb6ce5a39c959bf8d7109187c0682c60
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.14.3

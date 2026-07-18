@@ -88,12 +88,16 @@ class MatchListViewModel extends ChangeNotifier {
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
 
-  /// 정렬 순서 옵션. fetch 방향은 항상 최신→과거이고, '오래된 순' 은
-  /// 누적된 결과만 클라이언트에서 뒤집어 보여준다.
+  /// 정렬 순서 옵션. fetch 방향은 항상 최신→과거이고, 표시 방향은 View 가
+  /// ListView.reverse 로 뒤집는다 ([ascending] 참고). 기본은 '오래된 순'
+  /// (위가 과거, 아래가 미래).
   static const List<String> sortOrders = ['최근순', '오래된 순'];
 
-  String _sortOrder = sortOrders.first;
+  String _sortOrder = sortOrders[1];
   String get sortOrder => _sortOrder;
+
+  /// 화면 위→아래가 과거→미래(시간 오름차순)인지. '오래된 순' 일 때 true.
+  bool get ascending => _sortOrder == sortOrders[1];
 
   void selectSortOrder(String order) {
     if (_sortOrder == order) return;
@@ -126,10 +130,9 @@ class MatchListViewModel extends ChangeNotifier {
   /// 무한 스크롤로 누적된 날짜별 경기 그룹. 내부는 항상 최신→과거 순.
   final List<ScheduleDay> _schedule = [];
 
-  /// [_sortOrder] 에 따라 정렬한 결과. '오래된 순' 이면 역순.
-  List<ScheduleDay> get schedule => List.unmodifiable(
-    _sortOrder == sortOrders[1] ? _schedule.reversed : _schedule,
-  );
+  /// 항상 최신→과거 순. 표시 방향은 View 가 [ascending] 에 따라
+  /// ListView.reverse 로 뒤집는다 (과거 페이지 append 가 스크롤 점프 없이 붙도록).
+  List<ScheduleDay> get schedule => List.unmodifiable(_schedule);
 
   /// 다음 페이지 커서. 첫 페이지는 null (커서 생략).
   String? _cursor;

@@ -42,8 +42,14 @@ class MatchDetailChampionPickSection extends StatelessWidget {
 
   final double scale;
 
+  /// 밴 데이터가 하나라도 있는지. 전부 비어 있으면(외부 시트 갱신 전) 밴 행을 숨긴다.
+  static bool hasAnyBan(List<String?> bans) =>
+      bans.any((b) => b != null && b.isNotEmpty);
+
   @override
   Widget build(BuildContext context) {
+    // BLUE 밴 행이 숨겨지면 프레임이 그만큼(밴 36.4 + 간격 9) 줄어 VS 위치도 따라 올린다.
+    final vsTop = (hasAnyBan(blueBans) ? 174 : 174 - 45.4) * scale;
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
@@ -80,7 +86,7 @@ class MatchDetailChampionPickSection extends StatelessWidget {
           // VS 텍스트 — BLUE 프레임 끝(209.4) 근처에 떠서 두 프레임 경계를 덮는다.
           // 시안: 콘텐츠 영역 top 190 기준. 컨테이너 padding-top 16 제외 시 174.
           Positioned(
-            top: 174 * scale,
+            top: vsTop,
             child: _VsText(scale: scale),
           ),
         ],
@@ -124,10 +130,12 @@ class _TeamPickFrame extends StatelessWidget {
       scale: scale,
     );
 
+    // 밴 데이터가 전부 비어 있으면(외부 시트 갱신 전) 밴 행 자체를 숨긴다.
+    final showBans = MatchDetailChampionPickSection.hasAnyBan(bans);
+
     final children = isBlue
         ? <Widget>[
-            bansRow,
-            SizedBox(height: 9 * scale),
+            if (showBans) ...[bansRow, SizedBox(height: 9 * scale)],
             picksRow,
             SizedBox(height: 9 * scale),
             teamMetaRow,
@@ -136,8 +144,7 @@ class _TeamPickFrame extends StatelessWidget {
             teamMetaRow,
             SizedBox(height: 9 * scale),
             picksRow,
-            SizedBox(height: 9 * scale),
-            bansRow,
+            if (showBans) ...[SizedBox(height: 9 * scale), bansRow],
           ];
 
     return Container(
