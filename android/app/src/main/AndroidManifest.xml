@@ -51,6 +51,18 @@
             android:name="com.naver.sdk.clientName"
             android:value="@string/naver_client_name" />
 
+        <!-- 백그라운드 FCM(notification 페이로드)이 자동 표시될 때 쓸 채널.
+             미지정 시 FCM 기본 채널(중요도 낮음)로 가서 배너가 안 뜬다.
+             채널 자체는 FcmService.initMessaging 이 앱 시작 시 생성한다. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="warding_high_importance" />
+
+        <!-- 상태바 알림 아이콘. 흰색 단색 드로어블이어야 실루엣이 뭉개지지 않는다. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_warding" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -105,10 +105,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
     if (!mounted || target == null || !_scrollController.hasClients) return;
 
     // 대상 헤더가 그려졌으면 정밀 정렬하고 끝낸다.
-    // alignment 0.35: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
+    // 화면 위에서 35% 지점: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
+    // (reverse:true 인 오름차순에서는 alignment 0 이 아래쪽 기준이라 0.65.)
     final ctx = _todayHeaderKey.currentContext;
     if (ctx != null) {
-      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
+      Scrollable.ensureVisible(
+        ctx,
+        duration: Duration.zero,
+        alignment: _viewModel.ascending ? 0.65 : 0.35,
+      );
       return;
     }
 
@@ -122,7 +127,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
     const cardH = 140.0;
     var offset = 0.0;
     for (final day in _viewModel.schedule) {
-      if (_isSameDate(day.date, target)) break;
+      if (_isSameDate(day.date, target)) {
+        // 오름차순(reverse:true)에선 헤더가 그 날짜 카드들 뒤 인덱스라 카드 높이만큼 더한다.
+        if (_viewModel.ascending) offset += day.matches.length * cardH * scale;
+        break;
+      }
       offset += headerH * scale + day.matches.length * cardH * scale;
     }
     final max = _scrollController.position.maxScrollExtent;
@@ -311,10 +320,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
               ],
             ),
             // 하단 네비(bottom 26 + 높이 72) 위로 띄운다.
-            ScrollToTopButton(
-              scrollController: _scrollController,
-              scale: scale,
-              bottom: 110,
+            ListenableBuilder(
+              listenable: _viewModel,
+              builder: (context, _) => ScrollToTopButton(
+                scrollController: _scrollController,
+                scale: scale,
+                bottom: 110,
+                reverse: _viewModel.ascending,
+              ),
             ),
             Positioned(
               left: 0,
@@ -332,7 +345,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Widget _buildList(double scale) {
-    final items = _flatten(_viewModel.schedule);
+    final items = _flatten(_viewModel.schedule, ascending: _viewModel.ascending);
     final loading = _viewModel.loadingMatches || _viewModel.loadingMore;
 
     // 결과가 비어있을 때 — 로딩 중이면 스켈레톤, 아니면 빈 상태 메시지.
@@ -358,6 +371,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
     return ListView.builder(
       controller: _scrollController,
+      // 데이터는 항상 최신→과거 순. 오름차순(기본 '오래된 순')은 reverse 로 뒤집어
+      // 위=과거, 아래=미래로 보여준다. 과거 페이지 append 가 스크롤 점프 없이
+      // 위쪽으로 늘어나고, 기존 _onScroll(maxScrollExtent 근처) 트리거도 그대로 맞는다.
+      reverse: _viewModel.ascending,
       padding: EdgeInsets.only(bottom: 120 * scale),
       itemCount: items.length + 1,
       itemBuilder: (context, index) {
@@ -435,17 +452,23 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return const SizedBox.shrink();
   }
 
-  /// schedule(날짜별 그룹) 을 [_HeaderItem, _CardItem, ...] 평탄화.
-  /// 첫 번째 헤더에는 isFirst 플래그를 줘서 정렬 드롭다운을 같이 그리게 한다.
-  List<_ListItem> _flatten(List<ScheduleDay> schedule) {
+  /// schedule(날짜별 그룹, 최신→과거 순) 을 [_HeaderItem, _CardItem, ...] 평탄화.
+  /// 화면 맨 위에 그려지는 헤더에 isFirst 플래그를 줘서 정렬 드롭다운을 같이 그린다.
+  ///
+  /// [ascending] 이면 ListView 가 reverse:true 로 그리므로(인덱스 0 이 화면 맨 아래),
+  /// 헤더를 그 날짜 카드들 '뒤'에 넣어야 화면에선 헤더가 카드 위에 온다.
+  /// 카드 순서도 뒤집혀 날짜 안에서 이른 시간이 위로 온다.
+  List<_ListItem> _flatten(List<ScheduleDay> schedule, {required bool ascending}) {
     final out = <_ListItem>[];
-    var isFirst = true;
-    for (final day in schedule) {
-      out.add(_HeaderItem(day.date, isFirst: isFirst));
-      isFirst = false;
+    for (var i = 0; i < schedule.length; i++) {
+      final day = schedule[i];
+      // 화면 맨 위 헤더: 내림차순이면 첫 그룹, 오름차순(reverse)이면 마지막 그룹.
+      final isTop = ascending ? i == schedule.length - 1 : i == 0;
+      if (!ascending) out.add(_HeaderItem(day.date, isFirst: isTop));
       for (final m in day.matches) {
         out.add(_CardItem(m));
       }
+      if (ascending) out.add(_HeaderItem(day.date, isFirst: isTop));
     }
     return out;
   }
@@ -482,7 +505,7 @@ class _HeaderItem extends _ListItem {
   const _HeaderItem(this.date, {this.isFirst = false});
   final DateTime date;
 
-  /// 리스트의 첫 헤더면 우측에 정렬 드롭다운을 같이 배치한다.
+  /// 화면 맨 위에 그려지는 헤더면 우측에 정렬 드롭다운을 같이 배치한다.
   final bool isFirst;
 }
 

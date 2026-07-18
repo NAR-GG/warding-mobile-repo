@@ -14,10 +14,15 @@ class ScrollToTopButton extends StatefulWidget {
     this.right = 23,
     this.bottom = 23,
     this.showAfter = 300,
+    this.reverse = false,
   });
 
   final ScrollController scrollController;
   final double scale;
+
+  /// 대상 ListView 가 reverse:true 면 같이 true 로. 화면 '맨 위'가
+  /// maxScrollExtent 쪽이 되므로 표시 조건과 스크롤 목적지를 뒤집는다.
+  final bool reverse;
 
   /// 우측/하단 여백 (시안 기준 23/23). 화면에 겹치는 요소(하단 네비 등)가
   /// 있으면 화면에서 더 큰 값을 넘겨 그 위로 띄운다.
@@ -46,16 +51,24 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
     super.dispose();
   }
 
+  /// 화면 맨 위로부터의 스크롤 거리. reverse 리스트는 maxScrollExtent 쪽이 맨 위.
+  double _distanceFromTop(ScrollPosition position) => widget.reverse
+      ? position.maxScrollExtent - position.pixels
+      : position.pixels;
+
   void _onScroll() {
     final controller = widget.scrollController;
-    final show = controller.hasClients && controller.offset > widget.showAfter;
+    final show = controller.hasClients &&
+        _distanceFromTop(controller.position) > widget.showAfter;
     if (show != _visible) setState(() => _visible = show);
   }
 
   Future<void> _scrollToTop() {
     if (!widget.scrollController.hasClients) return Future.value();
+    // ponytail: reverse 무한 리스트는 lazy 렌더로 maxScrollExtent 가 실제보다 작게
+    // 잡혀 한 번에 못 갈 수 있음. 부족하면 사용자가 한 번 더 누르는 걸로 충분.
     return widget.scrollController.animateTo(
-      0,
+      widget.reverse ? widget.scrollController.position.maxScrollExtent : 0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
