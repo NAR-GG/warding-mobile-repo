@@ -10,6 +10,7 @@ import '../../../repository/auth/auth_service.dart';
 import '../../../repository/match/match_subscription_repository.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../login/login_screen.dart';
 import 'match_alarm_sheet.dart';
 
 /// 경기 한 건 카드. 헤더(알림 벨/시간·LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
@@ -161,7 +162,7 @@ class MatchCard extends StatelessWidget {
 ///
 /// 탭하면: 구독 중이면 즉시 구독 해제, 미구독이면 [showMatchAlarmSheet] 로
 /// 알림 설정 시트를 띄우고 '확인'으로 닫히면 구독을 등록한다.
-/// 비회원(JWT 없음)은 조회·등록을 시도하지 않고 정적인 bell-plus 로만 남는다.
+/// 비회원(JWT 없음)이 탭하면 로그인 화면으로 보낸다(평점 남기기와 동일 패턴).
 class _AlarmBell extends StatefulWidget {
   const _AlarmBell({
     required this.matchId,
@@ -232,6 +233,18 @@ class _AlarmBellState extends State<_AlarmBell> {
   }
 
   Future<void> _handleTap() async {
+    // 경기 알림은 회원 기반(서버도 로그인 필수) — 비회원은 로그인 화면으로 보낸다.
+    final jwt = await AuthService.instance.jwt;
+    if (!mounted) return;
+    if (jwt == null || jwt.isEmpty) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      );
+      // 로그인하고 돌아왔으면 구독 상태를 다시 읽는다(벨을 다시 탭해 설정 진행).
+      _loadInitialState();
+      return;
+    }
+
     if (_subscribed) {
       setState(() => _subscribed = false);
       try {
