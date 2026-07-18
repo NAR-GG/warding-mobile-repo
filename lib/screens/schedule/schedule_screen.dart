@@ -38,7 +38,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _openMonthPicker() async {
     final picked = await showAppBottomSheet<DateTime>(
       context: context,
-      child: MonthPickerSheet(initialMonth: _viewModel.displayMonth),
+      child: MonthPickerSheet(
+        initialMonth: _viewModel.displayMonth,
+        filterLeague: _viewModel.filterLeague,
+        filterTeamId: _viewModel.filterTeamId,
+      ),
     );
     if (picked != null) {
       _viewModel.selectDate(picked);

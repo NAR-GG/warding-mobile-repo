@@ -11,10 +11,19 @@ import '../../../viewmodel/schedule/month_picker_viewmodel.dart';
 /// - 날짜 칸 탭: 고른 날짜를 결과로 [Navigator.pop] 한다.
 ///   메인 화면 반영은 [showAppBottomSheet] 호출부가 그 결과로 처리한다.
 class MonthPickerSheet extends StatefulWidget {
-  const MonthPickerSheet({super.key, required this.initialMonth});
+  const MonthPickerSheet({
+    super.key,
+    required this.initialMonth,
+    this.filterLeague = 'ALL',
+    this.filterTeamId,
+  });
 
   /// 모달을 열 때 처음 보여줄 월.
   final DateTime initialMonth;
+
+  /// 메인 화면의 리그·팀 필터 — 점 표시가 본문 캘린더와 같은 조건으로 조회되게 한다.
+  final String filterLeague;
+  final int? filterTeamId;
 
   @override
   State<MonthPickerSheet> createState() => _MonthPickerSheetState();
@@ -26,7 +35,11 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
   @override
   void initState() {
     super.initState();
-    _viewModel = MonthPickerViewModel(initialMonth: widget.initialMonth);
+    _viewModel = MonthPickerViewModel(
+      initialMonth: widget.initialMonth,
+      filterLeague: widget.filterLeague,
+      filterTeamId: widget.filterTeamId,
+    );
   }
 
   @override
