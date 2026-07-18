@@ -48,7 +48,8 @@ class FcmService {
     );
 
     // 1) 로컬 알림(포그라운드 표시용) 초기화.
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // 상태바 아이콘은 흰색 단색 드로어블이어야 함(컬러 런처 아이콘은 네모로 뭉개짐).
+    const androidInit = AndroidInitializationSettings('@drawable/ic_stat_warding');
     const iosInit = DarwinInitializationSettings();
     await _localNotifications.initialize(
       settings: const InitializationSettings(android: androidInit, iOS: iosInit),
@@ -153,7 +154,7 @@ class FcmService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_stat_warding',
         ),
       ),
       payload: jsonEncode(message.data),
