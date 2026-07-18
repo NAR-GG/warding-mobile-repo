@@ -11,13 +11,22 @@ import '../../repository/schedule/schedule_repository.dart';
 class MonthPickerViewModel extends ChangeNotifier {
   MonthPickerViewModel({
     required DateTime initialMonth,
+    String filterLeague = 'ALL',
+    int? filterTeamId,
     ScheduleRepository? repository,
   }) : _month = DateTime(initialMonth.year, initialMonth.month),
+       _filterLeague = filterLeague,
+       _filterTeamId = filterTeamId,
        _repository = repository ?? ScheduleRepository.instance {
     loadCalendar();
   }
 
   final ScheduleRepository _repository;
+
+  // 메인 화면과 같은 리그·팀 필터. 안 넘기면 repository 기본값('LCK')으로 조회돼
+  // 본문 캘린더와 점 표시가 어긋난다 — 호출부가 반드시 메인 필터를 전달한다.
+  final String _filterLeague;
+  final int? _filterTeamId;
   bool _disposed = false;
 
   DateTime _month;
@@ -46,7 +55,11 @@ class MonthPickerViewModel extends ChangeNotifier {
   /// 현재 월의 경기 있는 날짜를 조회한다.
   Future<void> loadCalendar() async {
     try {
-      final days = await _repository.fetchCalendar(_month);
+      final days = await _repository.fetchCalendar(
+        _month,
+        league: _filterLeague,
+        teamId: _filterTeamId,
+      );
       _matchDays = {for (final day in days) day.date.day};
     } catch (e) {
       debugPrint('[MonthPicker] loadCalendar 에러: $e');
