@@ -56,6 +56,7 @@ class AuthService {
   /// 네이버 SDK로 로그인 → 받은 access token을 백엔드로 전달 → 자체 JWT 저장.
   Future<AuthResult> signInWithNaver() async {
     final NaverLoginResult result = await FlutterNaverLogin.logIn();
+    debugPrint('[NAVER] status=${result.status} error=${result.errorMessage}');
 
     if (result.status != NaverLoginStatus.loggedIn) {
       // NaverLoginStatus에는 취소 전용 값이 없어 errorMessage로 취소를 구분한다.
@@ -66,8 +67,13 @@ class AuthService {
       throw Exception('네이버 로그인 실패: $message');
     }
 
-    final token = result.accessToken;
+    // Android 앱-투-앱 인증은 logIn() 결과에 토큰이 비어 올 수 있어
+    // SDK 저장소에서 한 번 더 조회한다.
+    var token = result.accessToken;
     if (token == null || token.accessToken.isEmpty) {
+      token = await FlutterNaverLogin.getCurrentAccessToken();
+    }
+    if (token.accessToken.isEmpty) {
       throw Exception('네이버 로그인 응답에 access token이 없습니다');
     }
 

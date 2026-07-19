@@ -1,10 +1,11 @@
-<!-- 상태바 알림용 단색 아이콘(와딩 잎사귀). 시스템이 알파만 사용하므로 흰색 고정. -->
+<!-- 상태바 알림용 단색 아이콘(와딩 잎사귀). 시스템이 알파만 사용하므로 흰색 고정.
+     뷰포트를 잎사귀 bbox(46.8x40.4)에 딱 맞춰 아이콘 영역을 최대한 채운다. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="52"
-    android:viewportHeight="52">
-    <group android:translateX="-156.5" android:translateY="5.5">
+    android:viewportWidth="46.8"
+    android:viewportHeight="46.8">
+    <group android:translateX="-158.8" android:translateY="3.2">
         <path
             android:fillColor="#FFFFFFFF"
             android:pathData="M204.753 0C204.753 0 195.972 8.05006 188.907 10.6493C181.842 13.2486 170.948 13.5779 170.948 13.5779C170.948 13.5779 167.06 18.4181 164.874 20.2338C162.688 22.0494 158.799 24.2273 158.799 24.2273V35.9416C158.799 35.9416 161.655 34.7486 163.553 34.8766C165.451 35.0047 167.627 38.9404 170.948 40.2013C174.269 41.4622 186.261 37.203 192.604 32.2143C198.948 27.2256 202.795 21.3821 204.753 15.4416C206.711 9.50098 204.753 0 204.753 0Z"/>

@@ -1,0 +1,7 @@
+<!-- Adaptive icon: 검은 배경이 런처 마스크(원형 등)를 꽉 채우고
+     로고 텍스트는 전경 레이어로 중앙 안전영역에 놓인다. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+    <monochrome android:drawable="@drawable/ic_stat_warding"/>
+</adaptive-icon>
