@@ -1,4 +1,5 @@
 // test/viewmodel/onboarding/onboarding_viewmodel_test.dart
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/model/onboarding_selection.dart';
@@ -20,10 +21,27 @@ class MockOnboardingPreferenceRepository extends Mock
 class MockAuthService extends Mock implements AuthService {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late MockOnboardingRepository repo;
   late MockTeamPreferenceRepository teamPrefs;
   late MockOnboardingPreferenceRepository onboardingPrefs;
   late MockAuthService auth;
+
+  // goNext() 가 알림 단계 진입 시 permission_handler 네이티브 채널로 현재
+  // 권한 상태를 묻는다. 테스트 환경엔 네이티브 구현이 없으니 직접 목킹한다.
+  // 기본값 0(denied) — 기존 테스트들의 '명시적으로 markNotificationDone
+  // 호출' 흐름을 그대로 유지하기 위해서다.
+  const permissionChannel = MethodChannel(
+    'flutter.baseflow.com/permissions/methods',
+  );
+  var mockedPermissionStatus = 0;
+  void setMockedPermissionStatus(int status) => mockedPermissionStatus = status;
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(permissionChannel, (call) async {
+    if (call.method == 'checkPermissionStatus') return mockedPermissionStatus;
+    return null;
+  });
 
   setUpAll(() {
     registerFallbackValue(const OnboardingSelection(teamId: 0));
@@ -32,6 +50,7 @@ void main() {
   });
 
   setUp(() {
+    mockedPermissionStatus = 0;
     repo = MockOnboardingRepository();
     teamPrefs = MockTeamPreferenceRepository();
     onboardingPrefs = MockOnboardingPreferenceRepository();
@@ -134,5 +153,22 @@ void main() {
     final vm = build();
     await vm.skip();
     verify(() => onboardingPrefs.clear()).called(1);
+  });
+
+  test('알림 권한이 이미 허용돼 있으면 알림 단계를 건너뛰고 곧장 완료한다', () async {
+    setMockedPermissionStatus(1); // granted
+    when(() => auth.jwt).thenAnswer((_) async => null);
+
+    final vm = build();
+    vm.selectLeague('LCK');
+    await vm.goNext(); // league -> team
+    vm.selectTeam(1);
+    await vm.goNext(); // team -> player
+    vm.togglePlayer(5);
+    await vm.goNext(); // player -> notification(이미 허용) -> 곧장 완료
+
+    expect(vm.notificationDone, isTrue);
+    verify(() => onboardingPrefs.saveSelection(any())).called(1);
+    verify(() => teamPrefs.savePreferredTeam(any())).called(1);
   });
 }

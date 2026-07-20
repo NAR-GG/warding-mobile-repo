@@ -121,15 +121,25 @@ class OnboardingViewModel extends ChangeNotifier {
     if (isLastStep) {
       await _savePreferences();
       _onFinish();
-    } else {
-      _stepIndex++;
-      // 선수 단계 진입 시, 선택한 팀 기준으로 선수 목록을 준비한다.
-      if (currentStep == OnboardingStep.player &&
-          (!_playersLoaded || _playersTeamId != _selectedTeamId)) {
-        loadPlayers();
-      }
-      notifyListeners();
+      return;
     }
+    _stepIndex++;
+    // 선수 단계 진입 시, 선택한 팀 기준으로 선수 목록을 준비한다.
+    if (currentStep == OnboardingStep.player &&
+        (!_playersLoaded || _playersTeamId != _selectedTeamId)) {
+      loadPlayers();
+    }
+    // 알림 단계 진입 시 이미 권한이 허용돼 있으면(예: 이전에 다른 경로로
+    // 허용한 경우) 화면을 보여주지 않고 곧장 다음(완료)으로 넘어간다.
+    if (currentStep == OnboardingStep.notification && !_notificationDone) {
+      final status = await Permission.notification.status;
+      if (status.isGranted) _notificationDone = true;
+    }
+    if (currentStep == OnboardingStep.notification && _notificationDone) {
+      await goNext();
+      return;
+    }
+    notifyListeners();
   }
 
   /// 이전 단계로. 첫 단계에서는 호출하지 않는다([canGoBack] 확인).

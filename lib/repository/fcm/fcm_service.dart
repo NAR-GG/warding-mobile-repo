@@ -50,7 +50,13 @@ class FcmService {
     // 1) 로컬 알림(포그라운드 표시용) 초기화.
     // 상태바 아이콘은 흰색 단색 드로어블이어야 함(컬러 런처 아이콘은 네모로 뭉개짐).
     const androidInit = AndroidInitializationSettings('@drawable/ic_stat_warding');
-    const iosInit = DarwinInitializationSettings();
+    // request*Permission 을 꺼서 초기화 시점에 시스템 알림 팝업이 자동으로
+    // 뜨지 않게 한다. 권한 요청은 온보딩 알림 단계에서만 트리거한다.
+    const iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await _localNotifications.initialize(
       settings: const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: (response) {

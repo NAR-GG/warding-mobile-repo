@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/model/member_notification.dart';
@@ -25,6 +26,20 @@ MemberNotificationPage _page(List<MemberNotification> items, int unread) =>
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // 뷰모델 생성 시 refreshNotificationPermission() 이 permission_handler 를
+  // 통해 네이티브 채널을 호출하는데, 테스트 환경엔 네이티브 구현이 없으니
+  // 미허용(0) 상태로 응답하도록 채널을 목킹한다.
+  const permissionChannel = MethodChannel(
+    'flutter.baseflow.com/permissions/methods',
+  );
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(permissionChannel, (call) async {
+    if (call.method == 'checkPermissionStatus') return 0;
+    return null;
+  });
+
   late MockRepo repo;
   setUp(() => repo = MockRepo());
 

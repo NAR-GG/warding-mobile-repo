@@ -81,7 +81,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                   alignment: Alignment.topCenter,
                   children: [
                     ...previousChildren,
-                    if (currentChild != null) currentChild,
+                    ?currentChild,
                   ],
                 );
               },

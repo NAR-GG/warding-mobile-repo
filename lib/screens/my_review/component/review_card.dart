@@ -251,7 +251,7 @@ class _Avatar extends StatelessWidget {
               height: size,
               fit: BoxFit.cover,
               fadeInDuration: const Duration(milliseconds: 150),
-              errorWidget: (_, __, ___) => fallback,
+              errorWidget: (_, _, _) => fallback,
             ),
     );
   }
@@ -284,7 +284,7 @@ class _SubscribeBadge extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           fadeInDuration: const Duration(milliseconds: 150),
-          errorWidget: (_, __, ___) => placeholder,
+          errorWidget: (_, _, _) => placeholder,
         ),
       );
     }

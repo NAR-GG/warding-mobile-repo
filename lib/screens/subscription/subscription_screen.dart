@@ -6,6 +6,7 @@ import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
+import '../../components/nar_banner.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/notification_card.dart';
 import '../../components/scroll_to_top_button.dart';
@@ -78,10 +79,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   /// 백그라운드에서 받은 푸시가 있을 수 있으니 앱 복귀 시 피드를 다시 읽는다.
+  /// 앱 설정에서 알림 권한을 바꾸고 돌아왔을 수도 있으니 권한도 다시 확인한다.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _feedViewModel.load();
+      _feedViewModel.refreshNotificationPermission();
     }
   }
 
@@ -478,6 +481,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         ),
                       );
                     },
+                  ),
+                  // 알림 권한 미허용 안내 배너 — 온보딩을 건너뛰었거나
+                  // '허용 안 함'을 눌러 권한이 없는 동안 계속 노출된다.
+                  ListenableBuilder(
+                    listenable: _feedViewModel,
+                    builder: (context, _) =>
+                        _feedViewModel.notificationPermissionGranted
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: EdgeInsets.only(top: 14 * scale),
+                            child: NarBanner(
+                              scale: scale,
+                              onTap: _feedViewModel.requestNotificationPermission,
+                              icon: SvgPicture.asset(
+                                'assets/icons/bell.svg',
+                                width: 24 * scale,
+                                height: 24 * scale,
+                              ),
+                              text: '알림을 받으려면 알림 권한을 허용해주세요.',
+                            ),
+                          ),
                   ),
                   SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                   NarChipMultiSelect(
