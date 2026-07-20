@@ -19,7 +19,7 @@ void main() {
   });
 
   MatchDetailViewModel vmFor(List<MatchGame> games) {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => games);
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (games, null));
     return MatchDetailViewModel(
       matchId: 'm-1',
       repository: match,

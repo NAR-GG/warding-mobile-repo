@@ -66,7 +66,7 @@ void main() {
   });
 
   test('경기 조회 시 선택 시즌(연도)을 seasonYear 로 넘긴다', () async {
-    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
 
     final captured = verify(() => sched.fetchMatches(

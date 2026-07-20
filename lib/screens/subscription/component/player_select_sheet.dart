@@ -28,7 +28,7 @@ class PlayerSelectSheet extends StatefulWidget {
 }
 
 class _PlayerSelectSheetState extends State<PlayerSelectSheet> {
-  late Set<String> _selected = Set<String>.from(widget.initialSelected);
+  late final Set<String> _selected = Set<String>.from(widget.initialSelected);
 
   void _toggle(String player) {
     setState(() {

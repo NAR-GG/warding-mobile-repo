@@ -190,7 +190,7 @@ Widget _circleImage(String? url, double size) {
       height: size,
       fit: BoxFit.cover,
       fadeInDuration: const Duration(milliseconds: 150),
-      errorWidget: (_, __, ___) => placeholder,
+      errorWidget: (_, _, _) => placeholder,
     ),
   );
 }
