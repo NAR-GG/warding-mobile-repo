@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../model/member_notification.dart';
 import '../../repository/notification/member_notification_repository.dart';
@@ -8,10 +9,13 @@ import '../../repository/notification/member_notification_repository.dart';
 ///
 /// 타입/선수 필터는 UI 가 멀티셀렉트라 단일 type 쿼리로 표현하기 어려워,
 /// 여기선 전체를 받아두고 화면에서 클라이언트 필터링한다.
+///
+/// 온보딩에서 알림 권한을 건너뛴 회원을 위해, 알림 권한 상태도 함께 들고 있다.
 class SubscriptionFeedViewModel extends ChangeNotifier {
   SubscriptionFeedViewModel({MemberNotificationRepository? repository})
       : _repo = repository ?? MemberNotificationRepository.instance {
     load();
+    refreshNotificationPermission();
   }
 
   final MemberNotificationRepository _repo;
@@ -31,6 +35,33 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
 
   String? _error;
   String? get error => _error;
+
+  // 낙관적으로 true 로 시작해, 최초 확인 전까지 배너가 잠깐 나타났다 사라지는
+  // 깜빡임을 막는다.
+  bool _notificationPermissionGranted = true;
+  bool get notificationPermissionGranted => _notificationPermissionGranted;
+
+  /// 알림 권한 상태를 다시 확인한다(진입·복귀 시). 온보딩을 건너뛰었거나
+  /// '허용 안 함'을 눌러 미허용 상태면 화면에 안내 배너를 띄운다.
+  Future<void> refreshNotificationPermission() async {
+    final status = await Permission.notification.status;
+    final granted = status.isGranted;
+    if (granted != _notificationPermissionGranted) {
+      _notificationPermissionGranted = granted;
+      _notify();
+    }
+  }
+
+  /// 안내 배너 탭 → 알림 권한을 요청한다. 영구 거부 상태면 앱 설정으로 보낸다.
+  Future<void> requestNotificationPermission() async {
+    final status = await Permission.notification.request();
+    if (status.isGranted) {
+      _notificationPermissionGranted = true;
+      _notify();
+    } else if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    }
+  }
 
   /// 서버에서 알림을 다시 읽는다(진입·복귀 시).
   Future<void> load() async {
