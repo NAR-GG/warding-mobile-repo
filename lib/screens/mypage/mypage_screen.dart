@@ -202,7 +202,7 @@ class _MypageScreenState extends State<MypageScreen> {
                       title: '고객센터/문의',
                       scale: scale,
                       onTap: () => _launchUrl(
-                        'https://discord.com/channels/1441277795945807874/1441304369470640138',
+                        'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
                       ),
                     ),
                     SizedBox(height: 16 * scale),
