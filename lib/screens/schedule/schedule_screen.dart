@@ -60,7 +60,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
     );
     if (result != null) {
-      _viewModel.applyFilter(league: result.league, teamId: result.teamId);
+      _viewModel.applyFilter(
+        league: result.league,
+        teamId: result.teamId,
+        resetMonth: result.resetMonth,
+      );
     }
   }
 

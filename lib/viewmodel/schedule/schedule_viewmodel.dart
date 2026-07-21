@@ -132,11 +132,16 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 필터 모달에서 고른 리그·팀을 적용하고 캘린더를 다시 조회한다.
   /// [teamId] 가 null 이면 리그 전체.
-  void applyFilter({String? league, int? teamId}) {
+  /// [resetMonth] 가 true 면 현재 달로 되돌린다 (초기화 버튼).
+  void applyFilter({String? league, int? teamId, bool resetMonth = false}) {
     if (league != null && league.isNotEmpty) _league = league;
     _teamId = teamId;
     // 필터로 팀을 직접 골랐으면 헤더 선호팀 토글과 어긋나므로 해제해 둔다.
     _teamSelected = false;
+    if (resetMonth) {
+      _displayMonth = _monthOf(DateTime.now());
+      _selectedDate = null;
+    }
     _persistFilter();
     _notify();
     loadCalendar();

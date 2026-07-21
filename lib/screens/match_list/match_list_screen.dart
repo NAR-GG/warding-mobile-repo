@@ -429,6 +429,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
           liveSetLabel: _isLive(m.matchStatus)
               ? 'SET ${(m.sets.length).clamp(1, 99)} 진행중'
               : null,
+          leagueInfo: m.leagueInfo,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
