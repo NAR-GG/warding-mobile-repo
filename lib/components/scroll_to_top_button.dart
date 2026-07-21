@@ -15,6 +15,7 @@ class ScrollToTopButton extends StatefulWidget {
     this.bottom = 23,
     this.showAfter = 300,
     this.reverse = false,
+    this.onTap,
   });
 
   final ScrollController scrollController;
@@ -23,6 +24,9 @@ class ScrollToTopButton extends StatefulWidget {
   /// 대상 ListView 가 reverse:true 면 같이 true 로. 화면 '맨 위'가
   /// maxScrollExtent 쪽이 되므로 표시 조건과 스크롤 목적지를 뒤집는다.
   final bool reverse;
+
+  /// 외부에서 탭 동작을 직접 제어할 때 사용한다.
+  final VoidCallback? onTap;
 
   /// 우측/하단 여백 (시안 기준 23/23). 화면에 겹치는 요소(하단 네비 등)가
   /// 있으면 화면에서 더 큰 값을 넘겨 그 위로 띄운다.
@@ -51,10 +55,9 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
     super.dispose();
   }
 
-  /// 화면 맨 위로부터의 스크롤 거리. reverse 리스트는 maxScrollExtent 쪽이 맨 위.
-  double _distanceFromTop(ScrollPosition position) => widget.reverse
-      ? position.maxScrollExtent - position.pixels
-      : position.pixels;
+  /// 화면 시작점(맨 위)에서 얼마나 스크롤했는지.
+  /// reverse 여부와 상관없이 pixels 가 곧 스크롤 거리다.
+  double _distanceFromTop(ScrollPosition position) => position.pixels;
 
   void _onScroll() {
     final controller = widget.scrollController;
@@ -63,15 +66,28 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
     if (show != _visible) setState(() => _visible = show);
   }
 
-  Future<void> _scrollToTop() {
-    if (!widget.scrollController.hasClients) return Future.value();
-    // ponytail: reverse 무한 리스트는 lazy 렌더로 maxScrollExtent 가 실제보다 작게
-    // 잡혀 한 번에 못 갈 수 있음. 부족하면 사용자가 한 번 더 누르는 걸로 충분.
-    return widget.scrollController.animateTo(
-      widget.reverse ? widget.scrollController.position.maxScrollExtent : 0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  void _scrollToTop() {
+    if (widget.onTap != null) {
+      widget.onTap!();
+      return;
+    }
+    if (!widget.scrollController.hasClients) return;
+    if (widget.reverse) {
+      // reverse 리스트: 현재 위치에서 2000px 위로 이동.
+      final target = (widget.scrollController.position.pixels + 2000)
+          .clamp(0.0, widget.scrollController.position.maxScrollExtent);
+      widget.scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      widget.scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override

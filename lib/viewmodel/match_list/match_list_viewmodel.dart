@@ -102,6 +102,7 @@ class MatchListViewModel extends ChangeNotifier {
   void selectSortOrder(String order) {
     if (_sortOrder == order) return;
     _sortOrder = order;
+    _scheduleVersion++;
     notifyListeners();
   }
 
