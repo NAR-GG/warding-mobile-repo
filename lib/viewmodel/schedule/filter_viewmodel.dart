@@ -50,7 +50,7 @@ class FilterViewModel extends ChangeNotifier {
         _initialTeamIds = (initialTeamIds ?? const []).toSet(),
         _selectedLeagueCodes = _stripAll(initialLeagues),
         _selectedTeamIds = (initialTeamIds ?? const []).toSet() {
-    _load(_teamOptionsScope());
+    _load(_teamOptionsScopes());
   }
 
   /// 리그·팀 드롭다운의 '전체' 가상 옵션 라벨. 선택 해제 시 이 상태로 돌아간다.
@@ -152,7 +152,7 @@ class FilterViewModel extends ChangeNotifier {
     }
     _selectedTeamIds = {}; // 리그가 바뀌면 팀 선택은 초기화.
     notifyListeners();
-    _load(_teamOptionsScope());
+    _load(_teamOptionsScopes());
   }
 
   /// 이름으로 팀 체크박스를 토글한다. '전체'를 선택하면 다른 선택을 모두 지운다.
@@ -178,18 +178,27 @@ class FilterViewModel extends ChangeNotifier {
     _wasReset = true;
     _openDropdown = FilterDropdown.none;
     notifyListeners();
-    _load(allLeagueCode);
+    _load([allLeagueCode]);
   }
 
-  /// [league] 의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 온다.
-  /// [league] 가 '전체'(ALL)면 서버가 전 리그 팀 합집합을 내려준다.
-  Future<void> _load(String league) async {
+  /// [leagues] 각각의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 합친다.
+  /// `/filters` 가 단일 리그만 받는 API라, 리그를 복수 선택했으면 리그별로
+  /// 병렬 조회해 팀 목록을 teamId 기준 중복 제거하며 합친다.
+  Future<void> _load(List<String> leagues) async {
     _loading = true;
     notifyListeners();
     try {
-      final options = await _repository.fetchFilterOptions(league: league);
-      _leagues = options.leagues;
-      _teams = options.teams;
+      final results = await Future.wait(
+        leagues.map((l) => _repository.fetchFilterOptions(league: l)),
+      );
+      _leagues = results.first.leagues;
+      final mergedTeams = <int, FilterTeam>{};
+      for (final options in results) {
+        for (final team in options.teams) {
+          mergedTeams[team.teamId] = team;
+        }
+      }
+      _teams = mergedTeams.values.toList();
     } catch (_) {
       // 옵션 로드 실패 시 빈 목록 유지 — 모달은 떠 있되 항목만 비어 있다.
     } finally {
@@ -198,11 +207,12 @@ class FilterViewModel extends ChangeNotifier {
     }
   }
 
-  /// 팀 옵션 조회에 쓸 리그 스코프. 리그가 정확히 하나 선택돼 있으면 그 리그,
-  /// 그 외(전체 또는 복수 선택)는 서버에 'ALL'을 보내 전 리그 팀 합집합을 받는다
-  /// (`/filters` 는 단일 리그만 받는 API라 복수 선택을 정확히 반영할 수 없다).
-  String _teamOptionsScope() =>
-      _selectedLeagueCodes.length == 1 ? _selectedLeagueCodes.first : allLeagueCode;
+  /// 팀 옵션 조회에 쓸 리그 코드 목록. 선택된 리그가 있으면 그 리그들 각각,
+  /// 없으면(전체) 서버에 'ALL' 하나만 보내 전 리그 팀 목록을 받는다.
+  List<String> _teamOptionsScopes() =>
+      _selectedLeagueCodes.isEmpty
+          ? [allLeagueCode]
+          : _selectedLeagueCodes.toList();
 
   String? _leagueCodeOf(String name) {
     final code = _leagues

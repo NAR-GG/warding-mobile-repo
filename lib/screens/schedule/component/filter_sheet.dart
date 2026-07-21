@@ -142,6 +142,7 @@ class _SelectField extends StatelessWidget {
       children: [
         AppSelectBox(
           text: summary ?? placeholder,
+          selected: summary != null,
           scale: scale,
           onTap: onTapBox,
           trailing: SvgPicture.asset(

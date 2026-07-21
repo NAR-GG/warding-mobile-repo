@@ -140,7 +140,7 @@ void main() {
     verify(() => repo.fetchFilterOptions(league: 'LCK')).called(1);
   });
 
-  test('리그를 두 개 이상 선택하면 팀 옵션은 ALL(합집합)으로 받아온다', () async {
+  test('리그를 두 개 이상 선택하면 선택된 리그들을 각각 조회해 팀 목록을 합친다', () async {
     final vm = FilterViewModel(repository: repo);
     await pumpEventQueue();
 
@@ -148,7 +148,10 @@ void main() {
     vm.toggleLeague('LEC');
     await pumpEventQueue();
 
-    verify(() => repo.fetchFilterOptions(league: 'ALL')).called(greaterThanOrEqualTo(1));
+    verify(() => repo.fetchFilterOptions(league: 'LCK'))
+        .called(greaterThanOrEqualTo(1));
+    verify(() => repo.fetchFilterOptions(league: 'LEC')).called(1);
+    expect(vm.teamOptions.map((o) => o.name).toSet(), {'전체', 'T1', 'GenG'});
   });
 
   test('초기화하면 리그·팀 모두 전체로 되돌아가고 조회 버튼이 활성화된다', () async {

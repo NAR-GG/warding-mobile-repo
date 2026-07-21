@@ -14,6 +14,7 @@ class AppSelectBox extends StatelessWidget {
     required this.text,
     this.onTap,
     this.trailing,
+    this.selected = false,
     this.scale = 1,
   });
 
@@ -26,8 +27,14 @@ class AppSelectBox extends StatelessWidget {
   /// 오른쪽 끝에 둘 위젯 (예: 드롭다운 화살표). null 이면 텍스트만.
   final Widget? trailing;
 
+  /// '전체' 등 기본값이 아닌 실제 값이 선택됐는지. true 면 테두리를 그린다.
+  final bool selected;
+
   /// 비율 스케일. 디자인 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
+
+  /// 선택 시 그릴 그라데이션 테두리 두께.
+  static const _borderWidth = 2.0;
 
   @override
   Widget build(BuildContext context) {
@@ -48,28 +55,46 @@ class AppSelectBox extends StatelessWidget {
       ),
     );
 
+    final outerRadius = BorderRadius.circular(10 * scale);
+    final content = Container(
+      padding: EdgeInsets.symmetric(
+        vertical: 8 * scale, // spacing/2
+        horizontal: 16 * scale, // spacing/4
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.narBgLast, // #25262B
+        borderRadius: selected
+            ? BorderRadius.circular(10 * scale - _borderWidth * scale)
+            : outerRadius,
+      ),
+      alignment: Alignment.center,
+      child: hasTrailing
+          ? Row(
+              children: [
+                Expanded(child: label),
+                SizedBox(width: 8 * scale),
+                trailing!,
+              ],
+            )
+          : Center(child: label),
+    );
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         height: 45 * scale,
-        padding: EdgeInsets.symmetric(
-          vertical: 8 * scale, // spacing/2
-          horizontal: 16 * scale, // spacing/4
-        ),
+        // box-sizing: border-box — 테두리가 바깥으로 번지지 않고 45 높이 안에서
+        // 그라데이션 배경을 2px 만 남기고 안쪽 배경으로 덮어 '이너 스트로크'로 그린다.
+        padding: selected
+            ? EdgeInsets.all(_borderWidth * scale)
+            : EdgeInsets.zero,
         decoration: BoxDecoration(
-          color: AppColors.narBgLast, // #25262B
-          borderRadius: BorderRadius.circular(10 * scale),
+          gradient: selected ? AppColors.narBg : null,
+          color: selected ? null : AppColors.narBgLast,
+          borderRadius: outerRadius,
         ),
-        child: hasTrailing
-            ? Row(
-                children: [
-                  Expanded(child: label),
-                  SizedBox(width: 8 * scale),
-                  trailing!,
-                ],
-              )
-            : Center(child: label),
+        child: content,
       ),
     );
   }
