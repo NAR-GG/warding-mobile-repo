@@ -11,8 +11,8 @@ import '../../repository/schedule/schedule_repository.dart';
 class MatchDayViewModel extends ChangeNotifier {
   MatchDayViewModel({
     required this.date,
-    this.league = 'LCK',
-    this.teamId,
+    this.leagues = const ['LCK'],
+    this.teamIds,
     ScheduleRepository? repository,
   }) : _repository = repository ?? ScheduleRepository.instance {
     load();
@@ -21,11 +21,11 @@ class MatchDayViewModel extends ChangeNotifier {
   /// 조회할 날짜 (연·월·일만 사용).
   final DateTime date;
 
-  /// 조회에 적용할 리그 코드 (캘린더 필터와 동일).
-  final String league;
+  /// 조회에 적용할 리그 코드 목록 (캘린더 필터와 동일).
+  final List<String> leagues;
 
-  /// 조회에 적용할 팀 ID. null 이면 리그 전체.
-  final int? teamId;
+  /// 조회에 적용할 팀 ID 목록. 비어 있으면 리그 전체.
+  final List<int>? teamIds;
 
   final ScheduleRepository _repository;
 
@@ -51,8 +51,8 @@ class MatchDayViewModel extends ChangeNotifier {
     try {
       _matches = await _repository.fetchMatchesByDate(
         date,
-        league: league,
-        teamId: teamId,
+        leagues: leagues,
+        teamIds: teamIds,
       );
     } catch (e) {
       _error = e;

@@ -60,26 +60,41 @@ class ApiConfig {
   /// 모바일 월별 캘린더 마킹용 조회 (인증 불필요).
   /// 날짜별 경기 수와 칩에 쓸 대진 정보를 한 번에 내려준다.
   /// [month] 형식은 'yyyy-MM' (예: '2026-04').
+  /// [leagues] 는 같은 키(`league`)를 반복해 배열로 보낸다 (백엔드가 `List<String>` 로 받음).
   static String mobileScheduleCalendarUrl({
     required String month,
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
   }) {
-    final query = StringBuffer('month=$month&league=$league');
-    if (teamId != null) query.write('&teamId=$teamId');
+    final query = StringBuffer('month=$month')..write(_repeatedParam('league', leagues));
+    if (teamIds != null && teamIds.isNotEmpty) {
+      query.write(_repeatedParam('teamId', teamIds));
+    }
     return '$apiBaseUrl/mobile/schedules/calendar?$query';
   }
 
   /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
+  /// [leagues] 는 같은 키(`league`)를 반복해 배열로 보낸다 (백엔드가 `List<String>` 로 받음).
   static String mobileSchedulesUrl({
     required String date,
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
   }) {
-    final query = StringBuffer('date=$date&league=$league');
-    if (teamId != null) query.write('&teamId=$teamId');
+    final query = StringBuffer('date=$date')..write(_repeatedParam('league', leagues));
+    if (teamIds != null && teamIds.isNotEmpty) {
+      query.write(_repeatedParam('teamId', teamIds));
+    }
     return '$apiBaseUrl/mobile/schedules?$query';
+  }
+
+  /// [key] 를 반복하는 쿼리 파라미터 조각을 만든다. 예: `&league=LCK&league=LEC`.
+  static String _repeatedParam(String key, List<Object> values) {
+    final buffer = StringBuffer();
+    for (final value in values) {
+      buffer.write('&$key=${Uri.encodeQueryComponent(value.toString())}');
+    }
+    return buffer.toString();
   }
 
   /// 모바일 경기 리스트 커서 페이지 조회 (인증 불필요).

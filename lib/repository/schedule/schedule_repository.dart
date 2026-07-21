@@ -32,15 +32,15 @@ class ScheduleRepository {
   /// [month] 는 어느 날짜든 그 연·월만 사용된다.
   Future<List<MatchCalendarDay>> fetchCalendar(
     DateTime month, {
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
   }) async {
     final monthStr =
         '${month.year}-${month.month.toString().padLeft(2, '0')}';
     final url = ApiConfig.mobileScheduleCalendarUrl(
       month: monthStr,
-      league: league,
-      teamId: teamId,
+      leagues: leagues,
+      teamIds: teamIds,
     );
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));
@@ -62,16 +62,16 @@ class ScheduleRepository {
   /// 특정 날짜의 경기 리스트 카드를 조회한다 (인증 불필요).
   Future<List<ScheduleMatch>> fetchMatchesByDate(
     DateTime date, {
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
   }) async {
     final dateStr = '${date.year}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
     final url = ApiConfig.mobileSchedulesUrl(
       date: dateStr,
-      league: league,
-      teamId: teamId,
+      leagues: leagues,
+      teamIds: teamIds,
     );
     final response = await http.get(Uri.parse(url));
     debugPrint('[Schedule] day $dateStr ← ${response.statusCode}');
