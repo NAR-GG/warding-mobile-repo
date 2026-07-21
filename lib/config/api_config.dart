@@ -62,11 +62,16 @@ class ApiConfig {
   /// [month] 형식은 'yyyy-MM' (예: '2026-04').
   static String mobileScheduleCalendarUrl({
     required String month,
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int> teamIds = const [],
   }) {
-    final query = StringBuffer('month=$month&league=$league');
-    if (teamId != null) query.write('&teamId=$teamId');
+    final query = StringBuffer('month=$month');
+    for (final l in leagues) {
+      query.write('&league=$l');
+    }
+    for (final id in teamIds) {
+      query.write('&teamId=$id');
+    }
     return '$apiBaseUrl/mobile/schedules/calendar?$query';
   }
 
@@ -74,11 +79,16 @@ class ApiConfig {
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
   static String mobileSchedulesUrl({
     required String date,
-    String league = 'LCK',
-    int? teamId,
+    List<String> leagues = const ['LCK'],
+    List<int> teamIds = const [],
   }) {
-    final query = StringBuffer('date=$date&league=$league');
-    if (teamId != null) query.write('&teamId=$teamId');
+    final query = StringBuffer('date=$date');
+    for (final l in leagues) {
+      query.write('&league=$l');
+    }
+    for (final id in teamIds) {
+      query.write('&teamId=$id');
+    }
     return '$apiBaseUrl/mobile/schedules?$query';
   }
 

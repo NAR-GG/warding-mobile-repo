@@ -93,7 +93,7 @@ class MatchListViewModel extends ChangeNotifier {
   /// (위가 과거, 아래가 미래).
   static const List<String> sortOrders = ['최근순', '오래된 순'];
 
-  String _sortOrder = sortOrders[1];
+  String _sortOrder = sortOrders[0];
   String get sortOrder => _sortOrder;
 
   /// 화면 위→아래가 과거→미래(시간 오름차순)인지. '오래된 순' 일 때 true.

@@ -14,16 +14,16 @@ class MonthPickerSheet extends StatefulWidget {
   const MonthPickerSheet({
     super.key,
     required this.initialMonth,
-    this.filterLeague = 'ALL',
-    this.filterTeamId,
+    this.filterLeagues = const ['ALL'],
+    this.filterTeamIds = const [],
   });
 
   /// 모달을 열 때 처음 보여줄 월.
   final DateTime initialMonth;
 
   /// 메인 화면의 리그·팀 필터 — 점 표시가 본문 캘린더와 같은 조건으로 조회되게 한다.
-  final String filterLeague;
-  final int? filterTeamId;
+  final List<String> filterLeagues;
+  final List<int> filterTeamIds;
 
   @override
   State<MonthPickerSheet> createState() => _MonthPickerSheetState();
@@ -37,8 +37,8 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
     super.initState();
     _viewModel = MonthPickerViewModel(
       initialMonth: widget.initialMonth,
-      filterLeague: widget.filterLeague,
-      filterTeamId: widget.filterTeamId,
+      filterLeagues: widget.filterLeagues,
+      filterTeamIds: widget.filterTeamIds,
     );
   }
 

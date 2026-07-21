@@ -9,18 +9,15 @@ import '../../../viewmodel/schedule/filter_viewmodel.dart';
 
 /// 경기 필터 바텀시트.
 ///
-/// 헤더([초기화]·'필터'·[닫기]) 아래에 리그·팀 셀렉트 필드와 조회 버튼을
-/// 둔다. 셀렉트 필드는 탭하면 아래로 드롭다운이 펼쳐진다. 선택값이 모달을
-/// 열 때(이전 값)와 달라져야 조회 버튼이 활성된다.
-/// 자체 [FilterViewModel] 을 소유하며 [showAppBottomSheet] 의 child 로 띄운다.
+/// 리그는 멀티 선택(체크 아이콘 + 빨간 배경), 팀은 단일 선택.
 class FilterSheet extends StatefulWidget {
-  const FilterSheet({super.key, this.initialLeague, this.initialTeamId});
+  const FilterSheet({super.key, this.initialLeagues, this.initialTeamIds});
 
-  /// 모달을 열 때 이미 적용 중이던 리그 코드.
-  final String? initialLeague;
+  /// 모달을 열 때 이미 적용 중이던 리그 코드 Set.
+  final Set<String>? initialLeagues;
 
-  /// 모달을 열 때 이미 적용 중이던 팀 ID.
-  final int? initialTeamId;
+  /// 모달을 열 때 이미 적용 중이던 팀 ID Set.
+  final Set<int>? initialTeamIds;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
@@ -28,8 +25,8 @@ class FilterSheet extends StatefulWidget {
 
 class _FilterSheetState extends State<FilterSheet> {
   late final FilterViewModel _viewModel = FilterViewModel(
-    initialLeague: widget.initialLeague,
-    initialTeamId: widget.initialTeamId,
+    initialLeagues: widget.initialLeagues,
+    initialTeamIds: widget.initialTeamIds,
   );
 
   @override
@@ -49,11 +46,9 @@ class _FilterSheetState extends State<FilterSheet> {
         return NarFilterSheet(
           title: '필터',
           onReset: _viewModel.reset,
-          // 선택값이 이전 값과 같으면 비활성(null), 바뀌면 활성.
           onApply: _viewModel.isApplyEnabled
               ? () => Navigator.of(context).pop(_viewModel.result)
               : null,
-          // 셀렉트 박스 영역 — 좌우 24 들여쓰기.
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24 * scale),
             child: Column(
@@ -63,29 +58,31 @@ class _FilterSheetState extends State<FilterSheet> {
                 LabeledField(
                   label: '리그',
                   scale: scale,
-                  child: _SelectField(
+                  child: _MultiSelectField(
                     placeholder: '전체',
-                    selected: _viewModel.selectedLeagueName,
+                    summary: _viewModel.selectedLeagueSummary,
                     options: _viewModel.leagueNames,
+                    isSelectedByName: _viewModel.isLeagueSelectedByName,
                     isOpen: _viewModel.openDropdown == FilterDropdown.league,
                     onTapBox: () =>
                         _viewModel.toggleDropdown(FilterDropdown.league),
-                    onSelect: _viewModel.selectLeagueByName,
+                    onToggle: _viewModel.toggleLeagueByName,
                     scale: scale,
                   ),
                 ),
-                SizedBox(height: 24 * scale), // 리그 ↔ 팀 간격 24
+                SizedBox(height: 24 * scale),
                 LabeledField(
                   label: '팀',
                   scale: scale,
-                  child: _SelectField(
+                  child: _MultiSelectField(
                     placeholder: '전체',
-                    selected: _viewModel.selectedTeamName,
+                    summary: _viewModel.selectedTeamSummary,
                     options: _viewModel.teamNames,
+                    isSelectedByName: _viewModel.isTeamSelectedByName,
                     isOpen: _viewModel.openDropdown == FilterDropdown.team,
                     onTapBox: () =>
                         _viewModel.toggleDropdown(FilterDropdown.team),
-                    onSelect: _viewModel.selectTeamByName,
+                    onToggle: _viewModel.toggleTeamByName,
                     scale: scale,
                   ),
                 ),
@@ -98,39 +95,26 @@ class _FilterSheetState extends State<FilterSheet> {
   }
 }
 
-/// 셀렉트 박스 + 펼침 드롭다운 한 묶음.
-///
-/// 셀렉트 박스는 왼쪽에 텍스트, 오른쪽에 펼침 화살표를 둔다.
-/// [isOpen] 이면 박스 아래 4 간격을 띄우고 [_DropdownList] 를 보여준다.
-class _SelectField extends StatelessWidget {
-  const _SelectField({
+/// 멀티 선택 드롭다운. 선택된 항목은 체크 아이콘 + 빨간 배경.
+class _MultiSelectField extends StatelessWidget {
+  const _MultiSelectField({
     required this.placeholder,
-    required this.selected,
+    required this.summary,
     required this.options,
+    required this.isSelectedByName,
     required this.isOpen,
     required this.onTapBox,
-    required this.onSelect,
+    required this.onToggle,
     required this.scale,
   });
 
-  /// 미선택 시 박스에 보일 기본 문구.
   final String placeholder;
-
-  /// 현재 선택값. null 이면 [placeholder] 표시.
-  final String? selected;
-
-  /// 드롭다운 항목 목록.
+  final String? summary;
   final List<String> options;
-
-  /// 드롭다운 펼침 여부.
+  final bool Function(String) isSelectedByName;
   final bool isOpen;
-
-  /// 셀렉트 박스 탭 콜백.
   final VoidCallback onTapBox;
-
-  /// 항목 선택 콜백.
-  final ValueChanged<String> onSelect;
-
+  final ValueChanged<String> onToggle;
   final double scale;
 
   @override
@@ -140,7 +124,7 @@ class _SelectField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         AppSelectBox(
-          text: selected ?? placeholder,
+          text: summary ?? placeholder,
           scale: scale,
           onTap: onTapBox,
           trailing: SvgPicture.asset(
@@ -150,11 +134,11 @@ class _SelectField extends StatelessWidget {
           ),
         ),
         if (isOpen) ...[
-          SizedBox(height: 4 * scale), // 셀렉트 박스 ↔ 드롭다운 간격 4
-          _DropdownList(
+          SizedBox(height: 4 * scale),
+          _MultiDropdownList(
             options: options,
-            selected: selected,
-            onSelect: onSelect,
+            isSelected: isSelectedByName,
+            onToggle: onToggle,
             scale: scale,
           ),
         ],
@@ -163,32 +147,29 @@ class _SelectField extends StatelessWidget {
   }
 }
 
-/// 드롭다운 항목 목록 — 라운드 10, 배경은 셀렉트 박스와 동일.
-class _DropdownList extends StatelessWidget {
-  const _DropdownList({
+/// 멀티 선택 드롭다운 목록.
+class _MultiDropdownList extends StatelessWidget {
+  const _MultiDropdownList({
     required this.options,
-    required this.selected,
-    required this.onSelect,
+    required this.isSelected,
+    required this.onToggle,
     required this.scale,
   });
 
   final List<String> options;
-  final String? selected;
-  final ValueChanged<String> onSelect;
+  final bool Function(String) isSelected;
+  final ValueChanged<String> onToggle;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
-    // 항목 한 칸 높이 ≈ 위아래 패딩 11.5×2 + 줄높이 22 = 45.
-    // 약 5칸까지만 보이고 그보다 많으면 안에서 세로 스크롤한다.
-    const visibleItems = 5;
+    const visibleItems = 4;
     final maxHeight = 45.0 * scale * visibleItems;
 
     return Container(
-      // 항목 배경이 라운드 모서리 밖으로 새지 않게 클리핑.
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.narBgLast, // 셀렉트 박스와 같은 #25262B
+        color: AppColors.narBgTertiary,
         borderRadius: BorderRadius.circular(10 * scale),
       ),
       child: ConstrainedBox(
@@ -199,10 +180,10 @@ class _DropdownList extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final option in options)
-                _DropdownItem(
+                _MultiDropdownItem(
                   label: option,
-                  isSelected: option == selected,
-                  onTap: () => onSelect(option),
+                  isSelected: isSelected(option),
+                  onTap: () => onToggle(option),
                   scale: scale,
                 ),
             ],
@@ -213,12 +194,9 @@ class _DropdownList extends StatelessWidget {
   }
 }
 
-/// 드롭다운 항목 한 칸 — 좌우 16·위아래 11.5 패딩.
-///
-/// 선택된 항목은 빨강 배경([AppColors.narRedOpacity25]) + 어두운 글자,
-/// 미선택 항목은 흐린 글자만 표시한다.
-class _DropdownItem extends StatelessWidget {
-  const _DropdownItem({
+/// 멀티 선택 항목. 선택 시 체크 아이콘 + 빨간 배경.
+class _MultiDropdownItem extends StatelessWidget {
+  const _MultiDropdownItem({
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -236,23 +214,38 @@ class _DropdownItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        color: isSelected ? AppColors.narRedOpacity25 : null, // #FA525240
+        color: isSelected ? AppColors.narRedOpacity25 : null,
         padding: EdgeInsets.symmetric(
           horizontal: 16 * scale,
-          vertical: 11.5 * scale,
+          vertical: 8 * scale,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w400,
-            fontSize: 16 * scale,
-            height: 22 / 16, // line-height 22px / font-size 16px
-            letterSpacing: 0,
-            color: isSelected
-                ? AppColors.narButton1Text // 선택 — #101113
-                : AppColors.narDark200, // 미선택 — #909296
-          ),
+        child: Row(
+          children: [
+            if (isSelected) ...[
+              SvgPicture.asset(
+                'assets/icons/check.svg',
+                width: 24 * scale,
+                height: 24 * scale,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.narText,
+                  BlendMode.srcIn,
+                ),
+              ),
+              SizedBox(width: 4 * scale),
+            ],
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 16 * scale,
+                  height: 22 / 16,
+                  color: isSelected ? AppColors.narText : AppColors.narDark200,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

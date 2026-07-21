@@ -40,8 +40,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       context: context,
       child: MonthPickerSheet(
         initialMonth: _viewModel.displayMonth,
-        filterLeague: _viewModel.filterLeague,
-        filterTeamId: _viewModel.filterTeamId,
+        filterLeagues: _viewModel.filterLeagues.isNotEmpty
+            ? _viewModel.filterLeagues.toList()
+            : const ['ALL'],
+        filterTeamIds: _viewModel.filterTeamIds.toList(),
       ),
     );
     if (picked != null) {
@@ -55,14 +57,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final result = await showAppBottomSheet<FilterResult>(
       context: context,
       child: FilterSheet(
-        initialLeague: _viewModel.filterLeague,
-        initialTeamId: _viewModel.filterTeamId,
+        initialLeagues: _viewModel.filterLeagues,
+        initialTeamIds: _viewModel.filterTeamIds,
       ),
     );
     if (result != null) {
       _viewModel.applyFilter(
-        league: result.league,
-        teamId: result.teamId,
+        leagues: result.leagues,
+        teamIds: result.teamIds,
         resetMonth: result.resetMonth,
       );
     }
@@ -71,12 +73,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// 캘린더에서 경기가 있는 날짜를 탭 → 그 날의 경기 리스트 화면을 새로 띄운다.
   /// 캘린더에 적용 중인 리그·팀 필터를 그대로 넘겨 같은 경기 집합을 보여준다.
   void _openDay(DateTime date) {
+    final leagues = _viewModel.filterLeagues.isNotEmpty
+        ? _viewModel.filterLeagues.toList()
+        : const ['ALL'];
+    final teamIds = _viewModel.filterTeamIds.isNotEmpty
+        ? _viewModel.filterTeamIds.toList()
+        : const <int>[];
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MatchDayScreen(
           date: date,
-          league: _viewModel.filterLeague,
-          teamId: _viewModel.filterTeamId,
+          leagues: leagues,
+          teamIds: teamIds,
         ),
       ),
     );
