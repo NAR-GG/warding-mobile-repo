@@ -8,13 +8,16 @@ enum FilterDropdown { none, league, team }
 
 /// 필터 모달이 '조회'로 닫힐 때 화면에 돌려주는 선택 결과.
 class FilterResult {
-  const FilterResult({required this.league, this.teamId});
+  const FilterResult({required this.league, this.teamId, this.resetMonth = false});
 
   /// 선택한 리그 코드 (예: 'LCK').
   final String league;
 
   /// 선택한 팀 ID. null 이면 리그 전체.
   final int? teamId;
+
+  /// 초기화 버튼을 눌렀으면 true → 캘린더 월도 현재 달로 되돌린다.
+  final bool resetMonth;
 }
 
 /// 경기 필터 모달 ViewModel.
@@ -86,8 +89,12 @@ class FilterViewModel extends ChangeNotifier {
     return null;
   }
 
-  /// 선택값이 이전 값과 하나라도 달라졌으면 true → 조회 버튼 활성.
+  /// 초기화 버튼을 눌렀는지 여부. 초기화 후 조회를 누를 수 있게 한다.
+  bool _wasReset = false;
+
+  /// 선택값이 이전 값과 하나라도 달라졌거나 초기화됐으면 true → 조회 버튼 활성.
   bool get isApplyEnabled =>
+      _wasReset ||
       _selectedLeagueCode != _initialLeague ||
       _selectedTeamId != _initialTeamId;
 
@@ -95,6 +102,7 @@ class FilterViewModel extends ChangeNotifier {
   FilterResult get result => FilterResult(
         league: _selectedLeagueCode ?? allLeagueCode,
         teamId: _selectedTeamId,
+        resetMonth: _wasReset,
       );
 
   /// 드롭다운을 펼치거나 접는다. 이미 펼친 걸 다시 누르면 접힌다.
@@ -151,11 +159,14 @@ class FilterViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 초기화 — 팀 선택을 해제한다 (리그는 유지).
+  /// 초기화 — 리그·팀 선택을 모두 해제하고 전체로 되돌린다.
   void reset() {
+    _selectedLeagueCode = allLeagueCode;
     _selectedTeamId = null;
+    _wasReset = true;
     _openDropdown = FilterDropdown.none;
     notifyListeners();
+    _load(allLeagueCode);
   }
 
   /// [league] 의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 온다.

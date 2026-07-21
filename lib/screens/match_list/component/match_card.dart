@@ -31,6 +31,7 @@ class MatchCard extends StatelessWidget {
     this.liveSetLabel,
     this.onTap,
     this.scale = 1,
+    this.leagueInfo = '',
   });
 
   /// 경기 예약 알림 구독 API(`/match-subscriptions`)에 쓰는 경기 ID.
@@ -52,6 +53,13 @@ class MatchCard extends StatelessWidget {
 
   final VoidCallback? onTap;
   final double scale;
+
+  /// 리그 정보. 케스파컵이면 알림 버튼을 숨긴다.
+  final String leagueInfo;
+
+  bool get _isKaspaCup =>
+      leagueInfo.toLowerCase().contains('케스파') ||
+      leagueInfo.toLowerCase().contains('kespa');
 
   @override
   Widget build(BuildContext context) {
@@ -83,15 +91,17 @@ class MatchCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                _AlarmBell(
-                  matchId: matchId,
-                  homeName: homeName,
-                  homeLogoUrl: homeLogoUrl,
-                  awayName: awayName,
-                  awayLogoUrl: awayLogoUrl,
-                  scale: scale,
-                ),
-                SizedBox(width: 8 * scale),
+                if (!_isKaspaCup) ...[
+                  _AlarmBell(
+                    matchId: matchId,
+                    homeName: homeName,
+                    homeLogoUrl: homeLogoUrl,
+                    awayName: awayName,
+                    awayLogoUrl: awayLogoUrl,
+                    scale: scale,
+                  ),
+                  SizedBox(width: 8 * scale),
+                ],
                 if (isLive)
                   NarLiveBadge(scale: scale)
                 else
