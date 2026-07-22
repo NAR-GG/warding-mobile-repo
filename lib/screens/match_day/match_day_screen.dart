@@ -18,13 +18,13 @@ class MatchDayScreen extends StatefulWidget {
   const MatchDayScreen({
     super.key,
     required this.date,
-    this.league = 'LCK',
-    this.teamId,
+    this.leagues = const ['LCK'],
+    this.teamIds,
   });
 
   final DateTime date;
-  final String league;
-  final int? teamId;
+  final List<String> leagues;
+  final List<int>? teamIds;
 
   @override
   State<MatchDayScreen> createState() => _MatchDayScreenState();
@@ -33,8 +33,8 @@ class MatchDayScreen extends StatefulWidget {
 class _MatchDayScreenState extends State<MatchDayScreen> {
   late final MatchDayViewModel _viewModel = MatchDayViewModel(
     date: widget.date,
-    league: widget.league,
-    teamId: widget.teamId,
+    leagues: widget.leagues,
+    teamIds: widget.teamIds,
   );
 
   @override

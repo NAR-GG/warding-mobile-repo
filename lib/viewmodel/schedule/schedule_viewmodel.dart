@@ -45,8 +45,9 @@ class ScheduleViewModel extends ChangeNotifier {
     final saved =
         await _filterPreferences.load(FilterPreferenceRepository.scheduleKey);
     if (saved != null) {
-      _league = (saved['league'] as String?) ?? 'ALL';
-      _teamId = saved['teamId'] as int?;
+      final leagues = (saved['leagues'] as List?)?.cast<String>();
+      _leagues = leagues != null && leagues.isNotEmpty ? leagues : ['ALL'];
+      _teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
       _teamSelected = (saved['teamSelected'] as bool?) ?? false;
     }
     loadCalendar();
@@ -55,8 +56,8 @@ class ScheduleViewModel extends ChangeNotifier {
   /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
   void _persistFilter() {
     unawaited(_filterPreferences.save(FilterPreferenceRepository.scheduleKey, {
-      'league': _league,
-      'teamId': _teamId,
+      'leagues': _leagues,
+      'teamIds': _teamIds,
       'teamSelected': _teamSelected,
     }));
   }
@@ -80,13 +81,13 @@ class ScheduleViewModel extends ChangeNotifier {
   Team? _preferredTeam;
   Team? get preferredTeam => _preferredTeam;
 
-  /// 캘린더 조회에 적용 중인 리그 코드 (기본 'ALL' = 전체 리그).
-  String _league = 'ALL';
-  String get filterLeague => _league;
+  /// 캘린더 조회에 적용 중인 리그 코드 목록 (기본 ['ALL'] = 전체 리그).
+  List<String> _leagues = const ['ALL'];
+  List<String> get filterLeagues => _leagues;
 
-  /// 캘린더 조회에 적용 중인 팀 ID. null 이면 리그 전체.
-  int? _teamId;
-  int? get filterTeamId => _teamId;
+  /// 캘린더 조회에 적용 중인 팀 ID 목록. 비어 있으면 리그 전체.
+  List<int> _teamIds = const [];
+  List<int> get filterTeamIds => _teamIds;
 
   /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
   /// 켜지면 선호 팀으로 캘린더를 필터링한다.
@@ -124,18 +125,23 @@ class ScheduleViewModel extends ChangeNotifier {
   /// 켜지면 선호 팀으로, 끄면 리그 전체로 캘린더를 다시 조회한다.
   void toggleTeamSelected() {
     _teamSelected = !_teamSelected;
-    _teamId = _teamSelected ? _preferredTeam?.id : null;
+    final preferredId = _preferredTeam?.id;
+    _teamIds = _teamSelected && preferredId != null ? [preferredId] : const [];
     _persistFilter();
     _notify();
     loadCalendar();
   }
 
   /// 필터 모달에서 고른 리그·팀을 적용하고 캘린더를 다시 조회한다.
-  /// [teamId] 가 null 이면 리그 전체.
+  /// [teamIds] 가 비어 있으면 리그 전체.
   /// [resetMonth] 가 true 면 현재 달로 되돌린다 (초기화 버튼).
-  void applyFilter({String? league, int? teamId, bool resetMonth = false}) {
-    if (league != null && league.isNotEmpty) _league = league;
-    _teamId = teamId;
+  void applyFilter({
+    List<String>? leagues,
+    List<int>? teamIds,
+    bool resetMonth = false,
+  }) {
+    if (leagues != null && leagues.isNotEmpty) _leagues = leagues;
+    _teamIds = teamIds ?? const [];
     // 필터로 팀을 직접 골랐으면 헤더 선호팀 토글과 어긋나므로 해제해 둔다.
     _teamSelected = false;
     if (resetMonth) {
@@ -159,15 +165,15 @@ class ScheduleViewModel extends ChangeNotifier {
   /// `/api/mobile/schedules/calendar` 한 번으로 날짜별 칩 데이터까지 받는다.
   Future<void> loadCalendar() async {
     debugPrint('[Schedule] loadCalendar 시작: $_displayMonth '
-        '(league=$_league, teamId=$_teamId)');
+        '(leagues=$_leagues, teamIds=$_teamIds)');
     _isLoading = true;
     _error = null;
     _notify();
     try {
       final days = await _repository.fetchCalendar(
         _displayMonth,
-        league: _league,
-        teamId: _teamId,
+        leagues: _leagues,
+        teamIds: _teamIds,
       );
       _matchesByDay = {
         for (final day in days) day.date.day: day.matches,

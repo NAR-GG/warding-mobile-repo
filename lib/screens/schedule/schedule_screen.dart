@@ -40,8 +40,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       context: context,
       child: MonthPickerSheet(
         initialMonth: _viewModel.displayMonth,
-        filterLeague: _viewModel.filterLeague,
-        filterTeamId: _viewModel.filterTeamId,
+        filterLeagues: _viewModel.filterLeagues,
+        filterTeamIds: _viewModel.filterTeamIds,
       ),
     );
     if (picked != null) {
@@ -55,14 +55,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final result = await showAppBottomSheet<FilterResult>(
       context: context,
       child: FilterSheet(
-        initialLeague: _viewModel.filterLeague,
-        initialTeamId: _viewModel.filterTeamId,
+        initialLeagues: _viewModel.filterLeagues,
+        initialTeamIds: _viewModel.filterTeamIds,
       ),
     );
     if (result != null) {
       _viewModel.applyFilter(
-        league: result.league,
-        teamId: result.teamId,
+        leagues: result.leagues,
+        teamIds: result.teamIds,
         resetMonth: result.resetMonth,
       );
     }
@@ -75,8 +75,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       MaterialPageRoute(
         builder: (_) => MatchDayScreen(
           date: date,
-          league: _viewModel.filterLeague,
-          teamId: _viewModel.filterTeamId,
+          leagues: _viewModel.filterLeagues,
+          teamIds: _viewModel.filterTeamIds,
         ),
       ),
     );

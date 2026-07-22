@@ -225,17 +225,39 @@ class _MatchListScreenState extends State<MatchListScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(left: 20 * scale, top: 17 * scale),
-                  child: Text(
-                    '경기리스트',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 22 * scale,
-                      height: 1.4,
-                      letterSpacing: 0,
-                      color: AppColors.narText,
-                    ),
+                  padding: EdgeInsets.only(
+                    left: 20 * scale,
+                    right: 20 * scale,
+                    top: 17 * scale,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '경기리스트',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22 * scale,
+                            height: 1.4,
+                            letterSpacing: 0,
+                            color: AppColors.narText,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 110 * scale,
+                        child: ListenableBuilder(
+                          listenable: _viewModel,
+                          builder: (context, _) => NarDropdown(
+                            value: _viewModel.sortOrder,
+                            onTap: _showSortSheet,
+                            scale: scale,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 14 * scale),
@@ -385,31 +407,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
           final key = (_targetDate != null && _isSameDate(item.date, _targetDate!))
               ? _todayHeaderKey
               : null;
-          final header = MatchDateHeader(
-            label: _relativeLabel(item.date),
-            dateText: _formatDate(item.date),
-            scale: scale,
-          );
-          if (!item.isFirst) return KeyedSubtree(key: key, child: header);
-          // 첫 헤더 — 우측에 정렬 드롭다운 같이 배치.
           return KeyedSubtree(
             key: key,
-            child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(child: header),
-              Padding(
-                padding: EdgeInsets.only(right: 16 * scale),
-                child: SizedBox(
-                  width: 110 * scale,
-                  child: NarDropdown(
-                    value: _viewModel.sortOrder,
-                    onTap: _showSortSheet,
-                    scale: scale,
-                  ),
-                ),
-              ),
-            ],
+            child: MatchDateHeader(
+              label: _relativeLabel(item.date),
+              dateText: _formatDate(item.date),
+              scale: scale,
             ),
           );
         }
@@ -454,22 +457,18 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// schedule(날짜별 그룹, 최신→과거 순) 을 [_HeaderItem, _CardItem, ...] 평탄화.
-  /// 화면 맨 위에 그려지는 헤더에 isFirst 플래그를 줘서 정렬 드롭다운을 같이 그린다.
   ///
   /// [ascending] 이면 ListView 가 reverse:true 로 그리므로(인덱스 0 이 화면 맨 아래),
   /// 헤더를 그 날짜 카드들 '뒤'에 넣어야 화면에선 헤더가 카드 위에 온다.
   /// 카드 순서도 뒤집혀 날짜 안에서 이른 시간이 위로 온다.
   List<_ListItem> _flatten(List<ScheduleDay> schedule, {required bool ascending}) {
     final out = <_ListItem>[];
-    for (var i = 0; i < schedule.length; i++) {
-      final day = schedule[i];
-      // 화면 맨 위 헤더: 내림차순이면 첫 그룹, 오름차순(reverse)이면 마지막 그룹.
-      final isTop = ascending ? i == schedule.length - 1 : i == 0;
-      if (!ascending) out.add(_HeaderItem(day.date, isFirst: isTop));
+    for (final day in schedule) {
+      if (!ascending) out.add(_HeaderItem(day.date));
       for (final m in day.matches) {
         out.add(_CardItem(m));
       }
-      if (ascending) out.add(_HeaderItem(day.date, isFirst: isTop));
+      if (ascending) out.add(_HeaderItem(day.date));
     }
     return out;
   }
@@ -503,11 +502,8 @@ sealed class _ListItem {
 }
 
 class _HeaderItem extends _ListItem {
-  const _HeaderItem(this.date, {this.isFirst = false});
+  const _HeaderItem(this.date);
   final DateTime date;
-
-  /// 화면 맨 위에 그려지는 헤더면 우측에 정렬 드롭다운을 같이 배치한다.
-  final bool isFirst;
 }
 
 class _CardItem extends _ListItem {
