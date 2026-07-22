@@ -206,7 +206,8 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       _leagues = await _repository.fetchLeagues();
     } catch (e) {
-      _leaguesError = e;
+      _leaguesError = '리그 목록을 불러오지 못했어요';
+      debugPrint('[Onboarding] loadLeagues 에러: $e');
     } finally {
       _leaguesLoading = false;
       notifyListeners();
@@ -226,7 +227,8 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       _teams = await _repository.fetchTeams();
     } catch (e) {
-      _teamsError = e;
+      _teamsError = '팀 목록을 불러오지 못했어요';
+      debugPrint('[Onboarding] loadTeams 에러: $e');
     } finally {
       _teamsLoading = false;
       notifyListeners();
@@ -254,7 +256,8 @@ class OnboardingViewModel extends ChangeNotifier {
       );
       _playersLoaded = true;
     } catch (e) {
-      _playersError = e;
+      _playersError = '선수 목록을 불러오지 못했어요';
+      debugPrint('[Onboarding] loadPlayers 에러: $e');
     } finally {
       _playersLoading = false;
       notifyListeners();

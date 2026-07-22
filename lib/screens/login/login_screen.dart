@@ -51,9 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // 사용자가 로그인을 취소함 — 별도 알림 없이 종료
     } catch (e) {
       if (!mounted) return;
+      debugPrint('[Login] 로그인 에러: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('로그인에 실패했습니다: $e')));
+      ).showSnackBar(const SnackBar(content: Text('로그인에 실패했습니다. 잠시 후 다시 시도해주세요.')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

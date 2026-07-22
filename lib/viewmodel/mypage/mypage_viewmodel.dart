@@ -106,7 +106,7 @@ class MypageViewModel extends ChangeNotifier {
         _favoriteTeam = null;
       }
     } catch (e, st) {
-      _error = e;
+      _error = '프로필을 불러오지 못했어요';
       debugPrint('[Mypage] load 에러: $e\n$st');
     } finally {
       _isLoading = false;

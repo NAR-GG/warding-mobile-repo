@@ -46,7 +46,6 @@ class LeagueStep extends StatelessWidget {
     if (viewModel.leaguesError != null) {
       return OnboardingLoadError(
         message: '리그 목록을 불러오지 못했어요',
-        error: viewModel.leaguesError!,
         onRetry: viewModel.loadLeagues,
       );
     }
