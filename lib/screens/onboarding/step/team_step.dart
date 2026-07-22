@@ -47,7 +47,6 @@ class TeamStep extends StatelessWidget {
     if (viewModel.teamsError != null) {
       return OnboardingLoadError(
         message: '팀 목록을 불러오지 못했어요',
-        error: viewModel.teamsError!,
         onRetry: viewModel.loadTeams,
       );
     }

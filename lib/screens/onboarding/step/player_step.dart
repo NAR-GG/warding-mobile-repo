@@ -88,7 +88,6 @@ class _PlayerStepState extends State<PlayerStep> {
     if (_viewModel.playersError != null) {
       return OnboardingLoadError(
         message: '선수 목록을 불러오지 못했어요',
-        error: _viewModel.playersError!,
         onRetry: _viewModel.loadPlayers,
       );
     }

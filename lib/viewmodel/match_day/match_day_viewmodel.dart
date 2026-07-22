@@ -55,7 +55,7 @@ class MatchDayViewModel extends ChangeNotifier {
         teamIds: teamIds,
       );
     } catch (e) {
-      _error = e;
+      _error = '경기를 불러오지 못했어요';
       _matches = const [];
       debugPrint('[MatchDay] load 에러: $e');
     } finally {

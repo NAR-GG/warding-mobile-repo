@@ -49,7 +49,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
       // 마이페이지 섹션은 '구독중인 팀'만 보여 준다.
       _teams = all.where((t) => t.subscribed).toList();
     } catch (e, st) {
-      _error = e;
+      _error = '팀 알림 정보를 불러오지 못했어요';
       debugPrint('[TeamAlarm] load 에러: $e\n$st');
     } finally {
       _isLoading = false;

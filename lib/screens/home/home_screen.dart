@@ -26,9 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      debugPrint('[Home] 로그아웃 에러: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('로그아웃 실패: $e')));
+      ).showSnackBar(const SnackBar(content: Text('로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.')));
     } finally {
       if (mounted) setState(() => _isSigningOut = false);
     }

@@ -182,7 +182,7 @@ class ScheduleViewModel extends ChangeNotifier {
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료: ${_matchesByDay.length}일, 총 $total경기');
     } catch (e, st) {
-      _error = e;
+      _error = '경기 일정을 불러오지 못했어요';
       _matchesByDay = const {};
       debugPrint('[Schedule] loadCalendar 에러: $e');
       debugPrint('$st');

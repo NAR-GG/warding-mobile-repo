@@ -96,7 +96,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     try {
       await Future.wait([subscribed, teams, available]);
     } catch (e, st) {
-      _error = e;
+      _error = '구독 정보를 불러오지 못했어요';
       debugPrint('[Subscription] load 에러: $e\n$st');
     } finally {
       _isLoading = false;
