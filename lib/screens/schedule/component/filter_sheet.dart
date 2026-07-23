@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/app_select_box.dart';
@@ -47,8 +48,9 @@ class _FilterSheetState extends State<FilterSheet> {
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
+        final l = AppLocalizations.of(context)!;
         return NarFilterSheet(
-          title: '필터',
+          title: l.filter,
           onReset: _viewModel.reset,
           // 선택값이 이전 값과 같으면 비활성(null), 바뀌면 활성.
           onApply: _viewModel.isApplyEnabled
@@ -62,10 +64,10 @@ class _FilterSheetState extends State<FilterSheet> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 LabeledField(
-                  label: '리그',
+                  label: l.league,
                   scale: scale,
                   child: _SelectField(
-                    placeholder: '전체',
+                    placeholder: l.all,
                     summary: _viewModel.selectedLeagueSummary,
                     options: _viewModel.leagueOptions,
                     isOpen: _viewModel.openDropdown == FilterDropdown.league,
@@ -77,10 +79,10 @@ class _FilterSheetState extends State<FilterSheet> {
                 ),
                 SizedBox(height: 24 * scale), // 리그 ↔ 팀 간격 24
                 LabeledField(
-                  label: '팀',
+                  label: l.team,
                   scale: scale,
                   child: _SelectField(
-                    placeholder: '전체',
+                    placeholder: l.all,
                     summary: _viewModel.selectedTeamSummary,
                     options: _viewModel.teamOptions,
                     isOpen: _viewModel.openDropdown == FilterDropdown.team,

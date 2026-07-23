@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/player_subscription.dart';
 import '../../model/team_notification_subscription.dart';
 import '../../repository/subscription/subscription_repository.dart';
@@ -96,7 +98,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     try {
       await Future.wait([subscribed, teams, available]);
     } catch (e, st) {
-      _error = '구독 정보를 불러오지 못했어요';
+      _error = appStrings?.subscriptionLoadFailed ?? 'Failed to load subscriptions';
       debugPrint('[Subscription] load 에러: $e\n$st');
     } finally {
       _isLoading = false;

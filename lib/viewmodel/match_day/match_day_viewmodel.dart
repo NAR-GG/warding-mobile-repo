@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/schedule_match.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
@@ -55,7 +57,7 @@ class MatchDayViewModel extends ChangeNotifier {
         teamIds: teamIds,
       );
     } catch (e) {
-      _error = '경기를 불러오지 못했어요';
+      _error = appStrings?.matchLoadFailed ?? 'Failed to load matches';
       _matches = const [];
       debugPrint('[MatchDay] load 에러: $e');
     } finally {

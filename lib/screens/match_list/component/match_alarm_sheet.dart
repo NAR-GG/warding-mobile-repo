@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/app_bottom_sheet.dart';
@@ -60,6 +61,7 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -77,26 +79,26 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
         ),
         SizedBox(height: 12 * scale),
         _AlarmRow(
-          label: '세트 시작 알림',
+          label: l.setStartAlarm,
           value: _setStart,
           onChanged: (v) => setState(() => _setStart = v),
           scale: scale,
         ),
         _AlarmRow(
-          label: '세트 종료 알림',
+          label: l.setEndAlarm,
           value: _setEnd,
           onChanged: (v) => setState(() => _setEnd = v),
           scale: scale,
         ),
         _AlarmRow(
-          label: '라이브 이벤트 알림',
+          label: l.liveEventAlarm,
           value: _liveEvent,
           onChanged: (v) => setState(() => _liveEvent = v),
           scale: scale,
         ),
         SizedBox(height: 24 * scale),
         CommonButton(
-          label: '확인',
+          label: l.confirm,
           scale: scale,
           // 3종 모두 꺼져 있으면 구독 의미가 없어 비활성(onPressed=null).
           onPressed: (_setStart || _setEnd || _liveEvent)
@@ -132,6 +134,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(left: 8 * scale),
       child: Row(
@@ -143,7 +146,7 @@ class _Header extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '경기 알림 설정',
+                  l.matchAlarmSettings,
                   style: TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.w700,

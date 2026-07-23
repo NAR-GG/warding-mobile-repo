@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../styles/app_colors.dart';
@@ -20,8 +21,9 @@ class SearchSelectBox extends StatefulWidget {
     required this.options,
     required this.onChanged,
     this.value,
-    this.hint = '선택',
-    this.searchHint = '검색어를 입력...',
+    this.hint,
+    this.searchHint,
+    this.labelBuilder,
     this.scale = 1,
   });
 
@@ -34,11 +36,14 @@ class SearchSelectBox extends StatefulWidget {
   /// 현재 선택된 항목. null 이면 박스에 [hint] 를 표시한다.
   final String? value;
 
-  /// [value] 가 없을 때 박스에 표시할 안내 문구.
-  final String hint;
+  /// [value] 가 없을 때 박스에 표시할 안내 문구. null 이면 l10n 기본값([AppLocalizations.selectHint])을 사용한다.
+  final String? hint;
 
-  /// 드롭다운 검색창 placeholder.
-  final String searchHint;
+  /// 드롭다운 검색창 placeholder. null 이면 l10n 기본값([AppLocalizations.searchInputHint])을 사용한다.
+  final String? searchHint;
+
+  /// 옵션 문자열을 표시용 라벨로 변환. null 이면 옵션 문자열 그대로 표시.
+  final String Function(String)? labelBuilder;
 
   /// 비율 스케일. 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
@@ -107,19 +112,22 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
+    final resolvedHint = widget.hint ?? l.selectHint;
+    final resolvedSearchHint = widget.searchHint ?? l.searchInputHint;
     return CompositedTransformTarget(
       link: _link,
       child: OverlayPortal(
         controller: _portalController,
-        overlayChildBuilder: (context) => _buildOverlay(scale),
-        child: _buildBox(scale),
+        overlayChildBuilder: (context) => _buildOverlay(scale, resolvedSearchHint),
+        child: _buildBox(scale, resolvedHint),
       ),
     );
   }
 
   /// 오버레이 콘텐츠: 바깥 탭을 받는 배리어 + 박스를 따라다니는 드롭다운.
-  Widget _buildOverlay(double scale) {
+  Widget _buildOverlay(double scale, String resolvedSearchHint) {
     return Stack(
       children: [
         // 드롭다운 바깥 아무 곳이나 탭하면 닫힌다.
@@ -138,7 +146,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
           offset: Offset(0, 9 * scale),
           child: Material(
             type: MaterialType.transparency,
-            child: _buildDropdown(scale),
+            child: _buildDropdown(scale, resolvedSearchHint),
           ),
         ),
       ],
@@ -149,7 +157,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
   ///
   /// 테두리는 [Container.foregroundDecoration] 으로 그려, 1px 테두리가
   /// 내부 공간을 깎지 않게 한다(시안의 38·padding 8 을 그대로 유지).
-  Widget _buildBox(double scale) {
+  Widget _buildBox(double scale, String resolvedHint) {
     final radius = BorderRadius.circular(10 * scale);
     return GestureDetector(
       onTap: _toggle,
@@ -177,7 +185,9 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
           children: [
             Expanded(
               child: Text(
-                widget.value ?? widget.hint,
+                widget.value != null
+                    ? (widget.labelBuilder?.call(widget.value!) ?? widget.value!)
+                    : resolvedHint,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -206,7 +216,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
 
   /// 드롭다운 패널. 폭은 셀렉트 박스에 맞추고 높이 191,
   /// 상단 검색창 + 항목 리스트.
-  Widget _buildDropdown(double scale) {
+  Widget _buildDropdown(double scale, String resolvedSearchHint) {
     // 셀렉트 박스(LayerLink 의 leader)와 같은 폭으로 그린다.
     final width = _link.leaderSize?.width ?? 210 * scale;
     return Container(
@@ -227,7 +237,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
       ),
       child: Column(
         children: [
-          _buildSearchField(scale),
+          _buildSearchField(scale, resolvedSearchHint),
           SizedBox(height: 5 * scale), // 검색창 ↔ 리스트 간격 5
           Expanded(
             child: ListView.builder(
@@ -242,7 +252,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
   }
 
   /// 드롭다운 상단 검색창. 높이 35, 왼쪽 텍스트 · 오른쪽 검색 아이콘.
-  Widget _buildSearchField(double scale) {
+  Widget _buildSearchField(double scale, String resolvedSearchHint) {
     return Container(
       height: 35 * scale,
       padding: EdgeInsets.symmetric(horizontal: 13 * scale),
@@ -271,7 +281,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
                 isCollapsed: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
-                hintText: widget.searchHint,
+                hintText: resolvedSearchHint,
                 hintStyle: TextStyle(
                   fontFamily: 'SF Pro',
                   fontWeight: FontWeight.w400,
@@ -314,7 +324,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
           children: [
             Expanded(
               child: Text(
-                option,
+                widget.labelBuilder?.call(option) ?? option,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_toggle.dart';
 import '../../../model/team_notification_subscription.dart';
@@ -56,6 +57,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
   }
 
   Widget _buildSection(double scale) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: Column(
@@ -67,7 +69,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '구독 팀 알림 설정',
+                l.subscriptionTeamAlarmSettings,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w600,
@@ -80,7 +82,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
                 behavior: HitTestBehavior.opaque,
                 onTap: widget.onManageTap,
                 child: Text(
-                  '구독 관리',
+                  l.subscriptionManage,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w500,
@@ -101,6 +103,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
 
   /// 구독중인 팀 알림 카드. 로딩/빈 상태/목록을 그린다.
   Widget _buildCard(double scale) {
+    final l = AppLocalizations.of(context)!;
     final teams = _viewModel.teams;
     return Container(
       padding: EdgeInsets.only(top: 10 * scale, bottom: 20 * scale),
@@ -123,7 +126,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
                 vertical: 16 * scale,
               ),
               child: Text(
-                '구독중인 팀이 없어요.',
+                l.noSubscribedTeam,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w500,
@@ -161,6 +164,7 @@ class _TeamAlarmBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -192,19 +196,19 @@ class _TeamAlarmBlock extends StatelessWidget {
         ),
         // 알림 토글 3행.
         _AlarmRow(
-          label: '세트 시작 알림',
+          label: l.setStartAlarm,
           value: team.setStartEnabled,
           onChanged: (v) => viewModel.setSetStart(team.teamId, v),
           scale: scale,
         ),
         _AlarmRow(
-          label: '세트 종료 알림',
+          label: l.setEndAlarm,
           value: team.setEndEnabled,
           onChanged: (v) => viewModel.setSetEnd(team.teamId, v),
           scale: scale,
         ),
         _AlarmRow(
-          label: '라이브 이벤트 알림',
+          label: l.liveEventAlarm,
           value: team.liveEventEnabled,
           onChanged: (v) => viewModel.setLiveEvent(team.teamId, v),
           scale: scale,

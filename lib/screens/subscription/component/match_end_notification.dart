@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/notification_card.dart';
 import '../../../styles/app_colors.dart';
@@ -35,14 +36,15 @@ class MatchEndNotification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return NotificationCard(
       icon: 'assets/icons/closing.svg',
-      title: '$teamA VS $teamB 경기가 종료되었습니다.',
-      body: '$season _ $teamA VS $teamB 경기가 종료되었습니다. 지금 바로 평점을 남겨보세요!',
+      title: l.matchEndNotificationTitle(teamA, teamB),
+      body: l.matchEndNotificationBody(season, teamA, teamB),
       action: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onRatingTap,
-        child: _GradientLink(text: '경기 평점 남기기', scale: scale),
+        child: _GradientLink(text: l.leaveMatchRating, scale: scale),
       ),
       dateTime: dateTime,
       relativeTime: relativeTime,

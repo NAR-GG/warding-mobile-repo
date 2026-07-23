@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import '../styles/app_colors.dart';
 import 'nar_button.dart';
@@ -10,8 +11,8 @@ Future<bool?> showNarConfirmDialog({
   required BuildContext context,
   required String title,
   required String message,
-  String cancelLabel = '취소',
-  String confirmLabel = '확인',
+  String? cancelLabel,
+  String? confirmLabel,
 }) {
   return showDialog<bool>(
     context: context,
@@ -37,8 +38,8 @@ class NarAlertDialog extends StatelessWidget {
     super.key,
     required this.title,
     required this.message,
-    this.cancelLabel = '취소',
-    this.confirmLabel = '확인',
+    this.cancelLabel,
+    this.confirmLabel,
     this.onCancel,
     this.onConfirm,
   });
@@ -49,13 +50,17 @@ class NarAlertDialog extends StatelessWidget {
   /// 설명 문구(12px 기준).
   final String message;
 
-  final String cancelLabel;
-  final String confirmLabel;
+  /// null 이면 l10n 기본값([AppLocalizations.defaultCancel])을 사용한다.
+  final String? cancelLabel;
+
+  /// null 이면 l10n 기본값([AppLocalizations.defaultConfirm])을 사용한다.
+  final String? confirmLabel;
   final VoidCallback? onCancel;
   final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -103,13 +108,13 @@ class NarAlertDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 NarButton(
-                  label: cancelLabel,
+                  label: cancelLabel ?? l.defaultCancel,
                   variant: NarButtonVariant.type2,
                   onPressed: onCancel,
                   scale: scale,
                 ),
                 NarButton(
-                  label: confirmLabel,
+                  label: confirmLabel ?? l.defaultConfirm,
                   variant: NarButtonVariant.type1,
                   onPressed: onConfirm,
                   scale: scale,

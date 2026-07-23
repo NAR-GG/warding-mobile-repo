@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
@@ -28,6 +29,7 @@ class RatingDistributionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.all(20 * scale),
       child: Row(
@@ -56,7 +58,7 @@ class RatingDistributionSection extends StatelessWidget {
                 NarStarRating(rating: rating, starSize: 20, scale: scale),
                 SizedBox(height: 1 * scale),
                 Text(
-                  '총 $raterCount명 참여',
+                  l.totalParticipants(raterCount),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w400,

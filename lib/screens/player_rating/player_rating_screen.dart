@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_alert_dialog.dart';
@@ -168,19 +169,20 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('평점 저장에 실패했어요. 잠시 후 다시 시도해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.ratingSaveFailed)),
       );
     }
   }
 
   /// 내 댓글 삭제 확인 알럿을 띄운다.
   Future<void> _confirmDeleteComment() async {
+    final l = AppLocalizations.of(context)!;
     final ok = await showNarConfirmDialog(
       context: context,
-      title: '내 평점을 삭제하시겠습니까?',
-      message: '삭제된 댓글은 복구되지 않습니다. 댓글은 수정 기능을 통해 편집할 수 있습니다.',
-      cancelLabel: '취소',
-      confirmLabel: '삭제',
+      title: l.deleteMyRatingConfirm,
+      message: l.deleteMyRatingMessage,
+      cancelLabel: l.cancel,
+      confirmLabel: l.delete,
     );
     if (ok != true) return;
     try {
@@ -188,7 +190,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('평점 삭제에 실패했어요. 잠시 후 다시 시도해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.ratingDeleteFailed)),
       );
     }
   }
@@ -216,6 +218,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -227,7 +230,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
           children: [
             // 헤더는 상단 고정.
             NarDetailHeader(
-              title: '선수 평점',
+              title: l.playerRating,
               trailing: NarDropdown(
                 variant: NarDropdownVariant.round,
                 value: _currentSet,
@@ -279,7 +282,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                             padding:
                                 EdgeInsets.symmetric(horizontal: 10 * scale),
                             child: MyCommentCard(
-                              username: '나',
+                              username: l.me,
                               timeAgo: '',
                               rating: my.rating,
                               comment: my.comment,
@@ -305,7 +308,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                                 EdgeInsets.symmetric(horizontal: 10 * scale),
                             child: NarButton(
                               variant: NarButtonVariant.set1,
-                              label: '평점 남기기',
+                              label: l.leaveRating,
                               onPressed: (d?.rateable ?? false)
                                   ? _openRatingSheet
                                   : null,

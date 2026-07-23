@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../model/team.dart';
@@ -16,7 +17,7 @@ class ScheduleHeader extends StatelessWidget {
   const ScheduleHeader({
     super.key,
     required this.monthLabel,
-    this.summary = '월간 경기 일정 요약',
+    this.summary,
     this.onMonthTap,
     this.onFilterTap,
     this.preferredTeam,
@@ -27,8 +28,8 @@ class ScheduleHeader extends StatelessWidget {
   /// 'yyyy.MM' 형식 월 라벨. 예: '2026.04'.
   final String monthLabel;
 
-  /// 월 아래 요약 텍스트.
-  final String summary;
+  /// 월 아래 요약 텍스트. null 이면 l.monthlyScheduleSummary 를 사용한다.
+  final String? summary;
 
   /// 월·달력 영역 탭 콜백. null 이면 비활성.
   final VoidCallback? onMonthTap;
@@ -47,6 +48,7 @@ class ScheduleHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -94,7 +96,7 @@ class ScheduleHeader extends StatelessWidget {
                 ),
                 SizedBox(height: 4 * scale),
                 Text(
-                  summary,
+                  summary ?? l.monthlyScheduleSummary,
                   style: TextStyle(
                     fontFamily: 'SF Pro',
                     fontWeight: FontWeight.w400,

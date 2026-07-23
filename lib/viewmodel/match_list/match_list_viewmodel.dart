@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/category_tree.dart';
 import '../../model/schedule_match.dart';
 import '../../repository/category/category_repository.dart';
@@ -62,9 +64,11 @@ class MatchListViewModel extends ChangeNotifier {
   }
 
   /// 팀 멀티 셀렉트의 '전체' 가상 옵션 라벨. 단독 선택을 의미한다.
+  /// 내부 비교 키로도 쓰이므로 static const 로 고정한다.
   static const String allTeamsLabel = '전체';
 
   /// 리그 필터의 '전체' 가상 옵션 라벨. 화면 진입 시 기본 선택된다.
+  /// 내부 비교 키로도 쓰이므로 static const 로 고정한다.
   static const String allLeagueLabel = '전체';
 
   /// '전체' 리그로 조회할 때 서버에 보낼 리그 코드.
@@ -91,17 +95,24 @@ class MatchListViewModel extends ChangeNotifier {
   /// 정렬 순서 옵션. fetch 방향은 항상 최신→과거이고, 표시 방향은 View 가
   /// ListView.reverse 로 뒤집는다 ([ascending] 참고). 기본은 '오래된 순'
   /// (위가 과거, 아래가 미래).
-  static const List<String> sortOrders = ['최근순', '오래된 순'];
+  /// 표시용 라벨 목록 — l10n 에서 가져온다. 순서(0=최근순, 1=오래된 순)는 고정.
+  List<String> get sortOrders => [
+        appStrings?.sortRecent ?? 'Recent',
+        appStrings?.sortOldest ?? 'Oldest',
+      ];
 
-  String _sortOrder = sortOrders[1];
-  String get sortOrder => _sortOrder;
+  /// 0=최근순, 1=오래된 순. 라벨이 언어에 따라 바뀌어도 index로 비교한다.
+  int _sortOrderIndex = 1;
 
-  /// 화면 위→아래가 과거→미래(시간 오름차순)인지. '오래된 순' 일 때 true.
-  bool get ascending => _sortOrder == sortOrders[1];
+  String get sortOrder => sortOrders[_sortOrderIndex];
+
+  /// 화면 위→아래가 과거→미래(시간 오름차순)인지. '오래된 순'(index 1) 일 때 true.
+  bool get ascending => _sortOrderIndex == 1;
 
   void selectSortOrder(String order) {
-    if (_sortOrder == order) return;
-    _sortOrder = order;
+    final idx = sortOrders.indexOf(order);
+    if (idx < 0 || idx == _sortOrderIndex) return;
+    _sortOrderIndex = idx;
     notifyListeners();
   }
 

@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// 마이구독 알림 피드 한 건.
 ///
 /// `GET /api/mobile/me/notifications` 응답 항목에 대응한다. 백엔드가 푸시 발송
@@ -35,9 +37,9 @@ class MemberNotification {
   String? get matchId => _d('matchId');
 
   // 솔랭 카드 재구성용 — 서버 data 에 모두 들어있다.
-  String get playerName => _d('playerName') ?? '선수';
-  String get championName => _d('championName') ?? '챔피언 정보 확인 중';
-  String get queueType => _d('queueType') ?? '솔로 랭크';
+  String get playerName => _d('playerName') ?? (appStrings?.fallbackPlayer ?? 'Player');
+  String get championName => _d('championName') ?? (appStrings?.fallbackChampionInfo ?? 'Loading champion info');
+  String get queueType => _d('queueType') ?? (appStrings?.soloRank ?? 'Solo Rank');
   String? get championImageUrl => _d('championImageUrl');
   String? get opggUrl => _d('opggUrl');
 

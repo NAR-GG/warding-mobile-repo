@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_button.dart';
 import '../../../styles/app_colors.dart';
@@ -146,7 +147,7 @@ class SubscribedItemRow extends StatelessWidget {
             ],
           ),
           NarButton(
-            label: item.subscribed ? '구독중' : '구독',
+            label: item.subscribed ? AppLocalizations.of(context)!.subscribing : AppLocalizations.of(context)!.subscribe,
             variant: item.subscribed
                 ? NarButtonVariant.subscribed
                 : NarButtonVariant.subscribe,

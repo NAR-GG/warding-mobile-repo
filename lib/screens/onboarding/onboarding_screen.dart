@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
@@ -78,6 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / _designWidth;
 
@@ -91,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 NarDetailHeader(
-                  title: _headerTitle(_viewModel.currentStep),
+                  title: _headerTitle(context, _viewModel.currentStep),
                   onBack: _onBack,
                   backIconAsset: 'assets/icons/chevron-left.svg',
                   trailing: GestureDetector(
@@ -103,7 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         vertical: 4 * scale,
                       ),
                       child: Text(
-                        '건너뛰기',
+                        l.skipButton,
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w400,
@@ -130,7 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     bottom: 32 * scale,
                   ),
                   child: CommonButton(
-                    label: _viewModel.isLastStep ? '와딩 시작하기' : '다음',
+                    label: _viewModel.isLastStep ? l.startWarding : l.next,
                     scale: scale,
                     onPressed: _viewModel.canProceed
                         ? _viewModel.goNext
@@ -159,16 +161,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
   }
 
-  String _headerTitle(OnboardingStep step) {
+  String _headerTitle(BuildContext context, OnboardingStep step) {
+    final l = AppLocalizations.of(context)!;
     switch (step) {
       case OnboardingStep.league:
-        return '선호 리그';
+        return l.preferredLeague;
       case OnboardingStep.team:
-        return '선호 팀';
+        return l.preferredTeam;
       case OnboardingStep.player:
-        return '선호 선수';
+        return l.preferredPlayer;
       case OnboardingStep.notification:
-        return '알림 권한';
+        return l.notificationPermission;
     }
   }
 }

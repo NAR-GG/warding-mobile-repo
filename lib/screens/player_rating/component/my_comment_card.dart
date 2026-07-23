@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_star_rating.dart';
@@ -45,6 +46,7 @@ class MyCommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.narLine2, width: 1),
@@ -70,7 +72,7 @@ class MyCommentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '내 댓글',
+                    l.myComment,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w700,

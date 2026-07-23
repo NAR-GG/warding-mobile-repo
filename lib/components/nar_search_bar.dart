@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../styles/app_colors.dart';
@@ -11,7 +12,7 @@ class NarSearchBar extends StatelessWidget {
   const NarSearchBar({
     super.key,
     this.controller,
-    this.hint = '팀 또는 선수 검색..',
+    this.hint,
     this.onChanged,
     this.onSubmitted,
     this.onSearchTap,
@@ -22,8 +23,8 @@ class NarSearchBar extends StatelessWidget {
   /// 텍스트 컨트롤러. 미제공 시 내부적으로 [TextField] 가 관리한다.
   final TextEditingController? controller;
 
-  /// placeholder 문구.
-  final String hint;
+  /// placeholder 문구. null 이면 l10n 기본값([AppLocalizations.searchHint])을 사용한다.
+  final String? hint;
 
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -38,6 +39,7 @@ class NarSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       height: 44 * scale,
       padding: EdgeInsets.only(left: 13 * scale),
@@ -67,7 +69,7 @@ class NarSearchBar extends StatelessWidget {
                 isCollapsed: true,
                 contentPadding: EdgeInsets.zero,
                 border: InputBorder.none,
-                hintText: hint,
+                hintText: hint ?? l.searchHint,
                 hintStyle: TextStyle(
                   fontFamily: 'SF Pro',
                   fontWeight: FontWeight.w400,

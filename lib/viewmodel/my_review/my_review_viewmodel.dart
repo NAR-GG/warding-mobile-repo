@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/my_rating_list.dart';
 import '../../repository/rating/rating_repository.dart';
 
@@ -69,7 +71,7 @@ class MyReviewViewModel extends ChangeNotifier {
       _totalElements = result.totalElements;
     } catch (e) {
       debugPrint('[MyReviewVM] load failed: $e');
-      _error = '내 평가를 불러오지 못했어요';
+      _error = appStrings?.myReviewLoadFailed ?? 'Failed to load reviews';
     } finally {
       _loading = false;
       _safeNotify();

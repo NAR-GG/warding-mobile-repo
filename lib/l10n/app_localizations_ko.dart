@@ -1,0 +1,817 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Korean (`ko`).
+class AppLocalizationsKo extends AppLocalizations {
+  AppLocalizationsKo([String locale = 'ko']) : super(locale);
+
+  @override
+  String get appTitle => 'Warding';
+
+  @override
+  String get logoutFailed => '로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get mainScreenPlaceholder => '메인 화면 (작업 예정)';
+
+  @override
+  String get matchList => '경기리스트';
+
+  @override
+  String get season => '시즌';
+
+  @override
+  String get league => '리그';
+
+  @override
+  String get loading => '불러오는 중...';
+
+  @override
+  String get select => '선택';
+
+  @override
+  String get noMatches => '경기가 없어요';
+
+  @override
+  String setInProgress(int setNumber) {
+    return 'SET $setNumber 진행중';
+  }
+
+  @override
+  String get today => '오늘';
+
+  @override
+  String get yesterday => '어제';
+
+  @override
+  String get tomorrow => '내일';
+
+  @override
+  String monthDay(int month, int day) {
+    return '$month월 $day일';
+  }
+
+  @override
+  String get setStartAlarm => '세트 시작 알림';
+
+  @override
+  String get setEndAlarm => '세트 종료 알림';
+
+  @override
+  String get liveEventAlarm => '라이브 이벤트 알림';
+
+  @override
+  String get confirm => '확인';
+
+  @override
+  String get matchAlarmSettings => '경기 알림 설정';
+
+  @override
+  String get matchAlarmRemoved => '경기 알림이 해제되었어요';
+
+  @override
+  String get matchAlarmRemoveFailed => '알림 해제에 실패했어요. 다시 시도해주세요';
+
+  @override
+  String get matchAlarmRegistered => '경기 알림이 등록되었어요';
+
+  @override
+  String get matchAlarmRegisterFailed => '알림 등록에 실패했어요. 다시 시도해주세요';
+
+  @override
+  String get spoilerBlock => '스포방지';
+
+  @override
+  String get clickToSeeScore => '클릭시 스코어 확인 가능';
+
+  @override
+  String get weekdayMon => '월';
+
+  @override
+  String get weekdayTue => '화';
+
+  @override
+  String get weekdayWed => '수';
+
+  @override
+  String get weekdayThu => '목';
+
+  @override
+  String get weekdayFri => '금';
+
+  @override
+  String get weekdaySat => '토';
+
+  @override
+  String get weekdaySun => '일';
+
+  @override
+  String get filter => '필터';
+
+  @override
+  String get team => '팀';
+
+  @override
+  String get all => '전체';
+
+  @override
+  String get monthlyScheduleSummary => '월간 경기 일정 요약';
+
+  @override
+  String get ratingSaveFailed => '평점 저장에 실패했어요. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get deleteMyRatingConfirm => '내 평점을 삭제하시겠습니까?';
+
+  @override
+  String get deleteMyRatingMessage =>
+      '삭제된 댓글은 복구되지 않습니다. 댓글은 수정 기능을 통해 편집할 수 있습니다.';
+
+  @override
+  String get cancel => '취소';
+
+  @override
+  String get delete => '삭제';
+
+  @override
+  String get ratingDeleteFailed => '평점 삭제에 실패했어요. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get playerRating => '선수 평점';
+
+  @override
+  String get me => '나';
+
+  @override
+  String get leaveRating => '평점 남기기';
+
+  @override
+  String get myComment => '내 댓글';
+
+  @override
+  String get ratingAndComment => '평점·코멘트';
+
+  @override
+  String totalCount(int count) {
+    return '총 $count개';
+  }
+
+  @override
+  String get leaveRatingAndComment => '평점·코멘트 남기기';
+
+  @override
+  String get ratingCommentHint => '선수의 활약에 대한 의견을 남겨보세요.';
+
+  @override
+  String get ratingCommentWarning =>
+      '선수에 대한 지나친 비방 및 부적절한 표현은 운영 정책에 따라 사전 안내 없이 삭제될 수 있습니다.';
+
+  @override
+  String get submit => '등록하기';
+
+  @override
+  String totalParticipants(int count) {
+    return '총 $count명 참여';
+  }
+
+  @override
+  String get subscribedPlayer => '회원님이 구독한 선수';
+
+  @override
+  String get leaveRatingForPlayer => '님에게 평점를 남겨보세요!';
+
+  @override
+  String get championPick => '챔피언 픽';
+
+  @override
+  String get liveEvent => '라이브 이벤트';
+
+  @override
+  String get tabPlayerRating => '선수 평점';
+
+  @override
+  String setLabel(int order) {
+    return '세트 $order';
+  }
+
+  @override
+  String get inProgress => '진행중';
+
+  @override
+  String get broadcastChannelSelect => '중계 채널 선택';
+
+  @override
+  String get watchOnPlatform => '보고 싶은 플랫폼에서 이어서 시청하세요';
+
+  @override
+  String get official => '공식';
+
+  @override
+  String get matchDetail => '경기 상세';
+
+  @override
+  String get playerRatingAfterMatch => '선수 평점은 경기 종료 후 남길 수 있어요!';
+
+  @override
+  String get watchBroadcast => '중계 보기';
+
+  @override
+  String get rewatch => '다시보기';
+
+  @override
+  String get matchEnded => '경기 종료';
+
+  @override
+  String get preparing => '준비중';
+
+  @override
+  String get liveEventAfterMatch => '라이브 이벤트는 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get championPickAfterMatch => '챔피언 픽은 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get championPickAfterMatchAlt => '챔피언 픽은 경기 시작 후 확인할 수 있어요!';
+
+  @override
+  String get eventDuringMatch => '이벤트는 경기 중에 확인할 수 있어요!';
+
+  @override
+  String get loadingLiveEvents => '라이브 이벤트를 가져오는 중이에요...';
+
+  @override
+  String get matchScheduled => '경기 예정';
+
+  @override
+  String get matchInProgress => '경기 진행 중';
+
+  @override
+  String allPlayerRatingForSet(String setTitle) {
+    return '$setTitle 전체 선수 평점';
+  }
+
+  @override
+  String setEndedLeaveRating(String setText) {
+    return '$setText 경기가 끝났어요! 각 선수 평점을 남겨보세요';
+  }
+
+  @override
+  String get totalPrefix => '총 ';
+
+  @override
+  String get participantsSuffix => '명 참여';
+
+  @override
+  String playerRatingWithCount(String rating, int count) {
+    return '$rating ($count명)';
+  }
+
+  @override
+  String get justNow => '방금 전';
+
+  @override
+  String minutesAgo(int minutes) {
+    return '$minutes분 전';
+  }
+
+  @override
+  String hoursAgo(int hours) {
+    return '$hours시간 전';
+  }
+
+  @override
+  String daysAgo(int days) {
+    return '$days일 전';
+  }
+
+  @override
+  String get eventTypeAll => '전체';
+
+  @override
+  String get eventTypeSetStart => '세트 시작';
+
+  @override
+  String get eventTypeSetEnd => '세트 종료';
+
+  @override
+  String get deleteSwipe => '삭제';
+
+  @override
+  String get deleteFailed => '삭제하지 못했습니다.';
+
+  @override
+  String get deleteAllAlarms => '알림 모두 삭제';
+
+  @override
+  String get deleteAllAlarmsMessage => '받은 알림을 모두 삭제할까요?';
+
+  @override
+  String get enableNotificationPermission => '알림을 받으려면 알림 권한을 허용해주세요.';
+
+  @override
+  String get noNotifications => '받은 알림이 없습니다.';
+
+  @override
+  String get mySubscription => '마이 구독';
+
+  @override
+  String get subscribedTeams => '구독중인 팀';
+
+  @override
+  String get subscribedPlayers => '구독중인 선수';
+
+  @override
+  String get subscriptionSettings => '구독 설정';
+
+  @override
+  String get fullList => '전체 목록';
+
+  @override
+  String get tabTeam => '팀';
+
+  @override
+  String get tabPlayer => '선수';
+
+  @override
+  String get dateLabel => '날짜';
+
+  @override
+  String get allPlayers => '선수전체';
+
+  @override
+  String get player => '선수';
+
+  @override
+  String get playerSelect => '선수 선택';
+
+  @override
+  String get subscribedPlayerList => '구독한 선수';
+
+  @override
+  String get subscribing => '구독중';
+
+  @override
+  String get subscribe => '구독';
+
+  @override
+  String liveEventNotificationTitle(String teamA, String teamB) {
+    return '$teamA VS $teamB 라이브 이벤트 발생!';
+  }
+
+  @override
+  String liveEventNotificationBody(String season, String teamA, String teamB) {
+    return '$season _ $teamA VS $teamB 경기 실시간 이벤트를 확인해보세요';
+  }
+
+  @override
+  String get foldDetail => '접어두기';
+
+  @override
+  String get showDetail => '상세보기';
+
+  @override
+  String matchEndNotificationTitle(String teamA, String teamB) {
+    return '$teamA VS $teamB 경기가 종료되었습니다.';
+  }
+
+  @override
+  String matchEndNotificationBody(String season, String teamA, String teamB) {
+    return '$season _ $teamA VS $teamB 경기가 종료되었습니다. 지금 바로 평점을 남겨보세요!';
+  }
+
+  @override
+  String get leaveMatchRating => '경기 평점 남기기';
+
+  @override
+  String matchStartNotificationTitle(String teamA, String teamB) {
+    return '$teamA VS $teamB 경기가 시작됩니다!';
+  }
+
+  @override
+  String matchStartNotificationBody(String season, String teamA, String teamB) {
+    return '$season _ 응원중인 팀 $teamA 과 $teamB의 경기가 시작됩니다.';
+  }
+
+  @override
+  String get soloRank => '솔로 랭크';
+
+  @override
+  String rankStartTitle(String playerName) {
+    return '$playerName 선수 랭크 시작 감지!';
+  }
+
+  @override
+  String rankStartBody(
+    String playerName,
+    String champion,
+    String particle,
+    String queueType,
+  ) {
+    return '지금 $playerName 선수가 $champion$particle $queueType를 시작했습니다';
+  }
+
+  @override
+  String get withdraw => '회원탈퇴';
+
+  @override
+  String get withdrawConfirmTitle => '회원탈퇴';
+
+  @override
+  String get withdrawConfirmMessage =>
+      '계정과 구독·알림·평점 등 모든 데이터가\n삭제되며 되돌릴 수 없습니다.';
+
+  @override
+  String get withdrawConfirmButton => '탈퇴';
+
+  @override
+  String get withdrawFailed => '회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get teamAutoSetBanner => '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!';
+
+  @override
+  String get myReviewRating => '내 리뷰/평점';
+
+  @override
+  String get customerService => '고객센터/문의';
+
+  @override
+  String get narWebsite => '나르지지 웹사이트';
+
+  @override
+  String get latestVersion => '최신 버전입니다.';
+
+  @override
+  String currentVersion(String version) {
+    return '(현재 버전 $version)';
+  }
+
+  @override
+  String get logout => '로그아웃';
+
+  @override
+  String get myPage => '마이 페이지';
+
+  @override
+  String get nicknamePlaceholder => '닉네임';
+
+  @override
+  String get profileEdit => '프로필 수정';
+
+  @override
+  String countUnit(int count) {
+    return '$count건';
+  }
+
+  @override
+  String get appInfo => '앱정보';
+
+  @override
+  String get languageSetting => '언어 설정';
+
+  @override
+  String get languageKo => '한국어';
+
+  @override
+  String get languageEn => 'English';
+
+  @override
+  String get subscriptionTeamAlarmSettings => '구독 팀 알림 설정';
+
+  @override
+  String get subscriptionManage => '구독 관리';
+
+  @override
+  String get noSubscribedTeam => '구독중인 팀이 없어요.';
+
+  @override
+  String get profileEditTitle => '프로필 수정';
+
+  @override
+  String get nameLabel => '이름';
+
+  @override
+  String get nameHint => '이름을 입력하세요';
+
+  @override
+  String get tagLabel => '태그';
+
+  @override
+  String get tagHint => '#태그';
+
+  @override
+  String get done => '완료';
+
+  @override
+  String get cheerTeamSetting => '응원 팀 설정';
+
+  @override
+  String get cheerTeamDescription => '응원 팀 설정시 닉네임 옆에 뱃지가 생겨요';
+
+  @override
+  String get cumulativeReviewRating => '누적 리뷰/평점';
+
+  @override
+  String get reviewView => '리뷰보기';
+
+  @override
+  String get reviewDelete => '리뷰삭제';
+
+  @override
+  String get deleteFailed2 => '삭제에 실패했어요. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get loginFailed => '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get appleLogin => 'Apple 로그인';
+
+  @override
+  String get kakaoLogin => '카카오 로그인';
+
+  @override
+  String get naverLogin => '네이버 로그인';
+
+  @override
+  String get googleLogin => 'Google 로그인';
+
+  @override
+  String get guestStart => '비회원으로 시작하기';
+
+  @override
+  String get easyLogin => '간편 로그인';
+
+  @override
+  String get skipButton => '건너뛰기';
+
+  @override
+  String get startWarding => '와딩 시작하기';
+
+  @override
+  String get next => '다음';
+
+  @override
+  String get preferredLeague => '선호 리그';
+
+  @override
+  String get preferredTeam => '선호 팀';
+
+  @override
+  String get preferredPlayer => '선호 선수';
+
+  @override
+  String get notificationPermission => '알림 권한';
+
+  @override
+  String get favoriteLeagueQuestion => '즐겨 시청하는 리그는 무엇인가요?';
+
+  @override
+  String get leagueLoadFailed => '리그 목록을 불러오지 못했어요';
+
+  @override
+  String get favoriteTeamQuestion => '가장 응원하는 팀을 선택해주세요';
+
+  @override
+  String get domesticTeamNote => 'LCK 국내 팀 기준입니다.';
+
+  @override
+  String get teamLoadFailed => '팀 목록을 불러오지 못했어요';
+
+  @override
+  String get favoritePlayerQuestion => '응원하는 선수를 선택해주세요';
+
+  @override
+  String get domesticPlayerNote => 'LCK 국내 팀 기준입니다. (중복 가능)';
+
+  @override
+  String get playerLoadFailed => '선수 목록을 불러오지 못했어요';
+
+  @override
+  String get noPlayerInfo => '선수 정보가 없어요';
+
+  @override
+  String get teamSelect => '팀 선택';
+
+  @override
+  String get notificationQuestion => '\'Warding\'에서 보내는 이벤트 및 알림을 받아보시겠습니까?';
+
+  @override
+  String get notificationConsentMessage =>
+      '수신 동의 시 이벤트, 경기/팀/선수 등 다양한 정보에 대한 알림을 받아보실 수 있습니다.';
+
+  @override
+  String get readyComplete => '준비 완료!';
+
+  @override
+  String get enjoyMessage => '응원하는 팀과 선수의 경기,\n이제 놓치지 말고 즐겨보세요.';
+
+  @override
+  String get deny => '허용 안 함';
+
+  @override
+  String get allow => '허용';
+
+  @override
+  String get retry => '다시 시도';
+
+  @override
+  String get selected => '선택됨';
+
+  @override
+  String get matchSchedule => '경기 일정';
+
+  @override
+  String get matchLoadFailed => '경기를 불러오지 못했어요';
+
+  @override
+  String get navSchedule => '경기일정';
+
+  @override
+  String get navMatchList => '경기리스트';
+
+  @override
+  String get navSubscription => '마이 구독';
+
+  @override
+  String get navMyPage => '마이페이지';
+
+  @override
+  String get defaultCancel => '취소';
+
+  @override
+  String get defaultConfirm => '확인';
+
+  @override
+  String get filterApply => '조회하기';
+
+  @override
+  String get searchHint => '팀 또는 선수 검색..';
+
+  @override
+  String get selectHint => '선택';
+
+  @override
+  String get searchInputHint => '검색어를 입력...';
+
+  @override
+  String get loginRequired => '로그인 후 사용 가능';
+
+  @override
+  String get fallbackPlayer => '선수';
+
+  @override
+  String get fallbackChampionInfo => '챔피언 정보 확인 중';
+
+  @override
+  String get liveMatchNotification => '라이브 경기 알림';
+
+  @override
+  String get watchBroadcastFallback => '중계 보기';
+
+  @override
+  String get objectDragon => '드래곤';
+
+  @override
+  String objectSubDragon(String sub) {
+    return '$sub드래곤';
+  }
+
+  @override
+  String get objectBaron => '바론';
+
+  @override
+  String get objectTower => '타워';
+
+  @override
+  String get objectInhibitor => '억제기';
+
+  @override
+  String get notificationChannelName => '구독 알림';
+
+  @override
+  String get notificationChannelDesc => '구독 선수·팀의 경기/이벤트 알림';
+
+  @override
+  String get duplicateNickname => '이미 사용 중인 닉네임입니다';
+
+  @override
+  String get sortRecent => '최근순';
+
+  @override
+  String get sortOldest => '오래된 순';
+
+  @override
+  String get scheduleLoadFailed => '경기 일정을 불러오지 못했어요';
+
+  @override
+  String get playerRatingLoadFailed => '선수 평점을 불러오지 못했어요';
+
+  @override
+  String get noPlayerRecordInSet => '이 세트에는 해당 선수 기록이 없어요';
+
+  @override
+  String get setRatingLoadFailed => '세트 평점을 불러오지 못했어요';
+
+  @override
+  String get setInfoNotFound => '세트 정보를 찾을 수 없어요';
+
+  @override
+  String get championPickLoadFailed => '챔피언 픽을 불러오지 못했어요';
+
+  @override
+  String get liveEventLoadFailed => '라이브 이벤트를 불러오지 못했어요';
+
+  @override
+  String get playerRatingLoadFailed2 => '선수 평점을 불러오지 못했어요';
+
+  @override
+  String get subscriptionLoadFailed => '구독 정보를 불러오지 못했어요';
+
+  @override
+  String get notificationLoadFailed => '알림을 불러오지 못했습니다.';
+
+  @override
+  String get teamAlarmLoadFailed => '팀 알림 정보를 불러오지 못했어요';
+
+  @override
+  String get profileLoadFailed => '프로필을 불러오지 못했어요';
+
+  @override
+  String get requiredField => '필수 입력 항목입니다.';
+
+  @override
+  String get tagFormatError => '영문/숫자 2~5자로 입력하세요.';
+
+  @override
+  String get duplicateNicknameError => '이미 사용 중인 닉네임입니다.';
+
+  @override
+  String get saveFailed => '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get myReviewLoadFailed => '내 평가를 불러오지 못했어요';
+
+  @override
+  String get laneTop => '탑';
+
+  @override
+  String get laneJungle => '정글';
+
+  @override
+  String get laneMid => '미드';
+
+  @override
+  String get laneBot => '원딜';
+
+  @override
+  String get laneBotAlt => '바텀';
+
+  @override
+  String get laneSupport => '서폿';
+
+  @override
+  String get laneSupportAlt => '서포터';
+
+  @override
+  String weekRound(int week) {
+    return '$week주 차';
+  }
+
+  @override
+  String nthRound(int n) {
+    return '$n강';
+  }
+
+  @override
+  String get stagePlayIn => '플레이-인';
+
+  @override
+  String get stagePlayInTournament => '플레이-인 토너먼트 스테이지';
+
+  @override
+  String get stageGroup => '그룹';
+
+  @override
+  String get stageSwiss => '스위스';
+
+  @override
+  String get stageTournament => '토너먼트 스테이지';
+
+  @override
+  String get stagePlayoff => '플레이오프';
+
+  @override
+  String get stageFinal => '결승';
+
+  @override
+  String get updateAvailableTitle => '업데이트 안내';
+
+  @override
+  String get updateAvailableMessage => '새로운 버전이 출시되었습니다.\n최신 버전으로 업데이트해주세요.';
+
+  @override
+  String get updateNow => '업데이트';
+}

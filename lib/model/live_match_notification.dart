@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// 수신한 '라이브 경기' 푸시 한 건(세트 시작/종료/경기 이벤트).
 ///
 /// 솔랭 알림([SoloRankNotification])과 달리 선수/챔피언 필드가 없고,
@@ -48,7 +50,7 @@ class LiveMatchNotification {
     return LiveMatchNotification(
       type: s('type'),
       matchId: s('matchId'),
-      title: (title ?? sn('title') ?? '라이브 경기 알림'),
+      title: (title ?? sn('title') ?? (appStrings?.liveMatchNotification ?? 'Live Match Notification')),
       body: (body ?? sn('body') ?? ''),
       setNumber: sn('setNumber'),
       receivedAt: receivedAt ?? DateTime.now(),
@@ -71,7 +73,9 @@ class LiveMatchNotification {
     return LiveMatchNotification(
       type: (json['type'] ?? '').toString(),
       matchId: (json['matchId'] ?? '').toString(),
-      title: (json['title'] ?? '라이브 경기 알림').toString(),
+      title: (json['title'] as String?)?.isNotEmpty == true
+          ? json['title'] as String
+          : (appStrings?.liveMatchNotification ?? 'Live Match Notification'),
       body: (json['body'] ?? '').toString(),
       setNumber: json['setNumber'] as String?,
       receivedAt: DateTime.tryParse(json['receivedAt']?.toString() ?? '') ??

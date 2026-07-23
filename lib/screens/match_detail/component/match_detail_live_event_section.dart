@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../model/match_game.dart';
@@ -137,7 +138,7 @@ class _MatchDetailLiveEventSectionState
             _EmptyState(message: widget.errorMessage!, scale: scale)
           else if (events.isEmpty && !loading)
             MatchDetailLockedEmpty(
-              message: '이벤트는 경기 중에 확인할 수 있어요!',
+              message: AppLocalizations.of(context)!.eventDuringMatch,
               scale: scale,
             )
           else
@@ -207,22 +208,23 @@ class _ReloadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final iconColor =
         loading ? AppColors.narText3 : AppColors.narTextTertiary;
     final textColor = loading ? AppColors.narText3 : AppColors.narTextTertiary;
     final String label;
     if (loading) {
-      label = '라이브 이벤트를 가져오는 중이에요...';
+      label = l.loadingLiveEvents;
     } else {
       switch (status) {
         case MatchGameStatus.ended:
-          label = '경기 종료';
+          label = l.matchEnded;
           break;
         case MatchGameStatus.scheduled:
-          label = '경기 예정';
+          label = l.matchScheduled;
           break;
         default: // LIVE
-          label = '경기 진행 중';
+          label = l.matchInProgress;
       }
     }
 

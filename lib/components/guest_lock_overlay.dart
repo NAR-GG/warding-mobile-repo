@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import '../repository/auth/auth_service.dart';
 import '../screens/login/login_screen.dart';
@@ -61,6 +62,7 @@ class _GuestLockOverlayState extends State<GuestLockOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
     return Stack(
       children: [
@@ -76,7 +78,7 @@ class _GuestLockOverlayState extends State<GuestLockOverlay>
                   child: SizedBox(
                     width: 200 * scale,
                     child: NarButton(
-                      label: '로그인 후 사용 가능',
+                      label: l.loginRequired,
                       variant: NarButtonVariant.set1,
                       scale: scale,
                       onPressed: _goToLogin,

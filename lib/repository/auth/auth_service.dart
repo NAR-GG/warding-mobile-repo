@@ -13,6 +13,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../config/api_config.dart';
 import '../../config/app_globals.dart';
+import '../../l10n/app_strings.dart';
 import '../../model/user_profile.dart';
 import '../../screens/login/login_screen.dart';
 import '../device/device_repository.dart';
@@ -33,7 +34,7 @@ class NicknameConflictException implements Exception {
   const NicknameConflictException();
 
   @override
-  String toString() => '이미 사용 중인 닉네임입니다';
+  String toString() => appStrings?.duplicateNickname ?? 'This nickname is already in use';
 }
 
 class AuthService {

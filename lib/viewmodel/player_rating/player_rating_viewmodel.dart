@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/game_rating.dart';
 import '../../model/match_game.dart';
 import '../../repository/auth/auth_service.dart';
@@ -136,7 +138,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
         ..addAll(detail.reviews);
     } catch (e) {
       debugPrint('[PlayerRatingVM] load failed: $e');
-      _error = '선수 평점을 불러오지 못했어요';
+      _error = appStrings?.playerRatingLoadFailed ?? 'Failed to load player ratings';
     } finally {
       _loading = false;
       _safeNotify();
@@ -184,7 +186,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
       final player =
           list.players.where((p) => p.playerId == playerId).firstOrNull;
       if (player == null) {
-        _error = '이 세트에는 해당 선수 기록이 없어요';
+        _error = appStrings?.noPlayerRecordInSet ?? 'No player record in this set';
         _loading = false;
         _safeNotify();
         return;
@@ -193,7 +195,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
       _participantId = player.participantId;
     } catch (e) {
       debugPrint('[PlayerRatingVM] selectSet failed: $e');
-      _error = '세트 평점을 불러오지 못했어요';
+      _error = appStrings?.setRatingLoadFailed ?? 'Failed to load set ratings';
       _loading = false;
       _safeNotify();
       return;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_chip.dart';
 import '../../../components/nar_filter_sheet.dart';
@@ -45,8 +46,9 @@ class _PlayerSelectSheetState extends State<PlayerSelectSheet> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
+    final l = AppLocalizations.of(context)!;
     return NarFilterSheet(
-      title: '선수 선택',
+      title: l.playerSelect,
       onReset: () => setState(_selected.clear),
       // 선수를 안 골라도 조회 가능 (빈 선택이면 선수 필터 해제로 동작).
       onApply: () => Navigator.of(context).pop(_selected),
@@ -58,7 +60,7 @@ class _PlayerSelectSheetState extends State<PlayerSelectSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '구독한 선수',
+              l.subscribedPlayerList,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w500,

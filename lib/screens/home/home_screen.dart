@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
@@ -29,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('[Home] 로그아웃 에러: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.logoutFailed)));
     } finally {
       if (mounted) setState(() => _isSigningOut = false);
     }
@@ -37,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       appBar: AppBar(
@@ -49,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: const Center(
+      body: Center(
         child: Text(
-          '메인 화면 (작업 예정)',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          l.mainScreenPlaceholder,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
       ),
     );

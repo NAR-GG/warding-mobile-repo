@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_badge.dart';
@@ -63,8 +64,8 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
     return match?.group(0) ?? '';
   }
 
-  /// 배너 문구용 '1세트' 표기. 숫자를 못 찾으면 원본 라벨을 그대로 쓴다.
-  String get _setText => _setNumber.isNotEmpty ? '$_setNumber세트' : setLabel;
+  /// 배너 문구용 표기. 이미 로케일에 맞춰진 setLabel 을 그대로 쓴다.
+  String get _setText => setLabel;
 
   /// 요약 제목용 'SET 1' 표기.
   String get _setTitle => _setNumber.isNotEmpty ? 'SET $_setNumber' : setLabel;
@@ -103,7 +104,7 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.all(16 * scale),
                     child: _OverallRating(
-                      title: '$_setTitle 전체 선수 평점',
+                      title: AppLocalizations.of(context)!.allPlayerRatingForSet(_setTitle),
                       blueTeamName: blueTeamName,
                       redTeamName: redTeamName,
                       blueRating: blueRating,
@@ -197,7 +198,7 @@ class _RatingBanner extends StatelessWidget {
         width: 24 * scale,
         height: 24 * scale,
       ),
-      text: '$setText 경기가 끝났어요! 각 선수 평점을 남겨보세요',
+      text: AppLocalizations.of(context)!.setEndedLeaveRating(setText),
     );
   }
 }
@@ -321,21 +322,26 @@ class _TeamRatingColumn extends StatelessWidget {
           ),
         ),
         NarStarRating(rating: rating, scale: scale),
-        Text.rich(
-          TextSpan(
-            children: [
-              const TextSpan(text: '총 '),
-              TextSpan(text: '$raterCount'),
-              const TextSpan(text: '명 참여'),
-            ],
-          ),
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w400,
-            fontSize: 12 * scale,
-            height: 1.4,
-            color: AppColors.narText2,
-          ),
+        Builder(
+          builder: (context) {
+            final l = AppLocalizations.of(context)!;
+            return Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: l.totalPrefix),
+                  TextSpan(text: '$raterCount'),
+                  TextSpan(text: l.participantsSuffix),
+                ],
+              ),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 12 * scale,
+                height: 1.4,
+                color: AppColors.narText2,
+              ),
+            );
+          },
         ),
       ],
     );

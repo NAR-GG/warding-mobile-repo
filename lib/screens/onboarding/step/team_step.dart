@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -25,28 +26,30 @@ class TeamStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: 48 * scale),
         OnboardingTitle(
-          mainTitle: '가장 응원하는 팀을 선택해주세요',
-          subTitle: 'LCK 국내 팀 기준입니다.',
+          mainTitle: l.favoriteTeamQuestion,
+          subTitle: l.domesticTeamNote,
           scale: scale,
         ),
         SizedBox(height: 32 * scale), // 타이틀 ↔ 그리드 고정 간격 (스크롤해도 유지)
-        Expanded(child: _buildGrid()),
+        Expanded(child: _buildGrid(context)),
       ],
     );
   }
 
-  Widget _buildGrid() {
+  Widget _buildGrid(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     if (viewModel.teamsLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.teamsError != null) {
       return OnboardingLoadError(
-        message: '팀 목록을 불러오지 못했어요',
+        message: l.teamLoadFailed,
         onRetry: viewModel.loadTeams,
       );
     }

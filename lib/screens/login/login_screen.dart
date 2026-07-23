@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../repository/auth/auth_service.dart';
@@ -52,9 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       debugPrint('[Login] 로그인 에러: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('로그인에 실패했습니다. 잠시 후 다시 시도해주세요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.loginFailed)),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -62,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
@@ -88,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     size: 20,
                     color: AppColors.gray100,
                   ),
-                  label: 'Apple 로그인',
+                  label: l.appleLogin,
                   onTap: () => _signIn('apple'),
                 ),
                 const SizedBox(height: 16),
@@ -101,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 18,
                   height: 18,
                 ),
-                label: '카카오 로그인',
+                label: l.kakaoLogin,
                 onTap: () => _signIn('kakao'),
               ),
               const SizedBox(height: 16),
@@ -113,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 16,
                   height: 16,
                 ),
-                label: '네이버 로그인',
+                label: l.naverLogin,
                 onTap: () => _signIn('naver'),
               ),
               const SizedBox(height: 16),
@@ -125,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 20,
                   height: 20,
                 ),
-                label: 'Google 로그인',
+                label: l.googleLogin,
                 onTap: () => _signIn('google'),
               ),
               const SizedBox(height: 20),
@@ -137,9 +139,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (_) => const OnboardingScreen(),
                         ),
                       ),
-                child: const Text(
-                  '비회원으로 시작하기',
-                  style: TextStyle(color: AppColors.narText2, fontSize: 16),
+                child: Text(
+                  l.guestStart,
+                  style: const TextStyle(color: AppColors.narText2, fontSize: 16),
                 ),
               ),
               const Spacer(flex: 48),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/onboarding/onboarding_viewmodel.dart';
@@ -20,24 +21,18 @@ class NotificationStep extends StatelessWidget {
   /// 디자인 시안 대비 스케일.
   final double scale;
 
-  static const _boxMainTitle =
-      "'Warding'에서 보내는 이벤트 및 알림을 받아보시겠습니까?";
-  static const _boxSubTitle =
-      '수신 동의 시 이벤트, 경기/팀/선수 등 다양한 정보에 대한 알림을 받아보실 수 있습니다.';
-  static const _doneMainTitle = '준비 완료!';
-  static const _doneSubTitle = '응원하는 팀과 선수의 경기,\n이제 놓치지 말고 즐겨보세요.';
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: viewModel.notificationDone
-          ? _buildDoneMessage()
+          ? _buildDoneMessage(context)
           : Padding(
               padding: EdgeInsets.symmetric(horizontal: 45 * scale),
               child: NotificationPermissionBox(
                 scale: scale,
-                mainTitle: _boxMainTitle,
-                subTitle: _boxSubTitle,
+                mainTitle: l.notificationQuestion,
+                subTitle: l.notificationConsentMessage,
                 onDeny: viewModel.markNotificationDone,
                 onAllow: viewModel.requestNotificationPermission,
               ),
@@ -46,12 +41,13 @@ class NotificationStep extends StatelessWidget {
   }
 
   /// 알림 권한 단계 완료 후 가운데에 표시되는 메시지.
-  Widget _buildDoneMessage() {
+  Widget _buildDoneMessage(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          _doneMainTitle,
+          l.readyComplete,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Pretendard',
@@ -64,7 +60,7 @@ class NotificationStep extends StatelessWidget {
         ),
         SizedBox(height: 12 * scale),
         Text(
-          _doneSubTitle,
+          l.enjoyMessage,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Pretendard',

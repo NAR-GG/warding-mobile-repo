@@ -69,6 +69,9 @@ class NarTabBar extends StatelessWidget {
                           child: Text(
                             tabs[i],
                             textAlign: TextAlign.center,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontWeight: i == selectedIndex

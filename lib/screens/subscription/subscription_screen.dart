@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -100,23 +101,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   /// 상대 시각 ('방금 전', 'N분 전', 'N시간 전', 'N일 전').
-  String _formatRelative(DateTime t) {
+  String _formatRelative(DateTime t, AppLocalizations l) {
     final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return '방금 전';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
-    if (diff.inHours < 24) return '${diff.inHours}시간 전';
-    return '${diff.inDays}일 전';
+    if (diff.inMinutes < 1) return l.justNow;
+    if (diff.inMinutes < 60) return l.minutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l.hoursAgo(diff.inHours);
+    return l.daysAgo(diff.inDays);
   }
 
-  /// 이벤트 타입 필터 옵션. 첫 항목 '전체'는 나머지와 배타적으로 동작한다.
-  static const List<String> _eventTypes = ['전체', '세트 시작', '세트 종료'];
+  /// 이벤트 타입 필터 내부 키 상수.
+  static const String _keyAll = 'ALL';
+  static const String _keySetStart = 'SET_START';
+  static const String _keySetEnd = 'SET_END';
 
-  /// 칩 라벨 → 서버 알림 타입. '전체'는 null.
+  /// 칩 내부 키 → 서버 알림 타입. 'ALL'은 null.
   MemberNotificationType? _chipToType(String chip) {
     switch (chip) {
-      case '세트 시작':
+      case _keySetStart:
         return MemberNotificationType.setStart;
-      case '세트 종료':
+      case _keySetEnd:
         return MemberNotificationType.setEnd;
       default:
         return null;
@@ -193,7 +196,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   /// 알림 한 건을 타입에 맞는 카드로 그린다. 좌스와이프로 삭제, 탭으로 이동.
-  Widget _buildNotification(MemberNotification n, double scale) {
+  Widget _buildNotification(MemberNotification n, double scale, AppLocalizations l) {
     final Widget card;
     if (n.type == MemberNotificationType.playerSoloRank) {
       card = RankStartNotification(
@@ -201,7 +204,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         champion: n.championName,
         queueType: n.queueType,
         dateTime: _formatAbsolute(n.createdAt),
-        relativeTime: _formatRelative(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt, l),
         scale: scale,
       );
     } else {
@@ -211,7 +214,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         title: n.title,
         body: n.body,
         dateTime: _formatAbsolute(n.createdAt),
-        relativeTime: _formatRelative(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt, l),
         scale: scale,
       );
     }
@@ -220,7 +223,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       key: ValueKey<int>(n.id),
       direction: DismissDirection.endToStart,
       onDismissed: (_) => _deleteOne(n),
-      background: _swipeDeleteBackground(scale),
+      background: _swipeDeleteBackground(scale, l),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _onNotificationTap(n),
@@ -235,6 +238,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   List<Widget> _buildFeedChildren(
     List<MemberNotification> items,
     double scale,
+    AppLocalizations l,
   ) {
     _dateHeaderKeys.clear();
     final children = <Widget>[];
@@ -244,16 +248,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       if (day != lastDay) {
         final key = GlobalKey();
         _dateHeaderKeys[day] = key;
-        children.add(_dateHeader(day, scale, key));
+        children.add(_dateHeader(day, scale, key, l));
         lastDay = day;
       }
-      children.add(_buildNotification(n, scale));
+      children.add(_buildNotification(n, scale, l));
     }
     return children;
   }
 
   /// 날짜 구분 헤더 — 'M월 D일'.
-  Widget _dateHeader(DateTime day, double scale, Key key) {
+  Widget _dateHeader(DateTime day, double scale, Key key, AppLocalizations l) {
     return Padding(
       key: key,
       padding: EdgeInsets.fromLTRB(
@@ -263,7 +267,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         8 * scale,
       ),
       child: Text(
-        '${day.month}월 ${day.day}일',
+        l.monthDay(day.month, day.day),
         style: TextStyle(
           fontFamily: 'Pretendard',
           fontWeight: FontWeight.w600,
@@ -276,7 +280,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   /// 좌스와이프 시 뒤에 드러나는 빨간 삭제 배경.
-  Widget _swipeDeleteBackground(double scale) {
+  Widget _swipeDeleteBackground(double scale, AppLocalizations l) {
     return Container(
       color: AppColors.liveAccent,
       alignment: Alignment.centerRight,
@@ -291,7 +295,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ),
           SizedBox(width: 4 * scale),
           Text(
-            '삭제',
+            l.deleteSwipe,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14 * scale,
@@ -309,20 +313,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       await _feedViewModel.delete(n);
     } catch (_) {
       if (!mounted) return;
+      final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('삭제하지 못했습니다.')));
+      ).showSnackBar(SnackBar(content: Text(l.deleteFailed)));
     }
   }
 
   /// '비우기' — 전체 삭제 확인 후 실행.
   Future<void> _confirmClearAll() async {
     if (_feedViewModel.notifications.isEmpty) return;
+    final l = AppLocalizations.of(context)!;
     final confirmed = await showNarConfirmDialog(
       context: context,
-      title: '알림 모두 삭제',
-      message: '받은 알림을 모두 삭제할까요?',
-      confirmLabel: '삭제',
+      title: l.deleteAllAlarms,
+      message: l.deleteAllAlarmsMessage,
+      confirmLabel: l.delete,
     );
     if (confirmed != true) return;
     try {
@@ -331,7 +337,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('삭제하지 못했습니다.')));
+      ).showSnackBar(SnackBar(content: Text(l.deleteFailed)));
     }
   }
 
@@ -352,25 +358,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 구독한 선수 목록 — 진입 시 `/api/mobile/me/player-subscriptions`에서 채운다.
   List<String> _players = const [];
 
-  // 초기 상태 — 필터 없음('전체'만 활성).
-  Set<String> _selectedTypes = {'전체'};
+  // 초기 상태 — 필터 없음(_keyAll 만 활성).
+  Set<String> _selectedTypes = {_keyAll};
   Set<String> _selectedPlayers = {};
 
-  /// '전체' 활성 조건을 다른 필터와 동기화한다.
-  /// 세트 타입·선수 중 하나라도 선택돼 있으면 '전체'를 해제하고,
-  /// 아무 필터도 없으면 '전체'를 활성한다.
+  /// _keyAll 활성 조건을 다른 필터와 동기화한다.
+  /// 세트 타입·선수 중 하나라도 선택돼 있으면 _keyAll 을 해제하고,
+  /// 아무 필터도 없으면 _keyAll 을 활성한다.
   void _syncAll() {
     final hasFilter =
-        _selectedTypes.any((t) => t != '전체') || _selectedPlayers.isNotEmpty;
-    _selectedTypes = hasFilter ? (_selectedTypes..remove('전체')) : {'전체'};
+        _selectedTypes.any((t) => t != _keyAll) || _selectedPlayers.isNotEmpty;
+    _selectedTypes = hasFilter ? (_selectedTypes..remove(_keyAll)) : {_keyAll};
   }
 
-  /// 이벤트 타입 필터 토글. '전체'를 고르면 세트 타입·선수 필터를 모두 비운다.
+  /// 이벤트 타입 필터 토글. _keyAll 을 고르면 세트 타입·선수 필터를 모두 비운다.
   void _onTypesChanged(Set<String> next) {
     final added = next.difference(_selectedTypes);
     setState(() {
-      if (added.contains('전체')) {
-        _selectedTypes = {'전체'};
+      if (added.contains(_keyAll)) {
+        _selectedTypes = {_keyAll};
         _selectedPlayers = {};
       } else {
         _selectedTypes = next;
@@ -458,8 +464,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
+
+    /// 이벤트 타입 필터 옵션 — 내부 키 → 표시 라벨 맵.
+    final eventTypeLabels = {
+      _keyAll: l.eventTypeAll,
+      _keySetStart: l.eventTypeSetStart,
+      _keySetEnd: l.eventTypeSetEnd,
+    };
+    final eventTypeKeys = [_keyAll, _keySetStart, _keySetEnd];
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,
@@ -499,16 +514,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                 width: 24 * scale,
                                 height: 24 * scale,
                               ),
-                              text: '알림을 받으려면 알림 권한을 허용해주세요.',
+                              text: l.enableNotificationPermission,
                             ),
                           ),
                   ),
                   SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                   NarChipMultiSelect(
-                    options: _eventTypes,
+                    options: eventTypeKeys,
+                    labelBuilder: (key) => eventTypeLabels[key] ?? key,
                     selectedValues: _selectedTypes,
                     onChanged: _onTypesChanged,
-                    pinned: const {'전체'}, // '전체'는 항상 맨 앞 고정
+                    pinned: const {_keyAll}, // _keyAll 은 항상 맨 앞 고정
                     scale: scale,
                     trailing: [
                       (
@@ -564,7 +580,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                       const AlwaysScrollableScrollPhysics(),
                                   children: [
                                     SizedBox(height: 120 * scale),
-                                    _centerMessage('받은 알림이 없습니다.', scale),
+                                    _centerMessage(l.noNotifications, scale),
                                   ],
                                 )
                               // ponytail: SingleChildScrollView+Column 으로 모든 항목을
@@ -579,7 +595,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.stretch,
-                                    children: _buildFeedChildren(items, scale),
+                                    children: _buildFeedChildren(items, scale, l),
                                   ),
                                 ),
                         );
@@ -627,6 +643,7 @@ class _SubscriptionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.fromLTRB(20 * scale, 17 * scale, 20 * scale, 0),
       child: Row(
@@ -634,7 +651,7 @@ class _SubscriptionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            '마이 구독',
+            l.mySubscription,
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontWeight: FontWeight.w700,

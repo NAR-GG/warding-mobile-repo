@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_chip.dart';
 
@@ -36,16 +37,17 @@ class PlayerFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     // 0명 — 기본 드롭다운 칩.
     if (selected.isEmpty) {
-      return NarChip.dropdown(label: '선수전체', scale: scale, onTap: onTap);
+      return NarChip.dropdown(label: l.allPlayers, scale: scale, onTap: onTap);
     }
 
     // 전체 선택 — '선수' + '전체' 배지 + circle-x.
     if (players.isNotEmpty && selected.length >= players.length) {
       return NarChip.active(
-        label: '선수',
-        badge: '전체',
+        label: l.player,
+        badge: l.all,
         trailing: NarChipTrailing.remove,
         scale: scale,
         onTap: onTap,

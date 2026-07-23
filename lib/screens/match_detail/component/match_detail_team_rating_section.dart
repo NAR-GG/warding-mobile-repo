@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_star_rating.dart';
@@ -179,7 +180,7 @@ class _PlayerRatingRow extends StatelessWidget {
                 NarStarRating(rating: player.rating, scale: scale),
                 SizedBox(height: 2 * scale),
                 Text(
-                  '${player.rating.toStringAsFixed(1)} (${player.raterCount}명)',
+                  AppLocalizations.of(context)!.playerRatingWithCount(player.rating.toStringAsFixed(1), player.raterCount),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w600,

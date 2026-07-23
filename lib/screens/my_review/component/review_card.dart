@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/common_button.dart';
 import '../../../components/nar_badge.dart';
@@ -116,6 +117,7 @@ class ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final subStyle = TextStyle(
       fontFamily: 'Pretendard',
       fontWeight: FontWeight.w500,
@@ -204,7 +206,7 @@ class ReviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: CommonButton(
-                  label: '리뷰보기',
+                  label: l.reviewView,
                   variant: CommonButtonVariant.dark,
                   scale: scale,
                   onPressed: onView,
@@ -213,7 +215,7 @@ class ReviewCard extends StatelessWidget {
               SizedBox(width: 40 * scale),
               Expanded(
                 child: CommonButton(
-                  label: '리뷰삭제',
+                  label: l.reviewDelete,
                   variant: CommonButtonVariant.text,
                   scale: scale,
                   onPressed: onDelete,

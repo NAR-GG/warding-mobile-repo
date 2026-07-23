@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
@@ -65,13 +66,12 @@ class LiveEventNotification extends StatefulWidget {
 class _LiveEventNotificationState extends State<LiveEventNotification> {
   bool _expanded = false;
 
-  String get _title => '${widget.teamA} VS ${widget.teamB} 라이브 이벤트 발생!';
-  String get _body =>
-      '${widget.season} _ ${widget.teamA} VS ${widget.teamB} 경기 실시간 이벤트를 확인해보세요';
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
+    final title = l.liveEventNotificationTitle(widget.teamA, widget.teamB);
+    final body = l.liveEventNotificationBody(widget.season, widget.teamA, widget.teamB);
 
     return Container(
       width: double.infinity,
@@ -99,9 +99,9 @@ class _LiveEventNotificationState extends State<LiveEventNotification> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_title, style: _titleStyle(scale)),
+                    Text(title, style: _titleStyle(scale)),
                     SizedBox(height: 4 * scale),
-                    Text(_body, style: _bodyStyle(scale)),
+                    Text(body, style: _bodyStyle(scale)),
                   ],
                 ),
               ),
@@ -160,7 +160,7 @@ class _LiveEventNotificationState extends State<LiveEventNotification> {
             child: Padding(
               padding: EdgeInsets.only(left: _expanded ? 0 : 60 * scale),
               child: _LinkText(
-                text: _expanded ? '접어두기' : '상세보기',
+                text: _expanded ? l.foldDetail : l.showDetail,
                 scale: scale,
                 onTap: () => setState(() => _expanded = !_expanded),
               ),

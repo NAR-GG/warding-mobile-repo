@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../styles/app_colors.dart';
@@ -19,7 +20,7 @@ class NarFilterSheet extends StatelessWidget {
     this.onReset,
     this.onClose,
     this.onApply,
-    this.applyLabel = '조회하기',
+    this.applyLabel,
   });
 
   /// 헤더 가운데 타이틀.
@@ -37,11 +38,12 @@ class NarFilterSheet extends StatelessWidget {
   /// 하단 조회 버튼 콜백. null 이면 버튼이 비활성된다.
   final VoidCallback? onApply;
 
-  /// 하단 버튼 라벨.
-  final String applyLabel;
+  /// 하단 버튼 라벨. null 이면 l10n 기본값([AppLocalizations.applyFilter])을 사용한다.
+  final String? applyLabel;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -60,7 +62,7 @@ class NarFilterSheet extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 8 * scale),
           child: CommonButton(
-            label: applyLabel,
+            label: applyLabel ?? l.filterApply,
             scale: scale,
             onPressed: onApply,
           ),

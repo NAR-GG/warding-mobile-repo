@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/common_button.dart';
@@ -64,6 +65,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -94,7 +96,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         NarDetailHeader(
-                          title: '프로필 수정',
+                          title: l.profileEditTitle,
                           backIconAsset: 'assets/icons/chevron-left.svg',
                           scale: scale,
                         ),
@@ -119,8 +121,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               Expanded(
                                 child: NarInput(
                                   controller: _nameController,
-                                  label: '이름',
-                                  hintText: '이름을 입력하세요',
+                                  label: l.nameLabel,
+                                  hintText: l.nameHint,
                                   errorText: _viewModel.nameError,
                                   onChanged: _viewModel.updateName,
                                   scale: scale,
@@ -131,8 +133,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 width: 120 * scale,
                                 child: NarInput(
                                   controller: _tagController,
-                                  label: '태그',
-                                  hintText: '#태그',
+                                  label: l.tagLabel,
+                                  hintText: l.tagHint,
                                   errorText: _viewModel.tagError,
                                   onChanged: _viewModel.updateTag,
                                   scale: scale,
@@ -180,7 +182,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     bottom: 32 * scale,
                   ),
                   child: CommonButton(
-                    label: '완료',
+                    label: l.done,
                     variant: CommonButtonVariant.light,
                     scale: scale,
                     onPressed: _viewModel.canSubmit ? _onDone : null,

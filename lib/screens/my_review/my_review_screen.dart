@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_badge.dart';
@@ -56,7 +57,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
         playerName: item.playerName,
         position: positionFromRole(item.role),
         side: sideFromTeamSide(item.teamSide),
-        username: '나',
+        username: AppLocalizations.of(context)!.me,
         timeAgo: ratingTimeAgo(item.createdAt),
         rating: item.rating.toDouble(),
         comment: (item.comment != null && item.comment!.isNotEmpty)
@@ -70,8 +71,9 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
   /// (상세에서 평가를 수정·삭제했을 수 있으므로).
   Future<void> _openPlayerRating(MyRatingItem item) async {
     // 리뷰가 남겨진 세트 번호(gameOrder)로 헤더 세트 라벨('세트 N')을 채운다.
+    final l = AppLocalizations.of(context)!;
     final setNumber = item.match?.gameOrder ?? 0;
-    final setLabel = setNumber > 0 ? '세트 $setNumber' : '';
+    final setLabel = setNumber > 0 ? l.setLabel(setNumber) : '';
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayerRatingScreen(
@@ -103,12 +105,13 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
 
   /// 리뷰삭제 — 확인 후 VM 삭제.
   Future<void> _confirmDelete(MyRatingItem item) async {
+    final l = AppLocalizations.of(context)!;
     final ok = await showNarConfirmDialog(
       context: context,
-      title: '내 평점을 삭제하시겠습니까?',
-      message: '삭제된 댓글은 복구되지 않습니다. 댓글은 수정 기능을 통해 편집할 수 있습니다.',
-      cancelLabel: '취소',
-      confirmLabel: '삭제',
+      title: l.deleteMyRatingConfirm,
+      message: l.deleteMyRatingMessage,
+      cancelLabel: l.cancel,
+      confirmLabel: l.delete,
     );
     if (ok != true) return;
     try {
@@ -116,13 +119,14 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('삭제에 실패했어요. 잠시 후 다시 시도해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.deleteFailed2)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -133,7 +137,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             NarDetailHeader(
-              title: '내 리뷰/평점',
+              title: l.myReviewRating,
               backIconAsset: 'assets/icons/chevron-left.svg',
               scale: scale,
             ),
@@ -189,6 +193,7 @@ class _CumulativeReviewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       height: 45 * scale,
       color: AppColors.narDark600,
@@ -199,7 +204,7 @@ class _CumulativeReviewBar extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            '누적 리뷰/평점',
+            l.cumulativeReviewRating,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
@@ -213,7 +218,7 @@ class _CumulativeReviewBar extends StatelessWidget {
           ShaderMask(
             shaderCallback: (bounds) => AppColors.narBg.createShader(bounds),
             child: Text(
-              '$count건',
+              l.countUnit(count),
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w500,
