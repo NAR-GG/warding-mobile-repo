@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
+import '../../util/match_title_l10n.dart';
 import '../../viewmodel/match_day/match_day_viewmodel.dart';
 import '../match_detail/match_detail_screen.dart';
 import '../match_list/component/match_card.dart';
@@ -45,6 +47,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -54,7 +57,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            NarDetailHeader(title: '경기 일정', scale: scale),
+            NarDetailHeader(title: l.matchSchedule, scale: scale),
             Expanded(
               child: ListenableBuilder(
                 listenable: _viewModel,
@@ -68,6 +71,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
   }
 
   Widget _buildBody(double scale) {
+    final l = AppLocalizations.of(context)!;
     // 최초 로드 중 — 스켈레톤 카드로 채운다.
     if (_viewModel.isLoading) {
       return ListView.builder(
@@ -81,7 +85,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
     final matches = _viewModel.matches;
     if (matches.isEmpty) {
       return _centerMessage(
-        _viewModel.error != null ? '경기를 불러오지 못했어요' : '경기가 없어요',
+        _viewModel.error != null ? l.matchLoadFailed : l.noMatches,
         scale,
       );
     }
@@ -93,8 +97,8 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
       itemBuilder: (context, index) {
         if (index == 0) {
           return MatchDateHeader(
-            label: _relativeLabel(widget.date),
-            dateText: _formatDate(widget.date),
+            label: _relativeLabel(widget.date, l),
+            dateText: _formatDate(widget.date, l),
             scale: scale,
           );
         }
@@ -103,7 +107,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
           time: m.scheduledTime,
-          label: m.matchTitle,
+          label: _localizeMatchTitle(context, m.matchTitle),
           homeName: _shortName(m.teamA),
           awayName: _shortName(m.teamB),
           homeLogoUrl: m.teamA.teamImageUrl,
@@ -112,7 +116,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),
           liveSetLabel: _isLive(m.matchStatus)
-              ? 'SET ${m.sets.length.clamp(1, 99)} 진행중'
+              ? l.setInProgress(m.sets.length.clamp(1, 99))
               : null,
           leagueInfo: m.leagueInfo,
           onTap: () => Navigator.of(context).push(
@@ -146,17 +150,20 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
     return s == 'live' || s == 'in_progress' || s == 'ongoing';
   }
 
-  /// 오늘/어제/내일 만 한국어 라벨, 그 외는 빈 문자열 (경기리스트와 동일).
-  String _relativeLabel(DateTime date) {
+  /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열 (경기리스트와 동일).
+  String _relativeLabel(DateTime date, AppLocalizations l) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(date.year, date.month, date.day);
     final diff = d.difference(today).inDays;
-    if (diff == 0) return '오늘';
-    if (diff == -1) return '어제';
-    if (diff == 1) return '내일';
+    if (diff == 0) return l.today;
+    if (diff == -1) return l.yesterday;
+    if (diff == 1) return l.tomorrow;
     return '';
   }
 
-  String _formatDate(DateTime d) => '${d.month}월 ${d.day}일';
+  String _formatDate(DateTime d, AppLocalizations l) => l.monthDay(d.month, d.day);
+
+  String _localizeMatchTitle(BuildContext context, String title) =>
+      localizeMatchTitle(title, AppLocalizations.of(context)!);
 }

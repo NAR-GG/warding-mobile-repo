@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -25,27 +26,29 @@ class LeagueStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: 48 * scale),
         OnboardingTitle(
-          mainTitle: '즐겨 시청하는 리그는 무엇인가요?',
+          mainTitle: l.favoriteLeagueQuestion,
           scale: scale,
         ),
         SizedBox(height: 32 * scale), // 타이틀 ↔ 그리드 고정 간격 (스크롤해도 유지)
-        Expanded(child: _buildGrid()),
+        Expanded(child: _buildGrid(context)),
       ],
     );
   }
 
-  Widget _buildGrid() {
+  Widget _buildGrid(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     if (viewModel.leaguesLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.leaguesError != null) {
       return OnboardingLoadError(
-        message: '리그 목록을 불러오지 못했어요',
+        message: l.leagueLoadFailed,
         onRetry: viewModel.loadLeagues,
       );
     }

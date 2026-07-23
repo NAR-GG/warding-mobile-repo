@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import '../util/champion_image.dart';
 
 /// 라이브 이벤트 종류.
@@ -119,13 +120,16 @@ class MatchLiveEvent {
     switch (type) {
       case LiveEventType.dragon:
         final sub = subType?.trim();
-        return (sub != null && sub.isNotEmpty) ? '$sub드래곤' : '드래곤';
+        if (sub != null && sub.isNotEmpty) {
+          return appStrings?.objectSubDragon(sub) ?? '$sub Dragon';
+        }
+        return appStrings?.objectDragon ?? 'Dragon';
       case LiveEventType.baron:
-        return '바론';
+        return appStrings?.objectBaron ?? 'Baron';
       case LiveEventType.tower:
-        return '타워';
+        return appStrings?.objectTower ?? 'Tower';
       case LiveEventType.inhibitor:
-        return '억제기';
+        return appStrings?.objectInhibitor ?? 'Inhibitor';
       case LiveEventType.kill:
       case LiveEventType.unknown:
         return subType ?? '';

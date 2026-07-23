@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/notification_card.dart';
 
@@ -29,10 +30,11 @@ class MatchStartNotification extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return NotificationCard(
       icon: 'assets/icons/play.svg',
-      title: '$teamA VS $teamB 경기가 시작됩니다!',
-      body: '$season _ 응원중인 팀 $teamA 과 $teamB의 경기가 시작됩니다.',
+      title: l.matchStartNotificationTitle(teamA, teamB),
+      body: l.matchStartNotificationBody(season, teamA, teamB),
       dateTime: dateTime,
       relativeTime: relativeTime,
       scale: scale,

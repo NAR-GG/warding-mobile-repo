@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_button.dart';
 import '../../../styles/app_colors.dart';
@@ -30,6 +31,7 @@ class SubscribedRatingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     // player.name 이 이미 '팀 선수'(예: 'T1 Peyz') 형태면 팀명을 덧붙이지 않는다
     // (안 그러면 'T1 T1 Peyz' 처럼 팀명이 중복된다).
     final displayName =
@@ -54,7 +56,7 @@ class SubscribedRatingBanner extends StatelessWidget {
                   shaderCallback: (bounds) =>
                       AppColors.narBg.createShader(bounds),
                   child: Text(
-                    '회원님이 구독한 선수',
+                    l.subscribedPlayer,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w400,
@@ -73,7 +75,7 @@ class SubscribedRatingBanner extends StatelessWidget {
                         text: displayName,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      const TextSpan(text: '님에게 평점를 남겨보세요!'),
+                      TextSpan(text: l.leaveRatingForPlayer),
                     ],
                   ),
                   style: TextStyle(
@@ -93,7 +95,7 @@ class SubscribedRatingBanner extends StatelessWidget {
             width: 90 * scale,
             child: NarButton(
               variant: NarButtonVariant.set1,
-              label: '평점 남기기',
+              label: l.leaveRating,
               onPressed: onRate,
               scale: scale,
             ),

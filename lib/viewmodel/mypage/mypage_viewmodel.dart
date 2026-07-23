@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../l10n/app_strings.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../model/team.dart';
@@ -21,6 +24,7 @@ class MypageViewModel extends ChangeNotifier {
         _rating = rating ?? RatingRepository.instance {
     load();
     _loadTeamBanner();
+    _loadVersion();
   }
 
   final AuthService _auth;
@@ -77,6 +81,10 @@ class MypageViewModel extends ChangeNotifier {
   int? _reviewCount;
   int? get reviewCount => _reviewCount;
 
+  /// 앱 버전 (예: '1.0.2').
+  String _appVersion = '';
+  String get appVersion => _appVersion;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -106,7 +114,7 @@ class MypageViewModel extends ChangeNotifier {
         _favoriteTeam = null;
       }
     } catch (e, st) {
-      _error = '프로필을 불러오지 못했어요';
+      _error = appStrings?.profileLoadFailed ?? 'Failed to load profile';
       debugPrint('[Mypage] load 에러: $e\n$st');
     } finally {
       _isLoading = false;
@@ -125,6 +133,14 @@ class MypageViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('[Mypage] 리뷰 건수 로드 에러: $e');
     }
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _appVersion = info.version;
+      _notify();
+    } catch (_) {}
   }
 
   void _notify() {

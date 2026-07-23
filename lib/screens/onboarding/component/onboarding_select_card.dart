@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 
@@ -45,6 +46,7 @@ class OnboardingSelectCard extends StatelessWidget {
       onTap: onTap,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final l = AppLocalizations.of(context)!;
           // 이미지는 카드 너비에 비례한다.
           final imageSize = constraints.maxWidth * _imageRatio;
 
@@ -122,7 +124,7 @@ class OnboardingSelectCard extends StatelessWidget {
                     shaderCallback: (bounds) =>
                         AppColors.narBg.createShader(bounds),
                     child: Text(
-                      '선택됨',
+                      l.selected,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Pretendard',

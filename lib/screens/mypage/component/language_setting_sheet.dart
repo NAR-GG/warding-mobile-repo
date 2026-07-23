@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/app_bottom_sheet.dart';
-import '../../../components/nar_dropdown.dart';
 import '../../../styles/app_colors.dart';
 
 /// 언어 설정 바텀시트에서 선택 가능한 언어 목록.
@@ -9,95 +9,21 @@ const _languageOptions = ['한국어', 'English'];
 
 /// 마이페이지 언어 설정 바텀시트.
 ///
-/// [AppBottomSheet] 안에 [NarDropdown] 을 두어 한국어 / English 를 선택한다.
-/// 선택이 바뀌면 [onChanged] 로 알린다.
-class LanguageSettingSheet extends StatefulWidget {
+/// [AppBottomSheet] 안에 한국어 / English 옵션을 바로 나열한다.
+/// 선택하면 [onChanged] 로 알리고 시트를 닫는다.
+class LanguageSettingSheet extends StatelessWidget {
   const LanguageSettingSheet({
     super.key,
-    this.initialLanguage = '한국어',
+    this.currentLanguage = '한국어',
     this.onChanged,
   });
 
-  final String initialLanguage;
+  final String currentLanguage;
   final ValueChanged<String>? onChanged;
 
   @override
-  State<LanguageSettingSheet> createState() => _LanguageSettingSheetState();
-}
-
-class _LanguageSettingSheetState extends State<LanguageSettingSheet> {
-  late String _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.initialLanguage;
-  }
-
-  void _showOptions() {
-    final width = MediaQuery.of(context).size.width;
-    final scale = width.clamp(320.0, 430.0) / 375;
-
-    showAppBottomSheet(
-      context: context,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(bottom: 12 * scale),
-            child: Text(
-              '언어 선택',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-                fontSize: 16 * scale,
-                height: 1.55,
-                color: AppColors.narText,
-              ),
-            ),
-          ),
-          ..._languageOptions.map((lang) {
-            final isSelected = lang == _selected;
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                setState(() => _selected = lang);
-                widget.onChanged?.call(lang);
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                height: 48 * scale,
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.narBgTertiary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 16 * scale),
-                child: Text(
-                  lang,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 15 * scale,
-                    height: 1.55,
-                    color: isSelected
-                        ? AppColors.narText
-                        : AppColors.narTextTertiary,
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -120,7 +46,7 @@ class _LanguageSettingSheetState extends State<LanguageSettingSheet> {
         Padding(
           padding: EdgeInsets.only(bottom: 16 * scale),
           child: Text(
-            '언어 설정',
+            l.languageSetting,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w700,
@@ -130,11 +56,39 @@ class _LanguageSettingSheetState extends State<LanguageSettingSheet> {
             ),
           ),
         ),
-        NarDropdown(
-          value: _selected,
-          scale: scale,
-          onTap: _showOptions,
-        ),
+        ..._languageOptions.map((lang) {
+          final isSelected = lang == currentLanguage;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              onChanged?.call(lang);
+              Navigator.of(context).pop();
+            },
+            child: Container(
+              height: 48 * scale,
+              alignment: Alignment.centerLeft,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.narBgTertiary
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+              child: Text(
+                lang,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 15 * scale,
+                  height: 1.55,
+                  color: isSelected
+                      ? AppColors.narText
+                      : AppColors.narTextTertiary,
+                ),
+              ),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -143,13 +97,13 @@ class _LanguageSettingSheetState extends State<LanguageSettingSheet> {
 /// [LanguageSettingSheet] 를 [AppBottomSheet] 모달로 띄우는 헬퍼.
 Future<void> showLanguageSettingSheet({
   required BuildContext context,
-  String initialLanguage = '한국어',
+  String currentLanguage = '한국어',
   ValueChanged<String>? onChanged,
 }) {
   return showAppBottomSheet(
     context: context,
     child: LanguageSettingSheet(
-      initialLanguage: initialLanguage,
+      currentLanguage: currentLanguage,
       onChanged: onChanged,
     ),
   );

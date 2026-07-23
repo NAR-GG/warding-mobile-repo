@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// 수신한 '선수 솔랭 시작' 푸시 한 건.
 ///
 /// FCM data 페이로드(모두 String)에서 파싱하며, 마이구독 피드에 표시하기 위해
@@ -37,9 +39,9 @@ class SoloRankNotification {
 
     return SoloRankNotification(
       playerId: s('playerId'),
-      playerName: s('playerName').isEmpty ? '선수' : s('playerName'),
-      championName: s('championName').isEmpty ? '챔피언 정보 확인 중' : s('championName'),
-      queueType: s('queueType').isEmpty ? '솔로 랭크' : s('queueType'),
+      playerName: s('playerName').isEmpty ? (appStrings?.fallbackPlayer ?? 'Player') : s('playerName'),
+      championName: s('championName').isEmpty ? (appStrings?.fallbackChampionInfo ?? 'Loading champion info') : s('championName'),
+      queueType: s('queueType').isEmpty ? (appStrings?.soloRank ?? 'Solo Rank') : s('queueType'),
       gameId: s('gameId'),
       opggUrl: sn('opggUrl'),
       championImageUrl: sn('championImageUrl'),
@@ -64,9 +66,13 @@ class SoloRankNotification {
   factory SoloRankNotification.fromJson(Map<String, dynamic> json) {
     return SoloRankNotification(
       playerId: (json['playerId'] ?? '').toString(),
-      playerName: (json['playerName'] ?? '선수').toString(),
+      playerName: (json['playerName'] as String?)?.isNotEmpty == true
+          ? json['playerName'] as String
+          : (appStrings?.fallbackPlayer ?? 'Player'),
       championName: (json['championName'] ?? '').toString(),
-      queueType: (json['queueType'] ?? '솔로 랭크').toString(),
+      queueType: (json['queueType'] as String?)?.isNotEmpty == true
+          ? json['queueType'] as String
+          : (appStrings?.soloRank ?? 'Solo Rank'),
       gameId: (json['gameId'] ?? '').toString(),
       opggUrl: json['opggUrl'] as String?,
       championImageUrl: json['championImageUrl'] as String?,

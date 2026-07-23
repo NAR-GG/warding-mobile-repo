@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
 import '../../model/match_game.dart';
 import '../../model/schedule_match.dart';
+import '../../util/match_title_l10n.dart';
 import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_badge.dart';
@@ -44,7 +46,7 @@ class MatchDetailScreen extends StatefulWidget {
 }
 
 class _MatchDetailScreenState extends State<MatchDetailScreen> {
-  static const List<String> _tabs = ['챔피언 픽', '라이브 이벤트', '선수 평점'];
+  List<String> _buildTabs(AppLocalizations l) => [l.championPick, l.liveEvent, l.tabPlayerRating];
   late int _tabIndex = widget.initialTabIndex;
 
   late final MatchDetailViewModel _viewModel =
@@ -74,7 +76,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   /// 세트 번호 → '세트 N' 라벨.
-  String _setLabelOf(int order) => '세트 $order';
+  String _setLabelOf(int order) => AppLocalizations.of(context)!.setLabel(order);
 
   /// 현재 선택된 세트의 '세트 N' 라벨. (뷰모델의 currentSet 기준)
   String get _currentSet => _setLabelOf(_viewModel.currentSet);
@@ -94,7 +96,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   /// 예: '토너먼트 스테이지 | T1 vs GEN' → '토너먼트 스테이지'.
   String _stageOf(String matchTitle) {
     final idx = matchTitle.indexOf('|');
-    return (idx >= 0 ? matchTitle.substring(0, idx) : matchTitle).trim();
+    final raw = (idx >= 0 ? matchTitle.substring(0, idx) : matchTitle).trim();
+    return localizeMatchTitle(raw, AppLocalizations.of(context)!);
   }
 
   /// 경기 날짜(date)를 'YY.MM.DD' 로 포맷한다. date 가 없으면 빈 문자열.
@@ -134,7 +137,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     if (status.contains('진행') || status.toUpperCase().contains('SET')) {
       return status;
     }
-    return 'SET ${_setNumber(_currentSet)} 진행중';
+    return AppLocalizations.of(context)!.setInProgress(_setNumber(_currentSet));
   }
 
   /// '중계 보기' 탭. 중계 채널이 복수(치지직/SOOP)면 선택 시트를 띄우고,
@@ -166,7 +169,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, 2 * scale),
             child: Text(
-              '중계 채널 선택',
+              AppLocalizations.of(context)!.broadcastChannelSelect,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w700,
@@ -178,7 +181,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(8 * scale, 0, 8 * scale, 12 * scale),
             child: Text(
-              '보고 싶은 플랫폼에서 이어서 시청하세요',
+              AppLocalizations.of(context)!.watchOnPlatform,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w400,
@@ -257,7 +260,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            '공식',
+                            AppLocalizations.of(context)!.official,
                             style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontWeight: FontWeight.w700,
@@ -403,6 +406,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -417,7 +421,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   NarDetailHeader(
-                    title: '경기 상세',
+                    title: l.matchDetail,
                     // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
                     // 상태라 ListenableBuilder 로 라벨을 갱신한다.
                     trailing: ListenableBuilder(
@@ -436,7 +440,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   _buildActionButton(scale),
                   SizedBox(height: 16 * scale),
                   NarTabBar(
-                    tabs: _tabs,
+                    tabs: _buildTabs(l),
                     selectedIndex: _tabIndex,
                     onChanged: (i) => setState(() => _tabIndex = i),
                     scale: scale,
@@ -479,7 +483,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         child: ColoredBox(
           color: AppColors.narBgContent,
           child: MatchDetailLockedEmpty(
-            message: '선수 평점은 경기 종료 후 남길 수 있어요!',
+            message: AppLocalizations.of(context)!.playerRatingAfterMatch,
             scale: scale,
           ),
         ),
@@ -536,16 +540,17 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     final hasStream = (m?.effectiveStreamLinks ?? const []).isNotEmpty;
     final vodUrl = _viewModel.currentSetVodUrl;
     final hasVod = vodUrl != null && vodUrl.isNotEmpty;
+    final l = AppLocalizations.of(context)!;
     final String label;
     final VoidCallback? onPressed;
     if (_isLiveStatus(status)) {
-      label = '중계 보기';
+      label = l.watchBroadcast;
       onPressed = hasStream ? _openLiveStream : null;
     } else if (_isCompletedStatus(status)) {
-      label = hasVod ? '다시보기' : '경기 종료';
+      label = hasVod ? l.rewatch : l.matchEnded;
       onPressed = hasVod ? _openVod : null;
     } else {
-      label = '준비중';
+      label = l.preparing;
       onPressed = null;
     }
     final enabled = onPressed != null;
@@ -599,7 +604,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       return ColoredBox(
         color: AppColors.narBgContent,
         child: MatchDetailLockedEmpty(
-          message: '라이브 이벤트는 경기 시작 후 볼 수 있어요!',
+          message: AppLocalizations.of(context)!.liveEventAfterMatch,
           scale: scale,
         ),
       );
@@ -624,7 +629,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       return ColoredBox(
         color: AppColors.narBgContent,
         child: MatchDetailLockedEmpty(
-          message: '챔피언 픽은 경기 시작 후 볼 수 있어요!',
+          message: AppLocalizations.of(context)!.championPickAfterMatch,
           scale: scale,
         ),
       );
@@ -649,7 +654,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         color: AppColors.narBgContent,
         child: MatchDetailLockedEmpty(
           message:
-              _viewModel.championError ?? '챔피언 픽은 경기 시작 후 확인할 수 있어요!',
+              _viewModel.championError ?? AppLocalizations.of(context)!.championPickAfterMatchAlt,
           scale: scale,
         ),
       );

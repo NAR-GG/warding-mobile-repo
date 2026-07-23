@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 
@@ -20,13 +21,14 @@ class OnboardingLoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(message, style: const TextStyle(color: AppColors.narText2)),
           const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('다시 시도')),
+          TextButton(onPressed: onRetry, child: Text(l.retry)),
         ],
       ),
     );

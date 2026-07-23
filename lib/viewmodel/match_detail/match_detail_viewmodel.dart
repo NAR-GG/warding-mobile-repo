@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/game_rating.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
@@ -194,12 +196,12 @@ class MatchDetailViewModel extends ChangeNotifier {
     _safeNotify();
     try {
       if (gameId == null || gameId.isEmpty) {
-        throw Exception('세트 정보를 찾을 수 없어요');
+        throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
       _championPick = await _repository.fetchChampionPick(gameId);
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick failed: $e');
-      _championError = '챔피언 픽을 불러오지 못했어요';
+      _championError = appStrings?.championPickLoadFailed ?? 'Failed to load champion picks';
       _championPick = null;
     } finally {
       _loadingChampion = false;
@@ -214,12 +216,12 @@ class MatchDetailViewModel extends ChangeNotifier {
     _safeNotify();
     try {
       if (gameId == null || gameId.isEmpty) {
-        throw Exception('세트 정보를 찾을 수 없어요');
+        throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
       _liveEventsData = await _repository.fetchLiveEvents(gameId);
     } catch (e) {
       debugPrint('[MatchDetailVM] live events failed: $e');
-      _eventsError = '라이브 이벤트를 불러오지 못했어요';
+      _eventsError = appStrings?.liveEventLoadFailed ?? 'Failed to load live events';
       _liveEventsData = null;
     } finally {
       _loadingEvents = false;
@@ -240,7 +242,7 @@ class MatchDetailViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('[MatchDetailVM] load ratings failed: $e');
-      _ratingsError = '선수 평점을 불러오지 못했어요';
+      _ratingsError = appStrings?.playerRatingLoadFailed2 ?? 'Failed to load player ratings';
       _ratings = null;
     } finally {
       _loadingRatings = false;

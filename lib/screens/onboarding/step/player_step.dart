@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/app_select_box.dart';
 import '../../../components/labeled_field.dart';
@@ -50,20 +51,21 @@ class _PlayerStepState extends State<PlayerStep> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: 48 * scale),
         OnboardingTitle(
-          mainTitle: '응원하는 선수를 선택해주세요',
-          subTitle: 'LCK 국내 팀 기준입니다. (중복 가능)',
+          mainTitle: l.favoritePlayerQuestion,
+          subTitle: l.domesticPlayerNote,
           scale: scale,
         ),
         SizedBox(height: 32 * scale), // 타이틀 ↔ 셀렉트 박스 고정 간격
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 24 * scale),
           child: LabeledField(
-            label: '팀',
+            label: l.team,
             scale: scale,
             child: _TeamSelectField(
               teams: _viewModel.teams,
@@ -76,25 +78,26 @@ class _PlayerStepState extends State<PlayerStep> {
           ),
         ),
         SizedBox(height: 27 * scale), // 셀렉트 박스 ↔ 선수 그리드 간격 27
-        Expanded(child: _buildGrid()),
+        Expanded(child: _buildGrid(context)),
       ],
     );
   }
 
-  Widget _buildGrid() {
+  Widget _buildGrid(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     if (_viewModel.playersLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_viewModel.playersError != null) {
       return OnboardingLoadError(
-        message: '선수 목록을 불러오지 못했어요',
+        message: l.playerLoadFailed,
         onRetry: _viewModel.loadPlayers,
       );
     }
     if (_viewModel.players.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          '선수 정보가 없어요',
+          l.noPlayerInfo,
           style: TextStyle(color: AppColors.narText2),
         ),
       );
@@ -161,7 +164,8 @@ class _TeamSelectField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var selectedName = '팀 선택';
+    final l = AppLocalizations.of(context)!;
+    var selectedName = l.teamSelect;
     for (final team in teams) {
       if (team.id == selectedTeamId) {
         selectedName = team.name;

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../l10n/app_strings.dart';
+
 import '../../model/team_notification_subscription.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/subscription/subscription_repository.dart';
@@ -49,7 +51,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
       // 마이페이지 섹션은 '구독중인 팀'만 보여 준다.
       _teams = all.where((t) => t.subscribed).toList();
     } catch (e, st) {
-      _error = '팀 알림 정보를 불러오지 못했어요';
+      _error = appStrings?.teamAlarmLoadFailed ?? 'Failed to load team alarm settings';
       debugPrint('[TeamAlarm] load 에러: $e\n$st');
     } finally {
       _isLoading = false;

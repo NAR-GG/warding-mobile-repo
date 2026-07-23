@@ -1,0 +1,432 @@
+{
+  "@@locale": "ko",
+
+  "appTitle": "Warding",
+
+  "logoutFailed": "로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.",
+  "mainScreenPlaceholder": "메인 화면 (작업 예정)",
+
+  "matchList": "경기리스트",
+  "season": "시즌",
+  "league": "리그",
+  "loading": "불러오는 중...",
+  "select": "선택",
+  "noMatches": "경기가 없어요",
+  "setInProgress": "SET {setNumber} 진행중",
+  "@setInProgress": {
+    "placeholders": {
+      "setNumber": { "type": "int" }
+    }
+  },
+  "today": "오늘",
+  "yesterday": "어제",
+  "tomorrow": "내일",
+  "monthDay": "{month}월 {day}일",
+  "@monthDay": {
+    "placeholders": {
+      "month": { "type": "int" },
+      "day": { "type": "int" }
+    }
+  },
+
+  "setStartAlarm": "세트 시작 알림",
+  "setEndAlarm": "세트 종료 알림",
+  "liveEventAlarm": "라이브 이벤트 알림",
+  "confirm": "확인",
+  "matchAlarmSettings": "경기 알림 설정",
+  "matchAlarmRemoved": "경기 알림이 해제되었어요",
+  "matchAlarmRemoveFailed": "알림 해제에 실패했어요. 다시 시도해주세요",
+  "matchAlarmRegistered": "경기 알림이 등록되었어요",
+  "matchAlarmRegisterFailed": "알림 등록에 실패했어요. 다시 시도해주세요",
+
+  "spoilerBlock": "스포방지",
+  "clickToSeeScore": "클릭시 스코어 확인 가능",
+
+  "weekdayMon": "월",
+  "weekdayTue": "화",
+  "weekdayWed": "수",
+  "weekdayThu": "목",
+  "weekdayFri": "금",
+  "weekdaySat": "토",
+  "weekdaySun": "일",
+
+  "filter": "필터",
+  "team": "팀",
+  "all": "전체",
+
+  "monthlyScheduleSummary": "월간 경기 일정 요약",
+
+  "ratingSaveFailed": "평점 저장에 실패했어요. 잠시 후 다시 시도해주세요.",
+  "deleteMyRatingConfirm": "내 평점을 삭제하시겠습니까?",
+  "deleteMyRatingMessage": "삭제된 댓글은 복구되지 않습니다. 댓글은 수정 기능을 통해 편집할 수 있습니다.",
+  "cancel": "취소",
+  "delete": "삭제",
+  "ratingDeleteFailed": "평점 삭제에 실패했어요. 잠시 후 다시 시도해주세요.",
+  "playerRating": "선수 평점",
+  "me": "나",
+  "leaveRating": "평점 남기기",
+  "myComment": "내 댓글",
+  "ratingAndComment": "평점·코멘트",
+  "totalCount": "총 {count}개",
+  "@totalCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "leaveRatingAndComment": "평점·코멘트 남기기",
+  "ratingCommentHint": "선수의 활약에 대한 의견을 남겨보세요.",
+  "ratingCommentWarning": "선수에 대한 지나친 비방 및 부적절한 표현은 운영 정책에 따라 사전 안내 없이 삭제될 수 있습니다.",
+  "submit": "등록하기",
+  "totalParticipants": "총 {count}명 참여",
+  "@totalParticipants": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "subscribedPlayer": "회원님이 구독한 선수",
+  "leaveRatingForPlayer": "님에게 평점를 남겨보세요!",
+
+  "championPick": "챔피언 픽",
+  "liveEvent": "라이브 이벤트",
+  "tabPlayerRating": "선수 평점",
+  "setLabel": "세트 {order}",
+  "@setLabel": {
+    "placeholders": {
+      "order": { "type": "int" }
+    }
+  },
+  "inProgress": "진행중",
+  "broadcastChannelSelect": "중계 채널 선택",
+  "watchOnPlatform": "보고 싶은 플랫폼에서 이어서 시청하세요",
+  "official": "공식",
+  "matchDetail": "경기 상세",
+  "playerRatingAfterMatch": "선수 평점은 경기 종료 후 남길 수 있어요!",
+  "watchBroadcast": "중계 보기",
+  "rewatch": "다시보기",
+  "matchEnded": "경기 종료",
+  "preparing": "준비중",
+  "liveEventAfterMatch": "라이브 이벤트는 경기 시작 후 볼 수 있어요!",
+  "championPickAfterMatch": "챔피언 픽은 경기 시작 후 볼 수 있어요!",
+  "championPickAfterMatchAlt": "챔피언 픽은 경기 시작 후 확인할 수 있어요!",
+
+  "eventDuringMatch": "이벤트는 경기 중에 확인할 수 있어요!",
+  "loadingLiveEvents": "라이브 이벤트를 가져오는 중이에요...",
+  "matchScheduled": "경기 예정",
+  "matchInProgress": "경기 진행 중",
+
+  "allPlayerRatingForSet": "{setTitle} 전체 선수 평점",
+  "@allPlayerRatingForSet": {
+    "placeholders": {
+      "setTitle": { "type": "String" }
+    }
+  },
+  "setEndedLeaveRating": "{setText} 경기가 끝났어요! 각 선수 평점을 남겨보세요",
+  "@setEndedLeaveRating": {
+    "placeholders": {
+      "setText": { "type": "String" }
+    }
+  },
+  "totalPrefix": "총 ",
+  "participantsSuffix": "명 참여",
+  "playerRatingWithCount": "{rating} ({count}명)",
+  "@playerRatingWithCount": {
+    "placeholders": {
+      "rating": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
+  "justNow": "방금 전",
+  "minutesAgo": "{minutes}분 전",
+  "@minutesAgo": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "hoursAgo": "{hours}시간 전",
+  "@hoursAgo": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "daysAgo": "{days}일 전",
+  "@daysAgo": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "eventTypeAll": "전체",
+  "eventTypeSetStart": "세트 시작",
+  "eventTypeSetEnd": "세트 종료",
+  "deleteSwipe": "삭제",
+  "deleteFailed": "삭제하지 못했습니다.",
+  "deleteAllAlarms": "알림 모두 삭제",
+  "deleteAllAlarmsMessage": "받은 알림을 모두 삭제할까요?",
+  "enableNotificationPermission": "알림을 받으려면 알림 권한을 허용해주세요.",
+  "noNotifications": "받은 알림이 없습니다.",
+  "mySubscription": "마이 구독",
+
+  "subscribedTeams": "구독중인 팀",
+  "subscribedPlayers": "구독중인 선수",
+  "subscriptionSettings": "구독 설정",
+
+  "fullList": "전체 목록",
+  "tabTeam": "팀",
+  "tabPlayer": "선수",
+
+  "dateLabel": "날짜",
+  "allPlayers": "선수전체",
+  "player": "선수",
+
+  "playerSelect": "선수 선택",
+  "subscribedPlayerList": "구독한 선수",
+
+  "subscribing": "구독중",
+  "subscribe": "구독",
+
+  "liveEventNotificationTitle": "{teamA} VS {teamB} 라이브 이벤트 발생!",
+  "@liveEventNotificationTitle": {
+    "placeholders": {
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+  "liveEventNotificationBody": "{season} _ {teamA} VS {teamB} 경기 실시간 이벤트를 확인해보세요",
+  "@liveEventNotificationBody": {
+    "placeholders": {
+      "season": { "type": "String" },
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+  "foldDetail": "접어두기",
+  "showDetail": "상세보기",
+
+  "matchEndNotificationTitle": "{teamA} VS {teamB} 경기가 종료되었습니다.",
+  "@matchEndNotificationTitle": {
+    "placeholders": {
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+  "matchEndNotificationBody": "{season} _ {teamA} VS {teamB} 경기가 종료되었습니다. 지금 바로 평점을 남겨보세요!",
+  "@matchEndNotificationBody": {
+    "placeholders": {
+      "season": { "type": "String" },
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+  "leaveMatchRating": "경기 평점 남기기",
+
+  "matchStartNotificationTitle": "{teamA} VS {teamB} 경기가 시작됩니다!",
+  "@matchStartNotificationTitle": {
+    "placeholders": {
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+  "matchStartNotificationBody": "{season} _ 응원중인 팀 {teamA} 과 {teamB}의 경기가 시작됩니다.",
+  "@matchStartNotificationBody": {
+    "placeholders": {
+      "season": { "type": "String" },
+      "teamA": { "type": "String" },
+      "teamB": { "type": "String" }
+    }
+  },
+
+  "soloRank": "솔로 랭크",
+  "rankStartTitle": "{playerName} 선수 랭크 시작 감지!",
+  "@rankStartTitle": {
+    "placeholders": {
+      "playerName": { "type": "String" }
+    }
+  },
+  "rankStartBody": "지금 {playerName} 선수가 {champion}{particle} {queueType}를 시작했습니다",
+  "@rankStartBody": {
+    "placeholders": {
+      "playerName": { "type": "String" },
+      "champion": { "type": "String" },
+      "particle": { "type": "String" },
+      "queueType": { "type": "String" }
+    }
+  },
+
+  "withdraw": "회원탈퇴",
+  "withdrawConfirmTitle": "회원탈퇴",
+  "withdrawConfirmMessage": "계정과 구독·알림·평점 등 모든 데이터가\n삭제되며 되돌릴 수 없습니다.",
+  "withdrawConfirmButton": "탈퇴",
+  "withdrawFailed": "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.",
+  "teamAutoSetBanner": "설문 기반으로 응원하는 팀이 자동으로 설정됐어요!",
+  "myReviewRating": "내 리뷰/평점",
+  "customerService": "고객센터/문의",
+  "narWebsite": "나르지지 웹사이트",
+  "latestVersion": "최신 버전입니다.",
+  "currentVersion": "(현재 버전 {version})",
+  "@currentVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "logout": "로그아웃",
+  "myPage": "마이 페이지",
+  "nicknamePlaceholder": "닉네임",
+  "profileEdit": "프로필 수정",
+  "countUnit": "{count}건",
+  "@countUnit": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "appInfo": "앱정보",
+
+  "languageSetting": "언어 설정",
+  "languageKo": "한국어",
+  "languageEn": "English",
+
+  "subscriptionTeamAlarmSettings": "구독 팀 알림 설정",
+  "subscriptionManage": "구독 관리",
+  "noSubscribedTeam": "구독중인 팀이 없어요.",
+
+  "profileEditTitle": "프로필 수정",
+  "nameLabel": "이름",
+  "nameHint": "이름을 입력하세요",
+  "tagLabel": "태그",
+  "tagHint": "#태그",
+  "done": "완료",
+  "cheerTeamSetting": "응원 팀 설정",
+  "cheerTeamDescription": "응원 팀 설정시 닉네임 옆에 뱃지가 생겨요",
+
+  "cumulativeReviewRating": "누적 리뷰/평점",
+  "reviewView": "리뷰보기",
+  "reviewDelete": "리뷰삭제",
+  "deleteFailed2": "삭제에 실패했어요. 잠시 후 다시 시도해주세요.",
+
+  "loginFailed": "로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
+  "appleLogin": "Apple 로그인",
+  "kakaoLogin": "카카오 로그인",
+  "naverLogin": "네이버 로그인",
+  "googleLogin": "Google 로그인",
+  "guestStart": "비회원으로 시작하기",
+  "easyLogin": "간편 로그인",
+
+  "skipButton": "건너뛰기",
+  "startWarding": "와딩 시작하기",
+  "next": "다음",
+  "preferredLeague": "선호 리그",
+  "preferredTeam": "선호 팀",
+  "preferredPlayer": "선호 선수",
+  "notificationPermission": "알림 권한",
+  "favoriteLeagueQuestion": "즐겨 시청하는 리그는 무엇인가요?",
+  "leagueLoadFailed": "리그 목록을 불러오지 못했어요",
+  "favoriteTeamQuestion": "가장 응원하는 팀을 선택해주세요",
+  "domesticTeamNote": "LCK 국내 팀 기준입니다.",
+  "teamLoadFailed": "팀 목록을 불러오지 못했어요",
+  "favoritePlayerQuestion": "응원하는 선수를 선택해주세요",
+  "domesticPlayerNote": "LCK 국내 팀 기준입니다. (중복 가능)",
+  "playerLoadFailed": "선수 목록을 불러오지 못했어요",
+  "noPlayerInfo": "선수 정보가 없어요",
+  "teamSelect": "팀 선택",
+  "notificationQuestion": "'Warding'에서 보내는 이벤트 및 알림을 받아보시겠습니까?",
+  "notificationConsentMessage": "수신 동의 시 이벤트, 경기/팀/선수 등 다양한 정보에 대한 알림을 받아보실 수 있습니다.",
+  "readyComplete": "준비 완료!",
+  "enjoyMessage": "응원하는 팀과 선수의 경기,\n이제 놓치지 말고 즐겨보세요.",
+  "deny": "허용 안 함",
+  "allow": "허용",
+  "retry": "다시 시도",
+  "selected": "선택됨",
+
+  "matchSchedule": "경기 일정",
+  "matchLoadFailed": "경기를 불러오지 못했어요",
+
+  "navSchedule": "경기일정",
+  "navMatchList": "경기리스트",
+  "navSubscription": "마이 구독",
+  "navMyPage": "마이페이지",
+
+  "defaultCancel": "취소",
+  "defaultConfirm": "확인",
+
+  "filterApply": "조회하기",
+
+  "searchHint": "팀 또는 선수 검색..",
+  "selectHint": "선택",
+  "searchInputHint": "검색어를 입력...",
+
+  "loginRequired": "로그인 후 사용 가능",
+
+  "fallbackPlayer": "선수",
+  "fallbackChampionInfo": "챔피언 정보 확인 중",
+  "liveMatchNotification": "라이브 경기 알림",
+  "watchBroadcastFallback": "중계 보기",
+
+  "objectDragon": "드래곤",
+  "objectSubDragon": "{sub}드래곤",
+  "@objectSubDragon": {
+    "placeholders": {
+      "sub": { "type": "String" }
+    }
+  },
+  "objectBaron": "바론",
+  "objectTower": "타워",
+  "objectInhibitor": "억제기",
+
+  "notificationChannelName": "구독 알림",
+  "notificationChannelDesc": "구독 선수·팀의 경기/이벤트 알림",
+
+  "duplicateNickname": "이미 사용 중인 닉네임입니다",
+
+  "sortRecent": "최근순",
+  "sortOldest": "오래된 순",
+
+  "scheduleLoadFailed": "경기 일정을 불러오지 못했어요",
+  "playerRatingLoadFailed": "선수 평점을 불러오지 못했어요",
+  "noPlayerRecordInSet": "이 세트에는 해당 선수 기록이 없어요",
+  "setRatingLoadFailed": "세트 평점을 불러오지 못했어요",
+  "setInfoNotFound": "세트 정보를 찾을 수 없어요",
+  "championPickLoadFailed": "챔피언 픽을 불러오지 못했어요",
+  "liveEventLoadFailed": "라이브 이벤트를 불러오지 못했어요",
+  "playerRatingLoadFailed2": "선수 평점을 불러오지 못했어요",
+  "subscriptionLoadFailed": "구독 정보를 불러오지 못했어요",
+  "notificationLoadFailed": "알림을 불러오지 못했습니다.",
+  "teamAlarmLoadFailed": "팀 알림 정보를 불러오지 못했어요",
+  "profileLoadFailed": "프로필을 불러오지 못했어요",
+  "requiredField": "필수 입력 항목입니다.",
+  "tagFormatError": "영문/숫자 2~5자로 입력하세요.",
+  "duplicateNicknameError": "이미 사용 중인 닉네임입니다.",
+  "saveFailed": "저장에 실패했어요. 잠시 후 다시 시도해 주세요.",
+  "myReviewLoadFailed": "내 평가를 불러오지 못했어요",
+
+  "laneTop": "탑",
+  "laneJungle": "정글",
+  "laneMid": "미드",
+  "laneBot": "원딜",
+  "laneBotAlt": "바텀",
+  "laneSupport": "서폿",
+  "laneSupportAlt": "서포터",
+
+  "weekRound": "{week}주 차",
+  "@weekRound": {
+    "placeholders": {
+      "week": { "type": "int" }
+    }
+  },
+
+  "nthRound": "{n}강",
+  "@nthRound": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "stagePlayIn": "플레이-인",
+  "stagePlayInTournament": "플레이-인 토너먼트 스테이지",
+  "stageGroup": "그룹",
+  "stageSwiss": "스위스",
+  "stageTournament": "토너먼트 스테이지",
+  "stagePlayoff": "플레이오프",
+  "stageFinal": "결승",
+
+  "updateAvailableTitle": "업데이트 안내",
+  "updateAvailableMessage": "새로운 버전이 출시되었습니다.\n최신 버전으로 업데이트해주세요.",
+  "updateNow": "업데이트"
+}

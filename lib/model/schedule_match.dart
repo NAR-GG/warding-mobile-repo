@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// 특정 날짜의 경기 한 건.
 ///
 /// `특정 날짜 경기 목록` API 응답의 `matches` 항목 하나에 대응한다.
@@ -54,7 +56,7 @@ class ScheduleMatch {
     if (streamLinks.isNotEmpty) return streamLinks;
     final url = liveStreamUrl;
     if (url == null || url.isEmpty) return const [];
-    return [StreamLink(provider: 'default', label: '중계 보기', description: '', url: url)];
+    return [StreamLink(provider: 'default', label: appStrings?.watchBroadcastFallback ?? 'Watch', description: '', url: url)];
   }
 
   /// 세트별 정보 (VOD 등).

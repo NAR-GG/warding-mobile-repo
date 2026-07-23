@@ -17,6 +17,7 @@ class NarChipMultiSelect extends StatelessWidget {
     required this.options,
     required this.selectedValues,
     required this.onChanged,
+    this.labelBuilder,
     this.pinned = const {},
     this.trailing = const [],
     this.scale = 1,
@@ -25,6 +26,9 @@ class NarChipMultiSelect extends StatelessWidget {
   final List<String> options;
   final Set<String> selectedValues;
   final ValueChanged<Set<String>> onChanged;
+
+  /// 내부 키 값을 표시 라벨로 변환하는 함수. null 이면 값 자체를 라벨로 쓴다.
+  final String Function(String value)? labelBuilder;
 
   /// 정렬에서 제외하고 항상 맨 앞에 원래 순서로 고정할 옵션들.
   final Set<String> pinned;
@@ -44,7 +48,7 @@ class NarChipMultiSelect extends StatelessWidget {
   }
 
   NarChip _chip(String value) => NarChip(
-    label: value,
+    label: labelBuilder != null ? labelBuilder!(value) : value,
     selected: selectedValues.contains(value),
     onTap: () => _toggle(value),
     scale: scale,

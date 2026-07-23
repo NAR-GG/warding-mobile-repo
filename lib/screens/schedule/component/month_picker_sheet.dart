@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
@@ -140,17 +141,20 @@ class _WeekdayRow extends StatelessWidget {
 
   final double scale;
 
-  static const List<String> _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final weekdays = [
+      l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
+      l.weekdayFri, l.weekdaySat, l.weekdaySun,
+    ];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 31.5 * scale),
       child: SizedBox(
         height: 32 * scale,
         child: Row(
           children: [
-            for (final day in _weekdays)
+            for (final day in weekdays)
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12.5 * scale),

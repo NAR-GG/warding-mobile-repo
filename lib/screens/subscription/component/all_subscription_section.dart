@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_tab_bar.dart';
 import '../../../styles/app_colors.dart';
@@ -55,6 +56,7 @@ class AllSubscriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isTeams = selectedTab == 0;
     final items = isTeams ? teams : players;
     final onToggle = isTeams ? onTeamToggle : onPlayerToggle;
@@ -62,11 +64,11 @@ class AllSubscriptionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SubscribedSectionHeader(label: '전체 목록', scale: scale),
+        SubscribedSectionHeader(label: l.fullList, scale: scale),
         SizedBox(height: 8 * scale),
         NarTabBar(
           variant: NarTabBarVariant.compact,
-          tabs: const ['팀', '선수'],
+          tabs: [l.tabTeam, l.tabPlayer],
           selectedIndex: selectedTab,
           onChanged: onTabChanged,
           scale: scale,

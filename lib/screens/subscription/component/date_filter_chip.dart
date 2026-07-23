@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_chip.dart';
 
@@ -31,13 +32,14 @@ class DateFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final date = selectedDate;
     if (date == null) {
-      return NarChip.dropdown(label: '날짜', scale: scale, onTap: onTap);
+      return NarChip.dropdown(label: l.dateLabel, scale: scale, onTap: onTap);
     }
 
     return NarChip.active(
-      label: '${date.month}월 ${date.day}일',
+      label: l.monthDay(date.month, date.day),
       trailing: NarChipTrailing.remove,
       scale: scale,
       onTap: onTap,

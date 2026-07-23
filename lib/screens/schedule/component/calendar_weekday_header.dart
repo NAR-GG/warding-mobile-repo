@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../styles/app_colors.dart';
 
@@ -11,15 +12,18 @@ class CalendarWeekdayHeader extends StatelessWidget {
 
   final double scale;
 
-  static const List<String> _weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final weekdays = [
+      l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
+      l.weekdayFri, l.weekdaySat, l.weekdaySun,
+    ];
     return Column(
       children: [
         Row(
           children: [
-            for (final day in _weekdays)
+            for (final day in weekdays)
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(top: 14 * scale, bottom: 10 * scale),

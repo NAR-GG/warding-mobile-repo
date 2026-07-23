@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
@@ -32,6 +33,7 @@ class CheerTeamSettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -47,7 +49,7 @@ class CheerTeamSettingRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '응원 팀 설정',
+                    l.cheerTeamSetting,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w600,
@@ -57,7 +59,7 @@ class CheerTeamSettingRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '응원 팀 설정시 닉네임 옆에 뱃지가 생겨요',
+                    l.cheerTeamDescription,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w500,

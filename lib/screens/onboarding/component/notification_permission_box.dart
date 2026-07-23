@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_button.dart';
 import '../../../styles/app_colors.dart';
@@ -34,6 +35,7 @@ class NotificationPermissionBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(24 * scale),
@@ -76,13 +78,13 @@ class NotificationPermissionBox extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               NarButton(
-                label: '허용 안 함',
+                label: l.deny,
                 variant: NarButtonVariant.type2,
                 scale: scale,
                 onPressed: onDeny,
               ),
               NarButton(
-                label: '허용',
+                label: l.allow,
                 variant: NarButtonVariant.type1,
                 scale: scale,
                 onPressed: onAllow,

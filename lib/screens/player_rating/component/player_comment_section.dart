@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
@@ -51,6 +52,7 @@ class PlayerCommentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +65,7 @@ class PlayerCommentSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '평점·코멘트',
+                l.ratingAndComment,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w600,
@@ -73,7 +75,7 @@ class PlayerCommentSection extends StatelessWidget {
                 ),
               ),
               Text(
-                '총 ${comments.length}개',
+                l.totalCount(comments.length),
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w400,

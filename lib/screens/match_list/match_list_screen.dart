@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
@@ -9,6 +10,7 @@ import '../../components/scroll_to_top_button.dart';
 import '../../components/search_select_box.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
+import '../../util/match_title_l10n.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
 import '../match_detail/match_detail_screen.dart';
@@ -165,7 +167,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final order in MatchListViewModel.sortOrders)
+          for (final order in _viewModel.sortOrders)
             InkWell(
               onTap: () => Navigator.of(context).pop(order),
               child: Padding(
@@ -207,6 +209,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -235,7 +238,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '경기리스트',
+                          l.matchList,
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
                             fontWeight: FontWeight.w700,
@@ -273,7 +276,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           children: [
                             Expanded(
                               child: LabeledField(
-                                label: '시즌',
+                                label: l.season,
                                 scale: scale,
                                 child: SearchSelectBox(
                                   options: MatchListViewModel.seasons,
@@ -286,15 +289,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
                             SizedBox(width: 10 * scale),
                             Expanded(
                               child: LabeledField(
-                                label: '리그',
+                                label: l.league,
                                 scale: scale,
                                 child: SearchSelectBox(
                                   options: _viewModel.leagues,
                                   value: _viewModel.selectedLeague,
                                   onChanged: _viewModel.selectLeague,
                                   hint: _viewModel.loadingLeagues
-                                      ? '불러오는 중...'
-                                      : '선택',
+                                      ? l.loading
+                                      : l.select,
+                                  labelBuilder: (v) => v == MatchListViewModel.allLeagueLabel ? l.all : v,
                                   scale: scale,
                                 ),
                               ),
@@ -326,6 +330,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                             onChanged: _viewModel.updateSelectedTeams,
                             // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
                             pinned: const {MatchListViewModel.allTeamsLabel},
+                            labelBuilder: (v) => v == MatchListViewModel.allTeamsLabel ? l.all : v,
                             scale: scale,
                           ),
                         ),
@@ -336,7 +341,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 Expanded(
                   child: ListenableBuilder(
                     listenable: _viewModel,
-                    builder: (context, _) => _buildList(scale),
+                    builder: (context, _) => _buildList(context, scale),
                   ),
                 ),
               ],
@@ -366,7 +371,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     );
   }
 
-  Widget _buildList(double scale) {
+  Widget _buildList(BuildContext context, double scale) {
     final items = _flatten(_viewModel.schedule, ascending: _viewModel.ascending);
     final loading = _viewModel.loadingMatches || _viewModel.loadingMore;
 
@@ -382,7 +387,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       }
       return Center(
         child: Text(
-          '경기가 없어요',
+          AppLocalizations.of(context)!.noMatches,
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 14 * scale,
@@ -410,8 +415,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
           return KeyedSubtree(
             key: key,
             child: MatchDateHeader(
-              label: _relativeLabel(item.date),
-              dateText: _formatDate(item.date),
+              label: _relativeLabel(context, item.date),
+              dateText: _formatDate(context, item.date),
               scale: scale,
             ),
           );
@@ -421,7 +426,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
           time: m.scheduledTime,
-          label: m.matchTitle,
+          label: _localizeMatchTitle(context, m.matchTitle),
           homeName: _shortName(m.teamA),
           awayName: _shortName(m.teamB),
           homeLogoUrl: m.teamA.teamImageUrl,
@@ -430,7 +435,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),
           liveSetLabel: _isLive(m.matchStatus)
-              ? 'SET ${(m.sets.length).clamp(1, 99)} 진행중'
+              ? AppLocalizations.of(context)!.setInProgress((m.sets.length).clamp(1, 99))
               : null,
           leagueInfo: m.leagueInfo,
           onTap: () => Navigator.of(context).push(
@@ -482,19 +487,24 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return s == 'live' || s == 'in_progress' || s == 'ongoing';
   }
 
-  /// 오늘/어제/내일 만 한국어 라벨, 그 외는 빈 문자열.
-  String _relativeLabel(DateTime date) {
+  /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열.
+  String _relativeLabel(BuildContext context, DateTime date) {
+    final l = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(date.year, date.month, date.day);
     final diff = d.difference(today).inDays;
-    if (diff == 0) return '오늘';
-    if (diff == -1) return '어제';
-    if (diff == 1) return '내일';
+    if (diff == 0) return l.today;
+    if (diff == -1) return l.yesterday;
+    if (diff == 1) return l.tomorrow;
     return '';
   }
 
-  String _formatDate(DateTime d) => '${d.month}월 ${d.day}일';
+  String _formatDate(BuildContext context, DateTime d) =>
+      AppLocalizations.of(context)!.monthDay(d.month, d.day);
+
+  String _localizeMatchTitle(BuildContext context, String title) =>
+      localizeMatchTitle(title, AppLocalizations.of(context)!);
 }
 
 sealed class _ListItem {

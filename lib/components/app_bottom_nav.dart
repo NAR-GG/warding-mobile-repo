@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
@@ -20,20 +21,12 @@ class AppBottomNav extends StatelessWidget {
   /// 탭 선택 콜백.
   final ValueChanged<AppNavTab> onTabSelected;
 
-  /// 탭 순서·아이콘·라벨 정의 (디자인 시안 순서).
-  static const List<({String icon, String label, AppNavTab tab})> _items = [
-    (
-      icon: 'assets/icons/calendar-event.svg',
-      label: '경기일정',
-      tab: AppNavTab.schedule,
-    ),
-    (icon: 'assets/icons/layout-list.svg', label: '경기리스트', tab: AppNavTab.list),
-    (
-      icon: 'assets/icons/empty-stars.svg',
-      label: '마이 구독',
-      tab: AppNavTab.subscription,
-    ),
-    (icon: 'assets/icons/user.svg', label: '마이페이지', tab: AppNavTab.mypage),
+  /// 탭 순서·아이콘 정의 (디자인 시안 순서). 라벨은 build에서 l10n으로 가져온다.
+  static const List<({String icon, AppNavTab tab})> _items = [
+    (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
+    (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
+    (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
+    (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
   ];
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
@@ -47,8 +40,16 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
+
+    final labels = {
+      AppNavTab.schedule: l.navSchedule,
+      AppNavTab.list: l.navMatchList,
+      AppNavTab.subscription: l.navSubscription,
+      AppNavTab.mypage: l.navMyPage,
+    };
 
     final children = <Widget>[];
     for (var i = 0; i < _items.length; i++) {
@@ -59,7 +60,7 @@ class AppBottomNav extends StatelessWidget {
         active
             ? _NavItemActive(
                 icon: item.icon,
-                label: item.label,
+                label: labels[item.tab]!,
                 scale: scale,
                 onTap: () => onTabSelected(item.tab),
               )

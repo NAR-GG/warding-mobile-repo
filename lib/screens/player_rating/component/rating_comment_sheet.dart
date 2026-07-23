@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/common_button.dart';
@@ -89,6 +90,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -108,7 +110,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '평점·코멘트 남기기',
+                l.leaveRatingAndComment,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w600,
@@ -203,7 +205,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
                 isCollapsed: true,
                 border: InputBorder.none,
                 counterText: '', // 기본 카운터 숨기고 아래에 직접 표시.
-                hintText: '선수의 활약에 대한 의견을 남겨보세요.',
+                hintText: l.ratingCommentHint,
                 hintStyle: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w400,
@@ -238,7 +240,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
           SizedBox(height: 11 * scale),
           // 안내문.
           Text(
-            '선수에 대한 지나친 비방 및 부적절한 표현은 운영 정책에 따라 사전 안내 없이 삭제될 수 있습니다.',
+            l.ratingCommentWarning,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w400,
@@ -250,7 +252,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
           SizedBox(height: 16 * scale),
           // 등록 버튼(공용 버튼). 평점 미선택 시 onPressed null → 비활성.
           CommonButton(
-            label: '등록하기',
+            label: l.submit,
             onPressed: _canSubmit ? _submit : null,
             scale: scale,
           ),

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_badge.dart';
@@ -255,14 +256,15 @@ class _AlarmBellState extends State<_AlarmBell> {
       return;
     }
 
+    final l = AppLocalizations.of(context)!;
     if (_subscribed) {
       setState(() => _subscribed = false);
       try {
         await _repo.unsubscribeMatch(widget.matchId);
-        _showFeedback('경기 알림이 해제되었어요');
+        _showFeedback(l.matchAlarmRemoved);
       } catch (_) {
         if (mounted) setState(() => _subscribed = true);
-        _showFeedback('알림 해제에 실패했어요. 다시 시도해주세요');
+        _showFeedback(l.matchAlarmRemoveFailed);
       }
       return;
     }
@@ -284,10 +286,10 @@ class _AlarmBellState extends State<_AlarmBell> {
         setEndEnabled: result.setEnd,
         liveEventEnabled: result.liveEvent,
       );
-      _showFeedback('경기 알림이 등록되었어요');
+      _showFeedback(l.matchAlarmRegistered);
     } catch (_) {
       if (mounted) setState(() => _subscribed = false);
-      _showFeedback('알림 등록에 실패했어요. 다시 시도해주세요');
+      _showFeedback(l.matchAlarmRegisterFailed);
     }
   }
 
@@ -475,6 +477,7 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
     return SizedBox(
       width: 116 * scale,
@@ -504,7 +507,7 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '스포방지',
+                            l.spoilerBlock,
                             softWrap: false,
                             overflow: TextOverflow.visible,
                             style: TextStyle(
@@ -517,7 +520,7 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
                           ),
                           SizedBox(height: 4 * scale),
                           Text(
-                            '클릭시 스코어 확인 가능',
+                            l.clickToSeeScore,
                             softWrap: false,
                             overflow: TextOverflow.visible,
                             style: TextStyle(

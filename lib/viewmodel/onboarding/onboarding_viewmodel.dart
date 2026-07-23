@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+
+import '../../l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../model/league.dart';
@@ -206,7 +208,7 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       _leagues = await _repository.fetchLeagues();
     } catch (e) {
-      _leaguesError = '리그 목록을 불러오지 못했어요';
+      _leaguesError = appStrings?.leagueLoadFailed ?? 'Failed to load leagues';
       debugPrint('[Onboarding] loadLeagues 에러: $e');
     } finally {
       _leaguesLoading = false;
@@ -227,7 +229,7 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       _teams = await _repository.fetchTeams();
     } catch (e) {
-      _teamsError = '팀 목록을 불러오지 못했어요';
+      _teamsError = appStrings?.teamLoadFailed ?? 'Failed to load teams';
       debugPrint('[Onboarding] loadTeams 에러: $e');
     } finally {
       _teamsLoading = false;
@@ -256,7 +258,7 @@ class OnboardingViewModel extends ChangeNotifier {
       );
       _playersLoaded = true;
     } catch (e) {
-      _playersError = '선수 목록을 불러오지 못했어요';
+      _playersError = appStrings?.playerLoadFailed ?? 'Failed to load players';
       debugPrint('[Onboarding] loadPlayers 에러: $e');
     } finally {
       _playersLoading = false;

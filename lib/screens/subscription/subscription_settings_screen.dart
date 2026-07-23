@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_search_bar.dart';
@@ -95,6 +96,7 @@ class _SubscriptionSettingsScreenState
         child: ListenableBuilder(
           listenable: _viewModel,
           builder: (context, _) {
+            final l = AppLocalizations.of(context)!;
             final subscribedTeams = _viewModel.subscribedTeams;
             final subscribedPlayers = _viewModel.subscribedPlayers;
             final query = _viewModel.query.trim().toLowerCase();
@@ -109,7 +111,7 @@ class _SubscriptionSettingsScreenState
 
             final subscribedSections = <Widget>[
               SubscribedSection(
-                title: '구독중인 팀',
+                title: l.subscribedTeams,
                 items: [for (final t in subscribedTeams) _teamItem(t)],
                 onToggle: (i) {
                   final t = subscribedTeams[i];
@@ -119,7 +121,7 @@ class _SubscriptionSettingsScreenState
               ),
               SizedBox(height: 14 * scale),
               SubscribedSection(
-                title: '구독중인 선수',
+                title: l.subscribedPlayers,
                 items: [for (final p in subscribedPlayers) _playerItem(p)],
                 onToggle: (i) {
                   final p = subscribedPlayers[i];
@@ -153,7 +155,7 @@ class _SubscriptionSettingsScreenState
                   controller: _scrollController,
                   padding: EdgeInsets.zero,
                   children: [
-                    NarDetailHeader(title: '구독 설정', scale: scale),
+                    NarDetailHeader(title: l.subscriptionSettings, scale: scale),
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20 * scale,

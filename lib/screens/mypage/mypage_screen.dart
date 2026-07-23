@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -9,6 +10,7 @@ import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
+import '../../config/app_language.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
@@ -65,11 +67,12 @@ class _MypageScreenState extends State<MypageScreen> {
 
   /// 회원탈퇴 — 확인 다이얼로그 후 계정 삭제, 로그인 화면으로 이동.
   Future<void> _withdraw() async {
+    final l = AppLocalizations.of(context)!;
     final confirmed = await showNarConfirmDialog(
       context: context,
-      title: '회원탈퇴',
-      message: '계정과 구독·알림·평점 등 모든 데이터가\n삭제되며 되돌릴 수 없습니다.',
-      confirmLabel: '탈퇴',
+      title: l.withdrawConfirmTitle,
+      message: l.withdrawConfirmMessage,
+      confirmLabel: l.withdrawConfirmButton,
     );
     if (confirmed != true || !mounted) return;
     try {
@@ -77,7 +80,7 @@ class _MypageScreenState extends State<MypageScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.')),
+        SnackBar(content: Text(l.withdrawFailed)),
       );
       return;
     }
@@ -139,9 +142,9 @@ class _MypageScreenState extends State<MypageScreen> {
                       onGlobeTap: () {
                         showLanguageSettingSheet(
                           context: context,
+                          currentLanguage: AppLanguage.toLabel(AppLanguage.instance.current),
                           onChanged: (lang) {
-                            // TODO: 앱 전역 로케일 변경 연동.
-                            debugPrint('[MyPage] 언어 변경: $lang');
+                            AppLanguage.instance.setLanguage(AppLanguage.fromLabel(lang));
                           },
                         );
                       },
@@ -179,7 +182,7 @@ class _MypageScreenState extends State<MypageScreen> {
                                 width: 24 * scale,
                                 height: 24 * scale,
                               ),
-                              text: '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!',
+                              text: AppLocalizations.of(context)!.teamAutoSetBanner,
                             )
                           : const SizedBox.shrink(),
                     ),
@@ -193,7 +196,7 @@ class _MypageScreenState extends State<MypageScreen> {
                     ListenableBuilder(
                       listenable: _viewModel,
                       builder: (context, _) => _MypageLinkRow(
-                        title: '내 리뷰/평점',
+                        title: AppLocalizations.of(context)!.myReviewRating,
                         count: _viewModel.reviewCount,
                         scale: scale,
                         onTap: () async {
@@ -209,7 +212,7 @@ class _MypageScreenState extends State<MypageScreen> {
                     ),
                     SizedBox(height: 16 * scale),
                     _MypageLinkRow(
-                      title: '고객센터/문의',
+                      title: AppLocalizations.of(context)!.customerService,
                       scale: scale,
                       onTap: () => _launchUrl(
                         'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
@@ -217,16 +220,20 @@ class _MypageScreenState extends State<MypageScreen> {
                     ),
                     SizedBox(height: 16 * scale),
                     _MypageLinkRow(
-                      title: '나르지지 웹사이트',
+                      title: AppLocalizations.of(context)!.narWebsite,
                       scale: scale,
                       onTap: () => _launchUrl('https://nar.kr/'),
                     ),
                     SizedBox(height: 16 * scale),
-                    _AppInfoRow(
-                      // TODO: 실제 버전 정보로 교체 (현재 mock).
-                      versionStatus: '최신 버전입니다.',
-                      versionLabel: '(현재 버전 1.1.0)',
-                      scale: scale,
+                    ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, _) => _AppInfoRow(
+                        versionStatus: AppLocalizations.of(context)!.latestVersion,
+                        versionLabel: _viewModel.appVersion.isNotEmpty
+                            ? AppLocalizations.of(context)!.currentVersion(_viewModel.appVersion)
+                            : '',
+                        scale: scale,
+                      ),
                     ),
                     // 맨 아래 로그아웃/회원탈퇴 — 80 간격 후, 가운데 정렬·40 간격.
                     SizedBox(height: 80 * scale),
@@ -234,14 +241,14 @@ class _MypageScreenState extends State<MypageScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CommonButton(
-                          label: '로그아웃',
+                          label: AppLocalizations.of(context)!.logout,
                           variant: CommonButtonVariant.logout,
                           scale: scale,
                           onPressed: _logout,
                         ),
                         SizedBox(width: 40 * scale),
                         CommonButton(
-                          label: '회원탈퇴',
+                          label: AppLocalizations.of(context)!.withdraw,
                           variant: CommonButtonVariant.text,
                           scale: scale,
                           onPressed: _withdraw,
@@ -280,6 +287,7 @@ class _MypageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.fromLTRB(20 * scale, 17 * scale, 20 * scale, 0),
       child: Row(
@@ -287,7 +295,7 @@ class _MypageHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            '마이 페이지',
+            l.myPage,
             style: TextStyle(
               fontFamily: 'SF Pro Display',
               fontWeight: FontWeight.w700,
@@ -366,6 +374,7 @@ class _MypageProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.all(20 * scale),
       child: Row(
@@ -392,7 +401,7 @@ class _MypageProfile extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              nickname.isEmpty ? '닉네임' : nickname,
+                              nickname.isEmpty ? l.nicknamePlaceholder : nickname,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: TextStyle(
@@ -434,7 +443,7 @@ class _MypageProfile extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: onEditTap,
             child: Text(
-              '프로필 수정',
+              l.profileEdit,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w500,
@@ -535,6 +544,7 @@ class _MypageLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -566,7 +576,7 @@ class _MypageLinkRow extends StatelessWidget {
                       shaderCallback: (bounds) =>
                           AppColors.narBg.createShader(bounds),
                       child: Text(
-                        '$count건',
+                        l.countUnit(count!),
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w500,
@@ -620,6 +630,7 @@ class _AppInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final versionStyle = TextStyle(
       fontFamily: 'Pretendard',
       fontWeight: FontWeight.w500,
@@ -638,7 +649,7 @@ class _AppInfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '앱정보',
+            l.appInfo,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,

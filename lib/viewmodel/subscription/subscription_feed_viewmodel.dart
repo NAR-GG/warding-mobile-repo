@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+
+import '../../l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../model/member_notification.dart';
@@ -73,7 +75,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
       _notifications = pageData.notifications;
       _unreadCount = pageData.unreadCount;
     } catch (e, st) {
-      _error = '알림을 불러오지 못했습니다.';
+      _error = appStrings?.notificationLoadFailed ?? 'Failed to load notifications.';
       debugPrint('[Feed] load 에러: $e\n$st');
     } finally {
       _isLoading = false;

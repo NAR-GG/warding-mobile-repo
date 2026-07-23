@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+
+import '../../l10n/app_strings.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../model/team.dart';
@@ -120,7 +122,7 @@ class ProfileEditViewModel extends ChangeNotifier {
 
   void updateName(String value) {
     _name = value;
-    _nameError = value.trim().isEmpty ? '필수 입력 항목입니다.' : null;
+    _nameError = value.trim().isEmpty ? (appStrings?.requiredField ?? 'This field is required.') : null;
     _notify();
   }
 
@@ -128,9 +130,9 @@ class ProfileEditViewModel extends ChangeNotifier {
     _tag = value;
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
-      _tagError = '필수 입력 항목입니다.';
+      _tagError = appStrings?.requiredField ?? 'This field is required.';
     } else if (!_tagPattern.hasMatch(trimmed)) {
-      _tagError = '영문/숫자 2~5자로 입력하세요.';
+      _tagError = appStrings?.tagFormatError ?? '2-5 alphanumeric characters required.';
     } else {
       _tagError = null;
     }
@@ -187,11 +189,11 @@ class ProfileEditViewModel extends ChangeNotifier {
       _pendingImagePath = null;
       return true;
     } on NicknameConflictException {
-      _tagError = '이미 사용 중인 닉네임입니다.';
+      _tagError = appStrings?.duplicateNicknameError ?? 'This nickname is already in use.';
       return false;
     } catch (e, st) {
       debugPrint('[ProfileEdit] save 에러: $e\n$st');
-      _nameError = '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      _nameError = appStrings?.saveFailed ?? 'Failed to save. Please try again later.';
       return false;
     } finally {
       _isSaving = false;
