@@ -55,12 +55,13 @@ class MatchCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double scale;
 
-  /// 리그 정보. 케스파컵이면 알림 버튼을 숨긴다.
+  /// 리그 정보. LCK·MSI·EWC 경기가 아니면 알림 버튼을 숨긴다.
   final String leagueInfo;
 
-  bool get _isKaspaCup =>
-      leagueInfo.toLowerCase().contains('케스파') ||
-      leagueInfo.toLowerCase().contains('kespa');
+  bool get _isAlarmEligibleLeague {
+    final info = leagueInfo.toUpperCase();
+    return info.contains('LCK') || info.contains('MSI') || info.contains('EWC');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +93,7 @@ class MatchCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (!_isKaspaCup) ...[
+                if (_isAlarmEligibleLeague) ...[
                   _AlarmBell(
                     matchId: matchId,
                     homeName: homeName,
