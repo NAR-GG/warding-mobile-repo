@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
 import '../../model/game_rating.dart';
 import '../../model/my_rating_list.dart';
+import '../../util/sentry_logger.dart';
 import '../auth/auth_service.dart';
 
 /// 라이브 경기 선수 평점 API (`/api/mobile/live/games/...`).
@@ -85,8 +86,15 @@ class RatingRepository {
     );
     debugPrint('[Rating] 내평가 PUT ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postRating',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.myRatingUrl(gameId, participantId), 'statusCode': response.statusCode, 'gameId': gameId, 'participantId': participantId},
+      );
       throw Exception('내 평가 저장 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postRating', extra: {'gameId': gameId, 'participantId': participantId});
     return MyRating.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
@@ -100,8 +108,15 @@ class RatingRepository {
     );
     debugPrint('[Rating] 내평가 DELETE ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'deleteRating',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.myRatingUrl(gameId, participantId), 'statusCode': response.statusCode, 'gameId': gameId, 'participantId': participantId},
+      );
       throw Exception('내 평가 삭제 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'deleteRating', extra: {'gameId': gameId, 'participantId': participantId});
   }
 
   /// 내가 작성한 평가 전체 목록을 조회한다 (인증 필요, 페이지네이션).

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../util/sentry_logger.dart';
 import '../auth/auth_service.dart';
 
 /// 경기 예약(알림) 구독 API (`/api/mobile/me/match-subscriptions`).
@@ -79,8 +80,15 @@ class MatchSubscriptionRepository {
     );
     debugPrint('[MatchSubscription] 구독 → $matchId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postMatchAlarm',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.matchSubscriptionsUrl, 'statusCode': response.statusCode, 'matchId': matchId},
+      );
       throw Exception('경기 구독 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postMatchAlarm', extra: {'matchId': matchId});
     _cache = {...?_cache, matchId};
   }
 
@@ -94,8 +102,15 @@ class MatchSubscriptionRepository {
     );
     debugPrint('[MatchSubscription] 해제 → $matchId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'deleteMatchAlarm',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.matchSubscriptionUrl(matchId), 'statusCode': response.statusCode, 'matchId': matchId},
+      );
       throw Exception('경기 구독 해제 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'deleteMatchAlarm', extra: {'matchId': matchId});
     final cached = _cache;
     if (cached != null) _cache = {...cached}..remove(matchId);
   }

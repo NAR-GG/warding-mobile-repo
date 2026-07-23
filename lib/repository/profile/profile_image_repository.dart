@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../util/sentry_logger.dart';
 import '../auth/auth_service.dart';
 
 /// 프로필 이미지 업로드 — 백엔드에서 Cloudinary 서명 파라미터를 발급받아
@@ -36,6 +37,12 @@ class ProfileImageRepository {
       ),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'updateProfile',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.profileImageSignatureUrl, 'statusCode': response.statusCode, 'step': 'fetchSignature'},
+      );
       throw Exception('프로필 이미지 서명 발급 실패 (${response.statusCode})');
     }
     return _CloudinarySignature.fromJson(
@@ -62,6 +69,12 @@ class ProfileImageRepository {
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'updateProfile',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': sig.uploadUrl, 'statusCode': response.statusCode, 'step': 'cloudinaryUpload'},
+      );
       throw Exception(
         'Cloudinary 업로드 실패 (${response.statusCode}): ${response.body}',
       );
@@ -69,9 +82,16 @@ class ProfileImageRepository {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final url = data['secure_url'] as String?;
     if (url == null || url.isEmpty) {
+      SentryLogger.error(
+        module: 'Logic',
+        eventName: 'updateProfile',
+        reason: 'missing_secure_url',
+        extra: {'step': 'cloudinaryUpload', 'publicId': sig.publicId},
+      );
       throw Exception('Cloudinary 응답에 secure_url 이 없습니다: ${response.body}');
     }
     debugPrint('[ProfileImage] uploaded ✓ $url');
+    SentryLogger.info(module: 'API', eventName: 'updateProfile', extra: {'publicId': sig.publicId});
     return url;
   }
 }
