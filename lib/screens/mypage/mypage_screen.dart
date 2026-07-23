@@ -13,6 +13,7 @@ import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
+import 'component/language_setting_sheet.dart';
 import 'component/subscription_alarm_section.dart';
 import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
@@ -135,6 +136,15 @@ class _MypageScreenState extends State<MypageScreen> {
                   children: [
                     _MypageHeader(
                       scale: scale,
+                      onGlobeTap: () {
+                        showLanguageSettingSheet(
+                          context: context,
+                          onChanged: (lang) {
+                            // TODO: 앱 전역 로케일 변경 연동.
+                            debugPrint('[MyPage] 언어 변경: $lang');
+                          },
+                        );
+                      },
                       onBellTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -260,11 +270,12 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 }
 
-/// 마이페이지 헤더. 좌측 타이틀 + 우측 알림(bell) 아이콘 (양옆 20 패딩).
+/// 마이페이지 헤더. 좌측 타이틀 + 우측 지구본·알림(bell) 아이콘 (양옆 20 패딩).
 class _MypageHeader extends StatelessWidget {
-  const _MypageHeader({required this.scale, this.onBellTap});
+  const _MypageHeader({required this.scale, this.onGlobeTap, this.onBellTap});
 
   final double scale;
+  final VoidCallback? onGlobeTap;
   final VoidCallback? onBellTap;
 
   @override
@@ -286,18 +297,37 @@ class _MypageHeader extends StatelessWidget {
               color: AppColors.narText,
             ),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onBellTap,
-            child: SvgPicture.asset(
-              'assets/icons/bell.svg',
-              width: 24 * scale,
-              height: 24 * scale,
-              colorFilter: const ColorFilter.mode(
-                AppColors.narText,
-                BlendMode.srcIn,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onGlobeTap,
+                child: SvgPicture.asset(
+                  'assets/icons/globe.svg',
+                  width: 24 * scale,
+                  height: 24 * scale,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.narText,
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
-            ),
+              SizedBox(width: 16 * scale),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onBellTap,
+                child: SvgPicture.asset(
+                  'assets/icons/bell.svg',
+                  width: 24 * scale,
+                  height: 24 * scale,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.narText,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
