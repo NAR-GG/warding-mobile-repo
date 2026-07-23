@@ -16,6 +16,7 @@ import '../../config/app_globals.dart';
 import '../../l10n/app_strings.dart';
 import '../../model/user_profile.dart';
 import '../../screens/login/login_screen.dart';
+import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
 
 class AuthResult {
@@ -174,6 +175,15 @@ class AuthService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postLogin',
+        reason: 'status_${response.statusCode}',
+        extra: {
+          'endpoint': loginUrl,
+          'response': {'status': response.statusCode},
+        },
+      );
       throw Exception(
         '백엔드 로그인 실패 (${response.statusCode}): ${response.body}',
       );
@@ -182,6 +192,11 @@ class AuthService {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final jwt = (data['accessToken'] ?? data['jwt']) as String?;
     if (jwt == null) {
+      SentryLogger.error(
+        module: 'Logic',
+        eventName: 'postLogin_noToken',
+        reason: 'jwt_missing',
+      );
       throw Exception('백엔드 응답에 토큰이 없습니다: ${response.body}');
     }
     final refreshToken =
@@ -192,6 +207,12 @@ class AuthService {
     if (refreshToken != null && refreshToken.isNotEmpty) {
       await _storage.write(key: _refreshKey, value: refreshToken);
     }
+
+    // 로그인 성공 → Sentry에 사용자 ID 설정 + info 로그
+    final memberId = data['memberId']?.toString();
+    if (memberId != null) SentryLogger.setUser(memberId);
+    SentryLogger.info(module: 'API', eventName: 'postLogin');
+
     return AuthResult(jwt: jwt, isOnboarded: isOnboarded);
   }
 
@@ -392,5 +413,6 @@ class AuthService {
     }
     await _storage.delete(key: _jwtKey);
     await _storage.delete(key: _refreshKey);
+    SentryLogger.clearUser();
   }
 }

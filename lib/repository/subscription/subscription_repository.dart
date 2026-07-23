@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
 import '../../model/player_subscription.dart';
 import '../../model/team_notification_subscription.dart';
+import '../../util/sentry_logger.dart';
 import '../auth/auth_service.dart';
 
 /// 선수 구독·팀 알림 구독 관련 API (`/api/mobile/me/...`).
@@ -80,8 +81,15 @@ class SubscriptionRepository {
     );
     debugPrint('[Subscription] 선수구독 → $playerId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.playerSubscriptionsUrl, 'statusCode': response.statusCode, 'playerId': playerId},
+      );
       throw Exception('선수 구독 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'playerId': playerId});
     return PlayerSubscription.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -97,8 +105,15 @@ class SubscriptionRepository {
     );
     debugPrint('[Subscription] 선수해제 → $playerId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'deleteSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.playerSubscriptionUrl(playerId), 'statusCode': response.statusCode, 'playerId': playerId},
+      );
       throw Exception('선수 구독 해제 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'deleteSubscribe', extra: {'playerId': playerId});
   }
 
   // ── 팀 알림 구독 ──────────────────────────────────────────────────
@@ -152,8 +167,15 @@ class SubscriptionRepository {
     );
     debugPrint('[Subscription] 팀구독 → $teamId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.teamNotificationsUrl, 'statusCode': response.statusCode, 'teamId': teamId},
+      );
       throw Exception('팀 알림 구독 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'teamId': teamId});
     return TeamNotificationSubscription.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -179,8 +201,15 @@ class SubscriptionRepository {
     );
     debugPrint('[Subscription] 팀알림설정 → $teamId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.teamNotificationUrl(teamId), 'statusCode': response.statusCode, 'teamId': teamId},
+      );
       throw Exception('팀 알림 설정 변경 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'teamId': teamId, 'action': 'updateNotification'});
     return TeamNotificationSubscription.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -196,7 +225,14 @@ class SubscriptionRepository {
     );
     debugPrint('[Subscription] 팀해제 → $teamId ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'deleteSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.teamNotificationUrl(teamId), 'statusCode': response.statusCode, 'teamId': teamId},
+      );
       throw Exception('팀 알림 구독 해제 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'deleteSubscribe', extra: {'teamId': teamId});
   }
 }

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'config/api_config.dart';
 import 'config/app_globals.dart';
@@ -45,7 +46,31 @@ Future<void> main() async {
   await FcmService.instance.initMessaging();
   await AppLanguage.instance.load();
   KakaoSdk.init(nativeAppKey: ApiConfig.kakaoNativeAppKey);
-  runApp(const MyApp());
+
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = const String.fromEnvironment(
+        'SENTRY_DSN',
+        defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
+      );
+      options.environment = const String.fromEnvironment(
+        'APP_ENV',
+        defaultValue: 'production',
+      );
+      options.sendDefaultPii = true;
+      // 비용 절감을 위해 트레이스·프로파일 샘플링 비율을 낮춘다.
+      options.tracesSampleRate = 0.1;
+      options.profilesSampleRate = 0.1;
+      // 민감 정보 마스킹
+      options.beforeSend = (event, hint) {
+        event.request?.headers.remove('Authorization');
+        return event;
+      };
+    },
+    appRunner: () => runApp(
+      SentryWidget(child: const MyApp()),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -65,6 +90,7 @@ class MyApp extends StatelessWidget {
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          navigatorObservers: [SentryNavigatorObserver()],
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             scaffoldBackgroundColor: AppColors.narDark800,

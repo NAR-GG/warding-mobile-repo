@@ -6,6 +6,7 @@ import '../../config/api_config.dart';
 import '../../model/league.dart';
 import '../../model/player.dart';
 import '../../model/team.dart';
+import '../../util/sentry_logger.dart';
 
 /// 온보딩 관련 API.
 class OnboardingRepository {
@@ -86,7 +87,14 @@ class OnboardingRepository {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postOnboarding',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.onboardingUrl, 'statusCode': response.statusCode},
+      );
       throw Exception('온보딩 완료 저장 실패 (${response.statusCode})');
     }
+    SentryLogger.info(module: 'API', eventName: 'postOnboarding');
   }
 }
