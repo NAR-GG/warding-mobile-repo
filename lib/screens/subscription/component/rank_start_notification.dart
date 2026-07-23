@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../components/notification_card.dart';
+import '../../../util/korean_particle.dart';
 
 /// 선수 랭크 시작 감지 알림. 좌측 headset 아이콘 + 선수/챔피언/큐 정보.
 /// OP.GG 이동은 카드 전체 탭으로 처리하므로 카드 안에는 링크를 두지 않는다.
@@ -33,7 +34,7 @@ class RankStartNotification extends StatelessWidget {
     return NotificationCard(
       icon: 'assets/icons/headset.svg',
       title: '$playerName 선수 랭크 시작 감지!',
-      body: '지금 $playerName 선수가 $champion으로 $queueType를 시작했습니다',
+      body: '지금 $playerName 선수가 $champion${particleEuro(champion)} $queueType를 시작했습니다',
       dateTime: dateTime,
       relativeTime: relativeTime,
       scale: scale,
