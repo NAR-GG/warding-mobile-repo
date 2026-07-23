@@ -19,6 +19,7 @@ void main() {
             awayScore: 0,
             isLive: true,
             liveSetLabel: 'SET 2 진행중',
+            leagueInfo: 'LCK',
           ),
         ),
       ),
