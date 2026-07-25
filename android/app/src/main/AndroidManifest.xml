@@ -75,6 +75,15 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- 네이버 로그인 SDK가 네이버앱으로 OAuth 핸드오프 시도(Android 11+ 패키지 가시성).
+             미선언 시 SDK가 대상을 못 봐 no_catagorized_error 발생. iOS는 Info.plist
+             LSApplicationQueriesSchemes(naversearchapp)로 이미 선언돼 있어 정상 동작. -->
+        <package android:name="com.nhn.android.search"/>
+        <!-- 커스텀탭 폴백용 브라우저 감지. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
