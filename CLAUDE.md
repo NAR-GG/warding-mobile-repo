@@ -71,6 +71,30 @@ lib/
 - **폰트**: 기본 `Pretendard`, 일부 `Open Sans` (pubspec에 폰트 등록 필요).
 - `line-height`가 폰트 크기보다 많이 작으면 `height` 대신 부모의 `alignment`로 정렬한다.
 
+## 릴리즈 / 배포 (Shorebird)
+
+**스토어 제출용 빌드는 반드시 `shorebird release`로 뽑는다. `flutter build ipa`/`flutter build appbundle` 금지.**
+일반 빌드에는 Shorebird 업데이터가 안 들어가서, 그 빌드를 설치한 유저는 코드 푸시 패치를 영원히 못 받는다
+(1.0.3 iOS가 이 실수로 나가서 다음 스토어 릴리즈 전까지 패치 불가였음).
+
+```bash
+# 스토어 릴리즈 (버전은 pubspec.yaml의 version 사용)
+shorebird release ios        # → build/ios/ipa/*.ipa 를 Transporter로 업로드
+shorebird release android    # → build/app/outputs/bundle/release/*.aab 를 Play Console에 업로드
+
+# 제출 전 확인: 해당 버전이 목록에 있어야 shorebird 빌드가 맞음
+shorebird releases list
+
+# 출시 후 Dart 코드 핫픽스 (심사 불필요, 앱 재실행 2번이면 적용)
+shorebird patch ios --release-version <pubspec의 version>
+shorebird patch android --release-version <pubspec의 version>
+```
+
+패치 규칙:
+- 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출 필요.
+- 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시 위험.
+- 패치가 어느 코드였는지는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적.
+
 ## 진행 상황
 
 ### 완료
