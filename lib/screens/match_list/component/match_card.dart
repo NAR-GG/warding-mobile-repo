@@ -461,7 +461,7 @@ class _LiveScore extends StatelessWidget {
 
 /// 모든 카드 스코어 위에 깔리는 스포방지 오버레이.
 /// 시안에 맞춰 116×77 고정 영역을 차지하며, 양옆 [_TeamColumn] 을 침범하지 않는다.
-/// 안쪽 child(실제 스코어)는 가운데 정렬되어 보이고, 위에 흐림 + 텍스트가 덮인다.
+/// 공개 전에는 실제 스코어 대신 0:0 더미를 깔고 위에 흐림 + 텍스트를 덮는다.
 /// 탭하면 [_revealed=true] → 오버레이 사라지고 실제 스코어 노출.
 class _SpoilerOverlay extends StatefulWidget {
   const _SpoilerOverlay({required this.child, required this.scale});
@@ -486,8 +486,13 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 실제 스코어 — 가운데 정렬.
-          Center(child: widget.child),
+          // 공개 전에는 실제 스코어를 아예 그리지 않는다 — 흐림만으로는
+          // 숫자가 비쳐 스포일러가 새기 때문에 0:0 더미를 깔아 둔다.
+          Center(
+            child: _revealed
+                ? widget.child
+                : _ScoreRow(home: 0, away: 0, scale: scale),
+          ),
           if (!_revealed)
             Positioned.fill(
               child: GestureDetector(
