@@ -13,6 +13,7 @@ import '../model/schedule_match.dart';
 import '../model/team.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/onboarding/onboarding_repository.dart';
+import '../repository/preference/filter_preference_repository.dart';
 import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
 import '../screens/schedule/schedule_screen.dart';
@@ -199,6 +200,26 @@ class HomeWidgetService {
       await updateCalendar(month: now, matchesByDay: matchesByDay);
     } catch (e) {
       debugPrint('[HomeWidget] 캘린더 갱신 실패: $e');
+    }
+
+    // 저장된 필터 상태를 위젯에 전달
+    try {
+      final saved = await FilterPreferenceRepository.instance
+          .load(FilterPreferenceRepository.scheduleKey);
+      if (saved != null) {
+        final leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
+        final teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
+        final teamSelected = (saved['teamSelected'] as bool?) ?? false;
+        final hasFilter =
+            !(leagues.length == 1 && leagues.first == 'ALL') ||
+            teamIds.isNotEmpty;
+        await updateFilterState(
+          hasFilter: hasFilter,
+          teamSelected: teamSelected,
+        );
+      }
+    } catch (e) {
+      debugPrint('[HomeWidget] 필터 상태 갱신 실패: $e');
     }
 
     // 응원팀 정보도 위젯에 전달
