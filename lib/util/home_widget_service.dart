@@ -6,6 +6,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../config/app_globals.dart';
 import '../model/match_calendar_day.dart';
@@ -49,6 +50,8 @@ class HomeWidgetService {
   static Future<void> updateCalendar({
     required DateTime month,
     required Map<int, List<CalendarMatchBrief>> matchesByDay,
+    List<String> leagues = const ['ALL'],
+    List<int> teamIds = const [],
   }) async {
     try {
       final monthStr =
@@ -69,8 +72,37 @@ class HomeWidgetService {
       final json = jsonEncode({'month': monthStr, 'days': daysJson});
       await HomeWidget.saveWidgetData<String>('calendar_data', json);
 
-      // 오늘 경기 상세도 함께 가져와 저장
-      await _updateTodayMatches();
+      // 오늘 경기: 상세 API(시간 포함)로 가져오고, 캘린더 경기 ID로 필터링
+      final now = DateTime.now();
+      if (now.year == month.year && now.month == month.month) {
+        final calendarMatchIds = (matchesByDay[now.day] ?? [])
+            .map((m) => m.matchId)
+            .toSet();
+
+        if (calendarMatchIds.isNotEmpty) {
+          // 전체 리그로 상세 API 호출 (시간 정보 필요)
+          try {
+            final allMatches = await ScheduleRepository.instance
+                .fetchMatchesByDate(now);
+            // 캘린더에 있는 경기만 필터링 (캘린더 필터와 동기화)
+            final filtered = allMatches
+                .where((m) => calendarMatchIds.contains(m.matchId))
+                .toList();
+
+            if (filtered.isNotEmpty) {
+              await _saveTodayDetailed(now, filtered);
+            } else {
+              await _saveTodayFromCalendar(now, matchesByDay[now.day]!);
+            }
+          } catch (_) {
+            await _saveTodayFromCalendar(now, matchesByDay[now.day]!);
+          }
+        } else {
+          await _updateTodayMatches(leagues: leagues, teamIds: teamIds);
+        }
+      } else {
+        await _updateTodayMatches(leagues: leagues, teamIds: teamIds);
+      }
 
       await HomeWidget.updateWidget(
         androidName: _androidWidgetName,
@@ -88,15 +120,22 @@ class HomeWidgetService {
   }
 
   /// 오늘 경기 리스트(시간·대진·상태)를 위젯에 전달한다.
-  static Future<void> _updateTodayMatches() async {
+  static Future<void> _updateTodayMatches({
+    List<String> leagues = const ['ALL'],
+    List<int> teamIds = const [],
+  }) async {
     try {
       final now = DateTime.now();
-      final matches =
-          await ScheduleRepository.instance.fetchMatchesByDate(now);
+      final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+      final matches = await ScheduleRepository.instance.fetchMatchesByDate(
+        now,
+        leagues: leagueParam,
+        teamIds: teamIds.isNotEmpty ? teamIds : null,
+      );
 
       final todayJson = <String, dynamic>{
         'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
-        'weekday': now.weekday, // 1=Mon ... 7=Sun
+        'weekday': now.weekday,
         'matches': [
           for (final m in matches)
             {
@@ -117,6 +156,60 @@ class HomeWidgetService {
     } catch (e) {
       debugPrint('[HomeWidget] 오늘 경기 갱신 실패: $e');
     }
+  }
+
+  /// 상세 API 결과(시간 포함)를 위젯에 저장
+  static Future<void> _saveTodayDetailed(
+    DateTime now,
+    List<ScheduleMatch> matches,
+  ) async {
+    final todayJson = <String, dynamic>{
+      'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+      'weekday': now.weekday,
+      'matches': [
+        for (final m in matches)
+          {
+            'matchId': m.matchId,
+            'time': m.scheduledTime,
+            'status': m.matchStatus,
+            'blueCode': m.teamA.teamCode,
+            'redCode': m.teamB.teamCode,
+            'display': '${m.teamA.teamCode} VS ${m.teamB.teamCode}',
+          },
+      ],
+    };
+    await HomeWidget.saveWidgetData<String>(
+      'today_matches',
+      jsonEncode(todayJson),
+    );
+    debugPrint('[HomeWidget] 오늘 경기 상세: ${matches.length}개');
+  }
+
+  /// 캘린더 데이터에서 오늘 경기를 추출해 위젯에 저장 (fetchMatchesByDate 폴백)
+  static Future<void> _saveTodayFromCalendar(
+    DateTime now,
+    List<CalendarMatchBrief> todayMatches,
+  ) async {
+    final todayJson = <String, dynamic>{
+      'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+      'weekday': now.weekday,
+      'matches': [
+        for (final m in todayMatches)
+          {
+            'matchId': m.matchId,
+            'time': '',
+            'status': 'unstarted',
+            'blueCode': m.blueTeamCode,
+            'redCode': m.redTeamCode,
+            'display': '${m.blueTeamCode} VS ${m.redTeamCode}',
+          },
+      ],
+    };
+    await HomeWidget.saveWidgetData<String>(
+      'today_matches',
+      jsonEncode(todayJson),
+    );
+    debugPrint('[HomeWidget] 오늘 경기 캘린더 폴백: ${todayMatches.length}개');
   }
 
   /// 필터/팀 선택 상태를 위젯에 전달한다.
@@ -159,65 +252,117 @@ class HomeWidgetService {
         'team_name',
         team.name,
       );
-      debugPrint('[HomeWidget] 응원팀 저장: ${team.name}');
+      await HomeWidget.saveWidgetData<String>(
+        'team_code',
+        team.code,
+      );
+      debugPrint('[HomeWidget] 응원팀 저장: ${team.name} (${team.code})');
     } catch (e) {
       debugPrint('[HomeWidget] 응원팀 저장 실패: $e');
     }
   }
 
-  /// 위젯 딥링크 처리: warding://widget/prev, next, filter
-  static void handleWidgetDeepLink(Uri uri) {
-    final path = uri.host == 'widget' ? uri.path : uri.host;
-    final action = path.replaceAll('/', '');
-    debugPrint('[HomeWidget] 딥링크: $uri → action=$action');
+  static const _channel = MethodChannel('com.warding.app/widget');
 
-    // 경기일정 화면으로 이동
+  /// Swift에서 MethodChannel로 전달되는 위젯 액션을 수신한다.
+  static void listenWidgetActions() {
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'widgetAction') {
+        final urlStr = call.arguments as String?;
+        if (urlStr != null) _handleWidgetUrl(urlStr);
+      }
+    });
+  }
+
+  /// 위젯 URL 파싱 후 경기일정 화면으로 이동
+  static void _handleWidgetUrl(String urlStr) {
+    debugPrint('[HomeWidget] 위젯 URL: $urlStr');
+    final uri = Uri.tryParse(urlStr);
+    if (uri == null) return;
+
+    final action = uri.path.replaceAll('/', '');
+
+    // home 액션: 앱만 열기 (메인 페이지)
+    if (action == 'home') return;
+
+    final year = int.tryParse(uri.queryParameters['year'] ?? '');
+    final month = int.tryParse(uri.queryParameters['month'] ?? '');
+
+    // prev/next: 위젯에 표시된 월 기준으로 이동할 타겟 월 계산
+    DateTime? targetMonth;
+    if (year != null && month != null) {
+      if (action == 'prev') {
+        targetMonth = DateTime(year, month - 1);
+      } else if (action == 'next') {
+        targetMonth = DateTime(year, month + 1);
+      } else {
+        targetMonth = DateTime(year, month);
+      }
+    }
+
     final nav = navigatorKey.currentState;
     if (nav == null) return;
 
-    switch (action) {
-    case 'prev':
-    case 'next':
-    case 'filter':
-      // 경기일정 화면을 열면서 action 전달
-      nav.push(
-        MaterialPageRoute(
-          builder: (_) => ScheduleScreen(widgetAction: action),
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => ScheduleScreen(
+          widgetAction: action == 'prev' || action == 'next' ? null : action,
+          initialMonth: targetMonth,
         ),
-      );
-    }
+      ),
+    );
   }
 
   /// 백그라운드에서 최신 데이터를 가져와 위젯을 갱신한다.
   /// 캘린더 + 응원팀 + 오늘 경기를 한 번에 갱신한다.
   static Future<void> refreshFromApi() async {
-    try {
-      final now = DateTime.now();
-      final days = await ScheduleRepository.instance.fetchCalendar(now);
-      final matchesByDay = <int, List<CalendarMatchBrief>>{
-        for (final day in days) day.date.day: day.matches,
-      };
-      await updateCalendar(month: now, matchesByDay: matchesByDay);
-    } catch (e) {
-      debugPrint('[HomeWidget] 캘린더 갱신 실패: $e');
-    }
+    // 저장된 필터를 먼저 읽어서 캘린더/오늘경기에 적용
+    List<String> leagues = const ['ALL'];
+    List<int> teamIds = const [];
+    bool teamSelected = false;
 
-    // 저장된 필터 상태를 위젯에 전달
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
       if (saved != null) {
-        final leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
-        final teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
-        final teamSelected = (saved['teamSelected'] as bool?) ?? false;
-        final hasFilter =
-            !(leagues.length == 1 && leagues.first == 'ALL') ||
-            teamIds.isNotEmpty;
-        await updateFilterState(
-          hasFilter: hasFilter,
-          teamSelected: teamSelected,
-        );
+        leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
+        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
+        teamSelected = (saved['teamSelected'] as bool?) ?? false;
       }
+    } catch (e) {
+      debugPrint('[HomeWidget] 필터 복원 실패: $e');
+    }
+
+    try {
+      final now = DateTime.now();
+      final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+      final days = await ScheduleRepository.instance.fetchCalendar(
+        now,
+        leagues: leagueParam,
+        teamIds: teamIds.isNotEmpty ? teamIds : null,
+      );
+      final matchesByDay = <int, List<CalendarMatchBrief>>{
+        for (final day in days) day.date.day: day.matches,
+      };
+      await updateCalendar(
+        month: now,
+        matchesByDay: matchesByDay,
+        leagues: leagues,
+        teamIds: teamIds,
+      );
+    } catch (e) {
+      debugPrint('[HomeWidget] 캘린더 갱신 실패: $e');
+    }
+
+    // 필터 상태를 위젯에 전달
+    try {
+      final hasFilter =
+          !(leagues.length == 1 && leagues.first == 'ALL') ||
+          teamIds.isNotEmpty;
+      await updateFilterState(
+        hasFilter: hasFilter,
+        teamSelected: teamSelected,
+      );
     } catch (e) {
       debugPrint('[HomeWidget] 필터 상태 갱신 실패: $e');
     }

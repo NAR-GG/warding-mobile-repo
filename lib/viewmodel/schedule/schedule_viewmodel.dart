@@ -196,10 +196,12 @@ class ScheduleViewModel extends ChangeNotifier {
       final total =
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료: ${_matchesByDay.length}일, 총 $total경기');
-      // 홈 화면 위젯에 최신 캘린더 데이터 전달
+      // 홈 화면 위젯에 최신 캘린더 데이터 전달 (필터 포함)
       unawaited(HomeWidgetService.updateCalendar(
         month: _displayMonth,
         matchesByDay: _matchesByDay,
+        leagues: _leagues,
+        teamIds: _teamIds,
       ));
     } catch (e, st) {
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';

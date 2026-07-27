@@ -18,6 +18,17 @@ import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/home_widget_service.dart';
 
+/// 홈 화면 위젯 백그라운드 갱신 콜백.
+///
+/// iOS Background App Refresh 또는 WidgetKit 타임라인 갱신 시 호출된다.
+/// 별도 isolate 에서 실행되므로 최상위 함수여야 한다.
+@pragma('vm:entry-point')
+Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await HomeWidgetService.init();
+  await HomeWidgetService.refreshFromApi();
+}
+
 /// 앱이 백그라운드/종료 상태일 때 도착하는 FCM 메시지 핸들러.
 ///
 /// 별도 isolate 에서 실행되므로 최상위 함수여야 하고 `vm:entry-point` 가 필요하다.
@@ -50,16 +61,13 @@ Future<void> main() async {
   await AppLanguage.instance.load();
   KakaoSdk.init(nativeAppKey: ApiConfig.kakaoNativeAppKey);
   await HomeWidgetService.init();
+  // 백그라운드 위젯 갱신 콜백 등록
+  HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback);
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
   HomeWidgetService.refreshFromApi();
 
-  // 위젯 탭 시 앱이 열릴 때 딥링크 처리
-  HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
-    if (uri != null) HomeWidgetService.handleWidgetDeepLink(uri);
-  });
-  HomeWidget.widgetClicked.listen((uri) {
-    if (uri != null) HomeWidgetService.handleWidgetDeepLink(uri);
-  });
+  // 위젯 딥링크: MethodChannel로 Swift에서 전달받음
+  HomeWidgetService.listenWidgetActions();
 
   await SentryFlutter.init(
     (options) {

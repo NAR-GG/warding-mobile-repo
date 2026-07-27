@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import UIKit
 
 // MARK: - Data Models
 
@@ -39,7 +40,9 @@ struct TodayMatch {
     let redCode: String
     let display: String
 
-    var isFinished: Bool { status == "FINISHED" || status == "COMPLETED" }
+    var isFinished: Bool {
+        status == "FINISHED" || status == "COMPLETED" || status == "completed"
+    }
     var isLive: Bool { status == "LIVE" || status == "IN_PROGRESS" }
 }
 
@@ -47,29 +50,48 @@ struct TodayMatch {
 
 struct ScheduleProvider: TimelineProvider {
     func placeholder(in context: Context) -> ScheduleEntry {
-        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil, hasFilter: false, teamSelected: false)
+        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil, teamImage: nil, hasFilter: false, teamSelected: false, teamCode: "")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ScheduleEntry) -> Void) {
-        let (cal, today, teamUrl, hasFilter, teamSelected) = loadData()
-        completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, hasFilter: hasFilter, teamSelected: teamSelected))
+        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode) = loadData()
+        downloadTeamImage(url: teamUrl) { image in
+            completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode))
+        }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
-        let (cal, today, teamUrl, hasFilter, teamSelected) = loadData()
-        let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, hasFilter: hasFilter, teamSelected: teamSelected)
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
-        completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode) = loadData()
+        downloadTeamImage(url: teamUrl) { image in
+            let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode)
+            let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        }
     }
 
-    private func loadData() -> (CalendarData, TodayData, String?, Bool, Bool) {
+    private func downloadTeamImage(url: String?, completion: @escaping (UIImage?) -> Void) {
+        guard let urlStr = url, let imageUrl = URL(string: urlStr) else {
+            completion(nil)
+            return
+        }
+        URLSession.shared.dataTask(with: imageUrl) { data, _, _ in
+            if let data = data, let image = UIImage(data: data) {
+                completion(image)
+            } else {
+                completion(nil)
+            }
+        }.resume()
+    }
+
+    private func loadData() -> (CalendarData, TodayData, String?, Bool, Bool, String) {
         guard let ud = UserDefaults(suiteName: "group.com.warding.app") else {
-            return (.empty, .empty, nil, false, false)
+            return (.empty, .empty, nil, false, false, "")
         }
         let teamUrl = ud.string(forKey: "team_image_url")
         let hasFilter = ud.bool(forKey: "has_filter")
         let teamSelected = ud.bool(forKey: "team_selected")
-        return (loadCalendar(ud), loadToday(ud), teamUrl, hasFilter, teamSelected)
+        let teamCode = ud.string(forKey: "team_code") ?? ""
+        return (loadCalendar(ud), loadToday(ud), teamUrl, hasFilter, teamSelected, teamCode)
     }
 
     private func loadCalendar(_ ud: UserDefaults) -> CalendarData {
@@ -132,8 +154,10 @@ struct ScheduleEntry: TimelineEntry {
     let calendar: CalendarData
     let today: TodayData
     let teamImageUrl: String?
+    let teamImage: UIImage?
     let hasFilter: Bool
     let teamSelected: Bool
+    let teamCode: String
 }
 
 // MARK: - Medium Widget View (좌: 오늘 경기 | 우: 미니 캘린더)
@@ -152,7 +176,7 @@ struct MediumWidgetView: View {
 
     private var bgColor: Color { isDark ? Color.black : Color.white }
     private var textColor: Color { isDark ? Color.white : Color(hex: 0x101113) }
-    private var sundayColor: Color { isDark ? Color(hex: 0x9672AC) : Color(hex: 0x9672AC) }
+    private var sundayColor: Color { isDark ? Color(hex: 0x9672AC) : Color(hex: 0x6D2E92) }
 
     private var displayYear: Int { cal.month.isEmpty ? Calendar.current.component(.year, from: Date()) : cal.year }
     private var displayMonth: Int { cal.month.isEmpty ? Calendar.current.component(.month, from: Date()) : cal.monthNum }
@@ -180,13 +204,13 @@ struct MediumWidgetView: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 9) {
             // 왼쪽: 오늘 경기 리스트
             todayMatchesView
             // 오른쪽: 미니 캘린더
             miniCalendarView
         }
-        .padding(.horizontal, 12)
+        .padding(12)
         .background(bgColor)
         .containerBackground(bgColor, for: .widget)
     }
@@ -195,46 +219,48 @@ struct MediumWidgetView: View {
 
     private var todayMatchesView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 날짜 헤더
+            // 날짜 헤더 "07.26(일)"
             Text(todayLabel)
-                .font(.custom("Pretendard", size: 16).weight(.bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(textColor)
+                .frame(height: 22)
 
-            // 경기 리스트
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
-                    // 세로 구분선
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
-                                startPoint: .top, endPoint: .bottom
-                            )
+            // 경기 리스트 + 세로 바
+            HStack(alignment: .top, spacing: 4) {
+                // 세로 그라데이션 바 (시안: width 6, height 96)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                            startPoint: .top, endPoint: .bottom
                         )
-                        .frame(width: 2)
+                    )
+                    .frame(width: 6, height: 96)
 
-                    // 경기 항목들
-                    VStack(alignment: .leading, spacing: 3) {
-                        let maxShow = 3
-                        let matches = today.matches
-                        let nextIdx = nextScheduledIndex
+                // 경기 항목들
+                VStack(alignment: .leading, spacing: 3) {
+                    let maxShow = 3
+                    let matches = today.matches
+                    let nextIdx = nextScheduledIndex
 
-                        ForEach(0..<min(matches.count, maxShow), id: \.self) { i in
-                            matchRow(matches[i], isNext: i == nextIdx)
-                        }
-                        if matches.count > maxShow {
-                            Text("+\(matches.count - maxShow)")
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
-                                .foregroundColor(textColor)
-                        }
-                        if matches.isEmpty {
-                            Text("경기 없음")
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
-                                .foregroundColor(Color(hex: 0xA6A7AB))
-                        }
+                    ForEach(0..<min(matches.count, maxShow), id: \.self) { i in
+                        mediumMatchRow(matches[i], isNext: i == nextIdx)
                     }
-                    .padding(.leading, 1)
+                    if matches.count > maxShow {
+                        Text("+\(matches.count - maxShow)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(textColor)
+                            .frame(height: 20)
+                    }
+                    if matches.isEmpty {
+                        Text("경기 없음")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color(hex: 0xA6A7AB))
+                            .frame(height: 20)
+                    }
                 }
+                .padding(.leading, 1)
+                .padding(.vertical, 2)
             }
 
             Spacer(minLength: 0)
@@ -242,44 +268,57 @@ struct MediumWidgetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func matchRow(_ match: TodayMatch, isNext: Bool) -> some View {
-        HStack(spacing: 14) {
-            Text(match.time)
-                .font(.custom("Pretendard", size: 14).weight(.medium))
-            Text(match.display)
-                .font(.custom("Pretendard", size: 14).weight(.medium))
-        }
-        .foregroundColor(textColor)
-        .strikethrough(match.isFinished, color: textColor)
-        .opacity(match.isFinished ? 0.6 : 1.0)
-        .overlay(
-            Group {
-                if isNext {
-                    // 그라데이션 텍스트 효과 — overlay + mask
-                    HStack(spacing: 14) {
-                        Text(match.time)
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
-                        Text(match.display)
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
-                    }
-                    .foregroundColor(.clear)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
-                            startPoint: .leading, endPoint: .trailing
-                        )
+    /// 중간 위젯 경기 행
+    /// - 지난 경기: opacity 0.6 + line-through
+    /// - 라이브/바로 다음 예정: narBg 그라데이션 텍스트
+    /// - 그 외 예정: 일반 텍스트 (검정/흰)
+    private func mediumMatchRow(_ match: TodayMatch, isNext: Bool) -> some View {
+        Group {
+            if match.isFinished {
+                // 지난 경기: 취소선 + 흐림
+                HStack(spacing: 14) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .foregroundColor(textColor)
+                .strikethrough(true, color: textColor)
+                .opacity(0.6)
+            } else if match.isLive || isNext {
+                // 현재 경기 / 바로 다음 예정: 그라데이션 텍스트
+                HStack(spacing: 14) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .foregroundColor(.clear)
+                .overlay(
+                    LinearGradient(
+                        colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                        startPoint: .leading, endPoint: .trailing
                     )
                     .mask(
                         HStack(spacing: 14) {
                             Text(match.time)
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
+                                .font(.system(size: 14, weight: .medium))
                             Text(match.display)
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                     )
+                )
+            } else {
+                // 그 외 예정 경기: 일반 색
+                HStack(spacing: 14) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
                 }
+                .foregroundColor(textColor)
             }
-        )
+        }
         .frame(height: 20)
     }
 
@@ -332,39 +371,55 @@ struct MediumWidgetView: View {
                         let offset = week * 7 + dow - firstWeekday
                         let day = offset + 1
                         let isCurrent = day >= 1 && day <= daysInMonth
-                        let displayDay = isCurrent ? day : (day < 1 ? 0 : day - daysInMonth)
                         let isToday = isCurrent && isCurrentMonth && day == todayDay
+                        let hasMatches = isCurrent && (cal.days[day]?.isEmpty == false)
 
-                        if isCurrent || (week == 0 && day < 1) || (day > daysInMonth) {
-                            Text(isCurrent ? "\(day)" : (day < 1 ? "" : "\(displayDay)"))
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(
-                                    isToday ? Color(hex: 0xFF6B6B) :
-                                    dow == 6 ? sundayColor :
-                                    textColor
-                                )
-                                .frame(width: 20, height: 22)
-                                .background(
-                                    Group {
-                                        if isToday {
-                                            RoundedRectangle(cornerRadius: 7)
-                                                .fill(
-                                                    LinearGradient(
-                                                        colors: [
-                                                            Color(hex: 0xE87558).opacity(0.2),
-                                                            Color(hex: 0xC865C9).opacity(0.2),
-                                                            Color(hex: 0x791BB8).opacity(0.2)
-                                                        ],
-                                                        startPoint: .leading, endPoint: .trailing
+                        VStack(spacing: 1) {
+                            if isCurrent {
+                                Text("\(day)")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(
+                                        isToday ? Color(hex: 0xFF6B6B) :
+                                        dow == 6 ? sundayColor :
+                                        hasMatches ? textColor :
+                                        Color(hex: 0xA6A7AB)
+                                    )
+                                    .frame(width: 20, height: 16)
+                                    .background(
+                                        Group {
+                                            if isToday {
+                                                RoundedRectangle(cornerRadius: 7)
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [
+                                                                Color(hex: 0xE87558).opacity(0.2),
+                                                                Color(hex: 0xC865C9).opacity(0.2),
+                                                                Color(hex: 0x791BB8).opacity(0.2)
+                                                            ],
+                                                            startPoint: .leading, endPoint: .trailing
+                                                        )
                                                     )
-                                                )
+                                            }
                                         }
-                                    }
-                                )
-                                .opacity(isCurrent ? 1.0 : 0.0)
-                        } else {
-                            Color.clear.frame(width: 20, height: 22)
+                                    )
+                                // 경기 있는 날만 그라데이션 dot
+                                if hasMatches {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                                                startPoint: .leading, endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: 4, height: 4)
+                                } else {
+                                    Spacer().frame(width: 4, height: 4)
+                                }
+                            } else {
+                                Color.clear.frame(width: 20, height: 22)
+                            }
                         }
+                        .frame(width: 20, height: 22)
                     }
                 }
             }
@@ -373,18 +428,20 @@ struct MediumWidgetView: View {
     }
 }
 
-// MARK: - Small Widget View (오늘 경기 리스트만)
+// MARK: - Small Widget View (중간 위젯에서 캘린더 빠진 형태)
 
 struct SmallWidgetView: View {
     let entry: ScheduleEntry
 
     @Environment(\.colorScheme) var colorScheme
-
     private var isDark: Bool { colorScheme == .dark }
     private var today: TodayData { entry.today }
 
     private let weekdayShort = ["", "월", "화", "수", "목", "금", "토", "일"]
     private let weekdayNames = ["월", "화", "수", "목", "금", "토", "일"]
+
+    private var bgColor: Color { isDark ? Color.black : Color.white }
+    private var textColor: Color { isDark ? Color.white : Color(hex: 0x101113) }
 
     private var todayWeekdayLabel: String {
         let wd = today.weekday
@@ -405,26 +462,27 @@ struct SmallWidgetView: View {
         today.matches.firstIndex { !$0.isFinished && !$0.isLive }
     }
 
-    private var bgColor: Color { isDark ? Color.black : Color.white }
-    private var textColor: Color { isDark ? Color.white : Color(hex: 0x101113) }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // 날짜 헤더
             Text(todayLabel)
-                .font(.custom("Pretendard", size: 16).weight(.bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(textColor)
+                .frame(height: 22)
 
-            // 세로선 + 경기 리스트
-            HStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 1)
+            // 세로 바 + 경기 리스트
+            HStack(alignment: .top, spacing: 4) {
+                // 세로 그라데이션 바 (width 6, 경기 항목 높이에 맞춤)
+                RoundedRectangle(cornerRadius: 3)
                     .fill(
                         LinearGradient(
                             colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
                             startPoint: .top, endPoint: .bottom
                         )
                     )
-                    .frame(width: 2)
+                    .frame(width: 6)
 
+                // 경기 항목
                 VStack(alignment: .leading, spacing: 3) {
                     let maxShow = 3
                     let matches = today.matches
@@ -435,62 +493,73 @@ struct SmallWidgetView: View {
                     }
                     if matches.count > maxShow {
                         Text("+\(matches.count - maxShow)")
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textColor)
+                            .frame(height: 20)
                     }
                     if matches.isEmpty {
                         Text("경기 없음")
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: 0xA6A7AB))
+                            .frame(height: 20)
                     }
                 }
                 .padding(.leading, 1)
+                .padding(.vertical, 2)
             }
 
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(12)
         .background(bgColor)
         .containerBackground(bgColor, for: .widget)
     }
 
     private func smallMatchRow(_ match: TodayMatch, isNext: Bool) -> some View {
-        HStack(spacing: 8) {
-            Text(match.time)
-                .font(.custom("Pretendard", size: 14).weight(.medium))
-            Text(match.display)
-                .font(.custom("Pretendard", size: 14).weight(.medium))
-        }
-        .foregroundColor(textColor)
-        .strikethrough(match.isFinished, color: textColor)
-        .opacity(match.isFinished ? 0.6 : 1.0)
-        .overlay(
-            Group {
-                if isNext {
-                    HStack(spacing: 8) {
-                        Text(match.time)
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
-                        Text(match.display)
-                            .font(.custom("Pretendard", size: 14).weight(.medium))
-                    }
-                    .foregroundColor(.clear)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
-                            startPoint: .leading, endPoint: .trailing
-                        )
+        Group {
+            if match.isFinished {
+                HStack(spacing: 8) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .foregroundColor(textColor)
+                .strikethrough(true, color: textColor)
+                .opacity(0.6)
+            } else if match.isLive || isNext {
+                HStack(spacing: 8) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .foregroundColor(.clear)
+                .overlay(
+                    LinearGradient(
+                        colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                        startPoint: .leading, endPoint: .trailing
                     )
                     .mask(
                         HStack(spacing: 8) {
                             Text(match.time)
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
+                                .font(.system(size: 14, weight: .medium))
                             Text(match.display)
-                                .font(.custom("Pretendard", size: 14).weight(.medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                     )
+                )
+            } else {
+                HStack(spacing: 8) {
+                    Text(match.time)
+                        .font(.system(size: 14, weight: .medium))
+                    Text(match.display)
+                        .font(.system(size: 14, weight: .medium))
                 }
+                .foregroundColor(textColor)
             }
-        )
+        }
         .frame(height: 20)
     }
 }
@@ -565,50 +634,65 @@ struct LargeWidgetView: View {
         .containerBackground(bgColor, for: .widget)
     }
 
+    // URL에 현재 표시 월을 포함 (prev/next 시 기준 월)
+    private var prevUrl: URL {
+        URL(string: "warding://widget/prev?year=\(displayYear)&month=\(displayMonth)")!
+    }
+    private var nextUrl: URL {
+        URL(string: "warding://widget/next?year=\(displayYear)&month=\(displayMonth)")!
+    }
+
     private var largeHeader: some View {
         HStack {
             // 좌: < 월 >
             HStack(spacing: 8) {
-                Link(destination: URL(string: "warding://widget/prev")!) {
+                Link(destination: prevUrl) {
                     Image("chevron-left")
                         .renderingMode(.template)
                         .resizable()
                         .frame(width: 24, height: 24)
                         .foregroundColor(textColor)
-                        .contentShape(Rectangle())
                 }
                 Text(String(format: "%02d.%02d", displayYear % 100, displayMonth))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(textColor)
-                Link(destination: URL(string: "warding://widget/next")!) {
+                Link(destination: nextUrl) {
                     Image("chevron-right")
                         .renderingMode(.template)
                         .resizable()
                         .frame(width: 24, height: 24)
                         .foregroundColor(textColor)
-                        .contentShape(Rectangle())
                 }
             }
             Spacer()
             // 우: 필터 + 팀 아이콘
             HStack(spacing: 8) {
-                // 필터 아이콘: 필터 적용 시 #FCFDFE 배경 + #101113 아이콘
+                // 필터 아이콘: 적용 시 그라데이션 보더
                 Link(destination: URL(string: "warding://widget/filter")!) {
-                    Circle()
-                        .fill(entry.hasFilter
-                            ? Color(hex: 0xFCFDFE)
-                            : (isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE)))
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Image("filter")
-                                .renderingMode(.template)
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(entry.hasFilter
-                                    ? Color(hex: 0x101113)
-                                    : textColor)
-                        )
-                        .contentShape(Circle())
+                    ZStack {
+                        if entry.hasFilter {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                                        startPoint: .leading, endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: 36, height: 36)
+                            Circle()
+                                .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE))
+                                .frame(width: 32, height: 32)
+                        } else {
+                            Circle()
+                                .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE))
+                                .frame(width: 36, height: 36)
+                        }
+                        Image("filter")
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(textColor)
+                    }
                 }
                 // 팀 로고: 선택 시 그라데이션 보더, 미선택 시 보더 없음
                 ZStack {
@@ -629,16 +713,12 @@ struct LargeWidgetView: View {
                             .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
                             .frame(width: 36, height: 36)
                     }
-                    if let urlStr = entry.teamImageUrl, let url = URL(string: urlStr) {
-                        AsyncImage(url: url) { image in
-                            image.resizable().aspectRatio(contentMode: .fit)
-                        } placeholder: {
-                            Image(systemName: "shield.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(subtextColor)
-                        }
-                        .frame(width: 25, height: 25)
-                        .clipShape(Circle())
+                    if let uiImage = entry.teamImage {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 25, height: 25)
+                            .clipShape(Circle())
                     } else {
                         Image(systemName: "shield.fill")
                             .font(.system(size: 16))
@@ -671,12 +751,20 @@ struct LargeWidgetView: View {
         }
     }
 
+    // 6주일 때 칩 최대 수 줄임
+    private var maxChipsPerDay: Int { weekCount >= 6 ? 1 : 2 }
+
     private var largeGrid: some View {
-        VStack(spacing: 0) {
-            ForEach(0..<weekCount, id: \.self) { week in
-                largeWeekRow(week: week)
-                if week < weekCount - 1 {
-                    Rectangle().fill(Color(hex: 0xA6A7AB)).frame(height: 1)
+        GeometryReader { geo in
+            let totalSeparators = CGFloat(weekCount - 1)
+            let rowHeight = (geo.size.height - totalSeparators) / CGFloat(weekCount)
+            VStack(spacing: 0) {
+                ForEach(0..<weekCount, id: \.self) { week in
+                    largeWeekRow(week: week)
+                        .frame(height: rowHeight)
+                    if week < weekCount - 1 {
+                        Rectangle().fill(Color(hex: 0xA6A7AB)).frame(height: 1)
+                    }
                 }
             }
         }
@@ -698,9 +786,9 @@ struct LargeWidgetView: View {
         let isToday = isCurrent && todayDay == day
         let matches: [MatchBrief] = isCurrent ? (cal.days[day] ?? []) : []
 
-        return VStack(spacing: 2) {
+        return VStack(spacing: 1) {
             Text("\(displayDay)")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: weekCount >= 6 ? 9 : 10, weight: .bold))
                 .foregroundColor(
                     isToday ? Color(hex: 0xFF6B6B) :
                     dow == 6 ? sundayColor : textColor
@@ -710,7 +798,7 @@ struct LargeWidgetView: View {
             largeMatchChips(matches: matches)
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 1)
         .padding(.horizontal, 1)
         .frame(maxWidth: .infinity)
         .background(isToday ? AnyView(todayGradient) : AnyView(Color.clear))
@@ -722,11 +810,11 @@ struct LargeWidgetView: View {
         Group {
             if !matches.isEmpty {
                 VStack(spacing: 1) {
-                    ForEach(0..<min(matches.count, 2), id: \.self) { i in
+                    ForEach(0..<min(matches.count, maxChipsPerDay), id: \.self) { i in
                         matchChipView(matches[i])
                     }
-                    if matches.count > 2 {
-                        Text("+\(matches.count - 2)")
+                    if matches.count > maxChipsPerDay {
+                        Text("+\(matches.count - maxChipsPerDay)")
                             .font(.system(size: 6, weight: .bold))
                             .foregroundColor(chipText)
                     }
@@ -768,6 +856,112 @@ struct LargeWidgetView: View {
     }
 }
 
+// MARK: - Lock Screen Widget (잠금화면 — accessoryRectangular)
+
+struct LockScreenWidgetView: View {
+    let entry: ScheduleEntry
+
+    private var today: TodayData { entry.today }
+    private var teamCode: String { entry.teamCode }
+
+    // 응원팀 경기만 필터
+    private var teamMatches: [TodayMatch] {
+        let code = teamCode
+        if code.isEmpty { return today.matches }
+        return today.matches.filter { $0.blueCode == code || $0.redCode == code }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // 헤더: "오늘 T1 경기일정"
+            HStack(spacing: 4) {
+                Text("오늘")
+                    .font(.system(size: 16, weight: .bold))
+                if !teamCode.isEmpty {
+                    Text(teamCode)
+                        .font(.system(size: 16, weight: .bold))
+                }
+                Text("경기일정")
+                    .font(.system(size: 16, weight: .bold))
+            }
+            .foregroundColor(.white)
+
+            if teamMatches.isEmpty {
+                Text("오늘 경기 없음")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+            } else {
+                // 세로 바 + 경기 리스트 + MORE (시안: height 34, padding-left 8)
+                HStack(alignment: .center, spacing: 0) {
+                    // 세로 바 (시안: border 3px, height 34)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(.white)
+                        .frame(width: 3, height: 34)
+
+                    // 경기 항목
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(0..<min(teamMatches.count, 2), id: \.self) { i in
+                            HStack(spacing: 0) {
+                                lockScreenMatchRow(teamMatches[i])
+                                // +N: 마지막 경기 행 옆에 표시
+                                if i == min(teamMatches.count, 2) - 1 && teamMatches.count > 2 {
+                                    Text("  +\(teamMatches.count - 2)")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.leading, 8)
+
+                    Spacer(minLength: 0)
+                }
+                .frame(height: 34)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 10)
+        .widgetURL(URL(string: "warding://widget/schedule"))
+    }
+
+    private func lockScreenMatchRow(_ match: TodayMatch) -> some View {
+        HStack(spacing: 14) {
+            // 대진 (시안: gap 2, semibold 14px)
+            HStack(spacing: 2) {
+                Text(match.blueCode)
+                    .font(.system(size: 14, weight: .semibold))
+                Text("VS")
+                    .font(.system(size: 14, weight: .semibold))
+                Text(match.redCode)
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(.white)
+
+            // 시간 (시안: medium 14px, opacity 0.8)
+            if !match.time.isEmpty {
+                Text(match.time)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+        }
+        .frame(height: 17)
+    }
+}
+
+// MARK: - Lock Screen Circular Widget (잠금화면 아이콘 — accessoryCircular)
+
+struct LockScreenIconView: View {
+    var body: some View {
+        Image("warding-icon")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .foregroundColor(.white)
+            .widgetURL(URL(string: "warding://widget/home"))
+    }
+}
+
 // MARK: - Widget Configuration
 
 struct WardingScheduleWidget: Widget {
@@ -781,7 +975,7 @@ struct WardingScheduleWidget: Widget {
         }
         .configurationDisplayName("경기 일정")
         .description("이번 달 e스포츠 경기 일정을 한눈에 확인하세요.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular])
         .contentMarginsDisabled()
     }
 }
@@ -798,6 +992,10 @@ struct WidgetRouter: View {
             MediumWidgetView(entry: entry)
         case .systemLarge:
             LargeWidgetView(entry: entry)
+        case .accessoryRectangular:
+            LockScreenWidgetView(entry: entry)
+        case .accessoryCircular:
+            LockScreenIconView()
         default:
             MediumWidgetView(entry: entry)
         }
