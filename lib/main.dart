@@ -14,6 +14,7 @@ import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
+import 'util/home_widget_service.dart';
 
 /// 앱이 백그라운드/종료 상태일 때 도착하는 FCM 메시지 핸들러.
 ///
@@ -46,6 +47,9 @@ Future<void> main() async {
   await FcmService.instance.initMessaging();
   await AppLanguage.instance.load();
   KakaoSdk.init(nativeAppKey: ApiConfig.kakaoNativeAppKey);
+  await HomeWidgetService.init();
+  // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
+  HomeWidgetService.refreshFromApi();
 
   await SentryFlutter.init(
     (options) {

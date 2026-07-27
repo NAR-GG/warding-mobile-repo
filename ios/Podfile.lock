@@ -3,6 +3,8 @@ PODS:
   - flutter_naver_login (0.0.1):
     - Flutter
     - NidThirdPartyLogin (~> 5.0.0)
+  - home_widget (0.0.1):
+    - Flutter
   - NidThirdPartyLogin (5.0.1)
   - permission_handler_apple (9.3.0):
     - Flutter
@@ -10,6 +12,7 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_naver_login (from `.symlinks/plugins/flutter_naver_login/ios`)
+  - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
 
 SPEC REPOS:
@@ -21,12 +24,15 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_naver_login:
     :path: ".symlinks/plugins/flutter_naver_login/ios"
+  home_widget:
+    :path: ".symlinks/plugins/home_widget/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_naver_login: 965ca284c1a64f0185dfaf9dfd1b8f69f34e6c11
+  home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
   NidThirdPartyLogin: ed291a543cc60a433bcad522b6bf7d3126ad4fdc
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
 

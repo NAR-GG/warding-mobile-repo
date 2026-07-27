@@ -56,6 +56,7 @@ dependencies:
   package_info_plus: ^8.0.0
   upgrader: ^11.0.0
   sign_in_with_apple: ^8.1.0
+  home_widget: ^0.7.0
 
 dev_dependencies:
   sentry_dart_plugin: ^3.4.0

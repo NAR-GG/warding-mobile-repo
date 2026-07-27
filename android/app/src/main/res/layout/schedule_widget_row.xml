@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 미니 캘린더 한 주(7일) 행: 날짜 숫자만 표시 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="22dp"
+    android:orientation="horizontal"
+    android:baselineAligned="false">
+
+    <TextView android:id="@+id/day0_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day1_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day2_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day3_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day4_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day5_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+    <TextView android:id="@+id/day6_num" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FF9672AC" />
+
+</LinearLayout>

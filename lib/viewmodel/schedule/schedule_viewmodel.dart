@@ -11,6 +11,7 @@ import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
+import '../../util/home_widget_service.dart';
 
 /// 경기 일정 화면 ViewModel.
 ///
@@ -183,6 +184,11 @@ class ScheduleViewModel extends ChangeNotifier {
       final total =
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료: ${_matchesByDay.length}일, 총 $total경기');
+      // 홈 화면 위젯에 최신 캘린더 데이터 전달
+      unawaited(HomeWidgetService.updateCalendar(
+        month: _displayMonth,
+        matchesByDay: _matchesByDay,
+      ));
     } catch (e, st) {
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';
       _matchesByDay = const {};
