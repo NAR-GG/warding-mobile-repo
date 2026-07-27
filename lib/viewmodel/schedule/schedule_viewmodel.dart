@@ -224,6 +224,8 @@ class ScheduleViewModel extends ChangeNotifier {
       debugPrint('[Schedule] 응원팀 서버 조회 실패, 로컬 폴백: $e');
       _preferredTeam = await _teamPreferences.loadPreferredTeam();
     }
+    // 홈 화면 위젯에 응원팀 정보 전달
+    unawaited(HomeWidgetService.updatePreferredTeam(_preferredTeam));
     _notify();
   }
 

@@ -1,11 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:http/http.dart' as http;
 
 import '../model/match_calendar_day.dart';
 import '../model/schedule_match.dart';
+import '../model/team.dart';
 import '../repository/schedule/schedule_repository.dart';
+import '../util/app_image.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
 ///
@@ -104,6 +108,35 @@ class HomeWidgetService {
       );
     } catch (e) {
       debugPrint('[HomeWidget] 오늘 경기 갱신 실패: $e');
+    }
+  }
+
+  /// 응원팀 로고를 App Group 공유 폴더에 저장하고 경로를 위젯에 전달한다.
+  static Future<void> updatePreferredTeam(Team? team) async {
+    if (team == null) return;
+    try {
+      final imageUrl = resolveImageUrl(team.imageUrl);
+      if (imageUrl == null) return;
+
+      // 이미지 다운로드
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode != 200) return;
+
+      // App Group 공유 폴더에 저장
+      final dir = await HomeWidget.getWidgetData<String>('widget_dir');
+      // home_widget은 앱 그룹 UserDefaults만 지원하므로
+      // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
+      await HomeWidget.saveWidgetData<String>(
+        'team_image_url',
+        imageUrl,
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'team_name',
+        team.name,
+      );
+      debugPrint('[HomeWidget] 응원팀 저장: ${team.name}');
+    } catch (e) {
+      debugPrint('[HomeWidget] 응원팀 저장 실패: $e');
     }
   }
 

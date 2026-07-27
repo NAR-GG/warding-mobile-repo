@@ -47,26 +47,27 @@ struct TodayMatch {
 
 struct ScheduleProvider: TimelineProvider {
     func placeholder(in context: Context) -> ScheduleEntry {
-        ScheduleEntry(date: Date(), calendar: .empty, today: .empty)
+        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ScheduleEntry) -> Void) {
-        let (cal, today) = loadData()
-        completion(ScheduleEntry(date: Date(), calendar: cal, today: today))
+        let (cal, today, teamUrl) = loadData()
+        completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
-        let (cal, today) = loadData()
-        let entry = ScheduleEntry(date: Date(), calendar: cal, today: today)
+        let (cal, today, teamUrl) = loadData()
+        let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl)
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
     }
 
-    private func loadData() -> (CalendarData, TodayData) {
+    private func loadData() -> (CalendarData, TodayData, String?) {
         guard let ud = UserDefaults(suiteName: "group.com.warding.app") else {
-            return (.empty, .empty)
+            return (.empty, .empty, nil)
         }
-        return (loadCalendar(ud), loadToday(ud))
+        let teamUrl = ud.string(forKey: "team_image_url")
+        return (loadCalendar(ud), loadToday(ud), teamUrl)
     }
 
     private func loadCalendar(_ ud: UserDefaults) -> CalendarData {
@@ -128,6 +129,7 @@ struct ScheduleEntry: TimelineEntry {
     let date: Date
     let calendar: CalendarData
     let today: TodayData
+    let teamImageUrl: String?
 }
 
 // MARK: - Medium Widget View (좌: 오늘 경기 | 우: 미니 캘린더)
@@ -591,7 +593,7 @@ struct LargeWidgetView: View {
                             .frame(width: 24, height: 24)
                             .foregroundColor(textColor)
                     )
-                // 팀 로고: 36x36, narBg 그라데이션 보더 + 내부 원
+                // 팀 로고: 36x36, narBg 그라데이션 보더 + 내부 원 + 팀 이미지
                 ZStack {
                     Circle()
                         .fill(
@@ -604,9 +606,21 @@ struct LargeWidgetView: View {
                     Circle()
                         .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
                         .frame(width: 32, height: 32)
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(subtextColor)
+                    if let urlStr = entry.teamImageUrl, let url = URL(string: urlStr) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().aspectRatio(contentMode: .fit)
+                        } placeholder: {
+                            Image(systemName: "shield.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(subtextColor)
+                        }
+                        .frame(width: 25, height: 25)
+                        .clipShape(Circle())
+                    } else {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(subtextColor)
+                    }
                 }
             }
         }
@@ -713,6 +727,10 @@ struct LargeWidgetView: View {
         .lineLimit(1)
         .frame(maxWidth: .infinity)
         .frame(height: 13)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(chipBg)
+        )
     }
 
     private var todayGradient: some View {
