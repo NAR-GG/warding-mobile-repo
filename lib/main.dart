@@ -27,7 +27,7 @@ import 'util/home_widget_service.dart';
 Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
   WidgetsFlutterBinding.ensureInitialized();
   await HomeWidgetService.init();
-  await HomeWidgetService.refreshFromApi();
+  await HomeWidgetService.handleBackgroundWidgetAction(uri);
 }
 
 /// 앱이 백그라운드/종료 상태일 때 도착하는 FCM 메시지 핸들러.
