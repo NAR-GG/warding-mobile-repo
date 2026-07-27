@@ -35,15 +35,31 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             }
         }
         // 캐시 재렌더링뿐 아니라 실제 네트워크 재조회도 트리거한다 (30분 주기 자동 갱신 대응).
-        try {
-            HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/refresh")).send()
-        } catch (e: android.app.PendingIntent.CanceledException) {
-            Log.e(TAG, "refresh background intent failed", e)
+        // 주의: onUpdate()는 시스템 주기 틱뿐 아니라 HomeWidget.updateWidget() 호출(버튼 탭 처리 결과 등)
+        // 로도 재진입된다. 디바운스 없이 무조건 발사하면 갱신→onUpdate→갱신의 무한 루프가 생기므로,
+        // 마지막 발사로부터 REFRESH_DEBOUNCE_MS 이상 지났을 때만 실제로 브로드캐스트한다.
+        if (shouldTriggerBackgroundRefresh(context)) {
+            try {
+                HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/refresh")).send()
+            } catch (e: android.app.PendingIntent.CanceledException) {
+                Log.e(TAG, "refresh background intent failed", e)
+            }
         }
     }
 
     companion object {
         private val executor = Executors.newSingleThreadExecutor()
+
+        private const val REFRESH_DEBOUNCE_MS = 10 * 60 * 1000L // 10분 — 시스템 30분 주기보다 훨씬 짧지만, onUpdate() 재진입 체인(수 ms~수 초) 억제에는 충분히 길다.
+
+        private fun shouldTriggerBackgroundRefresh(context: Context): Boolean {
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val lastTriggeredAt = prefs.getLong("last_refresh_trigger_at", 0L)
+            val now = System.currentTimeMillis()
+            if (now - lastTriggeredAt < REFRESH_DEBOUNCE_MS) return false
+            prefs.edit().putLong("last_refresh_trigger_at", now).apply()
+            return true
+        }
 
         private fun isDarkMode(context: Context): Boolean {
             val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
