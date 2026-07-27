@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.util.Log
 import android.widget.RemoteViews
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import java.net.URL
 import java.util.Calendar
 import java.util.concurrent.Executors
@@ -32,6 +33,12 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             } catch (e: Exception) {
                 Log.e(TAG, "updateWidget failed for id=$appWidgetId", e)
             }
+        }
+        // 캐시 재렌더링뿐 아니라 실제 네트워크 재조회도 트리거한다 (30분 주기 자동 갱신 대응).
+        try {
+            HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/refresh")).send()
+        } catch (e: android.app.PendingIntent.CanceledException) {
+            Log.e(TAG, "refresh background intent failed", e)
         }
     }
 
@@ -94,21 +101,19 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             val year = calData.year
             val month = calData.month
 
-            val prevIntent = Intent(Intent.ACTION_VIEW, Uri.parse("warding://widget/prev?year=$year&month=$month"))
-            prevIntent.setPackage(context.packageName)
-            val prevPending = android.app.PendingIntent.getActivity(
-                context, 1, prevIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            views.setOnClickPendingIntent(
+                R.id.large_prev_btn,
+                HomeWidgetBackgroundIntent.getBroadcast(
+                    context, Uri.parse("warding://widget/prev?year=$year&month=$month")
+                )
             )
-            views.setOnClickPendingIntent(R.id.large_prev_btn, prevPending)
 
-            val nextIntent = Intent(Intent.ACTION_VIEW, Uri.parse("warding://widget/next?year=$year&month=$month"))
-            nextIntent.setPackage(context.packageName)
-            val nextPending = android.app.PendingIntent.getActivity(
-                context, 2, nextIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            views.setOnClickPendingIntent(
+                R.id.large_next_btn,
+                HomeWidgetBackgroundIntent.getBroadcast(
+                    context, Uri.parse("warding://widget/next?year=$year&month=$month")
+                )
             )
-            views.setOnClickPendingIntent(R.id.large_next_btn, nextPending)
 
             // 필터 아이콘: 필터 적용 시 그라데이션 보더
             val hasFilter = prefs.getBoolean("has_filter", false)
@@ -123,14 +128,11 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             views.setImageViewResource(R.id.large_filter_icon,
                 if (isDark) R.drawable.ic_filter else R.drawable.ic_filter_dark)
 
-            // 필터 클릭 → 앱 열고 필터 화면
-            val filterIntent = Intent(Intent.ACTION_VIEW, Uri.parse("warding://widget/filter"))
-            filterIntent.setPackage(context.packageName)
-            val filterPending = android.app.PendingIntent.getActivity(
-                context, 3, filterIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            // 필터 클릭 → 앱을 열지 않고 백그라운드에서 필터 ON/OFF 토글
+            views.setOnClickPendingIntent(
+                R.id.large_filter_btn,
+                HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/filter"))
             )
-            views.setOnClickPendingIntent(R.id.large_filter_btn, filterPending)
 
             // 팀 로고: 선택 시 그라데이션 보더
             val teamSelected = prefs.getBoolean("team_selected", false)
@@ -141,14 +143,11 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             }
             views.setImageViewResource(R.id.large_team_bg, teamBgRes)
 
-            // 팀 클릭 → 앱 열기
-            val teamIntent = Intent(Intent.ACTION_VIEW, Uri.parse("warding://widget/team"))
-            teamIntent.setPackage(context.packageName)
-            val teamPending = android.app.PendingIntent.getActivity(
-                context, 4, teamIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            // 팀 클릭 → 앱을 열지 않고 백그라운드에서 응원팀 필터 ON/OFF 토글
+            views.setOnClickPendingIntent(
+                R.id.large_team_btn,
+                HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/team"))
             )
-            views.setOnClickPendingIntent(R.id.large_team_btn, teamPending)
 
             // 앱 열기 인텐트
             val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
