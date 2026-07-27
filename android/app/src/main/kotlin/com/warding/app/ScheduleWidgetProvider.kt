@@ -86,45 +86,43 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             // 왼쪽: 오늘 경기 리스트 채우기
             views.removeAllViews(R.id.matches_container)
             val matches = todayData.matches
-            val maxShow = 3
-            var foundNextScheduled = false
+            val displayResult = selectDisplayMatches(matches)
 
-            for (i in 0 until minOf(matches.size, maxShow)) {
-                val m = matches[i]
+            for (displayMatch in displayResult.rows) {
+                val m = displayMatch.match
                 val row = RemoteViews(context.packageName, R.layout.match_row)
                 row.setTextViewText(R.id.match_time, m.time)
                 row.setTextViewText(R.id.match_display, m.display)
 
-                val isFinished = m.status == "FINISHED" || m.status == "COMPLETED"
-                val isLive = m.status == "LIVE" || m.status == "IN_PROGRESS"
-                val isNext = !isFinished && !isLive && !foundNextScheduled
-
-                if (isFinished) {
-                    // 취소선 + 투명도
-                    row.setInt(R.id.match_time, "setPaintFlags",
-                        Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
-                    row.setInt(R.id.match_display, "setPaintFlags",
-                        Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
-                    row.setTextColor(R.id.match_time, defaultTextColor)
-                    row.setTextColor(R.id.match_display, defaultTextColor)
-                    row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
-                } else if (isLive || isNext) {
-                    // LIVE or 다음 예정 경기: narBg 느낌의 그라데이션 색 (same in both modes)
-                    row.setTextColor(R.id.match_time, Color.parseColor("#E87558"))
-                    row.setTextColor(R.id.match_display, Color.parseColor("#C865C9"))
-                    if (isNext) foundNextScheduled = true
-                } else {
-                    // 기본 텍스트 색
-                    row.setTextColor(R.id.match_time, defaultTextColor)
-                    row.setTextColor(R.id.match_display, defaultTextColor)
+                when (displayMatch.role) {
+                    MatchRole.PAST -> {
+                        // 취소선 + 투명도
+                        row.setInt(R.id.match_time, "setPaintFlags",
+                            Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                        row.setInt(R.id.match_display, "setPaintFlags",
+                            Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                        row.setTextColor(R.id.match_time, defaultTextColor)
+                        row.setTextColor(R.id.match_display, defaultTextColor)
+                        row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
+                    }
+                    MatchRole.NEXT -> {
+                        // 바로 다음 예정(또는 진행중) 경기: 브랜드 그라데이션 근사 색 (다크/라이트 동일)
+                        row.setTextColor(R.id.match_time, Color.parseColor("#E87558"))
+                        row.setTextColor(R.id.match_display, Color.parseColor("#C865C9"))
+                    }
+                    MatchRole.OTHER -> {
+                        // 기본 텍스트 색
+                        row.setTextColor(R.id.match_time, defaultTextColor)
+                        row.setTextColor(R.id.match_display, defaultTextColor)
+                    }
                 }
 
                 views.addView(R.id.matches_container, row)
             }
 
-            if (matches.size > maxShow) {
+            if (displayResult.overflowCount > 0) {
                 val moreRow = RemoteViews(context.packageName, R.layout.match_row)
-                moreRow.setTextViewText(R.id.match_time, "+${matches.size - maxShow}")
+                moreRow.setTextViewText(R.id.match_time, "+${displayResult.overflowCount}")
                 moreRow.setTextViewText(R.id.match_display, "")
                 moreRow.setTextColor(R.id.match_time, defaultTextColor)
                 views.addView(R.id.matches_container, moreRow)
