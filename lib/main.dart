@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -12,6 +13,7 @@ import 'l10n/app_localizations.dart';
 import 'repository/fcm/fcm_service.dart';
 import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
+import 'screens/schedule/schedule_screen.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/home_widget_service.dart';
@@ -50,6 +52,12 @@ Future<void> main() async {
   await HomeWidgetService.init();
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
   HomeWidgetService.refreshFromApi();
+
+  // 위젯에서 딥링크 탭 처리 (warding://widget/prev, next, filter)
+  HomeWidget.widgetClicked.listen((uri) {
+    if (uri == null) return;
+    HomeWidgetService.handleWidgetDeepLink(uri);
+  });
 
   await SentryFlutter.init(
     (options) {

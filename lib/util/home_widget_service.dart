@@ -5,10 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:flutter/material.dart';
+
+import '../config/app_globals.dart';
 import '../model/match_calendar_day.dart';
 import '../model/schedule_match.dart';
 import '../model/team.dart';
 import '../repository/schedule/schedule_repository.dart';
+import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
@@ -111,6 +115,23 @@ class HomeWidgetService {
     }
   }
 
+  /// 필터/팀 선택 상태를 위젯에 전달한다.
+  static Future<void> updateFilterState({
+    required bool hasFilter,
+    required bool teamSelected,
+  }) async {
+    try {
+      await HomeWidget.saveWidgetData<bool>('has_filter', hasFilter);
+      await HomeWidget.saveWidgetData<bool>('team_selected', teamSelected);
+      await HomeWidget.updateWidget(
+        androidName: _androidWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+    } catch (e) {
+      debugPrint('[HomeWidget] 필터 상태 저장 실패: $e');
+    }
+  }
+
   /// 응원팀 로고를 App Group 공유 폴더에 저장하고 경로를 위젯에 전달한다.
   static Future<void> updatePreferredTeam(Team? team) async {
     if (team == null) return;
@@ -137,6 +158,29 @@ class HomeWidgetService {
       debugPrint('[HomeWidget] 응원팀 저장: ${team.name}');
     } catch (e) {
       debugPrint('[HomeWidget] 응원팀 저장 실패: $e');
+    }
+  }
+
+  /// 위젯 딥링크 처리: warding://widget/prev, next, filter
+  static void handleWidgetDeepLink(Uri uri) {
+    final path = uri.host == 'widget' ? uri.path : uri.host;
+    final action = path.replaceAll('/', '');
+    debugPrint('[HomeWidget] 딥링크: $uri → action=$action');
+
+    // 경기일정 화면으로 이동
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+
+    switch (action) {
+    case 'prev':
+    case 'next':
+    case 'filter':
+      // 경기일정 화면을 열면서 action 전달
+      nav.push(
+        MaterialPageRoute(
+          builder: (_) => ScheduleScreen(widgetAction: action),
+        ),
+      );
     }
   }
 

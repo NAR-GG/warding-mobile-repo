@@ -47,27 +47,29 @@ struct TodayMatch {
 
 struct ScheduleProvider: TimelineProvider {
     func placeholder(in context: Context) -> ScheduleEntry {
-        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil)
+        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil, hasFilter: false, teamSelected: false)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ScheduleEntry) -> Void) {
-        let (cal, today, teamUrl) = loadData()
-        completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl))
+        let (cal, today, teamUrl, hasFilter, teamSelected) = loadData()
+        completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, hasFilter: hasFilter, teamSelected: teamSelected))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
-        let (cal, today, teamUrl) = loadData()
-        let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl)
+        let (cal, today, teamUrl, hasFilter, teamSelected) = loadData()
+        let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, hasFilter: hasFilter, teamSelected: teamSelected)
         let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
     }
 
-    private func loadData() -> (CalendarData, TodayData, String?) {
+    private func loadData() -> (CalendarData, TodayData, String?, Bool, Bool) {
         guard let ud = UserDefaults(suiteName: "group.com.warding.app") else {
-            return (.empty, .empty, nil)
+            return (.empty, .empty, nil, false, false)
         }
         let teamUrl = ud.string(forKey: "team_image_url")
-        return (loadCalendar(ud), loadToday(ud), teamUrl)
+        let hasFilter = ud.bool(forKey: "has_filter")
+        let teamSelected = ud.bool(forKey: "team_selected")
+        return (loadCalendar(ud), loadToday(ud), teamUrl, hasFilter, teamSelected)
     }
 
     private func loadCalendar(_ ud: UserDefaults) -> CalendarData {
@@ -130,6 +132,8 @@ struct ScheduleEntry: TimelineEntry {
     let calendar: CalendarData
     let today: TodayData
     let teamImageUrl: String?
+    let hasFilter: Bool
+    let teamSelected: Bool
 }
 
 // MARK: - Medium Widget View (좌: 오늘 경기 | 우: 미니 캘린더)
@@ -565,47 +569,63 @@ struct LargeWidgetView: View {
         HStack {
             // 좌: < 월 >
             HStack(spacing: 8) {
-                Image("chevron-left")
-                    .renderingMode(.template)
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(textColor)
+                Link(destination: URL(string: "warding://widget/prev")!) {
+                    Image("chevron-left")
+                        .renderingMode(.template)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(textColor)
+                }
                 Text(String(format: "%02d.%02d", displayYear % 100, displayMonth))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(textColor)
-                Image("chevron-right")
-                    .renderingMode(.template)
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(textColor)
+                Link(destination: URL(string: "warding://widget/next")!) {
+                    Image("chevron-right")
+                        .renderingMode(.template)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(textColor)
+                }
             }
             Spacer()
             // 우: 필터 + 팀 아이콘
             HStack(spacing: 8) {
-                // 필터 아이콘: 36x36 원형
-                Circle()
-                    .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image("filter")
-                            .renderingMode(.template)
-                            .resizable()
-                            .frame(width: 24, height: 24)
-                            .foregroundColor(textColor)
-                    )
-                // 팀 로고: 36x36, narBg 그라데이션 보더 + 내부 원 + 팀 이미지
-                ZStack {
+                // 필터 아이콘: 필터 적용 시 #FCFDFE 배경 + #101113 아이콘
+                Link(destination: URL(string: "warding://widget/filter")!) {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
+                        .fill(entry.hasFilter
+                            ? Color(hex: 0xFCFDFE)
+                            : (isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE)))
                         .frame(width: 36, height: 36)
-                    Circle()
-                        .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
-                        .frame(width: 32, height: 32)
+                        .overlay(
+                            Image("filter")
+                                .renderingMode(.template)
+                                .resizable()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(entry.hasFilter
+                                    ? Color(hex: 0x101113)
+                                    : textColor)
+                        )
+                }
+                // 팀 로고: 선택 시 그라데이션 보더, 미선택 시 보더 없음
+                ZStack {
+                    if entry.teamSelected {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                                    startPoint: .leading, endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+                        Circle()
+                            .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
+                            .frame(width: 32, height: 32)
+                    } else {
+                        Circle()
+                            .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
+                            .frame(width: 36, height: 36)
+                    }
                     if let urlStr = entry.teamImageUrl, let url = URL(string: urlStr) {
                         AsyncImage(url: url) { image in
                             image.resizable().aspectRatio(contentMode: .fit)

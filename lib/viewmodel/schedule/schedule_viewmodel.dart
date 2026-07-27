@@ -131,6 +131,7 @@ class ScheduleViewModel extends ChangeNotifier {
     final preferredId = _preferredTeam?.id;
     _teamIds = _teamSelected && preferredId != null ? [preferredId] : const [];
     _persistFilter();
+    _updateWidgetFilterState();
     _notify();
     loadCalendar();
   }
@@ -152,8 +153,19 @@ class ScheduleViewModel extends ChangeNotifier {
       _selectedDate = null;
     }
     _persistFilter();
+    _updateWidgetFilterState();
     _notify();
     loadCalendar();
+  }
+
+  /// 위젯에 필터/팀 선택 상태를 전달한다.
+  void _updateWidgetFilterState() {
+    final hasFilter = !(_leagues.length == 1 && _leagues.first == 'ALL') ||
+        _teamIds.isNotEmpty;
+    unawaited(HomeWidgetService.updateFilterState(
+      hasFilter: hasFilter,
+      teamSelected: _teamSelected,
+    ));
   }
 
   /// 날짜 피커에서 고른 날짜를 반영한다 — 그 달로 이동하고 칸을 강조한다.
