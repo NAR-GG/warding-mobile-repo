@@ -53,10 +53,12 @@ Future<void> main() async {
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
   HomeWidgetService.refreshFromApi();
 
-  // 위젯에서 딥링크 탭 처리 (warding://widget/prev, next, filter)
+  // 위젯 탭 시 앱이 열릴 때 딥링크 처리
+  HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
+    if (uri != null) HomeWidgetService.handleWidgetDeepLink(uri);
+  });
   HomeWidget.widgetClicked.listen((uri) {
-    if (uri == null) return;
-    HomeWidgetService.handleWidgetDeepLink(uri);
+    if (uri != null) HomeWidgetService.handleWidgetDeepLink(uri);
   });
 
   await SentryFlutter.init(

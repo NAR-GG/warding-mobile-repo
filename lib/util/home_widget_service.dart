@@ -11,6 +11,9 @@ import '../config/app_globals.dart';
 import '../model/match_calendar_day.dart';
 import '../model/schedule_match.dart';
 import '../model/team.dart';
+import '../repository/auth/auth_service.dart';
+import '../repository/onboarding/onboarding_repository.dart';
+import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
@@ -185,6 +188,7 @@ class HomeWidgetService {
   }
 
   /// 백그라운드에서 최신 데이터를 가져와 위젯을 갱신한다.
+  /// 캘린더 + 응원팀 + 오늘 경기를 한 번에 갱신한다.
   static Future<void> refreshFromApi() async {
     try {
       final now = DateTime.now();
@@ -194,7 +198,26 @@ class HomeWidgetService {
       };
       await updateCalendar(month: now, matchesByDay: matchesByDay);
     } catch (e) {
-      debugPrint('[HomeWidget] 백그라운드 갱신 실패: $e');
+      debugPrint('[HomeWidget] 캘린더 갱신 실패: $e');
+    }
+
+    // 응원팀 정보도 위젯에 전달
+    try {
+      Team? team;
+      try {
+        final me = await AuthService.instance.fetchMe();
+        if (me.favoriteTeamId != null) {
+          final teams = await OnboardingRepository.instance.fetchTeams();
+          for (final t in teams) {
+            if (t.id == me.favoriteTeamId) { team = t; break; }
+          }
+        }
+      } catch (_) {
+        team = await TeamPreferenceRepository.instance.loadPreferredTeam();
+      }
+      await updatePreferredTeam(team);
+    } catch (e) {
+      debugPrint('[HomeWidget] 응원팀 갱신 실패: $e');
     }
   }
 }

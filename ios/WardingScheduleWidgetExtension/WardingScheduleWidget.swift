@@ -575,6 +575,7 @@ struct LargeWidgetView: View {
                         .resizable()
                         .frame(width: 24, height: 24)
                         .foregroundColor(textColor)
+                        .contentShape(Rectangle())
                 }
                 Text(String(format: "%02d.%02d", displayYear % 100, displayMonth))
                     .font(.system(size: 16, weight: .bold))
@@ -585,6 +586,7 @@ struct LargeWidgetView: View {
                         .resizable()
                         .frame(width: 24, height: 24)
                         .foregroundColor(textColor)
+                        .contentShape(Rectangle())
                 }
             }
             Spacer()
@@ -606,6 +608,7 @@ struct LargeWidgetView: View {
                                     ? Color(hex: 0x101113)
                                     : textColor)
                         )
+                        .contentShape(Circle())
                 }
                 // 팀 로고: 선택 시 그라데이션 보더, 미선택 시 보더 없음
                 ZStack {
