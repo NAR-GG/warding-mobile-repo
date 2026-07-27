@@ -1,26 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 대형 위젯 캘린더 한 주(7일) 행: 날짜 숫자 + 경기 칩(2개) + 추가 표시 + 셀 구분선 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/large_row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:baselineAligned="false"
-    android:paddingTop="2dp"
-    android:paddingBottom="2dp">
+    android:baselineAligned="false">
 
     <!-- Day 0 (월) -->
     <FrameLayout
         android:id="@+id/large_day0_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day0_num"
                 android:layout_width="wrap_content"
@@ -78,15 +80,18 @@
     <FrameLayout
         android:id="@+id/large_day1_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day1_num"
                 android:layout_width="wrap_content"
@@ -144,15 +149,18 @@
     <FrameLayout
         android:id="@+id/large_day2_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day2_num"
                 android:layout_width="wrap_content"
@@ -210,15 +218,18 @@
     <FrameLayout
         android:id="@+id/large_day3_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day3_num"
                 android:layout_width="wrap_content"
@@ -276,15 +287,18 @@
     <FrameLayout
         android:id="@+id/large_day4_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day4_num"
                 android:layout_width="wrap_content"
@@ -342,15 +356,18 @@
     <FrameLayout
         android:id="@+id/large_day5_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day5_num"
                 android:layout_width="wrap_content"
@@ -408,15 +425,18 @@
     <FrameLayout
         android:id="@+id/large_day6_cell"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:minHeight="48dp"
-        android:padding="1dp">
+        android:minHeight="54dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
             <TextView
                 android:id="@+id/large_day6_num"
                 android:layout_width="wrap_content"

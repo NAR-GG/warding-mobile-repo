@@ -1,5 +1,6 @@
 package com.warding.app
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -16,12 +17,16 @@ private const val TAG = "ScheduleWidgetLargeSvc"
 class ScheduleWidgetLargeService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
         Log.d(TAG, "onGetViewFactory called")
-        return LargeCalendarRemoteViewsFactory(applicationContext)
+        val appWidgetId = intent.getIntExtra(
+            AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID
+        )
+        return LargeCalendarRemoteViewsFactory(applicationContext, appWidgetId)
     }
 }
 
 class LargeCalendarRemoteViewsFactory(
-    private val context: Context
+    private val context: Context,
+    private val appWidgetId: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var data = CalendarWidgetData.empty()
@@ -29,6 +34,9 @@ class LargeCalendarRemoteViewsFactory(
         val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         nightMode == Configuration.UI_MODE_NIGHT_YES
     }
+
+    // 헤더(36dp) + 요일 행(19dp) + 구분선(1dp) + 상하 패딩(4dp+4dp) — schedule_widget_large.xml 기준.
+    private val chromeHeightDp = 36 + 19 + 1 + 4 + 4
 
     override fun onCreate() {
         Log.d(TAG, "Factory onCreate")
@@ -44,8 +52,30 @@ class LargeCalendarRemoteViewsFactory(
 
     override fun getCount(): Int = data.weekCount()
 
+    /**
+     * 위젯의 현재 세로 크기(dp)에서 헤더 영역을 뺀 뒤 주(week) 수로 나눠, 캘린더 그리드가
+     * 남는 공백 없이 위젯 전체 높이를 채우도록 한 행이 가져야 할 높이(px)를 계산한다.
+     * 옵션을 못 읽거나 계산값이 0 이하면 0을 반환해 레이아웃 XML의 기본(minHeight=54dp)을 그대로 쓴다.
+     */
+    private fun rowHeightPx(): Int {
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 0
+        val options = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId)
+        val minHeightDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
+        if (minHeightDp <= 0) return 0
+        val gridHeightDp = (minHeightDp - chromeHeightDp).coerceAtLeast(0)
+        if (gridHeightDp <= 0) return 0
+        val weeks = data.weekCount().coerceAtLeast(1)
+        val rowHeightDp = gridHeightDp / weeks
+        val density = context.resources.displayMetrics.density
+        return (rowHeightDp * density).toInt()
+    }
+
     override fun getViewAt(position: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.schedule_widget_large_row)
+        val rowHeight = rowHeightPx()
+        if (rowHeight > 0) {
+            views.setInt(R.id.large_row_root, "setMinimumHeight", rowHeight)
+        }
         val week = position
         val firstWd = data.firstWeekday()
         val dim = data.daysInMonth()

@@ -21,8 +21,9 @@
 
         <!-- Left: chevron prev + month + chevron next -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
@@ -53,12 +54,6 @@
                 android:scaleType="fitCenter"
                 android:contentDescription="다음 달" />
         </LinearLayout>
-
-        <!-- Spacer -->
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
 
         <!-- Right: 필터 아이콘 + 팀 로고 -->
         <LinearLayout

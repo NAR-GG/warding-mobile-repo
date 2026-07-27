@@ -323,9 +323,29 @@ class HomeWidgetService {
     });
   }
 
+  /// 스플래시가 첫 화면(로그인/홈) 분기 내비게이션을 시작하기 전에 위젯
+  /// 딥링크가 도착하면, 스플래시의 자체 내비게이션과 겹쳐 화면이 두 번
+  /// 열리는 것처럼 보인다(FCM 콜드 스타트 딥링크와 동일 문제).
+  static bool _splashReady = false;
+  static String? _pendingWidgetUrl;
+
+  /// 스플래시가 첫 화면 분기 내비게이션을 마친 직후 호출한다.
+  /// 그 전에 도착해 보류해 둔 위젯 딥링크가 있으면 그 위에 push 한다.
+  static void markSplashReady() {
+    _splashReady = true;
+    final pending = _pendingWidgetUrl;
+    _pendingWidgetUrl = null;
+    if (pending != null) _handleWidgetUrl(pending);
+  }
+
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
   static void _handleWidgetUrl(String urlStr) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
+    if (!_splashReady) {
+      // 콜드 스타트: 스플래시가 첫 화면 분기를 마칠 때까지 보류한다.
+      _pendingWidgetUrl = urlStr;
+      return;
+    }
     final uri = Uri.tryParse(urlStr);
     if (uri == null) return;
 

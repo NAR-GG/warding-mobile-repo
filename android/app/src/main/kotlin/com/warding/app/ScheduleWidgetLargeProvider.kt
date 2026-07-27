@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
@@ -45,6 +46,17 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
                 Log.e(TAG, "refresh background intent failed", e)
             }
         }
+    }
+
+    // 사용자가 위젯 크기를 조절하면 행 높이를 새 크기에 맞게 다시 계산해야 하므로 재렌더링한다.
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateWidget(context, appWidgetManager, appWidgetId)
     }
 
     companion object {
@@ -144,11 +156,14 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             views.setImageViewResource(R.id.large_filter_icon,
                 if (isDark) R.drawable.ic_filter else R.drawable.ic_filter_dark)
 
-            // 필터 클릭 → 앱을 열지 않고 백그라운드에서 필터 ON/OFF 토글
-            views.setOnClickPendingIntent(
-                R.id.large_filter_btn,
-                HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("warding://widget/filter"))
+            // 필터 클릭 → 앱 열고 필터 모달 자동 오픈
+            val filterIntent = Intent(Intent.ACTION_VIEW, Uri.parse("warding://widget/filter"))
+            filterIntent.setPackage(context.packageName)
+            val filterPending = android.app.PendingIntent.getActivity(
+                context, 3, filterIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
             )
+            views.setOnClickPendingIntent(R.id.large_filter_btn, filterPending)
 
             // 팀 로고: 선택 시 그라데이션 보더
             val teamSelected = prefs.getBoolean("team_selected", false)
