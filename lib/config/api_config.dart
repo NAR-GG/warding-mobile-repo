@@ -73,15 +73,29 @@ class ApiConfig {
     return '$apiBaseUrl/mobile/schedules/calendar?$query';
   }
 
+  /// `league=ALL` 을 이 목록으로 치환할 때 쓰는 실제 리그 코드 전체.
+  /// `/mobile/schedules/filters` 응답의 '전체'(ALL) 를 제외한 리그 목록과 동일해야 한다.
+  static const List<String> _allRealLeagueCodes = [
+    'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
+    'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP',
+  ];
+
   /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
   /// [leagues] 는 같은 키(`league`)를 반복해 배열로 보낸다 (백엔드가 `List<String>` 로 받음).
+  ///
+  /// 이 엔드포인트는 캘린더 조회(`mobileScheduleCalendarUrl`)와 달리 일부 날짜에서
+  /// `league=ALL` 자체를 400으로 거부하는 백엔드 버그가 있다(예: 2026-07-26·27).
+  /// 그래서 [leagues] 가 'ALL' 하나뿐이면 실제 리그 코드 전체를 나열해 보낸다.
   static String mobileSchedulesUrl({
     required String date,
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
   }) {
-    final query = StringBuffer('date=$date')..write(_repeatedParam('league', leagues));
+    final effectiveLeagues =
+        leagues.length == 1 && leagues.first == 'ALL' ? _allRealLeagueCodes : leagues;
+    final query = StringBuffer('date=$date')
+      ..write(_repeatedParam('league', effectiveLeagues));
     if (teamIds != null && teamIds.isNotEmpty) {
       query.write(_repeatedParam('teamId', teamIds));
     }
