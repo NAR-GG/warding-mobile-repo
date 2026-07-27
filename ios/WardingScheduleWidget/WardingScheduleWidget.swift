@@ -575,9 +575,9 @@ struct LargeWidgetView: View {
                     .frame(width: 24, height: 24)
             }
             Spacer()
-            // 우: 필터 + 팀 아이콘 (시안: 36x36 원형, 배경 #1F2024/#FCFDFE)
+            // 우: 필터 + 팀 아이콘
             HStack(spacing: 8) {
-                // 필터 깔때기 아이콘
+                // 필터 아이콘: 36x36 원형
                 Circle()
                     .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE))
                     .frame(width: 36, height: 36)
@@ -586,19 +586,14 @@ struct LargeWidgetView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(textColor)
                     )
-                // 팀 로고 자리 (로고 없으므로 방패 아이콘으로 표시)
+                // 팀 로고: 36x36 원형, 다크 #1F2024 / 라이트 #000000 배경
                 Circle()
-                    .fill(isDark ? Color(hex: 0x000000) : Color(hex: 0xFCFDFE))
+                    .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
                     .frame(width: 36, height: 36)
                     .overlay(
-                        Circle()
-                            .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xF1F3F5))
-                            .frame(width: 36, height: 36)
-                            .overlay(
-                                Image(systemName: "shield.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(subtextColor)
-                            )
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(subtextColor)
                     )
             }
         }
@@ -610,12 +605,12 @@ struct LargeWidgetView: View {
         HStack(spacing: 0) {
             ForEach(0..<7, id: \.self) { i in
                 Text(weekdays[i])
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(i == 6 ? sundayColor : subtextColor)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(i == 6 ? sundayColor : textColor)
                     .frame(maxWidth: .infinity)
             }
         }
-        .frame(height: 16)
+        .frame(height: 19)
     }
 
     private var largeGrid: some View {
@@ -623,7 +618,7 @@ struct LargeWidgetView: View {
             ForEach(0..<weekCount, id: \.self) { week in
                 largeWeekRow(week: week)
                 if week < weekCount - 1 {
-                    Divider().background(borderColor)
+                    Rectangle().fill(Color(hex: 0xA6A7AB)).frame(height: 1)
                 }
             }
         }
@@ -645,14 +640,14 @@ struct LargeWidgetView: View {
         let isToday = isCurrent && todayDay == day
         let matches: [MatchBrief] = isCurrent ? (cal.days[day] ?? []) : []
 
-        return VStack(spacing: 1) {
+        return VStack(spacing: 2) {
             Text("\(displayDay)")
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: 10, weight: .bold))
                 .foregroundColor(
                     isToday ? Color(hex: 0xFF6B6B) :
                     dow == 6 ? sundayColor : textColor
                 )
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             largeMatchChips(matches: matches)
             Spacer(minLength: 0)
@@ -670,13 +665,7 @@ struct LargeWidgetView: View {
             if !matches.isEmpty {
                 VStack(spacing: 1) {
                     ForEach(0..<min(matches.count, 2), id: \.self) { i in
-                        Text("\(matches[i].blue)VS\(matches[i].red)")
-                            .font(.system(size: 7))
-                            .foregroundColor(chipText)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 12)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(chipBg))
+                        matchChipView(matches[i])
                     }
                     if matches.count > 2 {
                         Text("+\(matches.count - 2)")
@@ -688,6 +677,31 @@ struct LargeWidgetView: View {
         }
     }
 
+    private func matchChipView(_ match: MatchBrief) -> some View {
+        HStack(spacing: 0) {
+            Text(match.blue)
+                .font(.system(size: 7))
+                .foregroundColor(chipText)
+            Text("VS")
+                .font(.system(size: 7))
+                .foregroundColor(Color(hex: 0xF03E3E))
+            Text(match.red)
+                .font(.system(size: 7))
+                .foregroundColor(chipText)
+        }
+        .lineLimit(1)
+        .frame(maxWidth: .infinity)
+        .frame(height: 13)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(chipBg)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(isDark ? Color(hex: 0x343A40) : Color.clear, lineWidth: 1)
+        )
+    }
+
     private var todayGradient: some View {
         LinearGradient(
             colors: [Color(hex: 0xE87558).opacity(0.2), Color(hex: 0xC865C9).opacity(0.2), Color(hex: 0x791BB8).opacity(0.2)],
@@ -696,7 +710,7 @@ struct LargeWidgetView: View {
     }
 
     private var rightBorder: some View {
-        HStack { Spacer(); Rectangle().fill(borderColor).frame(width: 0.5) }
+        HStack { Spacer(); Rectangle().fill(Color(hex: 0xA6A7AB)).frame(width: 0.5) }
     }
 }
 
