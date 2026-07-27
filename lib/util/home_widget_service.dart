@@ -418,21 +418,189 @@ class HomeWidgetService {
 
     // 응원팀 정보도 위젯에 전달
     try {
-      Team? team;
-      try {
-        final me = await AuthService.instance.fetchMe();
-        if (me.favoriteTeamId != null) {
-          final teams = await OnboardingRepository.instance.fetchTeams();
-          for (final t in teams) {
-            if (t.id == me.favoriteTeamId) { team = t; break; }
-          }
-        }
-      } catch (_) {
-        team = await TeamPreferenceRepository.instance.loadPreferredTeam();
-      }
+      final team = await _loadPreferredTeamForWidget();
       await updatePreferredTeam(team);
     } catch (e) {
       debugPrint('[HomeWidget] 응원팀 갱신 실패: $e');
+    }
+  }
+
+  /// 로그인 회원은 서버 `favoriteTeamId` 기준, 실패(비로그인 등) 시 로컬 캐시로
+  /// 폴백해 선호 팀을 읽는다. [refreshFromApi]와 백그라운드 팀 필터 토글이 공유한다.
+  static Future<Team?> _loadPreferredTeamForWidget() async {
+    try {
+      final me = await AuthService.instance.fetchMe();
+      if (me.favoriteTeamId != null) {
+        final teams = await OnboardingRepository.instance.fetchTeams();
+        for (final t in teams) {
+          if (t.id == me.favoriteTeamId) return t;
+        }
+      }
+      return null;
+    } catch (_) {
+      return TeamPreferenceRepository.instance.loadPreferredTeam();
+    }
+  }
+
+  /// 위젯에 마지막으로 저장된 캘린더 데이터의 월(연/월)을 읽는다.
+  /// 저장값이 없거나 파싱 실패 시 현재 실제 월로 폴백한다.
+  static Future<DateTime> _currentDisplayedMonth() async {
+    try {
+      final raw = await HomeWidget.getWidgetData<String>('calendar_data');
+      if (raw != null) {
+        final monthStr =
+            (jsonDecode(raw) as Map<String, dynamic>)['month'] as String?;
+        if (monthStr != null) {
+          final parts = monthStr.split('-');
+          return DateTime(int.parse(parts[0]), int.parse(parts[1]));
+        }
+      }
+    } catch (_) {
+      // 파싱 실패 시 아래 폴백으로.
+    }
+    final now = DateTime.now();
+    return DateTime(now.year, now.month);
+  }
+
+  /// [month]를 [hasFilter]/[teamSelected] 상태에 맞춰 다시 조회하고
+  /// 위젯(캘린더 + 필터 상태)을 갱신한다.
+  ///
+  /// 리그 필터는 `FilterPreferenceRepository`에 저장된 마지막 조합을 쓰되,
+  /// [hasFilter]가 false면 'ALL'로 되돌린다. 팀 필터는 [teamSelected]가
+  /// true일 때만 선호 팀 ID를 추가로 합친다. 앱의 실제 저장 필터
+  /// (`FilterPreferenceRepository`)는 읽기만 하고 쓰지 않는다 — 위젯 토글은
+  /// 위젯에만 적용되는 임시 상태다.
+  static Future<void> _refetchAndUpdate({
+    required DateTime month,
+    required bool hasFilter,
+    required bool teamSelected,
+  }) async {
+    List<String> savedLeagues = const ['ALL'];
+    List<int> savedTeamIds = const [];
+    try {
+      final saved = await FilterPreferenceRepository.instance
+          .load(FilterPreferenceRepository.scheduleKey);
+      if (saved != null) {
+        savedLeagues =
+            (saved['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
+        savedTeamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+      }
+    } catch (e) {
+      debugPrint('[HomeWidget] 저장된 필터 복원 실패: $e');
+    }
+
+    final leagues = hasFilter ? savedLeagues : const ['ALL'];
+    var teamIds = hasFilter ? savedTeamIds : const <int>[];
+    if (teamSelected) {
+      final team = await _loadPreferredTeamForWidget();
+      if (team != null) {
+        teamIds = {...teamIds, team.id}.toList();
+      }
+    }
+
+    final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+    final days = await ScheduleRepository.instance.fetchCalendar(
+      month,
+      leagues: leagueParam,
+      teamIds: teamIds.isNotEmpty ? teamIds : null,
+    );
+    final matchesByDay = <int, List<CalendarMatchBrief>>{
+      for (final day in days) day.date.day: day.matches,
+    };
+
+    await updateCalendar(
+      month: month,
+      matchesByDay: matchesByDay,
+      leagues: leagues,
+      teamIds: teamIds,
+    );
+    await updateFilterState(hasFilter: hasFilter, teamSelected: teamSelected);
+  }
+
+  static Future<void> _handleMonthShift(int delta) async {
+    final current = await _currentDisplayedMonth();
+    final target = DateTime(current.year, current.month + delta);
+    final hasFilter = await HomeWidget.getWidgetData<bool>(
+          'has_filter',
+          defaultValue: false,
+        ) ??
+        false;
+    final teamSelected = await HomeWidget.getWidgetData<bool>(
+          'team_selected',
+          defaultValue: false,
+        ) ??
+        false;
+    await _refetchAndUpdate(
+      month: target,
+      hasFilter: hasFilter,
+      teamSelected: teamSelected,
+    );
+  }
+
+  static Future<void> _handleFilterToggle() async {
+    final hasFilter = await HomeWidget.getWidgetData<bool>(
+          'has_filter',
+          defaultValue: false,
+        ) ??
+        false;
+    final teamSelected = await HomeWidget.getWidgetData<bool>(
+          'team_selected',
+          defaultValue: false,
+        ) ??
+        false;
+    final month = await _currentDisplayedMonth();
+    await _refetchAndUpdate(
+      month: month,
+      hasFilter: !hasFilter,
+      teamSelected: teamSelected,
+    );
+  }
+
+  static Future<void> _handleTeamToggle() async {
+    final hasFilter = await HomeWidget.getWidgetData<bool>(
+          'has_filter',
+          defaultValue: false,
+        ) ??
+        false;
+    final teamSelected = await HomeWidget.getWidgetData<bool>(
+          'team_selected',
+          defaultValue: false,
+        ) ??
+        false;
+    final month = await _currentDisplayedMonth();
+    await _refetchAndUpdate(
+      month: month,
+      hasFilter: hasFilter,
+      teamSelected: !teamSelected,
+    );
+  }
+
+  /// 위젯 백그라운드 인터랙션 진입점.
+  ///
+  /// `main.dart`의 `registerInteractivityCallback` 콜백에서 호출된다.
+  /// 앱 UI를 열지 않고 URI(`warding://widget/{prev,next,filter,team}`,
+  /// 주기 자동 갱신은 `/refresh`)에 따라 위젯만 갱신한다.
+  static Future<void> handleBackgroundWidgetAction(Uri? uri) async {
+    final action = uri?.path.replaceAll('/', '') ?? 'refresh';
+    try {
+      switch (action) {
+        case 'prev':
+          await _handleMonthShift(-1);
+          break;
+        case 'next':
+          await _handleMonthShift(1);
+          break;
+        case 'filter':
+          await _handleFilterToggle();
+          break;
+        case 'team':
+          await _handleTeamToggle();
+          break;
+        default:
+          await refreshFromApi();
+      }
+    } catch (e) {
+      debugPrint('[HomeWidget] 백그라운드 액션 처리 실패($action): $e');
     }
   }
 }
