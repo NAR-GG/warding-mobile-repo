@@ -14,6 +14,7 @@ import org.json.JSONObject
 import java.util.Calendar
 
 private const val TAG = "ScheduleWidget"
+private const val MAX_REAL_SLOTS = 2
 
 class ScheduleWidgetProvider : AppWidgetProvider() {
 
@@ -225,6 +226,34 @@ data class TodayWidgetData(val matches: List<TodayMatchInfo>) {
     companion object {
         fun empty() = TodayWidgetData(emptyList())
     }
+}
+
+enum class MatchRole { PAST, NEXT, OTHER }
+
+data class DisplayMatch(val match: TodayMatchInfo, val role: MatchRole)
+
+data class MatchDisplayResult(val rows: List<DisplayMatch>, val overflowCount: Int)
+
+fun selectDisplayMatches(matches: List<TodayMatchInfo>): MatchDisplayResult {
+    val sorted = matches.sortedBy { it.time }
+    val finished = sorted.filter { it.status == "FINISHED" || it.status == "COMPLETED" }
+    val upcoming = sorted.filter { it.status != "FINISHED" && it.status != "COMPLETED" }
+
+    // 지난 경기는 가장 최근에 끝난 1개만 노출한다.
+    val pastShown = finished.lastOrNull()
+    val remainingSlots = MAX_REAL_SLOTS - (if (pastShown != null) 1 else 0)
+    val upcomingShown = upcoming.take(remainingSlots)
+
+    val rows = mutableListOf<DisplayMatch>()
+    if (pastShown != null) {
+        rows.add(DisplayMatch(pastShown, MatchRole.PAST))
+    }
+    upcomingShown.forEachIndexed { index, m ->
+        rows.add(DisplayMatch(m, if (index == 0) MatchRole.NEXT else MatchRole.OTHER))
+    }
+
+    val overflow = sorted.size - rows.size
+    return MatchDisplayResult(rows, overflow)
 }
 
 data class CalendarWidgetData(
