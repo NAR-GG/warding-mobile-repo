@@ -553,7 +553,8 @@ struct LargeWidgetView: View {
             largeWeekdayRow
             largeGrid
         }
-        .padding(4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
         .background(bgColor)
         .containerBackground(bgColor, for: .widget)
     }
@@ -562,17 +563,19 @@ struct LargeWidgetView: View {
         HStack {
             // 좌: < 월 >
             HStack(spacing: 8) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(textColor)
+                Image("chevron-left")
+                    .renderingMode(.template)
+                    .resizable()
                     .frame(width: 24, height: 24)
+                    .foregroundColor(textColor)
                 Text(String(format: "%02d.%02d", displayYear % 100, displayMonth))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(textColor)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(textColor)
+                Image("chevron-right")
+                    .renderingMode(.template)
+                    .resizable()
                     .frame(width: 24, height: 24)
+                    .foregroundColor(textColor)
             }
             Spacer()
             // 우: 필터 + 팀 아이콘
@@ -582,19 +585,29 @@ struct LargeWidgetView: View {
                     .fill(isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE))
                     .frame(width: 36, height: 36)
                     .overlay(
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(.system(size: 14, weight: .semibold))
+                        Image("filter")
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 24, height: 24)
                             .foregroundColor(textColor)
                     )
-                // 팀 로고: 36x36 원형, 다크 #1F2024 / 라이트 #000000 배경
-                Circle()
-                    .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: "shield.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(subtextColor)
-                    )
+                // 팀 로고: 36x36, narBg 그라데이션 보더 + 내부 원
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .frame(width: 36, height: 36)
+                    Circle()
+                        .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(subtextColor)
+                }
             }
         }
         .padding(.horizontal, 4)
@@ -602,15 +615,23 @@ struct LargeWidgetView: View {
     }
 
     private var largeWeekdayRow: some View {
-        HStack(spacing: 0) {
-            ForEach(0..<7, id: \.self) { i in
-                Text(weekdays[i])
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(i == 6 ? sundayColor : textColor)
-                    .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(0..<7, id: \.self) { i in
+                    Text(weekdays[i])
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(i == 6 ? sundayColor : textColor)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 19)
+                }
             }
+            // 요일 아래 그라데이션 구분선
+            LinearGradient(
+                colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                startPoint: .leading, endPoint: .trailing
+            )
+            .frame(height: 1)
         }
-        .frame(height: 19)
     }
 
     private var largeGrid: some View {
@@ -680,26 +701,18 @@ struct LargeWidgetView: View {
     private func matchChipView(_ match: MatchBrief) -> some View {
         HStack(spacing: 0) {
             Text(match.blue)
-                .font(.system(size: 7))
+                .font(.system(size: 8))
                 .foregroundColor(chipText)
             Text("VS")
-                .font(.system(size: 7))
+                .font(.system(size: 8))
                 .foregroundColor(Color(hex: 0xF03E3E))
             Text(match.red)
-                .font(.system(size: 7))
+                .font(.system(size: 8))
                 .foregroundColor(chipText)
         }
         .lineLimit(1)
         .frame(maxWidth: .infinity)
         .frame(height: 13)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(chipBg)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(isDark ? Color(hex: 0x343A40) : Color.clear, lineWidth: 1)
-        )
     }
 
     private var todayGradient: some View {
