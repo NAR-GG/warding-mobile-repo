@@ -5,4 +5,5 @@
     <string name="naver_client_name">와딩</string>
     <string name="widget_description">이번 달 e스포츠 경기 일정을 확인하세요.</string>
     <string name="widget_description_small">오늘의 e스포츠 경기를 확인하세요.</string>
+    <string name="widget_description_large">이번 달 e스포츠 경기 일정을 캘린더로 확인하세요.</string>
 </resources>

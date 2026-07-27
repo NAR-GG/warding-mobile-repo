@@ -2,14 +2,19 @@ package com.warding.app
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import java.util.Calendar
 
+private const val TAG = "ScheduleWidgetSvc"
+
 class ScheduleWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
+        Log.d(TAG, "onGetViewFactory called")
         return ScheduleRemoteViewsFactory(applicationContext)
     }
 }
@@ -19,11 +24,19 @@ class ScheduleRemoteViewsFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var data = CalendarWidgetData.empty()
+    private val isDark: Boolean = run {
+        val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        nightMode == Configuration.UI_MODE_NIGHT_YES
+    }
 
-    override fun onCreate() {}
+    override fun onCreate() {
+        Log.d(TAG, "Factory onCreate")
+    }
 
     override fun onDataSetChanged() {
+        Log.d(TAG, "onDataSetChanged")
         data = ScheduleWidgetProvider.loadCalendarData(context)
+        Log.d(TAG, "loaded data: year=${data.year} month=${data.month} weekCount=${data.weekCount()} days=${data.days.size}")
     }
 
     override fun onDestroy() {}
@@ -41,25 +54,19 @@ class ScheduleRemoteViewsFactory(
             now.get(Calendar.MONTH) + 1 == data.month
         ) now.get(Calendar.DAY_OF_MONTH) else -1
 
+        // 색상 상수
+        val defaultDayColor = if (isDark) Color.WHITE else Color.BLACK
+        val sundayColor = if (isDark) Color.parseColor("#FF9672AC") else Color.parseColor("#FF6D2E92")
+        val noMatchColor = if (isDark) Color.parseColor("#FFA6A7AB") else Color.parseColor("#FFA6A7AB")
+        val nonCurrentMonthColor = if (isDark) Color.parseColor("#80FFFFFF") else Color.parseColor("#80000000")
+
         val dayNumIds = intArrayOf(
             R.id.day0_num, R.id.day1_num, R.id.day2_num,
             R.id.day3_num, R.id.day4_num, R.id.day5_num, R.id.day6_num
         )
-        val dayMatch1Ids = intArrayOf(
-            R.id.day0_match1, R.id.day1_match1, R.id.day2_match1,
-            R.id.day3_match1, R.id.day4_match1, R.id.day5_match1, R.id.day6_match1
-        )
-        val dayMatch2Ids = intArrayOf(
-            R.id.day0_match2, R.id.day1_match2, R.id.day2_match2,
-            R.id.day3_match2, R.id.day4_match2, R.id.day5_match2, R.id.day6_match2
-        )
-        val dayMoreIds = intArrayOf(
-            R.id.day0_more, R.id.day1_more, R.id.day2_more,
-            R.id.day3_more, R.id.day4_more, R.id.day5_more, R.id.day6_more
-        )
-        val dayCellIds = intArrayOf(
-            R.id.day0, R.id.day1, R.id.day2,
-            R.id.day3, R.id.day4, R.id.day5, R.id.day6
+        val dayDotIds = intArrayOf(
+            R.id.day0_dot, R.id.day1_dot, R.id.day2_dot,
+            R.id.day3_dot, R.id.day4_dot, R.id.day5_dot, R.id.day6_dot
         )
 
         for (dow in 0..6) {
@@ -68,66 +75,57 @@ class ScheduleRemoteViewsFactory(
 
             val displayDay: Int
             val isCurrentMonth: Boolean
-            val matches: List<MatchInfo>
 
             when {
                 dayNum < 1 -> {
                     displayDay = prevDim + dayNum
                     isCurrentMonth = false
-                    matches = emptyList()
                 }
                 dayNum > dim -> {
                     displayDay = dayNum - dim
                     isCurrentMonth = false
-                    matches = emptyList()
                 }
                 else -> {
                     displayDay = dayNum
                     isCurrentMonth = true
-                    matches = data.days[dayNum] ?: emptyList()
                 }
             }
 
-            // 날짜 숫자
+            if (!isCurrentMonth) {
+                // Not current month: empty text, hide dot
+                views.setTextViewText(dayNumIds[dow], "")
+                views.setViewVisibility(dayDotIds[dow], View.GONE)
+                // Clear any background from previous recycled view
+                views.setInt(dayNumIds[dow], "setBackgroundColor", Color.TRANSPARENT)
+                continue
+            }
+
+            // Current month
             views.setTextViewText(dayNumIds[dow], "$displayDay")
 
-            // 색상
-            val isToday = isCurrentMonth && dayNum == todayDay
-            val textColor = when {
-                isToday -> Color.parseColor("#FFFF6B6B")
-                dow == 6 -> Color.parseColor("#FFFFBCBC")
-                else -> Color.WHITE
-            }
-            views.setTextColor(dayNumIds[dow], textColor)
+            val isToday = dayNum == todayDay
+            val hasMatches = data.days.containsKey(dayNum) && data.days[dayNum]!!.isNotEmpty()
+            val isSunday = dow == 6
 
-            // 투명도 (이전/다음 달)
-            val alpha = if (isCurrentMonth) 255 else 127
-            views.setInt(dayCellIds[dow], "setAlpha", alpha)
-
-            // 경기 칩 1
-            if (matches.isNotEmpty()) {
-                val m = matches[0]
-                views.setTextViewText(dayMatch1Ids[dow], "${m.blue}VS${m.red}")
-                views.setViewVisibility(dayMatch1Ids[dow], View.VISIBLE)
+            if (isToday) {
+                // Today: red text + background highlight (same in both modes)
+                views.setTextColor(dayNumIds[dow], Color.parseColor("#FFFF6B6B"))
+                views.setInt(dayNumIds[dow], "setBackgroundResource",
+                    if (isDark) R.drawable.mini_today_bg else R.drawable.mini_today_bg_light)
+                // Show dot if has matches
+                views.setViewVisibility(dayDotIds[dow], if (hasMatches) View.VISIBLE else View.GONE)
+            } else if (hasMatches) {
+                // Has matches: colored text, dot visible
+                val color = if (isSunday) sundayColor else defaultDayColor
+                views.setTextColor(dayNumIds[dow], color)
+                views.setInt(dayNumIds[dow], "setBackgroundColor", Color.TRANSPARENT)
+                views.setViewVisibility(dayDotIds[dow], View.VISIBLE)
             } else {
-                views.setViewVisibility(dayMatch1Ids[dow], View.GONE)
-            }
-
-            // 경기 칩 2
-            if (matches.size >= 2) {
-                val m = matches[1]
-                views.setTextViewText(dayMatch2Ids[dow], "${m.blue}VS${m.red}")
-                views.setViewVisibility(dayMatch2Ids[dow], View.VISIBLE)
-            } else {
-                views.setViewVisibility(dayMatch2Ids[dow], View.GONE)
-            }
-
-            // +N
-            if (matches.size > 2) {
-                views.setTextViewText(dayMoreIds[dow], "+${matches.size - 2}")
-                views.setViewVisibility(dayMoreIds[dow], View.VISIBLE)
-            } else {
-                views.setViewVisibility(dayMoreIds[dow], View.GONE)
+                // No matches
+                val color = if (isSunday) sundayColor else noMatchColor
+                views.setTextColor(dayNumIds[dow], color)
+                views.setInt(dayNumIds[dow], "setBackgroundColor", Color.TRANSPARENT)
+                views.setViewVisibility(dayDotIds[dow], View.GONE)
             }
         }
 

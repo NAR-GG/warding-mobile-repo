@@ -4,12 +4,16 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
 import java.util.Calendar
+
+private const val TAG = "ScheduleWidget"
 
 class ScheduleWidgetProvider : AppWidgetProvider() {
 
@@ -18,14 +22,25 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.d(TAG, "onUpdate called, ids=${appWidgetIds.toList()}")
         for (appWidgetId in appWidgetIds) {
-            updateWidget(context, appWidgetManager, appWidgetId)
+            try {
+                updateWidget(context, appWidgetManager, appWidgetId)
+                Log.d(TAG, "updateWidget success for id=$appWidgetId")
+            } catch (e: Exception) {
+                Log.e(TAG, "updateWidget failed for id=$appWidgetId", e)
+            }
         }
     }
 
     companion object {
         private fun getPrefs(context: Context): SharedPreferences {
             return context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+        }
+
+        fun isDarkMode(context: Context): Boolean {
+            val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            return nightMode == Configuration.UI_MODE_NIGHT_YES
         }
 
         fun updateWidget(
@@ -35,6 +50,16 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         ) {
             val views = RemoteViews(context.packageName, R.layout.schedule_widget)
             val todayData = loadTodayData(context)
+            val isDark = isDarkMode(context)
+
+            // 배경
+            views.setInt(R.id.widget_root, "setBackgroundResource",
+                if (isDark) R.drawable.widget_background else R.drawable.widget_background_light)
+
+            // 색상 상수
+            val defaultTextColor = if (isDark) Color.WHITE else Color.parseColor("#101113")
+            val sundayColor = if (isDark) Color.parseColor("#9672AC") else Color.parseColor("#6D2E92")
+            val weekdayHeaderColor = if (isDark) Color.WHITE else Color.BLACK
 
             // 왼쪽: 오늘 날짜 헤더
             val cal = Calendar.getInstance()
@@ -48,6 +73,14 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                 weekdayNames[wdIdx]
             )
             views.setTextViewText(R.id.today_date_label, dateLabel)
+            views.setTextColor(R.id.today_date_label, defaultTextColor)
+
+            // 미니 캘린더 요일 헤더 색상
+            val wdIds = intArrayOf(R.id.wd_mon, R.id.wd_tue, R.id.wd_wed, R.id.wd_thu, R.id.wd_fri, R.id.wd_sat)
+            for (id in wdIds) {
+                views.setTextColor(id, weekdayHeaderColor)
+            }
+            views.setTextColor(R.id.wd_sun, sundayColor)
 
             // 왼쪽: 오늘 경기 리스트 채우기
             views.removeAllViews(R.id.matches_container)
@@ -62,8 +95,8 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                 row.setTextViewText(R.id.match_display, m.display)
 
                 val isFinished = m.status == "FINISHED" || m.status == "COMPLETED"
-                val isNext = !isFinished && !foundNextScheduled &&
-                        m.status != "LIVE" && m.status != "IN_PROGRESS"
+                val isLive = m.status == "LIVE" || m.status == "IN_PROGRESS"
+                val isNext = !isFinished && !isLive && !foundNextScheduled
 
                 if (isFinished) {
                     // 취소선 + 투명도
@@ -71,26 +104,32 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                         Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
                     row.setInt(R.id.match_display, "setPaintFlags",
                         Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                    row.setTextColor(R.id.match_time, defaultTextColor)
+                    row.setTextColor(R.id.match_display, defaultTextColor)
                     row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
-                } else if (isNext) {
-                    // 다음 예정 경기: narBg 느낌의 오렌지색 (그라데이션 불가)
+                } else if (isLive || isNext) {
+                    // LIVE or 다음 예정 경기: narBg 느낌의 그라데이션 색 (same in both modes)
                     row.setTextColor(R.id.match_time, Color.parseColor("#E87558"))
                     row.setTextColor(R.id.match_display, Color.parseColor("#C865C9"))
-                    foundNextScheduled = true
+                    if (isNext) foundNextScheduled = true
+                } else {
+                    // 기본 텍스트 색
+                    row.setTextColor(R.id.match_time, defaultTextColor)
+                    row.setTextColor(R.id.match_display, defaultTextColor)
                 }
-                // 그 외: 기본 흰색 유지
 
                 views.addView(R.id.matches_container, row)
             }
 
             if (matches.size > maxShow) {
                 val moreRow = RemoteViews(context.packageName, R.layout.match_row)
-                moreRow.setTextViewText(R.id.match_time, "")
-                moreRow.setTextViewText(R.id.match_display, "+${matches.size - maxShow}")
+                moreRow.setTextViewText(R.id.match_time, "+${matches.size - maxShow}")
+                moreRow.setTextViewText(R.id.match_display, "")
+                moreRow.setTextColor(R.id.match_time, defaultTextColor)
                 views.addView(R.id.matches_container, moreRow)
             }
 
-            if (matches.isEmpty) {
+            if (matches.isEmpty()) {
                 val emptyRow = RemoteViews(context.packageName, R.layout.match_row)
                 emptyRow.setTextViewText(R.id.match_time, "")
                 emptyRow.setTextViewText(R.id.match_display, "경기 없음")

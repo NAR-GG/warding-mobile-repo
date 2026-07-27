@@ -30,13 +30,14 @@ class HomeWidgetService {
   /// iOS App Group ID — Runner.entitlements 와 Widget Extension 양쪽에 등록해야 한다.
   static const String _appGroupId = 'group.com.warding.app';
 
-  /// Android 위젯 클래스 정규화 이름 (중/대).
-  static const String _androidWidgetName =
-      'com.warding.app.ScheduleWidgetProvider';
+  /// Android 위젯 클래스 이름 (중/대).
+  static const String _androidWidgetName = 'ScheduleWidgetProvider';
 
-  /// Android 소 위젯 클래스 정규화 이름.
-  static const String _androidSmallWidgetName =
-      'com.warding.app.ScheduleWidgetSmallProvider';
+  /// Android 소 위젯 클래스 이름.
+  static const String _androidSmallWidgetName = 'ScheduleWidgetSmallProvider';
+
+  /// Android 대형 위젯 클래스 이름 (풀 캘린더).
+  static const String _androidLargeWidgetName = 'ScheduleWidgetLargeProvider';
 
   /// iOS WidgetKit 이름 (소/중/대 공용 — WidgetRouter 에서 분기).
   static const String _iOSWidgetName = 'WardingScheduleWidget';
@@ -72,18 +73,30 @@ class HomeWidgetService {
       final json = jsonEncode({'month': monthStr, 'days': daysJson});
       await HomeWidget.saveWidgetData<String>('calendar_data', json);
 
-      // 오늘 경기: 상세 API(시간 포함)로 가져오고, 캘린더 경기 ID로 필터링
+      // 오늘 경기: 상세 API(시간 포함)로 가져와서 위젯에 저장
       final now = DateTime.now();
       if (now.year == month.year && now.month == month.month) {
-        final calendarMatchIds = (matchesByDay[now.day] ?? [])
-            .map((m) => m.matchId)
-            .toSet();
+        final todayBriefs = matchesByDay[now.day] ?? [];
+        final calendarMatchIds = todayBriefs.map((m) => m.matchId).toSet();
 
         if (calendarMatchIds.isNotEmpty) {
-          // 전체 리그로 상세 API 호출 (시간 정보 필요)
+          // 캘린더와 동일한 리그/팀 필터로 상세 API 호출 (시간 정보 필요)
+          // ALL이면 주요 리그를 각각 호출해서 합침 (상세 API는 리그 1개만 받음)
+          final leaguesForDetail = leagues.contains('ALL')
+              ? const ['LCK', 'LEC', 'LPL', 'LTA', 'LCP']
+              : leagues;
           try {
-            final allMatches = await ScheduleRepository.instance
-                .fetchMatchesByDate(now);
+            final allMatches = <ScheduleMatch>[];
+            for (final league in leaguesForDetail) {
+              try {
+                final matches = await ScheduleRepository.instance
+                    .fetchMatchesByDate(now, leagues: [league],
+                        teamIds: teamIds.isNotEmpty ? teamIds : null);
+                allMatches.addAll(matches);
+              } catch (_) {
+                // 개별 리그 실패 무시
+              }
+            }
             // 캘린더에 있는 경기만 필터링 (캘린더 필터와 동기화)
             final filtered = allMatches
                 .where((m) => calendarMatchIds.contains(m.matchId))
@@ -91,11 +104,13 @@ class HomeWidgetService {
 
             if (filtered.isNotEmpty) {
               await _saveTodayDetailed(now, filtered);
+            } else if (allMatches.isNotEmpty) {
+              await _saveTodayDetailed(now, allMatches);
             } else {
-              await _saveTodayFromCalendar(now, matchesByDay[now.day]!);
+              await _saveTodayFromCalendar(now, todayBriefs);
             }
           } catch (_) {
-            await _saveTodayFromCalendar(now, matchesByDay[now.day]!);
+            await _saveTodayFromCalendar(now, todayBriefs);
           }
         } else {
           await _updateTodayMatches(leagues: leagues, teamIds: teamIds);
@@ -113,6 +128,11 @@ class HomeWidgetService {
         androidName: _androidSmallWidgetName,
         iOSName: _iOSWidgetName,
       );
+      // 대형 위젯도 갱신
+      await HomeWidget.updateWidget(
+        androidName: _androidLargeWidgetName,
+        iOSName: _iOSWidgetName,
+      );
       debugPrint('[HomeWidget] 캘린더 위젯 갱신 완료: $monthStr');
     } catch (e) {
       debugPrint('[HomeWidget] 캘린더 위젯 갱신 실패: $e');
@@ -126,12 +146,20 @@ class HomeWidgetService {
   }) async {
     try {
       final now = DateTime.now();
-      final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
-      final matches = await ScheduleRepository.instance.fetchMatchesByDate(
-        now,
-        leagues: leagueParam,
-        teamIds: teamIds.isNotEmpty ? teamIds : null,
-      );
+      final leaguesForDetail = leagues.contains('ALL')
+          ? const ['LCK', 'LEC', 'LPL', 'LTA', 'LCP']
+          : leagues;
+      final matches = <ScheduleMatch>[];
+      for (final league in leaguesForDetail) {
+        try {
+          final result = await ScheduleRepository.instance
+              .fetchMatchesByDate(now, leagues: [league],
+                  teamIds: teamIds.isNotEmpty ? teamIds : null);
+          matches.addAll(result);
+        } catch (_) {
+          // 개별 리그 실패 무시
+        }
+      }
 
       final todayJson = <String, dynamic>{
         'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
@@ -183,6 +211,9 @@ class HomeWidgetService {
       jsonEncode(todayJson),
     );
     debugPrint('[HomeWidget] 오늘 경기 상세: ${matches.length}개');
+    for (final m in matches) {
+      debugPrint('[HomeWidget]   ${m.teamA.teamCode} VS ${m.teamB.teamCode} time="${m.scheduledTime}" status="${m.matchStatus}"');
+    }
   }
 
   /// 캘린더 데이터에서 오늘 경기를 추출해 위젯에 저장 (fetchMatchesByDate 폴백)
@@ -224,6 +255,10 @@ class HomeWidgetService {
         androidName: _androidWidgetName,
         iOSName: _iOSWidgetName,
       );
+      await HomeWidget.updateWidget(
+        androidName: _androidLargeWidgetName,
+        iOSName: _iOSWidgetName,
+      );
     } catch (e) {
       debugPrint('[HomeWidget] 필터 상태 저장 실패: $e');
     }
@@ -255,6 +290,20 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(
         'team_code',
         team.code,
+      );
+
+      // 위젯 갱신 트리거 (잠금화면 포함)
+      await HomeWidget.updateWidget(
+        androidName: _androidWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+      await HomeWidget.updateWidget(
+        androidName: _androidSmallWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+      await HomeWidget.updateWidget(
+        androidName: _androidLargeWidgetName,
+        iOSName: _iOSWidgetName,
       );
       debugPrint('[HomeWidget] 응원팀 저장: ${team.name} (${team.code})');
     } catch (e) {

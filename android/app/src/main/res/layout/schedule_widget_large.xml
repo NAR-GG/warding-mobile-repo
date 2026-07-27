@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_large_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <!-- 헤더: < YY.MM >  [필터] [팀로고] -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <!-- Left: chevron prev + month + chevron next -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/large_prev_btn"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_chevron_left"
+                android:scaleType="fitCenter"
+                android:contentDescription="이전 달" />
+
+            <TextView
+                android:id="@+id/large_month_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="26.07"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/large_next_btn"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_chevron_right"
+                android:scaleType="fitCenter"
+                android:contentDescription="다음 달" />
+        </LinearLayout>
+
+        <!-- Spacer -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Right: 필터 아이콘 + 팀 로고 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 필터 아이콘: 36dp 원형 -->
+            <FrameLayout
+                android:id="@+id/large_filter_btn"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp">
+                <ImageView
+                    android:id="@+id/large_filter_bg"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/filter_circle_bg"
+                    android:importantForAccessibility="no" />
+                <ImageView
+                    android:id="@+id/large_filter_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_filter"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="필터" />
+            </FrameLayout>
+
+            <!-- 팀 로고: 36dp 원형 -->
+            <FrameLayout
+                android:id="@+id/large_team_btn"
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+                <ImageView
+                    android:id="@+id/large_team_bg"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/team_circle_bg"
+                    android:importantForAccessibility="no" />
+                <ImageView
+                    android:id="@+id/large_team_logo"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="응원팀" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 요일 행 (height 19dp) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="19dp"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/large_wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="10sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- 요일 아래 그라데이션 구분선 -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:src="@drawable/gradient_separator"
+        android:scaleType="fitXY"
+        android:importantForAccessibility="no" />
+
+    <!-- 캘린더 그리드 -->
+    <ListView
+        android:id="@+id/widget_large_calendar_grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#FFA6A7AB"
+        android:dividerHeight="1dp"
+        android:scrollbars="none" />
+
+</LinearLayout>

@@ -16,6 +16,7 @@
         android:textColor="#FFFFFFFF"
         android:textSize="16sp"
         android:textStyle="bold"
+        android:singleLine="true"
         android:paddingBottom="8dp" />
 
     <!-- 세로선 + 경기 리스트 -->
@@ -25,10 +26,12 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <View
-            android:layout_width="2dp"
+        <ImageView
+            android:layout_width="6dp"
             android:layout_height="match_parent"
-            android:background="@drawable/gradient_line" />
+            android:src="@drawable/gradient_line"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
 
         <LinearLayout
             android:id="@+id/small_matches_container"

@@ -7,8 +7,6 @@
     android:background="@drawable/widget_background"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
     android:baselineAligned="false">
 
     <!-- 왼쪽: 오늘 경기 리스트 -->
@@ -18,17 +16,19 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginEnd="8dp">
+        android:layout_marginEnd="9dp">
 
         <!-- 날짜 헤더 -->
         <TextView
             android:id="@+id/today_date_label"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:text="07.26(일)"
             android:textColor="#FFFFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
+            android:singleLine="true"
             android:paddingBottom="8dp" />
 
         <!-- 경기 리스트 컨테이너 (세로선 + 항목) -->
@@ -38,11 +38,13 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <!-- 세로 그라데이션 선 -->
-            <View
-                android:layout_width="2dp"
-                android:layout_height="match_parent"
-                android:background="@drawable/gradient_line" />
+            <!-- 세로 그라데이션 선 (고정 96dp) -->
+            <ImageView
+                android:layout_width="6dp"
+                android:layout_height="96dp"
+                android:src="@drawable/gradient_line"
+                android:scaleType="fitXY"
+                android:importantForAccessibility="no" />
 
             <!-- 경기 항목들 -->
             <LinearLayout
@@ -66,13 +68,13 @@
             android:layout_width="match_parent"
             android:layout_height="22dp"
             android:orientation="horizontal">
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-            <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="10sp" android:textStyle="bold" />
         </LinearLayout>
 
         <!-- 날짜 그리드 (ListView로 주 행 렌더) -->

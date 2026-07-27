@@ -235,24 +235,24 @@ struct MediumWidgetView: View {
                             startPoint: .top, endPoint: .bottom
                         )
                     )
-                    .frame(width: 6, height: 96)
+                    .frame(width: 6, height: 93)
 
                 // 경기 항목들
                 VStack(alignment: .leading, spacing: 3) {
                     let maxShow = 3
-                    let matches = today.matches
-                    let nextIdx = nextScheduledIndex
+                    let filteredMatches = filterMatchesForWidget(today.matches)
+                    let nextIdx = filteredMatches.firstIndex { !$0.isFinished && !$0.isLive }
 
-                    ForEach(0..<min(matches.count, maxShow), id: \.self) { i in
-                        mediumMatchRow(matches[i], isNext: i == nextIdx)
+                    ForEach(0..<min(filteredMatches.count, maxShow), id: \.self) { i in
+                        mediumMatchRow(filteredMatches[i], isNext: i == nextIdx)
                     }
-                    if matches.count > maxShow {
-                        Text("+\(matches.count - maxShow)")
+                    if filteredMatches.count > maxShow {
+                        Text("+\(filteredMatches.count - maxShow)")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textColor)
-                            .frame(height: 20)
+                            .frame(width: 38, height: 20, alignment: .leading)
                     }
-                    if matches.isEmpty {
+                    if filteredMatches.isEmpty {
                         Text("경기 없음")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: 0xA6A7AB))
@@ -268,6 +268,22 @@ struct MediumWidgetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// 지난 경기는 마지막 1개만 남기고 필터링
+    private func filterMatchesForWidget(_ matches: [TodayMatch]) -> [TodayMatch] {
+        let finishedMatches = matches.filter { $0.isFinished }
+        let otherMatches = matches.filter { !$0.isFinished }
+        let lastFinished = finishedMatches.last.map { [$0] } ?? []
+        return lastFinished + otherMatches
+    }
+
+    /// AttributedString으로 취소선 적용
+    private func strikethroughText(_ str: String) -> AttributedString {
+        var attr = AttributedString(str)
+        attr.strikethroughStyle = .single
+        attr.foregroundColor = UIColor(textColor)
+        return attr
+    }
+
     /// 중간 위젯 경기 행
     /// - 지난 경기: opacity 0.6 + line-through
     /// - 라이브/바로 다음 예정: narBg 그라데이션 텍스트
@@ -277,19 +293,19 @@ struct MediumWidgetView: View {
             if match.isFinished {
                 // 지난 경기: 취소선 + 흐림
                 HStack(spacing: 14) {
-                    Text(match.time)
+                    Text(strikethroughText(match.time))
                         .font(.system(size: 14, weight: .medium))
-                    Text(match.display)
+                        .frame(width: 38, alignment: .leading)
+                    Text(strikethroughText(match.display))
                         .font(.system(size: 14, weight: .medium))
                 }
-                .foregroundColor(textColor)
-                .strikethrough(true, color: textColor)
                 .opacity(0.6)
             } else if match.isLive || isNext {
                 // 현재 경기 / 바로 다음 예정: 그라데이션 텍스트
                 HStack(spacing: 14) {
                     Text(match.time)
                         .font(.system(size: 14, weight: .medium))
+                        .frame(width: 38, alignment: .leading)
                     Text(match.display)
                         .font(.system(size: 14, weight: .medium))
                 }
@@ -303,6 +319,7 @@ struct MediumWidgetView: View {
                         HStack(spacing: 14) {
                             Text(match.time)
                                 .font(.system(size: 14, weight: .medium))
+                                .frame(width: 38, alignment: .leading)
                             Text(match.display)
                                 .font(.system(size: 14, weight: .medium))
                         }
@@ -313,6 +330,7 @@ struct MediumWidgetView: View {
                 HStack(spacing: 14) {
                     Text(match.time)
                         .font(.system(size: 14, weight: .medium))
+                        .frame(width: 38, alignment: .leading)
                     Text(match.display)
                         .font(.system(size: 14, weight: .medium))
                 }
@@ -485,19 +503,19 @@ struct SmallWidgetView: View {
                 // 경기 항목
                 VStack(alignment: .leading, spacing: 3) {
                     let maxShow = 3
-                    let matches = today.matches
-                    let nextIdx = nextScheduledIndex
+                    let filteredMatches = filterMatchesForWidget(today.matches)
+                    let nextIdx = filteredMatches.firstIndex { !$0.isFinished && !$0.isLive }
 
-                    ForEach(0..<min(matches.count, maxShow), id: \.self) { i in
-                        smallMatchRow(matches[i], isNext: i == nextIdx)
+                    ForEach(0..<min(filteredMatches.count, maxShow), id: \.self) { i in
+                        smallMatchRow(filteredMatches[i], isNext: i == nextIdx)
                     }
-                    if matches.count > maxShow {
-                        Text("+\(matches.count - maxShow)")
+                    if filteredMatches.count > maxShow {
+                        Text("+\(filteredMatches.count - maxShow)")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textColor)
-                            .frame(height: 20)
+                            .frame(width: 38, height: 20, alignment: .leading)
                     }
-                    if matches.isEmpty {
+                    if filteredMatches.isEmpty {
                         Text("경기 없음")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: 0xA6A7AB))
@@ -516,22 +534,38 @@ struct SmallWidgetView: View {
         .containerBackground(bgColor, for: .widget)
     }
 
+    /// 지난 경기는 마지막 1개만 남기고 필터링
+    private func filterMatchesForWidget(_ matches: [TodayMatch]) -> [TodayMatch] {
+        let finishedMatches = matches.filter { $0.isFinished }
+        let otherMatches = matches.filter { !$0.isFinished }
+        let lastFinished = finishedMatches.last.map { [$0] } ?? []
+        return lastFinished + otherMatches
+    }
+
+    /// AttributedString으로 취소선 적용
+    private func strikethroughText(_ str: String) -> AttributedString {
+        var attr = AttributedString(str)
+        attr.strikethroughStyle = .single
+        attr.foregroundColor = UIColor(textColor)
+        return attr
+    }
+
     private func smallMatchRow(_ match: TodayMatch, isNext: Bool) -> some View {
         Group {
             if match.isFinished {
                 HStack(spacing: 8) {
-                    Text(match.time)
+                    Text(strikethroughText(match.time))
                         .font(.system(size: 14, weight: .medium))
-                    Text(match.display)
+                        .frame(width: 38, alignment: .leading)
+                    Text(strikethroughText(match.display))
                         .font(.system(size: 14, weight: .medium))
                 }
-                .foregroundColor(textColor)
-                .strikethrough(true, color: textColor)
                 .opacity(0.6)
             } else if match.isLive || isNext {
                 HStack(spacing: 8) {
                     Text(match.time)
                         .font(.system(size: 14, weight: .medium))
+                        .frame(width: 38, alignment: .leading)
                     Text(match.display)
                         .font(.system(size: 14, weight: .medium))
                 }
@@ -545,6 +579,7 @@ struct SmallWidgetView: View {
                         HStack(spacing: 8) {
                             Text(match.time)
                                 .font(.system(size: 14, weight: .medium))
+                                .frame(width: 38, alignment: .leading)
                             Text(match.display)
                                 .font(.system(size: 14, weight: .medium))
                         }
@@ -554,6 +589,7 @@ struct SmallWidgetView: View {
                 HStack(spacing: 8) {
                     Text(match.time)
                         .font(.system(size: 14, weight: .medium))
+                        .frame(width: 38, alignment: .leading)
                     Text(match.display)
                         .font(.system(size: 14, weight: .medium))
                 }
@@ -577,7 +613,7 @@ struct LargeWidgetView: View {
 
     private var bgColor: Color { isDark ? Color.black : Color.white }
     private var textColor: Color { isDark ? Color.white : Color(hex: 0x101113) }
-    private var sundayColor: Color { isDark ? Color(hex: 0xFFBCBC) : Color(hex: 0xFFBCBC) }
+    private var sundayColor: Color { isDark ? Color(hex: 0x9672AC) : Color(hex: 0x6D2E92) }
     private var subtextColor: Color { Color(hex: 0xA6A7AB) }
     private var chipBg: Color { isDark ? Color(hex: 0x1F2024) : Color(hex: 0xFCFDFE) }
     private var chipText: Color { isDark ? Color.white : Color(hex: 0x101113) }
@@ -872,80 +908,71 @@ struct LockScreenWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             // 헤더: "오늘 T1 경기일정"
-            HStack(spacing: 4) {
+            HStack(spacing: 2) {
                 Text("오늘")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(.headline, design: .default, weight: .bold))
                 if !teamCode.isEmpty {
                     Text(teamCode)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(.headline, design: .default, weight: .bold))
                 }
                 Text("경기일정")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(.headline, design: .default, weight: .bold))
             }
-            .foregroundColor(.white)
 
             if teamMatches.isEmpty {
                 Text("오늘 경기 없음")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .font(.system(.caption, design: .default, weight: .medium))
+                    .opacity(0.8)
             } else {
-                // 세로 바 + 경기 리스트 + MORE (시안: height 34, padding-left 8)
+                // 세로 바 + 경기 리스트
                 HStack(alignment: .center, spacing: 0) {
-                    // 세로 바 (시안: border 3px, height 34)
+                    // 세로 바
                     RoundedRectangle(cornerRadius: 1.5)
-                        .fill(.white)
-                        .frame(width: 3, height: 34)
+                        .frame(width: 3)
 
                     // 경기 항목
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(0..<min(teamMatches.count, 2), id: \.self) { i in
+                    VStack(alignment: .leading, spacing: 1) {
+                        let maxShow = 2
+                        ForEach(0..<min(teamMatches.count, maxShow), id: \.self) { i in
                             HStack(spacing: 0) {
                                 lockScreenMatchRow(teamMatches[i])
                                 // +N: 마지막 경기 행 옆에 표시
-                                if i == min(teamMatches.count, 2) - 1 && teamMatches.count > 2 {
-                                    Text("  +\(teamMatches.count - 2)")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white)
+                                if i == min(teamMatches.count, maxShow) - 1 && teamMatches.count > maxShow {
+                                    Text("  +\(teamMatches.count - maxShow)")
+                                        .font(.system(.caption, design: .default, weight: .medium))
                                 }
                             }
                         }
                     }
-                    .padding(.leading, 8)
-
-                    Spacer(minLength: 0)
+                    .padding(.leading, 6)
                 }
-                .frame(height: 34)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 5)
-        .padding(.vertical, 10)
         .widgetURL(URL(string: "warding://widget/schedule"))
     }
 
     private func lockScreenMatchRow(_ match: TodayMatch) -> some View {
-        HStack(spacing: 14) {
-            // 대진 (시안: gap 2, semibold 14px)
-            HStack(spacing: 2) {
+        HStack(spacing: 6) {
+            // 대진
+            HStack(spacing: 1) {
                 Text(match.blueCode)
-                    .font(.system(size: 14, weight: .semibold))
+                    .fontWeight(.semibold)
                 Text("VS")
-                    .font(.system(size: 14, weight: .semibold))
+                    .fontWeight(.semibold)
                 Text(match.redCode)
-                    .font(.system(size: 14, weight: .semibold))
+                    .fontWeight(.semibold)
             }
-            .foregroundColor(.white)
 
-            // 시간 (시안: medium 14px, opacity 0.8)
+            // 시간
             if !match.time.isEmpty {
                 Text(match.time)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .fontWeight(.medium)
+                    .opacity(0.8)
             }
         }
-        .frame(height: 17)
+        .font(.system(.caption, design: .default))
     }
 }
 

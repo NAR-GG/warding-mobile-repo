@@ -25,6 +25,12 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- 위젯 딥링크: warding://widget/* -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="warding" android:host="widget" />
+            </intent-filter>
         </activity>
         <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀).
              SDK 2.x 부터 AuthCodeHandlerActivity 가 redirect 를 처리한다.
@@ -87,8 +93,25 @@
                 android:resource="@xml/schedule_widget_small_info" />
         </receiver>
 
+        <!-- 홈 화면 경기 일정 대형 위젯 (풀 캘린더) -->
+        <receiver
+            android:name=".ScheduleWidgetLargeProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/schedule_widget_large_info" />
+        </receiver>
+
         <service
             android:name=".ScheduleWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <service
+            android:name=".ScheduleWidgetLargeService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
 
