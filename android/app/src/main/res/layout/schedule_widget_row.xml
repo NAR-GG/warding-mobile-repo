@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 미니 캘린더 한 주(7일) 행: 날짜 숫자 + 경기일 dot -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:baselineAligned="false">
+    android:baselineAligned="false"
+    android:gravity="center_vertical">
 
     <!-- day0 (월) -->
     <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1">
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day0_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day0_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day0_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -23,9 +25,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day1_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day1_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day1_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -35,9 +37,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day2_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day2_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day2_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -47,9 +49,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day3_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day3_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day3_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -59,9 +61,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day4_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day4_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day4_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -71,9 +73,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day5_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
-            <ImageView android:id="@+id/day5_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FFFFFFFF" />
+            <ImageView android:id="@+id/day5_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>
@@ -83,9 +85,9 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center_horizontal">
             <TextView android:id="@+id/day6_num" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="#FF9672AC" />
-            <ImageView android:id="@+id/day6_dot" android:layout_width="4dp" android:layout_height="4dp"
-                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="1dp"
+                android:gravity="center" android:textSize="8sp" android:textStyle="bold" android:textColor="#FF9672AC" />
+            <ImageView android:id="@+id/day6_dot" android:layout_width="3dp" android:layout_height="3dp"
+                android:src="@drawable/gradient_dot" android:visibility="gone" android:layout_marginTop="0dp"
                 android:importantForAccessibility="no" />
         </LinearLayout>
     </FrameLayout>

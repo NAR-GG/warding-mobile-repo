@@ -81,9 +81,11 @@ class HomeWidgetService {
 
         if (calendarMatchIds.isNotEmpty) {
           // 캘린더와 동일한 리그/팀 필터로 상세 API 호출 (시간 정보 필요)
-          // ALL이면 주요 리그를 각각 호출해서 합침 (상세 API는 리그 1개만 받음)
+          // ALL이면 상세 API도 league=ALL 하나로 호출한다. KESPA 플레이-인 등
+          // LCK/LEC/LPL/LTA/LCP 어디에도 속하지 않는 리그의 경기가 있어서,
+          // 주요 리그만 개별 호출하면 그런 경기의 시간 정보를 못 가져온다.
           final leaguesForDetail = leagues.contains('ALL')
-              ? const ['LCK', 'LEC', 'LPL', 'LTA', 'LCP']
+              ? const ['ALL']
               : leagues;
           try {
             final allMatches = <ScheduleMatch>[];
@@ -146,8 +148,9 @@ class HomeWidgetService {
   }) async {
     try {
       final now = DateTime.now();
+      // ALL이면 상세 API도 league=ALL 하나로 호출한다 (updateCalendar와 동일한 이유).
       final leaguesForDetail = leagues.contains('ALL')
-          ? const ['LCK', 'LEC', 'LPL', 'LTA', 'LCP']
+          ? const ['ALL']
           : leagues;
       final matches = <ScheduleMatch>[];
       for (final league in leaguesForDetail) {

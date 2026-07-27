@@ -5,8 +5,13 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Shader
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -32,6 +37,18 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                 Log.e(TAG, "updateWidget failed for id=$appWidgetId", e)
             }
         }
+    }
+
+    // 사용자가 위젯 크기를 조절하거나, 런처가 최초 배치 시 디자인보다 큰 칸을 배정하면
+    // 패딩을 다시 계산해야 하므로 재렌더링한다.
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateWidget(context, appWidgetManager, appWidgetId)
     }
 
     companion object {
@@ -106,9 +123,15 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                         row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
                     }
                     MatchRole.NEXT -> {
-                        // 바로 다음 예정(또는 진행중) 경기: 브랜드 그라데이션 근사 색 (다크/라이트 동일)
-                        row.setTextColor(R.id.match_time, Color.parseColor("#E87558"))
-                        row.setTextColor(R.id.match_display, Color.parseColor("#C865C9"))
+                        // 바로 다음 예정(또는 진행중) 경기: 실제 브랜드 그라데이션 텍스트 (다크/라이트 동일)
+                        row.setViewVisibility(R.id.match_time, View.GONE)
+                        row.setViewVisibility(R.id.match_display, View.GONE)
+                        row.setViewVisibility(R.id.match_time_gradient, View.VISIBLE)
+                        row.setViewVisibility(R.id.match_display_gradient, View.VISIBLE)
+                        row.setImageViewBitmap(R.id.match_time_gradient,
+                            renderGradientTextBitmap(context, m.time, 14f, minWidthDp = 42f))
+                        row.setImageViewBitmap(R.id.match_display_gradient,
+                            renderGradientTextBitmap(context, m.display, 14f))
                     }
                     MatchRole.OTHER -> {
                         // 기본 텍스트 색
@@ -192,7 +215,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun loadTodayData(context: Context): TodayWidgetData {
+        fun loadTodayData(context: Context): TodayWidgetData {
             val prefs = getPrefs(context)
             val jsonStr = prefs.getString("today_matches", null)
                 ?: return TodayWidgetData.empty()
@@ -235,6 +258,36 @@ data class MatchDisplayResult(val rows: List<DisplayMatch>, val overflowCount: I
 private fun isFinishedStatus(status: String): Boolean {
     val s = status.lowercase()
     return s.contains("finish") || s.contains("complet") || s.contains("end")
+}
+
+// 브랜드 메인 그라데이션 (Figma: linear-gradient(90.43deg, #E87558 0.76%, #C865C9 51.53%, #791BB8 120.4%)).
+// RemoteViews의 TextView는 색상 int 하나만 받아 텍스트에 실제 그라데이션을 칠할 수 없으므로,
+// 텍스트를 비트맵에 직접 그려 넣어 RemoteViews.setImageViewBitmap 으로 대체 렌더링한다.
+// [minWidthDp] 는 같은 자리의 일반 TextView(minWidth 지정)와 폭을 맞추기 위한 값이다 —
+// 그라데이션 비트맵은 텍스트 실측 폭만큼만 그려지므로, minWidth 없이 두면 옆 행의
+// minWidth가 적용된 TextView보다 좁아져 뒤 텍스트와의 간격이 행마다 달라 보인다.
+fun renderGradientTextBitmap(context: Context, text: String, textSizeSp: Float, minWidthDp: Float = 0f): Bitmap {
+    val scaledDensity = context.resources.displayMetrics.scaledDensity
+    val density = context.resources.displayMetrics.density
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = textSizeSp * scaledDensity
+    }
+    val textWidth = paint.measureText(text).coerceAtLeast(1f)
+    val fontMetrics = paint.fontMetrics
+    val height = (fontMetrics.bottom - fontMetrics.top).coerceAtLeast(1f)
+
+    paint.shader = LinearGradient(
+        0f, 0f, textWidth, 0f,
+        intArrayOf(Color.parseColor("#E87558"), Color.parseColor("#C865C9"), Color.parseColor("#791BB8")),
+        floatArrayOf(0f, 0.43f, 0.83f),
+        Shader.TileMode.CLAMP
+    )
+
+    val bitmapWidth = maxOf(textWidth, minWidthDp * density).toInt().coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(bitmapWidth, height.toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawText(text, 0f, -fontMetrics.top, paint)
+    return bitmap
 }
 
 fun selectDisplayMatches(matches: List<TodayMatchInfo>): MatchDisplayResult {

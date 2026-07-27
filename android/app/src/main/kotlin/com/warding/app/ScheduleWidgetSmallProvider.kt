@@ -6,9 +6,10 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.RemoteViews
-import org.json.JSONObject
 import java.util.Calendar
 
 private const val TAG = "ScheduleWidgetSmall"
@@ -31,6 +32,18 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
         }
     }
 
+    // 런처가 위젯 크기를 재계산해 배정 옵션을 다시 보낼 때(리사이즈뿐 아니라, 이 기기에서는
+    // 다크/라이트 테마 전환 시에도 발생) 재렌더링해 최신 테마 색상을 반영한다.
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateWidget(context, appWidgetManager, appWidgetId)
+    }
+
     companion object {
         private fun isDarkMode(context: Context): Boolean {
             val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
@@ -43,7 +56,7 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
             appWidgetId: Int
         ) {
             val views = RemoteViews(context.packageName, R.layout.schedule_widget_small)
-            val todayData = loadTodayData(context)
+            val todayData = ScheduleWidgetProvider.loadTodayData(context)
             val isDark = isDarkMode(context)
 
             // 배경
@@ -67,47 +80,52 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.small_date_label, dateLabel)
             views.setTextColor(R.id.small_date_label, defaultTextColor)
 
-            // 경기 리스트
+            // 경기 리스트 (미디움 위젯과 동일한 선택 로직: 지난 경기 최대 1개 + 실제 카드 최대 2개)
             views.removeAllViews(R.id.small_matches_container)
             val matches = todayData.matches
-            val maxShow = 3
-            var foundNextScheduled = false
+            val displayResult = selectDisplayMatches(matches)
 
-            for (i in 0 until minOf(matches.size, maxShow)) {
-                val m = matches[i]
+            for (displayMatch in displayResult.rows) {
+                val m = displayMatch.match
                 val row = RemoteViews(context.packageName, R.layout.match_row_small)
                 row.setTextViewText(R.id.match_time, m.time)
                 row.setTextViewText(R.id.match_display, m.display)
 
-                val isFinished = m.status == "FINISHED" || m.status == "COMPLETED"
-                val isLive = m.status == "LIVE" || m.status == "IN_PROGRESS"
-                val isNext = !isFinished && !isLive && !foundNextScheduled
-
-                if (isFinished) {
-                    row.setInt(R.id.match_time, "setPaintFlags",
-                        Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
-                    row.setInt(R.id.match_display, "setPaintFlags",
-                        Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
-                    row.setTextColor(R.id.match_time, defaultTextColor)
-                    row.setTextColor(R.id.match_display, defaultTextColor)
-                    row.setInt(R.id.match_row_root, "setAlpha", 153)
-                } else if (isLive || isNext) {
-                    // LIVE or next scheduled: gradient colors (same in both modes)
-                    row.setTextColor(R.id.match_time, Color.parseColor("#E87558"))
-                    row.setTextColor(R.id.match_display, Color.parseColor("#C865C9"))
-                    if (isNext) foundNextScheduled = true
-                } else {
-                    // 기본 텍스트 색
-                    row.setTextColor(R.id.match_time, defaultTextColor)
-                    row.setTextColor(R.id.match_display, defaultTextColor)
+                when (displayMatch.role) {
+                    MatchRole.PAST -> {
+                        // 취소선 + 투명도
+                        row.setInt(R.id.match_time, "setPaintFlags",
+                            Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                        row.setInt(R.id.match_display, "setPaintFlags",
+                            Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
+                        row.setTextColor(R.id.match_time, defaultTextColor)
+                        row.setTextColor(R.id.match_display, defaultTextColor)
+                        row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
+                    }
+                    MatchRole.NEXT -> {
+                        // 바로 다음 예정(또는 진행중) 경기: 실제 브랜드 그라데이션 텍스트 (다크/라이트 동일)
+                        row.setViewVisibility(R.id.match_time, View.GONE)
+                        row.setViewVisibility(R.id.match_display, View.GONE)
+                        row.setViewVisibility(R.id.match_time_gradient, View.VISIBLE)
+                        row.setViewVisibility(R.id.match_display_gradient, View.VISIBLE)
+                        row.setImageViewBitmap(R.id.match_time_gradient,
+                            renderGradientTextBitmap(context, m.time, 14f, minWidthDp = 42f))
+                        row.setImageViewBitmap(R.id.match_display_gradient,
+                            renderGradientTextBitmap(context, m.display, 14f))
+                    }
+                    MatchRole.OTHER -> {
+                        // 기본 텍스트 색
+                        row.setTextColor(R.id.match_time, defaultTextColor)
+                        row.setTextColor(R.id.match_display, defaultTextColor)
+                    }
                 }
 
                 views.addView(R.id.small_matches_container, row)
             }
 
-            if (matches.size > maxShow) {
+            if (displayResult.overflowCount > 0) {
                 val moreRow = RemoteViews(context.packageName, R.layout.match_row_small)
-                moreRow.setTextViewText(R.id.match_time, "+${matches.size - maxShow}")
+                moreRow.setTextViewText(R.id.match_time, "+${displayResult.overflowCount}")
                 moreRow.setTextViewText(R.id.match_display, "")
                 moreRow.setTextColor(R.id.match_time, defaultTextColor)
                 views.addView(R.id.small_matches_container, moreRow)
@@ -132,28 +150,6 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
-
-        private fun loadTodayData(context: Context): TodayWidgetData {
-            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            val jsonStr = prefs.getString("today_matches", null)
-                ?: return TodayWidgetData.empty()
-            return try {
-                val json = JSONObject(jsonStr)
-                val matchArr = json.optJSONArray("matches") ?: return TodayWidgetData.empty()
-                val matches = mutableListOf<TodayMatchInfo>()
-                for (i in 0 until matchArr.length()) {
-                    val m = matchArr.optJSONObject(i) ?: continue
-                    matches.add(TodayMatchInfo(
-                        time = m.optString("time", ""),
-                        status = m.optString("status", ""),
-                        display = m.optString("display", "")
-                    ))
-                }
-                TodayWidgetData(matches)
-            } catch (e: Exception) {
-                TodayWidgetData.empty()
-            }
         }
     }
 }

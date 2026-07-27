@@ -1,5 +1,6 @@
 package com.warding.app
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -15,12 +16,16 @@ private const val TAG = "ScheduleWidgetSvc"
 class ScheduleWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
         Log.d(TAG, "onGetViewFactory called")
-        return ScheduleRemoteViewsFactory(applicationContext)
+        val appWidgetId = intent.getIntExtra(
+            AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID
+        )
+        return ScheduleRemoteViewsFactory(applicationContext, appWidgetId)
     }
 }
 
 class ScheduleRemoteViewsFactory(
-    private val context: Context
+    private val context: Context,
+    private val appWidgetId: Int
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var data = CalendarWidgetData.empty()
@@ -28,6 +33,12 @@ class ScheduleRemoteViewsFactory(
         val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         nightMode == Configuration.UI_MODE_NIGHT_YES
     }
+
+    // 요일 헤더(14dp) + widget_root 상하 패딩(12dp*2, schedule_widget.xml 기준)을 뺀
+    // 나머지를 주(week) 수로 나눈 값이 캘린더 행이 배정된 공간에 남는 공백/잘림 없이
+    // 정확히 맞아떨어지는 높이다. 최소값을 강제로 올리면(예: wrap_content 자연 높이보다
+    // 크게) 오히려 마지막 주 행이 배정된 영역 밖으로 밀려나 잘릴 수 있어 하한선을 두지 않는다.
+    private val chromeHeightDp = 14 + 24
 
     override fun onCreate() {
         Log.d(TAG, "Factory onCreate")
@@ -43,8 +54,26 @@ class ScheduleRemoteViewsFactory(
 
     override fun getCount(): Int = data.weekCount()
 
+    private fun rowHeightPx(): Int {
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 0
+        val options = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId)
+        val grantedHeightDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+            ?.takeIf { it > 0 }
+            ?: options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
+        if (grantedHeightDp <= 0) return 0
+        val gridHeightDp = (grantedHeightDp - chromeHeightDp).coerceAtLeast(0)
+        val weeks = data.weekCount().coerceAtLeast(1)
+        val rowHeightDp = gridHeightDp / weeks
+        val density = context.resources.displayMetrics.density
+        return (rowHeightDp * density).toInt()
+    }
+
     override fun getViewAt(position: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.schedule_widget_row)
+        val rowHeight = rowHeightPx()
+        if (rowHeight > 0) {
+            views.setInt(R.id.row_root, "setMinimumHeight", rowHeight)
+        }
         val week = position
         val firstWd = data.firstWeekday()
         val dim = data.daysInMonth()
@@ -55,7 +84,7 @@ class ScheduleRemoteViewsFactory(
         ) now.get(Calendar.DAY_OF_MONTH) else -1
 
         // 색상 상수
-        val defaultDayColor = if (isDark) Color.WHITE else Color.BLACK
+        val defaultDayColor = if (isDark) Color.parseColor("#FFFFFFFF") else Color.parseColor("#FF000000")
         val sundayColor = if (isDark) Color.parseColor("#FF9672AC") else Color.parseColor("#FF6D2E92")
         val noMatchColor = if (isDark) Color.parseColor("#FFA6A7AB") else Color.parseColor("#FFA6A7AB")
         val nonCurrentMonthColor = if (isDark) Color.parseColor("#80FFFFFF") else Color.parseColor("#80000000")
