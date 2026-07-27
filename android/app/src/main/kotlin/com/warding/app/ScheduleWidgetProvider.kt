@@ -232,10 +232,15 @@ data class DisplayMatch(val match: TodayMatchInfo, val role: MatchRole)
 
 data class MatchDisplayResult(val rows: List<DisplayMatch>, val overflowCount: Int)
 
+private fun isFinishedStatus(status: String): Boolean {
+    val s = status.lowercase()
+    return s.contains("finish") || s.contains("complet") || s.contains("end")
+}
+
 fun selectDisplayMatches(matches: List<TodayMatchInfo>): MatchDisplayResult {
     val sorted = matches.sortedBy { it.time }
-    val finished = sorted.filter { it.status == "FINISHED" || it.status == "COMPLETED" }
-    val upcoming = sorted.filter { it.status != "FINISHED" && it.status != "COMPLETED" }
+    val finished = sorted.filter { isFinishedStatus(it.status) }
+    val upcoming = sorted.filter { !isFinishedStatus(it.status) }
 
     // 지난 경기는 가장 최근에 끝난 1개만 노출한다.
     val pastShown = finished.lastOrNull()
