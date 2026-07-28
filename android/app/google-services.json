@@ -22,11 +22,27 @@
           }
         },
         {
+          "client_id": "12814317442-8tphv7lfdltgoen13cgmlauo7tsurmr2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warding.app",
+            "certificate_hash": "0de0c216b35a5519f788959051acd159381d0ff5"
+          }
+        },
+        {
           "client_id": "12814317442-bchonidmie13krcae3i7mhp3c1nfk8ig.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.warding.app",
             "certificate_hash": "0cd7205551e80383a34d91f3fa150a94e04520d5"
+          }
+        },
+        {
+          "client_id": "12814317442-kanc4a01idjnbccub42mic5fjjfj35dq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warding.app",
+            "certificate_hash": "52fd5bb55aee8d371f40d1a0ec044d671fcdde30"
           }
         },
         {
@@ -47,10 +63,10 @@
               "client_type": 3
             },
             {
-              "client_id": "12814317442-hp6ch65kon7n914t9188c6d2pogu22ha.apps.googleusercontent.com",
+              "client_id": "12814317442-b1s7k1981gv8qvgoglhnds62frsvj39p.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.warding.app"
+                "bundle_id": "gg.nar.warding"
               }
             }
           ]
