@@ -57,6 +57,15 @@ class AuthService {
 
   /// 네이버 SDK로 로그인 → 받은 access token을 백엔드로 전달 → 자체 JWT 저장.
   Future<AuthResult> signInWithNaver() async {
+    // SDK가 이전 로그인 세션을 캐싱해두면, 로그인 화면에서 다른 계정으로
+    // 전환해도 logIn()이 새로 인증하지 않고 캐시된 토큰을 그대로 반환한다.
+    // 매번 새 계정으로 제대로 인증되도록 시도 전에 기존 세션을 정리한다.
+    try {
+      await FlutterNaverLogin.logOut();
+    } catch (_) {
+      // 세션이 없어 로그아웃할 게 없어도 무시하고 로그인 진행.
+    }
+
     final NaverLoginResult result = await FlutterNaverLogin.logIn();
     debugPrint('[NAVER] status=${result.status} error=${result.errorMessage}');
 
