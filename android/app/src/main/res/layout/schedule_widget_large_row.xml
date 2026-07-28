@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 대형 위젯 캘린더 한 주(7일) 행: 날짜 숫자 + 경기 칩(2개) + 추가 표시 + 셀 구분선 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/large_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:baselineAligned="false">
+
+    <!-- Day 0 (월) -->
+    <FrameLayout
+        android:id="@+id/large_day0_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day0_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day0_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day0_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day0_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day0_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 1 (화) -->
+    <FrameLayout
+        android:id="@+id/large_day1_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day1_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day1_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day1_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day1_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day1_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 2 (수) -->
+    <FrameLayout
+        android:id="@+id/large_day2_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day2_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day2_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day2_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day2_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day2_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 3 (목) -->
+    <FrameLayout
+        android:id="@+id/large_day3_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day3_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day3_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day3_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day3_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day3_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 4 (금) -->
+    <FrameLayout
+        android:id="@+id/large_day4_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day4_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day4_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day4_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day4_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day4_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 5 (토) -->
+    <FrameLayout
+        android:id="@+id/large_day5_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day5_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day5_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day5_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day5_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/large_day5_border"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="#80A6A7AB"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Day 6 (일) — no right border -->
+    <FrameLayout
+        android:id="@+id/large_day6_cell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:minHeight="54dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp">
+            <TextView
+                android:id="@+id/large_day6_num"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#FF9672AC"
+                android:gravity="center" />
+            <TextView
+                android:id="@+id/large_day6_chip"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day6_chip2"
+                android:layout_width="match_parent"
+                android:layout_height="13dp"
+                android:textSize="8sp"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:singleLine="true"
+                android:background="@drawable/large_chip_bg"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:layout_marginTop="1dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/large_day6_more"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+</LinearLayout>

@@ -17,14 +17,37 @@ import 'component/schedule_header.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
 class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+  const ScheduleScreen({super.key, this.widgetAction, this.initialMonth});
+
+  /// 위젯 딥링크 액션: 'prev' (이전 달), 'next' (다음 달), 'filter' (필터 모달).
+  final String? widgetAction;
+
+  /// 위젯에서 이동할 타겟 월. null 이면 현재 달.
+  final DateTime? initialMonth;
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final ScheduleViewModel _viewModel = ScheduleViewModel();
+  late final ScheduleViewModel _viewModel = ScheduleViewModel(
+    initialMonth: widget.initialMonth,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    // 위젯 딥링크 액션 처리: 필터 복원 완료 후 모달 열기
+    if (widget.widgetAction == 'filter') {
+      void listener() {
+        if (!_viewModel.isLoading) {
+          _viewModel.removeListener(listener);
+          if (mounted) _openFilter();
+        }
+      }
+      _viewModel.addListener(listener);
+    }
+  }
 
   @override
   void dispose() {

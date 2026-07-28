@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../util/home_widget_service.dart';
 import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_input.dart';
@@ -60,6 +61,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _onDone() async {
     final ok = await _viewModel.save();
     if (!ok || !mounted) return;
+    // 응원팀 변경 시 위젯에 즉시 반영 (완료까지 대기)
+    await HomeWidgetService.refreshFromApi();
+    if (!mounted) return;
     Navigator.of(context).pop(true);
   }
 

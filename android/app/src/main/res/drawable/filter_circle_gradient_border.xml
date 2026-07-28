@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 그라데이션 보더: 외부 36dp 그라데이션 원 + 내부 32dp 다크 원 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 외부 그라데이션 (근사: ring stroke) -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#FFE87558"
+                android:centerColor="#FFC865C9"
+                android:endColor="#FF791BB8"
+                android:type="sweep" />
+            <size android:width="36dp" android:height="36dp" />
+        </shape>
+    </item>
+    <!-- 내부 다크 원 -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FF1F2024" />
+        </shape>
+    </item>
+</layer-list>
