@@ -51,7 +51,20 @@ class AuthService {
 
   /// 카카오 SDK로 로그인 → 받은 access token을 백엔드로 전달 → 자체 JWT 저장.
   Future<AuthResult> signInWithKakao() async {
-    final OAuthToken token = await _loginWithKakao();
+    final OAuthToken token;
+    try {
+      token = await _loginWithKakao();
+    } on AuthCancelledException {
+      rethrow;
+    } catch (e) {
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'kakaoSdkLogin',
+        reason: e.runtimeType.toString(),
+        error: e,
+      );
+      rethrow;
+    }
     return _exchangeWithBackend(ApiConfig.kakaoLoginUrl, token.accessToken);
   }
 
@@ -66,7 +79,18 @@ class AuthService {
       // 세션이 없어 로그아웃할 게 없어도 무시하고 로그인 진행.
     }
 
-    final NaverLoginResult result = await FlutterNaverLogin.logIn();
+    final NaverLoginResult result;
+    try {
+      result = await FlutterNaverLogin.logIn();
+    } catch (e) {
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'naverSdkLogin',
+        reason: e.runtimeType.toString(),
+        error: e,
+      );
+      rethrow;
+    }
     debugPrint('[NAVER] status=${result.status} error=${result.errorMessage}');
 
     if (result.status != NaverLoginStatus.loggedIn) {
@@ -75,6 +99,11 @@ class AuthService {
       if (message.toLowerCase().contains('cancel')) {
         throw const AuthCancelledException();
       }
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'naverSdkLogin',
+        reason: 'status_${result.status.name}',
+      );
       throw Exception('네이버 로그인 실패: $message');
     }
 
@@ -85,6 +114,11 @@ class AuthService {
       token = await FlutterNaverLogin.getCurrentAccessToken();
     }
     if (token.accessToken.isEmpty) {
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'naverSdkLogin',
+        reason: 'empty_token',
+      );
       throw Exception('네이버 로그인 응답에 access token이 없습니다');
     }
 
@@ -108,11 +142,22 @@ class AuthService {
       if (error.code == GoogleSignInExceptionCode.canceled) {
         throw const AuthCancelledException();
       }
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'googleSdkLogin',
+        reason: error.code.name,
+        error: error,
+      );
       rethrow;
     }
 
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'googleSdkLogin',
+        reason: 'empty_idToken',
+      );
       throw Exception('구글 로그인 응답에 idToken이 없습니다');
     }
 
@@ -139,11 +184,22 @@ class AuthService {
       if (error.code == AuthorizationErrorCode.canceled) {
         throw const AuthCancelledException();
       }
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'appleSdkLogin',
+        reason: error.code.name,
+        error: error,
+      );
       rethrow;
     }
 
     final identityToken = credential.identityToken;
     if (identityToken == null || identityToken.isEmpty) {
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'appleSdkLogin',
+        reason: 'empty_identityToken',
+      );
       throw Exception('애플 로그인 응답에 identityToken이 없습니다');
     }
 

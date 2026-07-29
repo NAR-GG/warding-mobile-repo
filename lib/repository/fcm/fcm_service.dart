@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../config/app_globals.dart';
 import '../../screens/match_detail/match_detail_screen.dart';
 import '../../screens/subscription/subscription_screen.dart';
+import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
 import '../notification/live_match_notification_store.dart';
 import '../notification/solo_rank_notification_store.dart';
@@ -106,7 +107,14 @@ class FcmService {
     String? token;
     try {
       token = await _messaging.getToken();
+      SentryLogger.info(module: 'FCM', eventName: 'getToken');
     } catch (e) {
+      SentryLogger.warning(
+        module: 'FCM',
+        eventName: 'getToken',
+        reason: e.runtimeType.toString(),
+        error: e,
+      );
       debugPrint('[FCM] 토큰 발급 실패(시뮬레이터/APNs 미설정 가능): $e');
     }
     // 테스트용: 이 토큰을 Firebase Console > Cloud Messaging > 테스트 메시지에 붙여
@@ -128,7 +136,14 @@ class FcmService {
         fcmToken: token,
         platform: _platform,
       );
+      SentryLogger.info(module: 'FCM', eventName: 'registerToken');
     } catch (e) {
+      SentryLogger.warning(
+        module: 'FCM',
+        eventName: 'registerToken',
+        reason: e.runtimeType.toString(),
+        error: e,
+      );
       // 토큰 등록 실패가 로그인 흐름을 막지 않도록 삼킨다.
       debugPrint('[FCM] 토큰 등록 실패: $e');
     }
@@ -139,32 +154,63 @@ class FcmService {
   /// 중복을 막기 위해 Android 에서만 직접 표시한다.
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     debugPrint('[FCM] 포그라운드 메시지: ${message.notification?.title}');
+    final type = message.data['type'] as String? ?? 'unknown';
     // 솔랭/라이브 경기 알림이면 마이구독 피드용으로 기기에 저장.
-    await SoloRankNotificationStore.instance.addFromFcmData(message.data);
-    await LiveMatchNotificationStore.instance.addFromFcmData(
-      message.data,
-      title: message.notification?.title,
-      body: message.notification?.body,
-    );
-    if (!Platform.isAndroid) return;
+    try {
+      await SoloRankNotificationStore.instance.addFromFcmData(message.data);
+      await LiveMatchNotificationStore.instance.addFromFcmData(
+        message.data,
+        title: message.notification?.title,
+        body: message.notification?.body,
+      );
+    } catch (e) {
+      SentryLogger.error(
+        module: 'FCM',
+        eventName: 'saveNotification',
+        reason: e.runtimeType.toString(),
+        throwable: e,
+      );
+    }
+    if (!Platform.isAndroid) {
+      SentryLogger.info(
+        module: 'FCM',
+        eventName: 'receiveNotification',
+        extra: {'type': type},
+      );
+      return;
+    }
     final notification = message.notification;
     if (notification == null) return;
-    await _localNotifications.show(
-      id: notification.hashCode,
-      title: notification.title,
-      body: notification.body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channel.id,
-          _channel.name,
-          channelDescription: _channel.description,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@drawable/ic_stat_warding',
+    try {
+      await _localNotifications.show(
+        id: notification.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channel.id,
+            _channel.name,
+            channelDescription: _channel.description,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_stat_warding',
+          ),
         ),
-      ),
-      payload: jsonEncode(message.data),
-    );
+        payload: jsonEncode(message.data),
+      );
+      SentryLogger.info(
+        module: 'FCM',
+        eventName: 'receiveNotification',
+        extra: {'type': type},
+      );
+    } catch (e) {
+      SentryLogger.error(
+        module: 'FCM',
+        eventName: 'showNotification',
+        reason: e.runtimeType.toString(),
+        throwable: e,
+      );
+    }
   }
 
   /// 로컬 알림 탭 → payload(JSON)에서 데이터를 꺼내 딥링크 처리.
@@ -174,6 +220,12 @@ class FcmService {
       final data = jsonDecode(payload) as Map<String, dynamic>;
       _navigateFromData(data);
     } catch (e) {
+      SentryLogger.error(
+        module: 'FCM',
+        eventName: 'parsePayload',
+        reason: e.runtimeType.toString(),
+        throwable: e,
+      );
       debugPrint('[FCM] payload 파싱 실패: $e');
     }
   }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../util/sentry_logger.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
@@ -29,6 +30,12 @@ class MatchDetailRepository {
       }
       return null;
     } catch (e) {
+      SentryLogger.error(
+        module: 'Logic',
+        eventName: 'fetchMatch_parse',
+        reason: e.runtimeType.toString(),
+        throwable: e,
+      );
       debugPrint('[MatchDetail] fetchMatch failed: $e');
       return null;
     }
@@ -63,6 +70,12 @@ class MatchDetailRepository {
           debugPrint('[MatchDetail] matchInfo from games: '
               '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}');
         } catch (e) {
+          SentryLogger.error(
+            module: 'Logic',
+            eventName: 'fetchGames_matchParse',
+            reason: e.runtimeType.toString(),
+            throwable: e,
+          );
           debugPrint('[MatchDetail] matchInfo parse from games failed: $e');
         }
       } else {
