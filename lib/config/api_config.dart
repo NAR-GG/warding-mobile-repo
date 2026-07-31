@@ -263,6 +263,16 @@ class ApiConfig {
   static String gameEventsUrl(String gameId) =>
       '$apiBaseUrl/mobile/live/games/$gameId/events';
 
+  // ── 공지사항 (인증 불필요) ─────────────────────────────────────────
+
+  /// 공지사항 목록 (발행분만, 고정 공지 먼저, 최신순).
+  static String noticesUrl({int page = 0, int size = 20}) =>
+      '$apiBaseUrl/notices?page=$page&size=$size';
+
+  /// 캘린더 상단 띠배너용 공지 1건 (`promote_until > now`인 최신 발행 공지).
+  /// 없으면 204.
+  static String get promotedNoticeUrl => '$apiBaseUrl/notices/promoted';
+
   // ── FCM 기기 토큰 (인증 필요) ──────────────────────────────────────
 
   /// FCM 토큰 등록·갱신 (POST {fcmToken, platform}).

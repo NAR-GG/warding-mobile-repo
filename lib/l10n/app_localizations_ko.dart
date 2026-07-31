@@ -439,6 +439,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get customerService => '고객센터/문의';
 
   @override
+  String get notice => '공지사항';
+
+  @override
+  String get noticeAdmin => '관리자';
+
+  @override
+  String get noticeEmpty => '공지사항이 없어요';
+
+  @override
+  String get noticeLoadFailed => '공지사항을 불러오지 못했어요';
+
+  @override
+  String get noticePinned => '📌 고정';
+
+  @override
+  String get noticeDraft => '임시저장';
+
+  @override
   String get narWebsite => '나르지지 웹사이트';
 
   @override
