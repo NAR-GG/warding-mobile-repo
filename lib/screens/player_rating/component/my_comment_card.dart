@@ -10,7 +10,7 @@ import '../../../util/app_image.dart';
 /// 선수 평점 상세 — 내가 남긴 평점·댓글 카드.
 ///
 /// narLine2 테두리 + 라운드 10 카드. 상단 헤더('내 댓글' + 수정/삭제 아이콘),
-/// 본문(프로필·닉네임·구독뱃지·시간 / 별점). 프로필·구독뱃지(팀 이미지)는 비워 둔다.
+/// 본문(프로필·닉네임·구독뱃지·시간 / 별점). 프로필은 없으면 기본 person 자산, 구독뱃지(팀 이미지)는 비워 둔다.
 class MyCommentCard extends StatelessWidget {
   const MyCommentCard({
     super.key,
@@ -32,7 +32,7 @@ class MyCommentCard extends StatelessWidget {
   /// 내가 남긴 코멘트 내용. 없으면 표시하지 않는다.
   final String? comment;
 
-  /// 현재 유저 프로필 이미지 URL. 없으면 원형 placeholder.
+  /// 현재 유저 프로필 이미지 URL. 없으면 기본 person 자산.
   final String? profileImageUrl;
 
   /// 현재 유저 응원팀 로고 URL. 없으면 원형 placeholder.
@@ -118,8 +118,8 @@ class MyCommentCard extends StatelessWidget {
                       Expanded(
                         child: Row(
                           children: [
-                            // 프로필 이미지 37×37. 없으면 원형 placeholder.
-                            _CircleImage(url: profileImageUrl, size: 37 * scale),
+                            // 프로필 이미지 32×32. 없으면 기본 person 자산.
+                            _ProfileImage(url: profileImageUrl, size: 32 * scale),
                             SizedBox(width: 5 * scale),
                             Flexible(
                               child: Text(
@@ -207,6 +207,36 @@ class _CircleImage extends StatelessWidget {
         fit: BoxFit.cover,
         fadeInDuration: const Duration(milliseconds: 150),
         errorWidget: (_, _, _) => placeholder,
+      ),
+    );
+  }
+}
+
+/// 작성자 프로필 이미지(없거나 로드 실패 시 기본 person 자산으로 폴백).
+class _ProfileImage extends StatelessWidget {
+  const _ProfileImage({required this.url, required this.size});
+
+  final String? url;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Image.asset(
+      'assets/images/person.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+    );
+    final resolved = resolveImageUrl(url);
+    if (resolved == null || resolved.isEmpty) return ClipOval(child: fallback);
+    return ClipOval(
+      child: CachedNetworkImage(
+        imageUrl: resolved,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        fadeInDuration: const Duration(milliseconds: 150),
+        errorWidget: (_, _, _) => fallback,
       ),
     );
   }

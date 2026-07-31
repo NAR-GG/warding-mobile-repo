@@ -28,7 +28,7 @@ class PlayerComment {
   /// 코멘트 본문. 없으면 별점만 노출.
   final String? comment;
 
-  /// 작성자 프로필 이미지 URL. 없으면 placeholder.
+  /// 작성자 프로필 이미지 URL. 없으면 기본 person 자산.
   final String? profileImageUrl;
 
   /// 작성자 응원팀 이미지 URL(구독뱃지). 없으면 placeholder.
@@ -39,7 +39,7 @@ class PlayerComment {
 ///
 /// 상단 헤더: 좌측 '평점·코멘트', 우측 '총 N개'.
 /// 그 아래 코멘트 카드(프로필·닉네임·시간 / 별점 / 코멘트)를 narLine2 하단선으로 구분해 쌓는다.
-/// 프로필 이미지와 구독뱃지(팀 이미지)는 비워 둔다(추후 연결).
+/// 프로필 이미지는 없으면 기본 person 자산, 구독뱃지(팀 이미지)는 비워 둔다(추후 연결).
 class PlayerCommentSection extends StatelessWidget {
   const PlayerCommentSection({
     super.key,
@@ -119,7 +119,7 @@ class _CommentTile extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    _circleImage(comment.profileImageUrl, 37 * scale),
+                    _profileImage(comment.profileImageUrl, 32 * scale),
                     SizedBox(width: 5 * scale),
                     Flexible(
                       child: Text(
@@ -193,6 +193,27 @@ Widget _circleImage(String? url, double size) {
       fit: BoxFit.cover,
       fadeInDuration: const Duration(milliseconds: 150),
       errorWidget: (_, _, _) => placeholder,
+    ),
+  );
+}
+
+/// 작성자 프로필 이미지. [url] 이 없거나 로드 실패하면 기본 person 자산으로 폴백.
+Widget _profileImage(String? url, double size) {
+  final fallback = Image.asset(
+    'assets/images/person.png',
+    width: size,
+    height: size,
+    fit: BoxFit.cover,
+  );
+  if (url == null || url.isEmpty) return ClipOval(child: fallback);
+  return ClipOval(
+    child: CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      fadeInDuration: const Duration(milliseconds: 150),
+      errorWidget: (_, _, _) => fallback,
     ),
   );
 }
