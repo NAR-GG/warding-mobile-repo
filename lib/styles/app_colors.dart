@@ -163,4 +163,7 @@ class AppColors {
 
   // 공용 입력 필드 — 기본 테두리(#424242).
   static const Color narInputBorder = Color(0xFF424242);
+
+  // 공지 본문 인라인 링크 (다크 배경 위 blue/3).
+  static const Color narLinkText = Color(0xFF74C0FC);
 }

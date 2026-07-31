@@ -871,6 +871,42 @@ abstract class AppLocalizations {
   /// **'고객센터/문의'**
   String get customerService;
 
+  /// No description provided for @notice.
+  ///
+  /// In ko, this message translates to:
+  /// **'공지사항'**
+  String get notice;
+
+  /// No description provided for @noticeAdmin.
+  ///
+  /// In ko, this message translates to:
+  /// **'관리자'**
+  String get noticeAdmin;
+
+  /// No description provided for @noticeEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'공지사항이 없어요'**
+  String get noticeEmpty;
+
+  /// No description provided for @noticeLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'공지사항을 불러오지 못했어요'**
+  String get noticeLoadFailed;
+
+  /// No description provided for @noticePinned.
+  ///
+  /// In ko, this message translates to:
+  /// **'📌 고정'**
+  String get noticePinned;
+
+  /// No description provided for @noticeDraft.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장'**
+  String get noticeDraft;
+
   /// No description provided for @narWebsite.
   ///
   /// In ko, this message translates to:

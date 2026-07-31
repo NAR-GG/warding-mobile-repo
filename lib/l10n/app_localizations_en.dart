@@ -451,6 +451,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customerService => 'Support/Inquiry';
 
   @override
+  String get notice => 'Notices';
+
+  @override
+  String get noticeAdmin => 'Admin';
+
+  @override
+  String get noticeEmpty => 'No notices yet';
+
+  @override
+  String get noticeLoadFailed => 'Couldn\'t load notices';
+
+  @override
+  String get noticePinned => '📌 Pinned';
+
+  @override
+  String get noticeDraft => 'Draft';
+
+  @override
   String get narWebsite => 'NAR.GG Website';
 
   @override

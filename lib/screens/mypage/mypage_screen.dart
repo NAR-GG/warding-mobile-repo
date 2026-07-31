@@ -20,6 +20,7 @@ import 'component/subscription_alarm_section.dart';
 import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_review/my_review_screen.dart';
+import '../notice/notice_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -209,6 +210,18 @@ class _MypageScreenState extends State<MypageScreen> {
                           await _viewModel.load();
                         },
                       ),
+                    ),
+                    SizedBox(height: 16 * scale),
+                    _MypageLinkRow(
+                      title: AppLocalizations.of(context)!.notice,
+                      scale: scale,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const NoticeScreen(),
+                          ),
+                        );
+                      },
                     ),
                     SizedBox(height: 16 * scale),
                     _MypageLinkRow(

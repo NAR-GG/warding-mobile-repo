@@ -5,10 +5,13 @@ import 'package:flutter/foundation.dart';
 import '../../l10n/app_strings.dart';
 
 import '../../model/match_calendar_day.dart';
+import '../../model/notice.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
+import '../../repository/notice/notice_repository.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
+import '../../repository/preference/notice_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 import '../../util/home_widget_service.dart';
@@ -24,6 +27,8 @@ class ScheduleViewModel extends ChangeNotifier {
     FilterPreferenceRepository? filterPreferences,
     AuthService? auth,
     OnboardingRepository? onboarding,
+    NoticeRepository? notices,
+    NoticePreferenceRepository? noticePreferences,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
        _repository = repository ?? ScheduleRepository.instance,
        _teamPreferences =
@@ -31,9 +36,13 @@ class ScheduleViewModel extends ChangeNotifier {
        _filterPreferences =
            filterPreferences ?? FilterPreferenceRepository.instance,
        _auth = auth ?? AuthService.instance,
-       _onboarding = onboarding ?? OnboardingRepository.instance {
+       _onboarding = onboarding ?? OnboardingRepository.instance,
+       _notices = notices ?? NoticeRepository.instance,
+       _noticePreferences =
+           noticePreferences ?? NoticePreferenceRepository.instance {
     _init();
     _loadPreferredTeam();
+    _loadPromotedNotice();
   }
 
   final ScheduleRepository _repository;
@@ -41,6 +50,44 @@ class ScheduleViewModel extends ChangeNotifier {
   final FilterPreferenceRepository _filterPreferences;
   final AuthService _auth;
   final OnboardingRepository _onboarding;
+  final NoticeRepository _notices;
+  final NoticePreferenceRepository _noticePreferences;
+
+  // ── 캘린더 상단 공지 띠배너 ─────────────────────────────────────
+
+  List<Notice> _promotedNotices = const [];
+  Set<int> _dismissedNoticeIds = const {};
+
+  /// 띠배너에 노출할 공지 — 닫지 않은 것 중 최신 발행. null 이면 배너 미표시.
+  Notice? get promotedNotice {
+    for (final notice in _promotedNotices) {
+      if (!_dismissedNoticeIds.contains(notice.id)) return notice;
+    }
+    return null;
+  }
+
+  /// 배너 공지 목록을 불러온다. ✕로 닫았던 공지는 건너뛴다.
+  /// 실패해도 캘린더 화면 자체는 정상 동작해야 하므로 조용히 무시한다.
+  Future<void> _loadPromotedNotice() async {
+    try {
+      final notices = await _notices.fetchPromoted();
+      if (notices.isEmpty) return;
+      _dismissedNoticeIds = await _noticePreferences.loadDismissedIds();
+      _promotedNotices = notices;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[Schedule] 배너 공지 조회 실패: $e');
+    }
+  }
+
+  /// 띠배너 ✕ — 해당 공지를 닫음 처리하고 다음 안 닫은 배너가 있으면 이어서 보여준다.
+  void dismissPromotedNotice() {
+    final notice = promotedNotice;
+    if (notice == null) return;
+    _dismissedNoticeIds = {..._dismissedNoticeIds, notice.id};
+    notifyListeners();
+    unawaited(_noticePreferences.addDismissedId(notice.id));
+  }
 
   /// 마지막 사용 필터를 복원한 뒤 첫 캘린더를 조회한다.
   /// 저장값이 없으면(첫 실행) 기본값 그대로 '전체'.
