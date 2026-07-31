@@ -13,6 +13,7 @@
   "select": "Select",
   "noMatches": "No matches found",
   "setInProgress": "SET {setNumber} In Progress",
+  "setWinner": "SET {setNumber} {teamCode} Win",
   "today": "Today",
   "yesterday": "Yesterday",
   "tomorrow": "Tomorrow",
@@ -30,6 +31,8 @@
 
   "spoilerBlock": "Spoiler Block",
   "clickToSeeScore": "Tap to reveal score",
+  "spoilerPreventionOn": "Spoiler Protection ON",
+  "spoilerPreventionOff": "Spoiler Protection OFF",
 
   "weekdayMon": "Mon",
   "weekdayTue": "Tue",

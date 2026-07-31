@@ -13,6 +13,7 @@ class SubscribedRatingBanner extends StatelessWidget {
   const SubscribedRatingBanner({
     super.key,
     required this.teamName,
+    this.teamCode = '',
     required this.playerName,
     this.onRate,
     this.scale = 1,
@@ -20,6 +21,10 @@ class SubscribedRatingBanner extends StatelessWidget {
 
   /// 선수 소속 팀 이름(예: 'T1').
   final String teamName;
+
+  /// playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답
+  /// (예: playerName='KRX Frog', teamName='Kiwoom Drx') 의 중복 표기 판별에 쓴다.
+  final String teamCode;
 
   /// 선수 이름(예: 'Faker').
   final String playerName;
@@ -32,12 +37,7 @@ class SubscribedRatingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    // player.name 이 이미 '팀 선수'(예: 'T1 Peyz') 형태면 팀명을 덧붙이지 않는다
-    // (안 그러면 'T1 T1 Peyz' 처럼 팀명이 중복된다).
-    final displayName =
-        (teamName.isEmpty || playerName.startsWith('$teamName '))
-            ? playerName
-            : '$teamName $playerName';
+    final displayName = playerName.trim();
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent, // #101113

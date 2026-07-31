@@ -18,9 +18,11 @@ class MatchDetailViewModel extends ChangeNotifier {
   MatchDetailViewModel({
     required this.matchId,
     this.initialMatch,
+    int initialTabIndex = 0,
     MatchDetailRepository? repository,
     RatingRepository? ratingRepository,
   })  : _matchInfo = initialMatch,
+        _activeTab = initialTabIndex,
         _repository = repository ?? MatchDetailRepository.instance,
         _ratingRepository = ratingRepository ?? RatingRepository.instance;
 
@@ -66,6 +68,14 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 보고 있으면 false (예: 1세트 종료 후 2세트 시작 전 1세트 선택).
   bool get isCurrentSetLive => currentSetStatus == MatchGameStatus.live;
 
+  /// 현재 선택된 세트를 이긴 팀의 teamCode. 미해석이거나 진행 전이면 null.
+  String? get currentSetWinnerTeamCode {
+    for (final g in _games) {
+      if (g.gameOrder == _currentSet) return g.winnerTeamCode;
+    }
+    return null;
+  }
+
   /// 현재 선택된 세트의 다시보기 VOD URL. 없으면 null.
   String? get currentSetVodUrl {
     for (final g in _games) {
@@ -102,6 +112,18 @@ class MatchDetailViewModel extends ChangeNotifier {
   String? _ratingsError;
   String? get ratingsError => _ratingsError;
 
+  // ── 탭 지연 로딩 ────────────────────────────
+  // 세 탭(챔피언 픽·라이브 이벤트·선수 평점)을 진입 즉시 한꺼번에 로드하면
+  // 화면에 보이지도 않는 탭의 요청이 활성 탭 로딩과 대역폭을 다퉈 체감 속도가
+  // 떨어진다. 활성 탭 데이터만 즉시 로드하고, 나머지는 실제로 그 탭으로
+  // 전환할 때(= [setActiveTab]) 처음 한 번만 로드한다. 세트를 바꾸면
+  // [selectSet] 이 요청 여부를 초기화해 다시 전환 시 새 세트로 로드한다.
+  int _activeTab;
+  int get activeTab => _activeTab;
+  bool _championRequested = false;
+  bool _eventsRequested = false;
+  bool _ratingsRequested = false;
+
   bool _disposed = false;
 
   @override
@@ -114,6 +136,13 @@ class MatchDetailViewModel extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// 세트 목록(games) 조회 중 여부.
+  /// 이 목록이 오기 전엔 [currentSetStatus] 가 기본값(SCHEDULED)으로 잡혀
+  /// 실제로는 이미 시작·종료된 경기인데도 탭들이 잠금 안내를 잠깐 보여줄 수 있다.
+  /// 화면은 이 플래그가 true 인 동안 잠금 안내 대신 스켈레톤을 보여줘야 한다.
+  bool _loadingGames = false;
+  bool get loadingGames => _loadingGames;
+
   /// 화면 진입 시 호출. 세트 목록 → 현재 세트 데이터 로드.
   Future<void> load() async {
     await _loadGames();
@@ -121,6 +150,8 @@ class MatchDetailViewModel extends ChangeNotifier {
   }
 
   Future<void> _loadGames() async {
+    _loadingGames = true;
+    _safeNotify();
     // games 로드와 matchInfo 로드를 분리해 fetchGames 실패 시에도 matchInfo 로드를 시도한다.
     try {
       final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
@@ -146,6 +177,7 @@ class MatchDetailViewModel extends ChangeNotifier {
         } catch (_) {}
       }
     }
+    _loadingGames = false;
     _safeNotify();
   }
 
@@ -169,24 +201,72 @@ class MatchDetailViewModel extends ChangeNotifier {
     return games.first.gameOrder;
   }
 
-  /// 세트 변경. 해당 세트의 챔피언 픽·라이브 이벤트를 다시 로드한다.
+  /// 세트 변경. 활성 탭의 데이터만 즉시 다시 로드한다(나머지는 지연 로딩 재적용).
   Future<void> selectSet(int setNumber) async {
     if (setNumber == _currentSet) return;
     _currentSet = setNumber;
-    // 이전 세트 데이터 비우고 로딩 표시.
+    // 이전 세트 데이터 비우고 요청 여부도 초기화 — 다른 탭은 다시 전환할 때 로드.
     _championPick = null;
     _liveEventsData = null;
     _ratings = null;
+    _championRequested = false;
+    _eventsRequested = false;
+    _ratingsRequested = false;
     _safeNotify();
     await _loadCurrentSet();
   }
 
-  Future<void> _loadCurrentSet() async {
-    await Future.wait([
-      _loadChampionPick(),
-      _loadLiveEvents(),
-      _loadRatings(),
-    ]);
+  /// 진입 시(또는 세트 변경 후) 현재 활성 탭의 데이터만 로드한다.
+  Future<void> _loadCurrentSet() => _ensureTabLoaded(_activeTab);
+
+  /// 탭 전환. 이미 로드했던 탭이면 재요청하지 않는다.
+  void setActiveTab(int index) {
+    if (_activeTab == index) return;
+    _activeTab = index;
+    _ensureTabLoaded(index);
+  }
+
+  Future<void> _ensureTabLoaded(int index) {
+    switch (index) {
+      case 0:
+        return ensureChampionPickLoaded();
+      case 1:
+        return ensureLiveEventsLoaded();
+      case 2:
+        return ensureRatingsLoaded();
+      default:
+        return Future.value();
+    }
+  }
+
+  /// 챔피언 픽 탭 데이터를 아직 요청한 적 없으면 로드한다.
+  /// 세트가 SCHEDULED(경기 전)면 화면이 잠금 안내만 보여주므로 요청하지 않는다.
+  Future<void> ensureChampionPickLoaded() {
+    if (_championRequested || currentSetStatus == MatchGameStatus.scheduled) {
+      return Future.value();
+    }
+    _championRequested = true;
+    return _loadChampionPick();
+  }
+
+  /// 라이브 이벤트 탭 데이터를 아직 요청한 적 없으면 로드한다.
+  /// 세트가 SCHEDULED(경기 전)면 화면이 잠금 안내만 보여주므로 요청하지 않는다.
+  Future<void> ensureLiveEventsLoaded() {
+    if (_eventsRequested || currentSetStatus == MatchGameStatus.scheduled) {
+      return Future.value();
+    }
+    _eventsRequested = true;
+    return _loadLiveEvents();
+  }
+
+  /// 선수 평점 탭 데이터를 아직 요청한 적 없으면 로드한다.
+  /// 세트가 ENDED(종료)가 아니면 화면이 잠금 안내만 보여주므로 요청하지 않는다.
+  Future<void> ensureRatingsLoaded() {
+    if (_ratingsRequested || currentSetStatus != MatchGameStatus.ended) {
+      return Future.value();
+    }
+    _ratingsRequested = true;
+    return _loadRatings();
   }
 
   Future<void> _loadChampionPick() async {
@@ -251,9 +331,15 @@ class MatchDetailViewModel extends ChangeNotifier {
   }
 
   /// 라이브 이벤트 리로드 버튼용. 현재 세트의 이벤트만 다시 가져온다.
-  Future<void> reloadLiveEvents() => _loadLiveEvents();
+  Future<void> reloadLiveEvents() {
+    _eventsRequested = true;
+    return _loadLiveEvents();
+  }
 
   /// 선수 평점 상세에서 평가 작성/수정/삭제 후 돌아왔을 때 현재 세트의
   /// 평점(평균·내 평점)을 다시 가져온다.
-  Future<void> reloadRatings() => _loadRatings();
+  Future<void> reloadRatings() {
+    _ratingsRequested = true;
+    return _loadRatings();
+  }
 }

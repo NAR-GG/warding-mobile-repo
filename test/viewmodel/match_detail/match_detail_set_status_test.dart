@@ -6,6 +6,8 @@ import 'package:warding/viewmodel/match_detail/match_detail_viewmodel.dart';
 import '../../support/fake_rating_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late MockMatchDetailRepository match;
   late MockRatingRepository rating;
 

@@ -14,6 +14,8 @@ GameRatings _ratings(String gameId) => GameRatings(
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late MockMatchDetailRepository match;
   late MockRatingRepository rating;
 
@@ -34,6 +36,7 @@ void main() {
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
+      initialTabIndex: 2,
       repository: match,
       ratingRepository: rating,
     );
@@ -54,6 +57,7 @@ void main() {
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
+      initialTabIndex: 2,
       repository: match,
       ratingRepository: rating,
     );
@@ -76,6 +80,7 @@ void main() {
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
+      initialTabIndex: 2,
       repository: match,
       ratingRepository: rating,
     );
@@ -94,6 +99,7 @@ void main() {
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
+      initialTabIndex: 2,
       repository: match,
       ratingRepository: rating,
     );

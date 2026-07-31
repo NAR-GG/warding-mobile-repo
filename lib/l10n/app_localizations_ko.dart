@@ -41,6 +41,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String setWinner(int setNumber, String teamCode) {
+    return 'SET $setNumber $teamCode 승';
+  }
+
+  @override
   String get today => '오늘';
 
   @override
@@ -86,6 +91,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get clickToSeeScore => '클릭시 스코어 확인 가능';
+
+  @override
+  String get spoilerPreventionOn => '스포방지 ON';
+
+  @override
+  String get spoilerPreventionOff => '스포방지 OFF';
 
   @override
   String get weekdayMon => '월';

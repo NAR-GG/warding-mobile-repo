@@ -144,15 +144,25 @@ class AppColors {
   static const Color narPink700 = Color(0xFFD6336C); // mantine pink/7
 
   // 플레이한 챔프 카드 (선수 평점 상세)
-  static const Color narPlayedChampBg = Color(0xFFFFFFFF); // 카드 배경(선수 이미지 자리)
+  // Figma 시안 원본은 #FFFFFF지만 그 위를 스플래시 아트 + 그라데이션이 항상 완전히
+  // 덮는 전제였다(원본 흰 배경은 실제로 보이면 안 됨). 카드가 스플래시 원본보다 훨씬
+  // 가로로 길쭉해 BoxFit.cover 가 폭 기준으로 스케일링되며 크롭 여유가 매우 작아지고,
+  // 기기별 서브픽셀 반올림에 따라 가장자리(좌/우/상/하 어느 쪽이든)에 이 배경이 실낱
+  // 같이 비칠 수 있다. 흰색 대신 그라데이션(narPlayedChampOverlay)과 같은 톤인
+  // narDark800 을 써서, 비쳐도 눈에 띄지 않게 한다.
+  static const Color narPlayedChampBg = narDark800; // 카드 배경(선수 이미지 자리)
 
   /// 플레이한 챔프 카드 하단 inset 그림자 — inset 0 -63px 60px rgba(20,21,23,0.62).
   /// inset shadow를 표현 못 하므로 하단을 어둡게 덮는 세로 그라데이션으로 근사한다.
+  /// blur 60px 이 카드 높이(101px)의 절반을 넘어 상단부까지 은은하게 번지므로,
+  /// 상단을 완전 투명으로 비워두면(구 버전 stops: [0.15, 1.0]) 밝은 스플래시 아트
+  /// 위에서는 그라데이션이 거의 안 보인다. 상단부터 옅게 시작해 하단에서 강하게
+  /// 어두워지도록 3-스탑으로 근사한다.
   static const LinearGradient narPlayedChampOverlay = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0x00141517), Color(0x9E141517)],
-    stops: [0.15, 1.0],
+    colors: [Color(0x00141517), Color(0x52141517), Color(0xB3141517)],
+    stops: [0.0, 0.45, 1.0],
   );
 
   // 평점 분포 (선수 평점 상세) — 별점·분포 바 채움 노랑.

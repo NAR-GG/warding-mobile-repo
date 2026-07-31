@@ -18,6 +18,13 @@
       "setNumber": { "type": "int" }
     }
   },
+  "setWinner": "SET {setNumber} {teamCode} 승",
+  "@setWinner": {
+    "placeholders": {
+      "setNumber": { "type": "int" },
+      "teamCode": { "type": "String" }
+    }
+  },
   "today": "오늘",
   "yesterday": "어제",
   "tomorrow": "내일",
@@ -41,6 +48,8 @@
 
   "spoilerBlock": "스포방지",
   "clickToSeeScore": "클릭시 스코어 확인 가능",
+  "spoilerPreventionOn": "스포방지 ON",
+  "spoilerPreventionOff": "스포방지 OFF",
 
   "weekdayMon": "월",
   "weekdayTue": "화",

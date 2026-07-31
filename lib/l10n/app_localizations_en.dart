@@ -41,6 +41,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String setWinner(int setNumber, String teamCode) {
+    return 'SET $setNumber $teamCode Win';
+  }
+
+  @override
   String get today => 'Today';
 
   @override
@@ -88,6 +93,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clickToSeeScore => 'Tap to reveal score';
+
+  @override
+  String get spoilerPreventionOn => 'Spoiler Protection ON';
+
+  @override
+  String get spoilerPreventionOff => 'Spoiler Protection OFF';
 
   @override
   String get weekdayMon => 'Mon';

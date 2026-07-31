@@ -32,6 +32,7 @@ class PlayerRatingScreen extends StatefulWidget {
     super.key,
     required this.player,
     required this.teamName,
+    this.teamCode = '',
     required this.side,
     this.sets = const [],
     this.initialSet = '',
@@ -47,6 +48,10 @@ class PlayerRatingScreen extends StatefulWidget {
 
   /// 선수가 속한 팀 이름과 진영.
   final String teamName;
+
+  /// 선수가 속한 팀의 teamCode. playerName 에 팀명 대신 팀코드가 이미 붙어
+  /// 오는 응답(예: playerName='KRX Frog')의 중복 표기 판별에 쓴다.
+  final String teamCode;
   final BadgeSide side;
 
   /// 헤더 세트 드롭다운에 노출할 세트 목록과 진입 시 선택 세트.
@@ -158,6 +163,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     final result = await showRatingCommentSheet(
       context: context,
       teamName: widget.teamName,
+      teamCode: widget.teamCode,
       playerName: widget.player.name,
       position: widget.player.position,
       initialRating: my?.rating ?? 0,
@@ -255,6 +261,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                         SizedBox(height: 28 * scale),
                         PlayedChampCard(
                           teamName: widget.teamName,
+                          teamCode: widget.teamCode,
                           playerName: widget.player.name,
                           position: widget.player.position,
                           championName: d?.player.championName ?? '',
@@ -296,6 +303,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                         else if (_vm.isSubscribed)
                           SubscribedRatingBanner(
                             teamName: widget.teamName,
+                            teamCode: widget.teamCode,
                             playerName: widget.player.name,
                             onRate: (d?.rateable ?? false)
                                 ? _openRatingSheet

@@ -19,9 +19,10 @@ class NarDetailHeader extends StatelessWidget {
     this.trailing,
     this.backIconAsset = 'assets/icons/back.svg',
     this.scale = 1,
+    this.centerTitle = true,
   });
 
-  /// 가운데 타이틀 텍스트.
+  /// 타이틀 텍스트.
   final String title;
 
   /// 뒤로가기 탭 콜백. null 이면 `Navigator.maybePop` 호출.
@@ -37,8 +38,29 @@ class NarDetailHeader extends StatelessWidget {
   /// 비율 스케일. 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
 
+  /// true(기본) 면 타이틀을 가운데 고정. false 면 뒤로가기 아이콘 바로 옆(좌측)에
+  /// 붙이고 우측 슬롯과 양끝 정렬한다(예: 경기 일정 상세 헤더).
+  final bool centerTitle;
+
   @override
   Widget build(BuildContext context) {
+    final titleStyle = TextStyle(
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w700,
+      fontSize: 18 * scale,
+      height: 21 / 18,
+      color: AppColors.narText,
+    );
+    final backButton = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onBack ?? () => Navigator.of(context).maybePop(),
+      child: SvgPicture.asset(
+        backIconAsset,
+        width: 24 * scale,
+        height: 24 * scale,
+      ),
+    );
+
     return Padding(
       padding: EdgeInsets.only(
         top: 18.5 * scale,
@@ -48,46 +70,40 @@ class NarDetailHeader extends StatelessWidget {
       ),
       child: SizedBox(
         height: 34 * scale,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Center(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18 * scale,
-                  height: 21 / 18,
-                  color: AppColors.narText,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onBack ?? () => Navigator.of(context).maybePop(),
-                  child: SvgPicture.asset(
-                    backIconAsset,
-                    width: 24 * scale,
-                    height: 24 * scale,
+        child: centerTitle
+            ? Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(child: Text(title, style: titleStyle)),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(child: backButton),
                   ),
-                ),
+                  if (trailing != null)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(child: trailing!),
+                    ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      backButton,
+                      SizedBox(width: 16 * scale),
+                      Text(title, style: titleStyle),
+                    ],
+                  ),
+                  ?trailing,
+                ],
               ),
-            ),
-            if (trailing != null)
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: Center(child: trailing!),
-              ),
-          ],
-        ),
       ),
     );
   }

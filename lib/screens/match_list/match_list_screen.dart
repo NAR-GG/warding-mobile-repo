@@ -6,6 +6,7 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/labeled_field.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/nar_dropdown.dart';
+import '../../components/nar_spoiler_toggle.dart';
 import '../../components/scroll_to_top_button.dart';
 import '../../components/search_select_box.dart';
 import '../../model/schedule_match.dart';
@@ -250,12 +251,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                         ),
                       ),
                       SizedBox(
-                        width: 110 * scale,
+                        width: 129 * scale,
                         child: ListenableBuilder(
                           listenable: _viewModel,
-                          builder: (context, _) => NarDropdown(
-                            value: _viewModel.sortOrder,
-                            onTap: _showSortSheet,
+                          builder: (context, _) => NarSpoilerToggle(
+                            value: _viewModel.spoilerPreventionEnabled,
+                            onChanged: _viewModel.setSpoilerPreventionEnabled,
                             scale: scale,
                           ),
                         ),
@@ -335,6 +336,26 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           ),
                         ),
                       ],
+                      // 정렬(최근순/오래된순) — 팀 멀티 셀렉터 아래, 오른쪽 정렬.
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 11 * scale,
+                          horizontal: 16 * scale,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SizedBox(
+                              width: 110 * scale,
+                              child: NarDropdown(
+                                value: _viewModel.sortOrder,
+                                onTap: _showSortSheet,
+                                scale: scale,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -438,6 +459,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
               ? AppLocalizations.of(context)!.setInProgress((m.sets.length).clamp(1, 99))
               : null,
           leagueInfo: m.leagueInfo,
+          spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
