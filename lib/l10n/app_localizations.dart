@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'SET {setNumber} 진행중'**
   String setInProgress(int setNumber);
 
+  /// No description provided for @setWinner.
+  ///
+  /// In ko, this message translates to:
+  /// **'SET {setNumber} {teamCode} 승'**
+  String setWinner(int setNumber, String teamCode);
+
   /// No description provided for @today.
   ///
   /// In ko, this message translates to:
@@ -247,6 +253,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'클릭시 스코어 확인 가능'**
   String get clickToSeeScore;
+
+  /// No description provided for @spoilerPreventionOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'스포방지 ON'**
+  String get spoilerPreventionOn;
+
+  /// No description provided for @spoilerPreventionOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'스포방지 OFF'**
+  String get spoilerPreventionOff;
 
   /// No description provided for @weekdayMon.
   ///

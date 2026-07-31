@@ -33,6 +33,7 @@ class MatchCard extends StatelessWidget {
     this.onTap,
     this.scale = 1,
     this.leagueInfo = '',
+    this.spoilerPreventionEnabled = true,
   });
 
   /// 경기 예약 알림 구독 API(`/match-subscriptions`)에 쓰는 경기 ID.
@@ -57,6 +58,9 @@ class MatchCard extends StatelessWidget {
 
   /// 리그 정보. LCK·MSI·EWC·KeSPA 경기가 아니면 알림 버튼을 숨긴다.
   final String leagueInfo;
+
+  /// 스포방지 on/off. false 면 [_SpoilerOverlay] 없이 스코어를 바로 보여준다.
+  final bool spoilerPreventionEnabled;
 
   bool get _isAlarmEligibleLeague {
     final info = leagueInfo.toUpperCase();
@@ -144,6 +148,7 @@ class MatchCard extends StatelessWidget {
                 ),
                 SizedBox(width: 20.5 * scale),
                 _SpoilerOverlay(
+                  enabled: spoilerPreventionEnabled,
                   scale: scale,
                   child: isLive
                       ? _LiveScore(
@@ -466,11 +471,17 @@ class _LiveScore extends StatelessWidget {
 /// 시안에 맞춰 116×77 고정 영역을 차지하며, 양옆 [_TeamColumn] 을 침범하지 않는다.
 /// 공개 전에는 실제 스코어 대신 0:0 더미를 깔고 위에 흐림 + 텍스트를 덮는다.
 /// 탭하면 [_revealed=true] → 오버레이 사라지고 실제 스코어 노출.
+/// [enabled] 가 false 면(경기리스트 헤더 스포방지 토글 off) 오버레이 없이 바로 노출한다.
 class _SpoilerOverlay extends StatefulWidget {
-  const _SpoilerOverlay({required this.child, required this.scale});
+  const _SpoilerOverlay({
+    required this.child,
+    required this.scale,
+    this.enabled = true,
+  });
 
   final Widget child;
   final double scale;
+  final bool enabled;
 
   @override
   State<_SpoilerOverlay> createState() => _SpoilerOverlayState();
@@ -483,6 +494,7 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
+    final revealed = _revealed || !widget.enabled;
     return SizedBox(
       width: 116 * scale,
       height: 77 * scale,
@@ -492,11 +504,11 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
           // 공개 전에는 실제 스코어를 아예 그리지 않는다 — 흐림만으로는
           // 숫자가 비쳐 스포일러가 새기 때문에 0:0 더미를 깔아 둔다.
           Center(
-            child: _revealed
+            child: revealed
                 ? widget.child
                 : _ScoreRow(home: 0, away: 0, scale: scale),
           ),
-          if (!_revealed)
+          if (!revealed)
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,

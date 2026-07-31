@@ -116,6 +116,16 @@ class MatchListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 카드 스코어 블러(스포방지) on/off. 기본 on(기존 동작 유지).
+  bool _spoilerPreventionEnabled = true;
+  bool get spoilerPreventionEnabled => _spoilerPreventionEnabled;
+
+  void setSpoilerPreventionEnabled(bool value) {
+    if (_spoilerPreventionEnabled == value) return;
+    _spoilerPreventionEnabled = value;
+    notifyListeners();
+  }
+
   /// 현재 선택된 시즌. 기본값은 가장 최근 시즌.
   String _selectedSeason = seasons.last;
   String get selectedSeason => _selectedSeason;

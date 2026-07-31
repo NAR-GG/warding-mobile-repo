@@ -16,6 +16,7 @@ class MatchGame {
     required this.gameOrder,
     this.status = MatchGameStatus.scheduled,
     this.vodUrl,
+    this.winnerTeamCode,
   });
 
   final String gameId;
@@ -28,6 +29,9 @@ class MatchGame {
 
   /// 세트 다시보기 VOD URL. 없으면 null.
   final String? vodUrl;
+
+  /// 세트를 이긴 팀의 teamCode. 세트가 끝나기 전엔 null.
+  final String? winnerTeamCode;
 
   bool get isLive => status == MatchGameStatus.live;
   bool get isEnded => status == MatchGameStatus.ended;
@@ -49,6 +53,7 @@ class MatchGame {
       gameOrder: order,
       status: status,
       vodUrl: json['vodUrl'] as String?,
+      winnerTeamCode: json['winnerTeamCode'] as String?,
     );
   }
 }

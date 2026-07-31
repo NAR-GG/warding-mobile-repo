@@ -17,6 +17,7 @@ class PlayedChampCard extends StatelessWidget {
   const PlayedChampCard({
     super.key,
     required this.teamName,
+    this.teamCode = '',
     required this.playerName,
     required this.position,
     required this.kda,
@@ -27,6 +28,10 @@ class PlayedChampCard extends StatelessWidget {
 
   /// 'T1 Faker' 표기에 쓰는 팀명/선수명.
   final String teamName;
+
+  /// playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답
+  /// (예: playerName='KRX Frog', teamName='Kiwoom Drx') 의 중복 표기 판별에 쓴다.
+  final String teamCode;
   final String playerName;
 
   /// 배경에 채울 챔피언 영문 키(예: 'Vayne'). 비어 있으면 배경 없음.
@@ -43,6 +48,8 @@ class PlayedChampCard extends StatelessWidget {
 
   final double scale;
 
+  String get _displayName => playerName.trim();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -58,14 +65,25 @@ class PlayedChampCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             // 배경: 챔피언 스플래시 아트(있으면). 캐릭터가 잘 보이게 상단 쪽 정렬.
+            // 카드가 스플래시 원본(약 1215×717)보다 훨씬 가로로 길쭉해 BoxFit.cover 가 폭
+            // 기준으로 스케일링되며 크롭 여유가 매우 작아진다. 기기별 서브픽셀 반올림에
+            // 따라 가장자리(어느 쪽이든)에 카드 배경이 얇은 선으로 비칠 수 있어, 이미지를
+            // 클립 경계보다 넉넉히 크게(overscan) 그려 항상 여유를 확보한다.
+            // memCacheWidth 는 지정하지 않는다 — 카드가 기기 폭 대부분을 차지해 작게
+            // 캐싱하면 확대 렌더링되며 화질이 흐려진다.
             if (championSplashUrl(championName) != null)
-              CachedNetworkImage(
-                imageUrl: championSplashUrl(championName)!,
-                fit: BoxFit.cover,
-                alignment: const Alignment(0, -0.2),
-                memCacheWidth: 480,
-                fadeInDuration: const Duration(milliseconds: 150),
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              Positioned(
+                left: -6,
+                right: -6,
+                top: -6,
+                bottom: -6,
+                child: CachedNetworkImage(
+                  imageUrl: championSplashUrl(championName)!,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.2),
+                  fadeInDuration: const Duration(milliseconds: 150),
+                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
             // 배경 위 어두운 세로 그라데이션(콘텐츠 가독성 + 하단 inset 그림자 근사).
             const DecoratedBox(
@@ -125,7 +143,7 @@ class PlayedChampCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '$teamName $playerName',
+                                _displayName,
                                 style: TextStyle(
                                   fontFamily: 'Pretendard',
                                   fontWeight: FontWeight.w600,

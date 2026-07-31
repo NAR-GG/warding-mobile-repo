@@ -64,8 +64,7 @@ class MyReview {
   /// (구) 작성자 구독 팀 뱃지 로컬 자산. teamImageUrl 우선, 둘 다 없으면 placeholder.
   final String? teamBadgeAsset;
 
-  /// 표시용 '팀 선수' (예: 'T1 Faker').
-  String get playerTeam => '$teamName $playerName';
+  String get playerTeam => playerName.trim();
 }
 
 /// 내 리뷰/평점 — 일자 구분 헤더 (padding 10/20, narBgSecondary 배경).

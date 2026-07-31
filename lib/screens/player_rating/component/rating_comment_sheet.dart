@@ -13,6 +13,7 @@ import '../../../util/lane_asset.dart';
 Future<({double rating, String comment})?> showRatingCommentSheet({
   required BuildContext context,
   required String teamName,
+  String teamCode = '',
   required String playerName,
   required String position,
   double initialRating = 0,
@@ -30,6 +31,7 @@ Future<({double rating, String comment})?> showRatingCommentSheet({
           ),
           child: RatingCommentSheet(
             teamName: teamName,
+            teamCode: teamCode,
             playerName: playerName,
             position: position,
             initialRating: initialRating,
@@ -48,6 +50,7 @@ class RatingCommentSheet extends StatefulWidget {
   const RatingCommentSheet({
     super.key,
     required this.teamName,
+    this.teamCode = '',
     required this.playerName,
     required this.position,
     this.initialRating = 0,
@@ -55,6 +58,10 @@ class RatingCommentSheet extends StatefulWidget {
   });
 
   final String teamName;
+
+  /// playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답
+  /// (예: playerName='KRX Frog', teamName='Kiwoom Drx') 의 중복 표기 판별에 쓴다.
+  final String teamCode;
   final String playerName;
   final String position;
 
@@ -76,6 +83,8 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
 
   // 별점만 있어도 등록 가능, 코멘트만은 불가 — 평점이 있어야 활성.
   bool get _canSubmit => _rating > 0;
+
+  String get _displayName => widget.playerName.trim();
 
   @override
   void dispose() {
@@ -140,7 +149,7 @@ class _RatingCommentSheetState extends State<RatingCommentSheet> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${widget.teamName} ${widget.playerName}',
+                _displayName,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w600,

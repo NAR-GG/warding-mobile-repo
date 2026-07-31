@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
 import '../../components/nar_detail_header.dart';
+import '../../components/nar_spoiler_toggle.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
 import '../../util/match_title_l10n.dart';
@@ -57,7 +58,21 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            NarDetailHeader(title: l.matchSchedule, scale: scale),
+            NarDetailHeader(
+              title: l.matchSchedule,
+              centerTitle: false,
+              trailing: ListenableBuilder(
+                listenable: _viewModel,
+                builder: (context, _) => NarSpoilerToggle(
+                  value: _viewModel.spoilerPreventionEnabled,
+                  onChanged: _viewModel.setSpoilerPreventionEnabled,
+                  textColor: AppColors.narText,
+                  gap: 4,
+                  scale: scale,
+                ),
+              ),
+              scale: scale,
+            ),
             Expanded(
               child: ListenableBuilder(
                 listenable: _viewModel,
@@ -119,6 +134,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
               ? l.setInProgress(m.sets.length.clamp(1, 99))
               : null,
           leagueInfo: m.leagueInfo,
+          spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),

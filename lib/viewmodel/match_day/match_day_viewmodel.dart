@@ -45,6 +45,16 @@ class MatchDayViewModel extends ChangeNotifier {
   Object? _error;
   Object? get error => _error;
 
+  /// 카드 스코어 블러(스포방지) on/off. 기본 on(기존 동작 유지).
+  bool _spoilerPreventionEnabled = true;
+  bool get spoilerPreventionEnabled => _spoilerPreventionEnabled;
+
+  void setSpoilerPreventionEnabled(bool value) {
+    if (_spoilerPreventionEnabled == value) return;
+    _spoilerPreventionEnabled = value;
+    notifyListeners();
+  }
+
   /// 해당 날짜의 경기를 조회한다. 재시도용으로 다시 호출할 수 있다.
   Future<void> load() async {
     _isLoading = true;

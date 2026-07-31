@@ -42,7 +42,7 @@ class MatchDetailScoreSection extends StatelessWidget {
   final String? blueTeamLogoUrl;
   final String? redTeamLogoUrl;
 
-  /// 라이브 경기일 때 스코어 아래에 표시할 라벨. 예: 'SET 1 진행중'.
+  /// 스코어 아래에 표시할 라벨. 예: 'SET 1 진행중', 'T1 승리'. 없으면 표시 안 함.
   final String? setLabel;
 
   final double scale;
@@ -123,7 +123,7 @@ class MatchDetailScoreSection extends StatelessWidget {
               _ScoreColumn(
                 homeScore: blueTeamScore,
                 awayScore: redTeamScore,
-                setLabel: isLive ? setLabel : null,
+                setLabel: setLabel,
                 scale: scale,
               ),
               SizedBox(width: 32 * scale),
@@ -188,6 +188,10 @@ class _TeamColumn extends StatelessWidget {
           child: Text(
             name,
             textAlign: TextAlign.center,
+            // 띄어쓰기가 있으면 그 기준으로 2줄까지는 자연스럽게 내려가되,
+            // 공백 없는 긴 한 단어라도 그 이상 밑으로 안 내려가게 2줄+말줄임으로 막는다.
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
@@ -202,7 +206,7 @@ class _TeamColumn extends StatelessWidget {
   }
 }
 
-/// 가운데 스코어 + (라이브 시) SET 라벨 컬럼.
+/// 가운데 스코어 + SET 상태/결과 라벨 컬럼.
 /// 승자 스코어는 red/7(narTextScore), 패자는 gray/1(scoreTextSub), 콜론은 narText2.
 class _ScoreColumn extends StatelessWidget {
   const _ScoreColumn({

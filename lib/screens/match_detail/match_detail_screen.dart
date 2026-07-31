@@ -20,6 +20,7 @@ import 'component/match_detail_champion_pick_section.dart';
 import 'component/match_detail_live_event_section.dart';
 import 'component/match_detail_locked_empty.dart';
 import 'component/match_detail_player_rating_section.dart';
+import 'component/match_detail_player_rating_skeleton.dart';
 import 'component/match_detail_score_section.dart';
 import 'component/match_detail_team_rating_section.dart';
 
@@ -49,8 +50,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   List<String> _buildTabs(AppLocalizations l) => [l.championPick, l.liveEvent, l.tabPlayerRating];
   late int _tabIndex = widget.initialTabIndex;
 
-  late final MatchDetailViewModel _viewModel =
-      MatchDetailViewModel(matchId: widget.matchId, initialMatch: widget.match);
+  late final MatchDetailViewModel _viewModel = MatchDetailViewModel(
+    matchId: widget.matchId,
+    initialMatch: widget.match,
+    initialTabIndex: widget.initialTabIndex,
+  );
 
   /// widget.match 가 있으면 그것을, 없으면 뷰모델이 API 로 로드한 정보를 사용한다.
   ScheduleMatch? get _effectiveMatch => widget.match ?? _viewModel.matchInfo;
@@ -138,6 +142,20 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       return status;
     }
     return AppLocalizations.of(context)!.setInProgress(_setNumber(_currentSet));
+  }
+
+  /// 스코어 아래 라벨. 선택된 세트가 LIVE면 'SET N 진행중', 종료된 세트고
+  /// 승자가 확인되면 'SET N {팀코드} 승'. 그 외(예정 등)엔 표시 안 함.
+  String? _currentSetResultLabel(ScheduleMatch m) {
+    if (_viewModel.isCurrentSetLive) return _setLabel(m.matchStatus);
+    if (_viewModel.currentSetStatus != MatchGameStatus.ended) return null;
+    final winnerCode = _viewModel.currentSetWinnerTeamCode;
+    if (winnerCode == null || winnerCode.isEmpty) return null;
+    if (winnerCode != m.teamA.teamCode && winnerCode != m.teamB.teamCode) {
+      return null;
+    }
+    return AppLocalizations.of(context)!
+        .setWinner(_viewModel.currentSet, winnerCode);
   }
 
   /// '중계 보기' 탭. 중계 채널이 복수(치지직/SOOP)면 선택 시트를 띄우고,
@@ -384,11 +402,17 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       PlayerRating player, String teamName, BadgeSide side) async {
     final gameId = _viewModel.currentGameId;
     if (gameId == null || gameId.isEmpty || player.participantId == 0) return;
+    // playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답의 중복 표기
+    // 판별에 쓴다(예: playerName='KRX Frog', teamName='Kiwoom Drx').
+    final teamCode = side == BadgeSide.blue
+        ? (_effectiveMatch?.teamA.teamCode ?? '')
+        : (_effectiveMatch?.teamB.teamCode ?? '');
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => PlayerRatingScreen(
           player: player,
           teamName: teamName,
+          teamCode: teamCode,
           side: side,
           sets: _sets,
           initialSet: _currentSet,
@@ -442,7 +466,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                   NarTabBar(
                     tabs: _buildTabs(l),
                     selectedIndex: _tabIndex,
-                    onChanged: (i) => setState(() => _tabIndex = i),
+                    onChanged: (i) => setState(() {
+                      _tabIndex = i;
+                      // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
+                      _viewModel.setActiveTab(i);
+                    }),
                     scale: scale,
                   ),
                 ],
@@ -476,6 +504,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   /// 선수 평점 탭. 슬리버(MatchDetailPlayerRatingSection)를 그대로 반환해
   /// 외부 CustomScrollView 의 slivers 에 직접 배치한다. (pinned 헤더 sticky 유지)
   Widget _buildRatingTab(double scale) {
+    // 세트 목록(games)을 아직 못 받아온 동안은 currentSetStatus 가 기본값
+    // (SCHEDULED)이라, 실제로는 이미 종료된 경기여도 '경기 종료 후' 잠금 안내가
+    // 잠깐 잘못 스칠 수 있다. 이 구간은 스켈레톤으로 대신한다.
+    if (_viewModel.loadingGames) {
+      return SliverToBoxAdapter(
+        child: MatchDetailPlayerRatingSkeleton(scale: scale),
+      );
+    }
     // 선수 평점은 세트 종료 후에만 남길 수 있다. 종료 전에는 배너·평점 대신
     // 잠금(lock-off) 빈 상태를 보여준다. (배너도 자연히 종료 후에만 노출)
     if (_viewModel.currentSetStatus != MatchGameStatus.ended) {
@@ -487,6 +523,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             scale: scale,
           ),
         ),
+      );
+    }
+    // 이 세트로 처음 로드 중(아직 데이터도 에러도 없음)이면 스켈레톤.
+    // (loadingRatings 플래그가 true 로 바뀌기 전 찰나에도 스켈레톤을 유지해야
+    // '평점 없음' 빈 상태가 잘못 스치지 않는다.) 로드 실패(ratingsError)면
+    // 무한 스켈레톤 대신 기존처럼 빈 데이터로 렌더한다.
+    if (_viewModel.ratings == null && _viewModel.ratingsError == null) {
+      return SliverToBoxAdapter(
+        child: MatchDetailPlayerRatingSkeleton(scale: scale),
       );
     }
     final r = _viewModel.ratings;
@@ -590,16 +635,24 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       redTeamScore: m?.teamB.score ?? 0,
       blueTeamLogoUrl: m?.teamA.teamImageUrl,
       redTeamLogoUrl: m?.teamB.teamImageUrl,
-      // 세트 라벨('진행중')은 경기 전체가 아니라 선택된 세트가 LIVE일 때만.
-      setLabel: (m != null && _viewModel.isCurrentSetLive)
-          ? _setLabel(m.matchStatus)
-          : null,
+      // 세트 라벨: 선택된 세트가 LIVE면 '진행중', 종료됐고 승자가 있으면 '승리'.
+      setLabel: m != null ? _currentSetResultLabel(m) : null,
       scale: scale,
     );
   }
 
   /// 라이브 이벤트 탭 본문. 경기 전(SCHEDULED)이면 잠금 안내, 아니면 이벤트 섹션.
   Widget _buildLiveEventTab(double scale) {
+    // games 를 아직 못 받아온 동안은 currentSetStatus 가 기본값(SCHEDULED)이라
+    // 실제로는 이미 시작된 경기여도 잠금 안내가 잠깐 잘못 스칠 수 있다.
+    if (_viewModel.loadingGames) {
+      return MatchDetailLiveEventSection(
+        events: const [],
+        initialLoading: true,
+        status: MatchGameStatus.live,
+        scale: scale,
+      );
+    }
     if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
       return ColoredBox(
         color: AppColors.narBgContent,
@@ -624,6 +677,22 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   /// 챔피언 픽 탭 본문. ViewModel 데이터로 렌더링하되 로딩·에러 상태를 처리한다.
   Widget _buildChampionPickTab(double scale) {
+    // games 를 아직 못 받아온 동안은 currentSetStatus 가 기본값(SCHEDULED)이라
+    // 실제로는 이미 시작된 경기여도 '경기 시작 후' 잠금 안내가 잠깐 잘못 스칠 수
+    // 있다. 이 구간은 스켈레톤으로 대신한다.
+    if (_viewModel.loadingGames) {
+      return MatchDetailChampionPickSection(
+        blueTeamName: '',
+        redTeamName: '',
+        blueBans: const [null, null, null, null, null],
+        redBans: const [null, null, null, null, null],
+        bluePicks: const [null, null, null, null, null],
+        redPicks: const [null, null, null, null, null],
+        bluePlayerNames: const ['', '', '', '', ''],
+        redPlayerNames: const ['', '', '', '', ''],
+        scale: scale,
+      );
+    }
     // 경기 전(SCHEDULED)이면 잠금(lock-off) 안내를 보여준다.
     if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
       return ColoredBox(
@@ -634,8 +703,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         ),
       );
     }
-    // 최초 로드 중(아직 데이터 없음)이면 플레이스홀더 픽으로 스켈레톤 렌더.
-    if (_viewModel.loadingChampion && _viewModel.championPick == null) {
+    // 최초 로드 중이거나(아직 데이터·에러 모두 없음) 처리 중이면 플레이스홀더
+    // 픽으로 스켈레톤 렌더. (championError 가 있으면 실패이므로 건너뛴다.)
+    if (_viewModel.championPick == null && _viewModel.championError == null) {
       return MatchDetailChampionPickSection(
         blueTeamName: '',
         redTeamName: '',
