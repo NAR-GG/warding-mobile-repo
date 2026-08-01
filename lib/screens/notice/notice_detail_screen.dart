@@ -51,10 +51,17 @@ class NoticeDetailScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      child: Icon(
-                        Icons.list_rounded,
-                        size: 26 * scale,
-                        color: AppColors.narText,
+                      // 아이콘 폰트는 릴리즈 트리셰이킹 때문에 shorebird 패치로
+                      // 새 글리프를 못 실어서 텍스트 버튼을 쓴다.
+                      child: Text(
+                        l.noticeListButton,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14 * scale,
+                          height: 1.55,
+                          color: AppColors.narTextTertiary,
+                        ),
                       ),
                     )
                   : null,

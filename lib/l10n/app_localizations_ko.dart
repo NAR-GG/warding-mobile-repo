@@ -468,6 +468,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get noticeDraft => '임시저장';
 
   @override
+  String get noticeListButton => '목록';
+
+  @override
   String get narWebsite => '나르지지 웹사이트';
 
   @override

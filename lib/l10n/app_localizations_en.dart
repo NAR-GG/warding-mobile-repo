@@ -480,6 +480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noticeDraft => 'Draft';
 
   @override
+  String get noticeListButton => 'List';
+
+  @override
   String get narWebsite => 'NAR.GG Website';
 
   @override
