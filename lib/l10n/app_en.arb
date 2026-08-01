@@ -160,6 +160,7 @@
   "noticeLoadFailed": "Couldn't load notices",
   "noticePinned": "📌 Pinned",
   "noticeDraft": "Draft",
+  "noticeListButton": "List",
   "narWebsite": "NAR.GG Website",
   "latestVersion": "You're up to date.",
   "currentVersion": "(Version {version})",

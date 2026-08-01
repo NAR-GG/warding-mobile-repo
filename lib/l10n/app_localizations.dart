@@ -925,6 +925,12 @@ abstract class AppLocalizations {
   /// **'임시저장'**
   String get noticeDraft;
 
+  /// No description provided for @noticeListButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'목록'**
+  String get noticeListButton;
+
   /// No description provided for @narWebsite.
   ///
   /// In ko, this message translates to:

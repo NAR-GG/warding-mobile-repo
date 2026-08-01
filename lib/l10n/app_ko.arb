@@ -275,6 +275,7 @@
   "noticeLoadFailed": "공지사항을 불러오지 못했어요",
   "noticePinned": "📌 고정",
   "noticeDraft": "임시저장",
+  "noticeListButton": "목록",
   "narWebsite": "나르지지 웹사이트",
   "latestVersion": "최신 버전입니다.",
   "currentVersion": "(현재 버전 {version})",
