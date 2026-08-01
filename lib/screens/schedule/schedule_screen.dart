@@ -108,11 +108,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// 띠배너 탭 → 공지 상세.
+  /// 띠배너 탭 → 공지 상세. 목록을 거치지 않고 왔으므로 목록 이동 아이콘을 켠다.
   void _openNotice(Notice notice) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => NoticeDetailScreen(notice: notice),
+        builder: (_) => NoticeDetailScreen(notice: notice, showListButton: true),
       ),
     );
   }

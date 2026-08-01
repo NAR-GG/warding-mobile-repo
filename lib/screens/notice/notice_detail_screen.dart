@@ -7,13 +7,23 @@ import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
 import '../../styles/app_colors.dart';
+import 'notice_screen.dart';
 
 /// 공지사항 상세 화면. 목록/띠배너에서 [Notice]를 통째로 받아 그린다
 /// (목록 응답에 본문이 포함되므로 재조회하지 않는다).
 class NoticeDetailScreen extends StatelessWidget {
-  const NoticeDetailScreen({super.key, required this.notice});
+  const NoticeDetailScreen({
+    super.key,
+    required this.notice,
+    this.showListButton = false,
+  });
 
   final Notice notice;
+
+  /// 헤더 우측에 공지 목록 이동 아이콘 표시 여부.
+  /// 띠배너처럼 목록을 거치지 않고 진입한 경우에만 켠다
+  /// (목록에서 들어왔을 땐 뒤로가기가 곧 목록이라 불필요).
+  final bool showListButton;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +37,28 @@ class NoticeDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            NarDetailHeader(title: l.notice, scale: scale),
+            NarDetailHeader(
+              title: l.notice,
+              scale: scale,
+              trailing: showListButton
+                  ? GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        // 상세를 목록으로 대체 — 목록에서 뒤로가면 원래 화면(캘린더).
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const NoticeScreen(),
+                          ),
+                        );
+                      },
+                      child: Icon(
+                        Icons.list_rounded,
+                        size: 26 * scale,
+                        color: AppColors.narText,
+                      ),
+                    )
+                  : null,
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
