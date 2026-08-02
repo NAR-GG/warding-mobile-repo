@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 import '../../model/onboarding_selection.dart';
 
 /// 비회원 온보딩 선택값을 기기에 로컬 저장한다.
@@ -12,7 +14,7 @@ import '../../model/onboarding_selection.dart';
 /// 민감 정보는 아니지만 이미 설치된 [FlutterSecureStorage] 를 재사용한다.
 class OnboardingPreferenceRepository {
   OnboardingPreferenceRepository({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ?? secureStorage;
 
   static final OnboardingPreferenceRepository instance =
       OnboardingPreferenceRepository();

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 /// 화면별 경기 필터 선택값을 기기에 로컬 저장한다.
 ///
 /// 경기 일정(캘린더)과 경기 리스트가 각자 키로 마지막 필터를 저장하고,
@@ -11,7 +13,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// 민감 정보는 아니지만 기존 관례대로 [FlutterSecureStorage] 를 재사용한다.
 class FilterPreferenceRepository {
   FilterPreferenceRepository({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ?? secureStorage;
 
   static final FilterPreferenceRepository instance =
       FilterPreferenceRepository();

@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:flutter_naver_login/interface/types/naver_login_result.dart';
 import 'package:flutter_naver_login/interface/types/naver_login_status.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../config/secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
@@ -45,7 +45,7 @@ class AuthService {
   static const _jwtKey = 'jwt';
   static const _refreshKey = 'refreshToken';
 
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   bool _googleInitialized = false;
 

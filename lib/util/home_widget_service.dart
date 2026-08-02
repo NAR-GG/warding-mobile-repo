@@ -461,7 +461,13 @@ class HomeWidgetService {
       }
       return null;
     } catch (_) {
-      return TeamPreferenceRepository.instance.loadPreferredTeam();
+      try {
+        return await TeamPreferenceRepository.instance.loadPreferredTeam();
+      } on PlatformException {
+        // 잠금 상태 백그라운드 갱신 중 Keychain 접근 불가(-25308) —
+        // 이번 위젯 갱신에서만 응원팀을 건너뛴다.
+        return null;
+      }
     }
   }
 

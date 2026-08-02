@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../l10n/app_localizations.dart';
 
 import '../repository/auth/auth_service.dart';
@@ -47,7 +48,14 @@ class _GuestLockOverlayState extends State<GuestLockOverlay>
   }
 
   Future<void> _checkGuest() async {
-    final jwt = await AuthService.instance.jwt;
+    final String? jwt;
+    try {
+      jwt = await AuthService.instance.jwt;
+    } on PlatformException {
+      // Keychain 접근 불가(-25308: 기기 잠금 등) — '비회원'으로 단정하면
+      // 로그인 유저에게 블러가 뜬다. 상태를 바꾸지 않고 다음 resume 재확인에 맡긴다.
+      return;
+    }
     if (!mounted) return;
     setState(() => _isGuest = jwt == null || jwt.isEmpty);
   }

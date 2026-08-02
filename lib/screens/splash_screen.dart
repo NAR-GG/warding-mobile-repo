@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../components/nar_alert_dialog.dart';
 import '../config/app_globals.dart';
 import '../config/app_language.dart';
+import '../config/secure_storage.dart';
 import '../l10n/app_localizations.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
@@ -25,21 +27,93 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with WidgetsBindingObserver {
+  /// Keychain 접근 불가(잠금 상태 백그라운드 launch 등)로 부팅을 보류하면
+  /// true — 포그라운드 복귀 시 [_bootstrap]을 재시도한다.
+  bool _retryOnResume = false;
+
+  /// 포그라운드인데도 Keychain 이 계속 실패할 때(기기 keychain 고장 등)의
+  /// 지연 재시도 횟수. [_maxForegroundRetries]를 넘으면 포기하고 진행한다.
+  int _foregroundRetries = 0;
+  static const _maxForegroundRetries = 5;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _retryOnResume) {
+      _retryOnResume = false;
+      _bootstrap();
+    }
+  }
+
+  /// Keychain 접근 실패 시 재시도 예약. 백그라운드면 resumed 이벤트가
+  /// 트리거지만, 이미 포그라운드면 그 이벤트가 안 오므로 지연 재시도로
+  /// 커버한다 (계속 실패하면 포기하고 진행 — 스플래시에 갇히지 않게).
+  void _scheduleRetry() {
+    _retryOnResume = true;
+    if (WidgetsBinding.instance.lifecycleState !=
+        AppLifecycleState.resumed) {
+      return;
+    }
+    if (_foregroundRetries >= _maxForegroundRetries) {
+      _retryOnResume = false;
+      _proceed(null);
+      return;
+    }
+    _foregroundRetries++;
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted && _retryOnResume) {
+        _retryOnResume = false;
+        _bootstrap();
+      }
+    });
+  }
+
   Future<void> _bootstrap() async {
-    final results = await Future.wait([
-      Future<void>.delayed(const Duration(seconds: 2)),
-      AuthService.instance.jwt,
-    ]);
+    final List<Object?> results;
+    try {
+      // 구 접근성(unlocked)으로 저장된 Keychain 항목을 잠금 중에도 읽히는
+      // first_unlock_this_device 로 1회 이전. 미완료 상태에선 jwt read 가
+      // 예외 없이 null 을 반환하므로(접근성 불일치 → notFound), 완료 전엔
+      // 절대 jwt 로 로그인 여부를 판단하지 않는다.
+      final migrated = await migrateKeychainAccessibility();
+      if (!migrated) {
+        _scheduleRetry();
+        return;
+      }
+      // 첫 실행(마이그레이션 직후)이면 main()에서 미리 읽은 언어 설정이
+      // 구 접근성 항목이라 null(→ko)로 폴백됐을 수 있다 — 다시 읽는다.
+      await AppLanguage.instance.load();
+      results = await Future.wait([
+        Future<void>.delayed(const Duration(seconds: 2)),
+        AuthService.instance.jwt,
+      ]);
+    } on PlatformException {
+      // Keychain 접근 불가(-25308: 기기 잠금 + 백그라운드 launch 등).
+      // '토큰 없음'이 아니므로 LoginScreen 으로 보내면 안 된다.
+      _scheduleRetry();
+      return;
+    }
+    _proceed(results[1] as String?);
+  }
+
+  /// [jwt] 유무에 따라 첫 화면으로 전환한다. 재시도 포기 시엔 null 로 호출.
+  void _proceed(String? jwt) {
     if (!mounted) return;
 
-    final jwt = results[1] as String?;
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
     final destination =

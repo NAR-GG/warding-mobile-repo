@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 import '../../model/solo_rank_notification.dart';
 import '../fcm/fcm_notification_types.dart';
 
@@ -21,7 +23,7 @@ class SoloRankNotificationStore {
   /// 피드에 보관하는 최대 개수(최신 우선).
   static const _maxItems = 50;
 
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   /// 저장된 알림을 최신순으로 읽는다.
   Future<List<SoloRankNotification>> loadAll() async {
