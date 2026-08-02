@@ -32,18 +32,20 @@ class CalendarMatchChip extends StatelessWidget {
   }
 
   Widget _teamName(String name) {
-    return Text(
-      name,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontFamily: 'SF Pro',
-        fontWeight: FontWeight.w400, // Regular
-        fontSize: 8 * scale,
-        height: 1.0, // 칩 높이(18) 안에서 Row 가 세로 가운데 정렬
-        letterSpacing: 0,
-        color: AppColors.narText, // #FFFFFF
+    // 세 글자 팀 코드(BFX, GEN, HLE)가 잘리지 않도록 넘치면 글자를 축소한다.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        name,
+        maxLines: 1,
+        style: TextStyle(
+          fontFamily: 'SF Pro',
+          fontWeight: FontWeight.w400, // Regular
+          fontSize: 8 * scale,
+          height: 1.0, // 칩 높이(18) 안에서 Row 가 세로 가운데 정렬
+          letterSpacing: 0,
+          color: AppColors.narText, // #FFFFFF
+        ),
       ),
     );
   }
