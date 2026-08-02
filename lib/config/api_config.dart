@@ -269,6 +269,10 @@ class ApiConfig {
   static String noticesUrl({int page = 0, int size = 20}) =>
       '$apiBaseUrl/notices?page=$page&size=$size';
 
+  /// 공지 조회수 +1 (POST, 본문 없음, 204). 목록 응답에 본문이 함께 오므로
+  /// 상세 조회 요청이 없다 — 앱이 상세를 열 때 직접 알려줘야 조회수가 쌓인다.
+  static String noticeViewUrl(int id) => '$apiBaseUrl/notices/$id/view';
+
   /// 캘린더 상단 띠배너용 공지 1건 (`promote_until > now`인 최신 발행 공지).
   /// 없으면 204.
   static String get promotedNoticeUrl => '$apiBaseUrl/notices/promoted';

@@ -38,6 +38,18 @@ class NoticeRepository {
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
+  /// 공지 조회수 +1. 화면 표시와 무관한 집계라 실패해도 조용히 무시한다
+  /// (열람 자체는 이미 성공한 상태 — 에러를 띄울 이유가 없다).
+  Future<void> markViewed(int id) async {
+    if (useMock) return;
+    try {
+      final response = await http.post(Uri.parse(ApiConfig.noticeViewUrl(id)));
+      debugPrint('[Notice] 조회수 $id ← ${response.statusCode}');
+    } catch (e) {
+      debugPrint('[Notice] 조회수 $id 실패: $e');
+    }
+  }
+
   /// 캘린더 상단 띠배너 대상 공지 목록 (최신 발행순, 최대 5건).
   /// 앱은 이 중 ✕로 닫지 않은 첫 건을 띄운다. 없으면 빈 목록.
   Future<List<Notice>> fetchPromoted() async {

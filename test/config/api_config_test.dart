@@ -39,4 +39,10 @@ void main() {
       expect(url, isNot(contains('league=LPL')));
     });
   });
+
+  group('noticeViewUrl', () {
+    test('공지 id 로 조회수 증가 경로를 만든다', () {
+      expect(ApiConfig.noticeViewUrl(7), endsWith('/notices/7/view'));
+    });
+  });
 }
