@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'secure_storage.dart';
@@ -29,8 +30,18 @@ class AppLanguage extends ChangeNotifier {
   bool get isKo => _current == AppLang.ko;
 
   /// 앱 시작 시 저장된 언어를 불러온다.
+  ///
+  /// main() 초입(Sentry init 이전)에 불리므로 Keychain 접근 실패
+  /// (-25308: 재부팅 후 첫 잠금해제 전 prewarming 등)로 앱 시작이
+  /// 죽지 않게 방어한다 — 표시 언어일 뿐이라 ko 폴백으로 충분.
   Future<void> load() async {
-    final raw = await _storage.read(key: _key);
+    final String? raw;
+    try {
+      raw = await _storage.read(key: _key);
+    } on PlatformException {
+      _current = AppLang.ko;
+      return;
+    }
     if (raw == 'en') {
       _current = AppLang.en;
     } else {
