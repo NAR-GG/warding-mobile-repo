@@ -6,12 +6,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
+import '../../repository/notice/notice_repository.dart';
 import '../../styles/app_colors.dart';
 import 'notice_screen.dart';
 
 /// 공지사항 상세 화면. 목록/띠배너에서 [Notice]를 통째로 받아 그린다
 /// (목록 응답에 본문이 포함되므로 재조회하지 않는다).
-class NoticeDetailScreen extends StatelessWidget {
+class NoticeDetailScreen extends StatefulWidget {
   const NoticeDetailScreen({
     super.key,
     required this.notice,
@@ -26,7 +27,24 @@ class NoticeDetailScreen extends StatelessWidget {
   final bool showListButton;
 
   @override
+  State<NoticeDetailScreen> createState() => _NoticeDetailScreenState();
+}
+
+class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 조회수 집계 — 화면 진입 1회. 임시저장은 ADMIN 검수 열람이라 세지 않는다.
+    // 응답을 기다리지 않는다(실패해도 화면은 그대로).
+    if (!widget.notice.isDraft) {
+      NoticeRepository.instance.markViewed(widget.notice.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final notice = widget.notice;
+    final showListButton = widget.showListButton;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
     final l = AppLocalizations.of(context)!;
