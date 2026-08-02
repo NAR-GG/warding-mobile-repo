@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 /// 캘린더 상단 띠배너에서 ✕로 닫은 공지 id 목록을 기기에 저장한다.
 ///
 /// 배너가 여러 개 발행될 수 있어 목록으로 저장하고, 앱은 "안 닫은 첫 배너"를 띄운다.
@@ -15,7 +17,7 @@ class NoticePreferenceRepository {
 
   static const _key = 'dismissed_notice_ids';
 
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   /// 닫은 공지 id를 목록에 추가한다.
   Future<void> addDismissedId(int noticeId) async {

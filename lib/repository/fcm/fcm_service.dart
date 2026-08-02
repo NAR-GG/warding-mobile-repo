@@ -247,8 +247,13 @@ class FcmService {
     final type = data['type'];
     debugPrint('[FCM] 알림 탭 → type=$type');
     // 탭한 알림이 피드에 빠짐없이 들어가도록 저장(중복은 무시됨).
-    SoloRankNotificationStore.instance.addFromFcmData(data);
-    LiveMatchNotificationStore.instance.addFromFcmData(data);
+    // 저장 실패(잠금 중 Keychain -25308 등)는 피드 한 건 누락일 뿐 — 무시.
+    SoloRankNotificationStore.instance
+        .addFromFcmData(data)
+        .catchError((Object e) => debugPrint('[FCM] 탭 알림 저장 실패: $e'));
+    LiveMatchNotificationStore.instance
+        .addFromFcmData(data)
+        .catchError((Object e) => debugPrint('[FCM] 탭 알림 저장 실패: $e'));
 
     if (type == FcmNotificationType.playerSoloRankStarted) {
       navigatorKey.currentState?.push(

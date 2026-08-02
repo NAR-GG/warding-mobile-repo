@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../components/nar_alert_dialog.dart';
 import '../config/app_globals.dart';
 import '../config/app_language.dart';
+import '../config/secure_storage.dart';
 import '../l10n/app_localizations.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
@@ -25,18 +27,50 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with WidgetsBindingObserver {
+  /// 잠금 상태 백그라운드 launch(iOS prewarming 등)에서 Keychain 접근이
+  /// -25308로 실패하면 true — 포그라운드 복귀 시 [_bootstrap]을 재시도한다.
+  bool _retryOnResume = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bootstrap();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _retryOnResume) {
+      _retryOnResume = false;
+      _bootstrap();
+    }
+  }
+
   Future<void> _bootstrap() async {
-    final results = await Future.wait([
-      Future<void>.delayed(const Duration(seconds: 2)),
-      AuthService.instance.jwt,
-    ]);
+    final List<Object?> results;
+    try {
+      // 구 접근성(unlocked)으로 저장된 Keychain 항목을 잠금 중에도 읽히는
+      // first_unlock_this_device 로 1회 이전. jwt 읽기보다 먼저 실행해야 한다.
+      await migrateKeychainAccessibility();
+      results = await Future.wait([
+        Future<void>.delayed(const Duration(seconds: 2)),
+        AuthService.instance.jwt,
+      ]);
+    } on PlatformException {
+      // Keychain 접근 불가(-25308: 기기 잠금 + 백그라운드 launch 등).
+      // '토큰 없음'이 아니므로 LoginScreen 으로 보내면 안 된다 —
+      // 포그라운드 복귀 때 재시도한다.
+      _retryOnResume = true;
+      return;
+    }
     if (!mounted) return;
 
     final jwt = results[1] as String?;

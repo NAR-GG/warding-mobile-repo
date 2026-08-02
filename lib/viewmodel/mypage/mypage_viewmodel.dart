@@ -4,6 +4,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../l10n/app_strings.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 import '../../model/team.dart';
 import '../../model/user_profile.dart';
 import '../../repository/auth/auth_service.dart';
@@ -34,7 +36,7 @@ class MypageViewModel extends ChangeNotifier {
 
   /// 로컬 저장(응원팀 자동설정 안내 배너 노출 여부 등). 이미 설치된
   /// [FlutterSecureStorage] 를 재사용한다(패키지 추가 불필요).
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   /// '설문 기반 응원팀 자동설정' 안내 배너를 한 번이라도 노출했는지 저장하는 키.
   static const _teamBannerSeenKey = 'mypage_team_banner_seen';

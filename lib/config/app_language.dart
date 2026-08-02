@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'secure_storage.dart';
+
 /// 앱 내 지원 언어.
 enum AppLang {
   ko,
@@ -16,7 +18,7 @@ class AppLanguage extends ChangeNotifier {
   static final AppLanguage instance = AppLanguage._();
 
   static const _key = 'app_language';
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   AppLang _current = AppLang.ko;
 

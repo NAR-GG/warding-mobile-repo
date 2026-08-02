@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../config/secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
@@ -19,7 +19,7 @@ class DeviceRepository {
   static const _deviceIdKey = 'fcm_device_id';
 
   final AuthService _auth = AuthService.instance;
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   /// 마지막으로 등록해 받은 기기 ID. 없으면 null.
   Future<String?> get deviceId => _storage.read(key: _deviceIdKey);

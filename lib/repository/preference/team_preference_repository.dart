@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../config/secure_storage.dart';
+
 import '../../model/team.dart';
 
 /// 비회원 선호 팀을 기기에 로컬 저장한다.
@@ -17,7 +19,7 @@ class TeamPreferenceRepository {
 
   static const _key = 'preferred_team';
 
-  final _storage = const FlutterSecureStorage();
+  final _storage = secureStorage;
 
   /// 선호 팀을 저장한다.
   Future<void> savePreferredTeam(Team team) async {
