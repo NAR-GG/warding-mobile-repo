@@ -1662,6 +1662,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'업데이트'**
   String get updateNow;
+
+  /// No description provided for @patchReadyTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'업데이트 준비 완료'**
+  String get patchReadyTitle;
+
+  /// No description provided for @patchReadyMessageAndroid.
+  ///
+  /// In ko, this message translates to:
+  /// **'개선 사항을 받아뒀어요.\n앱을 종료한 뒤 다시 열면 적용돼요.'**
+  String get patchReadyMessageAndroid;
+
+  /// No description provided for @patchReadyMessageIos.
+  ///
+  /// In ko, this message translates to:
+  /// **'개선 사항을 받아뒀어요.\n앱을 완전히 종료한 뒤 다시 열면 적용돼요.'**
+  String get patchReadyMessageIos;
+
+  /// No description provided for @patchRestartNow.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 종료'**
+  String get patchRestartNow;
 }
 
 class _AppLocalizationsDelegate

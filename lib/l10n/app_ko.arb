@@ -444,5 +444,10 @@
 
   "updateAvailableTitle": "업데이트 안내",
   "updateAvailableMessage": "새로운 버전이 출시되었습니다.\n최신 버전으로 업데이트해주세요.",
-  "updateNow": "업데이트"
+  "updateNow": "업데이트",
+
+  "patchReadyTitle": "업데이트 준비 완료",
+  "patchReadyMessageAndroid": "개선 사항을 받아뒀어요.\n앱을 종료한 뒤 다시 열면 적용돼요.",
+  "patchReadyMessageIos": "개선 사항을 받아뒀어요.\n앱을 완전히 종료한 뒤 다시 열면 적용돼요.",
+  "patchRestartNow": "지금 종료"
 }

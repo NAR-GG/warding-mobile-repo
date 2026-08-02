@@ -304,5 +304,10 @@
 
   "updateAvailableTitle": "Update Available",
   "updateAvailableMessage": "A new version is available.\nPlease update to the latest version.",
-  "updateNow": "Update"
+  "updateNow": "Update",
+
+  "patchReadyTitle": "Update Ready",
+  "patchReadyMessageAndroid": "An improvement has been downloaded.\nClose the app and open it again to apply.",
+  "patchReadyMessageIos": "An improvement has been downloaded.\nFully close the app and open it again to apply.",
+  "patchRestartNow": "Close Now"
 }

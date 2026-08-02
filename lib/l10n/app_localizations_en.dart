@@ -864,4 +864,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateNow => 'Update';
+
+  @override
+  String get patchReadyTitle => 'Update Ready';
+
+  @override
+  String get patchReadyMessageAndroid =>
+      'An improvement has been downloaded.\nClose the app and open it again to apply.';
+
+  @override
+  String get patchReadyMessageIos =>
+      'An improvement has been downloaded.\nFully close the app and open it again to apply.';
+
+  @override
+  String get patchRestartNow => 'Close Now';
 }

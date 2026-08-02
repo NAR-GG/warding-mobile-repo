@@ -57,6 +57,7 @@ dependencies:
   upgrader: ^11.0.0
   sign_in_with_apple: ^8.1.0
   home_widget: ^0.7.0
+  shorebird_code_push: ^2.0.7
 
 dev_dependencies:
   sentry_dart_plugin: ^3.4.0

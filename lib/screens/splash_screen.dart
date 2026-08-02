@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -130,24 +131,28 @@ class _SplashScreenState extends State<SplashScreen>
     HomeWidgetService.markSplashReady();
 
     // 화면 전환 후 업데이트 체크 (팝업은 NarAlertDialog 로 띄운다).
-    _checkForUpdate();
+    // 스토어 업데이트 팝업이 떴으면 코드푸시 안내는 생략 — 팝업 두 개는 과하다.
+    _checkForUpdate().then((storePrompted) {
+      if (!storePrompted) _promptPatchRestart();
+    });
   }
 
   /// 앱스토어/플레이스토어 최신 버전을 조회해, 현재 버전보다 높으면
   /// [NarAlertDialog] 팝업을 띄운다. 확인 누르면 스토어로 이동.
-  Future<void> _checkForUpdate() async {
+  /// 팝업을 띄웠으면 true.
+  Future<bool> _checkForUpdate() async {
     try {
       final upgrader = Upgrader(
         languageCode: AppLanguage.instance.isKo ? 'ko' : 'en',
       );
       await upgrader.initialize();
-      if (!upgrader.isUpdateAvailable()) return;
+      if (!upgrader.isUpdateAvailable()) return false;
 
       // l10n 문자열과 스토어 URL 을 async 전에 캡처한다.
       final ctx = navigatorKey.currentContext;
-      if (ctx == null) return;
+      if (ctx == null) return false;
       final l = AppLocalizations.of(ctx);
-      if (l == null) return;
+      if (l == null) return false;
       final title = l.updateAvailableTitle;
       final message = l.updateAvailableMessage;
       final confirmLabel = l.updateNow;
@@ -164,8 +169,46 @@ class _SplashScreenState extends State<SplashScreen>
         final url = Platform.isIOS ? iosUrl : androidUrl;
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       }
+      return true;
     } catch (e) {
       debugPrint('[Update] 업데이트 체크 실패: $e');
+      return false;
+    }
+  }
+
+  /// Shorebird 코드푸시 패치 안내. 패치는 이미 로딩된 Dart 코드에는 못 붙어서
+  /// **다음 실행부터** 적용된다 — 받아둔 패치가 있으면 재실행을 안내한다
+  /// (안 띄우면 앱을 며칠 안 죽이는 유저는 계속 구버전 코드로 남는다).
+  /// iOS 는 앱이 스스로 종료·재실행할 방법이 없어 안내만, Android 는 종료까지.
+  Future<void> _promptPatchRestart() async {
+    final updater = ShorebirdUpdater();
+    // shorebird release 로 빌드되지 않았거나 디버그면 업데이터가 없다.
+    if (!updater.isAvailable) return;
+    try {
+      var status = await updater.checkForUpdate();
+      if (status == UpdateStatus.outdated) {
+        // auto_update 가 이미 받는 중이면 여기서 실패할 수 있다 — 다음 실행에
+        // 어차피 다시 받으므로 조용히 넘긴다.
+        await updater.update();
+        status = UpdateStatus.restartRequired;
+      }
+      if (status != UpdateStatus.restartRequired) return;
+
+      final ctx = navigatorKey.currentContext;
+      if (ctx == null) return;
+      final l = AppLocalizations.of(ctx);
+      if (l == null) return;
+      final confirmed = await showNarConfirmDialog(
+        context: ctx,
+        title: l.patchReadyTitle,
+        message: Platform.isAndroid ? l.patchReadyMessageAndroid : l.patchReadyMessageIos,
+        confirmLabel: Platform.isAndroid ? l.patchRestartNow : l.confirm,
+      );
+      if (confirmed == true && Platform.isAndroid) {
+        await SystemNavigator.pop();
+      }
+    } catch (e) {
+      debugPrint('[Patch] 코드푸시 확인 실패: $e');
     }
   }
 

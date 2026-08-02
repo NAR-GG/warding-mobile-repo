@@ -846,4 +846,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updateNow => '업데이트';
+
+  @override
+  String get patchReadyTitle => '업데이트 준비 완료';
+
+  @override
+  String get patchReadyMessageAndroid => '개선 사항을 받아뒀어요.\n앱을 종료한 뒤 다시 열면 적용돼요.';
+
+  @override
+  String get patchReadyMessageIos => '개선 사항을 받아뒀어요.\n앱을 완전히 종료한 뒤 다시 열면 적용돼요.';
+
+  @override
+  String get patchRestartNow => '지금 종료';
 }
