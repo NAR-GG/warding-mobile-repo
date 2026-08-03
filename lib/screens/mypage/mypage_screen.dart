@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -18,7 +17,6 @@ import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
 import 'component/language_setting_sheet.dart';
 import 'component/subscription_alarm_section.dart';
-import '../live_activity_debug/live_activity_debug_screen.dart';
 import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_review/my_review_screen.dart';
@@ -239,21 +237,6 @@ class _MypageScreenState extends State<MypageScreen> {
                       scale: scale,
                       onTap: () => _launchUrl('https://nar.kr/'),
                     ),
-                    // 개발 빌드 전용 — Live Activity 렌더링 확인용 진입점.
-                    if (kDebugMode) ...[
-                      SizedBox(height: 16 * scale),
-                      _MypageLinkRow(
-                        title: '[DEV] Live Activity 테스트',
-                        scale: scale,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const LiveActivityDebugScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
                     SizedBox(height: 16 * scale),
                     ListenableBuilder(
                       listenable: _viewModel,
