@@ -172,8 +172,7 @@
             android:layout_marginStart="24dp"
             android:layout_marginEnd="24dp"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:background="@drawable/live_score_box">
+            android:gravity="center">
 
             <TextView
                 android:id="@+id/live_score_a"

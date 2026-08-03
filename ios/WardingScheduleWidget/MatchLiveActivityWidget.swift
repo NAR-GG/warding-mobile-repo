@@ -29,13 +29,6 @@ private enum LiveColors {
         dark ? Color.white : Color(red: 0x10 / 255, green: 0x11 / 255, blue: 0x13 / 255)
     }
 
-    /// 스코어 박스 배경 — #FAFAFA / #25262B
-    static func scoreBox(_ dark: Bool) -> Color {
-        dark
-            ? Color(red: 0x25 / 255, green: 0x26 / 255, blue: 0x2B / 255)
-            : Color(red: 0xFA / 255, green: 0xFA / 255, blue: 0xFA / 255)
-    }
-
     /// 스코어 숫자 — #909296 / #A6A7AB
     static func scoreText(_ dark: Bool) -> Color {
         dark
@@ -121,9 +114,8 @@ private enum LiveMetrics {
     static let teamLogoBox: CGFloat = 50
     static let teamLogoImage: CGFloat = 40
 
-    /// 스코어 박스 116×77, 팀 칼럼과의 간격 24.
+    /// 스코어 영역 폭 116, 팀 칼럼과의 간격 24.
     static let scoreBoxWidth: CGFloat = 116
-    static let scoreBoxHeight: CGFloat = 77
     static let contentGap: CGFloat = 24
 }
 
@@ -314,7 +306,7 @@ private struct TeamLogoBox: View {
     }
 }
 
-/// 가운데 스코어 박스 (116×77).
+/// 가운데 스코어 (116×77 영역). 배경 없이 숫자만 놓는다.
 @available(iOS 16.1, *)
 private struct ScoreBox: View {
     let scoreA: Int
@@ -330,10 +322,6 @@ private struct ScoreBox: View {
         }
         .padding(.vertical, 14 * scale)
         .frame(width: LiveMetrics.scoreBoxWidth * scale)
-        .background(
-            RoundedRectangle(cornerRadius: 14 * scale)
-                .fill(LiveColors.scoreBox(isDark))
-        )
     }
 
     private func digit(_ value: String) -> some View {

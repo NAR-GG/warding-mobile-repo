@@ -11,8 +11,6 @@
     <color name="live_score_row_bg">#CCFFFFFF</color>
     <!-- 본문 텍스트 — #101113 -->
     <color name="live_text">#FF101113</color>
-    <!-- 스코어 박스 배경 — #FAFAFA -->
-    <color name="live_score_box_bg">#FFFAFAFA</color>
     <!-- 스코어 숫자 — #909296 -->
     <color name="live_score_text">#FF909296</color>
     <!-- 평점 유도 문구 — #25262B -->
