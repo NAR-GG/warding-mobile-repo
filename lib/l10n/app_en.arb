@@ -264,6 +264,7 @@
 
   "sortRecent": "Recent",
   "sortOldest": "Oldest",
+  "sortUpcoming": "Upcoming",
 
   "scheduleLoadFailed": "Failed to load schedule",
   "playerRatingLoadFailed": "Failed to load player ratings",

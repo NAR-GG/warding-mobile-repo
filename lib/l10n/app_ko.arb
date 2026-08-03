@@ -394,6 +394,7 @@
 
   "sortRecent": "최근순",
   "sortOldest": "오래된 순",
+  "sortUpcoming": "오늘 이후",
 
   "scheduleLoadFailed": "경기 일정을 불러오지 못했어요",
   "playerRatingLoadFailed": "선수 평점을 불러오지 못했어요",

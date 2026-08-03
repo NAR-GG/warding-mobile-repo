@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  실시간 경기 알림 색상 — 다크 모드.
+  values/live_activity_colors.xml 과 같은 이름으로 값만 다크 시안 값으로 덮는다.
+  (팀 로고 박스·LIVE 배지·그라디언트는 라이트와 동일해 여기서 재정의하지 않는다.)
+-->
+<resources>
+    <!-- 상단 두 줄 배경 — #000000 -->
+    <color name="live_header_bg">#FF000000</color>
+    <!-- 스코어 줄 배경 — #000000 80% -->
+    <color name="live_score_row_bg">#CC000000</color>
+    <!-- 본문 텍스트 — #FFFFFF -->
+    <color name="live_text">#FFFFFFFF</color>
+    <!-- 스코어 박스 배경 — #25262B -->
+    <color name="live_score_box_bg">#FF25262B</color>
+    <!-- 스코어 숫자 — #A6A7AB -->
+    <color name="live_score_text">#FFA6A7AB</color>
+    <!-- 평점 유도 문구 — #FCFDFE -->
+    <color name="live_rating_text">#FFFCFDFE</color>
+</resources>

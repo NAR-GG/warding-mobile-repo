@@ -17,6 +17,7 @@ import '../repository/onboarding/onboarding_repository.dart';
 import '../repository/preference/filter_preference_repository.dart';
 import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
+import '../screens/match_detail/match_detail_screen.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
 
@@ -344,13 +345,22 @@ class HomeWidgetService {
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
   static void _handleWidgetUrl(String urlStr) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
-    if (!_splashReady) {
-      // 콜드 스타트: 스플래시가 첫 화면 분기를 마칠 때까지 보류한다.
+    // 콜드 스타트에서만 보류한다. 스플래시를 이미 지나 화면이 떠 있는
+    // 상태(앱이 백그라운드에 있다가 딥링크로 돌아온 경우)에는 바로 처리한다.
+    // navigator 유무로 판단해야 `_splashReady` 가 false 로 남아 있어도
+    // 딥링크가 묻히지 않는다.
+    if (!_splashReady && navigatorKey.currentState == null) {
       _pendingWidgetUrl = urlStr;
       return;
     }
     final uri = Uri.tryParse(urlStr);
     if (uri == null) return;
+
+    // Live Activity 카드: warding://match/{matchId}?tab=rating&set=N
+    if (uri.host == 'match') {
+      _openMatchDetail(uri);
+      return;
+    }
 
     final action = uri.path.replaceAll('/', '');
 
@@ -380,6 +390,38 @@ class HomeWidgetService {
         builder: (_) => ScheduleScreen(
           widgetAction: action == 'prev' || action == 'next' ? null : action,
           initialMonth: targetMonth,
+        ),
+      ),
+    );
+  }
+
+  /// Live Activity 딥링크로 경기 상세를 연다.
+  ///
+  /// `warding://match/{matchId}?tab=rating&set=N`
+  /// - `tab=rating` 이면 선수 평점 탭(인덱스 2)으로, 없으면 기본 탭으로 연다.
+  /// - `set` 이 있으면 해당 세트를 선택한 상태로 진입한다.
+  static void _openMatchDetail(Uri uri) {
+    final matchId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
+    debugPrint('[LiveActivity] 딥링크 수신: $uri (matchId=$matchId)');
+    if (matchId.isEmpty) return;
+
+    final tab = uri.queryParameters['tab'];
+    final tabIndex = switch (tab) {
+      'rating' => 2,
+      'event' => 1,
+      _ => 0,
+    };
+    final set = int.tryParse(uri.queryParameters['set'] ?? '');
+
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => MatchDetailScreen(
+          matchId: matchId,
+          initialTabIndex: tabIndex,
+          initialSet: set,
         ),
       ),
     );

@@ -75,11 +75,19 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
     _scrolledForVersion = _viewModel.scheduleVersion;
     _targetDate = _findTargetDate();
+    // 정렬 변경으로 다시 스크롤할 때는 이전 오프셋이 남아 있으면 어림 계산(jumpTo)이
+    // 어긋나므로 0(=목록 시작)부터 다시 접근한다.
+    if (_scrollController.hasClients && _scrollController.offset != 0) {
+      _scrollController.jumpTo(0);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTarget());
   }
 
   /// 최신→과거 순 목록에서 오늘 이하(=오늘 또는 가장 가까운 과거)인 첫 그룹의 날짜.
   /// 전부 미래면 가장 가까운(마지막) 그룹으로 폴백한다.
+  ///
+  /// '오늘 이후' 정렬은 과거 그룹이 아예 없어 위 규칙이면 항상 폴백으로 빠지는데,
+  /// 목록의 마지막(=가장 이른) 그룹이 곧 오늘 또는 가장 가까운 예정일이라 결과는 같다.
   DateTime? _findTargetDate() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

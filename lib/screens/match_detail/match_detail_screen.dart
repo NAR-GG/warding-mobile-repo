@@ -13,6 +13,7 @@ import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_dropdown.dart';
 import '../../components/nar_tab_bar.dart';
+import '../../repository/live_activity/live_match_activity_controller.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/match_detail/match_detail_viewmodel.dart';
 import '../player_rating/player_rating_screen.dart';
@@ -31,6 +32,7 @@ class MatchDetailScreen extends StatefulWidget {
     required this.matchId,
     this.match,
     this.initialTabIndex = 0,
+    this.initialSet,
   });
 
   /// 상세를 볼 경기 ID. 탭(챔피언/이벤트) 로드의 기준.
@@ -41,6 +43,9 @@ class MatchDetailScreen extends StatefulWidget {
 
   /// 진입 시 선택할 탭 인덱스(0: 챔피언 픽, 1: 라이브 이벤트, 2: 선수 평점).
   final int initialTabIndex;
+
+  /// 진입 시 선택할 세트 번호. null 이면 진행 상태로 자동 판단한다.
+  final int? initialSet;
 
   @override
   State<MatchDetailScreen> createState() => _MatchDetailScreenState();
@@ -54,6 +59,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     matchId: widget.matchId,
     initialMatch: widget.match,
     initialTabIndex: widget.initialTabIndex,
+    initialSet: widget.initialSet,
   );
 
   /// widget.match 가 있으면 그것을, 없으면 뷰모델이 API 로 로드한 정보를 사용한다.
@@ -70,6 +76,18 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   void _onViewModelChanged() {
     if (mounted) setState(() {});
+    _syncLiveActivity();
+  }
+
+  /// 경기가 진행 중이면 iOS 잠금화면 Live Activity 를 띄우고 상태를 반영한다.
+  /// (컨트롤러가 중복 갱신을 걸러내므로 매 변경마다 호출해도 된다.)
+  void _syncLiveActivity() {
+    final match = _effectiveMatch;
+    if (match == null) return;
+    liveMatchActivityController.sync(
+      match: match,
+      games: _viewModel.games,
+    );
   }
 
   @override

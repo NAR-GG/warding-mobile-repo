@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  실시간 경기 알림 — 경기 중.
+  iOS Live Activity 잠금화면 카드와 같은 시안(3단 구조)을 따른다.
+    1단 30dp: Warding 로고(69×14) + LIVE 배지(46×18)
+    2단 30dp: "SET 1 - 12:34" + 리그명
+    3단 93dp: 팀(68×70) · 스코어(116×77) · 팀(68×70), gap 24
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- ── 1단: 로고 + LIVE 배지 ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/live_header_bg"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="6dp">
+
+        <ImageView
+            android:id="@+id/live_logo"
+            android:layout_width="0dp"
+            android:layout_height="14dp"
+            android:layout_weight="1"
+            android:scaleType="fitStart"
+            android:importantForAccessibility="no" />
+
+        <!-- LIVE 배지 -->
+        <LinearLayout
+            android:id="@+id/live_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="18dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/live_badge_bg"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <TextView
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/live_badge_dot"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_badge_fg" />
+        </LinearLayout>
+
+        <!-- 종료 상태에서 배지 대신 노출되는 라벨 -->
+        <TextView
+            android:id="@+id/live_ended_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:visibility="gone"
+            android:textColor="@color/live_text" />
+    </LinearLayout>
+
+    <!-- ── 2단: 세트+경과시간 / 리그명 ── -->
+    <LinearLayout
+        android:id="@+id/live_info_row"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/live_header_bg"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp">
+
+        <!-- "SET 1 - " 라벨. 옆의 크로노미터와 이어 붙는다. -->
+        <TextView
+            android:id="@+id/live_set_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:includeFontPadding="false"
+            android:textColor="@color/live_text" />
+
+        <!-- 경과 시간: 시스템이 1초마다 스스로 갱신한다. -->
+        <Chronometer
+            android:id="@+id/live_chronometer"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:includeFontPadding="false"
+            android:textColor="@color/live_text" />
+
+        <!-- 종료 상태에서 크로노미터 대신 쓰는 고정 시간 -->
+        <TextView
+            android:id="@+id/live_frozen_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:visibility="gone"
+            android:includeFontPadding="false"
+            android:textColor="@color/live_text" />
+
+        <TextView
+            android:id="@+id/live_league"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:textColor="@color/live_text" />
+    </LinearLayout>
+
+    <!-- ── 3단: 팀 · 스코어 · 팀 ── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="93dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@color/live_score_row_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="10dp">
+
+        <!-- A팀 -->
+        <LinearLayout
+            android:layout_width="68dp"
+            android:layout_height="70dp"
+            android:orientation="vertical"
+            android:gravity="center_horizontal|bottom">
+
+            <ImageView
+                android:id="@+id/live_team_a_logo"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/live_logo_box"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/live_team_a_name"
+                android:layout_width="match_parent"
+                android:layout_height="18dp"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textSize="13sp"
+                android:singleLine="true"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_text" />
+        </LinearLayout>
+
+        <!-- 스코어 -->
+        <LinearLayout
+            android:layout_width="116dp"
+            android:layout_height="77dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/live_score_box">
+
+            <TextView
+                android:id="@+id/live_score_a"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_score_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=":"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_score_text" />
+
+            <TextView
+                android:id="@+id/live_score_b"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_score_text" />
+        </LinearLayout>
+
+        <!-- B팀 -->
+        <LinearLayout
+            android:layout_width="68dp"
+            android:layout_height="70dp"
+            android:orientation="vertical"
+            android:gravity="center_horizontal|bottom">
+
+            <ImageView
+                android:id="@+id/live_team_b_logo"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/live_logo_box"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/live_team_b_name"
+                android:layout_width="match_parent"
+                android:layout_height="18dp"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textSize="13sp"
+                android:singleLine="true"
+                android:includeFontPadding="false"
+                android:textColor="@color/live_text" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

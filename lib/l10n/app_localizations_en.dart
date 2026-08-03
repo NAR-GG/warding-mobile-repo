@@ -753,6 +753,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortOldest => 'Oldest';
 
   @override
+  String get sortUpcoming => 'Upcoming';
+
+  @override
   String get scheduleLoadFailed => 'Failed to load schedule';
 
   @override

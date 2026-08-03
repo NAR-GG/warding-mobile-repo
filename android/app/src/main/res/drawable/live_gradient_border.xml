@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 경기 종료 하단 줄의 상단 보더 3dp — 메인 그라디언트 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:startColor="@color/live_gradient_start"
+        android:centerColor="@color/live_gradient_center"
+        android:endColor="@color/live_gradient_end"
+        android:angle="0" />
+</shape>
