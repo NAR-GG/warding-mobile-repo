@@ -19,6 +19,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     required this.matchId,
     this.initialMatch,
     int initialTabIndex = 0,
+    this.initialSet,
     MatchDetailRepository? repository,
     RatingRepository? ratingRepository,
   })  : _matchInfo = initialMatch,
@@ -31,6 +32,10 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// Screen 이 주입한 초기 경기 정보 (경기 목록에서 진입할 때).
   /// 마이구독처럼 matchId 만 가지고 진입하면 null 이므로 _loadGames 에서 별도 로드한다.
   final ScheduleMatch? initialMatch;
+
+  /// 진입 시 선택할 세트 번호. Live Activity '평점 남기기' 처럼 특정 세트를
+  /// 지정해 들어올 때 쓴다. null 이면 [_computeInitialSet] 으로 자동 판단한다.
+  final int? initialSet;
 
   ScheduleMatch? _matchInfo;
 
@@ -186,6 +191,13 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 2) 없으면 status=="ENDED" 중 gameOrder 가 가장 큰 세트
   /// 3) 그래도 없으면 1세트(목록이 있으면 첫 세트)
   int _computeInitialSet(List<MatchGame> games) {
+    // 딥링크 등으로 세트를 지정해 들어왔으면 그 세트를 우선한다.
+    // (목록에 없는 번호면 자동 판단으로 넘어간다.)
+    final requested = initialSet;
+    if (requested != null &&
+        (games.isEmpty || games.any((g) => g.gameOrder == requested))) {
+      return requested;
+    }
     if (games.isEmpty) return 1;
     for (final g in games) {
       if (g.isLive) return g.gameOrder;

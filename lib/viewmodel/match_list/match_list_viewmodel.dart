@@ -95,24 +95,41 @@ class MatchListViewModel extends ChangeNotifier {
   /// 정렬 순서 옵션. fetch 방향은 항상 최신→과거이고, 표시 방향은 View 가
   /// ListView.reverse 로 뒤집는다 ([ascending] 참고). 기본은 '오래된 순'
   /// (위가 과거, 아래가 미래).
-  /// 표시용 라벨 목록 — l10n 에서 가져온다. 순서(0=최근순, 1=오래된 순)는 고정.
+  /// 표시용 라벨 목록 — l10n 에서 가져온다.
+  /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정.
   List<String> get sortOrders => [
         appStrings?.sortRecent ?? 'Recent',
         appStrings?.sortOldest ?? 'Oldest',
+        appStrings?.sortUpcoming ?? 'Upcoming',
       ];
 
-  /// 0=최근순, 1=오래된 순. 라벨이 언어에 따라 바뀌어도 index로 비교한다.
+  /// 0=최근순, 1=오래된 순, 2=오늘 이후. 라벨이 언어에 따라 바뀌어도 index로 비교한다.
   int _sortOrderIndex = 1;
 
   String get sortOrder => sortOrders[_sortOrderIndex];
 
-  /// 화면 위→아래가 과거→미래(시간 오름차순)인지. '오래된 순'(index 1) 일 때 true.
-  bool get ascending => _sortOrderIndex == 1;
+  /// 화면 위→아래가 과거→미래(시간 오름차순)인지.
+  /// '오래된 순'(1)·'오늘 이후'(2) 일 때 true.
+  bool get ascending => _sortOrderIndex >= 1;
+
+  /// '오늘 이후'(index 2) — 오늘 0시 이전에 시작한 경기는 목록에서 제외한다.
+  bool get upcomingOnly => _sortOrderIndex == 2;
 
   void selectSortOrder(String order) {
     final idx = sortOrders.indexOf(order);
     if (idx < 0 || idx == _sortOrderIndex) return;
+    final wasUpcomingOnly = upcomingOnly;
     _sortOrderIndex = idx;
+    // '오늘 이후' 를 켜고 끌 때는 필터 조건 자체가 바뀌므로 첫 페이지부터 다시 받는다.
+    // (누적본에는 이미 걸러진 과거 경기가 없어 되돌릴 수 없다.)
+    // _reloadSchedule 이 버전을 올리고 notify 하므로 여기선 따로 알리지 않는다.
+    if (wasUpcomingOnly != upcomingOnly) {
+      _reloadSchedule();
+      return;
+    }
+    // 재조회가 필요 없는 전환(최근순↔오래된 순)도 표시 방향이 뒤집히므로
+    // 버전을 올려 View 가 오늘 날짜로 다시 스크롤하게 한다.
+    _scheduleVersion++;
     notifyListeners();
   }
 
@@ -326,8 +343,10 @@ class MatchListViewModel extends ChangeNotifier {
       // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
       //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
       //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
+      //    '오늘 이후'는 과거를 아예 안 담으므로 오늘 이하 조건은 보지 않는다.
       final needPrefetch =
-          (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded()) &&
+          (newMatches < _minMatchesPerLoad ||
+              (!upcomingOnly && !_hasTodayOrPastLoaded())) &&
           _hasMore;
 
       // 첫 페이지는 즉시 노출하되, prefetch 가 필요하면 loadingMore 를 같은 프레임에
@@ -340,7 +359,8 @@ class MatchListViewModel extends ChangeNotifier {
         var attempts = 1;
         while (_hasMore &&
             attempts < _maxCatchUpPages &&
-            (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded())) {
+            (newMatches < _minMatchesPerLoad ||
+                (!upcomingOnly && !_hasTodayOrPastLoaded()))) {
           newMatches += await _fetchNextPage();
           attempts++;
           _notify();
@@ -373,9 +393,27 @@ class MatchListViewModel extends ChangeNotifier {
     );
     _cursor = page.nextCursor;
     _hasMore = page.hasNext && page.nextCursor != null;
+    // '오늘 이후' 는 응답이 최신→과거 순이라, 페이지가 오늘 이전으로 넘어가면
+    // 그 뒤 페이지는 전부 과거다. 더 받아봐야 전부 걸러지므로 여기서 멈춘다.
+    if (upcomingOnly && _hasMore && _pageEndsBeforeToday(page.matches)) {
+      _hasMore = false;
+    }
     final filtered = _applyFilters(page.matches);
     _mergeIntoSchedule(filtered);
     return filtered.length;
+  }
+
+  /// 서버 페이지(최신→과거 순)의 마지막 경기가 이미 오늘 이전인지.
+  /// 참이면 이후 커서 페이지는 전부 과거라 '오늘 이후' 조회를 끝내도 된다.
+  bool _pageEndsBeforeToday(List<ScheduleMatch> matches) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final m in matches.reversed) {
+      final d = m.date;
+      if (d == null) continue;
+      return DateTime(d.year, d.month, d.day).isBefore(today);
+    }
+    return false;
   }
 
   /// 새 페이지 매치(최신→과거 순)를 날짜별 그룹으로 묶어 [_schedule] 뒤에 붙인다.
@@ -452,7 +490,16 @@ class MatchListViewModel extends ChangeNotifier {
     final isAllLeagues =
         league == null || league.isEmpty || league == allLeagueLabel;
     final allTeams = _selectedTeams.contains(allTeamsLabel);
+    // '오늘 이후' 는 오늘 0시 기준으로 그 이전 날짜 경기를 전부 뺀다.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final onlyUpcoming = upcomingOnly;
     return matches.where((m) {
+      if (onlyUpcoming) {
+        final d = m.date;
+        if (d == null) return false;
+        if (DateTime(d.year, d.month, d.day).isBefore(today)) return false;
+      }
       if (!isAllLeagues &&
           m.leagueInfo.isNotEmpty &&
           m.leagueInfo != league) {

@@ -1035,6 +1035,10 @@ struct WidgetRouter: View {
 struct WardingWidgetBundle: WidgetBundle {
     var body: some Widget {
         WardingScheduleWidget()
+        // 실시간 경기 Live Activity (iOS 16.1+).
+        if #available(iOS 16.1, *) {
+            MatchLiveActivityWidget()
+        }
     }
 }
 

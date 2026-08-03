@@ -736,6 +736,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sortOldest => '오래된 순';
 
   @override
+  String get sortUpcoming => '오늘 이후';
+
+  @override
   String get scheduleLoadFailed => '경기 일정을 불러오지 못했어요';
 
   @override

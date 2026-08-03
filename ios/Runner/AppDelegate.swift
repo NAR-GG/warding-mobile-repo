@@ -15,8 +15,14 @@ import WidgetKit
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  /// 실시간 경기 Live Activity 채널 핸들러. 해제되지 않게 강한 참조로 붙잡는다.
+  private var liveActivityPlugin: LiveActivityPlugin?
+
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    liveActivityPlugin = LiveActivityPlugin.register(
+      with: engineBridge.applicationRegistrar.messenger()
+    )
   }
 
   // 백그라운드 fetch → 위젯 타임라인 갱신 트리거
@@ -40,7 +46,8 @@ import WidgetKit
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
-    if url.scheme == "warding" && url.host == "widget" {
+    // widget: 홈 화면 위젯 / match: Live Activity 카드
+    if url.scheme == "warding" && (url.host == "widget" || url.host == "match") {
       if let controller = window?.rootViewController as? FlutterViewController {
         let channel = FlutterMethodChannel(
           name: "com.warding.app/widget",

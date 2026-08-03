@@ -1447,6 +1447,12 @@ abstract class AppLocalizations {
   /// **'오래된 순'**
   String get sortOldest;
 
+  /// No description provided for @sortUpcoming.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 이후'**
+  String get sortUpcoming;
+
   /// No description provided for @scheduleLoadFailed.
   ///
   /// In ko, this message translates to:

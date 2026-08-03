@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 실시간 경기 알림(Live Activity 대응) 표시용. Android 13+ 는 런타임 요청이 필요하다. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="warding"
         android:name="${applicationName}"
@@ -29,6 +31,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="warding" android:host="widget" />
+            </intent-filter>
+            <!-- 실시간 경기 알림 딥링크: warding://match/{matchId} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="warding" android:host="match" />
             </intent-filter>
         </activity>
         <!-- 카카오 로그인 콜백 (카카오톡 → 앱 복귀).
