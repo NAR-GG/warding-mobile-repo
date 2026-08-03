@@ -9,6 +9,7 @@ import '../../model/team_notification_subscription.dart';
 import '../match/match_detail_repository.dart';
 import '../match/match_subscription_repository.dart';
 import '../preference/team_preference_repository.dart';
+import '../schedule/schedule_repository.dart';
 import '../subscription/subscription_repository.dart';
 import 'live_activity_service.dart';
 
@@ -133,6 +134,81 @@ class LiveMatchActivityController {
     if (phase == LiveMatchPhase.matchEnded) {
       _scheduleAutoDismiss();
     }
+  }
+
+  /// 진행 중인 구독 경기를 찾아 카드를 띄운다.
+  ///
+  /// 앱 시작·포그라운드 복귀 시 호출한다. 푸시만으로는 카드를 띄울 수 없는
+  /// 경우(세트 시작 알림을 꺼 둔 구독자 등)를 메우는 경로다.
+  /// 이미 카드가 떠 있으면 아무것도 하지 않는다.
+  ///
+  /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 오늘 경기를
+  /// 훑는다. 앞쪽이 후보가 훨씬 적어 대부분 거기서 끝난다.
+  Future<void> scanForLiveMatch() async {
+    if (_matchId != null) return;
+    if (!await _service.isSupported()) return;
+
+    try {
+      for (final matchId in await _subscribedMatchIds()) {
+        if (await _startIfLive(matchId)) return;
+      }
+      for (final matchId in await _todayMatchIdsOfSubscribedTeams()) {
+        if (await _startIfLive(matchId)) return;
+      }
+    } catch (e) {
+      debugPrint('[LiveActivity] 진행 중 경기 스캔 실패: $e');
+    }
+  }
+
+  /// 알림을 켠 경기 ID 목록. 실패하면 빈 집합.
+  ///
+  /// 경기 리스트에서 직접 신청한 것만 담긴다(팀 구독 경기는 포함되지 않는다).
+  Future<Set<String>> _subscribedMatchIds() async {
+    try {
+      return await MatchSubscriptionRepository.instance.subscribedMatchIds();
+    } catch (e) {
+      debugPrint('[LiveActivity] 경기 구독 목록 조회 실패: $e');
+      return const {};
+    }
+  }
+
+  /// 구독(또는 응원) 팀이 나오는 오늘 경기의 ID 목록.
+  ///
+  /// 경기 단위 알림을 켜지 않았어도 팀만 구독했으면 카드를 띄워야 해서
+  /// 필요한 경로다.
+  Future<List<String>> _todayMatchIdsOfSubscribedTeams() async {
+    final codes = {
+      for (final s in await _loadTeamSubs())
+        if (s.subscribed || s.favoriteTeam) s.teamCode,
+    };
+    if (codes.isEmpty) return const [];
+
+    try {
+      final matches = await ScheduleRepository.instance
+          .fetchMatchesByDate(DateTime.now(), leagues: const ['ALL']);
+      return [
+        for (final m in matches)
+          if (codes.contains(m.teamA.teamCode) ||
+              codes.contains(m.teamB.teamCode))
+            m.matchId,
+      ];
+    } catch (e) {
+      debugPrint('[LiveActivity] 오늘 경기 조회 실패: $e');
+      return const [];
+    }
+  }
+
+  /// 해당 경기가 진행 중이면 카드를 띄운다. 띄웠으면 true.
+  Future<bool> _startIfLive(String matchId) async {
+    final match = await MatchDetailRepository.instance.fetchMatch(matchId);
+    if (match == null) return false;
+
+    final (games, _) =
+        await MatchDetailRepository.instance.fetchGames(matchId);
+    if (resolvePhase(games) != LiveMatchPhase.playing) return false;
+
+    await sync(match: match, games: games);
+    return _matchId != null;
   }
 
   /// 경기 종료 카드를 일정 시간 뒤 자동으로 내린다.

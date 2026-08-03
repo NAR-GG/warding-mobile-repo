@@ -12,6 +12,7 @@ import 'config/app_language.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'repository/fcm/fcm_service.dart';
+import 'repository/live_activity/live_match_activity_controller.dart';
 import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/schedule/schedule_screen.dart';
@@ -100,8 +101,37 @@ Future<void> main() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // 앱 시작 시 진행 중인 구독 경기가 있으면 실시간 카드를 띄운다.
+    // (푸시로는 세트 시작 알림을 꺼 둔 구독자를 커버하지 못한다.)
+    liveMatchActivityController.scanForLiveMatch();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 포그라운드로 돌아올 때마다 다시 살핀다. 앱이 떠 있는 동안 경기가
+    // 시작됐을 수 있고, 카드가 이미 떠 있으면 스캔은 즉시 반환한다.
+    if (state == AppLifecycleState.resumed) {
+      liveMatchActivityController.scanForLiveMatch();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
