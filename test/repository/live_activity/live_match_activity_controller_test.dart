@@ -72,6 +72,15 @@ void main() {
       ];
       expect(controller.resolvePhase(games), LiveMatchPhase.setEnded);
     });
+
+    test('세트 데이터가 전혀 없으면(과거 경기 등) 진행 중으로 보지 않는다', () {
+      expect(controller.resolvePhase(const []), isNot(LiveMatchPhase.playing));
+    });
+
+    test('세트가 모두 SCHEDULED 면(시작 직전) 진행 중으로 본다', () {
+      final games = [game(1, 'SCHEDULED'), game(2, 'SCHEDULED')];
+      expect(controller.resolvePhase(games), LiveMatchPhase.playing);
+    });
   });
 
   group('resolveSetNumber', () {

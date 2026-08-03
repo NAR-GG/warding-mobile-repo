@@ -64,6 +64,11 @@ class LiveMatchActivityController {
   }) async {
     if (!await _service.isSupported()) return;
 
+    // 이미 추적 중인 경기인데 세트 응답이 비어 오면 일시적인 응답 누락일
+    // 가능성이 크다. 그대로 반영하면 진행 중인 세트가 "SET END"로 잘못
+    // 표시되니, 상태를 내리지 말고 이번 갱신은 건너뛴다.
+    if (_matchId == match.matchId && games.isEmpty) return;
+
     final phase = resolvePhase(games);
     final setNumber = resolveSetNumber(games);
     final (scoreA, scoreB) = resolveScore(match, games);
@@ -393,9 +398,11 @@ class LiveMatchActivityController {
   @visibleForTesting
   LiveMatchPhase resolvePhase(List<MatchGame> games) {
     if (games.any((g) => g.isLive)) return LiveMatchPhase.playing;
-    if (games.isNotEmpty && games.every((g) => g.isEnded)) {
-      return LiveMatchPhase.matchEnded;
-    }
+    // 세트 데이터가 전혀 없으면(과거 경기, 잘못된 matchId 등) 진행 중이라고
+    // 볼 근거가 없다. 아래 SCHEDULED-전용 폴백과 구분해야 한다
+    // — 그건 "세트는 있는데 아직 LIVE 로 안 바뀐 시작 직전" 케이스다.
+    if (games.isEmpty) return LiveMatchPhase.setEnded;
+    if (games.every((g) => g.isEnded)) return LiveMatchPhase.matchEnded;
     // 진행 중인 세트는 없지만 끝난 세트가 있으면 세트 간 휴식.
     if (games.any((g) => g.isEnded)) return LiveMatchPhase.setEnded;
     return LiveMatchPhase.playing;

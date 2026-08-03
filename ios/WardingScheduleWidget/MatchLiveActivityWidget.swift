@@ -29,13 +29,6 @@ private enum LiveColors {
         dark ? Color.white : Color(red: 0x10 / 255, green: 0x11 / 255, blue: 0x13 / 255)
     }
 
-    /// 스코어 박스 배경 — #FAFAFA / #25262B
-    static func scoreBox(_ dark: Bool) -> Color {
-        dark
-            ? Color(red: 0x25 / 255, green: 0x26 / 255, blue: 0x2B / 255)
-            : Color(red: 0xFA / 255, green: 0xFA / 255, blue: 0xFA / 255)
-    }
-
     /// 스코어 숫자 — #909296 / #A6A7AB
     static func scoreText(_ dark: Bool) -> Color {
         dark
@@ -150,7 +143,7 @@ private struct WardingLogo: View {
     }
 }
 
-/// 헤더 우측 LIVE 배지 (46×18). 진행 중이면 점이 깜빡인다.
+/// 헤더 우측 LIVE 배지 (46×18). 진행 중이면 빨간 점이 표시된다.
 @available(iOS 16.1, *)
 private struct LiveBadge: View {
     let phase: MatchLivePhase
@@ -178,7 +171,9 @@ private struct LiveBadge: View {
     var body: some View {
         HStack(spacing: 6 * scale) {
             if isLive {
-                BlinkingDot(scale: scale)
+                Circle()
+                    .fill(LiveColors.liveBadgeFg)
+                    .frame(width: 6 * scale, height: 6 * scale)
             }
             Text(label)
                 .font(.system(size: 8 * scale, weight: .medium))
@@ -200,31 +195,6 @@ private struct LiveBadge: View {
                         )
                 )
         )
-    }
-}
-
-/// LIVE 배지의 깜빡이는 빨간 점.
-///
-/// 위젯 확장은 렌더된 스냅샷을 표시해 `@State` + `onAppear` 로 건
-/// `repeatForever` 애니메이션이 돌지 않는다. `TimelineView` 로 위젯 스스로
-/// 주기적으로 다시 그리게 하고, 그 시각으로 투명도를 계산해 깜빡임을 만든다.
-@available(iOS 16.1, *)
-private struct BlinkingDot: View {
-    let scale: CGFloat
-
-    /// 한 번 깜빡이는 주기(초).
-    private let period: TimeInterval = 1.2
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: period / 2)) { context in
-            let phase = context.date.timeIntervalSinceReferenceDate
-                .truncatingRemainder(dividingBy: period)
-            Circle()
-                .fill(LiveColors.liveBadgeFg)
-                .frame(width: 6 * scale, height: 6 * scale)
-                .opacity(phase < period / 2 ? 1 : 0.2)
-                .animation(.easeInOut(duration: period / 2), value: phase < period / 2)
-        }
     }
 }
 
@@ -330,10 +300,6 @@ private struct ScoreBox: View {
         }
         .padding(.vertical, 14 * scale)
         .frame(width: LiveMetrics.scoreBoxWidth * scale)
-        .background(
-            RoundedRectangle(cornerRadius: 14 * scale)
-                .fill(LiveColors.scoreBox(isDark))
-        )
     }
 
     private func digit(_ value: String) -> some View {
