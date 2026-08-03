@@ -142,8 +142,8 @@ class LiveMatchActivityController {
   /// 경우(세트 시작 알림을 꺼 둔 구독자 등)를 메우는 경로다.
   /// 이미 카드가 떠 있으면 아무것도 하지 않는다.
   ///
-  /// 알림을 켠 경기 ID 목록을 먼저 보고, 없으면 구독 팀이 나오는 오늘 경기를
-  /// 훑는다. 앞쪽이 훨씬 적은 후보를 보므로 대부분 여기서 끝난다.
+  /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 오늘 경기를
+  /// 훑는다. 앞쪽이 후보가 훨씬 적어 대부분 거기서 끝난다.
   Future<void> scanForLiveMatch() async {
     if (_matchId != null) return;
     if (!await _service.isSupported()) return;
@@ -161,6 +161,8 @@ class LiveMatchActivityController {
   }
 
   /// 알림을 켠 경기 ID 목록. 실패하면 빈 집합.
+  ///
+  /// 경기 리스트에서 직접 신청한 것만 담긴다(팀 구독 경기는 포함되지 않는다).
   Future<Set<String>> _subscribedMatchIds() async {
     try {
       return await MatchSubscriptionRepository.instance.subscribedMatchIds();
