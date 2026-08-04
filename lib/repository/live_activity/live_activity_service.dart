@@ -4,17 +4,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../model/live_match_activity.dart';
+import 'live_activity_push_token_repository.dart';
 
 /// 실시간 경기 카드 제어 서비스.
 ///
-/// 네이티브 채널(`com.warding.app/live_activity`)로 각 플랫폼 구현을 호출한다.
-/// - iOS: ActivityKit Live Activity
-/// - Android: 커스텀 레이아웃을 붙인 진행 중(ongoing) 알림
-///
-/// 두 플랫폼이 같은 채널·메서드·페이로드를 쓰므로 호출부는 분기하지 않는다.
+/// 네이티브 채널(`com.warding.app/live_activity`)로 iOS(ActivityKit Live
+/// Activity) 구현을 호출한다. 세트 스코어는 서버가 APNs 로 카드를 직접
+/// 갱신하고, 앱은 카드가 발급한 푸시 토큰을 받아 등록만 한다(`pushToken`
+/// 콜백 — [_handleNativeCall] 참고).
 class LiveActivityService {
   LiveActivityService._();
   static final LiveActivityService instance = LiveActivityService._();
@@ -27,15 +26,25 @@ class LiveActivityService {
 
   String? get activeMatchId => _activeMatchId;
 
-  /// 실시간 카드를 지원하는 플랫폼인지(iOS·Android).
-  bool get _supportedPlatform =>
-      !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+  /// [_handleNativeCall] 등록 여부. 실제로 지원 플랫폼에서 채널을 처음 쓸
+  /// 때 등록한다 — 생성자에서 바로 등록하면 위젯 바인딩 없는 순수 단위
+  /// 테스트에서 `LiveActivityService.instance` 에 닿기만 해도 죽는다.
+  bool _handlerRegistered = false;
+
+  void _ensureHandlerRegistered() {
+    if (_handlerRegistered) return;
+    _handlerRegistered = true;
+    _channel.setMethodCallHandler(_handleNativeCall);
+  }
+
+  /// 실시간 카드를 지원하는 플랫폼인지. Android 는 서버 푸시 갱신 없이
+  /// 백그라운드 상태를 따라가지 못해 제외했다(iOS 만 지원).
+  bool get _supportedPlatform => !kIsWeb && Platform.isIOS;
 
   /// 기기/설정에서 실시간 카드를 쓸 수 있는지.
-  ///
-  /// Android 는 알림 권한이 곧 표시 가능 여부다(13+ 는 런타임 권한).
   Future<bool> isSupported() async {
     if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
     try {
       return await _channel.invokeMethod<bool>('isSupported') ?? false;
     } on PlatformException catch (e) {
@@ -44,16 +53,25 @@ class LiveActivityService {
     }
   }
 
-  /// Android 알림 권한을 확보한다. iOS 는 별도 권한이 없어 그대로 true.
-  ///
-  /// 이미 거부된 상태면 다시 묻지 않고 false 를 돌려준다(설정에서만 변경 가능).
+  /// iOS 는 별도 권한이 없어 지원 플랫폼이면 그대로 true.
   Future<bool> ensurePermission() async {
-    if (!_supportedPlatform) return false;
-    if (!Platform.isAndroid) return true;
-    if (await isSupported()) return true;
+    return _supportedPlatform;
+  }
 
-    final status = await Permission.notification.request();
-    return status.isGranted;
+  /// 네이티브(iOS)에서 오는 콜백을 처리한다.
+  ///
+  /// - `pushToken` : 카드가 발급한 APNs 푸시 토큰. 서버에 등록해야 세트
+  ///   시작·종료 시 서버가 이 카드를 직접 갱신할 수 있다.
+  Future<void> _handleNativeCall(MethodCall call) async {
+    if (call.method != 'pushToken') return;
+    final args = call.arguments as Map<Object?, Object?>?;
+    final matchId = args?['matchId'] as String?;
+    final pushToken = args?['pushToken'] as String?;
+    if (matchId == null || pushToken == null) return;
+    await LiveActivityPushTokenRepository.instance.register(
+      matchId: matchId,
+      pushToken: pushToken,
+    );
   }
 
   /// Live Activity 를 시작한다. 성공하면 true.
@@ -64,6 +82,7 @@ class LiveActivityService {
     required LiveMatchActivityState state,
   }) async {
     if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
     try {
       final args = <String, dynamic>{...config.toMap(), ...state.toMap()};
       final id = await _channel.invokeMethod<String>('start', args);

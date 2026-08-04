@@ -277,6 +277,12 @@ class ApiConfig {
   /// 없으면 204.
   static String get promotedNoticeUrl => '$apiBaseUrl/notices/promoted';
 
+  // ── Live Activity 푸시 토큰 (인증 필요) ──────────────────────────────
+
+  /// 실시간 경기 카드 푸시 토큰 등록(POST {matchId, pushToken}).
+  static String get liveActivitiesUrl =>
+      '$apiBaseUrl/mobile/me/live-activities';
+
   // ── FCM 기기 토큰 (인증 필요) ──────────────────────────────────────
 
   /// FCM 토큰 등록·갱신 (POST {fcmToken, platform}).

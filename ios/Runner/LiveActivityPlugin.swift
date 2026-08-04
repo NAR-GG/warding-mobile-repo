@@ -21,12 +21,16 @@ final class LiveActivityPlugin: NSObject {
     /// 현재 앱에서 시작한 액티비티 (동시에 하나만 유지한다).
     private var currentActivityId: String?
 
+    /// 푸시 토큰을 Dart 쪽으로 되돌려 보낼 때 쓰는 채널.
+    private var channel: FlutterMethodChannel?
+
     static func register(with messenger: FlutterBinaryMessenger) -> LiveActivityPlugin {
         let instance = LiveActivityPlugin()
         let channel = FlutterMethodChannel(name: channelName, binaryMessenger: messenger)
         channel.setMethodCallHandler { [weak instance] call, result in
             instance?.handle(call, result: result)
         }
+        instance.channel = channel
         return instance
     }
 
@@ -105,16 +109,17 @@ final class LiveActivityPlugin: NSObject {
                 activity = try Activity.request(
                     attributes: attributes,
                     content: ActivityContent(state: state, staleDate: nil),
-                    pushType: nil
+                    pushType: .token
                 )
             } else {
                 activity = try Activity.request(
                     attributes: attributes,
                     contentState: state,
-                    pushType: nil
+                    pushType: .token
                 )
             }
             currentActivityId = activity.id
+            observePushTokenUpdates(of: activity, matchId: attributes.matchId)
             result(activity.id)
         } catch {
             result(FlutterError(code: "start_failed",
@@ -197,6 +202,26 @@ final class LiveActivityPlugin: NSObject {
         #endif
     }
 
+    #if canImport(ActivityKit)
+    /// 액티비티의 APNs 푸시 토큰이 발급·갱신될 때마다 hex 문자열로 바꿔
+    /// Dart 쪽에 알린다(`pushToken` 메서드). 서버가 이 토큰으로 카드를
+    /// 직접 갱신한다 — 토큰 등록 자체는 인증(JWT)이 필요해 Dart 쪽에서 한다.
+    @available(iOS 16.1, *)
+    private func observePushTokenUpdates(of activity: Activity<MatchLiveAttributes>, matchId: String) {
+        Task {
+            for await tokenData in activity.pushTokenUpdates {
+                let hexToken = tokenData.map { String(format: "%02x", $0) }.joined()
+                await MainActor.run {
+                    self.channel?.invokeMethod("pushToken", arguments: [
+                        "matchId": matchId,
+                        "pushToken": hexToken,
+                    ])
+                }
+            }
+        }
+    }
+    #endif
+
     // MARK: - 헬퍼
 
     #if canImport(ActivityKit)
@@ -207,17 +232,9 @@ final class LiveActivityPlugin: NSObject {
             rawValue: args["phase"] as? String ?? MatchLivePhase.playing.rawValue
         ) ?? .playing
 
-        // 세트 시작 시각은 epoch millis 로 받는다.
-        var startedAt: Date?
-        if let millis = args["setStartedAtMillis"] as? NSNumber {
-            startedAt = Date(timeIntervalSince1970: millis.doubleValue / 1000.0)
-        }
-
         return MatchLiveAttributes.ContentState(
             phase: phase,
             setNumber: (args["setNumber"] as? NSNumber)?.intValue ?? 1,
-            setStartedAt: startedAt,
-            frozenTime: args["frozenTime"] as? String,
             scoreA: (args["scoreA"] as? NSNumber)?.intValue ?? 0,
             scoreB: (args["scoreB"] as? NSNumber)?.intValue ?? 0,
             statusLabel: args["statusLabel"] as? String ?? "",
