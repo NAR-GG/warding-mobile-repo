@@ -29,12 +29,6 @@ class LiveMatchActivityController {
   /// 액티비티가 붙어있는 경기 ID.
   String? _matchId;
 
-  /// 현재 세트가 시작된 시각. LIVE 세트가 바뀔 때만 다시 잡는다.
-  DateTime? _setStartedAt;
-
-  /// [_setStartedAt] 기준점이 어느 세트의 것인지. 세트가 바뀌면 다시 잡는다.
-  int? _timedSet;
-
   /// 경기 종료 후 카드를 자동으로 내리는 타이머.
   Timer? _dismissTimer;
 
@@ -68,23 +62,11 @@ class LiveMatchActivityController {
     final setNumber = resolveSetNumber(games);
     final (scoreA, scoreB) = resolveScore(match, games);
 
-    // 진행 중인 세트가 바뀌면 경과 시간 기준점을 새로 잡는다.
-    // (세트가 끝나고 다음 세트가 시작되면 타이머가 0부터 다시 흘러야 한다.)
-    if (phase == LiveMatchPhase.playing) {
-      if (_timedSet != setNumber) {
-        _timedSet = setNumber;
-        _setStartedAt = DateTime.now();
-      }
-      _setStartedAt ??= DateTime.now();
-    }
-
     final state = LiveMatchActivityState(
       phase: phase,
       setNumber: setNumber,
       scoreA: scoreA,
       scoreB: scoreB,
-      setStartedAt: phase == LiveMatchPhase.playing ? _setStartedAt : null,
-      frozenTime: phase == LiveMatchPhase.playing ? null : _frozenElapsed(),
       statusLabel: _statusLabel(phase, setNumber),
       winnerTeamCode: phase == LiveMatchPhase.matchEnded
           ? _resolveWinner(match, scoreA, scoreB)
@@ -114,7 +96,6 @@ class LiveMatchActivityController {
       if (autoStart &&
           phase == LiveMatchPhase.playing &&
           await _shouldShow(match)) {
-        _setStartedAt = DateTime.now();
         if (await _start(match, state)) {
           _matchId = match.matchId;
           _lastSignature = signature;
@@ -249,7 +230,6 @@ class LiveMatchActivityController {
     _pollTimer = null;
     _dismissTimer?.cancel();
     _dismissTimer = null;
-    _timedSet = null;
     if (_matchId == null) {
       await _service.endAll();
       return;
@@ -265,7 +245,6 @@ class LiveMatchActivityController {
     );
     _matchId = null;
     _lastSignature = null;
-    _setStartedAt = null;
   }
 
   // ── 표시 자격 / 응원 팀 ──────────────────────
@@ -360,9 +339,8 @@ class LiveMatchActivityController {
     ScheduleMatch match,
     LiveMatchActivityState state,
   ) async {
-    // Android 는 알림 권한이 없으면 카드가 뜨지 않는다. 시작 직전에 확보한다.
     if (!await _service.ensurePermission()) {
-      debugPrint('[LiveActivity] 알림 권한이 없어 표시하지 않음');
+      debugPrint('[LiveActivity] 지원하지 않는 플랫폼이라 표시하지 않음');
       return false;
     }
 
@@ -434,15 +412,6 @@ class LiveMatchActivityController {
   String? _resolveWinner(ScheduleMatch match, int scoreA, int scoreB) {
     if (scoreA == scoreB) return null;
     return scoreA > scoreB ? match.teamA.teamCode : match.teamB.teamCode;
-  }
-
-  /// 세트가 끝난 시점의 경과 시간 문자열.
-  String? _frozenElapsed() {
-    final started = _setStartedAt;
-    if (started == null) return null;
-    final d = DateTime.now().difference(started);
-    return '${d.inMinutes.toString().padLeft(2, '0')}:'
-        '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
   String _statusLabel(LiveMatchPhase phase, int setNumber) {

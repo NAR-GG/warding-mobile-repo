@@ -29,13 +29,6 @@ private enum LiveColors {
         dark ? Color.white : Color(red: 0x10 / 255, green: 0x11 / 255, blue: 0x13 / 255)
     }
 
-    /// 스코어 박스 배경 — #FAFAFA / #25262B
-    static func scoreBox(_ dark: Bool) -> Color {
-        dark
-            ? Color(red: 0x25 / 255, green: 0x26 / 255, blue: 0x2B / 255)
-            : Color(red: 0xFA / 255, green: 0xFA / 255, blue: 0xFA / 255)
-    }
-
     /// 스코어 숫자 — #909296 / #A6A7AB
     static func scoreText(_ dark: Bool) -> Color {
         dark
@@ -330,10 +323,6 @@ private struct ScoreBox: View {
         }
         .padding(.vertical, 14 * scale)
         .frame(width: LiveMetrics.scoreBoxWidth * scale)
-        .background(
-            RoundedRectangle(cornerRadius: 14 * scale)
-                .fill(LiveColors.scoreBox(isDark))
-        )
     }
 
     private func digit(_ value: String) -> some View {
@@ -627,31 +616,14 @@ private struct MatchLiveLockScreenView: View {
         .padding(.horizontal, 9 * scale)
     }
 
-    /// 2단 좌측 — "SET 1 - 12:24" 형태의 세트 번호 + 경과 시간.
+    /// 2단 좌측 — "SET 1" 형태의 세트 번호.
     ///
-    /// 경과 시간은 `Text(_, style: .timer)` 로 그려야 푸시 없이도 위젯이
-    /// 스스로 1초마다 갱신한다. `Text` 끼리는 `+` 로 이어 붙일 수 있어
-    /// HStack 없이 한 줄로 만든다(위젯에서 레이아웃이 더 안정적이다).
+    /// 경과 시간은 서버 푸시로만 카드를 갱신하는 구조로 바뀌면서 더는
+    /// 표시하지 않는다(자세한 배경은 `LiveMatchActivityState` 주석 참고).
     private func setAndElapsedView(scale: CGFloat) -> some View {
-        let font = Font.system(size: 13 * scale, weight: .medium)
-        return elapsedText(prefix: "SET \(state.setNumber) - ")
-            .font(font)
+        Text("SET \(state.setNumber)")
+            .font(.system(size: 13 * scale, weight: .medium))
             .foregroundColor(LiveColors.text(isDark))
-    }
-
-    /// 상태에 따라 "SET n - 12:34" / "SET n 종료" / "경기 종료" 를 만든다.
-    private func elapsedText(prefix: String) -> Text {
-        switch state.phase {
-        case .playing:
-            if let startedAt = state.setStartedAt {
-                return Text(prefix) + Text(startedAt, style: .timer)
-            }
-            return Text(prefix) + Text(state.frozenTime ?? "00:00")
-        case .setEnded:
-            return Text("SET \(state.setNumber) 종료")
-        case .matchEnded:
-            return Text("경기 종료")
-        }
     }
 }
 
@@ -744,19 +716,11 @@ struct MatchLiveActivityWidget: Widget {
                         Text("\(context.state.scoreA) : \(context.state.scoreB)")
                             .font(.system(size: 24, weight: .bold))
                             .monospacedDigit()
-                        if context.state.phase == .playing,
-                           let startedAt = context.state.setStartedAt {
-                            Text(startedAt, style: .timer)
-                                .font(.system(size: 11))
-                                .monospacedDigit()
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .frame(width: 60)
-                        } else {
-                            Text(context.state.statusLabel)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
+                        Text(context.state.phase == .playing
+                            ? "SET \(context.state.setNumber)"
+                            : context.state.statusLabel)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
                     }
                 }
             } compactLeading: {

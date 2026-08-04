@@ -23,19 +23,11 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun handleWidgetIntent(intent: Intent?) {
         val uri = intent?.data ?: return
-        // widget: 홈 화면 위젯 / match: 실시간 경기 알림
-        if (uri.scheme == "warding" && (uri.host == "widget" || uri.host == "match")) {
+        // widget: 홈 화면 위젯 딥링크
+        if (uri.scheme == "warding" && uri.host == "widget") {
             flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
                 MethodChannel(messenger, CHANNEL).invokeMethod("widgetAction", uri.toString())
             }
         }
-    }
-
-    override fun configureFlutterEngine(flutterEngine: io.flutter.embedding.engine.FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        LiveActivityPlugin.register(
-            applicationContext,
-            flutterEngine.dartExecutor.binaryMessenger,
-        )
     }
 }

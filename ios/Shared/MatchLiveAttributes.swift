@@ -33,13 +33,6 @@ struct MatchLiveAttributes: ActivityAttributes {
         /// 현재 세트 번호 (1부터).
         var setNumber: Int
 
-        /// 세트 시작 시각. 경과 시간을 타이머로 자동 표시하는 데 쓴다.
-        /// 세트가 끝났으면 nil 로 두고 [frozenTime] 을 쓴다.
-        var setStartedAt: Date?
-
-        /// 세트 종료/경기 종료 시 고정 표시할 경과 시간 문자열 (예: "32:14").
-        var frozenTime: String?
-
         /// A팀(왼쪽) 세트 스코어.
         var scoreA: Int
 

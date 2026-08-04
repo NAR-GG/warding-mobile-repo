@@ -74,8 +74,6 @@ class LiveMatchActivityState {
     required this.setNumber,
     required this.scoreA,
     required this.scoreB,
-    this.setStartedAt,
-    this.frozenTime,
     this.statusLabel = '',
     this.winnerTeamCode,
   });
@@ -89,13 +87,6 @@ class LiveMatchActivityState {
   final int scoreA;
   final int scoreB;
 
-  /// 세트 시작 시각. 진행 중일 때 위젯이 이 값 기준으로 경과 시간을
-  /// 1초마다 스스로 갱신한다(푸시 불필요).
-  final DateTime? setStartedAt;
-
-  /// 종료 상태에서 고정 표시할 경과 시간 (예: '32:14').
-  final String? frozenTime;
-
   /// 시각 대신 보여줄 보조 라벨 (예: '다음 세트 준비 중').
   final String statusLabel;
 
@@ -107,8 +98,6 @@ class LiveMatchActivityState {
         'setNumber': setNumber,
         'scoreA': scoreA,
         'scoreB': scoreB,
-        'setStartedAtMillis': setStartedAt?.millisecondsSinceEpoch,
-        'frozenTime': frozenTime,
         'statusLabel': statusLabel,
         'winnerTeamCode': winnerTeamCode,
       };
@@ -118,8 +107,6 @@ class LiveMatchActivityState {
     int? setNumber,
     int? scoreA,
     int? scoreB,
-    DateTime? setStartedAt,
-    String? frozenTime,
     String? statusLabel,
     String? winnerTeamCode,
   }) {
@@ -128,8 +115,6 @@ class LiveMatchActivityState {
       setNumber: setNumber ?? this.setNumber,
       scoreA: scoreA ?? this.scoreA,
       scoreB: scoreB ?? this.scoreB,
-      setStartedAt: setStartedAt ?? this.setStartedAt,
-      frozenTime: frozenTime ?? this.frozenTime,
       statusLabel: statusLabel ?? this.statusLabel,
       winnerTeamCode: winnerTeamCode ?? this.winnerTeamCode,
     );
