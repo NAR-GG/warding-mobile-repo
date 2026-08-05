@@ -88,8 +88,15 @@ void main() {
   });
 
   group('isScheduledStatus', () {
+    test('실제 서버가 시작 전 경기에 쓰는 unstarted 를 걸러낸다', () {
+      // GET /api/mobile/matches/{id} 응답의 matchStatus 실제 값.
+      // 이 값이 빠져서 시작 전 경기에 카드가 떴다.
+      expect(controller.isScheduledStatus('unstarted'), isTrue);
+    });
+
     test('예정을 뜻하는 값이면 true', () {
       for (final s in const [
+        'unstarted',
         'SCHEDULED',
         'scheduled',
         'UPCOMING',

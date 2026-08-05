@@ -26,83 +26,56 @@ class LiveMatchActivityController {
 
   final LiveActivityService _service;
 
-  /// 마지막으로 네이티브에 넘긴 상태의 지문. 같으면 갱신을 건너뛴다.
-  String? _lastSignature;
-
   /// 액티비티가 붙어있는 경기 ID.
   String? _matchId;
 
   /// 현재 액티비티가 떠 있는지.
   bool get isRunning => _matchId != null;
 
-  /// 경기 상태를 반영한다.
+  /// 경기가 진행 중이면 카드를 띄운다.
   ///
-  /// - LIVE 세트가 있고 액티비티가 없으면 시작
-  /// - 이미 떠 있으면 상태만 갱신 (매치 종료는 서버가 처리하므로 제외)
+  /// 카드가 뜬 뒤의 갱신·종료는 전부 서버가 APNs 로 처리하므로, 이 메서드는
+  /// '띄우기'만 한다. 앱이 같이 갱신하면 스코어 기준이 달라(서버는 매치
+  /// 스코어, 앱은 세트 승자 카운트) 표시가 오락가락한다.
   ///
-  /// [autoStart] 가 false 면 이미 떠 있는 액티비티 갱신만 하고 새로 시작하지 않는다.
+  /// [autoStart] 가 false 면 새로 시작하지 않는다.
   Future<void> sync({
     required ScheduleMatch match,
     required List<MatchGame> games,
     bool autoStart = true,
   }) async {
+    if (!autoStart) return;
+    // 이미 이 경기 카드가 떠 있으면 할 일이 없다.
+    if (_matchId == match.matchId) return;
     if (!await _service.isSupported()) return;
 
     // 아직 시작하지 않은 경기(세트가 없거나 전부 예정)는 표시 대상이 아니다.
     final phase = resolvePhase(games);
-    if (phase == null) return;
+    if (!_canStart(match, phase)) return;
+
+    // 구독한 팀이 나오거나 알림을 켠 경기일 때만 띄운다.
+    if (!await _shouldShow(match)) return;
+
+    // 다른 경기 카드가 떠 있으면 내리고 새로 띄운다.
+    if (_matchId != null) await stop();
 
     final setNumber = resolveSetNumber(games);
     final (scoreA, scoreB) = resolveScore(match, games);
 
     final state = LiveMatchActivityState(
-      phase: phase,
+      phase: phase!,
       setNumber: setNumber,
       scoreA: scoreA,
       scoreB: scoreB,
       statusLabel: _statusLabel(phase, setNumber),
-      winnerTeamCode: phase == LiveMatchPhase.matchEnded
-          ? _resolveWinner(match, scoreA, scoreB)
-          : null,
     );
 
-    final signature = '${match.matchId}|${state.phase.wireValue}|'
-        '${state.setNumber}|${state.scoreA}|${state.scoreB}';
-
-    if (_matchId == null) {
-      // 아직 안 떴는데 경기가 진행 중이 아니면 띄울 이유가 없다.
-      if (!autoStart || !_canStart(match, phase)) return;
-      // 구독한 팀이 나오거나 알림을 켠 경기일 때만 띄운다.
-      if (!await _shouldShow(match)) return;
-      if (await _start(match, state)) {
-        _matchId = match.matchId;
-        _lastSignature = signature;
-      }
-      return;
+    if (await _start(match, state)) {
+      _matchId = match.matchId;
+      debugPrint('[LiveActivity] 카드 표시: ${match.matchId} '
+          '${match.teamA.teamCode} vs ${match.teamB.teamCode} '
+          'status="${match.matchStatus}" set=$setNumber');
     }
-
-    // 다른 경기로 넘어갔으면 기존 액티비티를 내리고 새로 시작한다.
-    if (_matchId != match.matchId) {
-      await stop();
-      if (autoStart && _canStart(match, phase) && await _shouldShow(match)) {
-        if (await _start(match, state)) {
-          _matchId = match.matchId;
-          _lastSignature = signature;
-        }
-      }
-      return;
-    }
-
-    if (signature == _lastSignature) return;
-    _lastSignature = signature;
-
-    // 카드가 떠 있는 동안의 갱신은 서버가 APNs 로 한다. 여기서 굳이 한 번 더
-    // 쏘는 건 경기 상세 화면을 보고 있을 때 반영을 앞당기는 용도다.
-    // (서버는 매치 스코어를, 앱은 세트 승자 카운트를 쓰므로 값이 어긋날 수
-    //  있어 매치 종료 상태는 서버에 맡기고 여기서 보내지 않는다.)
-    if (phase == LiveMatchPhase.matchEnded) return;
-
-    await _service.update(state);
   }
 
   /// 새로 카드를 띄워도 되는 상태인지.
@@ -124,43 +97,70 @@ class LiveMatchActivityController {
   ///
   /// 앱 시작·포그라운드 복귀 시 호출한다. 푸시만으로는 카드를 띄울 수 없는
   /// 경우(세트 시작 알림을 꺼 둔 구독자 등)를 메우는 경로다.
-  /// 이미 카드가 떠 있으면 아무것도 하지 않는다.
+  /// 이미 이 컨트롤러가 띄운 카드가 있으면 아무것도 하지 않는다.
   ///
   /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 오늘 경기를
   /// 훑는다. 앞쪽이 후보가 훨씬 적어 대부분 거기서 끝난다.
+  ///
+  /// 띄울 경기를 하나도 못 찾으면 남아 있는 카드를 정리한다([_dismissStale]).
   Future<void> scanForLiveMatch() async {
     if (_matchId != null) return;
     if (!await _service.isSupported()) return;
 
     try {
-      for (final matchId in await _subscribedMatchIds()) {
+      final subscribed = await _subscribedMatchIds();
+      for (final matchId in subscribed ?? const <String>{}) {
         if (await _startIfLive(matchId)) return;
       }
-      for (final matchId in await _todayMatchIdsOfSubscribedTeams()) {
+      final todays = await _todayMatchIdsOfSubscribedTeams();
+      for (final matchId in todays ?? const <String>[]) {
         if (await _startIfLive(matchId)) return;
       }
+
+      // 조회가 실패했으면 후보를 다 보지 못한 것이라 정리하지 않는다.
+      if (subscribed == null || todays == null) return;
+      await _dismissStale();
     } catch (e) {
       debugPrint('[LiveActivity] 진행 중 경기 스캔 실패: $e');
     }
   }
 
-  /// 알림을 켠 경기 ID 목록. 실패하면 빈 집합.
+  /// 앱이 띄운 적 없는데 잠금화면에 남아 있는 카드를 정리한다.
+  ///
+  /// 카드는 iOS 시스템이 들고 있어 앱을 껐다 켜도 살아남지만, 이 컨트롤러는
+  /// 전역 싱글턴이라 재시작하면 [_matchId] 가 null 로 돌아온다. 그래서 앱은
+  /// "내가 띄운 카드가 없다"고 보고 그 카드를 영영 건드리지 못한다.
+  ///
+  /// 서버는 자기가 아는 카드만 `end` 로 닫으므로, 잘못 떠서 서버에 토큰이
+  /// 등록되지 않은 카드는 이 경로로만 사라진다.
+  ///
+  /// [scanForLiveMatch] 가 띄울 경기를 못 찾은 뒤에만 부른다 — 진행 중인
+  /// 경기가 있으면 그 경로에서 이미 반환했다. 카드가 없으면 네이티브
+  /// `endAll` 이 빈 목록을 돌아 아무 일도 하지 않는다.
+  Future<void> _dismissStale() async {
+    debugPrint('[LiveActivity] 진행 중인 경기가 없어 남은 카드를 정리');
+    await _service.endAll();
+  }
+
+  /// 알림을 켠 경기 ID 목록. 조회에 실패하면 null.
   ///
   /// 경기 리스트에서 직접 신청한 것만 담긴다(팀 구독 경기는 포함되지 않는다).
-  Future<Set<String>> _subscribedMatchIds() async {
+  /// 빈 목록(대상 없음)과 실패를 구분해야 [_dismissStale] 이 조회 실패를
+  /// '진행 중인 경기 없음'으로 오해하고 멀쩡한 카드를 내리지 않는다.
+  Future<Set<String>?> _subscribedMatchIds() async {
     try {
       return await MatchSubscriptionRepository.instance.subscribedMatchIds();
     } catch (e) {
       debugPrint('[LiveActivity] 경기 구독 목록 조회 실패: $e');
-      return const {};
+      return null;
     }
   }
 
-  /// 구독(또는 응원) 팀이 나오는 오늘 경기의 ID 목록.
+  /// 구독(또는 응원) 팀이 나오는 오늘 경기의 ID 목록. 조회에 실패하면 null.
   ///
   /// 경기 단위 알림을 켜지 않았어도 팀만 구독했으면 카드를 띄워야 해서
   /// 필요한 경로다.
-  Future<List<String>> _todayMatchIdsOfSubscribedTeams() async {
+  Future<List<String>?> _todayMatchIdsOfSubscribedTeams() async {
     final codes = {
       for (final s in await _loadTeamSubs())
         if (s.subscribed || s.favoriteTeam) s.teamCode,
@@ -178,7 +178,7 @@ class LiveMatchActivityController {
       ];
     } catch (e) {
       debugPrint('[LiveActivity] 오늘 경기 조회 실패: $e');
-      return const [];
+      return null;
     }
   }
 
@@ -197,26 +197,14 @@ class LiveMatchActivityController {
     return _matchId != null;
   }
 
-  /// 액티비티를 즉시 내린다.
+  /// 떠 있는 카드를 즉시 내린다.
   ///
   /// 매치 종료 시의 정리는 서버가 `end` + dismissal-date 로 처리하므로,
-  /// 여기는 사용자가 직접 내리거나 다른 경기로 넘어갈 때만 쓴다.
+  /// 여기는 다른 경기로 넘어가거나 잘못 뜬 카드를 치울 때만 쓴다.
+  /// 최종 스코어를 남길 필요가 없어 상태를 새로 만들지 않고 바로 내린다.
   Future<void> stop() async {
-    if (_matchId == null) {
-      await _service.endAll();
-      return;
-    }
-    await _service.end(
-      LiveMatchActivityState(
-        phase: LiveMatchPhase.matchEnded,
-        setNumber: 1,
-        scoreA: 0,
-        scoreB: 0,
-        statusLabel: '경기 종료',
-      ),
-    );
+    await _service.endAll();
     _matchId = null;
-    _lastSignature = null;
   }
 
   // ── 표시 자격 / 응원 팀 ──────────────────────
@@ -389,10 +377,14 @@ class LiveMatchActivityController {
   ///
   /// 세트 API 가 늦게 갱신되는 경우를 막는 2차 방어선이다. 값이 비어 있거나
   /// 모르는 값이면 false 를 돌려 세트 데이터 판정에 맡긴다.
+  ///
+  /// 실제 서버(`GET /api/mobile/matches/{id}`)는 시작 전 경기에 `unstarted`
+  /// 를 내려준다. 나머지 값은 서버 구현이 바뀌어도 걸리도록 함께 둔 것이다.
   @visibleForTesting
   bool isScheduledStatus(String status) {
     final s = status.toLowerCase();
-    return s.contains('schedul') ||
+    return s.contains('unstarted') ||
+        s.contains('schedul') ||
         s.contains('upcoming') ||
         s.contains('not_started') ||
         s.contains('notstarted') ||
@@ -400,11 +392,6 @@ class LiveMatchActivityController {
         s.contains('ready') ||
         status.contains('예정') ||
         status.contains('대기');
-  }
-
-  String? _resolveWinner(ScheduleMatch match, int scoreA, int scoreB) {
-    if (scoreA == scoreB) return null;
-    return scoreA > scoreB ? match.teamA.teamCode : match.teamB.teamCode;
   }
 
   String _statusLabel(LiveMatchPhase phase, int setNumber) {
