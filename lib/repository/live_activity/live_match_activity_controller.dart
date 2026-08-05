@@ -108,17 +108,20 @@ class LiveMatchActivityController {
     if (!await _service.isSupported()) return;
 
     try {
-      final subscribed = await _subscribedMatchIds();
-      for (final matchId in subscribed ?? const <String>{}) {
-        if (await _startIfLive(matchId)) return;
-      }
-      final todays = await _todayMatchIdsOfSubscribedTeams();
-      for (final matchId in todays ?? const <String>[]) {
+      // 경기 단위 구독은 인증이 필요해 비회원·로그인 전에는 조회가 실패한다.
+      // 그때는 후보가 없는 것으로 보고 팀 구독 경로만 본다.
+      for (final matchId in await _subscribedMatchIds() ?? const <String>{}) {
         if (await _startIfLive(matchId)) return;
       }
 
-      // 조회가 실패했으면 후보를 다 보지 못한 것이라 정리하지 않는다.
-      if (subscribed == null || todays == null) return;
+      // 오늘 경기 목록은 인증이 필요 없다. 이쪽 조회까지 실패했다면 후보를
+      // 다 보지 못한 것이라, 진행 중인 카드를 잘못 내리지 않도록 멈춘다.
+      final todays = await _todayMatchIdsOfSubscribedTeams();
+      if (todays == null) return;
+      for (final matchId in todays) {
+        if (await _startIfLive(matchId)) return;
+      }
+
       await _dismissStale();
     } catch (e) {
       debugPrint('[LiveActivity] 진행 중 경기 스캔 실패: $e');
@@ -314,9 +317,9 @@ class LiveMatchActivityController {
     return _service.start(
       config: LiveMatchActivityConfig(
         matchId: match.matchId,
-        teamAName: match.teamA.teamName,
+        teamAName: displayName(match.teamA),
         teamACode: match.teamA.teamCode,
-        teamBName: match.teamB.teamName,
+        teamBName: displayName(match.teamB),
         teamBCode: match.teamB.teamCode,
         leagueName: match.leagueInfo,
         teamALogoBase64: logoA,
@@ -326,6 +329,16 @@ class LiveMatchActivityController {
       state: state,
     );
   }
+
+  /// 카드에 띄울 팀 표시명. 팀 코드가 있으면 코드를 쓴다.
+  ///
+  /// 위젯은 로고 아래에 `teamAName` 을 그리는데, 서버가 주는 팀명은
+  /// "Nongshim Redforce" 같은 풀네임이라 좁은 카드에서 잘린다. 시안대로
+  /// "NS" 를 보여주려면 코드를 넘겨야 한다 — 위젯(Swift)을 고치면 스토어
+  /// 재제출이 필요해 표시명 자체를 여기서 정한다.
+  @visibleForTesting
+  String displayName(MatchTeam team) =>
+      team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
 
   /// 세트 목록에서 현재 국면을 판단한다. 아직 시작 전이면 null.
   ///

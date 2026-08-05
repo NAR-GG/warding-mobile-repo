@@ -116,6 +116,23 @@ void main() {
     });
   });
 
+  group('displayName', () {
+    test('팀 코드가 있으면 코드를 쓴다 (풀네임은 카드에서 잘린다)', () {
+      // 서버는 'Team Vitality' 를 주지만 카드에는 'VIT' 로 보여야 한다.
+      expect(controller.displayName(match().teamB), 'VIT');
+      expect(controller.displayName(match().teamA), 'TH');
+    });
+
+    test('팀 코드가 비어 있으면 팀명으로 폴백한다', () {
+      final team = MatchTeam.fromJson({
+        'teamName': 'Nongshim Redforce',
+        'teamCode': '',
+        'teamImageUrl': '',
+      });
+      expect(controller.displayName(team), 'Nongshim Redforce');
+    });
+  });
+
   group('resolveSetNumber', () {
     test('LIVE 세트가 있으면 그 세트 번호', () {
       final games = [
