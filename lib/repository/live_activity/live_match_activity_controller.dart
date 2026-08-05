@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../../model/live_match_activity.dart';
@@ -16,7 +14,12 @@ import 'live_activity_service.dart';
 /// 경기 데이터([ScheduleMatch] + 세트 목록)를 Live Activity 상태로 옮겨주는 컨트롤러.
 ///
 /// [MatchDetailViewModel] 은 화면 상태만 담당하고, 여기서 그 데이터를 읽어
-/// 액티비티 시작·갱신·종료를 판단한다. 같은 상태로 중복 갱신하지 않는다.
+/// 액티비티 시작·갱신을 판단한다. 같은 상태로 중복 갱신하지 않는다.
+///
+/// 카드가 뜬 뒤의 갱신·종료는 서버가 APNs 로 직접 처리한다
+/// (세트 시작·종료 시 `update`, 매치 종료 시 `end` + 30분 뒤 dismissal-date).
+/// 앱은 카드를 띄우고(서버는 push-to-start 를 쓰지 않는다) 발급된 푸시 토큰을
+/// 등록하는 역할만 한다 — [LiveActivityService] 의 `pushToken` 콜백 참고.
 class LiveMatchActivityController {
   LiveMatchActivityController({LiveActivityService? service})
       : _service = service ?? LiveActivityService.instance;
@@ -29,26 +32,13 @@ class LiveMatchActivityController {
   /// 액티비티가 붙어있는 경기 ID.
   String? _matchId;
 
-  /// 경기 종료 후 카드를 자동으로 내리는 타이머.
-  Timer? _dismissTimer;
-
-  /// 카드가 떠 있는 동안 스코어를 주기적으로 갱신하는 타이머.
-  Timer? _pollTimer;
-
-  /// 갱신 주기. 세트 스코어는 자주 바뀌지 않아 30초면 충분하다.
-  static const _pollInterval = Duration(seconds: 30);
-
-  /// 경기 종료 카드를 유지하는 시간. 평점을 남길 여유를 준다.
-  static const _autoDismissAfter = Duration(minutes: 30);
-
   /// 현재 액티비티가 떠 있는지.
   bool get isRunning => _matchId != null;
 
   /// 경기 상태를 반영한다.
   ///
   /// - LIVE 세트가 있고 액티비티가 없으면 시작
-  /// - 이미 떠 있으면 상태만 갱신
-  /// - 경기가 끝났으면 종료 상태로 갱신
+  /// - 이미 떠 있으면 상태만 갱신 (매치 종료는 서버가 처리하므로 제외)
   ///
   /// [autoStart] 가 false 면 이미 떠 있는 액티비티 갱신만 하고 새로 시작하지 않는다.
   Future<void> sync({
@@ -58,7 +48,10 @@ class LiveMatchActivityController {
   }) async {
     if (!await _service.isSupported()) return;
 
+    // 아직 시작하지 않은 경기(세트가 없거나 전부 예정)는 표시 대상이 아니다.
     final phase = resolvePhase(games);
+    if (phase == null) return;
+
     final setNumber = resolveSetNumber(games);
     final (scoreA, scoreB) = resolveScore(match, games);
 
@@ -78,14 +71,12 @@ class LiveMatchActivityController {
 
     if (_matchId == null) {
       // 아직 안 떴는데 경기가 진행 중이 아니면 띄울 이유가 없다.
-      if (!autoStart || phase != LiveMatchPhase.playing) return;
+      if (!autoStart || !_canStart(match, phase)) return;
       // 구독한 팀이 나오거나 알림을 켠 경기일 때만 띄운다.
       if (!await _shouldShow(match)) return;
-      final started = await _start(match, state);
-      if (started) {
+      if (await _start(match, state)) {
         _matchId = match.matchId;
         _lastSignature = signature;
-        _startPolling(match);
       }
       return;
     }
@@ -93,13 +84,10 @@ class LiveMatchActivityController {
     // 다른 경기로 넘어갔으면 기존 액티비티를 내리고 새로 시작한다.
     if (_matchId != match.matchId) {
       await stop();
-      if (autoStart &&
-          phase == LiveMatchPhase.playing &&
-          await _shouldShow(match)) {
+      if (autoStart && _canStart(match, phase) && await _shouldShow(match)) {
         if (await _start(match, state)) {
           _matchId = match.matchId;
           _lastSignature = signature;
-          _startPolling(match);
         }
       }
       return;
@@ -108,13 +96,28 @@ class LiveMatchActivityController {
     if (signature == _lastSignature) return;
     _lastSignature = signature;
 
-    await _service.update(state);
+    // 카드가 떠 있는 동안의 갱신은 서버가 APNs 로 한다. 여기서 굳이 한 번 더
+    // 쏘는 건 경기 상세 화면을 보고 있을 때 반영을 앞당기는 용도다.
+    // (서버는 매치 스코어를, 앱은 세트 승자 카운트를 쓰므로 값이 어긋날 수
+    //  있어 매치 종료 상태는 서버에 맡기고 여기서 보내지 않는다.)
+    if (phase == LiveMatchPhase.matchEnded) return;
 
-    // 경기가 끝나면 최종 스코어를 잠깐 보여준 뒤 카드를 내린다.
-    // (사용자가 '평점 남기기' 를 누를 시간을 준다.)
-    if (phase == LiveMatchPhase.matchEnded) {
-      _scheduleAutoDismiss();
+    await _service.update(state);
+  }
+
+  /// 새로 카드를 띄워도 되는 상태인지.
+  ///
+  /// 세트 데이터가 LIVE 를 가리키면서, 서버의 경기 상태도 '예정'이 아니어야 한다.
+  /// 세트가 LIVE 인데 matchStatus 가 아직 SCHEDULED 로 남아 있는 경기를 걸러
+  /// 시작 전 카드 노출을 막는다.
+  bool _canStart(ScheduleMatch match, LiveMatchPhase? phase) {
+    if (phase != LiveMatchPhase.playing) return false;
+    if (isScheduledStatus(match.matchStatus)) {
+      debugPrint('[LiveActivity] 서버 상태가 예정이라 표시하지 않음: '
+          '${match.matchId} status="${match.matchStatus}"');
+      return false;
     }
+    return true;
   }
 
   /// 진행 중인 구독 경기를 찾아 카드를 띄운다.
@@ -183,53 +186,22 @@ class LiveMatchActivityController {
   Future<bool> _startIfLive(String matchId) async {
     final match = await MatchDetailRepository.instance.fetchMatch(matchId);
     if (match == null) return false;
+    // 서버 상태가 '예정'이면 세트 목록까지 받아볼 필요도 없다.
+    if (isScheduledStatus(match.matchStatus)) return false;
 
     final (games, _) =
         await MatchDetailRepository.instance.fetchGames(matchId);
-    if (resolvePhase(games) != LiveMatchPhase.playing) return false;
+    if (!_canStart(match, resolvePhase(games))) return false;
 
     await sync(match: match, games: games);
     return _matchId != null;
   }
 
-  /// 경기 종료 카드를 일정 시간 뒤 자동으로 내린다.
-  ///
-  /// iOS 는 액티비티를 최대 8시간 유지하고 그 뒤 스스로 정리하지만,
-  /// 종료된 경기 카드가 몇 시간씩 잠금화면에 남으면 방해가 된다.
-  void _scheduleAutoDismiss() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    _dismissTimer?.cancel();
-    _dismissTimer = Timer(_autoDismissAfter, () {
-      stop();
-    });
-  }
-
-  /// 카드가 떠 있는 동안 세트 목록을 주기적으로 다시 받아 상태를 갱신한다.
-  ///
-  /// 경기 상세 화면을 벗어나도 잠금화면 카드가 계속 살아 있어야 하므로,
-  /// 화면이 아니라 컨트롤러가 직접 폴링한다. 앱이 백그라운드로 내려가면
-  /// iOS 가 타이머를 멈추고, 포그라운드 복귀 시 다시 돈다.
-  void _startPolling(ScheduleMatch match) {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(_pollInterval, (_) async {
-      if (_matchId != match.matchId) return;
-      try {
-        final (games, _) =
-            await MatchDetailRepository.instance.fetchGames(match.matchId);
-        await sync(match: match, games: games, autoStart: false);
-      } catch (e) {
-        debugPrint('[LiveActivity] 폴링 실패: $e');
-      }
-    });
-  }
-
   /// 액티비티를 즉시 내린다.
+  ///
+  /// 매치 종료 시의 정리는 서버가 `end` + dismissal-date 로 처리하므로,
+  /// 여기는 사용자가 직접 내리거나 다른 경기로 넘어갈 때만 쓴다.
   Future<void> stop() async {
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    _dismissTimer?.cancel();
-    _dismissTimer = null;
     if (_matchId == null) {
       await _service.endAll();
       return;
@@ -367,16 +339,20 @@ class LiveMatchActivityController {
     );
   }
 
-  /// 세트 목록에서 현재 국면을 판단한다.
+  /// 세트 목록에서 현재 국면을 판단한다. 아직 시작 전이면 null.
+  ///
+  /// 세트가 하나도 없거나 전부 `SCHEDULED` 면 경기가 시작되지 않은 것이므로
+  /// null 을 돌려준다. (예전에는 이 경우도 [LiveMatchPhase.playing] 으로 봐서
+  /// 시작 전 경기에 카드가 떴다.)
   @visibleForTesting
-  LiveMatchPhase resolvePhase(List<MatchGame> games) {
+  LiveMatchPhase? resolvePhase(List<MatchGame> games) {
     if (games.any((g) => g.isLive)) return LiveMatchPhase.playing;
     if (games.isNotEmpty && games.every((g) => g.isEnded)) {
       return LiveMatchPhase.matchEnded;
     }
     // 진행 중인 세트는 없지만 끝난 세트가 있으면 세트 간 휴식.
     if (games.any((g) => g.isEnded)) return LiveMatchPhase.setEnded;
-    return LiveMatchPhase.playing;
+    return null;
   }
 
   /// 표시할 세트 번호 — LIVE 세트가 있으면 그것, 없으면 마지막 종료 세트.
@@ -407,6 +383,23 @@ class LiveMatchActivityController {
       }
     }
     return (a, b);
+  }
+
+  /// 서버가 내려준 [ScheduleMatch.matchStatus] 가 '아직 시작 전'을 뜻하는지.
+  ///
+  /// 세트 API 가 늦게 갱신되는 경우를 막는 2차 방어선이다. 값이 비어 있거나
+  /// 모르는 값이면 false 를 돌려 세트 데이터 판정에 맡긴다.
+  @visibleForTesting
+  bool isScheduledStatus(String status) {
+    final s = status.toLowerCase();
+    return s.contains('schedul') ||
+        s.contains('upcoming') ||
+        s.contains('not_started') ||
+        s.contains('notstarted') ||
+        s.contains('pending') ||
+        s.contains('ready') ||
+        status.contains('예정') ||
+        status.contains('대기');
   }
 
   String? _resolveWinner(ScheduleMatch match, int scoreA, int scoreB) {

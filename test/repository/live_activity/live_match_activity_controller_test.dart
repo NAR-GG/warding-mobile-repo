@@ -27,7 +27,7 @@ void main() {
   }
 
   /// TH vs VIT 대진. 스코어 판정은 teamCode 매칭에 의존한다.
-  ScheduleMatch match() {
+  ScheduleMatch match({String status = 'completed'}) {
     return ScheduleMatch.fromJson({
       'matchId': '115548681803406115',
       'teamA': {
@@ -42,7 +42,7 @@ void main() {
       },
       'leagueInfo': 'LEC',
       'matchTitle': 'Group Stage | TH vs VIT',
-      'matchStatus': 'completed',
+      'matchStatus': status,
       'scheduledTime': '18:00',
     });
   }
@@ -71,6 +71,41 @@ void main() {
         game(2, 'SCHEDULED'),
       ];
       expect(controller.resolvePhase(games), LiveMatchPhase.setEnded);
+    });
+
+    test('세트가 하나도 없으면 시작 전이라 null', () {
+      // 경기 시작 전에는 세트 목록이 비어 내려온다.
+      expect(controller.resolvePhase(const []), isNull);
+    });
+
+    test('세트가 전부 예정이면 시작 전이라 null', () {
+      final games = [
+        game(1, 'SCHEDULED'),
+        game(2, 'SCHEDULED'),
+      ];
+      expect(controller.resolvePhase(games), isNull);
+    });
+  });
+
+  group('isScheduledStatus', () {
+    test('예정을 뜻하는 값이면 true', () {
+      for (final s in const [
+        'SCHEDULED',
+        'scheduled',
+        'UPCOMING',
+        'NOT_STARTED',
+        'pending',
+        '경기 예정',
+        '대기중',
+      ]) {
+        expect(controller.isScheduledStatus(s), isTrue, reason: s);
+      }
+    });
+
+    test('진행·종료·빈 값이면 false (세트 데이터 판정에 맡긴다)', () {
+      for (final s in const ['LIVE', 'in_progress', 'completed', 'ENDED', '']) {
+        expect(controller.isScheduledStatus(s), isFalse, reason: s);
+      }
     });
   });
 
