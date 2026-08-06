@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -33,10 +34,19 @@ class _SplashScreenState extends State<SplashScreen>
   /// true — 포그라운드 복귀 시 [_bootstrap]을 재시도한다.
   bool _retryOnResume = false;
 
-  /// 포그라운드인데도 Keychain 이 계속 실패할 때(기기 keychain 고장 등)의
-  /// 지연 재시도 횟수. [_maxForegroundRetries]를 넘으면 포기하고 진행한다.
-  int _foregroundRetries = 0;
-  static const _maxForegroundRetries = 5;
+  /// 기기가 잠금해제되길 기다리는 폴링 타이머.
+  ///
+  /// 잠금 상태에서 launch 되면 `resumed` 가 이미 와 있어 라이프사이클
+  /// 이벤트로는 잠금해제 시점을 알 수 없다 — 보호 데이터 가용 여부를
+  /// 직접 주기적으로 확인한다.
+  Timer? _unlockPoll;
+
+  /// 보호 데이터가 열린 뒤에도 Keychain 이 실패할 때의 재시도 횟수.
+  ///
+  /// 잠금이 원인인 실패는 이 카운터를 쓰지 않는다 — 그건 시간이 해결하는
+  /// 문제라 횟수로 끊으면 멀쩡한 로그인 사용자를 로그인 화면으로 보낸다.
+  int _unlockedRetries = 0;
+  static const _maxUnlockedRetries = 5;
 
   @override
   void initState() {
@@ -47,38 +57,89 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _unlockPoll?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 사용자가 앱을 실제로 열면 잠금은 이미 풀려 있다 — 폴링을 기다리지 않고
+    // 곧바로 재시도한다(폴링은 그동안의 백그라운드 구간을 메우는 용도).
     if (state == AppLifecycleState.resumed && _retryOnResume) {
+      _unlockPoll?.cancel();
       _retryOnResume = false;
       _bootstrap();
     }
   }
 
-  /// Keychain 접근 실패 시 재시도 예약. 백그라운드면 resumed 이벤트가
-  /// 트리거지만, 이미 포그라운드면 그 이벤트가 안 오므로 지연 재시도로
-  /// 커버한다 (계속 실패하면 포기하고 진행 — 스플래시에 갇히지 않게).
-  void _scheduleRetry() {
+  /// Keychain 접근 실패 시 재시도를 예약한다.
+  ///
+  /// 실패 원인을 두 갈래로 나눠 다르게 다룬다. 기기 잠금 때문이면 시간이
+  /// 해결하는 문제라 **횟수 제한 없이** 잠금해제를 기다리고, 잠금이 아닌데도
+  /// 실패하면(기기 keychain 고장 등) 몇 번 재시도하다 포기한다.
+  ///
+  /// 잠금 상태를 라이프사이클로 판단하면 안 된다 — 잠금화면 위에서 launch
+  /// (prewarming·백그라운드 푸시)돼도 iOS 는 `resumed` 를 보고한다. 그래서
+  /// 예전 구현은 잠긴 기기를 '포그라운드'로 오해해 5초 만에 포기하고
+  /// 로그인 화면으로 보냈다(-25308 이 로그아웃으로 체감된 경로).
+  Future<void> _scheduleRetry() async {
     _retryOnResume = true;
-    if (WidgetsBinding.instance.lifecycleState !=
-        AppLifecycleState.resumed) {
+
+    final unlocked = await _isProtectedDataAvailable();
+    if (!mounted || !_retryOnResume) return;
+
+    if (!unlocked) {
+      // 잠금해제될 때까지 기다린다. 사용자가 앱을 열었을 땐 이미 풀려 있다.
+      _startUnlockPolling();
       return;
     }
-    if (_foregroundRetries >= _maxForegroundRetries) {
+
+    // 잠금은 풀렸는데도 실패 — 여기서만 횟수로 끊는다.
+    if (_unlockedRetries >= _maxUnlockedRetries) {
       _retryOnResume = false;
       _proceed(null);
       return;
     }
-    _foregroundRetries++;
+    _unlockedRetries++;
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted && _retryOnResume) {
         _retryOnResume = false;
         _bootstrap();
       }
+    });
+  }
+
+  /// Keychain 을 읽을 수 있는 상태(기기 잠금해제)인지.
+  ///
+  /// iOS 가 아니거나 조회 자체가 실패하면 true 로 본다 — 잠금이 원인이
+  /// 아니라는 뜻이라 일반 재시도 경로로 보낸다.
+  Future<bool> _isProtectedDataAvailable() async {
+    if (kIsWeb || !Platform.isIOS) return true;
+    try {
+      return await secureStorage.isCupertinoProtectedDataAvailable() ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// 잠금해제를 기다렸다가 [_bootstrap] 을 재시도한다.
+  ///
+  /// 잠금 중에는 화면도 보이지 않으므로 스플래시에 머물러도 사용자가 겪는
+  /// 불편이 없다. 여기서 포기하고 로그인 화면을 띄우면, 나중에 사용자가
+  /// 앱을 열었을 때 멀쩡한 토큰을 두고 로그아웃된 것처럼 보인다.
+  void _startUnlockPolling() {
+    _unlockPoll?.cancel();
+    _unlockPoll = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted || !_retryOnResume) {
+        timer.cancel();
+        return;
+      }
+      if (!await _isProtectedDataAvailable()) return;
+      timer.cancel();
+      if (!mounted || !_retryOnResume) return;
+      _retryOnResume = false;
+      _bootstrap();
     });
   }
 
