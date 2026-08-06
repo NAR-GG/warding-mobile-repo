@@ -233,6 +233,14 @@ private struct TeamColumn: View {
                             width: LiveMetrics.teamLogoImage * scale,
                             height: LiveMetrics.teamLogoImage * scale
                         )
+                } else {
+                    // 로고 프리페치 전에도 어느 팀인지 읽히게 이름을 대신 그린다.
+                    Text(name)
+                        .font(.system(size: 14 * scale, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .padding(.horizontal, 4 * scale)
                 }
             }
             .frame(
@@ -262,6 +270,7 @@ private struct TeamColumn: View {
 @available(iOS 16.1, *)
 private struct TeamLogoBox: View {
     let logo: UIImage?
+    let teamCode: String
     let isFavorite: Bool
     let scale: CGFloat
 
@@ -278,6 +287,15 @@ private struct TeamLogoBox: View {
                         width: LiveMetrics.teamLogoImage * scale,
                         height: LiveMetrics.teamLogoImage * scale
                     )
+            } else {
+                // 서버가 만든 카드는 로고 프리페치가 끝나기 전에 뜰 수 있다.
+                // 그때 빈 검은 박스만 남지 않도록 팀 코드를 대신 그린다.
+                Text(teamCode)
+                    .font(.system(size: 14 * scale, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .padding(.horizontal, 4 * scale)
             }
         }
         .frame(
@@ -594,11 +612,13 @@ private struct MatchLiveLockScreenView: View {
         HStack(spacing: 9 * scale) {
             TeamLogoBox(
                 logo: MatchLiveImageStore.load(fileName: attributes.teamALogoFile),
+                teamCode: attributes.teamACode,
                 isFavorite: attributes.favoriteTeamCode == attributes.teamACode,
                 scale: scale
             )
             TeamLogoBox(
                 logo: MatchLiveImageStore.load(fileName: attributes.teamBLogoFile),
+                teamCode: attributes.teamBCode,
                 isFavorite: attributes.favoriteTeamCode == attributes.teamBCode,
                 scale: scale
             )

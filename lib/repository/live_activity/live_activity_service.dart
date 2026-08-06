@@ -62,16 +62,80 @@ class LiveActivityService {
   ///
   /// - `pushToken` : 카드가 발급한 APNs 푸시 토큰. 서버에 등록해야 세트
   ///   시작·종료 시 서버가 이 카드를 직접 갱신할 수 있다.
+  /// - `pushToStartToken` : 앱 단위 토큰. 카드가 없어도 발급되고, 이게 있어야
+  ///   서버가 앱이 안 떠 있는 상태에서 카드를 새로 만들 수 있다.
   Future<void> _handleNativeCall(MethodCall call) async {
-    if (call.method != 'pushToken') return;
     final args = call.arguments as Map<Object?, Object?>?;
-    final matchId = args?['matchId'] as String?;
     final pushToken = args?['pushToken'] as String?;
-    if (matchId == null || pushToken == null) return;
-    await LiveActivityPushTokenRepository.instance.register(
-      matchId: matchId,
-      pushToken: pushToken,
-    );
+    if (pushToken == null) return;
+
+    switch (call.method) {
+      case 'pushToken':
+        final matchId = args?['matchId'] as String?;
+        if (matchId == null) return;
+        await LiveActivityPushTokenRepository.instance.register(
+          matchId: matchId,
+          pushToken: pushToken,
+        );
+      case 'pushToStartToken':
+        await LiveActivityPushTokenRepository.instance
+            .registerStartToken(pushToken);
+    }
+  }
+
+  /// push-to-start 토큰 관찰을 시작한다.
+  ///
+  /// 앱 시작 시 한 번 부르면 되고, 네이티브가 중복 관찰을 막는다.
+  /// iOS 17.2 미만이면 false — 그 기기는 포그라운드 폴백만 쓴다.
+  Future<bool> observePushToStartToken() async {
+    if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
+    try {
+      return await _channel.invokeMethod<bool>('observePushToStartToken') ??
+          false;
+    } on PlatformException catch (e) {
+      debugPrint('[LiveActivity] push-to-start 관찰 실패: ${e.message}');
+      return false;
+    }
+  }
+
+  /// [fileName] 로고가 [url] 로 받아둔 그대로 캐싱돼 있는지.
+  ///
+  /// 파일 존재와 원본 URL 을 함께 본다 — 파일만 보면 팀이 로고를 바꿔도
+  /// 옛 이미지를 계속 쓰게 된다. URL 기록은 파일과 같은 App Group 에 둔다.
+  Future<bool> hasLogo(String fileName, {String? url}) async {
+    if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
+    try {
+      return await _channel.invokeMethod<bool>(
+            'hasLogo',
+            {'fileName': fileName, 'url': url},
+          ) ??
+          false;
+    } on PlatformException catch (e) {
+      debugPrint('[LiveActivity] hasLogo 실패: ${e.message}');
+      return false;
+    }
+  }
+
+  /// base64 로고를 App Group 에 [fileName] 으로 캐싱한다.
+  ///
+  /// 서버가 만든 카드는 앱이 안 떠 있을 때 렌더되므로, 그 전에 미리
+  /// 저장돼 있어야 로고가 보인다. [url] 을 주면 다음 [hasLogo] 가
+  /// 리브랜딩을 알아채도록 원본 주소를 함께 기록한다.
+  Future<bool> cacheLogo(String base64, String fileName, {String? url}) async {
+    if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
+    try {
+      return await _channel.invokeMethod<bool>(
+            'cacheLogo',
+            {'base64': base64, 'fileName': fileName, 'url': url},
+          ) ??
+          false;
+    } on PlatformException catch (e) {
+      debugPrint('[LiveActivity] cacheLogo 실패: ${e.message}');
+      return false;
+    }
   }
 
   /// Live Activity 를 시작한다. 성공하면 true.
