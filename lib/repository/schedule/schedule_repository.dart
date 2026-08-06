@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
 import '../../model/match_calendar_day.dart';
@@ -26,15 +26,38 @@ class ScheduleRepository {
   ScheduleRepository._();
   static final ScheduleRepository instance = ScheduleRepository._();
 
+  /// 진행 중인 캘린더 요청. 같은 조회 조건의 요청이 겹치면 결과를 나눠 쓴다.
+  ///
+  /// 앱 시작 시 캘린더를 부르는 곳이 셋이다 — 스플래시 프리페치,
+  /// 홈 위젯 갱신([HomeWidgetService.refreshFromApi]), 그리고 일정 화면
+  /// 진입. 이걸 그대로 두면 같은 응답을 세 번 받으려고 회선을 서로 뺏는다.
+  /// 먼저 뜬 요청에 나머지가 올라타면 실제 왕복은 한 번으로 끝난다.
+  final Map<String, Future<List<MatchCalendarDay>>> _calendarInFlight = {};
+
+  /// 방금 받은 캘린더 응답. [_calendarCacheTtl] 동안만 유효하다.
+  final Map<String, (DateTime, List<MatchCalendarDay>)> _calendarCache = {};
+
+  /// 캐시를 신뢰하는 시간.
+  ///
+  /// 스플래시에서 미리 받은 응답을 곧이어 열리는 일정 화면이 재사용하는 게
+  /// 목적이라 짧게 잡는다. 경기 중 스코어가 바뀌는 화면이므로 이보다 길게
+  /// 두면 사용자가 옛 데이터를 보게 된다 — 월 이동·필터 변경으로 다시 들어와도
+  /// 이 시간이 지났으면 새로 받는다.
+  static const Duration _calendarCacheTtl = Duration(seconds: 30);
+
   /// 특정 월의 캘린더 마킹 데이터를 조회한다 (인증 불필요).
   ///
   /// 날짜별 경기 수와, 캘린더 칸 칩에 바로 쓸 대진 목록까지 한 번에 받는다.
   /// [month] 는 어느 날짜든 그 연·월만 사용된다.
+  ///
+  /// 같은 조건의 요청이 이미 떠 있거나 방금 끝났으면 그 결과를 재사용한다.
+  /// [forceRefresh] 를 주면 캐시를 건너뛰고 새로 받는다 (당겨서 새로고침 등).
   Future<List<MatchCalendarDay>> fetchCalendar(
     DateTime month, {
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
-  }) async {
+    bool forceRefresh = false,
+  }) {
     final monthStr =
         '${month.year}-${month.month.toString().padLeft(2, '0')}';
     final url = ApiConfig.mobileScheduleCalendarUrl(
@@ -42,6 +65,33 @@ class ScheduleRepository {
       leagues: leagues,
       teamIds: teamIds,
     );
+
+    if (!forceRefresh) {
+      final cached = _calendarCache[url];
+      if (cached != null &&
+          DateTime.now().difference(cached.$1) < _calendarCacheTtl) {
+        debugPrint('[Schedule] calendar cache hit: $monthStr');
+        return Future.value(cached.$2);
+      }
+      final inFlight = _calendarInFlight[url];
+      if (inFlight != null) {
+        debugPrint('[Schedule] calendar 요청 합류: $monthStr');
+        return inFlight;
+      }
+    }
+
+    final request = _fetchCalendar(url, monthStr).then((days) {
+      _calendarCache[url] = (DateTime.now(), days);
+      return days;
+    }).whenComplete(() => _calendarInFlight.remove(url));
+    _calendarInFlight[url] = request;
+    return request;
+  }
+
+  Future<List<MatchCalendarDay>> _fetchCalendar(
+    String url,
+    String monthStr,
+  ) async {
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));
     debugPrint('[Schedule] calendar ← ${response.statusCode} '

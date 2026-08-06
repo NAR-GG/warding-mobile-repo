@@ -149,38 +149,56 @@ class MatchDetailViewModel extends ChangeNotifier {
   bool get loadingGames => _loadingGames;
 
   /// 화면 진입 시 호출. 세트 목록 → 현재 세트 데이터 로드.
+  ///
+  /// 스코어 카드용 경기 정보([matchInfo])는 탭 데이터와 무관하므로 기다리지
+  /// 않는다 — 도착하는 대로 [_safeNotify] 로 화면에 반영된다.
   Future<void> load() async {
+    // 세트 목록과 경기 정보는 서로를 필요로 하지 않으므로 같이 띄운다.
+    // 예전엔 games 를 받아본 뒤에야 '팀 정보가 없네' 하고 match 를 불러
+    // 두 번의 왕복이 그대로 더해졌다.
+    //
+    // 경기 정보를 이미 들고 진입했으면(경기 목록에서 카드 탭) 요청 자체를
+    // 띄우지 않는다 — 마이구독·딥링크처럼 matchId 만 있을 때만 필요하다.
+    // games 응답 최상위에 팀 정보가 실려 오기도 하는데, 그때는 이 요청 결과를
+    // 버린다. 헛요청 한 번이 순차 왕복보다 싸고, 실려 오는지는 미리 알 수 없다.
+    final matchInfoDone =
+        _matchInfo == null ? _loadMatchInfo() : Future<void>.value();
+
     await _loadGames();
+    // 탭 데이터(gameId 필요)는 세트 목록만 있으면 시작할 수 있다.
     await _loadCurrentSet();
+    // 화면이 완전히 채워지는 시점을 load() 완료로 삼는다 — 여기까지 오면
+    // 대개 이미 끝나 있다.
+    await matchInfoDone;
+  }
+
+  /// 스코어 카드에 쓸 경기 정보를 따로 받아둔다. 실패해도 화면은 나머지
+  /// 데이터로 렌더링되므로 조용히 넘어간다.
+  Future<void> _loadMatchInfo() async {
+    try {
+      final info = await _repository.fetchMatch(matchId);
+      // 그 사이 games 응답이 팀 정보를 채웠으면 그쪽을 그대로 둔다.
+      if (_matchInfo == null && info != null) {
+        _matchInfo = info;
+        _safeNotify();
+      }
+    } catch (e) {
+      debugPrint('[MatchDetailVM] load match failed: $e');
+    }
   }
 
   Future<void> _loadGames() async {
     _loadingGames = true;
     _safeNotify();
-    // games 로드와 matchInfo 로드를 분리해 fetchGames 실패 시에도 matchInfo 로드를 시도한다.
     try {
       final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
       _games = games;
       // 진입 시 기본 세트: LIVE → 최신 ENDED → 1세트.
       _currentSet = _computeInitialSet(games);
-
-      // games 응답에 팀 정보가 없고 initialMatch도 없으면 별도 API 시도.
-      if (_matchInfo == null) {
-        _matchInfo = matchInfoFromGames;
-        if (_matchInfo == null) {
-          final info = await _repository.fetchMatch(matchId);
-          if (info != null) _matchInfo = info;
-        }
-      }
+      // games 응답에 팀 정보가 실려 왔으면 그걸 먼저 쓴다.
+      _matchInfo ??= matchInfoFromGames;
     } catch (e) {
       debugPrint('[MatchDetailVM] load games failed: $e');
-      // fetchGames 실패 시에도 matchInfo 로드는 이어서 시도한다.
-      if (_matchInfo == null) {
-        try {
-          final info = await _repository.fetchMatch(matchId);
-          if (info != null) _matchInfo = info;
-        } catch (_) {}
-      }
     }
     _loadingGames = false;
     _safeNotify();

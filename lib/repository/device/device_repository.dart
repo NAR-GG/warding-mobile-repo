@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import '../../config/secure_storage.dart';
-import 'package:http/http.dart' as http;
+import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
 import '../../util/sentry_logger.dart';
