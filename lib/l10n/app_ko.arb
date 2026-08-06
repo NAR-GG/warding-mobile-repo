@@ -386,6 +386,7 @@
   "objectBaron": "바론",
   "objectTower": "타워",
   "objectInhibitor": "억제기",
+  "objectNexus": "넥서스",
 
   "notificationChannelName": "구독 알림",
   "notificationChannelDesc": "구독 선수·팀의 경기/이벤트 알림",

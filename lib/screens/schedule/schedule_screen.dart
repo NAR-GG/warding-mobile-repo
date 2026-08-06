@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/load_error.dart';
 import '../../components/nar_banner.dart';
 import '../../model/notice.dart';
 import '../../styles/app_colors.dart';
@@ -117,6 +118,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  /// 캘린더 영역. 아직 데이터가 하나도 없는 상태(최초 진입·재시도 전)에서
+  /// 로딩 중이면 스피너, 조회 실패면 안내+재시도를 보여준다. 그 외(성공해서
+  /// 데이터가 있거나, 성공했지만 그 달에 경기가 없는 경우)엔 캘린더 그대로.
+  Widget _buildCalendarArea(
+    BuildContext context,
+    Map<int, List<CalendarMatch>> matchesByDay,
+  ) {
+    if (_viewModel.matchesByDay.isEmpty) {
+      if (_viewModel.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (_viewModel.error != null) {
+        return LoadError(
+          message: '${_viewModel.error}',
+          onRetry: _viewModel.loadCalendar,
+        );
+      }
+    }
+    return ScheduleCalendar(
+      month: _viewModel.displayMonth,
+      matchesByDay: matchesByDay,
+      onMonthShift: _viewModel.shiftMonth,
+      selectedDate: _viewModel.selectedDate,
+      onDateTap: _openDay,
+    );
+  }
+
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.list) {
@@ -184,13 +212,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 72 * scale + 34),
-                        child: ScheduleCalendar(
-                          month: _viewModel.displayMonth,
-                          matchesByDay: matchesByDay,
-                          onMonthShift: _viewModel.shiftMonth,
-                          selectedDate: _viewModel.selectedDate,
-                          onDateTap: _openDay,
-                        ),
+                        child: _buildCalendarArea(context, matchesByDay),
                       ),
                     ),
                   ],

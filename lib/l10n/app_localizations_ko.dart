@@ -721,6 +721,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get objectInhibitor => '억제기';
 
   @override
+  String get objectNexus => '넥서스';
+
+  @override
   String get notificationChannelName => '구독 알림';
 
   @override

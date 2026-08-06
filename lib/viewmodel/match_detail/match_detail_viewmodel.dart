@@ -99,7 +99,71 @@ class MatchDetailViewModel extends ChangeNotifier {
 
   // ── 라이브 이벤트 ──────────────────────────
   MatchLiveEvents? _liveEventsData;
-  List<MatchLiveEvent> get liveEvents => _liveEventsData?.events ?? const [];
+
+  /// 실제 이벤트 목록 + (조건이 맞으면) 맨 앞에 합성한 넥서스 처치 이벤트.
+  ///
+  /// 리스트는 최신순이라 맨 앞 = 화면에서 가장 위 = 시간상 가장 나중에
+  /// 일어난 일이다. 넥서스 처치는 그 세트의 마지막 이벤트이므로 맨 앞에 둔다.
+  List<MatchLiveEvent> get liveEvents {
+    final base = _liveEventsData?.events ?? const [];
+    final nexus = _synthesizedNexusEvent(base);
+    if (nexus == null) return base;
+    return [nexus, ...base];
+  }
+
+  /// 세트가 ENDED 이고 승자가 확정됐고, [_matchInfo] 로 승자의 사이드(Blue/Red)를
+  /// 판별할 수 있을 때만 넥서스 이벤트를 만든다. 아래 중 하나라도 아니면 null:
+  /// - 세트가 아직 LIVE/SCHEDULED
+  /// - 라이브 이벤트 조회 자체가 실패함([_liveEventsData] 가 null) — 이 경우
+  ///   합성해 넣으면 [liveEvents] 가 비어있지 않게 되어 화면의 에러 UI가 가려진다.
+  /// - winnerTeamCode 가 없거나, [_matchInfo] 의 teamA/teamB 어느 teamCode 와도
+  ///   안 맞음 (팀 사이드를 모르면 어느 로고를 써야 할지 알 수 없어 스킵한다).
+  MatchLiveEvent? _synthesizedNexusEvent(List<MatchLiveEvent> base) {
+    final liveEventsData = _liveEventsData;
+    if (liveEventsData == null) return null;
+    if (base.any((e) => e.type == LiveEventType.nexus)) return null;
+    if (currentSetStatus != MatchGameStatus.ended) return null;
+    final winnerCode = currentSetWinnerTeamCode;
+    if (winnerCode == null || winnerCode.isEmpty) return null;
+    final info = _matchInfo;
+    if (info == null) return null;
+
+    final String winnerTeamName;
+    if (winnerCode == info.teamA.teamCode) {
+      winnerTeamName = info.teamA.teamName;
+    } else if (winnerCode == info.teamB.teamCode) {
+      winnerTeamName = info.teamB.teamName;
+    } else {
+      return null;
+    }
+
+    // 사이드는 그 세트 API(blueTeamName/redTeamName)로 먼저 판별한다 — 팀
+    // 로고도 같은 응답(_liveEventsData)에서 오므로, 이름과 사이드가 항상
+    // 같은 출처에서 나와야 진영이 세트마다 바뀌어도(LCK 흔함) 로고가
+    // 정확히 맞는다. 그 값이 없을 때만 매치 단위 teamA=Blue/teamB=Red
+    // 관례로 폴백한다.
+    final String teamSide;
+    if (liveEventsData.blueTeamName == winnerTeamName) {
+      teamSide = 'Blue';
+    } else if (liveEventsData.redTeamName == winnerTeamName) {
+      teamSide = 'Red';
+    } else if (winnerCode == info.teamA.teamCode) {
+      teamSide = 'Blue';
+    } else {
+      teamSide = 'Red';
+    }
+
+    // 실제 마지막(=가장 최근, 리스트 맨 앞) 이벤트 시각을 근사치로 재사용한다.
+    // 넥서스 처치의 정확한 게임 내 시각은 현재 API에 없다.
+    final latest = base.isNotEmpty ? base.first : null;
+    return MatchLiveEvent(
+      type: LiveEventType.nexus,
+      gameTime: latest?.gameTime ?? '',
+      gameTimeSeconds: latest?.gameTimeSeconds ?? 0,
+      teamSide: teamSide,
+      teamName: winnerTeamName,
+    );
+  }
 
   /// 오브젝트 이벤트 출처 팀 로고용 — 응답 최상위의 양 팀 로고 URL.
   String? get blueTeamImageUrl => _liveEventsData?.blueTeamImageUrl;

@@ -2,7 +2,7 @@ import '../l10n/app_strings.dart';
 import '../util/champion_image.dart';
 
 /// 라이브 이벤트 종류.
-enum LiveEventType { kill, dragon, baron, tower, inhibitor, unknown }
+enum LiveEventType { kill, dragon, baron, tower, inhibitor, nexus, unknown }
 
 /// `GET /api/mobile/live/games/{gameId}/events` 응답 전체.
 ///
@@ -97,6 +97,7 @@ class MatchLiveEvent {
       'BARON' => LiveEventType.baron,
       'TOWER' => LiveEventType.tower,
       'INHIBITOR' => LiveEventType.inhibitor,
+      'NEXUS' => LiveEventType.nexus,
       _ => LiveEventType.unknown,
     };
     final killerJson = json['killer'] as Map<String, dynamic>?;
@@ -130,6 +131,8 @@ class MatchLiveEvent {
         return appStrings?.objectTower ?? 'Tower';
       case LiveEventType.inhibitor:
         return appStrings?.objectInhibitor ?? 'Inhibitor';
+      case LiveEventType.nexus:
+        return appStrings?.objectNexus ?? 'Nexus';
       case LiveEventType.kill:
       case LiveEventType.unknown:
         return subType ?? '';
@@ -147,6 +150,8 @@ class MatchLiveEvent {
         return 'assets/images/turret.png';
       case LiveEventType.inhibitor:
         return 'assets/images/inhibitor.png';
+      case LiveEventType.nexus:
+        return 'assets/images/nexus.png';
       case LiveEventType.kill:
       case LiveEventType.unknown:
         return null;
