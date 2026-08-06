@@ -256,6 +256,7 @@
   "objectBaron": "Baron",
   "objectTower": "Tower",
   "objectInhibitor": "Inhibitor",
+  "objectNexus": "Nexus",
 
   "notificationChannelName": "Subscription Alerts",
   "notificationChannelDesc": "Notifications for subscribed players and teams",
