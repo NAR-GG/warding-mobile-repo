@@ -119,23 +119,38 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// - winnerTeamCode 가 없거나, [_matchInfo] 의 teamA/teamB 어느 teamCode 와도
   ///   안 맞음 (팀 사이드를 모르면 어느 로고를 써야 할지 알 수 없어 스킵한다).
   MatchLiveEvent? _synthesizedNexusEvent(List<MatchLiveEvent> base) {
-    if (_liveEventsData == null) return null;
+    final liveEventsData = _liveEventsData;
+    if (liveEventsData == null) return null;
+    if (base.any((e) => e.type == LiveEventType.nexus)) return null;
     if (currentSetStatus != MatchGameStatus.ended) return null;
     final winnerCode = currentSetWinnerTeamCode;
     if (winnerCode == null || winnerCode.isEmpty) return null;
     final info = _matchInfo;
     if (info == null) return null;
 
-    final String teamSide;
-    final String teamName;
+    final String winnerTeamName;
     if (winnerCode == info.teamA.teamCode) {
-      teamSide = 'Blue';
-      teamName = info.teamA.teamName;
+      winnerTeamName = info.teamA.teamName;
     } else if (winnerCode == info.teamB.teamCode) {
-      teamSide = 'Red';
-      teamName = info.teamB.teamName;
+      winnerTeamName = info.teamB.teamName;
     } else {
       return null;
+    }
+
+    // 사이드는 그 세트 API(blueTeamName/redTeamName)로 먼저 판별한다 — 팀
+    // 로고도 같은 응답(_liveEventsData)에서 오므로, 이름과 사이드가 항상
+    // 같은 출처에서 나와야 진영이 세트마다 바뀌어도(LCK 흔함) 로고가
+    // 정확히 맞는다. 그 값이 없을 때만 매치 단위 teamA=Blue/teamB=Red
+    // 관례로 폴백한다.
+    final String teamSide;
+    if (liveEventsData.blueTeamName == winnerTeamName) {
+      teamSide = 'Blue';
+    } else if (liveEventsData.redTeamName == winnerTeamName) {
+      teamSide = 'Red';
+    } else if (winnerCode == info.teamA.teamCode) {
+      teamSide = 'Blue';
+    } else {
+      teamSide = 'Red';
     }
 
     // 실제 마지막(=가장 최근, 리스트 맨 앞) 이벤트 시각을 근사치로 재사용한다.
@@ -146,7 +161,7 @@ class MatchDetailViewModel extends ChangeNotifier {
       gameTime: latest?.gameTime ?? '',
       gameTimeSeconds: latest?.gameTimeSeconds ?? 0,
       teamSide: teamSide,
-      teamName: teamName,
+      teamName: winnerTeamName,
     );
   }
 

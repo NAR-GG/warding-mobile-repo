@@ -71,6 +71,8 @@ void main() {
         ),
       ],
       liveEvents: const MatchLiveEvents(
+        blueTeamName: 'T1',
+        redTeamName: 'Gen.G',
         blueTeamImageUrl: 'https://example.com/t1.png',
         redTeamImageUrl: 'https://example.com/gen.png',
         events: [
@@ -198,5 +200,67 @@ void main() {
     await vm.load();
 
     expect(vm.liveEvents, isEmpty);
+  });
+
+  test('세트마다 진영이 바뀌어도(사이드 스왑) 그 세트 API 기준으로 사이드를 정한다', () async {
+    final vm = vmFor(
+      games: const [
+        MatchGame(
+          gameId: 'g1',
+          gameOrder: 2,
+          status: 'ENDED',
+          winnerTeamCode: 'T1', // matchInfo 상 teamA(T1)가 승리
+        ),
+      ],
+      liveEvents: const MatchLiveEvents(
+        // 하지만 이번 세트는 T1이 Red 사이드였다 — blueTeamName 은 Gen.G.
+        blueTeamName: 'Gen.G',
+        redTeamName: 'T1',
+        blueTeamImageUrl: 'https://example.com/gen.png',
+        redTeamImageUrl: 'https://example.com/t1.png',
+        events: [],
+      ),
+      initialMatch: scheduleMatch,
+    );
+    await vm.load();
+
+    final events = vm.liveEvents;
+
+    expect(events, hasLength(1));
+    expect(events.first.type, LiveEventType.nexus);
+    expect(events.first.teamSide, 'Red'); // teamA 위치가 아니라 실제 사이드
+    expect(events.first.teamName, 'T1');
+  });
+
+  test('실제 NEXUS 이벤트가 이미 있으면 중복 합성하지 않는다', () async {
+    final vm = vmFor(
+      games: const [
+        MatchGame(
+          gameId: 'g1',
+          gameOrder: 1,
+          status: 'ENDED',
+          winnerTeamCode: 'T1',
+        ),
+      ],
+      liveEvents: const MatchLiveEvents(
+        blueTeamName: 'T1',
+        redTeamName: 'Gen.G',
+        events: [
+          MatchLiveEvent(
+            type: LiveEventType.nexus,
+            gameTime: '30:00',
+            gameTimeSeconds: 1800,
+            teamSide: 'Blue',
+            teamName: 'T1',
+          ),
+        ],
+      ),
+      initialMatch: scheduleMatch,
+    );
+    await vm.load();
+
+    final events = vm.liveEvents;
+
+    expect(events, hasLength(1)); // 합성 안 됨 — 실제 이벤트 하나만.
   });
 }
