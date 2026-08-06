@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_live_badge.dart';
 import '../../../repository/auth/auth_service.dart';
+import '../../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../../repository/match/match_subscription_repository.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -26,6 +28,8 @@ class MatchCard extends StatelessWidget {
     required this.awayName,
     this.homeLogoUrl,
     this.awayLogoUrl,
+    this.homeCode = '',
+    this.awayCode = '',
     required this.homeScore,
     required this.awayScore,
     this.isLive = false,
@@ -44,6 +48,12 @@ class MatchCard extends StatelessWidget {
   final String awayName;
   final String? homeLogoUrl;
   final String? awayLogoUrl;
+
+  /// 양 팀 코드. 알림을 켤 때 실시간 카드용 로고를 이 코드로 미리 캐싱한다
+  /// (파일명이 `<팀코드>.png` 라 코드가 없으면 저장할 이름이 없다).
+  final String homeCode;
+  final String awayCode;
+
   final int homeScore;
   final int awayScore;
 
@@ -105,8 +115,10 @@ class MatchCard extends StatelessWidget {
                     matchId: matchId,
                     homeName: homeName,
                     homeLogoUrl: homeLogoUrl,
+                    homeCode: homeCode,
                     awayName: awayName,
                     awayLogoUrl: awayLogoUrl,
+                    awayCode: awayCode,
                     scale: scale,
                   ),
                   SizedBox(width: 8 * scale),
@@ -188,14 +200,18 @@ class _AlarmBell extends StatefulWidget {
     required this.matchId,
     required this.homeName,
     required this.homeLogoUrl,
+    required this.homeCode,
     required this.awayName,
     required this.awayLogoUrl,
+    required this.awayCode,
     required this.scale,
   });
 
   final String matchId;
   final String homeName;
   final String? homeLogoUrl;
+  final String homeCode;
+  final String awayCode;
   final String awayName;
   final String? awayLogoUrl;
   final double scale;
@@ -296,6 +312,13 @@ class _AlarmBellState extends State<_AlarmBell> {
         liveEventEnabled: result.liveEvent,
       );
       _showFeedback(l.matchAlarmRegistered);
+
+      // 이 경기는 서버가 세트 시작에 맞춰 카드를 만든다. 그때 앱은 안 떠
+      // 있으므로 지금 양 팀 로고를 미리 저장해 둔다.
+      unawaited(liveActivityLogoPrefetcher.prefetch([
+        LogoTarget(code: widget.homeCode, imageUrl: widget.homeLogoUrl ?? ''),
+        LogoTarget(code: widget.awayCode, imageUrl: widget.awayLogoUrl ?? ''),
+      ]));
     } catch (_) {
       if (mounted) setState(() => _subscribed = false);
       _showFeedback(l.matchAlarmRegisterFailed);

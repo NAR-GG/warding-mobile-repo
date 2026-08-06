@@ -460,6 +460,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
           awayName: _shortName(m.teamB),
           homeLogoUrl: m.teamA.teamImageUrl,
           awayLogoUrl: m.teamB.teamImageUrl,
+          homeCode: m.teamA.teamCode,
+          awayCode: m.teamB.teamCode,
           homeScore: m.teamA.score,
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),

@@ -12,6 +12,8 @@ import 'config/app_language.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'repository/fcm/fcm_service.dart';
+import 'repository/live_activity/live_activity_logo_prefetcher.dart';
+import 'repository/live_activity/live_activity_service.dart';
 import 'repository/live_activity/live_match_activity_controller.dart';
 import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
@@ -114,8 +116,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // 앱 시작 시 진행 중인 구독 경기가 있으면 실시간 카드를 띄운다.
-    // (푸시로는 세트 시작 알림을 꺼 둔 구독자를 커버하지 못한다.)
+    // iOS 17.2 미만은 push-to-start 가 없어 이 경로가 유일한 표시 수단이다.
     liveMatchActivityController.scanForLiveMatch();
+
+    // push-to-start 토큰을 관찰해 서버에 올린다. 이게 등록돼야 앱이 꺼져
+    // 있어도 서버가 세트 시작에 맞춰 카드를 직접 만든다.
+    LiveActivityService.instance.observePushToStartToken();
+
+    // 서버가 만든 카드는 앱 없이 렌더되므로 로고를 미리 저장해 둬야 한다.
+    // 이미 받아둔 팀은 존재 확인만 하고 넘어간다.
+    liveActivityLogoPrefetcher.prefetchLeague();
   }
 
   @override

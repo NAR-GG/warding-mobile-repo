@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../model/schedule_filter_options.dart';
+import '../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
 /// 필터 모달에서 펼쳐진 드롭다운 식별자.
@@ -199,6 +202,11 @@ class FilterViewModel extends ChangeNotifier {
         }
       }
       _teams = mergedTeams.values.toList();
+
+      // 실시간 카드 로고를 미리 저장해 둔다. 서버가 만든 카드는 앱 없이
+      // 렌더되므로 그 전에 디스크에 있어야 로고가 보인다. 이미 받아둔 팀은
+      // 존재 확인만 하고 넘어가고, 여기서 기다리지 않는다.
+      unawaited(liveActivityLogoPrefetcher.prefetchTeams(_teams));
     } catch (_) {
       // 옵션 로드 실패 시 빈 목록 유지 — 모달은 떠 있되 항목만 비어 있다.
     } finally {

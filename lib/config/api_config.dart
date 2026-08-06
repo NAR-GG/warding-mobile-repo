@@ -280,8 +280,16 @@ class ApiConfig {
   // ── Live Activity 푸시 토큰 (인증 필요) ──────────────────────────────
 
   /// 실시간 경기 카드 푸시 토큰 등록(POST {matchId, pushToken}).
+  /// 카드 하나에 붙는 토큰이라 카드를 띄울 때마다 새로 발급된다.
   static String get liveActivitiesUrl =>
       '$apiBaseUrl/mobile/me/live-activities';
+
+  /// push-to-start 토큰 등록(POST {pushToken}).
+  ///
+  /// [liveActivitiesUrl] 과 달리 앱 단위 토큰이라 카드가 없어도 존재한다.
+  /// 서버는 이 토큰이 있어야 앱이 안 떠 있는 상태에서 카드를 새로 만들 수 있다.
+  static String get liveActivityStartTokenUrl =>
+      '$apiBaseUrl/mobile/me/live-activities/start-token';
 
   // ── FCM 기기 토큰 (인증 필요) ──────────────────────────────────────
 

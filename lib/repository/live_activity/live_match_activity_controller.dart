@@ -9,6 +9,7 @@ import '../match/match_subscription_repository.dart';
 import '../preference/team_preference_repository.dart';
 import '../schedule/schedule_repository.dart';
 import '../subscription/subscription_repository.dart';
+import 'live_activity_logo_prefetcher.dart';
 import 'live_activity_service.dart';
 
 /// 경기 데이터([ScheduleMatch] + 세트 목록)를 Live Activity 상태로 옮겨주는 컨트롤러.
@@ -21,10 +22,14 @@ import 'live_activity_service.dart';
 /// 앱은 카드를 띄우고(서버는 push-to-start 를 쓰지 않는다) 발급된 푸시 토큰을
 /// 등록하는 역할만 한다 — [LiveActivityService] 의 `pushToken` 콜백 참고.
 class LiveMatchActivityController {
-  LiveMatchActivityController({LiveActivityService? service})
-      : _service = service ?? LiveActivityService.instance;
+  LiveMatchActivityController({
+    LiveActivityService? service,
+    LiveActivityLogoPrefetcher? logoPrefetcher,
+  })  : _service = service ?? LiveActivityService.instance,
+        _logoPrefetcher = logoPrefetcher ?? liveActivityLogoPrefetcher;
 
   final LiveActivityService _service;
+  final LiveActivityLogoPrefetcher _logoPrefetcher;
 
   /// 액티비티가 붙어있는 경기 ID.
   String? _matchId;
@@ -307,9 +312,19 @@ class LiveMatchActivityController {
       return false;
     }
 
-    // 로고는 액티비티 시작 시 한 번만 받아 App Group 에 캐싱한다.
-    final logoA = await _service.fetchLogoBase64(match.teamA.teamImageUrl);
-    final logoB = await _service.fetchLogoBase64(match.teamB.teamImageUrl);
+    // 양 팀 로고를 `<팀코드>.png` 로 캐싱해 둔다. 이미 프리페치된 팀은
+    // 네트워크를 타지 않고, 여기서 저장해 두면 다음에 서버가 만든 카드도
+    // 같은 파일을 쓴다(파일명이 서버와 맞춘 규칙이라 둘이 같은 파일을 본다).
+    await _logoPrefetcher.prefetch([
+      LogoTarget(
+        code: match.teamA.teamCode,
+        imageUrl: match.teamA.teamImageUrl,
+      ),
+      LogoTarget(
+        code: match.teamB.teamCode,
+        imageUrl: match.teamB.teamImageUrl,
+      ),
+    ]);
 
     // 응원 팀이 이 경기에 나오면 그 팀 로고에 하트를 붙인다.
     final favoriteCode = await _favoriteTeamCode(match);
@@ -322,8 +337,8 @@ class LiveMatchActivityController {
         teamBName: displayName(match.teamB),
         teamBCode: match.teamB.teamCode,
         leagueName: match.leagueInfo,
-        teamALogoBase64: logoA,
-        teamBLogoBase64: logoB,
+        // 로고는 위에서 이미 `<팀코드>.png` 로 저장했다. 네이티브가 그 파일을
+        // 찾아 attributes 에 담으므로 base64 를 다시 실어 보내지 않는다.
         favoriteTeamCode: favoriteCode,
       ),
       state: state,
