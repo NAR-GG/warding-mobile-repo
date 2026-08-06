@@ -33,7 +33,8 @@ class ScheduleScreen extends StatefulWidget {
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleScreenState extends State<ScheduleScreen>
+    with WidgetsBindingObserver {
   late final ScheduleViewModel _viewModel = ScheduleViewModel(
     initialMonth: widget.initialMonth,
   );
@@ -41,6 +42,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 위젯 딥링크 액션 처리: 필터 복원 완료 후 모달 열기
     if (widget.widgetAction == 'filter') {
       void listener() {
@@ -55,8 +57,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  /// 백그라운드로 갔다 돌아왔을 때 다시 불러온다.
+  ///
+  /// 조회가 아직 진행 중(로딩 스피너)인 상태로 백그라운드에 들어가면, 실기기는
+  /// 프로세스를 완전히 정지시켜 진행 중이던 요청의 타임아웃 타이머까지 같이
+  /// 멈춘다. 복귀 후 아무도 다시 요청하지 않으면 화면이 멈춘 스피너 그대로
+  /// 남는다 — 그래서 복귀할 때마다 무조건 새로 불러온다(경기 스코어가 실시간으로
+  /// 바뀌는 화면이라 어차피 최신화할 가치가 있다).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _viewModel.loadCalendar();
+    }
   }
 
   /// 헤더 월 영역 탭 → 날짜 피커 바텀시트. 모달 안 화살표는 모달
