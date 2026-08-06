@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import '../../util/api_client.dart' as http;
 
 import '../../model/live_match_activity.dart';
 import 'live_activity_push_token_repository.dart';
@@ -141,9 +141,10 @@ class LiveActivityService {
   Future<String?> fetchLogoBase64(String? url) async {
     if (url == null || url.isEmpty) return null;
     try {
-      final response = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 5));
+      final response = await http.get(
+        Uri.parse(url),
+        timeout: const Duration(seconds: 5),
+      );
       if (response.statusCode < 200 || response.statusCode >= 300) return null;
       return base64Encode(response.bodyBytes);
     } catch (e) {

@@ -15,6 +15,8 @@ import '../config/secure_storage.dart';
 import '../l10n/app_localizations.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
+import '../repository/preference/filter_preference_repository.dart';
+import '../repository/schedule/schedule_repository.dart';
 import '../styles/app_colors.dart';
 import '../util/home_widget_service.dart';
 import 'login/login_screen.dart';
@@ -82,8 +84,16 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  /// 로고가 최소한 이만큼은 보이도록 잡아두는 시간.
+  ///
+  /// 예전엔 2초를 무조건 기다렸다. Keychain 조회는 수십 ms 라 나머지 시간은
+  /// 순수한 대기였고, 그 뒤에야 일정 화면이 캘린더를 부르기 시작해
+  /// 사용자는 '2초 + API' 를 겪었다. 지금은 이 시간 동안 캘린더를 미리
+  /// 받아두므로(=[_prefetchCalendar]) 대기가 실제 로딩과 겹친다.
+  static const _minSplashDuration = Duration(milliseconds: 600);
+
   Future<void> _bootstrap() async {
-    final List<Object?> results;
+    final String? jwt;
     try {
       // 구 접근성(unlocked)으로 저장된 Keychain 항목을 잠금 중에도 읽히는
       // first_unlock_this_device 로 1회 이전. 미완료 상태에선 jwt read 가
@@ -97,17 +107,58 @@ class _SplashScreenState extends State<SplashScreen>
       // 첫 실행(마이그레이션 직후)이면 main()에서 미리 읽은 언어 설정이
       // 구 접근성 항목이라 null(→ko)로 폴백됐을 수 있다 — 다시 읽는다.
       await AppLanguage.instance.load();
-      results = await Future.wait([
-        Future<void>.delayed(const Duration(seconds: 2)),
+
+      // 스플래시가 떠 있는 동안 첫 화면(일정)의 캘린더를 미리 받아둔다.
+      // 실패해도 화면 진입을 막지 않는다 — 그때는 일정 화면이 평소대로
+      // 직접 부르고 에러 UI 도 거기서 처리한다.
+      final prefetch = _prefetchCalendar();
+
+      final results = await Future.wait([
+        Future<void>.delayed(_minSplashDuration),
         AuthService.instance.jwt,
       ]);
+      jwt = results[1] as String?;
+
+      // 프리페치가 최소 표시 시간 안에 끝났으면 일정 화면은 캐시를 그대로
+      // 쓴다. 아직이면 기다리지 않고 넘어간다 — 화면 진입을 느린 네트워크에
+      // 묶어두면 프리페치가 오히려 손해다. 이 경우에도 요청은 이미 떠 있어
+      // 일정 화면의 조회가 그 요청에 합류한다.
+      unawaited(prefetch);
     } on PlatformException {
       // Keychain 접근 불가(-25308: 기기 잠금 + 백그라운드 launch 등).
       // '토큰 없음'이 아니므로 LoginScreen 으로 보내면 안 된다.
       _scheduleRetry();
       return;
     }
-    _proceed(results[1] as String?);
+    _proceed(jwt);
+  }
+
+  /// 일정 화면이 진입 직후 부를 캘린더를 미리 받아 캐시에 채운다.
+  ///
+  /// [ScheduleViewModel] 과 **같은 조건**(저장된 필터·이번 달)으로 불러야
+  /// 캐시가 맞는다 — 조건이 어긋나면 프리페치는 버려지고 화면은 새로 받는다.
+  Future<void> _prefetchCalendar() async {
+    try {
+      // 아래 기본값·복원 규칙은 ScheduleViewModel._init() 과 같아야 한다.
+      // 조건이 어긋나면 URL 이 달라져 캐시가 빗나가고 프리페치가 헛돈다.
+      List<String> leagues = const ['ALL'];
+      List<int> teamIds = const [];
+      final saved = await FilterPreferenceRepository.instance
+          .load(FilterPreferenceRepository.scheduleKey);
+      if (saved != null) {
+        final savedLeagues = (saved['leagues'] as List?)?.cast<String>();
+        leagues =
+            savedLeagues != null && savedLeagues.isNotEmpty ? savedLeagues : ['ALL'];
+        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+      }
+      await ScheduleRepository.instance.fetchCalendar(
+        DateTime.now(),
+        leagues: leagues,
+        teamIds: teamIds,
+      );
+    } catch (e) {
+      debugPrint('[Splash] 캘린더 프리페치 실패(무시): $e');
+    }
   }
 
   /// [jwt] 유무에 따라 첫 화면으로 전환한다. 재시도 포기 시엔 null 로 호출.

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:http/http.dart' as http;
+import 'api_client.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
