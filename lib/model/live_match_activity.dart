@@ -19,8 +19,9 @@ enum LiveMatchPhase {
 
 /// Live Activity 를 시작할 때 한 번만 넘기는 정적 정보.
 ///
-/// 팀 로고는 확장에서 네트워크를 못 쓰므로, 앱이 미리 내려받은
-/// PNG 바이트를 base64 로 넘겨 App Group 에 캐싱시킨다.
+/// 팀 로고는 확장에서 네트워크를 못 쓰므로 앱이 App Group 에 미리
+/// `<팀코드>.png` 로 캐싱해 두고([LiveActivityLogoPrefetcher]), 네이티브가
+/// 그 파일을 찾아 attributes 에 담는다. 그래서 여기엔 이미지가 없다.
 class LiveMatchActivityConfig {
   const LiveMatchActivityConfig({
     required this.matchId,
@@ -29,8 +30,6 @@ class LiveMatchActivityConfig {
     required this.teamBName,
     required this.teamBCode,
     this.leagueName = '',
-    this.teamALogoBase64,
-    this.teamBLogoBase64,
     this.favoriteTeamCode,
   });
 
@@ -47,10 +46,6 @@ class LiveMatchActivityConfig {
   /// 상단 좌측에 표시할 리그명 (예: 'LCK').
   final String leagueName;
 
-  /// 팀 로고 PNG 의 base64. 없으면 로고 없이 박스만 표시된다.
-  final String? teamALogoBase64;
-  final String? teamBLogoBase64;
-
   /// 사용자가 응원하는 팀 코드. 세트 종료 화면에서 해당 팀 로고에 하트를 붙인다.
   final String? favoriteTeamCode;
 
@@ -61,8 +56,6 @@ class LiveMatchActivityConfig {
         'teamBName': teamBName,
         'teamBCode': teamBCode,
         'leagueName': leagueName,
-        'teamALogoBase64': teamALogoBase64,
-        'teamBLogoBase64': teamBLogoBase64,
         'favoriteTeamCode': favoriteTeamCode,
       };
 }
