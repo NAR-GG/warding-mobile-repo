@@ -1417,6 +1417,12 @@ abstract class AppLocalizations {
   /// **'억제기'**
   String get objectInhibitor;
 
+  /// No description provided for @objectNexus.
+  ///
+  /// In ko, this message translates to:
+  /// **'넥서스'**
+  String get objectNexus;
+
   /// No description provided for @notificationChannelName.
   ///
   /// In ko, this message translates to:

@@ -737,6 +737,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get objectInhibitor => 'Inhibitor';
 
   @override
+  String get objectNexus => 'Nexus';
+
+  @override
   String get notificationChannelName => 'Subscription Alerts';
 
   @override
