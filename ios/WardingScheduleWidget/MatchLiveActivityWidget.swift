@@ -171,7 +171,7 @@ private struct LiveBadge: View {
     var body: some View {
         HStack(spacing: 6 * scale) {
             if isLive {
-                BlinkingDot(scale: scale)
+                LiveDot(scale: scale)
             }
             Text(label)
                 .font(.system(size: 8 * scale, weight: .medium))
@@ -196,28 +196,18 @@ private struct LiveBadge: View {
     }
 }
 
-/// LIVE 배지의 깜빡이는 빨간 점.
+/// LIVE 배지의 빨간 점.
 ///
-/// 위젯 확장은 렌더된 스냅샷을 표시해 `@State` + `onAppear` 로 건
-/// `repeatForever` 애니메이션이 돌지 않는다. `TimelineView` 로 위젯 스스로
-/// 주기적으로 다시 그리게 하고, 그 시각으로 투명도를 계산해 깜빡임을 만든다.
+/// 잠금화면 Live Activity 는 렌더된 스냅샷을 띄우는 구조라 깜빡임이
+/// 안정적으로 반영되지 않는다. 주기적으로 다시 그리는 대신 정적으로 둔다.
 @available(iOS 16.1, *)
-private struct BlinkingDot: View {
+private struct LiveDot: View {
     let scale: CGFloat
 
-    /// 한 번 깜빡이는 주기(초).
-    private let period: TimeInterval = 1.2
-
     var body: some View {
-        TimelineView(.periodic(from: .now, by: period / 2)) { context in
-            let phase = context.date.timeIntervalSinceReferenceDate
-                .truncatingRemainder(dividingBy: period)
-            Circle()
-                .fill(LiveColors.liveBadgeFg)
-                .frame(width: 6 * scale, height: 6 * scale)
-                .opacity(phase < period / 2 ? 1 : 0.2)
-                .animation(.easeInOut(duration: period / 2), value: phase < period / 2)
-        }
+        Circle()
+            .fill(LiveColors.liveBadgeFg)
+            .frame(width: 6 * scale, height: 6 * scale)
     }
 }
 
