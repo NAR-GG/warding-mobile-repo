@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../l10n/app_localizations.dart';
+import '../l10n/app_localizations.dart';
 
-import '../../../styles/app_colors.dart';
+import '../styles/app_colors.dart';
 
-/// 온보딩 선택 그리드(리그/팀/선수) 로딩 실패 시 보여주는 안내.
+/// 데이터 로딩 실패 시 보여주는 공용 안내.
 ///
 /// 한 줄 안내 메시지와 '다시 시도' 버튼을 가운데에 그린다.
-class OnboardingLoadError extends StatelessWidget {
-  const OnboardingLoadError({
+class LoadError extends StatelessWidget {
+  const LoadError({
     super.key,
     required this.message,
     required this.onRetry,

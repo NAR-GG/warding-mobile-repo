@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 
+import '../../../components/load_error.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/onboarding/onboarding_viewmodel.dart';
-import '../component/onboarding_load_error.dart';
 import '../component/onboarding_select_card.dart';
 import '../component/onboarding_title.dart';
 
@@ -47,7 +47,7 @@ class LeagueStep extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.leaguesError != null) {
-      return OnboardingLoadError(
+      return LoadError(
         message: l.leagueLoadFailed,
         onRetry: viewModel.loadLeagues,
       );
