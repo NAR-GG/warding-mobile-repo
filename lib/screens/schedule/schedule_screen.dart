@@ -69,10 +69,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 멈춘다. 복귀 후 아무도 다시 요청하지 않으면 화면이 멈춘 스피너 그대로
   /// 남는다 — 그래서 복귀할 때마다 무조건 새로 불러온다(경기 스코어가 실시간으로
   /// 바뀌는 화면이라 어차피 최신화할 가치가 있다).
+  ///
+  /// 이때 반드시 `forceRefresh` 로 부른다. 그냥 부르면 리포지토리가 백그라운드에서
+  /// 같이 얼어붙은 그 진행 중 요청에 합류시켜 버려서, 다시 불러도 똑같이 멈춘
+  /// 스피너가 남는다.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _viewModel.loadCalendar();
+      _viewModel.loadCalendar(forceRefresh: true);
     }
   }
 

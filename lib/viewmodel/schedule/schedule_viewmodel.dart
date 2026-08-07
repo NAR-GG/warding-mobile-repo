@@ -191,7 +191,9 @@ class ScheduleViewModel extends ChangeNotifier {
     List<int>? teamIds,
     bool resetMonth = false,
   }) {
-    if (leagues != null && leagues.isNotEmpty) _leagues = leagues;
+    // 빈 목록은 '전체'로 취급한다. 이전 리그를 남겨두면 시트에서 리그를 전부
+    // 해제한 의도가 무시돼 필터가 안 먹은 것처럼 보인다.
+    _leagues = (leagues == null || leagues.isEmpty) ? const ['ALL'] : leagues;
     _teamIds = teamIds ?? const [];
     // 필터로 팀을 직접 골랐으면 헤더 선호팀 토글과 어긋나므로 해제해 둔다.
     _teamSelected = false;
@@ -222,42 +224,70 @@ class ScheduleViewModel extends ChangeNotifier {
     _notify(); // 같은 달이면 위에서 통지 안 됐을 수 있어 한 번 더.
   }
 
+  /// 캘린더 조회 세대. 새 조회가 시작될 때마다 올라간다.
+  ///
+  /// 월 이동·필터 변경·백그라운드 복귀가 겹치면 조회가 여러 개 동시에 뜬다.
+  /// 응답이 돌아온 시점에 자기 세대가 최신이 아니면 결과를 버려, 늦게 도착한
+  /// 옛 조회가 최신 화면을 덮어쓰거나 로딩을 먼저 내려버리는 걸 막는다.
+  int _calendarRequestId = 0;
+
   /// 현재 표시 월의 경기 캘린더를 불러온다.
   ///
   /// `/api/mobile/schedules/calendar` 한 번으로 날짜별 칩 데이터까지 받는다.
-  Future<void> loadCalendar() async {
-    debugPrint('[Schedule] loadCalendar 시작: $_displayMonth '
-        '(leagues=$_leagues, teamIds=$_teamIds)');
+  /// [forceRefresh] 면 리포지토리 캐시·진행 중 요청을 건너뛰고 새로 받는다.
+  Future<void> loadCalendar({bool forceRefresh = false}) async {
+    final requestId = ++_calendarRequestId;
+    // 조회 시작 시점의 조건을 고정해 둔다. 응답을 기다리는 동안 필터가 바뀌어도
+    // 이 조회의 결과·위젯 갱신은 자기가 요청한 조건 기준이어야 한다.
+    final month = _displayMonth;
+    final leagues = _leagues;
+    final teamIds = _teamIds;
+
+    debugPrint('[Schedule] loadCalendar#$requestId 시작: $month '
+        '(leagues=$leagues, teamIds=$teamIds)');
     _isLoading = true;
     _error = null;
     _notify();
     try {
       final days = await _repository.fetchCalendar(
-        _displayMonth,
-        leagues: _leagues,
-        teamIds: _teamIds,
+        month,
+        leagues: leagues,
+        teamIds: teamIds,
+        forceRefresh: forceRefresh,
       );
+      if (requestId != _calendarRequestId) {
+        debugPrint('[Schedule] loadCalendar#$requestId 결과 폐기 (더 최신 조회 있음)');
+        return;
+      }
       _matchesByDay = {
         for (final day in days) day.date.day: day.matches,
       };
       final total =
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
-      debugPrint('[Schedule] 완료: ${_matchesByDay.length}일, 총 $total경기');
+      debugPrint('[Schedule] 완료#$requestId: ${_matchesByDay.length}일, 총 $total경기');
       // 홈 화면 위젯에 최신 캘린더 데이터 전달 (필터 포함)
       unawaited(HomeWidgetService.updateCalendar(
-        month: _displayMonth,
+        month: month,
         matchesByDay: _matchesByDay,
-        leagues: _leagues,
-        teamIds: _teamIds,
+        leagues: leagues,
+        teamIds: teamIds,
       ));
     } catch (e, st) {
+      if (requestId != _calendarRequestId) {
+        debugPrint('[Schedule] loadCalendar#$requestId 에러 무시 (더 최신 조회 있음): $e');
+        return;
+      }
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';
       _matchesByDay = const {};
-      debugPrint('[Schedule] loadCalendar 에러: $e');
+      debugPrint('[Schedule] loadCalendar#$requestId 에러: $e');
       debugPrint('$st');
     } finally {
-      _isLoading = false;
-      _notify();
+      // 최신 조회만 로딩을 내린다. 구버전이 내리면 아직 진행 중인 조회가 있는데도
+      // 로딩이 꺼져 빈 화면이 잠깐 보인다.
+      if (requestId == _calendarRequestId) {
+        _isLoading = false;
+        _notify();
+      }
     }
   }
 
