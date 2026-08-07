@@ -222,9 +222,15 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  /// 첫 화면 전환을 이미 시작했는지. 부팅 경로가 둘(정상 부팅·재시도 포기)이라
+  /// 잠금 재시도와 겹치면 [_proceed] 가 두 번 불릴 수 있는데, 그러면
+  /// pushReplacement 가 두 번 돌아 첫 화면이 딥링크 상세 위로 튀어나온다.
+  bool _proceeded = false;
+
   /// [jwt] 유무에 따라 첫 화면으로 전환한다. 재시도 포기 시엔 null 로 호출.
   void _proceed(String? jwt) {
-    if (!mounted) return;
+    if (!mounted || _proceeded) return;
+    _proceeded = true;
 
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
