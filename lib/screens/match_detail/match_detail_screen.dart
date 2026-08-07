@@ -631,6 +631,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
+  /// 헤더에 표시할 팀 라벨 — 축약 코드 우선, 없으면 풀네임.
+  ///
+  /// 서버가 teamCode 를 안 주는 팀이 있어(신생 팀·표기 누락) 코드가 빈 경우엔
+  /// 이름을 그대로 쓴다. 둘 다 없으면 빈 문자열.
+  static String _teamLabel(MatchTeam? team) {
+    if (team == null) return '';
+    return team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
+  }
+
   /// 헤더 스코어 칸. match 가 있으면 실데이터로, 없으면 플레이스홀더로 렌더한다.
   Widget _buildScoreSection(double scale) {
     final m = _effectiveMatch;
@@ -647,8 +656,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       isLive: isLive,
       // 라이브가 아니면 우측에 경기 시각(scheduledTime, 'HH:mm')을 표시한다.
       time: m?.scheduledTime ?? '',
-      blueTeamName: m?.teamA.teamName ?? '',
-      redTeamName: m?.teamB.teamName ?? '',
+      // 헤더는 로고 아래 폭 80 칸에 들어가야 해서 축약 코드(DRX, NS)로 쓴다.
+      // 코드가 비어 오는 팀은 풀네임으로 폴백한다 — 빈칸보다는 긴 이름이 낫다.
+      blueTeamName: _teamLabel(m?.teamA),
+      redTeamName: _teamLabel(m?.teamB),
       blueTeamScore: m?.teamA.score ?? 0,
       redTeamScore: m?.teamB.score ?? 0,
       blueTeamLogoUrl: m?.teamA.teamImageUrl,
