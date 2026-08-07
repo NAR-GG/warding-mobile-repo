@@ -233,13 +233,22 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => destination),
     );
-    // 콜드 스타트(종료 상태에서 알림 탭) 딥링크는 initMessaging() 시점엔
-    // navigatorKey 가 아직 비어 있어 보류돼 있었다 — 첫 화면 분기 위에 push.
-    FcmService.instance.consumePendingDeepLink();
+    // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.
+    //
+    // pushReplacement 는 호출 즉시 끝나지 않는다 — 전환이 도는 동안 스택에는
+    // 아직 스플래시가 남아 있어서, 바로 push 하면 곧 제거될 라우트 위에 상세가
+    // 얹힌다. 그러면 전환이 끝나며 상세까지 같이 걷혀 "들어갔다가 튕겨나오고"
+    // 첫 화면만 남는다(Live Activity 카드를 눌렀을 때의 증상).
+    //
+    // 다음 프레임으로 미루면 교체가 끝난 ScheduleScreen 위에 정상적으로 쌓인다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 콜드 스타트(종료 상태에서 알림 탭) 딥링크는 initMessaging() 시점엔
+      // navigatorKey 가 아직 비어 있어 보류돼 있었다 — 첫 화면 분기 위에 push.
+      FcmService.instance.consumePendingDeepLink();
 
-    // 콜드 스타트 위젯 딥링크(필터 등)도 같은 이유로 보류돼 있었다 — 여기서 소비.
-    // (스플래시 내비게이션과 겹쳐 화면이 두 번 열리는 것처럼 보이는 문제 방지.)
-    HomeWidgetService.markSplashReady();
+      // 콜드 스타트 위젯·Live Activity 딥링크도 같은 이유로 보류돼 있었다.
+      HomeWidgetService.markSplashReady();
+    });
 
     // 화면 전환 후 업데이트 체크 (팝업은 NarAlertDialog 로 띄운다).
     _checkForUpdate();
