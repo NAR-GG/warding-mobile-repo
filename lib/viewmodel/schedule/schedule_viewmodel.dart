@@ -94,6 +94,10 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> _init() async {
     final saved =
         await _filterPreferences.load(FilterPreferenceRepository.scheduleKey);
+    // 저장된 필터를 읽는 사이에 화면이 사라질 수 있다(콜드 스타트 딥링크로
+    // 첫 화면이 곧바로 교체되는 경로). 그대로 진행하면 죽은 뷰모델이 조회를
+    // 걸어 로딩만 켜 두고 끝나, 다음에 뜬 화면이 멈춘 스피너를 물려받는다.
+    if (_disposed) return;
     if (saved != null) {
       final leagues = (saved['leagues'] as List?)?.cast<String>();
       _leagues = leagues != null && leagues.isNotEmpty ? leagues : ['ALL'];

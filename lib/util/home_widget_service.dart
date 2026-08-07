@@ -342,6 +342,19 @@ class HomeWidgetService {
     if (pending != null) _handleWidgetUrl(pending);
   }
 
+  /// 마지막으로 처리한 URL과 그 시각. 같은 딥링크가 짧은 간격으로 두 번
+  /// 들어오는 걸 걸러낸다.
+  ///
+  /// 콜드 스타트에서는 같은 URL 이 두 경로로 온다 — 네이티브 채널이 늦게
+  /// 전달한 것과, 스플래시가 [markSplashReady] 로 소비한 보류분이다. 둘 다
+  /// 통과하면 같은 경기 상세가 두 장 쌓인다(Live Activity 카드 탭 증상).
+  ///
+  /// 사용자가 카드를 연달아 눌러 같은 화면을 다시 여는 건 막지 않도록
+  /// 시간 창을 짧게 둔다.
+  static String? _lastHandledUrl;
+  static DateTime? _lastHandledAt;
+  static const _duplicateWindow = Duration(seconds: 3);
+
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
   static void _handleWidgetUrl(String urlStr) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
@@ -353,6 +366,17 @@ class HomeWidgetService {
       _pendingWidgetUrl = urlStr;
       return;
     }
+
+    // 보류분과 채널 전달이 겹쳐 같은 URL 이 두 번 오면 뒤엣것은 버린다.
+    final at = _lastHandledAt;
+    if (_lastHandledUrl == urlStr &&
+        at != null &&
+        DateTime.now().difference(at) < _duplicateWindow) {
+      debugPrint('[HomeWidget] 같은 딥링크가 중복 도착해 무시: $urlStr');
+      return;
+    }
+    _lastHandledUrl = urlStr;
+    _lastHandledAt = DateTime.now();
     final uri = Uri.tryParse(urlStr);
     if (uri == null) return;
 
