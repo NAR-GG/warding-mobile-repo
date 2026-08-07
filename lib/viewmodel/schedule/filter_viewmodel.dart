@@ -184,16 +184,23 @@ class FilterViewModel extends ChangeNotifier {
     _load([allLeagueCode]);
   }
 
+  /// 옵션 조회 세대. 리그 체크를 빠르게 여러 번 누르면 조회가 겹치는데,
+  /// 응답 순서는 보장되지 않는다. 자기 세대가 최신이 아니면 결과를 버려
+  /// 늦게 도착한 옛 조회가 엉뚱한 팀 목록을 덮어쓰는 걸 막는다.
+  int _loadId = 0;
+
   /// [leagues] 각각의 필터 옵션(리그 전체 목록 + 그 리그 팀)을 받아 합친다.
   /// `/filters` 가 단일 리그만 받는 API라, 리그를 복수 선택했으면 리그별로
   /// 병렬 조회해 팀 목록을 teamId 기준 중복 제거하며 합친다.
   Future<void> _load(List<String> leagues) async {
+    final loadId = ++_loadId;
     _loading = true;
     notifyListeners();
     try {
       final results = await Future.wait(
         leagues.map((l) => _repository.fetchFilterOptions(league: l)),
       );
+      if (loadId != _loadId) return; // 더 최신 선택의 조회가 이미 떠 있다.
       _leagues = results.first.leagues;
       final mergedTeams = <int, FilterTeam>{};
       for (final options in results) {
@@ -210,8 +217,12 @@ class FilterViewModel extends ChangeNotifier {
     } catch (_) {
       // 옵션 로드 실패 시 빈 목록 유지 — 모달은 떠 있되 항목만 비어 있다.
     } finally {
-      _loading = false;
-      notifyListeners();
+      // 최신 조회만 로딩을 내린다. 구버전이 내리면 아직 받는 중인데 목록이
+      // 비어 보인다.
+      if (loadId == _loadId) {
+        _loading = false;
+        notifyListeners();
+      }
     }
   }
 

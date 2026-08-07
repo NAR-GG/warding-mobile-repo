@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -45,6 +46,13 @@ class ScheduleRepository {
   /// 이 시간이 지났으면 새로 받는다.
   static const Duration _calendarCacheTtl = Duration(seconds: 30);
 
+  /// 캘린더 요청 한 건이 살아 있을 수 있는 최대 시간.
+  ///
+  /// 백그라운드에 들어가면 OS 가 프로세스를 멈춰 소켓 타임아웃도 같이 얼어붙는다.
+  /// 상한을 두지 않으면 그 요청이 영원히 진행 중으로 남아, 뒤따르는 조회가
+  /// 계속 거기에 합류하며 스피너가 멈춘 채로 남는다.
+  static const Duration _calendarTimeout = Duration(seconds: 15);
+
   /// 특정 월의 캘린더 마킹 데이터를 조회한다 (인증 불필요).
   ///
   /// 날짜별 경기 수와, 캘린더 칸 칩에 바로 쓸 대진 목록까지 한 번에 받는다.
@@ -80,10 +88,21 @@ class ScheduleRepository {
       }
     }
 
-    final request = _fetchCalendar(url, monthStr).then((days) {
+    final request = _fetchCalendar(url, monthStr)
+        .timeout(_calendarTimeout)
+        .then((days) {
       _calendarCache[url] = (DateTime.now(), days);
       return days;
-    }).whenComplete(() => _calendarInFlight.remove(url));
+    });
+    // 성공·실패 무관하게 진행 중 목록에서 뺀다. 실패한 요청이 남아 있으면
+    // 다음 조회가 이미 끝난 실패 future 에 합류해 계속 같은 에러만 받는다.
+    // 그 사이 새 요청이 들어와 있으면(같은 url) 그 쪽을 지우지 않도록 확인한다.
+    // 정리용 체인 자체의 에러는 여기서 삼킨다 — 원본 에러는 호출자가 받는다.
+    unawaited(request.whenComplete(() {
+      if (identical(_calendarInFlight[url], request)) {
+        _calendarInFlight.remove(url);
+      }
+    }).catchError((_) => const <MatchCalendarDay>[]));
     _calendarInFlight[url] = request;
     return request;
   }
