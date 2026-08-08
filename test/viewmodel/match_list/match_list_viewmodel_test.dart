@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/model/category_tree.dart';
 import 'package:warding/model/schedule_filter_options.dart';
+import 'package:warding/model/schedule_match.dart';
 import 'package:warding/repository/category/category_repository.dart';
 import 'package:warding/repository/preference/filter_preference_repository.dart';
 import 'package:warding/repository/schedule/schedule_repository.dart';
@@ -93,6 +94,64 @@ void main() {
           seasonYear: captureAny(named: 'seasonYear'),
         )).captured;
     expect(captured, contains(2025));
+  });
+
+  test("'오늘 이후'는 오늘 날짜까지 페이지를 당겨온다", () async {
+    // sortOrders 가 l10n(GlobalKey) 을 읽으므로 바인딩이 필요하다.
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final today = DateTime.now();
+    final day = DateTime(today.year, today.month, today.day);
+    ScheduleMatch match(String id, DateTime d) => ScheduleMatch(
+          matchId: id,
+          scheduledTime: '18:00',
+          leagueInfo: 'LCK',
+          matchTitle: 'A vs B',
+          matchStatus: 'unstarted',
+          isSynced: false,
+          date: d,
+          teamA: const MatchTeam(
+              teamName: 'A', teamCode: 'A', teamImageUrl: '', score: 0),
+          teamB: const MatchTeam(
+              teamName: 'B', teamCode: 'B', teamImageUrl: '', score: 0),
+        );
+    // 서버는 최신→과거 순. 첫 페이지는 시즌 끝(오늘+40일) 경기만 담긴다.
+    final pages = <String?, MatchPage>{
+      null: MatchPage(
+        matches: [for (var i = 0; i < 5; i++) match('far$i', day.add(const Duration(days: 40)))],
+        nextCursor: 'c1',
+        hasNext: true,
+      ),
+      'c1': MatchPage(
+        matches: [for (var i = 0; i < 5; i++) match('soon$i', day.add(const Duration(days: 1)))],
+        nextCursor: 'c2',
+        hasNext: true,
+      ),
+      'c2': MatchPage(
+        matches: [for (var i = 0; i < 5; i++) match('past$i', day.subtract(const Duration(days: 1)))],
+        nextCursor: 'c3',
+        hasNext: true,
+      ),
+    };
+    when(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((inv) async =>
+        pages[inv.namedArguments[const Symbol('cursor')]] ??
+        const MatchPage(matches: [], nextCursor: null, hasNext: false));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    vm.selectSortOrder(vm.sortOrders[2]); // '오늘 이후'
+    await pumpEventQueue();
+
+    expect(vm.upcomingOnly, isTrue);
+    // 오늘에 가장 가까운 예정일까지 당겨와야 한다 (첫 페이지의 오늘+40일에서 멈추면 실패).
+    expect(vm.schedule.last.date, day.add(const Duration(days: 1)));
+    // 과거 경기는 담지 않는다.
+    expect(vm.schedule.any((d) => d.date.isBefore(day)), isFalse);
   });
 
   group('필터 저장·복원', () {

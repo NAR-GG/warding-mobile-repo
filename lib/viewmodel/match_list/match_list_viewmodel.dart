@@ -87,7 +87,8 @@ class MatchListViewModel extends ChangeNotifier {
   /// 초기 진입 시 '오늘' 그룹으로 스크롤하려면 오늘 이하 경기가 최소 한 건은
   /// 로드돼 있어야 한다. '전체'(ALL) 리그는 최신 페이지가 전부 미래(예정) 경기라
   /// 오늘 이하가 나올 때까지 더 당겨야 하므로 catch-up 최대 페이지를 넉넉히 둔다.
-  static const int _maxCatchUpPages = 10;
+  /// (2026-08 시점 ALL 기준 오늘까지 9페이지. 시즌 초는 예정 경기가 더 많다.)
+  static const int _maxCatchUpPages = 20;
 
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
@@ -343,10 +344,12 @@ class MatchListViewModel extends ChangeNotifier {
       // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
       //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
       //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
-      //    '오늘 이후'는 과거를 아예 안 담으므로 오늘 이하 조건은 보지 않는다.
+      //    '오늘 이후'도 마찬가지다. 첫 페이지는 시즌 끝(예: 9월) 경기만 담겨
+      //    오늘까지 안 당기면 스크롤이 엉뚱한 미래 날짜에 멈춘다. 오늘 경기가
+      //    없는 날엔 _hasTodayOrPastLoaded 가 계속 false 지만, 페이지가 오늘
+      //    이전으로 넘어가는 순간 _fetchNextPage 가 _hasMore 를 내려 멈춘다.
       final needPrefetch =
-          (newMatches < _minMatchesPerLoad ||
-              (!upcomingOnly && !_hasTodayOrPastLoaded())) &&
+          (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded()) &&
           _hasMore;
 
       // 첫 페이지는 즉시 노출하되, prefetch 가 필요하면 loadingMore 를 같은 프레임에
@@ -359,8 +362,7 @@ class MatchListViewModel extends ChangeNotifier {
         var attempts = 1;
         while (_hasMore &&
             attempts < _maxCatchUpPages &&
-            (newMatches < _minMatchesPerLoad ||
-                (!upcomingOnly && !_hasTodayOrPastLoaded()))) {
+            (newMatches < _minMatchesPerLoad || !_hasTodayOrPastLoaded())) {
           newMatches += await _fetchNextPage();
           attempts++;
           _notify();
