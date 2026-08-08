@@ -50,6 +50,12 @@ class MatchListViewModel extends ChangeNotifier {
       if (teams != null && teams.isNotEmpty) {
         _pendingRestoredTeams = teams.toSet();
       }
+      // 라벨은 언어에 따라 바뀌므로 인덱스로 저장·복원한다. 저장 당시보다
+      // 옵션이 줄어든 버전에서도 안전하도록 범위를 확인한다.
+      final sortOrder = saved['sortOrder'] as int?;
+      if (sortOrder != null && sortOrder >= 0 && sortOrder < _sortOrderCount) {
+        _sortOrderIndex = sortOrder;
+      }
     }
     await _loadLeagues();
   }
@@ -60,6 +66,7 @@ class MatchListViewModel extends ChangeNotifier {
       'season': _selectedSeason,
       'league': _selectedLeague,
       'teams': _selectedTeams.toList(),
+      'sortOrder': _sortOrderIndex,
     }));
   }
 
@@ -104,6 +111,10 @@ class MatchListViewModel extends ChangeNotifier {
         appStrings?.sortUpcoming ?? 'Upcoming',
       ];
 
+  /// 정렬 옵션 개수. [sortOrders] 는 l10n 을 읽어 위젯 바인딩이 필요하므로,
+  /// 복원 시 범위 확인처럼 바인딩 없이 쓰는 곳은 이 상수를 본다.
+  static const int _sortOrderCount = 3;
+
   /// 0=최근순, 1=오래된 순, 2=오늘 이후. 라벨이 언어에 따라 바뀌어도 index로 비교한다.
   int _sortOrderIndex = 1;
 
@@ -133,6 +144,7 @@ class MatchListViewModel extends ChangeNotifier {
     if (idx < 0 || idx == _sortOrderIndex) return;
     final wasUpcomingOnly = upcomingOnly;
     _sortOrderIndex = idx;
+    _persistFilter();
     // '오늘 이후' 를 켜고 끌 때는 필터 조건 자체가 바뀌므로 첫 페이지부터 다시 받는다.
     // (누적본에는 이미 걸러진 과거 경기가 없어 되돌릴 수 없다.)
     // _reloadSchedule 이 버전을 올리고 notify 하므로 여기선 따로 알리지 않는다.

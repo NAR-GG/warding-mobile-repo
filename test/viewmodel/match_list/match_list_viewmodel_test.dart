@@ -253,5 +253,46 @@ void main() {
           .last as Map<String, dynamic>;
       expect(saved['league'], 'LCK');
     });
+
+    test('정렬 변경 시 저장하고, 다음 실행에 복원한다', () async {
+      // sortOrders 가 l10n(GlobalKey) 을 읽으므로 바인딩이 필요하다.
+      TestWidgetsFlutterBinding.ensureInitialized();
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => null);
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      vm.selectSortOrder(vm.sortOrders[2]); // '오늘 이후'
+      await pumpEventQueue();
+
+      final saved = verify(() =>
+              prefs.save(FilterPreferenceRepository.matchListKey, captureAny()))
+          .captured
+          .last as Map<String, dynamic>;
+      expect(saved['sortOrder'], 2);
+
+      // 저장된 값으로 새로 띄우면 '오늘 이후'가 그대로 살아 있어야 한다.
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => saved);
+
+      final restored = buildVm();
+      await pumpEventQueue();
+
+      expect(restored.upcomingOnly, isTrue);
+      expect(restored.scheduleAscending, isTrue);
+    });
+
+    test('저장된 정렬 인덱스가 범위를 벗어나면 기본값을 쓴다', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => {'sortOrder': 99});
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      expect(vm.upcomingOnly, isFalse);
+      expect(vm.sortOrder, vm.sortOrders[1]); // 기본 '오래된 순'
+    });
   });
 }
