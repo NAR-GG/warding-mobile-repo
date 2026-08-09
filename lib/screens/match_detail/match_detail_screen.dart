@@ -13,7 +13,6 @@ import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_dropdown.dart';
 import '../../components/nar_tab_bar.dart';
-import '../../repository/live_activity/live_match_activity_controller.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/match_detail/match_detail_viewmodel.dart';
 import '../player_rating/player_rating_screen.dart';
@@ -76,18 +75,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   void _onViewModelChanged() {
     if (mounted) setState(() {});
-    _syncLiveActivity();
-  }
-
-  /// 경기가 진행 중이면 iOS 잠금화면 Live Activity 를 띄우고 상태를 반영한다.
-  /// (컨트롤러가 중복 갱신을 걸러내므로 매 변경마다 호출해도 된다.)
-  void _syncLiveActivity() {
-    final match = _effectiveMatch;
-    if (match == null) return;
-    liveMatchActivityController.sync(
-      match: match,
-      games: _viewModel.games,
-    );
   }
 
   @override
