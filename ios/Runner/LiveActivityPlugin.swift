@@ -30,6 +30,12 @@ final class LiveActivityPlugin: NSObject {
     /// push-to-start 토큰 관찰 태스크. 중복 관찰을 막는다.
     private var pushToStartTask: Task<Void, Never>?
 
+    /// activityUpdates 스트림 관찰 태스크. 중복 관찰을 막는다.
+    private var activityUpdatesTask: Task<Void, Never>?
+
+    /// update 토큰 스트림을 이미 관찰 중인 액티비티 id 집합.
+    private var observedActivityIds = Set<String>()
+
     static func register(with messenger: FlutterBinaryMessenger) -> LiveActivityPlugin {
         let instance = LiveActivityPlugin()
         let channel = FlutterMethodChannel(name: channelName, binaryMessenger: messenger)
@@ -250,6 +256,10 @@ final class LiveActivityPlugin: NSObject {
     /// 포그라운드에서만 카드가 뜬다.
     private func observePushToStartToken(result: @escaping FlutterResult) {
         #if canImport(ActivityKit)
+        // update 토큰(카드 단위) 관찰은 16.1+ 에서 가능하므로 17.2 guard 앞에서 시작한다.
+        if #available(iOS 16.1, *) {
+            observeAllActivityTokens()
+        }
         guard #available(iOS 17.2, *) else {
             result(false)
             return
@@ -277,11 +287,37 @@ final class LiveActivityPlugin: NSObject {
     }
 
     #if canImport(ActivityKit)
+    /// 모든 카드(이미 떠 있는 것 + 앞으로 생기는 것)의 update 토큰 발급을 관찰한다.
+    ///
+    /// 서버가 push-to-start 로 만든 카드는 `Activity.request` 를 안 거치므로
+    /// start() 경로의 [observePushTokenUpdates] 만으로는 토큰이 등록되지 않고,
+    /// 서버가 빈 토큰 리스트를 받아 카드를 갱신·종료하지 못한다. activityUpdates
+    /// 스트림으로 그런 카드까지 잡는다.
+    @available(iOS 16.1, *)
+    private func observeAllActivityTokens() {
+        guard activityUpdatesTask == nil else { return }
+        for activity in Activity<MatchLiveAttributes>.activities {
+            observePushTokenUpdates(of: activity, matchId: activity.attributes.matchId)
+        }
+        activityUpdatesTask = Task { [weak self] in
+            for await activity in Activity<MatchLiveAttributes>.activityUpdates {
+                await MainActor.run {
+                    self?.observePushTokenUpdates(of: activity,
+                                                  matchId: activity.attributes.matchId)
+                }
+            }
+        }
+    }
+
     /// 액티비티의 APNs 푸시 토큰이 발급·갱신될 때마다 hex 문자열로 바꿔
     /// Dart 쪽에 알린다(`pushToken` 메서드). 서버가 이 토큰으로 카드를
     /// 직접 갱신한다 — 토큰 등록 자체는 인증(JWT)이 필요해 Dart 쪽에서 한다.
+    ///
+    /// 같은 액티비티를 start()·activityUpdates 양쪽에서 만나도 스트림은
+    /// 하나만 유지한다(observedActivityIds). 호출은 메인 스레드에서만 한다.
     @available(iOS 16.1, *)
     private func observePushTokenUpdates(of activity: Activity<MatchLiveAttributes>, matchId: String) {
+        guard observedActivityIds.insert(activity.id).inserted else { return }
         Task {
             for await tokenData in activity.pushTokenUpdates {
                 let hexToken = tokenData.map { String(format: "%02x", $0) }.joined()
