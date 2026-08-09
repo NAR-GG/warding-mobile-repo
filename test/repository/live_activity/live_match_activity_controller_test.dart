@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/model/live_match_activity.dart';
 import 'package:warding/model/match_game.dart';
-import 'package:warding/model/schedule_match.dart';
 import 'package:warding/repository/live_activity/live_match_activity_controller.dart';
 
-/// 세트 목록 → Live Activity 상태 판정 로직 검증.
+/// 세트 목록 → 경기 국면 판정 로직 검증.
 ///
-/// 실제 API 응답(`/api/mobile/matches/{id}/games`) 구조를 그대로 써서,
-/// 경기 진행 국면·표시 세트·세트 스코어가 의도대로 나오는지 확인한다.
+/// 카드 정리(dismissStaleCards)가 "아직 카드를 유지해야 하는 경기"를
+/// 잘못 판정해 멀쩡한 카드를 내리지 않도록, 실제 API 응답
+/// (`/api/mobile/matches/{id}/games`) 구조 그대로 확인한다.
 void main() {
   late LiveMatchActivityController controller;
 
@@ -23,27 +23,6 @@ void main() {
       'status': status,
       'vodUrl': null,
       'winnerTeamCode': winner,
-    });
-  }
-
-  /// TH vs VIT 대진. 스코어 판정은 teamCode 매칭에 의존한다.
-  ScheduleMatch match({String status = 'completed'}) {
-    return ScheduleMatch.fromJson({
-      'matchId': '115548681803406115',
-      'teamA': {
-        'teamName': 'Team Heretics',
-        'teamCode': 'TH',
-        'teamImageUrl': '',
-      },
-      'teamB': {
-        'teamName': 'Team Vitality',
-        'teamCode': 'VIT',
-        'teamImageUrl': '',
-      },
-      'leagueInfo': 'LEC',
-      'matchTitle': 'Group Stage | TH vs VIT',
-      'matchStatus': status,
-      'scheduledTime': '18:00',
     });
   }
 
@@ -113,66 +92,6 @@ void main() {
       for (final s in const ['LIVE', 'in_progress', 'completed', 'ENDED', '']) {
         expect(controller.isScheduledStatus(s), isFalse, reason: s);
       }
-    });
-  });
-
-  group('displayName', () {
-    test('팀 코드가 있으면 코드를 쓴다 (풀네임은 카드에서 잘린다)', () {
-      // 서버는 'Team Vitality' 를 주지만 카드에는 'VIT' 로 보여야 한다.
-      expect(controller.displayName(match().teamB), 'VIT');
-      expect(controller.displayName(match().teamA), 'TH');
-    });
-
-    test('팀 코드가 비어 있으면 팀명으로 폴백한다', () {
-      final team = MatchTeam.fromJson({
-        'teamName': 'Nongshim Redforce',
-        'teamCode': '',
-        'teamImageUrl': '',
-      });
-      expect(controller.displayName(team), 'Nongshim Redforce');
-    });
-  });
-
-  group('resolveSetNumber', () {
-    test('LIVE 세트가 있으면 그 세트 번호', () {
-      final games = [
-        game(1, 'ENDED', winner: 'TH'),
-        game(2, 'LIVE'),
-        game(3, 'SCHEDULED'),
-      ];
-      expect(controller.resolveSetNumber(games), 2);
-    });
-
-    test('LIVE 가 없으면 마지막으로 끝난 세트 번호', () {
-      final games = [
-        game(1, 'ENDED', winner: 'VIT'),
-        game(2, 'ENDED', winner: 'VIT'),
-      ];
-      expect(controller.resolveSetNumber(games), 2);
-    });
-  });
-
-  group('resolveScore', () {
-    test('세트 승자 코드로 양 팀 승수를 센다', () {
-      // 실제 경기 결과: VIT 2 : 0 TH (teamA=TH, teamB=VIT)
-      final games = [
-        game(1, 'ENDED', winner: 'VIT'),
-        game(2, 'ENDED', winner: 'VIT'),
-      ];
-      expect(controller.resolveScore(match(), games), (0, 2));
-    });
-
-    test('진행 중인 세트는 승자가 없어 스코어에 반영되지 않는다', () {
-      final games = [
-        game(1, 'ENDED', winner: 'TH'),
-        game(2, 'LIVE'),
-      ];
-      expect(controller.resolveScore(match(), games), (1, 0));
-    });
-
-    test('대진에 없는 팀 코드는 무시한다', () {
-      final games = [game(1, 'ENDED', winner: 'GEN')];
-      expect(controller.resolveScore(match(), games), (0, 0));
     });
   });
 }

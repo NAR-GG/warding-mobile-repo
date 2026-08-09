@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../util/api_client.dart' as http;
 
-import '../../model/live_match_activity.dart';
 import 'live_activity_push_token_repository.dart';
 
 /// 실시간 경기 카드 제어 서비스.
@@ -20,11 +19,6 @@ class LiveActivityService {
 
   static const MethodChannel _channel =
       MethodChannel('com.warding.app/live_activity');
-
-  /// 현재 활성 액티비티가 붙어있는 경기 ID. 없으면 null.
-  String? _activeMatchId;
-
-  String? get activeMatchId => _activeMatchId;
 
   /// [_handleNativeCall] 등록 여부. 실제로 지원 플랫폼에서 채널을 처음 쓸
   /// 때 등록한다 — 생성자에서 바로 등록하면 위젯 바인딩 없는 순수 단위
@@ -61,11 +55,6 @@ class LiveActivityService {
       debugPrint('[LiveActivity] isSupported failed: ${e.message}');
       return false;
     }
-  }
-
-  /// iOS 는 별도 권한이 없어 지원 플랫폼이면 그대로 true.
-  Future<bool> ensurePermission() async {
-    return _supportedPlatform;
   }
 
   /// 네이티브(iOS)에서 오는 콜백을 처리한다.
@@ -148,61 +137,14 @@ class LiveActivityService {
     }
   }
 
-  /// Live Activity 를 시작한다. 성공하면 true.
+  /// 남아있는 모든 액티비티를 즉시 종료한다 (고착 카드 정리용).
   ///
-  /// 이미 다른 경기의 액티비티가 떠 있으면 네이티브에서 정리하고 새로 띄운다.
-  Future<bool> start({
-    required LiveMatchActivityConfig config,
-    required LiveMatchActivityState state,
-  }) async {
-    if (!_supportedPlatform) return false;
-    _ensureHandlerRegistered();
-    try {
-      final args = <String, dynamic>{...config.toMap(), ...state.toMap()};
-      final id = await _channel.invokeMethod<String>('start', args);
-      if (id != null) {
-        _activeMatchId = config.matchId;
-        debugPrint('[LiveActivity] started: $id (${config.matchId})');
-        return true;
-      }
-      return false;
-    } on PlatformException catch (e) {
-      debugPrint('[LiveActivity] start failed: ${e.code} ${e.message}');
-      return false;
-    }
-  }
-
-  /// 활성 액티비티의 상태를 갱신한다.
-  Future<bool> update(LiveMatchActivityState state) async {
-    if (!_supportedPlatform || _activeMatchId == null) return false;
-    try {
-      return await _channel.invokeMethod<bool>('update', state.toMap()) ?? false;
-    } on PlatformException catch (e) {
-      debugPrint('[LiveActivity] update failed: ${e.message}');
-      return false;
-    }
-  }
-
-  /// 최종 상태를 반영하고 액티비티를 종료한다.
-  Future<bool> end(LiveMatchActivityState finalState) async {
-    if (!_supportedPlatform) return false;
-    try {
-      final ok =
-          await _channel.invokeMethod<bool>('end', finalState.toMap()) ?? false;
-      _activeMatchId = null;
-      return ok;
-    } on PlatformException catch (e) {
-      debugPrint('[LiveActivity] end failed: ${e.message}');
-      return false;
-    }
-  }
-
-  /// 남아있는 모든 액티비티를 즉시 종료한다 (앱 시작 시 정리용).
+  /// 카드의 시작·갱신·정상 종료는 서버가 APNs 로 처리한다. 앱에는 서버가
+  /// 못 닫는(토큰 미등록) 카드를 치우는 이 경로만 남겼다.
   Future<void> endAll() async {
     if (!_supportedPlatform) return;
     try {
       await _channel.invokeMethod<bool>('endAll');
-      _activeMatchId = null;
     } on PlatformException catch (e) {
       debugPrint('[LiveActivity] endAll failed: ${e.message}');
     }

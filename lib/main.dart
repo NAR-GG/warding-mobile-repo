@@ -115,9 +115,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // 앱 시작 시 진행 중인 구독 경기가 있으면 실시간 카드를 띄운다.
-    // iOS 17.2 미만은 push-to-start 가 없어 이 경로가 유일한 표시 수단이다.
-    liveMatchActivityController.scanForLiveMatch();
+    // 앱 시작 시 잘못 남은 실시간 카드를 정리한다. 카드 생성·갱신·종료는
+    // 서버가 APNs 로 처리하고, 앱은 서버가 못 닫는(토큰 미등록) 카드만 치운다.
+    liveMatchActivityController.dismissStaleCards();
 
     // push-to-start 토큰을 관찰해 서버에 올린다. 이게 등록돼야 앱이 꺼져
     // 있어도 서버가 세트 시작에 맞춰 카드를 직접 만든다.
@@ -136,10 +136,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 포그라운드로 돌아올 때마다 다시 살핀다. 앱이 떠 있는 동안 경기가
-    // 시작됐을 수 있고, 카드가 이미 떠 있으면 스캔은 즉시 반환한다.
+    // 포그라운드로 돌아올 때마다 고착 카드가 없는지 다시 살핀다.
     if (state == AppLifecycleState.resumed) {
-      liveMatchActivityController.scanForLiveMatch();
+      liveMatchActivityController.dismissStaleCards();
     }
   }
 
