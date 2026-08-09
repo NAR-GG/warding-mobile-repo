@@ -79,8 +79,10 @@ lib/
 
 ```bash
 # 스토어 릴리즈 (버전은 pubspec.yaml의 version 사용)
+git tag -a release/1.0.13+20 -m "shorebird release ios+android"   # 빌드 직전에 (아래 태그 규칙)
 shorebird release ios        # → build/ios/ipa/*.ipa 를 Transporter로 업로드
 shorebird release android    # → build/app/outputs/bundle/release/*.aab 를 Play Console에 업로드
+git push --follow-tags
 
 # 제출 전 확인: 해당 버전이 목록에 있어야 shorebird 빌드가 맞음
 shorebird releases list
@@ -90,10 +92,31 @@ shorebird patch ios --release-version <pubspec의 version>
 shorebird patch android --release-version <pubspec의 version>
 ```
 
-패치 규칙:
+### 릴리즈 태그 규칙
+
+**`shorebird release` 실행 직전에 annotated 태그를 찍는다.** shorebird 는 업로드 시각만
+저장하고 어느 커밋이었는지는 남기지 않는다. 태그가 없으면 "이 릴리즈가 어느 코드였나"를
+업로드 시각으로 역추적해야 하는데, 커밋 시각 ≠ 빌드 시각이고 uncommitted 상태로 빌드했으면
+아예 못 찾는다.
+
+- 태그명은 `release/<pubspec의 version 그대로>` — 예: `release/1.0.13+20`.
+  조회는 언제나 "shorebird 가 말하는 버전 → 커밋" 방향이라 이름에 버전이 들어가야 한다.
+- **`-a` 필수.** lightweight 태그는 자기 날짜가 없어 커밋 날짜로 대체되는데, 알고 싶은 건
+  빌드 시각이다. annotated 는 태그를 찍은 시각을 따로 저장해 shorebird 의 `created_at` 과
+  대조할 수 있다.
+- 빌드 번호를 올려 다시 뽑으면 태그도 새로 찍는다. 옛 태그는 지우지 않는다 — 어느 빌드가
+  실제로 스토어에 나갔는지 구분된다 (예: `+19` 는 폐기, `+20` 이 제출분).
+- 날짜순으로 보려면:
+  `git tag --sort=-creatordate --format='%(creatordate:short)  %(refname:short)  %(contents:subject)'`
+
+패치 태그(`patch/<version>/<번호>`)는 만들지 않는다. shorebird 패치를 당분간 쓰지 않기로 했다.
+다시 쓰게 되면 같은 방식으로 패치 직전에 찍는다.
+
+패치 규칙 (현재 미사용, 재개할 때 참고):
 - 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출 필요.
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시 위험.
-- 패치가 어느 코드였는지는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적.
+- 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
+- 과금은 **패치 설치 수** 기준이라(Free 5,000/월) 패치를 남발하면 한도가 찬다. 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
 
 ## 진행 상황
 
