@@ -161,6 +161,9 @@ class ScheduleRepository {
   ///
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
   /// `nextCursor` 를 [cursor] 로 넘겨 이어 받는다 (첫 페이지는 cursor 생략).
+  ///
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기를 오름차순으로 받는다.
+  /// '오늘 이후' 필터가 쓰는 경로다.
   Future<MatchPage> fetchMatches({
     String? cursor,
     int size = 20,
@@ -168,6 +171,7 @@ class ScheduleRepository {
     int? teamId,
     int? seasonYear,
     String? split,
+    String? from,
   }) async {
     final url = ApiConfig.matchesUrl(
       league: league,
@@ -176,6 +180,7 @@ class ScheduleRepository {
       teamId: teamId,
       seasonYear: seasonYear,
       split: split,
+      from: from,
     );
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));

@@ -50,6 +50,12 @@ class MatchListViewModel extends ChangeNotifier {
       if (teams != null && teams.isNotEmpty) {
         _pendingRestoredTeams = teams.toSet();
       }
+      // 라벨은 언어에 따라 바뀌므로 인덱스로 저장·복원한다. 저장 당시보다
+      // 옵션이 줄어든 버전에서도 안전하도록 범위를 확인한다.
+      final sortOrder = saved['sortOrder'] as int?;
+      if (sortOrder != null && sortOrder >= 0 && sortOrder < _sortOrderCount) {
+        _sortOrderIndex = sortOrder;
+      }
     }
     await _loadLeagues();
   }
@@ -60,6 +66,7 @@ class MatchListViewModel extends ChangeNotifier {
       'season': _selectedSeason,
       'league': _selectedLeague,
       'teams': _selectedTeams.toList(),
+      'sortOrder': _sortOrderIndex,
     }));
   }
 
@@ -87,14 +94,15 @@ class MatchListViewModel extends ChangeNotifier {
   /// 초기 진입 시 '오늘' 그룹으로 스크롤하려면 오늘 이하 경기가 최소 한 건은
   /// 로드돼 있어야 한다. '전체'(ALL) 리그는 최신 페이지가 전부 미래(예정) 경기라
   /// 오늘 이하가 나올 때까지 더 당겨야 하므로 catch-up 최대 페이지를 넉넉히 둔다.
-  static const int _maxCatchUpPages = 10;
+  /// (2026-08 시점 ALL 기준 오늘까지 9페이지. 시즌 초는 예정 경기가 더 많다.)
+  static const int _maxCatchUpPages = 20;
 
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
 
-  /// 정렬 순서 옵션. fetch 방향은 항상 최신→과거이고, 표시 방향은 View 가
-  /// ListView.reverse 로 뒤집는다 ([ascending] 참고). 기본은 '오래된 순'
-  /// (위가 과거, 아래가 미래).
+  /// 정렬 순서 옵션. fetch 방향은 '오늘 이후'만 과거→미래고 나머지는 최신→과거다
+  /// ([scheduleAscending]). 표시 방향은 View 가 [listReversed] 로 맞춘다.
+  /// 기본은 '오래된 순'(위가 과거, 아래가 미래).
   /// 표시용 라벨 목록 — l10n 에서 가져온다.
   /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정.
   List<String> get sortOrders => [
@@ -102,6 +110,10 @@ class MatchListViewModel extends ChangeNotifier {
         appStrings?.sortOldest ?? 'Oldest',
         appStrings?.sortUpcoming ?? 'Upcoming',
       ];
+
+  /// 정렬 옵션 개수. [sortOrders] 는 l10n 을 읽어 위젯 바인딩이 필요하므로,
+  /// 복원 시 범위 확인처럼 바인딩 없이 쓰는 곳은 이 상수를 본다.
+  static const int _sortOrderCount = 3;
 
   /// 0=최근순, 1=오래된 순, 2=오늘 이후. 라벨이 언어에 따라 바뀌어도 index로 비교한다.
   int _sortOrderIndex = 1;
@@ -115,11 +127,24 @@ class MatchListViewModel extends ChangeNotifier {
   /// '오늘 이후'(index 2) — 오늘 0시 이전에 시작한 경기는 목록에서 제외한다.
   bool get upcomingOnly => _sortOrderIndex == 2;
 
+  /// [schedule] 이 담긴 순서가 과거→미래인지.
+  ///
+  /// '오늘 이후'만 서버에 `from=오늘` 을 보내 오름차순으로 받으므로 true 고,
+  /// 나머지 정렬은 최신→과거 순으로 담긴다.
+  bool get scheduleAscending => upcomingOnly;
+
+  /// View 가 리스트를 뒤집어 그려야 하는지(`ListView.reverse`).
+  ///
+  /// 화면은 [ascending] 이 원하는 방향으로 보여야 하는데, 저장 순서가 이미
+  /// 그 방향([scheduleAscending])이면 뒤집을 필요가 없다.
+  bool get listReversed => ascending && !scheduleAscending;
+
   void selectSortOrder(String order) {
     final idx = sortOrders.indexOf(order);
     if (idx < 0 || idx == _sortOrderIndex) return;
     final wasUpcomingOnly = upcomingOnly;
     _sortOrderIndex = idx;
+    _persistFilter();
     // '오늘 이후' 를 켜고 끌 때는 필터 조건 자체가 바뀌므로 첫 페이지부터 다시 받는다.
     // (누적본에는 이미 걸러진 과거 경기가 없어 되돌릴 수 없다.)
     // _reloadSchedule 이 버전을 올리고 notify 하므로 여기선 따로 알리지 않는다.
@@ -165,11 +190,12 @@ class MatchListViewModel extends ChangeNotifier {
   Set<String> _selectedTeams = {allTeamsLabel};
   Set<String> get selectedTeams => _selectedTeams;
 
-  /// 무한 스크롤로 누적된 날짜별 경기 그룹. 내부는 항상 최신→과거 순.
+  /// 무한 스크롤로 누적된 날짜별 경기 그룹. 담긴 순서는 서버 응답 방향과 같다.
   final List<ScheduleDay> _schedule = [];
 
-  /// 항상 최신→과거 순. 표시 방향은 View 가 [ascending] 에 따라
-  /// ListView.reverse 로 뒤집는다 (과거 페이지 append 가 스크롤 점프 없이 붙도록).
+  /// 담긴 순서는 [scheduleAscending] 이 알려준다 — '오늘 이후'는 과거→미래,
+  /// 나머지는 최신→과거. 어느 쪽이든 다음 페이지가 뒤에 append 되므로 스크롤
+  /// 점프가 없다. 표시 방향은 View 가 [listReversed] 로 맞춘다.
   List<ScheduleDay> get schedule => List.unmodifiable(_schedule);
 
   /// 다음 페이지 커서. 첫 페이지는 null (커서 생략).
@@ -343,7 +369,8 @@ class MatchListViewModel extends ChangeNotifier {
       // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
       //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
       //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
-      //    '오늘 이후'는 과거를 아예 안 담으므로 오늘 이하 조건은 보지 않는다.
+      //    '오늘 이후'는 서버에 from=오늘 을 보내 첫 페이지가 곧 오늘부터라,
+      //    오늘 이하 조건은 보지 않는다(화면 채우기 조건만 남는다).
       final needPrefetch =
           (newMatches < _minMatchesPerLoad ||
               (!upcomingOnly && !_hasTodayOrPastLoaded())) &&
@@ -390,33 +417,28 @@ class MatchListViewModel extends ChangeNotifier {
       size: _pageSize,
       league: leagueParam,
       seasonYear: int.tryParse(_selectedSeason),
+      // '오늘 이후' 는 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
+      // 다른 정렬은 from 없이 최신→과거 순 그대로 받는다.
+      from: upcomingOnly ? _todayParam() : null,
     );
     _cursor = page.nextCursor;
     _hasMore = page.hasNext && page.nextCursor != null;
-    // '오늘 이후' 는 응답이 최신→과거 순이라, 페이지가 오늘 이전으로 넘어가면
-    // 그 뒤 페이지는 전부 과거다. 더 받아봐야 전부 걸러지므로 여기서 멈춘다.
-    if (upcomingOnly && _hasMore && _pageEndsBeforeToday(page.matches)) {
-      _hasMore = false;
-    }
     final filtered = _applyFilters(page.matches);
     _mergeIntoSchedule(filtered);
     return filtered.length;
   }
 
-  /// 서버 페이지(최신→과거 순)의 마지막 경기가 이미 오늘 이전인지.
-  /// 참이면 이후 커서 페이지는 전부 과거라 '오늘 이후' 조회를 끝내도 된다.
-  bool _pageEndsBeforeToday(List<ScheduleMatch> matches) {
+  /// 서버 `from` 파라미터에 쓸 오늘 날짜(`yyyy-MM-dd`).
+  String _todayParam() {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    for (final m in matches.reversed) {
-      final d = m.date;
-      if (d == null) continue;
-      return DateTime(d.year, d.month, d.day).isBefore(today);
-    }
-    return false;
+    return '${now.year}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
   }
 
-  /// 새 페이지 매치(최신→과거 순)를 날짜별 그룹으로 묶어 [_schedule] 뒤에 붙인다.
+  /// 새 페이지 매치를 날짜별 그룹으로 묶어 [_schedule] 뒤에 붙인다.
+  /// 페이지가 진행하는 방향은 정렬에 따라 다르지만([scheduleAscending]),
+  /// 어느 쪽이든 뒤 페이지가 앞 페이지의 연장이라 append 로 이어붙으면 된다.
   /// 페이지 경계에서 같은 날짜가 걸치면 마지막 기존 그룹에 머지한다.
   void _mergeIntoSchedule(List<ScheduleMatch> matches) {
     final groups = _groupByDate(matches);

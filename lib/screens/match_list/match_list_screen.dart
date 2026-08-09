@@ -86,17 +86,20 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 최신→과거 순 목록에서 오늘 이하(=오늘 또는 가장 가까운 과거)인 첫 그룹의 날짜.
   /// 전부 미래면 가장 가까운(마지막) 그룹으로 폴백한다.
   ///
-  /// '오늘 이후' 정렬은 과거 그룹이 아예 없어 위 규칙이면 항상 폴백으로 빠지는데,
-  /// 목록의 마지막(=가장 이른) 그룹이 곧 오늘 또는 가장 가까운 예정일이라 결과는 같다.
+  /// '오늘 이후'는 서버가 오늘부터 오름차순으로 내려주므로 첫 그룹이 곧 대상이다
+  /// (오늘 경기가 없으면 가장 가까운 예정일).
   DateTime? _findTargetDate() {
+    final schedule = _viewModel.schedule;
+    if (schedule.isEmpty) return null;
+    if (_viewModel.scheduleAscending) return schedule.first.date;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final schedule = _viewModel.schedule;
     for (final day in schedule) {
       final d = DateTime(day.date.year, day.date.month, day.date.day);
       if (!d.isAfter(today)) return day.date;
     }
-    return schedule.isNotEmpty ? schedule.last.date : null;
+    return schedule.last.date;
   }
 
   bool _isSameDate(DateTime a, DateTime b) =>
@@ -123,7 +126,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       Scrollable.ensureVisible(
         ctx,
         duration: Duration.zero,
-        alignment: _viewModel.ascending ? 0.65 : 0.35,
+        alignment: _viewModel.listReversed ? 0.65 : 0.35,
       );
       return;
     }
@@ -139,8 +142,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
     var offset = 0.0;
     for (final day in _viewModel.schedule) {
       if (_isSameDate(day.date, target)) {
-        // 오름차순(reverse:true)에선 헤더가 그 날짜 카드들 뒤 인덱스라 카드 높이만큼 더한다.
-        if (_viewModel.ascending) offset += day.matches.length * cardH * scale;
+        // 뒤집어 그릴 때(reverse:true)는 헤더가 그 날짜 카드들 뒤 인덱스라 카드 높이만큼 더한다.
+        if (_viewModel.listReversed) {
+          offset += day.matches.length * cardH * scale;
+        }
         break;
       }
       offset += headerH * scale + day.matches.length * cardH * scale;
@@ -382,7 +387,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 scrollController: _scrollController,
                 scale: scale,
                 bottom: 110,
-                reverse: _viewModel.ascending,
+                reverse: _viewModel.listReversed,
               ),
             ),
             Positioned(
@@ -401,7 +406,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Widget _buildList(BuildContext context, double scale) {
-    final items = _flatten(_viewModel.schedule, ascending: _viewModel.ascending);
+    final items = _flatten(_viewModel.schedule, reversed: _viewModel.listReversed);
     final loading = _viewModel.loadingMatches || _viewModel.loadingMore;
 
     // 결과가 비어있을 때 — 로딩 중이면 스켈레톤, 아니면 빈 상태 메시지.
@@ -430,7 +435,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       // 데이터는 항상 최신→과거 순. 오름차순(기본 '오래된 순')은 reverse 로 뒤집어
       // 위=과거, 아래=미래로 보여준다. 과거 페이지 append 가 스크롤 점프 없이
       // 위쪽으로 늘어나고, 기존 _onScroll(maxScrollExtent 근처) 트리거도 그대로 맞는다.
-      reverse: _viewModel.ascending,
+      reverse: _viewModel.listReversed,
       padding: EdgeInsets.only(bottom: 120 * scale),
       itemCount: items.length + 1,
       itemBuilder: (context, index) {
@@ -498,14 +503,19 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// [ascending] 이면 ListView 가 reverse:true 로 그리므로(인덱스 0 이 화면 맨 아래),
   /// 헤더를 그 날짜 카드들 '뒤'에 넣어야 화면에선 헤더가 카드 위에 온다.
   /// 카드 순서도 뒤집혀 날짜 안에서 이른 시간이 위로 온다.
-  List<_ListItem> _flatten(List<ScheduleDay> schedule, {required bool ascending}) {
+  /// 날짜 그룹을 헤더+카드 1차원 목록으로 편다.
+  ///
+  /// [reversed] 는 `ListView.reverse` 로 뒤집어 그리는지다. 뒤집어 그리면
+  /// 인덱스가 아래에서 위로 쌓이므로, 헤더가 화면에서 카드 위에 오려면
+  /// 인덱스상으로는 카드 뒤에 와야 한다.
+  List<_ListItem> _flatten(List<ScheduleDay> schedule, {required bool reversed}) {
     final out = <_ListItem>[];
     for (final day in schedule) {
-      if (!ascending) out.add(_HeaderItem(day.date));
+      if (!reversed) out.add(_HeaderItem(day.date));
       for (final m in day.matches) {
         out.add(_CardItem(m));
       }
-      if (ascending) out.add(_HeaderItem(day.date));
+      if (reversed) out.add(_HeaderItem(day.date));
     }
     return out;
   }

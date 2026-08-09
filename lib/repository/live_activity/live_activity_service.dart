@@ -37,9 +37,19 @@ class LiveActivityService {
     _channel.setMethodCallHandler(_handleNativeCall);
   }
 
+  /// 실시간 카드 킬스위치.
+  ///
+  /// false 면 [_supportedPlatform] 이 항상 false 라 카드 표시·push-to-start
+  /// 토큰 등록·로고 프리페치 경로가 전부 즉시 빠져나간다. 코드는 그대로 두는
+  /// 이유는 Dart 전용 변경이라 다시 켤 때 shorebird patch 한 번이면 되기
+  /// 때문이다(네이티브를 들어내면 스토어 재제출이 필요하다).
+  ///
+  /// ponytail: 서버 푸시 갱신이 안정화되면 true 로 되돌리고 이 상수를 지운다.
+  static final bool _enabled = false;
+
   /// 실시간 카드를 지원하는 플랫폼인지. Android 는 서버 푸시 갱신 없이
   /// 백그라운드 상태를 따라가지 못해 제외했다(iOS 만 지원).
-  bool get _supportedPlatform => !kIsWeb && Platform.isIOS;
+  bool get _supportedPlatform => _enabled && !kIsWeb && Platform.isIOS;
 
   /// 기기/설정에서 실시간 카드를 쓸 수 있는지.
   Future<bool> isSupported() async {
