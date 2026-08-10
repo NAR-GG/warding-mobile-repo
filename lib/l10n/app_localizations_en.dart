@@ -870,4 +870,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateNow => 'Update';
+
+  @override
+  String get quietHours => 'Quiet hours';
+
+  @override
+  String get quietHoursUse => 'Use quiet hours';
+
+  @override
+  String get quietHoursStart => 'From';
+
+  @override
+  String get quietHoursEnd => 'To';
+
+  @override
+  String get quietHoursOffHint =>
+      'When on, notifications arrive silently and stay in your inbox.';
+
+  @override
+  String quietHoursOnHint(String start, String end) {
+    return 'From $start to $end, all notifications arrive silently and stay in your inbox. Adjust this if you follow late-night international matches.';
+  }
+
+  @override
+  String get quietHoursStartSheetTitle => 'Quiet hours start';
+
+  @override
+  String get quietHoursEndSheetTitle => 'Quiet hours end';
+
+  @override
+  String get quietHoursSameTimeError =>
+      'Start and end can\'t be the same. Pick a different time.';
+
+  @override
+  String get quietHoursSaveFailed => 'Couldn\'t save your quiet hours.';
+
+  @override
+  String get quietHoursAm => 'AM';
+
+  @override
+  String get quietHoursPm => 'PM';
+
+  @override
+  String get quietHoursSave => 'Save';
 }
