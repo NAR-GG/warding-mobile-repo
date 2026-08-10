@@ -25,7 +25,7 @@ class QuietHoursViewModel extends ChangeNotifier {
   bool _isSaving = false;
   bool get isSaving => _isSaving;
 
-  /// 저장 실패 문구. 한 번 노출하고 [clearError] 로 비운다.
+  /// 저장 실패 문구. 안내 문구 아래에 덧붙여 노출하고, 다음 저장 시도 때 비운다.
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -58,12 +58,6 @@ class QuietHoursViewModel extends ChangeNotifier {
   Future<void> setStart(TimeOfDay start) => _save(_settings.copyWith(start: start));
 
   Future<void> setEnd(TimeOfDay end) => _save(_settings.copyWith(end: end));
-
-  void clearError() {
-    if (_errorMessage == null) return;
-    _errorMessage = null;
-    _notify();
-  }
 
   /// 낙관적 반영 후 저장한다. 실패하면 이전 값으로 되돌린다 —
   /// 화면이 저장된 것처럼 남아 있으면 유저가 잠자기가 켜졌다고 착각한다.

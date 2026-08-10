@@ -130,25 +130,43 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
           ],
           Padding(
             padding: EdgeInsets.fromLTRB(20 * scale, 6 * scale, 20 * scale, 0),
-            child: Text(
-              // "무음으로 쌓인다"는 동작이 눈에 보이지 않아 유저가 껐다고 착각하기 쉽다.
-              // 그래서 ON 안내에 실제 설정 시각을 넣는다.
-              error ??
-                  (settings.enabled
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  // "무음으로 쌓인다"는 동작이 눈에 보이지 않아 유저가 껐다고 착각하기 쉽다.
+                  // 그래서 ON 안내에 실제 설정 시각을 넣는다.
+                  settings.enabled
                       ? l.quietHoursOnHint(
                           _label(l, settings.start),
                           _label(l, settings.end),
                         )
-                      : l.quietHoursOffHint),
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w400,
-                fontSize: 12 * scale,
-                height: 1.5,
-                color: error == null
-                    ? AppColors.narTextTertiarySub
-                    : AppColors.narTextRed,
-              ),
+                      : l.quietHoursOffHint,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12 * scale,
+                    height: 1.5,
+                    color: AppColors.narTextTertiarySub,
+                  ),
+                ),
+                // 에러는 안내를 대체하지 않고 아래에 덧붙인다. 대체하면 유저가
+                // 이 기능이 무엇인지 설명을 잃는다.
+                if (error != null)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4 * scale),
+                    child: Text(
+                      error,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12 * scale,
+                        height: 1.5,
+                        color: AppColors.narTextRed,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
