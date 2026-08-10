@@ -866,11 +866,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get quietHoursEnd => '종료';
 
   @override
-  String get quietHoursOffHint => '켜면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.';
+  String get quietHoursOffHint => '사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.';
 
   @override
   String quietHoursOnHint(String start, String end) {
-    return '$start부터 $end까지 모든 알림이 소리 없이 알림함에만 쌓입니다. 새벽 국제전을 챙기려면 이 시간을 조정하세요.';
+    return '$start부터 $end까지 모든 알림이 소리 없이 알림함에만 쌓입니다.';
   }
 
   @override

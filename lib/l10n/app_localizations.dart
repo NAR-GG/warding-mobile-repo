@@ -1702,13 +1702,13 @@ abstract class AppLocalizations {
   /// No description provided for @quietHoursOffHint.
   ///
   /// In ko, this message translates to:
-  /// **'켜면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.'**
+  /// **'사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.'**
   String get quietHoursOffHint;
 
   /// No description provided for @quietHoursOnHint.
   ///
   /// In ko, this message translates to:
-  /// **'{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다. 새벽 국제전을 챙기려면 이 시간을 조정하세요.'**
+  /// **'{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다.'**
   String quietHoursOnHint(String start, String end);
 
   /// No description provided for @quietHoursStartSheetTitle.

@@ -312,8 +312,8 @@
   "quietHoursUse": "Use quiet hours",
   "quietHoursStart": "From",
   "quietHoursEnd": "To",
-  "quietHoursOffHint": "When on, notifications arrive silently and stay in your inbox.",
-  "quietHoursOnHint": "From {start} to {end}, all notifications arrive silently and stay in your inbox. Adjust this if you follow late-night international matches.",
+  "quietHoursOffHint": "When enabled, notifications arrive silently and stay in your inbox.",
+  "quietHoursOnHint": "From {start} to {end}, all notifications arrive silently and stay in your inbox.",
   "@quietHoursOnHint": {
     "placeholders": {
       "start": { "type": "String" },

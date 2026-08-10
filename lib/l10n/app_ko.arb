@@ -452,8 +452,8 @@
   "quietHoursUse": "잠자기 사용",
   "quietHoursStart": "시작",
   "quietHoursEnd": "종료",
-  "quietHoursOffHint": "켜면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.",
-  "quietHoursOnHint": "{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다. 새벽 국제전을 챙기려면 이 시간을 조정하세요.",
+  "quietHoursOffHint": "사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.",
+  "quietHoursOnHint": "{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다.",
   "@quietHoursOnHint": {
     "placeholders": {
       "start": { "type": "String" },

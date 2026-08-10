@@ -885,11 +885,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quietHoursOffHint =>
-      'When on, notifications arrive silently and stay in your inbox.';
+      'When enabled, notifications arrive silently and stay in your inbox.';
 
   @override
   String quietHoursOnHint(String start, String end) {
-    return 'From $start to $end, all notifications arrive silently and stay in your inbox. Adjust this if you follow late-night international matches.';
+    return 'From $start to $end, all notifications arrive silently and stay in your inbox.';
   }
 
   @override
