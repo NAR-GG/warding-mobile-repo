@@ -36,6 +36,23 @@ class FcmService {
     importance: Importance.high,
   );
 
+  /// 알림 잠자기 시간대 발송용 채널.
+  ///
+  /// Android O+ 는 채널 설정이 서버 payload 보다 우선한다. 서버가 sound 를 비우고
+  /// priority 를 낮춰도 채널 importance 가 high 면 시스템이 소리를 내므로, 무음은
+  /// 중요도 낮은 채널을 따로 둬야 한다. id 는 서버
+  /// (FirebaseMobilePushGateway.QUIET_CHANNEL_ID)와 반드시 일치해야 한다 — 없는 채널로
+  /// 오면 Android 가 알림을 아예 띄우지 못한다.
+  static const AndroidNotificationChannel _quietChannel =
+      AndroidNotificationChannel(
+    'warding_quiet',
+    '알림 잠자기',
+    description: '잠자기 시간대에 소리 없이 받는 알림',
+    importance: Importance.low,
+    playSound: false,
+    enableVibration: false,
+  );
+
   /// 서버가 기대하는 플랫폼 문자열.
   String get _platform => Platform.isIOS ? 'IOS' : 'ANDROID';
 
@@ -65,10 +82,10 @@ class FcmService {
         _handlePayload(response.payload);
       },
     );
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_channel);
+    final android = _localNotifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await android?.createNotificationChannel(_channel);
+    await android?.createNotificationChannel(_quietChannel);
 
     // 2) 포그라운드 수신 → 직접 알림 표시 (Android 는 자동 표시가 안 됨).
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
@@ -182,6 +199,11 @@ class FcmService {
     }
     final notification = message.notification;
     if (notification == null) return;
+    // 백그라운드는 시스템이 payload 채널대로 표시하지만, 포그라운드는 여기서 직접
+    // 띄우므로 서버가 지정한 채널을 따라가야 잠자기 시간에 소리가 나지 않는다.
+    // 소리 나는 발송에는 서버가 AndroidNotification 을 붙이지 않아 channelId 가 null 이다.
+    final quiet = notification.android?.channelId == _quietChannel.id;
+    final channel = quiet ? _quietChannel : _channel;
     try {
       await _localNotifications.show(
         id: notification.hashCode,
@@ -189,11 +211,13 @@ class FcmService {
         body: notification.body,
         notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
-            _channel.id,
-            _channel.name,
-            channelDescription: _channel.description,
-            importance: Importance.high,
-            priority: Priority.high,
+            channel.id,
+            channel.name,
+            channelDescription: channel.description,
+            importance: quiet ? Importance.low : Importance.high,
+            priority: quiet ? Priority.low : Priority.high,
+            playSound: !quiet,
+            enableVibration: !quiet,
             icon: '@drawable/ic_stat_warding',
           ),
         ),
