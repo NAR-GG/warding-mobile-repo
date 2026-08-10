@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../components/nar_toggle.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../model/quiet_hours.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/mypage/quiet_hours_viewmodel.dart';
 import 'quiet_hours_time_sheet.dart';
@@ -119,13 +118,13 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
               label: l.quietHoursStart,
               scale: scale,
               onTap: () => _pickTime(isStart: true),
-              trailing: _TimeValue(time: settings.start, scale: scale),
+              trailing: _TimeValue(label: _label(l, settings.start), scale: scale),
             ),
             _Row(
               label: l.quietHoursEnd,
               scale: scale,
               onTap: () => _pickTime(isStart: false),
-              trailing: _TimeValue(time: settings.end, scale: scale),
+              trailing: _TimeValue(label: _label(l, settings.end), scale: scale),
             ),
           ],
           Padding(
@@ -174,7 +173,7 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
     );
   }
 
-  /// 안내 문구용 표기 — `오전 1:00`.
+  /// 시각 표기 — `오전 1:00`. 시트가 오전/오후로 고르게 하므로 칩·안내 모두 12시간제로 맞춘다.
   String _label(AppLocalizations l, TimeOfDay time) {
     final period = time.hour < 12 ? l.quietHoursAm : l.quietHoursPm;
     final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
@@ -229,9 +228,9 @@ class _Row extends StatelessWidget {
 
 /// 시각 값 + chevron.
 class _TimeValue extends StatelessWidget {
-  const _TimeValue({required this.time, required this.scale});
+  const _TimeValue({required this.label, required this.scale});
 
-  final TimeOfDay time;
+  final String label;
   final double scale;
 
   @override
@@ -247,7 +246,7 @@ class _TimeValue extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            QuietHours.format(time),
+            label,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,

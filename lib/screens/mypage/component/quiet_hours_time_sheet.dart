@@ -97,36 +97,21 @@ class _QuietHoursTimeSheetState extends State<QuietHoursTimeSheet> {
             color: AppColors.narBgTertiary,
             borderRadius: BorderRadius.circular(10 * scale),
           ),
-          child: Row(
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Expanded(
-                child: _Wheel(
-                  initialIndex: _period,
-                  count: 2,
-                  labelAt: (i) => i == 0 ? l.quietHoursAm : l.quietHoursPm,
-                  onChanged: (i) => setState(() => _period = i),
-                  scale: scale,
+              // 선택 기준선. 없으면 어느 줄이 선택인지 판단할 시각적 기준이 없다.
+              IgnorePointer(
+                child: Container(
+                  height: 38 * scale,
+                  margin: EdgeInsets.symmetric(horizontal: 12 * scale),
+                  decoration: BoxDecoration(
+                    color: AppColors.narDark500,
+                    borderRadius: BorderRadius.circular(8 * scale),
+                  ),
                 ),
               ),
-              Expanded(
-                child: _Wheel(
-                  initialIndex: _hourIndex,
-                  count: _hours.length,
-                  labelAt: (i) => '${_hours[i]}',
-                  onChanged: (i) => setState(() => _hourIndex = i),
-                  scale: scale,
-                ),
-              ),
-              Expanded(
-                child: _Wheel(
-                  initialIndex: _minuteIndex,
-                  count: 60 ~/ kQuietHoursMinuteStep,
-                  labelAt: (i) =>
-                      (i * kQuietHoursMinuteStep).toString().padLeft(2, '0'),
-                  onChanged: (i) => setState(() => _minuteIndex = i),
-                  scale: scale,
-                ),
-              ),
+              _buildWheels(scale, l),
             ],
           ),
         ),
@@ -150,6 +135,42 @@ class _QuietHoursTimeSheetState extends State<QuietHoursTimeSheet> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  /// 오전·오후 / 시 / 분 3열.
+  Widget _buildWheels(double scale, AppLocalizations l) {
+    return Row(
+      children: [
+        Expanded(
+          child: _Wheel(
+            initialIndex: _period,
+            count: 2,
+            labelAt: (i) => i == 0 ? l.quietHoursAm : l.quietHoursPm,
+            onChanged: (i) => setState(() => _period = i),
+            scale: scale,
+          ),
+        ),
+        Expanded(
+          child: _Wheel(
+            initialIndex: _hourIndex,
+            count: _hours.length,
+            labelAt: (i) => '${_hours[i]}',
+            onChanged: (i) => setState(() => _hourIndex = i),
+            scale: scale,
+          ),
+        ),
+        Expanded(
+          child: _Wheel(
+            initialIndex: _minuteIndex,
+            count: 60 ~/ kQuietHoursMinuteStep,
+            labelAt: (i) =>
+                (i * kQuietHoursMinuteStep).toString().padLeft(2, '0'),
+            onChanged: (i) => setState(() => _minuteIndex = i),
+            scale: scale,
+          ),
         ),
       ],
     );
