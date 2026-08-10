@@ -852,4 +852,45 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updateNow => '업데이트';
+
+  @override
+  String get quietHours => '알림 잠자기';
+
+  @override
+  String get quietHoursUse => '잠자기 사용';
+
+  @override
+  String get quietHoursStart => '시작';
+
+  @override
+  String get quietHoursEnd => '종료';
+
+  @override
+  String get quietHoursOffHint => '사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.';
+
+  @override
+  String quietHoursOnHint(String start, String end) {
+    return '$start부터 $end까지 모든 알림이 소리 없이 알림함에만 쌓입니다.';
+  }
+
+  @override
+  String get quietHoursStartSheetTitle => '잠자기 시작 시간';
+
+  @override
+  String get quietHoursEndSheetTitle => '잠자기 종료 시간';
+
+  @override
+  String get quietHoursSameTimeError => '시작과 종료가 같으면 안 됩니다. 다른 시간을 골라주세요.';
+
+  @override
+  String get quietHoursSaveFailed => '알림 잠자기 설정을 저장하지 못했습니다.';
+
+  @override
+  String get quietHoursAm => '오전';
+
+  @override
+  String get quietHoursPm => '오후';
+
+  @override
+  String get quietHoursSave => '저장';
 }

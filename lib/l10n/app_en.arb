@@ -306,5 +306,25 @@
 
   "updateAvailableTitle": "Update Available",
   "updateAvailableMessage": "A new version is available.\nPlease update to the latest version.",
-  "updateNow": "Update"
+  "updateNow": "Update",
+
+  "quietHours": "Quiet hours",
+  "quietHoursUse": "Use quiet hours",
+  "quietHoursStart": "From",
+  "quietHoursEnd": "To",
+  "quietHoursOffHint": "When enabled, notifications arrive silently and stay in your inbox.",
+  "quietHoursOnHint": "From {start} to {end}, all notifications arrive silently and stay in your inbox.",
+  "@quietHoursOnHint": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "quietHoursStartSheetTitle": "Quiet hours start",
+  "quietHoursEndSheetTitle": "Quiet hours end",
+  "quietHoursSameTimeError": "Start and end can't be the same. Pick a different time.",
+  "quietHoursSaveFailed": "Couldn't save your quiet hours.",
+  "quietHoursAm": "AM",
+  "quietHoursPm": "PM",
+  "quietHoursSave": "Save"
 }

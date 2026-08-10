@@ -446,5 +446,25 @@
 
   "updateAvailableTitle": "업데이트 안내",
   "updateAvailableMessage": "새로운 버전이 출시되었습니다.\n최신 버전으로 업데이트해주세요.",
-  "updateNow": "업데이트"
+  "updateNow": "업데이트",
+
+  "quietHours": "알림 잠자기",
+  "quietHoursUse": "잠자기 사용",
+  "quietHoursStart": "시작",
+  "quietHoursEnd": "종료",
+  "quietHoursOffHint": "사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.",
+  "quietHoursOnHint": "{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다.",
+  "@quietHoursOnHint": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "quietHoursStartSheetTitle": "잠자기 시작 시간",
+  "quietHoursEndSheetTitle": "잠자기 종료 시간",
+  "quietHoursSameTimeError": "시작과 종료가 같으면 안 됩니다. 다른 시간을 골라주세요.",
+  "quietHoursSaveFailed": "알림 잠자기 설정을 저장하지 못했습니다.",
+  "quietHoursAm": "오전",
+  "quietHoursPm": "오후",
+  "quietHoursSave": "저장"
 }

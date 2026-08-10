@@ -147,6 +147,11 @@ class ApiConfig {
   static String categoriesTreeUrl({required int year}) =>
       '$apiBaseUrl/categories/tree?year=$year';
 
+  // ── 알림 잠자기 (인증 필요) ───────────────────────────────────────
+
+  /// 알림 잠자기 설정 조회(GET) / 변경(PUT).
+  static String get quietHoursUrl => '$apiBaseUrl/mobile/me/quiet-hours';
+
   // ── 선수 구독 (인증 필요) ─────────────────────────────────────────
 
   /// 내 구독 선수 목록 조회 / 선수 구독 추가(POST {playerId}).

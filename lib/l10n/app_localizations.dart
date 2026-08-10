@@ -1674,6 +1674,84 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'업데이트'**
   String get updateNow;
+
+  /// No description provided for @quietHours.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 잠자기'**
+  String get quietHours;
+
+  /// No description provided for @quietHoursUse.
+  ///
+  /// In ko, this message translates to:
+  /// **'잠자기 사용'**
+  String get quietHoursUse;
+
+  /// No description provided for @quietHoursStart.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작'**
+  String get quietHoursStart;
+
+  /// No description provided for @quietHoursEnd.
+  ///
+  /// In ko, this message translates to:
+  /// **'종료'**
+  String get quietHoursEnd;
+
+  /// No description provided for @quietHoursOffHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.'**
+  String get quietHoursOffHint;
+
+  /// No description provided for @quietHoursOnHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'{start}부터 {end}까지 모든 알림이 소리 없이 알림함에만 쌓입니다.'**
+  String quietHoursOnHint(String start, String end);
+
+  /// No description provided for @quietHoursStartSheetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'잠자기 시작 시간'**
+  String get quietHoursStartSheetTitle;
+
+  /// No description provided for @quietHoursEndSheetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'잠자기 종료 시간'**
+  String get quietHoursEndSheetTitle;
+
+  /// No description provided for @quietHoursSameTimeError.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작과 종료가 같으면 안 됩니다. 다른 시간을 골라주세요.'**
+  String get quietHoursSameTimeError;
+
+  /// No description provided for @quietHoursSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 잠자기 설정을 저장하지 못했습니다.'**
+  String get quietHoursSaveFailed;
+
+  /// No description provided for @quietHoursAm.
+  ///
+  /// In ko, this message translates to:
+  /// **'오전'**
+  String get quietHoursAm;
+
+  /// No description provided for @quietHoursPm.
+  ///
+  /// In ko, this message translates to:
+  /// **'오후'**
+  String get quietHoursPm;
+
+  /// No description provided for @quietHoursSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장'**
+  String get quietHoursSave;
 }
 
 class _AppLocalizationsDelegate
