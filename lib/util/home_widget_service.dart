@@ -330,6 +330,10 @@ class HomeWidgetService {
   /// 스플래시가 첫 화면(로그인/홈) 분기 내비게이션을 시작하기 전에 위젯
   /// 딥링크가 도착하면, 스플래시의 자체 내비게이션과 겹쳐 화면이 두 번
   /// 열리는 것처럼 보인다(FCM 콜드 스타트 딥링크와 동일 문제).
+  ///
+  /// 한 번 true 가 되면 다시 false 로 돌아가지 않는다 — 앱이 살아 있는 동안
+  /// 스플래시는 한 번만 지난다. 그래서 이후의 딥링크(백그라운드 복귀 등)는
+  /// 이 플래그를 그대로 통과한다.
   static bool _splashReady = false;
   static String? _pendingWidgetUrl;
 
@@ -339,7 +343,9 @@ class HomeWidgetService {
     _splashReady = true;
     final pending = _pendingWidgetUrl;
     _pendingWidgetUrl = null;
-    if (pending != null) _handleWidgetUrl(pending);
+    // 보류분은 아직 화면을 연 적이 없으므로 중복 필터를 건너뛴다. 채널이
+    // 늦게 같은 URL 을 또 넘기면 그때 _lastHandledUrl 로 걸러진다.
+    if (pending != null) _handleWidgetUrl(pending, skipDuplicateCheck: true);
   }
 
   /// 마지막으로 처리한 URL과 그 시각. 같은 딥링크가 짧은 간격으로 두 번
@@ -356,20 +362,28 @@ class HomeWidgetService {
   static const _duplicateWindow = Duration(seconds: 3);
 
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
-  static void _handleWidgetUrl(String urlStr) {
+  static void _handleWidgetUrl(String urlStr, {bool skipDuplicateCheck = false}) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
-    // 콜드 스타트에서만 보류한다. 스플래시를 이미 지나 화면이 떠 있는
-    // 상태(앱이 백그라운드에 있다가 딥링크로 돌아온 경우)에는 바로 처리한다.
-    // navigator 유무로 판단해야 `_splashReady` 가 false 로 남아 있어도
-    // 딥링크가 묻히지 않는다.
-    if (!_splashReady && navigatorKey.currentState == null) {
+    // 콜드 스타트에서는 스플래시가 첫 화면으로 교체를 마칠 때까지 보류한다.
+    //
+    // navigator 유무로 판단하면 안 된다 — 스플래시도 MaterialApp 아래에 있어
+    // 이 시점에 navigator 는 이미 살아 있다. 그래서 예전 조건은 콜드 스타트에서
+    // 보류를 못 하고 스플래시만 있는 스택 위로 상세를 바로 push 했다. 그 뒤
+    // 스플래시의 pushReplacement 가 자기 자신을 첫 화면으로 바꾸면서 상세가
+    // 첫 화면 아래로 깔려, "상세로 갔다가 일정으로 튕기고 뒤로가면 스플래시"가 됐다.
+    //
+    // [_splashReady] 는 한 번 true 가 되면 되돌아가지 않으므로, 스플래시를
+    // 지난 뒤 도착하는 딥링크(백그라운드 복귀 등)는 그대로 통과한다.
+    if (!_splashReady) {
+      debugPrint('[HomeWidget] 스플래시 진행 중 — 딥링크 보류: $urlStr');
       _pendingWidgetUrl = urlStr;
       return;
     }
 
     // 보류분과 채널 전달이 겹쳐 같은 URL 이 두 번 오면 뒤엣것은 버린다.
     final at = _lastHandledAt;
-    if (_lastHandledUrl == urlStr &&
+    if (!skipDuplicateCheck &&
+        _lastHandledUrl == urlStr &&
         at != null &&
         DateTime.now().difference(at) < _duplicateWindow) {
       debugPrint('[HomeWidget] 같은 딥링크가 중복 도착해 무시: $urlStr');
