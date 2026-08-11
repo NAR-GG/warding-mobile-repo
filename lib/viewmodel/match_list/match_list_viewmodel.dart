@@ -8,6 +8,7 @@ import '../../model/category_tree.dart';
 import '../../model/schedule_match.dart';
 import '../../repository/category/category_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
+import '../../repository/preference/spoiler_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 
 /// 경기 리스트 화면의 상태·로직.
@@ -16,17 +17,23 @@ class MatchListViewModel extends ChangeNotifier {
     CategoryRepository? categoryRepository,
     ScheduleRepository? scheduleRepository,
     FilterPreferenceRepository? filterPreferences,
+    SpoilerPreferenceRepository? spoilerPreferences,
   }) : _categoryRepository = categoryRepository ?? CategoryRepository.instance,
        _scheduleRepository =
            scheduleRepository ?? ScheduleRepository.instance,
        _filterPreferences =
-           filterPreferences ?? FilterPreferenceRepository.instance {
+           filterPreferences ?? FilterPreferenceRepository.instance,
+       _spoilerPreferences =
+           spoilerPreferences ?? SpoilerPreferenceRepository.instance {
+    // 이미 읽어둔 값이 있으면 첫 프레임부터 그 상태로 그린다.
+    _spoilerPreventionEnabled = _spoilerPreferences.cachedValue ?? true;
     _init();
   }
 
   final CategoryRepository _categoryRepository;
   final ScheduleRepository _scheduleRepository;
   final FilterPreferenceRepository _filterPreferences;
+  final SpoilerPreferenceRepository _spoilerPreferences;
 
   /// 복원됐지만 아직 리그 목록 검증 전인 팀 선택. [_updateTeams] 가 1회 소비한다.
   Set<String>? _pendingRestoredTeams;
@@ -35,6 +42,7 @@ class MatchListViewModel extends ChangeNotifier {
   /// 리그는 [_loadLeagues] 가 서버 목록과 대조해 없으면 '전체'로 되돌리고,
   /// 팀은 [_updateTeams] 가 현재 리그 팀 목록과 교집합만 살린다.
   Future<void> _init() async {
+    await _restoreSpoilerPreference();
     final saved =
         await _filterPreferences.load(FilterPreferenceRepository.matchListKey);
     if (saved != null) {
@@ -158,13 +166,24 @@ class MatchListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 카드 스코어 블러(스포방지) on/off. 기본 on(기존 동작 유지).
+  /// 카드 스코어 블러(스포방지) on/off. 저장된 값이 없으면 on(기존 동작 유지).
+  /// 경기 일정의 날짜별 리스트와 같은 저장값을 공유한다.
   bool _spoilerPreventionEnabled = true;
   bool get spoilerPreventionEnabled => _spoilerPreventionEnabled;
+
+  /// 저장된 스포방지 설정을 복원한다. 생성자에서 캐시로 이미 맞춘 값과 같으면 알리지 않는다.
+  Future<void> _restoreSpoilerPreference() async {
+    final saved = await _spoilerPreferences.load();
+    if (saved == _spoilerPreventionEnabled) return;
+    _spoilerPreventionEnabled = saved;
+    notifyListeners();
+  }
 
   void setSpoilerPreventionEnabled(bool value) {
     if (_spoilerPreventionEnabled == value) return;
     _spoilerPreventionEnabled = value;
+    // 저장 실패해도 화면 토글은 그대로 동작하므로 기다리지 않는다.
+    unawaited(_spoilerPreferences.save(value));
     notifyListeners();
   }
 
