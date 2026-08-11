@@ -10,12 +10,14 @@ import 'package:flutter/services.dart';
 
 import '../config/api_config.dart';
 import '../config/app_globals.dart';
+import '../model/calendar_week_start.dart';
 import '../model/match_calendar_day.dart';
 import '../model/schedule_match.dart';
 import '../model/team.dart';
 import '../model/user_profile.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/onboarding/onboarding_repository.dart';
+import '../repository/preference/calendar_week_start_preference_repository.dart';
 import '../repository/preference/filter_preference_repository.dart';
 import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
@@ -267,6 +269,28 @@ class HomeWidgetService {
       );
     } catch (e) {
       debugPrint('[HomeWidget] 필터 상태 저장 실패: $e');
+    }
+  }
+
+  /// 캘린더 시작 요일 설정을 위젯에 전달하고 갱신을 트리거한다.
+  static Future<void> updateWeekStart(CalendarWeekStart value) async {
+    try {
+      await HomeWidget.saveWidgetData<String>('week_start', value.storageValue);
+      await HomeWidget.updateWidget(
+        androidName: _androidWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+      await HomeWidget.updateWidget(
+        androidName: _androidSmallWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+      await HomeWidget.updateWidget(
+        androidName: _androidLargeWidgetName,
+        iOSName: _iOSWidgetName,
+      );
+      debugPrint('[HomeWidget] 캘린더 시작 요일 갱신: ${value.storageValue}');
+    } catch (e) {
+      debugPrint('[HomeWidget] 캘린더 시작 요일 갱신 실패: $e');
     }
   }
 
@@ -527,6 +551,15 @@ class HomeWidgetService {
       await updatePreferredTeam(team);
     } catch (e) {
       debugPrint('[HomeWidget] 응원팀 갱신 실패: $e');
+    }
+
+    // 캘린더 시작 요일 로컬 설정을 위젯에도 동기화한다 (재설치 등으로
+    // 공유 저장소와 로컬 저장소가 어긋나는 경우 대비 — 앱 시작마다 맞춘다).
+    try {
+      final weekStart = await CalendarWeekStartPreferenceRepository.instance.load();
+      await updateWeekStart(weekStart);
+    } catch (e) {
+      debugPrint('[HomeWidget] 캘린더 시작 요일 동기화 실패: $e');
     }
   }
 
