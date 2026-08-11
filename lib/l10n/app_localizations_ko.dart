@@ -893,4 +893,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get quietHoursSave => '저장';
+
+  @override
+  String get calendarWeekStartSetting => '캘린더 시작 요일';
+
+  @override
+  String get calendarWeekStartRowLabel => '시작 요일';
+
+  @override
+  String get calendarWeekStartMonday => '월요일';
+
+  @override
+  String get calendarWeekStartSunday => '일요일';
 }

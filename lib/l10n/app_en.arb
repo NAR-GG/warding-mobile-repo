@@ -326,5 +326,9 @@
   "quietHoursSaveFailed": "Couldn't save your quiet hours.",
   "quietHoursAm": "AM",
   "quietHoursPm": "PM",
-  "quietHoursSave": "Save"
+  "quietHoursSave": "Save",
+  "calendarWeekStartSetting": "Calendar start day",
+  "calendarWeekStartRowLabel": "Starts on",
+  "calendarWeekStartMonday": "Monday",
+  "calendarWeekStartSunday": "Sunday"
 }

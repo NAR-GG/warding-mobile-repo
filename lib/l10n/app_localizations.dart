@@ -1752,6 +1752,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'저장'**
   String get quietHoursSave;
+
+  /// No description provided for @calendarWeekStartSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'캘린더 시작 요일'**
+  String get calendarWeekStartSetting;
+
+  /// No description provided for @calendarWeekStartRowLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 요일'**
+  String get calendarWeekStartRowLabel;
+
+  /// No description provided for @calendarWeekStartMonday.
+  ///
+  /// In ko, this message translates to:
+  /// **'월요일'**
+  String get calendarWeekStartMonday;
+
+  /// No description provided for @calendarWeekStartSunday.
+  ///
+  /// In ko, this message translates to:
+  /// **'일요일'**
+  String get calendarWeekStartSunday;
 }
 
 class _AppLocalizationsDelegate

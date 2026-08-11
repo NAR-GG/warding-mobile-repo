@@ -15,6 +15,7 @@ import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
+import 'component/calendar_week_start_section.dart';
 import 'component/language_setting_sheet.dart';
 import 'component/quiet_hours_section.dart';
 import 'component/subscription_alarm_section.dart';
@@ -193,6 +194,8 @@ class _MypageScreenState extends State<MypageScreen> {
                     // 팀 카드는 구독 팀 수만큼 길어져서 그 아래 두면 알림을 많이 받는
                     // 유저(= 이 기능이 필요한 유저)일수록 스크롤 없이는 못 본다.
                     QuietHoursSection(scale: scale),
+                    SizedBox(height: 16 * scale),
+                    CalendarWeekStartSection(scale: scale),
                     SizedBox(height: 16 * scale),
                     SubscriptionAlarmSection(
                       key: _subscriptionAlarmKey,
