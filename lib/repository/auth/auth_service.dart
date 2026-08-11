@@ -30,6 +30,27 @@ class AuthCancelledException implements Exception {
   const AuthCancelledException();
 }
 
+/// [AuthService.refreshAccessToken] 의 결과. 실패를 두 갈래로 구분한다 —
+/// 서버가 401 로 토큰 무효를 확정했을 때만 로그아웃 대상이고,
+/// 일시 장애(타임아웃·네트워크·5xx·429)는 이번 요청만 실패시켜야 한다.
+class RefreshResult {
+  /// 재발급 성공 — [token] 은 새 Access Token.
+  const RefreshResult.success(String this.token) : tokenInvalid = false;
+
+  /// 리프레시 토큰 무효/만료를 서버가 401 로 확정 — 재로그인만이 답이다.
+  const RefreshResult.invalid()
+      : token = null,
+        tokenInvalid = true;
+
+  /// 일시 장애 — 토큰은 아직 살아 있을 수 있으므로 로그아웃하면 안 된다.
+  const RefreshResult.transient()
+      : token = null,
+        tokenInvalid = false;
+
+  final String? token;
+  final bool tokenInvalid;
+}
+
 /// `PUT /api/auth/me` 가 409 를 반환할 때 — 다른 회원이 같은 닉네임 사용 중.
 class NicknameConflictException implements Exception {
   const NicknameConflictException();
@@ -338,20 +359,25 @@ class AuthService {
   }
 
   /// 진행 중인 재발급 요청. 동시에 여러 API가 만료를 감지해도 1회만 호출한다.
-  Future<String?>? _refreshing;
+  Future<RefreshResult>? _refreshing;
 
   /// Refresh Token으로 Access Token을 재발급해 저장한다.
-  /// 성공하면 새 Access Token을, 실패(만료/없음)하면 null 을 반환한다.
   /// 동시 호출은 하나의 요청으로 합쳐 결과를 공유한다.
-  Future<String?> refreshAccessToken() {
+  ///
+  /// 실패는 두 갈래로 구분해 반환한다 — 서버가 401 로 토큰 무효를 확정한
+  /// 경우([RefreshResult.tokenInvalid])와, 타임아웃·네트워크 오류·5xx·429 같은
+  /// 일시 장애. 후자는 토큰이 죽었다는 증거가 아니므로 호출부가 로그아웃하면
+  /// 안 된다. (2026-08-11 20:17 장애: 커넥션 풀 대기로 refresh 응답이 3~5.7초
+  /// 걸리자 타임아웃을 전부 로그아웃 처리해 유저들이 튕겨나갔다.)
+  Future<RefreshResult> refreshAccessToken() {
     return _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
   }
 
-  Future<String?> _doRefresh() async {
+  Future<RefreshResult> _doRefresh() async {
     final refresh = await refreshToken;
     if (refresh == null || refresh.isEmpty) {
       debugPrint('[Auth] refreshToken 없음 — 재발급 불가 (재로그인 필요)');
-      return null;
+      return const RefreshResult.invalid();
     }
     try {
       debugPrint('[Auth] 재발급 요청 (query 방식)');
@@ -360,24 +386,38 @@ class AuthService {
         Uri.parse(ApiConfig.refreshUrl(refresh)),
         headers: const {'Content-Type': 'application/json'},
       );
+      if (response.statusCode == 401) {
+        // 서버가 리프레시 토큰 무효/만료를 확정한 유일한 경우.
+        // (서버의 로테이션 유예 덕에 동시 재발급 경합은 둘 다 성공하므로,
+        // 여기의 401 은 정말 죽은 토큰이다.)
+        debugPrint('[Auth] 리프레시 토큰 무효 확정 (401): ${response.body}');
+        return const RefreshResult.invalid();
+      }
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        debugPrint('[Auth] 토큰 재발급 실패 (${response.statusCode}): '
+        // 5xx·429 등 서버 사정 — 토큰이 무효라는 증거가 아니다.
+        debugPrint('[Auth] 토큰 재발급 일시 실패 (${response.statusCode}): '
             '${response.body}');
-        return null;
+        return const RefreshResult.transient();
       }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final newJwt = (data['accessToken'] ?? data['jwt']) as String?;
       final newRefresh =
           (data['refreshToken'] ?? data['refresh_token']) as String?;
-      if (newJwt != null) await _storage.write(key: _jwtKey, value: newJwt);
+      if (newJwt == null) {
+        // 2xx 인데 토큰이 없다 — 서버 응답 이상. 무효 확정이 아니다.
+        debugPrint('[Auth] 재발급 응답에 accessToken 없음: ${response.body}');
+        return const RefreshResult.transient();
+      }
+      await _storage.write(key: _jwtKey, value: newJwt);
       if (newRefresh != null && newRefresh.isNotEmpty) {
         await _storage.write(key: _refreshKey, value: newRefresh);
       }
       debugPrint('[Auth] 토큰 재발급 성공');
-      return newJwt;
+      return RefreshResult.success(newJwt);
     } catch (e) {
-      debugPrint('[Auth] 토큰 재발급 에러: $e');
-      return null;
+      // 타임아웃·네트워크 예외 — 서버가 토큰 무효를 확정한 게 아니다.
+      debugPrint('[Auth] 토큰 재발급 에러(일시 장애로 처리): $e');
+      return const RefreshResult.transient();
     }
   }
 
@@ -396,13 +436,19 @@ class AuthService {
     var response = await send(token);
     if (_isAuthExpired(response)) {
       debugPrint('[Auth] 인증 만료 감지 → 토큰 재발급 시도');
-      final newToken = await refreshAccessToken();
+      final refreshed = await refreshAccessToken();
+      final newToken = refreshed.token;
       if (newToken != null) {
         response = await send(newToken);
-      } else {
+      } else if (refreshed.tokenInvalid) {
         // Refresh Token도 만료/무효화된 상태 — 더 이상 재시도해도 로그인
         // 상태를 복구할 수 없으므로 세션을 정리하고 로그인 화면으로 보낸다.
         await _forceLogout();
+      } else {
+        // 재발급이 일시 장애(타임아웃·네트워크·5xx 등)로 실패 — 토큰이
+        // 죽었다는 증거가 아니므로 로그아웃하지 않고, 이번 요청만 만료
+        // 응답 그대로 실패시킨다. 다음 요청에서 재발급을 다시 시도한다.
+        debugPrint('[Auth] 재발급 일시 실패 — 이번 요청만 실패 (로그아웃 안 함)');
       }
     }
     return response;
