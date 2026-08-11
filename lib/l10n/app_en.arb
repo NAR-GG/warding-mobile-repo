@@ -29,10 +29,10 @@
   "matchAlarmRegistered": "Match alarm has been registered",
   "matchAlarmRegisterFailed": "Failed to register alarm. Please try again.",
 
-  "spoilerBlock": "Spoiler Block",
+  "spoilerBlock": "Spoiler",
   "clickToSeeScore": "Tap to reveal score",
-  "spoilerPreventionOn": "Spoiler Protection ON",
-  "spoilerPreventionOff": "Spoiler Protection OFF",
+  "spoilerPreventionOn": "Spoiler ON",
+  "spoilerPreventionOff": "Spoiler OFF",
 
   "weekdayMon": "Mon",
   "weekdayTue": "Tue",
@@ -126,6 +126,9 @@
 
   "playerSelect": "Select Player",
   "subscribedPlayerList": "Subscribed Players",
+
+  "playerSortByPosition": "Position",
+  "playerSortByName": "Name (A–Z)",
 
   "subscribing": "Subscribed",
   "subscribe": "Subscribe",

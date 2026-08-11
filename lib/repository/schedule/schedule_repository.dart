@@ -27,6 +27,17 @@ class ScheduleRepository {
   ScheduleRepository._();
   static final ScheduleRepository instance = ScheduleRepository._();
 
+  /// matchStatus 값이 'live'/'in_progress'/'ongoing' 인 경기가 하나라도
+  /// 있는지 (대소문자 무시). 화면의 라이브 판정([_isLive] in match_list_screen.dart)과
+  /// 같은 기준이다 — 캐시 여부 판단에 쓴다.
+  bool _hasLiveMatch(List<ScheduleMatch> matches) {
+    for (final m in matches) {
+      final s = m.matchStatus.toLowerCase();
+      if (s == 'live' || s == 'in_progress' || s == 'ongoing') return true;
+    }
+    return false;
+  }
+
   /// 진행 중인 캘린더 요청. 같은 조회 조건의 요청이 겹치면 결과를 나눠 쓴다.
   ///
   /// 앱 시작 시 캘린더를 부르는 곳이 셋이다 — 스플래시 프리페치,
@@ -128,12 +139,21 @@ class ScheduleRepository {
         .toList();
   }
 
+  /// 진행 중인 날짜별 경기 요청 + 캐시. [_calendarInFlight]/[_calendarCache] 와
+  /// 같은 이유 — 앱 시작 시 홈 위젯 갱신과 Live Activity 카드 정리 스캔이
+  /// '오늘 경기'를 동시에 각자 부른다. 캘린더와 같은 TTL 을 쓴다.
+  final Map<String, Future<List<ScheduleMatch>>> _matchesByDateInFlight = {};
+  final Map<String, (DateTime, List<ScheduleMatch>)> _matchesByDateCache = {};
+
   /// 특정 날짜의 경기 리스트 카드를 조회한다 (인증 불필요).
+  ///
+  /// 같은 조건의 요청이 이미 떠 있거나 방금 끝났으면([_calendarCacheTtl] 이내)
+  /// 그 결과를 재사용한다.
   Future<List<ScheduleMatch>> fetchMatchesByDate(
     DateTime date, {
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
-  }) async {
+  }) {
     final dateStr = '${date.year}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
@@ -142,6 +162,42 @@ class ScheduleRepository {
       leagues: leagues,
       teamIds: teamIds,
     );
+
+    final cached = _matchesByDateCache[url];
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _calendarCacheTtl) {
+      debugPrint('[Schedule] day cache hit: $dateStr');
+      return Future.value(cached.$2);
+    }
+    final inFlight = _matchesByDateInFlight[url];
+    if (inFlight != null) {
+      debugPrint('[Schedule] day 요청 합류: $dateStr');
+      return inFlight;
+    }
+
+    final request = _fetchMatchesByDate(url, dateStr)
+        .timeout(_calendarTimeout)
+        .then((matches) {
+      // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
+      // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
+      if (!_hasLiveMatch(matches)) {
+        _matchesByDateCache[url] = (DateTime.now(), matches);
+      }
+      return matches;
+    });
+    unawaited(request.whenComplete(() {
+      if (identical(_matchesByDateInFlight[url], request)) {
+        _matchesByDateInFlight.remove(url);
+      }
+    }).catchError((_) => const <ScheduleMatch>[]));
+    _matchesByDateInFlight[url] = request;
+    return request;
+  }
+
+  Future<List<ScheduleMatch>> _fetchMatchesByDate(
+    String url,
+    String dateStr,
+  ) async {
     final response = await http.get(Uri.parse(url));
     debugPrint('[Schedule] day $dateStr ← ${response.statusCode}');
 
@@ -157,6 +213,15 @@ class ScheduleRepository {
         .toList();
   }
 
+  /// 진행 중인 커서 페이지 요청 + 캐시. [_calendarInFlight]/[_calendarCache] 와
+  /// 같은 이유다 — 경기 리스트 화면은 진입할 때마다 ViewModel 을 새로 만들어
+  /// 자체 캐시가 없다. '오늘까지 당겨오는' 첫 진입 카탄업이 페이지 10개를
+  /// 순차로 받는데(커서 체인이라 병렬화 불가), 화면을 나갔다 금방 다시
+  /// 들어오면 이 페이지들을 처음부터 그대로 다시 받고 있었다. 커서 체인 자체는
+  /// 못 줄이지만, 같은 페이지를 다시 밟을 땐 캐시로 건너뛴다.
+  final Map<String, Future<MatchPage>> _matchesInFlight = {};
+  final Map<String, (DateTime, MatchPage)> _matchesCache = {};
+
   /// 경기 리스트를 커서 페이지 단위로 조회한다 (인증 불필요).
   ///
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
@@ -164,6 +229,9 @@ class ScheduleRepository {
   ///
   /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기를 오름차순으로 받는다.
   /// '오늘 이후' 필터가 쓰는 경로다.
+  ///
+  /// 같은 조건(같은 커서 포함)의 요청이 이미 떠 있거나 방금 끝났으면
+  /// ([_calendarCacheTtl] 이내) 그 결과를 재사용한다.
   Future<MatchPage> fetchMatches({
     String? cursor,
     int size = 20,
@@ -172,7 +240,7 @@ class ScheduleRepository {
     int? seasonYear,
     String? split,
     String? from,
-  }) async {
+  }) {
     final url = ApiConfig.matchesUrl(
       league: league,
       size: size,
@@ -182,6 +250,39 @@ class ScheduleRepository {
       split: split,
       from: from,
     );
+
+    final cached = _matchesCache[url];
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _calendarCacheTtl) {
+      debugPrint('[Schedule] matches cache hit');
+      return Future.value(cached.$2);
+    }
+    final inFlight = _matchesInFlight[url];
+    if (inFlight != null) {
+      debugPrint('[Schedule] matches 요청 합류');
+      return inFlight;
+    }
+
+    final request = _fetchMatches(url).timeout(_calendarTimeout).then((page) {
+      // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
+      // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
+      if (!_hasLiveMatch(page.matches)) {
+        _matchesCache[url] = (DateTime.now(), page);
+      }
+      return page;
+    });
+    unawaited(request.whenComplete(() {
+      if (identical(_matchesInFlight[url], request)) {
+        _matchesInFlight.remove(url);
+      }
+    }).catchError((_) {
+      return const MatchPage(matches: [], nextCursor: null, hasNext: false);
+    }));
+    _matchesInFlight[url] = request;
+    return request;
+  }
+
+  Future<MatchPage> _fetchMatches(String url) async {
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));
 

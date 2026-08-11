@@ -308,8 +308,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
-				7A1B2C3D4E5F60718293A4B5 /* Check Naver Secret */,
 				5AEA5F67D3E20EEC5165C2D2 /* [CP] Check Pods Manifest.lock */,
+				7A1B2C3D4E5F60718293A4B5 /* Check Naver Secret */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
@@ -405,21 +405,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7A1B2C3D4E5F60718293A4B5 /* Check Naver Secret */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Check Naver Secret";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Secrets.xcconfig(gitignore)가 없으면 #include? 가 조용히 넘어가 NidClientSecret이 빈 값으로 빌드된다.\n# 1.0.14+21 사고: 워크트리 빌드에 파일 누락 -> 네이버 로그인만 침묵 실패. Release는 빌드를 실패시킨다.\nif [ -z \"${NAVER_CLIENT_SECRET}\" ]; then\n  if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    echo \"error: NAVER_CLIENT_SECRET 빈 값 — ios/Flutter/Secrets.xcconfig 누락. 메인 레포에서 복사할 것 (Secrets.xcconfig.example 참고).\" >&2\n    exit 1\n  fi\n  echo \"warning: NAVER_CLIENT_SECRET 빈 값 — 이 빌드에서 네이버 로그인은 동작하지 않는다.\"\nfi\n";
-		};
 		2B8C631F9577EC748287DF91 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -496,6 +481,21 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		7A1B2C3D4E5F60718293A4B5 /* Check Naver Secret */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Check Naver Secret";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Secrets.xcconfig(gitignore)가 없으면 #include? 가 조용히 넘어가 NidClientSecret이 빈 값으로 빌드된다.\n# 1.0.14+21 사고: 워크트리 빌드에 파일 누락 -> 네이버 로그인만 침묵 실패. Release는 빌드를 실패시킨다.\nif [ -z \"${NAVER_CLIENT_SECRET}\" ]; then\n  if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    echo \"error: NAVER_CLIENT_SECRET 빈 값 — ios/Flutter/Secrets.xcconfig 누락. 메인 레포에서 복사할 것 (Secrets.xcconfig.example 참고).\" >&2\n    exit 1\n  fi\n  echo \"warning: NAVER_CLIENT_SECRET 빈 값 — 이 빌드에서 네이버 로그인은 동작하지 않는다.\"\nfi\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;

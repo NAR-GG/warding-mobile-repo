@@ -323,11 +323,14 @@ class ScheduleViewModel extends ChangeNotifier {
   /// 매칭하고, 비로그인 등 실패 시 로컬 캐시로 폴백한다.
   Future<void> _loadPreferredTeam() async {
     try {
+      // teamId 를 알기 전에도 팀 목록은 미리 받아둔다 — fetchMe 와 겹쳐서
+      // 왕복 한 번을 아낀다. (teamId 가 null 이면 결과는 버려진다.)
+      final teamsFuture = _onboarding.fetchTeams();
       final me = await _auth.fetchMe();
       final teamId = me.favoriteTeamId;
+      final teams = await teamsFuture;
       Team? team;
       if (teamId != null) {
-        final teams = await _onboarding.fetchTeams();
         for (final t in teams) {
           if (t.id == teamId) {
             team = t;

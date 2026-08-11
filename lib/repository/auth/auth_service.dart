@@ -70,6 +70,28 @@ class AuthService {
 
   bool _googleInitialized = false;
 
+  /// [jwt] 인메모리 캐시. Keychain/Keystore 는 플랫폼 채널을 타는 I/O라, 인증
+  /// 요청마다(그리고 경기 카드 하나당 한 번씩) 매번 새로 읽으면 그 비용이
+  /// 그대로 쌓인다. 로그인·재발급·로그아웃 시점에만 갱신하면 되므로 캐싱해도
+  /// 안전하다.
+  String? _cachedJwt;
+  bool _jwtCached = false;
+
+  void _setCachedJwt(String? value) {
+    _cachedJwt = value;
+    _jwtCached = true;
+  }
+
+  /// 테스트 전용 — 인메모리 캐시를 지워 다음 [jwt] 읽기가 storage 를 다시 보게
+  /// 한다. `AuthService.instance` 는 테스트 파일 전체가 공유하는 싱글턴이라,
+  /// `FlutterSecureStorage.setMockInitialValues` 로 storage 를 직접 갈아끼우는
+  /// 테스트라면 `setUp` 에서 같이 호출해야 캐시가 이전 테스트 값으로 남지 않는다.
+  @visibleForTesting
+  void resetJwtCacheForTesting() {
+    _cachedJwt = null;
+    _jwtCached = false;
+  }
+
   /// 카카오 SDK로 로그인 → 받은 access token을 백엔드로 전달 → 자체 JWT 저장.
   Future<AuthResult> signInWithKakao() async {
     final OAuthToken token;
@@ -290,6 +312,7 @@ class AuthService {
     final isOnboarded = data['isOnboarded'] as bool? ?? false;
 
     await _storage.write(key: _jwtKey, value: jwt);
+    _setCachedJwt(jwt);
     if (refreshToken != null && refreshToken.isNotEmpty) {
       await _storage.write(key: _refreshKey, value: refreshToken);
     }
@@ -302,7 +325,18 @@ class AuthService {
     return AuthResult(jwt: jwt, isOnboarded: isOnboarded);
   }
 
-  Future<String?> get jwt => _storage.read(key: _jwtKey);
+  Future<String?> get jwt async {
+    if (_jwtCached) return _cachedJwt;
+    final value = await _storage.read(key: _jwtKey);
+    // null 은 캐싱하지 않는다 — 기기 잠금 중 Keychain 접근성 불일치 등으로
+    // 진짜 로그인 상태인데도 일시적으로 null 이 읽히는 경우가 있었다(과거
+    // -25308 오탐 로그아웃 사고, splash_screen.dart 참고). 캐싱해버리면 그
+    // 한 번의 헛읽기가 앱 재시작 전까지 영구히 '로그아웃'으로 굳는다.
+    // 로그인·재발급·명시적 로그아웃(_setCachedJwt 직접 호출)은 그 자체가
+    // 신뢰할 수 있는 값이라 정상적으로 캐싱된다.
+    if (value != null) _setCachedJwt(value);
+    return value;
+  }
 
   Future<String?> get refreshToken => _storage.read(key: _refreshKey);
 
@@ -409,6 +443,7 @@ class AuthService {
         return const RefreshResult.transient();
       }
       await _storage.write(key: _jwtKey, value: newJwt);
+      _setCachedJwt(newJwt);
       if (newRefresh != null && newRefresh.isNotEmpty) {
         await _storage.write(key: _refreshKey, value: newRefresh);
       }
@@ -464,6 +499,7 @@ class AuthService {
     debugPrint('[Auth] 세션 만료 → 자동 로그아웃');
     try {
       await _storage.delete(key: _jwtKey);
+      _setCachedJwt(null);
       await _storage.delete(key: _refreshKey);
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
@@ -523,6 +559,7 @@ class AuthService {
       // 구글 세션이 이미 끊겼더라도 자체 토큰은 지움
     }
     await _storage.delete(key: _jwtKey);
+    _setCachedJwt(null);
     await _storage.delete(key: _refreshKey);
     SentryLogger.clearUser();
   }

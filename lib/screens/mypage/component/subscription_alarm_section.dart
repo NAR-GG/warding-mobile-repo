@@ -115,10 +115,10 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_viewModel.isLoading && teams.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 24 * scale),
-              child: const Center(child: CircularProgressIndicator()),
-            )
+            for (var i = 0; i < 2; i++) ...[
+              if (i > 0) SizedBox(height: 8 * scale),
+              _TeamAlarmBlockSkeleton(scale: scale),
+            ]
           else if (teams.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(
@@ -284,6 +284,96 @@ class _AlarmRow extends StatelessWidget {
           NarToggle(value: value, onChanged: onChanged, scale: scale),
         ],
       ),
+    );
+  }
+}
+
+/// 팀 알림 목록 최초 로딩 중 표시할 스켈레톤 블록.
+/// [_TeamAlarmBlock] 과 동일한 레이아웃(로고+팀명 헤더 + 토글 3행)에 회색 박스를
+/// 깔고 opacity 를 펄스시킨다. [MatchCardSkeleton] 과 동일한 톤.
+class _TeamAlarmBlockSkeleton extends StatefulWidget {
+  const _TeamAlarmBlockSkeleton({this.scale = 1});
+
+  final double scale;
+
+  @override
+  State<_TeamAlarmBlockSkeleton> createState() =>
+      _TeamAlarmBlockSkeletonState();
+}
+
+class _TeamAlarmBlockSkeletonState extends State<_TeamAlarmBlockSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = widget.scale;
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final opacity = 0.3 + (_ctrl.value * 0.3); // 0.3 ↔ 0.6 펄스
+        Widget box({double? w, required double h, double r = 4}) => Opacity(
+          opacity: opacity,
+          child: Container(
+            width: w,
+            height: h,
+            decoration: BoxDecoration(
+              color: AppColors.narLine2,
+              borderRadius: BorderRadius.circular(r),
+            ),
+          ),
+        );
+        Widget alarmRow() => Padding(
+          padding:
+              EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              box(w: 70 * scale, h: 14 * scale), // 라벨
+              box(w: 34 * scale, h: 19 * scale, r: 9.5), // 토글
+            ],
+          ),
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 20 * scale,
+                vertical: 8 * scale,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  box(w: 33 * scale, h: 33 * scale, r: 33), // 로고
+                  SizedBox(width: 8 * scale),
+                  box(w: 80 * scale, h: 16 * scale), // 팀명
+                ],
+              ),
+            ),
+            alarmRow(),
+            alarmRow(),
+            alarmRow(),
+          ],
+        );
+      },
     );
   }
 }
