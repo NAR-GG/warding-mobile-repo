@@ -89,16 +89,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to register alarm. Please try again.';
 
   @override
-  String get spoilerBlock => 'Spoiler Block';
+  String get spoilerBlock => 'Spoiler';
 
   @override
   String get clickToSeeScore => 'Tap to reveal score';
 
   @override
-  String get spoilerPreventionOn => 'Spoiler Protection ON';
+  String get spoilerPreventionOn => 'Spoiler ON';
 
   @override
-  String get spoilerPreventionOff => 'Spoiler Protection OFF';
+  String get spoilerPreventionOff => 'Spoiler OFF';
 
   @override
   String get weekdayMon => 'Mon';
@@ -370,6 +370,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscribedPlayerList => 'Subscribed Players';
+
+  @override
+  String get playerSortByPosition => 'Position';
+
+  @override
+  String get playerSortByName => 'Name (A–Z)';
 
   @override
   String get subscribing => 'Subscribed';

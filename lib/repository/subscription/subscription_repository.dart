@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -26,15 +27,50 @@ class SubscriptionRepository {
 
   // ── 선수 구독 ────────────────────────────────────────────────────
 
+  /// 진행 중인 구독 선수 요청 + 캐시. `/api/mobile/me/...` 인증 API 들이
+  /// 응답이 150ms~4.3s 로 들쭉날쭉해서(2026-08-12 실측) 마이구독 탭을
+  /// 오갈 때마다 그대로 체감됐다. 짧게 캐시해 잦은 재방문을 가려준다.
+  /// [subscribePlayer]/[unsubscribePlayer] 는 이 캐시를 지워 다음 조회가
+  /// 최신 상태를 받게 한다.
+  Future<List<PlayerSubscription>>? _subscribedInFlight;
+  (DateTime, List<PlayerSubscription>)? _subscribedCache;
+  static const Duration _subscribedCacheTtl = Duration(seconds: 30);
+
   /// 내 구독 선수 목록을 조회한다.
-  Future<List<PlayerSubscription>> fetchSubscribedPlayers() async {
+  Future<List<PlayerSubscription>> fetchSubscribedPlayers() {
+    final cached = _subscribedCache;
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _subscribedCacheTtl) {
+      debugPrint('[Subscription] 구독선수 cache hit');
+      return Future.value(cached.$2);
+    }
+    final inFlight = _subscribedInFlight;
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchSubscribedPlayers().then((list) {
+      _subscribedCache = (DateTime.now(), list);
+      return list;
+    });
+    unawaited(request.whenComplete(() {
+      if (identical(_subscribedInFlight, request)) {
+        _subscribedInFlight = null;
+      }
+    }).catchError((_) => const <PlayerSubscription>[]));
+    _subscribedInFlight = request;
+    return request;
+  }
+
+  Future<List<PlayerSubscription>> _fetchSubscribedPlayers() async {
+    final sw = Stopwatch()..start();
     final response = await _auth.authorizedRequest(
       (token) => http.get(
         Uri.parse(ApiConfig.playerSubscriptionsUrl),
         headers: _headers(token),
       ),
     );
-    debugPrint('[Subscription] 구독선수 ← ${response.statusCode}');
+    sw.stop();
+    debugPrint('[Subscription] 구독선수 ← ${response.statusCode} '
+        '(${sw.elapsedMilliseconds}ms)');
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('구독 선수 조회 실패 (${response.statusCode})');
     }

@@ -58,7 +58,7 @@ class NarDropdown extends StatelessWidget {
               value,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontFamily: 'SF Pro',
+                fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w400,
                 fontSize: 14 * scale,
                 height: 22 / 14, // 155%

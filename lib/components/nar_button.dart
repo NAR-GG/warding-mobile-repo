@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../styles/app_colors.dart';
 
 /// nar_button 디자인 토큰 버튼 종류.
@@ -17,10 +18,12 @@ enum NarButtonVariant {
   /// (예: 경기 상세 '준비중'·'경기 종료')
   set1Disabled,
 
-  /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 64×34 고정.
+  /// 구독 — 미구독 상태. 밝은 회색 90% 배경 + #495057 텍스트. 높이 34 고정,
+  /// 폭은 로케일별 '구독'/'구독중' 라벨 중 더 긴 쪽 기준(한국어 64).
   subscribe,
 
-  /// 구독중 — 구독 상태. 보라 50% 배경 + #FCFDFE 텍스트. 64×34 고정.
+  /// 구독중 — 구독 상태. 보라 50% 배경 + #FCFDFE 텍스트. 높이 34 고정,
+  /// 폭은 로케일별 '구독'/'구독중' 라벨 중 더 긴 쪽 기준(한국어 64).
   subscribed,
 }
 
@@ -28,7 +31,8 @@ enum NarButtonVariant {
 /// [variant] 별 사이즈/스타일:
 /// - type1/type2: 110.5×34 고정, Open Sans 400, padding 10, radius 8.
 /// - set1: 부모 폭을 채우고 34 높이, Open Sans 400, padding 10, radius 8.
-/// - subscribe/subscribed: 64×34 고정, Pretendard 500, padding 16, radius 10.
+/// - subscribe/subscribed: 높이 34 고정(폭은 로케일별 최장 라벨 기준),
+///   Pretendard 500, padding 16, radius 10.
 class NarButton extends StatelessWidget {
   const NarButton({
     super.key,
@@ -92,7 +96,7 @@ class NarButton extends StatelessWidget {
   }
 
   /// type1/type2 는 시안 폭 고정, set1 은 부모를 채우고, subscribe* 는 콘텐츠 자동 폭.
-  double? _width(double scale) {
+  double? _width(double scale, BuildContext context) {
     switch (variant) {
       case NarButtonVariant.type1:
       case NarButtonVariant.type2:
@@ -102,10 +106,19 @@ class NarButton extends StatelessWidget {
         return double.infinity;
       case NarButtonVariant.subscribe:
       case NarButtonVariant.subscribed:
-        // 라벨 길이('구독' vs '구독중')에 따라 폭이 달라지지 않도록, 더 긴 라벨
-        // '구독중' 기준으로 폭을 고정한다(짧은 '구독'은 같은 폭 안에서 가운데 정렬).
-        return _measureText('구독중', _textStyle(scale)).width +
-            _horizontalPadding * scale * 2;
+        // 라벨 길이(예: '구독' vs '구독중', 'Subscribe' vs 'Subscribed')에 따라
+        // 폭이 달라지지 않도록, 현재 로케일에서 더 긴 라벨 기준으로 폭을 고정한다
+        // (짧은 라벨은 같은 폭 안에서 가운데 정렬). 하드코딩된 한국어 대신
+        // 로케일별 실제 문구를 재서, 영어 등 더 긴 언어에서도 버튼 텍스트가
+        // 넘치지 않게 한다.
+        final l = AppLocalizations.of(context)!;
+        final subscribeWidth = _measureText(l.subscribe, _textStyle(scale)).width;
+        final subscribingWidth =
+            _measureText(l.subscribing, _textStyle(scale)).width;
+        final labelWidth = subscribeWidth > subscribingWidth
+            ? subscribeWidth
+            : subscribingWidth;
+        return labelWidth + _horizontalPadding * scale * 2;
     }
   }
 
@@ -143,7 +156,7 @@ class NarButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: _width(scale),
+        width: _width(scale, context),
         height: 34 * scale,
         padding: EdgeInsets.symmetric(horizontal: _horizontalPadding * scale),
         alignment: Alignment.center,

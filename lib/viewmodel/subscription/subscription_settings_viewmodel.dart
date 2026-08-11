@@ -6,6 +6,15 @@ import '../../model/player_subscription.dart';
 import '../../model/team_notification_subscription.dart';
 import '../../repository/subscription/subscription_repository.dart';
 
+/// 구독 설정 화면 선수 목록 정렬 모드.
+enum PlayerSortMode {
+  /// 포지션(탑→정글→미드→원딜→서포터) 후 이름순. 서버 기본 정렬과 동일.
+  position,
+
+  /// 이름(playerName, 로마자) 오름차순.
+  name,
+}
+
 /// 구독 설정 화면 ViewModel.
 ///
 /// 구독중인 팀·선수, 전체(검색) 목록을 들고 구독 토글을 처리한다.
@@ -19,9 +28,43 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   final SubscriptionRepository _repo;
   bool _disposed = false;
 
-  /// 한 페이지에 받을 선수 수. 백엔드 상한(100)에 맞춰 현재 LCK 로스터(약 60여 명)를
-  /// 한 번에 받는다. 로스터가 100을 넘어가면 [loadMorePlayers] 무한 스크롤로 이어 받는다.
-  static const int _pageSize = 100;
+  /// 한 페이지에 받을 선수 수. 백엔드 상한(300, PR #367)에 맞춰 구독 가능 선수 전원(약
+  /// 102명)을 한 번에 받는다. 로스터가 커지면 [loadMorePlayers] 무한 스크롤로 이어 받는다.
+  static const int _pageSize = 200;
+
+  /// 포지션순 정렬 시 포지션별 순서. 서버 `PlayerRoleOrder`와 동일한 순서다.
+  static const Map<String, int> _roleOrder = {
+    'TOP': 0,
+    'JUNGLE': 1,
+    'MID': 2,
+    'ADC': 3,
+    'SUPPORT': 4,
+  };
+
+  PlayerSortMode _sortMode = PlayerSortMode.position;
+  PlayerSortMode get sortMode => _sortMode;
+
+  /// 정렬 모드를 바꾸고 즉시 재정렬한다. 서버 재조회는 하지 않는다.
+  void setSortMode(PlayerSortMode mode) {
+    if (_sortMode == mode) return;
+    _sortMode = mode;
+    _subscribedPlayers = _sortPlayers(_subscribedPlayers);
+    _availablePlayers = _sortPlayers(_availablePlayers);
+    _notify();
+  }
+
+  List<PlayerSubscription> _sortPlayers(List<PlayerSubscription> list) =>
+      [...list]..sort(_comparePlayers);
+
+  int _comparePlayers(PlayerSubscription a, PlayerSubscription b) {
+    if (_sortMode == PlayerSortMode.name) {
+      return a.playerName.toLowerCase().compareTo(b.playerName.toLowerCase());
+    }
+    final orderA = _roleOrder[a.role.toUpperCase()] ?? _roleOrder.length;
+    final orderB = _roleOrder[b.role.toUpperCase()] ?? _roleOrder.length;
+    if (orderA != orderB) return orderA.compareTo(orderB);
+    return a.playerName.toLowerCase().compareTo(b.playerName.toLowerCase());
+  }
 
   List<PlayerSubscription> _subscribedPlayers = const [];
   List<PlayerSubscription> get subscribedPlayers => _subscribedPlayers;
@@ -77,7 +120,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     _notify();
 
     final subscribed = _repo.fetchSubscribedPlayers().then((v) {
-      _subscribedPlayers = v;
+      _subscribedPlayers = _sortPlayers(v);
       _notify();
     });
     final teams = _repo.fetchAvailableTeams().then((v) {
@@ -87,7 +130,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     final available = _repo
         .searchAvailablePlayers(query: _query, page: 0, size: _pageSize)
         .then((v) {
-      _availablePlayers = v.content;
+      _availablePlayers = _sortPlayers(v.content);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
       _availTotalElements = v.totalElements;
@@ -113,7 +156,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     try {
       final v = await _repo.searchAvailablePlayers(
           query: query, page: 0, size: _pageSize);
-      _availablePlayers = v.content;
+      _availablePlayers = _sortPlayers(v.content);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
       _availTotalElements = v.totalElements;
@@ -136,7 +179,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
         page: _availPage + 1,
         size: _pageSize,
       );
-      _availablePlayers = [..._availablePlayers, ...v.content];
+      _availablePlayers = _sortPlayers([..._availablePlayers, ...v.content]);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
       _availTotalElements = v.totalElements;
@@ -182,6 +225,9 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   }
 
   /// 선수 토글 결과를 구독중 목록·전체 목록 양쪽에 반영한다.
+  ///
+  /// 두 목록 모두 항상 현재 [sortMode] 기준으로 정렬된 상태를 유지한다 — 여기서 끝에
+  /// 그냥 append 하면 방금 구독한 선수만 정렬 순서 밖으로 밀려난다.
   void _applyPlayerToggle(int playerId, bool nowSubscribed) {
     _availablePlayers = [
       for (final p in _availablePlayers)
@@ -192,7 +238,7 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
         final added = _availablePlayers
             .firstWhere((p) => p.playerId == playerId)
             .copyWith(subscribed: true);
-        _subscribedPlayers = [..._subscribedPlayers, added];
+        _subscribedPlayers = _sortPlayers([..._subscribedPlayers, added]);
       }
     } else {
       _subscribedPlayers =

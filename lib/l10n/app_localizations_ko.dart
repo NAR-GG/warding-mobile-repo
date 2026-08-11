@@ -362,6 +362,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscribedPlayerList => '구독한 선수';
 
   @override
+  String get playerSortByPosition => '포지션순';
+
+  @override
+  String get playerSortByName => '이름순';
+
+  @override
   String get subscribing => '구독중';
 
   @override
@@ -854,10 +860,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get updateNow => '업데이트';
 
   @override
-  String get quietHours => '알림 잠자기';
+  String get quietHours => '방해 금지 모드 설정';
 
   @override
-  String get quietHoursUse => '잠자기 사용';
+  String get quietHoursUse => '방해 금지 모드 사용';
 
   @override
   String get quietHoursStart => '시작';

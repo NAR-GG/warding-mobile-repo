@@ -103,11 +103,14 @@ class PlayerRatingViewModel extends ChangeNotifier {
   /// 평점 로딩과 독립이라 실패해도 화면 나머지에 영향이 없다.
   Future<void> _loadMyProfile() async {
     try {
+      // teamId 를 알기 전에도 팀 목록은 미리 받아둔다 — fetchMe 와 겹쳐서
+      // 왕복 한 번을 아낀다. (teamId 가 null 이면 결과는 버려진다.)
+      final teamsFuture = _onboarding.fetchTeams();
       final me = await _auth.fetchMe();
       _myProfileImageUrl = me.profileImageUrl;
       final teamId = me.favoriteTeamId;
+      final teams = await teamsFuture;
       if (teamId != null) {
-        final teams = await _onboarding.fetchTeams();
         for (final t in teams) {
           if (t.id == teamId) {
             _myTeamImageUrl = t.imageUrl;

@@ -30,10 +30,13 @@ class MemberNotificationRepository {
     int size = 20,
   }) async {
     final url = ApiConfig.notificationsUrl(type: type, page: page, size: size);
+    final sw = Stopwatch()..start();
     final response = await _auth.authorizedRequest(
       (token) => http.get(Uri.parse(url), headers: _headers(token)),
     );
-    debugPrint('[Notification] 피드 ← ${response.statusCode}');
+    sw.stop();
+    debugPrint('[Notification] 피드 ← ${response.statusCode} '
+        '(${sw.elapsedMilliseconds}ms)');
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('알림 조회 실패 (${response.statusCode})');
     }

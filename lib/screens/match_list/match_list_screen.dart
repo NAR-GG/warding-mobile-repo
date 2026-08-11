@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/labeled_field.dart';
+import '../../components/load_error.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/nar_dropdown.dart';
 import '../../components/nar_spoiler_toggle.dart';
@@ -75,6 +76,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
     _scrolledForVersion = _viewModel.scheduleVersion;
     _targetDate = _findTargetDate();
+    debugPrint('[MatchList][perf] 데이터 로드 끝, 스크롤 예약 ${DateTime.now()}');
     // 정렬 변경으로 다시 스크롤할 때는 이전 오프셋이 남아 있으면 어림 계산(jumpTo)이
     // 어긋나므로 0(=목록 시작)부터 다시 접근한다.
     if (_scrollController.hasClients && _scrollController.offset != 0) {
@@ -115,6 +117,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 2) 다음 프레임에 반복 → 점진적으로 대상에 접근.
   /// 3) 대상 헤더가 렌더(GlobalKey attach)되면 ensureVisible 로 정밀 정렬 후 종료.
   void _scrollToTarget({int attempt = 0}) {
+    if (attempt == 0) {
+      debugPrint('[MatchList][perf] _scrollToTarget 시작 ${DateTime.now()}');
+    }
     final target = _targetDate;
     if (!mounted || target == null || !_scrollController.hasClients) return;
 
@@ -123,6 +128,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     // (reverse:true 인 오름차순에서는 alignment 0 이 아래쪽 기준이라 0.65.)
     final ctx = _todayHeaderKey.currentContext;
     if (ctx != null) {
+      debugPrint(
+          '[MatchList][perf] _scrollToTarget 완료 attempt=$attempt ${DateTime.now()}');
       Scrollable.ensureVisible(
         ctx,
         duration: Duration.zero,
@@ -133,7 +140,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
     // 무한 반복 방지.
     const maxAttempts = 40;
-    if (attempt >= maxAttempts) return;
+    if (attempt >= maxAttempts) {
+      debugPrint('[MatchList][perf] _scrollToTarget 40번 시도 후 포기');
+      return;
+    }
 
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
@@ -409,8 +419,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
     final items = _flatten(_viewModel.schedule, reversed: _viewModel.listReversed);
     final loading = _viewModel.loadingMatches || _viewModel.loadingMore;
 
-    // 결과가 비어있을 때 — 로딩 중이면 스켈레톤, 아니면 빈 상태 메시지.
+    // 결과가 비어있을 때 — 에러면 재시도 안내, 로딩 중이면 스켈레톤, 아니면 빈 상태 메시지.
     if (items.isEmpty) {
+      if (_viewModel.error != null) {
+        return LoadError(
+          message: AppLocalizations.of(context)!.matchLoadFailed,
+          onRetry: _viewModel.retryLoadMatches,
+        );
+      }
       if (loading) {
         return ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
