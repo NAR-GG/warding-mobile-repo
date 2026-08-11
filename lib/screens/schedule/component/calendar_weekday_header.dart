@@ -4,7 +4,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../model/calendar_week_start.dart';
 import '../../../styles/app_colors.dart';
 
-/// 요일 헤더 — 월·화·수·목·금·토·일.
+/// 요일 헤더 — [weekStart]로 설정한 시작 요일부터 순서대로 표시한다
+/// (기본값 월·화·수·목·금·토·일).
 ///
 /// 요일 한 칸당 위 14 / 아래 10 패딩을 주고, 행 아래에 1px 그라데이션
 /// 구분선([AppColors.narBg])을 둔다.

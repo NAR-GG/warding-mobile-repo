@@ -7,9 +7,9 @@ import 'calendar_today_badge.dart';
 
 /// 월간 날짜 그리드.
 ///
-/// 주(week)는 월요일 시작. 이전·다음 달 날짜로 빈 칸을 채워 7×N 격자를
-/// 만들고, 각 주 행 높이를 92*scale 로 고정한다. 주 수가 많아 화면을
-/// 넘치면 세로로 스크롤된다.
+/// 주(week) 시작 요일은 [weekStart]로 설정한다(기본값 월요일). 이전·다음
+/// 달 날짜로 빈 칸을 채워 7×N 격자를 만들고, 각 주 행 높이를 92*scale 로
+/// 고정한다. 주 수가 많아 화면을 넘치면 세로로 스크롤된다.
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
