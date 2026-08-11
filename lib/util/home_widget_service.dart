@@ -8,10 +8,12 @@ import 'api_client.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../config/api_config.dart';
 import '../config/app_globals.dart';
 import '../model/match_calendar_day.dart';
 import '../model/schedule_match.dart';
 import '../model/team.dart';
+import '../model/user_profile.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/onboarding/onboarding_repository.dart';
 import '../repository/preference/filter_preference_repository.dart';
@@ -528,26 +530,61 @@ class HomeWidgetService {
     }
   }
 
+  /// 위젯 갱신 경로 전용 회원 조회 — 토큰 재발급을 시도하지 않는다.
+  ///
+  /// 홈위젯 백그라운드 콜백은 별도 아이솔레이트에서 돌아 앱 프로세스와
+  /// 메모리를 공유하지 않으므로, [AuthService] 의 재발급 단일화
+  /// (single-flight) 락이 여기까지 미치지 않는다. 여기서 재발급하면
+  /// 포그라운드 앱의 재발급과 경쟁해 토큰이 꼬일 수 있다.
+  ///
+  /// 그래서 저장된 Access Token 을 그대로 쓰고, 401 등 실패면 null 을
+  /// 반환해 이번 위젯 갱신만 조용히 건너뛴다(위젯은 이전 데이터 유지).
+  /// 위젯 경로에서는 절대 재발급·로그아웃하지 않는다.
+  static Future<UserProfile?> _fetchMeWithoutRefresh() async {
+    final token = await AuthService.instance.jwt;
+    if (token == null || token.isEmpty) return null;
+    final response = await http.get(
+      Uri.parse(ApiConfig.meUrl),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint(
+          '[HomeWidget] 회원 조회 실패 (${response.statusCode}) — 이번 갱신 건너뜀');
+      return null;
+    }
+    return UserProfile.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   /// 로그인 회원은 서버 `favoriteTeamId` 기준, 실패(비로그인 등) 시 로컬 캐시로
   /// 폴백해 선호 팀을 읽는다. [refreshFromApi]와 백그라운드 팀 필터 토글이 공유한다.
+  ///
+  /// 서버 조회는 [_fetchMeWithoutRefresh] 를 쓴다 — 위젯 아이솔레이트에서
+  /// 토큰 재발급을 시도하면 안 되기 때문이다 (해당 메서드 주석 참고).
   static Future<Team?> _loadPreferredTeamForWidget() async {
     try {
-      final me = await AuthService.instance.fetchMe();
-      if (me.favoriteTeamId != null) {
-        final teams = await OnboardingRepository.instance.fetchTeams();
-        for (final t in teams) {
-          if (t.id == me.favoriteTeamId) return t;
+      final me = await _fetchMeWithoutRefresh();
+      if (me != null) {
+        if (me.favoriteTeamId != null) {
+          final teams = await OnboardingRepository.instance.fetchTeams();
+          for (final t in teams) {
+            if (t.id == me.favoriteTeamId) return t;
+          }
         }
-      }
-      return null;
-    } catch (_) {
-      try {
-        return await TeamPreferenceRepository.instance.loadPreferredTeam();
-      } on PlatformException {
-        // 잠금 상태 백그라운드 갱신 중 Keychain 접근 불가(-25308) —
-        // 이번 위젯 갱신에서만 응원팀을 건너뛴다.
+        // 로그인 상태인데 응원팀 미설정 — 로컬 캐시로 덮지 않는다.
         return null;
       }
+    } catch (_) {
+      // 네트워크 오류 등 — 아래 로컬 캐시 폴백으로.
+    }
+    // 비로그인·토큰 만료(401)·조회 실패 → 로컬 캐시 폴백.
+    try {
+      return await TeamPreferenceRepository.instance.loadPreferredTeam();
+    } on PlatformException {
+      // 잠금 상태 백그라운드 갱신 중 Keychain 접근 불가(-25308) —
+      // 이번 위젯 갱신에서만 응원팀을 건너뛴다.
+      return null;
     }
   }
 
