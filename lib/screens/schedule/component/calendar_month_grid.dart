@@ -88,7 +88,7 @@ class CalendarMonthGrid extends StatelessWidget {
                           onTap: (onDateTap != null && dayMatches.isNotEmpty)
                               ? () => onDateTap!(date)
                               : null,
-                          // 마지막 열(일요일) 오른쪽엔 세로 테두리 없음.
+                          // 마지막 열 오른쪽엔 세로 테두리 없음.
                           showRightBorder: dow != 6,
                           // 첫 주만 위쪽 테두리. 이후 행은 윗 행의 아래
                           // 테두리가 위 선 역할을 한다.

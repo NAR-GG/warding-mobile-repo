@@ -8,8 +8,9 @@ import 'calendar_week_start_sheet.dart';
 
 /// 마이페이지 — 캘린더 시작 요일 설정 섹션 (양옆 20 패딩).
 ///
-/// QuietHours 섹션 바로 아래에 온다. 기기 로컬 설정이라 로그인 여부와 무관하게
-/// 항상 보인다(서버 저장이 필요한 QuietHours와 다른 점).
+/// QuietHours 섹션 바로 아래에 온다. 기기 로컬 설정이지만 화면 전체를 덮는
+/// GuestLockOverlay 안에 위치해 다른 마이페이지 항목과 동일하게 비회원에게는
+/// 잠긴다(로그인해야 사용 가능).
 class CalendarWeekStartSection extends StatefulWidget {
   const CalendarWeekStartSection({super.key, this.scale = 1});
 

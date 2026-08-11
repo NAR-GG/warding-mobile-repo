@@ -8,7 +8,9 @@ import '../../util/home_widget_service.dart';
 
 /// 마이페이지 — 캘린더 시작 요일 설정 ViewModel.
 ///
-/// 기기 로컬 설정이라 로그인 여부와 무관하게 동작한다(QuietHours와 다른 점).
+/// 기기 로컬 설정이라 이 ViewModel 자체는 로그인 여부를 확인하지 않는다.
+/// 다만 화면(CalendarWeekStartSection)이 마이페이지 전체를 덮는
+/// GuestLockOverlay 안에 위치해, 실제로는 로그인해야 접근할 수 있다.
 class CalendarWeekStartViewModel extends ChangeNotifier {
   CalendarWeekStartViewModel({CalendarWeekStartPreferenceRepository? repository})
       : _repository = repository ?? CalendarWeekStartPreferenceRepository.instance {
