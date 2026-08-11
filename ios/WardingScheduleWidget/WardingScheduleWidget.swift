@@ -50,20 +50,20 @@ struct TodayMatch {
 
 struct ScheduleProvider: TimelineProvider {
     func placeholder(in context: Context) -> ScheduleEntry {
-        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil, teamImage: nil, hasFilter: false, teamSelected: false, teamCode: "")
+        ScheduleEntry(date: Date(), calendar: .empty, today: .empty, teamImageUrl: nil, teamImage: nil, hasFilter: false, teamSelected: false, teamCode: "", sundayFirst: false)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ScheduleEntry) -> Void) {
-        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode) = loadData()
+        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode, sundayFirst) = loadData()
         downloadTeamImage(url: teamUrl) { image in
-            completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode))
+            completion(ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode, sundayFirst: sundayFirst))
         }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
-        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode) = loadData()
+        let (cal, today, teamUrl, hasFilter, teamSelected, teamCode, sundayFirst) = loadData()
         downloadTeamImage(url: teamUrl) { image in
-            let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode)
+            let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode, sundayFirst: sundayFirst)
             let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
             completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
         }
@@ -83,15 +83,16 @@ struct ScheduleProvider: TimelineProvider {
         }.resume()
     }
 
-    private func loadData() -> (CalendarData, TodayData, String?, Bool, Bool, String) {
+    private func loadData() -> (CalendarData, TodayData, String?, Bool, Bool, String, Bool) {
         guard let ud = UserDefaults(suiteName: "group.com.warding.app") else {
-            return (.empty, .empty, nil, false, false, "")
+            return (.empty, .empty, nil, false, false, "", false)
         }
         let teamUrl = ud.string(forKey: "team_image_url")
         let hasFilter = ud.bool(forKey: "has_filter")
         let teamSelected = ud.bool(forKey: "team_selected")
         let teamCode = ud.string(forKey: "team_code") ?? ""
-        return (loadCalendar(ud), loadToday(ud), teamUrl, hasFilter, teamSelected, teamCode)
+        let sundayFirst = ud.string(forKey: "week_start") == "sunday"
+        return (loadCalendar(ud), loadToday(ud), teamUrl, hasFilter, teamSelected, teamCode, sundayFirst)
     }
 
     private func loadCalendar(_ ud: UserDefaults) -> CalendarData {
@@ -158,6 +159,33 @@ struct ScheduleEntry: TimelineEntry {
     let hasFilter: Bool
     let teamSelected: Bool
     let teamCode: String
+    let sundayFirst: Bool
+}
+
+// MARK: - Week-start-aware calendar helpers
+
+/// [year]년 [month]월 1일이 그리드에서 몇 번째 칸(0-based)에 오는지.
+/// [sundayFirst] 가 false면 월요일 시작(0=월 ... 6=일), true면 일요일 시작(0=일 ... 6=토).
+func firstWeekdayIndex(year: Int, month: Int, sundayFirst: Bool) -> Int {
+    var comps = DateComponents()
+    comps.year = year
+    comps.month = month
+    comps.day = 1
+    let date = Calendar.current.date(from: comps) ?? Date()
+    let wd = Calendar.current.component(.weekday, from: date) // Sun=1 ... Sat=7
+    return sundayFirst ? (wd - 1) : ((wd + 5) % 7)
+}
+
+/// [sundayFirst] 기준으로 정렬된 요일 라벨 7개.
+func weekdayLabels(sundayFirst: Bool) -> [String] {
+    let mondayFirst = ["월", "화", "수", "목", "금", "토", "일"]
+    guard sundayFirst else { return mondayFirst }
+    return [mondayFirst.last!] + mondayFirst.dropLast()
+}
+
+/// [sundayFirst] 기준 그리드에서 일요일이 위치한 컬럼(0-based).
+func sundayColumnIndex(sundayFirst: Bool) -> Int {
+    sundayFirst ? 0 : 6
 }
 
 // MARK: - Medium Widget View (좌: 오늘 경기 | 우: 미니 캘린더)
@@ -343,13 +371,7 @@ struct MediumWidgetView: View {
     // MARK: - 오른쪽: 미니 캘린더
 
     private var firstWeekday: Int {
-        var comps = DateComponents()
-        comps.year = displayYear
-        comps.month = displayMonth
-        comps.day = 1
-        let date = Calendar.current.date(from: comps) ?? Date()
-        let wd = Calendar.current.component(.weekday, from: date)
-        return (wd + 5) % 7
+        firstWeekdayIndex(year: displayYear, month: displayMonth, sundayFirst: entry.sundayFirst)
     }
 
     private var daysInMonth: Int {
@@ -375,9 +397,9 @@ struct MediumWidgetView: View {
             // 요일 헤더
             HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { i in
-                    Text(weekdayNames[i])
+                    Text(weekdayLabels(sundayFirst: entry.sundayFirst)[i])
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(i == 6 ? sundayColor : textColor)
+                        .foregroundColor(i == sundayColumnIndex(sundayFirst: entry.sundayFirst) ? sundayColor : textColor)
                         .frame(width: 20, height: 22)
                 }
             }
@@ -398,7 +420,7 @@ struct MediumWidgetView: View {
                                     .font(.system(size: 10, weight: .semibold))
                                     .foregroundColor(
                                         isToday ? Color(hex: 0xFF6B6B) :
-                                        dow == 6 ? sundayColor :
+                                        dow == sundayColumnIndex(sundayFirst: entry.sundayFirst) ? sundayColor :
                                         hasMatches ? textColor :
                                         Color(hex: 0xA6A7AB)
                                     )
@@ -609,7 +631,7 @@ struct LargeWidgetView: View {
     private var isDark: Bool { colorScheme == .dark }
 
     private var cal: CalendarData { entry.calendar }
-    private let weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+    private var weekdays: [String] { weekdayLabels(sundayFirst: entry.sundayFirst) }
 
     private var bgColor: Color { isDark ? Color.black : Color.white }
     private var textColor: Color { isDark ? Color.white : Color(hex: 0x101113) }
@@ -623,13 +645,7 @@ struct LargeWidgetView: View {
     private var displayMonth: Int { cal.month.isEmpty ? Calendar.current.component(.month, from: Date()) : cal.monthNum }
 
     private var firstWeekday: Int {
-        var comps = DateComponents()
-        comps.year = displayYear
-        comps.month = displayMonth
-        comps.day = 1
-        let date = Calendar.current.date(from: comps) ?? Date()
-        let wd = Calendar.current.component(.weekday, from: date)
-        return (wd + 5) % 7
+        firstWeekdayIndex(year: displayYear, month: displayMonth, sundayFirst: entry.sundayFirst)
     }
 
     private var daysInMonth: Int {
@@ -773,7 +789,7 @@ struct LargeWidgetView: View {
                 ForEach(0..<7, id: \.self) { i in
                     Text(weekdays[i])
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(i == 6 ? sundayColor : textColor)
+                        .foregroundColor(i == sundayColumnIndex(sundayFirst: entry.sundayFirst) ? sundayColor : textColor)
                         .frame(maxWidth: .infinity)
                         .frame(height: 19)
                 }
@@ -827,7 +843,7 @@ struct LargeWidgetView: View {
                 .font(.system(size: weekCount >= 6 ? 9 : 10, weight: .bold))
                 .foregroundColor(
                     isToday ? Color(hex: 0xFF6B6B) :
-                    dow == 6 ? sundayColor : textColor
+                    dow == sundayColumnIndex(sundayFirst: entry.sundayFirst) ? sundayColor : textColor
                 )
                 .frame(maxWidth: .infinity, alignment: .center)
 
