@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import '../../util/api_client.dart' as http;
@@ -27,8 +28,37 @@ class OnboardingRepository {
         .toList();
   }
 
+  /// 팀 목록 캐시. 마이페이지·경기일정·평점상세·프로필수정이 화면 진입마다
+  /// 각자 이 거의 안 바뀌는 목록을 새로 받던 걸 막는다.
+  (DateTime, List<Team>)? _teamsCache;
+  Future<List<Team>>? _teamsInFlight;
+  static const Duration _teamsCacheTtl = Duration(minutes: 10);
+
   /// 온보딩용 LCK 팀 목록 조회. 인증이 필요 없다.
-  Future<List<Team>> fetchTeams() async {
+  ///
+  /// 같은 요청이 이미 떠 있거나 방금 끝났으면([_teamsCacheTtl] 이내) 그 결과를
+  /// 재사용한다.
+  Future<List<Team>> fetchTeams() {
+    final cached = _teamsCache;
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _teamsCacheTtl) {
+      return Future.value(cached.$2);
+    }
+    final inFlight = _teamsInFlight;
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchTeams().then((teams) {
+      _teamsCache = (DateTime.now(), teams);
+      return teams;
+    });
+    unawaited(request.whenComplete(() {
+      if (identical(_teamsInFlight, request)) _teamsInFlight = null;
+    }).catchError((_) => const <Team>[]));
+    _teamsInFlight = request;
+    return request;
+  }
+
+  Future<List<Team>> _fetchTeams() async {
     final response = await http.get(Uri.parse(ApiConfig.onboardingTeamsUrl));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

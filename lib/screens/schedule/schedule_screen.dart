@@ -17,6 +17,7 @@ import '../subscription/subscription_screen.dart';
 import 'component/filter_sheet.dart';
 import 'component/month_picker_sheet.dart';
 import 'component/schedule_calendar.dart';
+import 'component/schedule_calendar_skeleton.dart';
 import 'component/schedule_header.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
@@ -140,15 +141,16 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   /// 캘린더 영역. 아직 데이터가 하나도 없는 상태(최초 진입·재시도 전)에서
-  /// 로딩 중이면 스피너, 조회 실패면 안내+재시도를 보여준다. 그 외(성공해서
+  /// 로딩 중이면 스켈레톤, 조회 실패면 안내+재시도를 보여준다. 그 외(성공해서
   /// 데이터가 있거나, 성공했지만 그 달에 경기가 없는 경우)엔 캘린더 그대로.
   Widget _buildCalendarArea(
     BuildContext context,
     Map<int, List<CalendarMatch>> matchesByDay,
+    double scale,
   ) {
     if (_viewModel.matchesByDay.isEmpty) {
       if (_viewModel.isLoading) {
-        return const Center(child: CircularProgressIndicator());
+        return ScheduleCalendarSkeleton(scale: scale);
       }
       if (_viewModel.error != null) {
         return LoadError(
@@ -233,7 +235,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 72 * scale + 34),
-                        child: _buildCalendarArea(context, matchesByDay),
+                        child: _buildCalendarArea(context, matchesByDay, scale),
                       ),
                     ),
                   ],

@@ -38,6 +38,9 @@ void main() {
       jwtKey: 'old-jwt',
       refreshKey: 'refresh-1',
     });
+    // AuthService.instance 는 이 파일의 모든 테스트가 공유하는 싱글턴이라,
+    // jwt 인메모리 캐시가 이전 테스트 값으로 남지 않도록 매번 지운다.
+    auth.resetJwtCacheForTesting();
   });
 
   tearDown(() => api.setApiClientForTesting(null));
@@ -140,5 +143,30 @@ void main() {
     await auth.authorizedRequest(expiredThenOk);
 
     expect(await auth.jwt, isNull);
+  });
+
+  group('jwt 인메모리 캐시', () {
+    // 기기 잠금 중 Keychain 접근성 불일치 등으로 실제로는 로그인 상태인데도
+    // 한 번의 조회가 예외 없이 null 을 반환하는 경우가 있었다(과거 -25308
+    // 오탐 로그아웃 사고, splash_screen.dart 참고). 이 null 을 캐싱해버리면
+    // 그 순간의 헛읽기가 앱 재시작 전까지 영구히 '로그아웃'으로 굳는다.
+    test('null 읽기는 캐싱하지 않는다 — 다음 읽기에서 storage 를 다시 본다', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      expect(await auth.jwt, isNull);
+
+      // storage 에 토큰이 다시 나타나도(예: 잠금 해제 후 정상 조회) 캐시가
+      // null 로 굳어 있지 않아야 이 값을 곧바로 돌려줄 수 있다.
+      FlutterSecureStorage.setMockInitialValues({jwtKey: 'recovered-jwt'});
+      expect(await auth.jwt, 'recovered-jwt');
+    });
+
+    test('non-null 읽기는 캐싱해 이후 읽기가 storage 를 다시 보지 않는다', () async {
+      expect(await auth.jwt, 'old-jwt');
+
+      // storage 값이 바뀌어도 캐시된 값을 그대로 돌려준다(로그아웃 등 실제
+      // 변경은 항상 _setCachedJwt 를 거치므로 이 경로로는 안 바뀐다).
+      FlutterSecureStorage.setMockInitialValues({jwtKey: 'other-jwt'});
+      expect(await auth.jwt, 'old-jwt');
+    });
   });
 }

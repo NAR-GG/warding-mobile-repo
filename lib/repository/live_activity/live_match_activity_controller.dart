@@ -38,23 +38,33 @@ class LiveMatchActivityController {
     try {
       // 경기 단위 구독은 인증이 필요해 비회원·로그인 전에는 조회가 실패한다.
       // 그때는 후보가 없는 것으로 보고 팀 구독 경로만 본다.
-      for (final matchId in await _subscribedMatchIds() ?? const <String>{}) {
-        if (await _isOngoing(matchId)) return;
-      }
+      final subscribedIds = await _subscribedMatchIds() ?? const <String>{};
+      if (await _anyOngoing(subscribedIds)) return;
 
       // 오늘 경기 목록은 인증이 필요 없다. 이쪽 조회까지 실패했다면 후보를
       // 다 보지 못한 것이라, 진행 중인 카드를 잘못 내리지 않도록 멈춘다.
       final todays = await _todayMatchIdsOfSubscribedTeams();
       if (todays == null) return;
-      for (final matchId in todays) {
-        if (await _isOngoing(matchId)) return;
-      }
+      // 알림 구독 경기와 겹치는 건 1단계에서 이미 확인했으니 다시 묻지 않는다.
+      final remaining = todays.where((id) => !subscribedIds.contains(id));
+      if (await _anyOngoing(remaining)) return;
 
       debugPrint('[LiveActivity] 진행 중인 경기가 없어 남은 카드를 정리');
       await _service.endAll();
     } catch (e) {
       debugPrint('[LiveActivity] 카드 정리 스캔 실패: $e');
     }
+  }
+
+  /// [matchIds] 중 하나라도 아직 카드를 유지해야 하는 상태인지, 병렬로 확인한다.
+  ///
+  /// 예전엔 순차 `for`-루프로 하나씩 물어봐서 경기가 많은 날은(최근 실측
+  /// 20개 기준 약 6초) 앱을 열 때마다 매치 상세·세트 API가 줄줄이 걸렸다.
+  /// 동시에 쏘고 기다리는 시간을 가장 느린 응답 하나로 줄인다.
+  Future<bool> _anyOngoing(Iterable<String> matchIds) async {
+    if (matchIds.isEmpty) return false;
+    final ongoing = await Future.wait(matchIds.map(_isOngoing));
+    return ongoing.any((v) => v);
   }
 
   /// 해당 경기가 아직 카드를 유지해야 하는 상태인지.

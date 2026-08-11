@@ -98,14 +98,19 @@ class MypageViewModel extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     _notify();
+    // 리뷰 건수는 프로필·팀 로딩과 독립적이라 처음부터 같이 띄운다.
+    final reviewCountFuture = _loadReviewCount();
     try {
+      // teamId 를 알기 전에도 팀 목록은 미리 받아둔다 — fetchMe 와 겹쳐서
+      // 왕복 한 번을 아낀다. (teamId 가 null 이면 결과는 버려진다.)
+      final teamsFuture = _onboarding.fetchTeams();
       final me = await _auth.fetchMe();
       _profile = me;
       _notify(); // 닉네임 등은 먼저 보여 준다.
 
       final teamId = me.favoriteTeamId;
+      final teams = await teamsFuture;
       if (teamId != null) {
-        final teams = await _onboarding.fetchTeams();
         for (final t in teams) {
           if (t.id == teamId) {
             _favoriteTeam = t;
@@ -122,7 +127,7 @@ class MypageViewModel extends ChangeNotifier {
       _isLoading = false;
       _notify();
     }
-    await _loadReviewCount();
+    await reviewCountFuture;
   }
 
   /// 내 리뷰/평점 누적 건수만 가볍게 조회한다(첫 페이지 메타의 totalElements).

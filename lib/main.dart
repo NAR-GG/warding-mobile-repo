@@ -54,17 +54,29 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+/// Firebase 초기화 → 백그라운드 메시지 핸들러 등록 → FCM 포그라운드 준비.
+/// 셋이 서로 순서 의존이 있어(핸들러 등록·initMessaging 모두 Firebase 초기화가
+/// 먼저 끝나야 함) 하나로 묶어, [main] 에서 다른 무관한 초기화와 병렬로 돌린다.
+Future<void> _initFirebaseMessaging() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   // 포그라운드 알림 표시·알림 탭 핸들링을 준비한다 (토큰 등록은 로그인 후).
   await FcmService.instance.initMessaging();
-  await AppLanguage.instance.load();
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Firebase/FCM 준비, 언어 설정 로드, 홈 위젯 App Group 설정은 서로 의존하지
+  // 않는데 예전엔 순서대로 await 해서 앱을 켤 때마다 첫 프레임이 그만큼
+  // 늦어졌다. 동시에 돌려 가장 느린 하나의 시간만 걸리게 한다.
+  await Future.wait([
+    _initFirebaseMessaging(),
+    AppLanguage.instance.load(),
+    HomeWidgetService.init(),
+  ]);
   KakaoSdk.init(nativeAppKey: ApiConfig.kakaoNativeAppKey);
-  await HomeWidgetService.init();
   // 백그라운드 위젯 갱신 콜백 등록
   HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback);
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)

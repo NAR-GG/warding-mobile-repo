@@ -23,6 +23,7 @@ import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import 'component/date_filter_chip.dart';
+import 'component/notification_card_skeleton.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/rank_start_notification.dart';
@@ -54,8 +55,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   @override
   void initState() {
     super.initState();
+    debugPrint('[Subscription][perf] 화면 진입 ${DateTime.now()}');
     WidgetsBinding.instance.addObserver(this);
     _loadPlayers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[Subscription][perf] 첫 프레임 ${DateTime.now()}');
+    });
   }
 
   /// 구독한 선수 목록을 불러와 필터 칩/시트에 반영한다.
@@ -561,8 +566,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       builder: (context, _) {
                         final vm = _feedViewModel;
                         if (vm.isLoading && vm.notifications.isEmpty) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
+                          return ListView.builder(
+                            padding: EdgeInsets.only(bottom: 120 * scale),
+                            itemCount: 6,
+                            itemBuilder: (_, _) =>
+                                NotificationCardSkeleton(scale: scale),
                           );
                         }
                         if (vm.error != null && vm.notifications.isEmpty) {

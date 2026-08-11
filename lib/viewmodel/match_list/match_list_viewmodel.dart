@@ -65,7 +65,14 @@ class MatchListViewModel extends ChangeNotifier {
         _sortOrderIndex = sortOrder;
       }
     }
-    await _loadLeagues();
+    // 리그 목록(카테고리 트리 + 필터 옵션)과 경기 리스트 조회는 서로 다른
+    // API라 순서대로 기다릴 필요가 없다. 리그 선택은 이미 위에서 정해졌으니
+    // (복원값 또는 기본 '전체') 리그 목록 응답을 기다리지 않고 동시에 돈다.
+    // fetchTree 가 로그도 없이 0.9~2.7초씩 걸려(2026-08-12 실측) 순차로 두면
+    // 경기 리스트가 그 시간만큼 이유 없이 늦게 떴었다.
+    final leaguesDone = _loadLeagues(reloadAfter: false);
+    await _reloadSchedule();
+    await leaguesDone;
   }
 
   /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
@@ -90,7 +97,13 @@ class MatchListViewModel extends ChangeNotifier {
   static const String allLeagueCode = 'ALL';
 
   /// 커서 페이지 한 번에 받는 경기 수.
-  static const int _pageSize = 20;
+  ///
+  /// 서버가 실제로 내려주는 상한이 50이다(그 이상 요청해도 50으로 잘림,
+  /// 2026-08-12 실측). '전체' 리그는 오늘까지 캐치업하는 데 페이지가 여러 장
+  /// 필요한데, 커서 체인이라 병렬화가 안 돼 페이지 수만큼 순차 왕복이
+  /// 그대로 로딩 시간이 된다. 서버 상한까지 크게 받아 왕복 횟수를 줄인다
+  /// (20 기준 9왕복 → 50 기준 4왕복, 2026-08 ALL 실측).
+  static const int _pageSize = 50;
 
   /// 한 번의 reload/loadMore 호출에서 최소로 모아야 하는 매치 수.
   /// 클라 팀 필터 결과가 적어 화면이 안 차고 스크롤이 안 트리거되는 걸 방지한다.
@@ -200,7 +213,9 @@ class MatchListViewModel extends ChangeNotifier {
   String? _selectedLeague = allLeagueLabel;
   String? get selectedLeague => _selectedLeague;
 
-  bool _loadingLeagues = false;
+  // 생성 직후 첫 프레임(비동기 초기화가 끝나기 전)에도 로딩 중으로 보여야
+  // '경기가 없어요' 빈 상태 문구가 스켈레톤보다 먼저 잠깐 보이지 않는다.
+  bool _loadingLeagues = true;
   bool get loadingLeagues => _loadingLeagues;
 
   List<String> _teams = const [allTeamsLabel];
@@ -224,11 +239,15 @@ class MatchListViewModel extends ChangeNotifier {
   bool _hasMore = true;
   bool get hasMore => _hasMore;
 
-  bool _loadingMatches = false;
+  bool _loadingMatches = true;
   bool get loadingMatches => _loadingMatches;
 
   bool _loadingMore = false;
   bool get loadingMore => _loadingMore;
+
+  /// 마지막 [_reloadSchedule] 실패 시 에러. 성공하면 null.
+  Object? _error;
+  Object? get error => _error;
 
   /// [_reloadSchedule] 이 새로 시작할 때마다 증가. View 는 이 값이 바뀔 때마다
   /// '오늘로 스크롤'을 다시 수행해, 필터 변경으로 재조회될 때도 오늘 날짜로 이동한다.
@@ -296,9 +315,16 @@ class MatchListViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadLeagues() async {
+  /// [reloadAfter] 를 false 로 주면(현재 [_init] 전용) 리그 선택이 그대로
+  /// 유지된 경우엔 끝에서 다시 [_reloadSchedule] 을 부르지 않는다 — 호출자가
+  /// 이미 같은 유효 리그 코드로 경기 조회를 병렬로 돌리고 있다고 가정한다.
+  /// 저장된 리그가 서버 목록에 없어 여기서 기본값으로 바뀐 경우(드묾)엔
+  /// 그 값으로 다시 조회한다. 다른 호출자([selectSeason])는 항상 true 로
+  /// 불러 기존과 동일하게 끝에서 무조건 다시 조회한다.
+  Future<void> _loadLeagues({bool reloadAfter = true}) async {
     _loadingLeagues = true;
     _notify();
+    final previousLeagueCode = _effectiveLeagueCode(_selectedLeague);
     try {
       final year = int.parse(_selectedSeason);
       final tree = await _categoryRepository.fetchTree(year: year);
@@ -324,6 +350,10 @@ class MatchListViewModel extends ChangeNotifier {
     } finally {
       _loadingLeagues = false;
       _notify();
+    }
+    if (!reloadAfter &&
+        _effectiveLeagueCode(_selectedLeague) == previousLeagueCode) {
+      return;
     }
     await _reloadSchedule();
   }
@@ -377,6 +407,7 @@ class MatchListViewModel extends ChangeNotifier {
   Future<void> _reloadSchedule() async {
     _scheduleVersion++;
     _loadingMatches = true;
+    _error = null;
     _schedule.clear();
     _cursor = null;
     _hasMore = true;
@@ -414,27 +445,32 @@ class MatchListViewModel extends ChangeNotifier {
         _loadingMore = false;
         _notify();
       }
-    } catch (_) {
+    } catch (e) {
       _hasMore = false;
       _loadingMatches = false;
       _loadingMore = false;
+      _error = e;
+      debugPrint('[MatchList] 경기 조회 에러: $e');
       _notify();
     }
   }
 
+  /// 경기 조회 실패 후 '다시 시도' 버튼에서 호출한다.
+  Future<void> retryLoadMatches() => _reloadSchedule();
+
+  /// 서버에 보낼 리그 코드. '전체' 선택(또는 미선택)이면 'ALL'.
+  String _effectiveLeagueCode(String? league) =>
+      (league == null || league.isEmpty || league == allLeagueLabel)
+          ? allLeagueCode
+          : league;
+
   /// 현재 커서로 한 페이지를 받아 [_schedule] 에 날짜별로 누적한다.
   /// 커서·hasNext 를 갱신하고, 누적된(필터 통과) 매치 수를 반환한다.
   Future<int> _fetchNextPage() async {
-    final league = _selectedLeague;
-    // '전체' 선택(또는 미선택)이면 서버에 'ALL' 을 보내 모든 리그를 조회한다.
-    final leagueParam =
-        (league == null || league.isEmpty || league == allLeagueLabel)
-        ? allLeagueCode
-        : league;
     final page = await _scheduleRepository.fetchMatches(
       cursor: _cursor,
       size: _pageSize,
-      league: leagueParam,
+      league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
       // '오늘 이후' 는 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
       // 다른 정렬은 from 없이 최신→과거 순 그대로 받는다.
