@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
+import '../../components/app_bottom_sheet.dart';
 import '../../components/nar_detail_header.dart';
+import '../../components/nar_dropdown.dart';
 import '../../components/nar_search_bar.dart';
 import '../../components/scroll_to_top_button.dart';
 import '../../model/player_subscription.dart';
@@ -49,6 +51,51 @@ class _SubscriptionSettingsScreenState
     final hasTeams = _viewModel.availableTeams.any((t) => _teamMatches(t, q));
     // 선수 결과가 있으면 '선수', 없고 팀만 있으면 '팀' 탭으로.
     setState(() => _allTab = hasPlayers ? 1 : (hasTeams ? 0 : 1));
+  }
+
+  /// 선수 정렬 옵션 선택 바텀시트. 경기리스트 정렬(오래된순/최신순, [NarDropdown] +
+  /// [showAppBottomSheet]) 과 동일한 패턴을 재사용한다.
+  Future<void> _showPlayerSortSheet() async {
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    final l = AppLocalizations.of(context)!;
+    final current = _viewModel.sortMode;
+    final options = {
+      PlayerSortMode.position: l.playerSortByPosition,
+      PlayerSortMode.name: l.playerSortByName,
+    };
+    final selected = await showAppBottomSheet<PlayerSortMode>(
+      context: context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final entry in options.entries)
+            InkWell(
+              onTap: () => Navigator.of(context).pop(entry.key),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8 * scale,
+                  vertical: 14 * scale,
+                ),
+                child: Text(
+                  entry.value,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight:
+                        entry.key == current ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 16 * scale,
+                    color: entry.key == current
+                        ? AppColors.narText
+                        : AppColors.narText2,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (selected != null) _viewModel.setSortMode(selected);
   }
 
   @override
@@ -146,6 +193,21 @@ class _SubscriptionSettingsScreenState
               },
               playersLoading: _viewModel.loadingAvailablePlayers,
               playersLoadingMore: _viewModel.loadingMorePlayers,
+              // 정렬 모드는 뷰모델 하나를 공유한다 — 드롭다운은 선수 탭에서만 노출된다.
+              // 경기리스트 정렬 필터와 동일하게 기본(rect) variant를 쓴다.
+              // NarDropdown(rect)의 높이(38*scale)가 [AllSubscriptionSection]의 탭바 행
+              // 높이(38*scale)와 정확히 같아 Center 만으로 이미 꽉 채워 정렬된다 — 여기서
+              // 별도 오프셋을 주면 오히려 박스 밖으로 밀려나 정렬이 어긋난다.
+              playerSortTrailing: SizedBox(
+                width: 110 * scale,
+                child: NarDropdown(
+                  value: _viewModel.sortMode == PlayerSortMode.position
+                      ? l.playerSortByPosition
+                      : l.playerSortByName,
+                  onTap: _showPlayerSortSheet,
+                  scale: scale,
+                ),
+              ),
               scale: scale,
             );
 

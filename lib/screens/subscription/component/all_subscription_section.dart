@@ -24,6 +24,7 @@ class AllSubscriptionSection extends StatelessWidget {
     this.onPlayerToggle,
     this.playersLoading = false,
     this.playersLoadingMore = false,
+    this.playerSortTrailing,
     this.scale = 1,
   });
 
@@ -51,6 +52,10 @@ class AllSubscriptionSection extends StatelessWidget {
   /// 선수 다음 페이지를 이어 받는 중인지 (목록 하단 스피너 표시).
   final bool playersLoadingMore;
 
+  /// 탭바 오른쪽에 노출할 위젯(정렬 드롭다운 등). 선수 탭에서만 보인다 — 팀은
+  /// 정렬 축이 없으므로 팀 탭에서는 숨긴다.
+  final Widget? playerSortTrailing;
+
   /// 비율 스케일. 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
 
@@ -66,12 +71,39 @@ class AllSubscriptionSection extends StatelessWidget {
       children: [
         SubscribedSectionHeader(label: l.fullList, scale: scale),
         SizedBox(height: 8 * scale),
-        NarTabBar(
-          variant: NarTabBarVariant.compact,
-          tabs: [l.tabTeam, l.tabPlayer],
-          selectedIndex: selectedTab,
-          onChanged: onTabChanged,
-          scale: scale,
+        // 탭바(높이 ~31)와 드롭다운(rect variant, 높이 38) 실제 높이가 달라 Row 기본
+        // 정렬만으론 어긋나 보인다 — [NarDetailHeader] 와 동일하게 전체를 한 높이로
+        // 감싸고 Positioned(top:0, bottom:0) + Center 로 각각 세로 중앙 정렬한다.
+        // 행 높이를 드롭다운(38*scale)과 똑같이 주면 Center 가 채울 여백이 없어 드롭다운이
+        // 위아래 여백 없이 행에 꽉 끼어 보인다 — 드롭다운도 진짜 여백을 두고 뜨도록 행
+        // 높이를 드롭다운보다 12*scale 더 크게 잡는다.
+        SizedBox(
+          height: 50 * scale,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: NarTabBar(
+                    variant: NarTabBarVariant.compact,
+                    tabs: [l.tabTeam, l.tabPlayer],
+                    selectedIndex: selectedTab,
+                    onChanged: onTabChanged,
+                    scale: scale,
+                  ),
+                ),
+              ),
+              if (!isTeams && playerSortTrailing != null)
+                Positioned(
+                  right: 20 * scale,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(child: playerSortTrailing!),
+                ),
+            ],
+          ),
         ),
         for (var i = 0; i < items.length; i++)
           SubscribedItemRow(
