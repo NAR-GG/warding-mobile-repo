@@ -146,7 +146,7 @@ class LargeCalendarRemoteViewsFactory(
 
             // 오늘 여부
             val isToday = isCurrentMonth && dayNum == todayDay
-            val isSunday = dow == 6
+            val isSunday = dow == data.sundayColumn
 
             // 날짜 숫자 색상
             val textColor = when {
