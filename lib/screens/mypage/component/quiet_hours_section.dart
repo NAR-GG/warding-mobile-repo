@@ -8,9 +8,7 @@ import 'quiet_hours_time_sheet.dart';
 
 /// 마이페이지 — 알림 잠자기 섹션 (양옆 20 패딩).
 ///
-/// 구독 팀 알림 설정 **위**에 온다. 잠자기는 모든 알림에 걸리는 전역 설정이라
-/// 팀별 개별 설정보다 앞에 오는 게 맞고, 팀 카드는 구독 팀 수만큼 길어져서
-/// 그 아래 두면 알림을 많이 받는 유저일수록 안 보인다.
+/// 구독 팀 알림 설정 **아래**에 온다.
 class QuietHoursSection extends StatefulWidget {
   const QuietHoursSection({super.key, this.scale = 1});
 

@@ -118,12 +118,13 @@ class NarTabBar extends StatelessWidget {
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => onChanged(i),
-              // IntrinsicWidth + crossAxisAlignment.stretch 로 하단 stroke 가
-              // 텍스트(+ 좌우 패딩 12) 폭에 딱 맞게 늘어나도록.
+              // IntrinsicWidth 로 하단 stroke 가 텍스트(+ 좌우 패딩 12) 폭에 딱 맞게
+              // 늘어나도록. stroke 는 Stack 으로 텍스트 블록 바깥에 겹쳐 그려 레이아웃
+              // 높이에 포함시키지 않는다 — Column 으로 쌓으면 이 위젯 전체를 다른 곳에서
+              // 세로 중앙 정렬할 때 stroke 자리(2*scale)만큼 텍스트가 중심보다 위로 밀린다.
               child: IntrinsicWidth(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -146,11 +147,16 @@ class NarTabBar extends StatelessWidget {
                     ),
                     // 활성 stroke. 비선택 탭도 같은 자리에 투명 컨테이너로 둬
                     // 선택/비선택 간 텍스트 위치가 흔들리지 않도록 한다.
-                    Container(
-                      height: 2 * scale,
-                      decoration: i == selectedIndex
-                          ? const BoxDecoration(gradient: AppColors.narBg)
-                          : null,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: -2 * scale,
+                      child: Container(
+                        height: 2 * scale,
+                        decoration: i == selectedIndex
+                            ? const BoxDecoration(gradient: AppColors.narBg)
+                            : null,
+                      ),
                     ),
                   ],
                 ),

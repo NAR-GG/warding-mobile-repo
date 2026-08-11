@@ -189,16 +189,13 @@ class _MypageScreenState extends State<MypageScreen> {
                           : const SizedBox.shrink(),
                     ),
                     SizedBox(height: 20 * scale),
-                    // 잠자기는 모든 알림에 걸리는 전역 설정이라 팀별 개별 설정보다 앞에 온다.
-                    // 팀 카드는 구독 팀 수만큼 길어져서 그 아래 두면 알림을 많이 받는
-                    // 유저(= 이 기능이 필요한 유저)일수록 스크롤 없이는 못 본다.
-                    QuietHoursSection(scale: scale),
-                    SizedBox(height: 16 * scale),
                     SubscriptionAlarmSection(
                       key: _subscriptionAlarmKey,
                       scale: scale,
                       onManageTap: _goToSubscriptionSettings,
                     ),
+                    SizedBox(height: 16 * scale),
+                    QuietHoursSection(scale: scale),
                     SizedBox(height: 16 * scale),
                     ListenableBuilder(
                       listenable: _viewModel,

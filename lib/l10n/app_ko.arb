@@ -190,6 +190,9 @@
   "playerSelect": "선수 선택",
   "subscribedPlayerList": "구독한 선수",
 
+  "playerSortByPosition": "포지션순",
+  "playerSortByName": "이름순",
+
   "subscribing": "구독중",
   "subscribe": "구독",
 
@@ -448,8 +451,8 @@
   "updateAvailableMessage": "새로운 버전이 출시되었습니다.\n최신 버전으로 업데이트해주세요.",
   "updateNow": "업데이트",
 
-  "quietHours": "알림 잠자기",
-  "quietHoursUse": "잠자기 사용",
+  "quietHours": "방해 금지 모드 설정",
+  "quietHoursUse": "방해 금지 모드 사용",
   "quietHoursStart": "시작",
   "quietHoursEnd": "종료",
   "quietHoursOffHint": "사용하면 정한 시간엔 알림이 소리 없이 알림함에만 쌓입니다.",

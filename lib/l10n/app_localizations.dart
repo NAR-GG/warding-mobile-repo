@@ -752,6 +752,18 @@ abstract class AppLocalizations {
   /// **'구독한 선수'**
   String get subscribedPlayerList;
 
+  /// No description provided for @playerSortByPosition.
+  ///
+  /// In ko, this message translates to:
+  /// **'포지션순'**
+  String get playerSortByPosition;
+
+  /// No description provided for @playerSortByName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름순'**
+  String get playerSortByName;
+
   /// No description provided for @subscribing.
   ///
   /// In ko, this message translates to:
@@ -1678,13 +1690,13 @@ abstract class AppLocalizations {
   /// No description provided for @quietHours.
   ///
   /// In ko, this message translates to:
-  /// **'알림 잠자기'**
+  /// **'방해 금지 모드 설정'**
   String get quietHours;
 
   /// No description provided for @quietHoursUse.
   ///
   /// In ko, this message translates to:
-  /// **'잠자기 사용'**
+  /// **'방해 금지 모드 사용'**
   String get quietHoursUse;
 
   /// No description provided for @quietHoursStart.
