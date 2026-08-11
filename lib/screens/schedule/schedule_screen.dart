@@ -90,6 +90,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         initialMonth: _viewModel.displayMonth,
         filterLeagues: _viewModel.filterLeagues,
         filterTeamIds: _viewModel.filterTeamIds,
+        weekStart: _viewModel.weekStart,
       ),
     );
     if (picked != null) {
