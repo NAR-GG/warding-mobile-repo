@@ -163,6 +163,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       onMonthShift: _viewModel.shiftMonth,
       selectedDate: _viewModel.selectedDate,
       onDateTap: _openDay,
+      weekStart: _viewModel.weekStart,
     );
   }
 

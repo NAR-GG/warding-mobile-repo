@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../model/calendar_week_start.dart';
 import 'calendar_day_cell.dart';
 import 'calendar_match.dart';
 import 'calendar_today_badge.dart';
@@ -17,10 +18,12 @@ class CalendarMonthGrid extends StatelessWidget {
     required this.matchesOf,
     this.selectedDate,
     this.onDateTap,
+    this.weekStart = CalendarWeekStart.monday,
   });
 
   final DateTime month;
   final double scale;
+  final CalendarWeekStart weekStart;
 
   /// 특정 날짜의 경기 목록을 반환한다.
   final List<CalendarMatch> Function(DateTime date) matchesOf;
@@ -33,8 +36,8 @@ class CalendarMonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 그리드 시작일이 속한 주의 월요일까지 거슬러 올라갈 일수.
-    final leadingDays = month.weekday - DateTime.monday; // 월요일이면 0
+    // 그리드 시작일이 속한 주에서, 설정된 시작 요일까지 거슬러 올라갈 일수.
+    final leadingDays = weekStart.leadingDays(month);
     // 이번 달 일수 (다음 달 0일 = 이번 달 말일).
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     // 앞쪽 빈 칸 + 이번 달 일수를 7로 올림 → 필요한 주 수.
