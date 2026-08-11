@@ -88,7 +88,10 @@ class CalendarWeekStartPreferenceRepository {
 - `lib/viewmodel/mypage/calendar_week_start_viewmodel.dart` — `CalendarWeekStartViewModel(ChangeNotifier)`.
   생성자에서 `repository.cachedValue ?? CalendarWeekStart.monday`로 동기 초기화 후 `load()`로 재검증(스포방지
   패턴). `setWeekStart(value)`는 즉시 `notifyListeners()` 후 `repository.save(value)` + 위젯 동기화를 호출한다.
-  **로그인 여부와 무관하게 항상 동작** — 서버 저장이 아닌 기기 로컬 설정이라 QuietHours와 달리 게스트 락이 없다.
+  ViewModel 자체는 로그인 여부를 확인하지 않지만, 화면은 `QuietHoursSection`과 마찬가지로 마이페이지
+  전체를 덮는 `GuestLockOverlay` 안에 놓인다 — 최종 리뷰에서 게스트 접근 허용 여부를 확인한 결과, 다른
+  마이페이지 설정과 동일하게 로그인해야 사용 가능하도록 유지하기로 결정했다(초안의 "게스트 락 없음"
+  방침을 뒤집음).
 - `lib/screens/mypage/component/calendar_week_start_section.dart` — `QuietHoursSection`과 같은 카드 스타일
   (제목 텍스트 + `narDark600` 카드), 카드 안에 `_Row` 하나: 라벨 "캘린더 시작 요일", 트레일링은 quiet hours의
   `_TimeValue`와 같은 값+chevron 칩("월요일"/"일요일"), 탭하면 바텀시트 오픈.

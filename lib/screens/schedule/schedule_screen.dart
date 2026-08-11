@@ -91,6 +91,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         initialMonth: _viewModel.displayMonth,
         filterLeagues: _viewModel.filterLeagues,
         filterTeamIds: _viewModel.filterTeamIds,
+        weekStart: _viewModel.weekStart,
       ),
     );
     if (picked != null) {
@@ -165,6 +166,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       onMonthShift: _viewModel.shiftMonth,
       selectedDate: _viewModel.selectedDate,
       onDateTap: _openDay,
+      weekStart: _viewModel.weekStart,
     );
   }
 

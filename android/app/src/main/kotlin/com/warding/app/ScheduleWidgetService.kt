@@ -134,7 +134,7 @@ class ScheduleRemoteViewsFactory(
 
             val isToday = dayNum == todayDay
             val hasMatches = data.days.containsKey(dayNum) && data.days[dayNum]!!.isNotEmpty()
-            val isSunday = dow == 6
+            val isSunday = dow == data.sundayColumn
 
             if (isToday) {
                 // Today: red text + background highlight (same in both modes)

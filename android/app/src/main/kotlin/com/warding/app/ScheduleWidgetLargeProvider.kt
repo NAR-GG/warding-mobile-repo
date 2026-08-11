@@ -109,15 +109,16 @@ class ScheduleWidgetLargeProvider : AppWidgetProvider() {
             views.setImageViewResource(R.id.large_next_btn,
                 if (isDark) R.drawable.ic_chevron_right else R.drawable.ic_chevron_right_dark)
 
-            // 요일 헤더 색상
-            val largeWdIds = intArrayOf(
-                R.id.large_wd_mon, R.id.large_wd_tue, R.id.large_wd_wed,
-                R.id.large_wd_thu, R.id.large_wd_fri, R.id.large_wd_sat
+            // 요일 헤더 — 텍스트 순서와 색을 설정에 맞춰 함께 갱신한다.
+            val allLargeWdIds = intArrayOf(
+                R.id.large_wd_mon, R.id.large_wd_tue, R.id.large_wd_wed, R.id.large_wd_thu,
+                R.id.large_wd_fri, R.id.large_wd_sat, R.id.large_wd_sun
             )
-            for (id in largeWdIds) {
-                views.setTextColor(id, weekdayHeaderColor)
+            val orderedLabels = orderedWeekdayLabels(calData.weekStart)
+            for (i in allLargeWdIds.indices) {
+                views.setTextViewText(allLargeWdIds[i], orderedLabels[i])
+                views.setTextColor(allLargeWdIds[i], if (i == calData.sundayColumn) sundayColor else weekdayHeaderColor)
             }
-            views.setTextColor(R.id.large_wd_sun, sundayColor)
 
             // ListView RemoteAdapter 설정
             val intent = Intent(context, ScheduleWidgetLargeService::class.java)

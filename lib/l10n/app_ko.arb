@@ -469,5 +469,9 @@
   "quietHoursSaveFailed": "알림 잠자기 설정을 저장하지 못했습니다.",
   "quietHoursAm": "오전",
   "quietHoursPm": "오후",
-  "quietHoursSave": "저장"
+  "quietHoursSave": "저장",
+  "calendarWeekStartSetting": "캘린더 시작 요일",
+  "calendarWeekStartRowLabel": "시작 요일",
+  "calendarWeekStartMonday": "월요일",
+  "calendarWeekStartSunday": "일요일"
 }

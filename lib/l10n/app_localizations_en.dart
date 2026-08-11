@@ -919,4 +919,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quietHoursSave => 'Save';
+
+  @override
+  String get calendarWeekStartSetting => 'Calendar start day';
+
+  @override
+  String get calendarWeekStartRowLabel => 'Starts on';
+
+  @override
+  String get calendarWeekStartMonday => 'Monday';
+
+  @override
+  String get calendarWeekStartSunday => 'Sunday';
 }

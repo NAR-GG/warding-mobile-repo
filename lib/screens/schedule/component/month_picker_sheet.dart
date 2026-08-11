@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/calendar_week_start.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/schedule/month_picker_viewmodel.dart';
 
@@ -17,6 +18,7 @@ class MonthPickerSheet extends StatefulWidget {
     required this.initialMonth,
     this.filterLeagues = const ['ALL'],
     this.filterTeamIds,
+    this.weekStart = CalendarWeekStart.monday,
   });
 
   /// 모달을 열 때 처음 보여줄 월.
@@ -25,6 +27,9 @@ class MonthPickerSheet extends StatefulWidget {
   /// 메인 화면의 리그·팀 필터 — 점 표시가 본문 캘린더와 같은 조건으로 조회되게 한다.
   final List<String> filterLeagues;
   final List<int>? filterTeamIds;
+
+  /// 캘린더 시작 요일 설정. 요일 행·날짜 그리드에 그대로 전달한다.
+  final CalendarWeekStart weekStart;
 
   @override
   State<MonthPickerSheet> createState() => _MonthPickerSheetState();
@@ -96,11 +101,12 @@ class _MonthPickerSheetState extends State<MonthPickerSheet> {
               ],
             ),
             SizedBox(height: 24 * scale), // 월 네비게이터 ↔ 요일 행 간격 24
-            _WeekdayRow(scale: scale),
+            _WeekdayRow(scale: scale, weekStart: widget.weekStart),
             _DayGrid(
               month: _viewModel.month,
               matchDays: _viewModel.matchDays,
               scale: scale,
+              weekStart: widget.weekStart,
               onDaySelected: _selectDay,
             ),
           ],
@@ -132,22 +138,24 @@ class _ArrowButton extends StatelessWidget {
   }
 }
 
-/// 요일 행 — 월·화·수·목·금·토·일.
+/// 요일 행 — [weekStart]로 설정한 시작 요일부터 순서대로 표시한다
+/// (기본값 월·화·수·목·금·토·일).
 ///
 /// 좌우를 31.5 들여쓰고, 높이 32 안에서 7칸을 균등 분할한다.
 /// 칸마다 좌우 12.5 패딩을 주고 텍스트를 가운데 정렬한다.
 class _WeekdayRow extends StatelessWidget {
-  const _WeekdayRow({required this.scale});
+  const _WeekdayRow({required this.scale, required this.weekStart});
 
   final double scale;
+  final CalendarWeekStart weekStart;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final weekdays = [
+    final weekdays = weekStart.orderedWeekdayLabels([
       l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
       l.weekdayFri, l.weekdaySat, l.weekdaySun,
-    ];
+    ]);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 31.5 * scale),
       child: SizedBox(
@@ -181,7 +189,7 @@ class _WeekdayRow extends StatelessWidget {
   }
 }
 
-/// 날짜 그리드 — 월요일 시작, 한 칸 40×40.
+/// 날짜 그리드 — [weekStart]로 설정한 요일부터 시작, 한 칸 40×40.
 ///
 /// 이번 달 날짜만 그리고 이전·다음 달 자리는 빈 칸으로 둔다.
 /// 요일 행과 세로가 맞도록 좌우를 똑같이 31.5 들여쓴다.
@@ -190,6 +198,7 @@ class _DayGrid extends StatelessWidget {
     required this.month,
     required this.matchDays,
     required this.scale,
+    required this.weekStart,
     required this.onDaySelected,
   });
 
@@ -198,15 +207,16 @@ class _DayGrid extends StatelessWidget {
   /// 경기가 있는 '일(day)' 집합.
   final Set<int> matchDays;
   final double scale;
+  final CalendarWeekStart weekStart;
 
   /// 날짜 칸 탭 콜백. 인자는 탭한 '일(day)'.
   final ValueChanged<int> onDaySelected;
 
   @override
   Widget build(BuildContext context) {
-    // 1일이 속한 주의 월요일까지 거슬러 올라갈 빈 칸 수.
     final firstDay = DateTime(month.year, month.month);
-    final leadingDays = firstDay.weekday - DateTime.monday; // 월요일이면 0
+    // 1일이 속한 주에서, 설정된 시작 요일까지 거슬러 올라갈 빈 칸 수.
+    final leadingDays = weekStart.leadingDays(firstDay);
     // 이번 달 일수 (다음 달 0일 = 이번 달 말일).
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final weekCount = ((leadingDays + daysInMonth) / 7).ceil();

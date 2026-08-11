@@ -4,12 +4,14 @@ import 'package:flutter/foundation.dart';
 
 import '../../l10n/app_strings.dart';
 
+import '../../model/calendar_week_start.dart';
 import '../../model/match_calendar_day.dart';
 import '../../model/notice.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/notice/notice_repository.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
+import '../../repository/preference/calendar_week_start_preference_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
 import '../../repository/preference/notice_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
@@ -29,6 +31,7 @@ class ScheduleViewModel extends ChangeNotifier {
     OnboardingRepository? onboarding,
     NoticeRepository? notices,
     NoticePreferenceRepository? noticePreferences,
+    CalendarWeekStartPreferenceRepository? weekStartPreferences,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
        _repository = repository ?? ScheduleRepository.instance,
        _teamPreferences =
@@ -39,10 +42,14 @@ class ScheduleViewModel extends ChangeNotifier {
        _onboarding = onboarding ?? OnboardingRepository.instance,
        _notices = notices ?? NoticeRepository.instance,
        _noticePreferences =
-           noticePreferences ?? NoticePreferenceRepository.instance {
+           noticePreferences ?? NoticePreferenceRepository.instance,
+       _weekStartPreferences = weekStartPreferences ??
+           CalendarWeekStartPreferenceRepository.instance {
+    _weekStart = _weekStartPreferences.cachedValue ?? CalendarWeekStart.monday;
     _init();
     _loadPreferredTeam();
     _loadPromotedNotice();
+    _restoreWeekStart();
   }
 
   final ScheduleRepository _repository;
@@ -52,6 +59,7 @@ class ScheduleViewModel extends ChangeNotifier {
   final OnboardingRepository _onboarding;
   final NoticeRepository _notices;
   final NoticePreferenceRepository _noticePreferences;
+  final CalendarWeekStartPreferenceRepository _weekStartPreferences;
 
   // ── 캘린더 상단 공지 띠배너 ─────────────────────────────────────
 
@@ -126,6 +134,20 @@ class ScheduleViewModel extends ChangeNotifier {
   /// 헤더에 표시할 'yyyy.MM' 라벨. 예: '2026.04'.
   String get monthLabel =>
       '${_displayMonth.year}.${_displayMonth.month.toString().padLeft(2, '0')}';
+
+  CalendarWeekStart _weekStart = CalendarWeekStart.monday;
+
+  /// 캘린더 시작 요일 설정. 마이페이지에서 바꾼 값을, 탭 전환으로 이 ViewModel이
+  /// 새로 만들어질 때 캐시로 즉시 반영한다(스포방지 설정과 동일한 보장).
+  CalendarWeekStart get weekStart => _weekStart;
+
+  /// 저장된 캘린더 시작 요일 설정을 복원한다. 생성자에서 캐시로 이미 맞춘 값과 같으면 알리지 않는다.
+  Future<void> _restoreWeekStart() async {
+    final saved = await _weekStartPreferences.load();
+    if (_disposed || saved == _weekStart) return;
+    _weekStart = saved;
+    notifyListeners();
+  }
 
   /// 현재 월의 경기 캘린더 — 일(day) → 그 날 칸에 표시할 경기 칩 목록.
   Map<int, List<CalendarMatchBrief>> _matchesByDay = const {};

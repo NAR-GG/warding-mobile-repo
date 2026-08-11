@@ -15,6 +15,7 @@ import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
+import 'component/calendar_week_start_section.dart';
 import 'component/language_setting_sheet.dart';
 import 'component/quiet_hours_section.dart';
 import 'component/subscription_alarm_section.dart';
@@ -196,6 +197,8 @@ class _MypageScreenState extends State<MypageScreen> {
                     ),
                     SizedBox(height: 16 * scale),
                     QuietHoursSection(scale: scale),
+                    SizedBox(height: 16 * scale),
+                    CalendarWeekStartSection(scale: scale),
                     SizedBox(height: 16 * scale),
                     ListenableBuilder(
                       listenable: _viewModel,

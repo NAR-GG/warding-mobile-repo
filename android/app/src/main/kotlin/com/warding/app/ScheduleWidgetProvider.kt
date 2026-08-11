@@ -56,6 +56,9 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             return context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
         }
 
+        private fun loadWeekStart(context: Context): String =
+            getPrefs(context).getString("week_start", "monday") ?: "monday"
+
         fun isDarkMode(context: Context): Boolean {
             val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
             return nightMode == Configuration.UI_MODE_NIGHT_YES
@@ -93,12 +96,18 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.today_date_label, dateLabel)
             views.setTextColor(R.id.today_date_label, defaultTextColor)
 
-            // 미니 캘린더 요일 헤더 색상
-            val wdIds = intArrayOf(R.id.wd_mon, R.id.wd_tue, R.id.wd_wed, R.id.wd_thu, R.id.wd_fri, R.id.wd_sat)
-            for (id in wdIds) {
-                views.setTextColor(id, weekdayHeaderColor)
+            // 미니 캘린더 요일 헤더 — 텍스트 순서와 색을 설정에 맞춰 함께 갱신한다.
+            val weekStart = loadWeekStart(context)
+            val allWdIds = intArrayOf(
+                R.id.wd_mon, R.id.wd_tue, R.id.wd_wed, R.id.wd_thu,
+                R.id.wd_fri, R.id.wd_sat, R.id.wd_sun
+            )
+            val orderedLabels = orderedWeekdayLabels(weekStart)
+            val sundayCol = if (weekStart == "sunday") 0 else 6
+            for (i in allWdIds.indices) {
+                views.setTextViewText(allWdIds[i], orderedLabels[i])
+                views.setTextColor(allWdIds[i], if (i == sundayCol) sundayColor else weekdayHeaderColor)
             }
-            views.setTextColor(R.id.wd_sun, sundayColor)
 
             // 왼쪽: 오늘 경기 리스트 채우기
             views.removeAllViews(R.id.matches_container)
@@ -181,8 +190,9 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
 
         fun loadCalendarData(context: Context): CalendarWidgetData {
             val prefs = getPrefs(context)
+            val weekStart = loadWeekStart(context)
             val jsonStr = prefs.getString("calendar_data", null)
-                ?: return CalendarWidgetData.empty()
+                ?: return CalendarWidgetData.empty(weekStart)
             return try {
                 val json = JSONObject(jsonStr)
                 val monthStr = json.optString("month", "")
@@ -209,9 +219,9 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
                     }
                     days[dayNum] = matches
                 }
-                CalendarWidgetData(year, month, days)
+                CalendarWidgetData(year, month, days, weekStart)
             } catch (e: Exception) {
-                CalendarWidgetData.empty()
+                CalendarWidgetData.empty(weekStart)
             }
         }
 
@@ -315,20 +325,24 @@ fun selectDisplayMatches(matches: List<TodayMatchInfo>): MatchDisplayResult {
 data class CalendarWidgetData(
     val year: Int,
     val month: Int,
-    val days: Map<Int, List<MatchInfo>>
+    val days: Map<Int, List<MatchInfo>>,
+    val weekStart: String = "monday"
 ) {
     companion object {
-        fun empty(): CalendarWidgetData {
+        fun empty(weekStart: String = "monday"): CalendarWidgetData {
             val cal = Calendar.getInstance()
-            return CalendarWidgetData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, emptyMap())
+            return CalendarWidgetData(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, emptyMap(), weekStart)
         }
     }
+
+    /** 그리드에서 일요일이 위치하는 컬럼(0-based). weekStart="sunday"면 0, 아니면 6. */
+    val sundayColumn: Int get() = if (weekStart == "sunday") 0 else 6
 
     fun firstWeekday(): Int {
         val cal = Calendar.getInstance()
         cal.set(year, month - 1, 1)
-        val wd = cal.get(Calendar.DAY_OF_WEEK)
-        return (wd + 5) % 7
+        val wd = cal.get(Calendar.DAY_OF_WEEK) // Sun=1 ... Sat=7
+        return if (weekStart == "sunday") (wd - 1) else (wd + 5) % 7
     }
 
     fun daysInMonth(): Int {
@@ -345,4 +359,10 @@ data class CalendarWidgetData(
     }
 
     fun weekCount(): Int = ((firstWeekday() + daysInMonth() - 1) / 7) + 1
+}
+
+/** 월~일 순서 요일 라벨을 [weekStart] 기준으로 회전한다. */
+fun orderedWeekdayLabels(weekStart: String): List<String> {
+    val mondayFirst = listOf("월", "화", "수", "목", "금", "토", "일")
+    return if (weekStart == "sunday") listOf(mondayFirst.last()) + mondayFirst.dropLast(1) else mondayFirst
 }

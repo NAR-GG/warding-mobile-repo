@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../model/calendar_week_start.dart';
 import 'calendar_match.dart';
 import 'calendar_month_grid.dart';
 import 'calendar_weekday_header.dart';
@@ -20,6 +21,7 @@ class ScheduleCalendar extends StatefulWidget {
     this.onMonthShift,
     this.selectedDate,
     this.onDateTap,
+    this.weekStart = CalendarWeekStart.monday,
   });
 
   /// 표시할 월 (1일 0시로 정규화된 DateTime).
@@ -37,6 +39,9 @@ class ScheduleCalendar extends StatefulWidget {
 
   /// 경기가 있는 날짜 칸을 탭하면 그 날짜로 호출한다. null 이면 탭 비활성.
   final ValueChanged<DateTime>? onDateTap;
+
+  /// 캘린더 시작 요일 설정. 요일 헤더·월간 그리드에 그대로 전달한다.
+  final CalendarWeekStart weekStart;
 
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
@@ -68,7 +73,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CalendarWeekdayHeader(scale: scale),
+          CalendarWeekdayHeader(scale: scale, weekStart: widget.weekStart),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
@@ -106,6 +111,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 key: ValueKey(month),
                 month: month,
                 scale: scale,
+                weekStart: widget.weekStart,
                 selectedDate: widget.selectedDate,
                 onDateTap: widget.onDateTap,
                 matchesOf:
