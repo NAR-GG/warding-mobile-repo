@@ -38,6 +38,12 @@ class LargeCalendarRemoteViewsFactory(
     // 헤더(36dp) + 요일 행(19dp) + 구분선(1dp) + 상하 패딩(4dp+4dp) — schedule_widget_large.xml 기준.
     private val chromeHeightDp = 36 + 19 + 1 + 4 + 4
 
+    // 날짜 셀 안에서 칩이 아닌 부분(날짜 숫자 텍스트 + 상하 패딩) 예상 높이 —
+    // schedule_widget_large_row.xml 기준(10sp 텍스트 줄높이 약 12dp + paddingTop/Bottom 2dp씩).
+    private val cellChromeHeightDp = 16
+    // 칩 한 줄 높이(13dp) + 위 마진(1dp) — 같은 XML 기준.
+    private val chipRowHeightDp = 14
+
     override fun onCreate() {
         Log.d(TAG, "Factory onCreate")
     }
@@ -54,10 +60,10 @@ class LargeCalendarRemoteViewsFactory(
 
     /**
      * 위젯의 현재 세로 크기(dp)에서 헤더 영역을 뺀 뒤 주(week) 수로 나눠, 캘린더 그리드가
-     * 남는 공백 없이 위젯 전체 높이를 채우도록 한 행이 가져야 할 높이(px)를 계산한다.
+     * 남는 공백 없이 위젯 전체 높이를 채우도록 한 행이 가져야 할 높이(dp)를 계산한다.
      * 옵션을 못 읽거나 계산값이 0 이하면 0을 반환해 레이아웃 XML의 기본(minHeight=54dp)을 그대로 쓴다.
      */
-    private fun rowHeightPx(): Int {
+    private fun rowHeightDp(): Int {
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return 0
         val options = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId)
         val minHeightDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
@@ -65,14 +71,31 @@ class LargeCalendarRemoteViewsFactory(
         val gridHeightDp = (minHeightDp - chromeHeightDp).coerceAtLeast(0)
         if (gridHeightDp <= 0) return 0
         val weeks = data.weekCount().coerceAtLeast(1)
-        val rowHeightDp = gridHeightDp / weeks
+        return gridHeightDp / weeks
+    }
+
+    private fun rowHeightPx(rowHeightDp: Int): Int {
+        if (rowHeightDp <= 0) return 0
         val density = context.resources.displayMetrics.density
         return (rowHeightDp * density).toInt()
     }
 
+    /**
+     * 행 높이가 실제로 칩 2개를 담을 여유가 있는지로 하루 최대 칩 수를 정한다.
+     * 예전엔 "6주짜리 달이면 무조건 1개"로 고정해서, 위젯이 커서 6주라도 공간이
+     * 충분한 경우까지 칩을 숨기는 문제가 있었다. rowHeightDp 를 못 구했으면(위젯
+     * 옵션 미제공) 기존과 같이 주 수 기준으로 대체한다.
+     */
+    private fun maxChipsPerDay(rowHeightDp: Int): Int {
+        if (rowHeightDp <= 0) return if (data.weekCount() >= 6) 1 else 2
+        val availableForChips = rowHeightDp - cellChromeHeightDp
+        return if (availableForChips >= chipRowHeightDp * 2) 2 else 1
+    }
+
     override fun getViewAt(position: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.schedule_widget_large_row)
-        val rowHeight = rowHeightPx()
+        val rowHeightDp = rowHeightDp()
+        val rowHeight = rowHeightPx(rowHeightDp)
         if (rowHeight > 0) {
             views.setInt(R.id.large_row_root, "setMinimumHeight", rowHeight)
         }
@@ -85,7 +108,7 @@ class LargeCalendarRemoteViewsFactory(
             now.get(Calendar.MONTH) + 1 == data.month
         ) now.get(Calendar.DAY_OF_MONTH) else -1
 
-        val maxChipsPerDay = if (data.weekCount() >= 6) 1 else 2
+        val maxChipsPerDay = maxChipsPerDay(rowHeightDp)
 
         // 색상 상수
         val defaultDayColor = if (isDark) Color.WHITE else Color.BLACK
