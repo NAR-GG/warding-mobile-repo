@@ -8,8 +8,11 @@ import 'calendar_today_badge.dart';
 /// 월간 날짜 그리드.
 ///
 /// 주(week) 시작 요일은 [weekStart]로 설정한다(기본값 월요일). 이전·다음
-/// 달 날짜로 빈 칸을 채워 7×N 격자를 만들고, 각 주 행 높이를 92*scale 로
-/// 고정한다. 주 수가 많아 화면을 넘치면 세로로 스크롤된다.
+/// 달 날짜로 빈 칸을 채워 7×N 격자를 만든다. 각 주 행 높이는 부모가 준
+/// 가용 세로 공간을 주 수로 나눠 동적으로 정해서, 주 수가 몇 개든 그리드
+/// 전체가 스크롤 없이 뷰포트 안에 다 들어오게 한다. 다만 화면이 너무 작아
+/// 계산된 행 높이가 [_minRowHeight] 밑으로 떨어지면(콘텐츠가 눌려 안 보이는
+/// 것을 막기 위해) 그 최소값을 지키고, 그 경우에 한해 세로로 스크롤된다.
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
@@ -34,6 +37,9 @@ class CalendarMonthGrid extends StatelessWidget {
   /// 경기가 있는 날짜 칸을 탭하면 그 날짜로 호출한다. null 이면 탭 비활성.
   final ValueChanged<DateTime>? onDateTap;
 
+  /// 날짜 숫자 + 경기 칩이 눌리지 않고 보이는 최소 행 높이.
+  static const double _minRowHeight = 64.0;
+
   @override
   Widget build(BuildContext context) {
     // 그리드 시작일이 속한 주에서, 설정된 시작 요일까지 거슬러 올라갈 일수.
@@ -57,103 +63,107 @@ class CalendarMonthGrid extends StatelessWidget {
             ? todayOffset ~/ 7
             : -1;
 
-    // 날짜 한 칸(=주 행)의 고정 세로높이.
-    final rowHeight = 92.0 * scale;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minRowHeight = _minRowHeight * scale;
+        final availableHeight = constraints.maxHeight;
+        // 가용 세로 공간을 주 수로 균등 분배 → 그리드가 정확히 뷰포트를
+        // 채운다. 공간이 무한(바운드 없는 부모)이면 최소값으로 대체.
+        final fitRowHeight =
+            availableHeight.isFinite ? availableHeight / weekCount : minRowHeight;
+        final rowHeight =
+            fitRowHeight > minRowHeight ? fitRowHeight : minRowHeight;
+        final totalHeight = rowHeight * weekCount;
+        final needsScroll = totalHeight > availableHeight;
+        final cellWidth = constraints.maxWidth / 7;
 
-    final grid = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var week = 0; week < weekCount; week++)
-          SizedBox(
-            height: rowHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var dow = 0; dow < 7; dow++)
-                  Builder(
-                    builder: (context) {
-                      // DateTime 생성자가 음수·초과 일수를 알아서 정규화한다.
-                      final date = DateTime(
-                        month.year,
-                        month.month,
-                        1 - leadingDays + week * 7 + dow,
-                      );
-                      final dayMatches = matchesOf(date);
-                      return Expanded(
-                        child: CalendarDayCell(
-                          date: date,
-                          matches: dayMatches,
-                          // 경기가 있는 날만 탭 가능(다른 달·빈 날은 matchesOf 가 [] 라 비활성).
-                          onTap: (onDateTap != null && dayMatches.isNotEmpty)
-                              ? () => onDateTap!(date)
-                              : null,
-                          // 마지막 열 오른쪽엔 세로 테두리 없음.
-                          showRightBorder: dow != 6,
-                          // 첫 주만 위쪽 테두리. 이후 행은 윗 행의 아래
-                          // 테두리가 위 선 역할을 한다.
-                          showTopBorder: week == 0,
-                          isToday:
-                              date.year == today.year &&
-                              date.month == today.month &&
-                              date.day == today.day,
-                          isSelected:
-                              selectedDate != null &&
-                              date.year == selectedDate!.year &&
-                              date.month == selectedDate!.month &&
-                              date.day == selectedDate!.day,
-                          scale: scale,
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-      ],
-    );
-
-    // 행 높이가 고정(92*scale)이라 주 수가 많은 달은 화면을 넘칠 수 있다.
-    // 넘치면 세로 스크롤되도록 그리드 전체를 스크롤뷰로 감싼다.
-    // 전체 높이 = 주 수 × 행 높이.
-    final totalHeight = weekCount * rowHeight;
-
-    if (todayWeek < 0) {
-      return SingleChildScrollView(child: grid);
-    }
-
-    // 배지 오른쪽 끝이 오늘 칸의 왼쪽 세로선에 닿게, 윗 선에 걸치도록 띄운다.
-    return SingleChildScrollView(
-      child: SizedBox(
-        height: totalHeight,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final cellWidth = constraints.maxWidth / 7;
-            final todayDow = todayOffset % 7; // 오늘 칸의 열 (월=0 … 일=6)
-            return Stack(
-              fit: StackFit.expand,
-              clipBehavior: Clip.none,
-              children: [
-                grid,
-                Positioned(
-                  // 오늘 칸 왼쪽 세로선에서 배지 폭(30)만큼 왼쪽, 윗 선 위로
-                  // 24만큼 띄운다. 단 그리드 첫 주(top)·첫 열(left)이면 음수가
-                  // 되어 스크롤뷰 클립에 잘리므로 0 으로 막아 항상 보이게 한다.
-                  left: (todayDow * cellWidth - 30 * scale).clamp(
-                    0.0,
-                    double.infinity,
-                  ),
-                  top: (todayWeek * rowHeight - 24 * scale).clamp(
-                    0.0,
-                    double.infinity,
-                  ),
-                  child: CalendarTodayBadge(scale: scale),
+        final grid = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var week = 0; week < weekCount; week++)
+              SizedBox(
+                height: rowHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var dow = 0; dow < 7; dow++)
+                      Builder(
+                        builder: (context) {
+                          // DateTime 생성자가 음수·초과 일수를 알아서 정규화한다.
+                          final date = DateTime(
+                            month.year,
+                            month.month,
+                            1 - leadingDays + week * 7 + dow,
+                          );
+                          final dayMatches = matchesOf(date);
+                          return Expanded(
+                            child: CalendarDayCell(
+                              date: date,
+                              matches: dayMatches,
+                              // 경기가 있는 날만 탭 가능(다른 달·빈 날은 matchesOf 가 [] 라 비활성).
+                              onTap:
+                                  (onDateTap != null && dayMatches.isNotEmpty)
+                                      ? () => onDateTap!(date)
+                                      : null,
+                              // 마지막 열 오른쪽엔 세로 테두리 없음.
+                              showRightBorder: dow != 6,
+                              // 첫 주만 위쪽 테두리. 이후 행은 윗 행의 아래
+                              // 테두리가 위 선 역할을 한다.
+                              showTopBorder: week == 0,
+                              isToday:
+                                  date.year == today.year &&
+                                  date.month == today.month &&
+                                  date.day == today.day,
+                              isSelected:
+                                  selectedDate != null &&
+                                  date.year == selectedDate!.year &&
+                                  date.month == selectedDate!.month &&
+                                  date.day == selectedDate!.day,
+                              scale: scale,
+                            ),
+                          );
+                        },
+                      ),
+                  ],
                 ),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+          ],
+        );
+
+        if (todayWeek < 0) {
+          return needsScroll ? SingleChildScrollView(child: grid) : grid;
+        }
+
+        final todayDow = todayOffset % 7; // 오늘 칸의 열 (월=0 … 일=6)
+        final stack = SizedBox(
+          height: totalHeight,
+          child: Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.none,
+            children: [
+              grid,
+              Positioned(
+                // 오늘 칸 왼쪽 세로선에서 배지 폭(30)만큼 왼쪽, 윗 선 위로
+                // 24만큼 띄운다. 단 그리드 첫 주(top)·첫 열(left)이면 음수가
+                // 되어 잘리므로 0 으로 막아 항상 보이게 한다.
+                left: (todayDow * cellWidth - 30 * scale).clamp(
+                  0.0,
+                  double.infinity,
+                ),
+                top: (todayWeek * rowHeight - 24 * scale).clamp(
+                  0.0,
+                  double.infinity,
+                ),
+                child: CalendarTodayBadge(scale: scale),
+              ),
+            ],
+          ),
+        );
+
+        // 배지 오른쪽 끝이 오늘 칸의 왼쪽 세로선에 닿게, 윗 선에 걸치도록 띄운다.
+        return needsScroll ? SingleChildScrollView(child: stack) : stack;
+      },
     );
   }
 }
