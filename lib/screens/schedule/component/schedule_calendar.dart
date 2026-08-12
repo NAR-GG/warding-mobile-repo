@@ -48,15 +48,33 @@ class ScheduleCalendar extends StatefulWidget {
 }
 
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
-  /// 슬라이드 방향 — +1: 다음 달(왼쪽으로 밀림), -1: 이전 달(오른쪽으로).
-  double _direction = 1;
+  /// 월(月)별 슬라이드 시작 위치(beginX). +1: 오른쪽에서 들어와 왼쪽으로
+  /// 나감(다음 달), -1: 그 반대(이전 달).
+  ///
+  /// 예전엔 이 값을 `_direction` 필드 하나에 담아 모든 자식이 공유해서
+  /// 읽었다. 그런데 월 전환 애니메이션(300ms)이 끝나기 전에 또 스와이프하면
+  /// AnimatedSwitcher 안에 아직 빠져나가는 중인 이전 그리드가 남아있는 채로
+  /// 새 전환이 시작되고, 그 이전 그리드가 transitionBuilder 에서 방금 덮어쓴
+  /// `_direction`을 다시 읽어버려 방향이 갑자기 바뀌며 화면 중간에 튀었다
+  /// (연속 스와이프 시 날짜가 밀리는 버그).
+  ///
+  /// 전환이 시작되는 그 순간, 관련된 두 달(새로 들어오는 달·빠지는 달)의
+  /// beginX 를 각자의 키로 고정해 두면 이후 다른 전환이 일어나도 영향받지
+  /// 않는다.
+  final Map<DateTime, double> _beginXByMonth = {};
+
+  /// 드래그 중 누적된 가로 이동량. 빠른 플릭이 아니라 천천히 끝까지 미는
+  /// 드래그도 인식하려면 속도뿐 아니라 이동 거리도 봐야 한다.
+  double _dragDx = 0;
 
   @override
   void didUpdateWidget(ScheduleCalendar oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 월 변경 방향에 맞춰 슬라이드 방향을 정한다 (스와이프·날짜피커 공통).
     if (widget.month != oldWidget.month) {
-      _direction = widget.month.isAfter(oldWidget.month) ? 1 : -1;
+      final forward = widget.month.isAfter(oldWidget.month);
+      _beginXByMonth[widget.month] = forward ? 1 : -1;
+      _beginXByMonth[oldWidget.month] = forward ? -1 : 1;
     }
   }
 
@@ -91,12 +109,11 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 );
               },
               transitionBuilder: (child, animation) {
-                // 들어오는 그리드는 _direction 쪽에서, 나가는 그리드는
-                // 그 반대쪽으로 슬라이드한다.
+                // 이 자식(달)이 화면에 들어올 때 고정된 시작 위치를 그대로
+                // 쓴다 — 그 사이 다른 전환이 일어나도 바뀌지 않는다.
                 final key = child.key;
-                final incoming =
-                    key is ValueKey<DateTime> && key.value == month;
-                final beginX = incoming ? _direction : -_direction;
+                final childMonth = key is ValueKey<DateTime> ? key.value : month;
+                final beginX = _beginXByMonth[childMonth] ?? 1;
                 return ClipRect(
                   child: SlideTransition(
                     position: Tween<Offset>(
@@ -130,14 +147,23 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     if (onShift == null) return calendar;
 
     // 좌우 스와이프로 월 이동 — 왼쪽으로 밀면 다음 달, 오른쪽이면 이전 달.
-    // primaryVelocity 단위는 logical px/s. 의도치 않은 미세 드래그는 무시.
+    // 빠른 플릭은 속도(primaryVelocity, logical px/s)로, 천천히 끝까지 미는
+    // 드래그는 누적 이동 거리(_dragDx)로 판단한다. 둘 중 하나만 기준을
+    // 넘어도 넘긴다 — 속도만 보면 느리지만 화면 절반 넘게 민 드래그를
+    // 놓쳐서 "잘 안 넘어간다"는 느낌을 준다.
+    const velocityThreshold = 200.0;
+    final distanceThreshold = 60 * scale;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: (_) => _dragDx = 0,
+      onHorizontalDragUpdate: (details) => _dragDx += details.delta.dx,
       onHorizontalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
-        if (velocity < -200) {
+        if (velocity < -velocityThreshold ||
+            (velocity <= 0 && _dragDx < -distanceThreshold)) {
           onShift(1);
-        } else if (velocity > 200) {
+        } else if (velocity > velocityThreshold ||
+            (velocity >= 0 && _dragDx > distanceThreshold)) {
           onShift(-1);
         }
       },

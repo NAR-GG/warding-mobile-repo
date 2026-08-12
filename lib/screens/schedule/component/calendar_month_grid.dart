@@ -9,10 +9,13 @@ import 'calendar_today_badge.dart';
 ///
 /// 주(week) 시작 요일은 [weekStart]로 설정한다(기본값 월요일). 이전·다음
 /// 달 날짜로 빈 칸을 채워 7×N 격자를 만든다. 각 주 행 높이는 부모가 준
-/// 가용 세로 공간을 주 수로 나눠 동적으로 정해서, 주 수가 몇 개든 그리드
-/// 전체가 스크롤 없이 뷰포트 안에 다 들어오게 한다. 다만 화면이 너무 작아
-/// 계산된 행 높이가 [_minRowHeight] 밑으로 떨어지면(콘텐츠가 눌려 안 보이는
-/// 것을 막기 위해) 그 최소값을 지키고, 그 경우에 한해 세로로 스크롤된다.
+/// 가용 세로 공간을 [_maxWeekCount](6주) 기준으로 나눠 정해서, 달마다 실제
+/// 주 수(4~6)가 달라도 셀 높이는 항상 같다 — 월 전환 스와이프 애니메이션에서
+/// 이전·다음 달 그리드가 겹쳐 보이는 동안 셀 크기가 달라 날짜가 밀리는
+/// 것처럼 보이는 걸 막는다. 대신 주 수가 6보다 적은 달은 그리드 아래에
+/// 여백이 남는다. 화면이 너무 작아 계산된 행 높이가 [_minRowHeight] 밑으로
+/// 떨어지면(콘텐츠가 눌려 안 보이는 것을 막기 위해) 그 최소값을 지키고,
+/// 그 경우에 한해 세로로 스크롤된다.
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
@@ -39,6 +42,15 @@ class CalendarMonthGrid extends StatelessWidget {
 
   /// 날짜 숫자 + 경기 칩이 눌리지 않고 보이는 최소 행 높이.
   static const double _minRowHeight = 64.0;
+
+  /// 한 달 그리드가 가질 수 있는 최대 주 수 (달력 그리드 최대 6주).
+  ///
+  /// 행 높이를 '이번 달 주 수'로 나누면 달마다 주 수(4~6)가 달라 셀 높이도
+  /// 달라진다. 월 전환 애니메이션에서 이전·다음 달 그리드가 겹쳐 보이는 동안
+  /// 셀 크기가 서로 달라 날짜 칸이 커지거나 밀리는 것처럼 보인다. 항상 최대
+  /// 주 수 기준으로 나눠 셀 높이를 고정하면 이 문제가 없어진다(대신 주 수가
+  /// 6보다 적은 달은 그리드 아래에 여백이 남는다).
+  static const int _maxWeekCount = 6;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +82,9 @@ class CalendarMonthGrid extends StatelessWidget {
         // 가용 세로 공간을 주 수로 균등 분배 → 그리드가 정확히 뷰포트를
         // 채운다. 공간이 무한(바운드 없는 부모)이면 최소값으로 대체.
         final fitRowHeight =
-            availableHeight.isFinite ? availableHeight / weekCount : minRowHeight;
+            availableHeight.isFinite
+                ? availableHeight / _maxWeekCount
+                : minRowHeight;
         final rowHeight =
             fitRowHeight > minRowHeight ? fitRowHeight : minRowHeight;
         final totalHeight = rowHeight * weekCount;
