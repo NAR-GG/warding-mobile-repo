@@ -189,6 +189,10 @@ class FcmService {
         throwable: e,
       );
     }
+    // 앱이 떠 있는 동안 온 알림은 생명주기 이벤트도, 화면 재생성도 일으키지 않아
+    // 마이구독 피드가 그대로 남아 있었다. 서버는 발송 전에 피드를 적재하므로
+    // 지금 다시 읽으면 방금 온 알림이 들어 있다.
+    feedRefreshTick.value++;
     if (!Platform.isAndroid) {
       SentryLogger.info(
         module: 'FCM',
