@@ -176,4 +176,10 @@ class AppColors {
 
   // 공지 본문 인라인 링크 (다크 배경 위 blue/3).
   static const Color narLinkText = Color(0xFF74C0FC);
+
+  // 스포방지 토글 (경기리스트·경기 일정 전용) — OFF 노브 rgba(20,21,23,0.4).
+  static const Color narSpoilerKnobOff = Color(0x66141517);
+
+  /// 스포방지 토글 트랙 inset 그림자 — inset 0 2px 4px rgba(0,0,0,0.14).
+  static const Color narSpoilerTrackShadow = Color(0x24000000);
 }

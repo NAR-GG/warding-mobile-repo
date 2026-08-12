@@ -72,8 +72,8 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
                 builder: (context, _) => NarSpoilerToggle(
                   value: _pager.spoilerPreventionEnabled,
                   onChanged: _pager.setSpoilerPreventionEnabled,
-                  textColor: AppColors.narText,
-                  gap: 4,
+                  // 헤더 슬롯 높이가 34 라 시안 패딩 8(총 38)은 세로로 넘친다.
+                  verticalPadding: 0,
                   scale: scale,
                 ),
               ),
