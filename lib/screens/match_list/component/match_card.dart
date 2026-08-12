@@ -95,13 +95,18 @@ class MatchCard extends StatelessWidget {
       bottom: 24 * scale,
     );
 
-    // LIVE: 배경 narDark600 + 왼쪽 3px 보더.
+    // LIVE: 배경 narDark600 + 왼쪽 3px 보더 + (다른 카드와 동일한) 위쪽 1px 구분선.
     // 예정·종료: 배경 narBgTertiary + 위쪽 1px 보더(카드 구분선 역할).
+    // 구분선은 두 상태 공통으로 showTopBorder 를 따른다 — 날짜 헤더 바로 아래
+    // 첫 카드만 꺼서 헤더와 선이 겹쳐 보이지 않게 한다.
     final decoration = isLive
-        ? const BoxDecoration(
+        ? BoxDecoration(
             color: AppColors.narDark600,
             border: Border(
-              left: BorderSide(color: AppColors.liveSideBorder, width: 3),
+              left: const BorderSide(color: AppColors.liveSideBorder, width: 3),
+              top: showTopBorder
+                  ? const BorderSide(color: AppColors.narLine2, width: 1)
+                  : BorderSide.none,
             ),
           )
         : BoxDecoration(
@@ -416,6 +421,8 @@ class _TeamColumn extends StatelessWidget {
   }
 }
 
+/// 예정·종료 카드 스코어. 예정 경기는 0:0 이라 둘 다 기본색으로 보이고,
+/// 종료 경기는 이긴 쪽만 [AppColors.scoreWin] 로 강조된다(라이브와 동일 규칙).
 class _ScoreRow extends StatelessWidget {
   const _ScoreRow({
     required this.home,
@@ -427,23 +434,27 @@ class _ScoreRow extends StatelessWidget {
   final int away;
   final double scale;
 
+  Color _colorFor(int self, int other) =>
+      self > other ? AppColors.scoreWin : AppColors.narDark200;
+
+  TextStyle _style(Color c) => TextStyle(
+    fontFamily: 'SF Pro',
+    fontWeight: FontWeight.w700,
+    fontSize: 28 * scale,
+    height: 33 / 28,
+    color: c,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontFamily: 'SF Pro',
-      fontWeight: FontWeight.w700,
-      fontSize: 28 * scale,
-      height: 33 / 28,
-      color: AppColors.narDark200,
-    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$home', style: style),
+        Text('$home', style: _style(_colorFor(home, away))),
         SizedBox(width: 14 * scale),
-        Text(':', style: style),
+        Text(':', style: _style(AppColors.narDark200)),
         SizedBox(width: 14 * scale),
-        Text('$away', style: style),
+        Text('$away', style: _style(_colorFor(away, home))),
       ],
     );
   }
