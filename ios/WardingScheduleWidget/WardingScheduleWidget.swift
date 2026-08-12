@@ -803,8 +803,18 @@ struct LargeWidgetView: View {
         }
     }
 
-    // 6주일 때 칩 최대 수 줄임
-    private var maxChipsPerDay: Int { weekCount >= 6 ? 1 : 2 }
+    // 날짜 숫자(줄높이 약 11) + 상하 패딩(1+1) + 칩 앞 spacing(1) — largeDayCell 기준.
+    private let cellChromeHeight: CGFloat = 14
+    // 칩 한 줄 높이(13) + 칩 사이 spacing(1) — matchChipView·largeMatchChips 기준.
+    private let chipRowHeight: CGFloat = 14
+
+    // 실제 행 높이에 칩 2개가 들어갈 여유가 있는지로 하루 최대 칩 수를 정한다.
+    // 예전엔 "6주짜리 달이면 무조건 1개"로 고정해서, 위젯이 커서 6주라도 공간이
+    // 충분한 경우까지 칩을 숨기는 문제가 있었다.
+    private func maxChipsPerDay(rowHeight: CGFloat) -> Int {
+        let availableForChips = rowHeight - cellChromeHeight
+        return availableForChips >= chipRowHeight * 2 ? 2 : 1
+    }
 
     private var largeGrid: some View {
         GeometryReader { geo in
@@ -812,7 +822,7 @@ struct LargeWidgetView: View {
             let rowHeight = (geo.size.height - totalSeparators) / CGFloat(weekCount)
             VStack(spacing: 0) {
                 ForEach(0..<weekCount, id: \.self) { week in
-                    largeWeekRow(week: week)
+                    largeWeekRow(week: week, rowHeight: rowHeight)
                         .frame(height: rowHeight)
                     if week < weekCount - 1 {
                         Rectangle().fill(Color(hex: 0xA6A7AB)).frame(height: 1)
@@ -822,15 +832,15 @@ struct LargeWidgetView: View {
         }
     }
 
-    private func largeWeekRow(week: Int) -> some View {
+    private func largeWeekRow(week: Int, rowHeight: CGFloat) -> some View {
         HStack(spacing: 0) {
             ForEach(0..<7, id: \.self) { dow in
-                largeDayCell(week: week, dow: dow)
+                largeDayCell(week: week, dow: dow, rowHeight: rowHeight)
             }
         }
     }
 
-    private func largeDayCell(week: Int, dow: Int) -> some View {
+    private func largeDayCell(week: Int, dow: Int, rowHeight: CGFloat) -> some View {
         let offset = week * 7 + dow - firstWeekday
         let day = offset + 1
         let isCurrent = day >= 1 && day <= daysInMonth
@@ -847,7 +857,7 @@ struct LargeWidgetView: View {
                 )
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            largeMatchChips(matches: matches)
+            largeMatchChips(matches: matches, maxChips: maxChipsPerDay(rowHeight: rowHeight))
             Spacer(minLength: 0)
         }
         .padding(.vertical, 1)
@@ -858,15 +868,15 @@ struct LargeWidgetView: View {
         .overlay(dow < 6 ? AnyView(rightBorder) : AnyView(EmptyView()))
     }
 
-    private func largeMatchChips(matches: [MatchBrief]) -> some View {
+    private func largeMatchChips(matches: [MatchBrief], maxChips: Int) -> some View {
         Group {
             if !matches.isEmpty {
                 VStack(spacing: 1) {
-                    ForEach(0..<min(matches.count, maxChipsPerDay), id: \.self) { i in
+                    ForEach(0..<min(matches.count, maxChips), id: \.self) { i in
                         matchChipView(matches[i])
                     }
-                    if matches.count > maxChipsPerDay {
-                        Text("+\(matches.count - maxChipsPerDay)")
+                    if matches.count > maxChips {
+                        Text("+\(matches.count - maxChips)")
                             .font(.system(size: 6, weight: .bold))
                             .foregroundColor(chipText)
                     }
