@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../model/game_rating.dart';
 import '../../model/match_game.dart';
 import '../../model/schedule_match.dart';
+import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
 import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
@@ -119,15 +120,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     return '$yy.$mm.$dd';
   }
 
-  /// matchStatus 가 라이브를 의미하는지. 'LIVE'/'inProgress'/'진행' 등 포함이면 true.
-  bool _isLiveStatus(String status) {
-    final s = status.toLowerCase();
-    return s.contains('live') ||
-        s.contains('inprogress') ||
-        s.contains('in_progress') ||
-        s.contains('ongoing') ||
-        status.contains('진행');
-  }
+  /// 라이브 판정은 경기리스트·경기 일정과 같은 공용 유틸을 쓴다.
+  bool _isLiveStatus(String status) => isLiveMatchStatus(status);
 
   /// matchStatus 가 경기 종료를 의미하는지. 'completed'/'ended'/'종료' 등 포함이면 true.
   bool _isCompletedStatus(String status) {

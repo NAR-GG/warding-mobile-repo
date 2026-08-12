@@ -8,6 +8,7 @@ import '../../config/api_config.dart';
 import '../../model/match_calendar_day.dart';
 import '../../model/schedule_filter_options.dart';
 import '../../model/schedule_match.dart';
+import '../../util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.
 class MatchPage {
@@ -27,16 +28,10 @@ class ScheduleRepository {
   ScheduleRepository._();
   static final ScheduleRepository instance = ScheduleRepository._();
 
-  /// matchStatus 값이 'live'/'in_progress'/'ongoing' 인 경기가 하나라도
-  /// 있는지 (대소문자 무시). 화면의 라이브 판정([_isLive] in match_list_screen.dart)과
-  /// 같은 기준이다 — 캐시 여부 판단에 쓴다.
-  bool _hasLiveMatch(List<ScheduleMatch> matches) {
-    for (final m in matches) {
-      final s = m.matchStatus.toLowerCase();
-      if (s == 'live' || s == 'in_progress' || s == 'ongoing') return true;
-    }
-    return false;
-  }
+  /// 라이브 경기가 하나라도 있는지 — 화면과 같은 [isLiveMatchStatus] 기준이다.
+  /// 캐시 여부 판단에 쓴다(라이브가 있으면 캐시를 짧게 가져간다).
+  bool _hasLiveMatch(List<ScheduleMatch> matches) =>
+      matches.any((m) => isLiveMatchStatus(m.matchStatus));
 
   /// 진행 중인 캘린더 요청. 같은 조회 조건의 요청이 겹치면 결과를 나눠 쓴다.
   ///
