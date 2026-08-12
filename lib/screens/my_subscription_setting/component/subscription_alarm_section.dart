@@ -8,21 +8,32 @@ import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/subscription/team_alarm_viewmodel.dart';
 
-/// 마이페이지 — 구독 팀 알림 설정 섹션 (양옆 20 패딩).
+/// 구독 팀 알림 설정 섹션 (양옆 20 패딩).
 ///
 /// 상단: '구독 팀 알림 설정' 타이틀 + '구독 관리' 액션.
 /// 하단: narDark600 카드 안에 팀별 블록(로고/팀명 + 알림 토글 3개).
-/// 구독중인 팀과 알림 설정은 `notification-subscriptions` API 로 받고,
-/// 토글하면 `PUT` 으로 서버에 반영한다.
+/// 구독중인 팀과 알림 설정은 `notification-subscriptions` API 로 받는다.
+///
+/// [viewModel] 을 주면 그 인스턴스를 쓰고(마이 구독 설정 화면처럼 '완료' 버튼과
+/// 상태를 공유할 때), 없으면 내부에서 만들어 토글 즉시 서버에 반영한다.
 class SubscriptionAlarmSection extends StatefulWidget {
   const SubscriptionAlarmSection({
     super.key,
     this.scale = 1,
     this.onManageTap,
+    this.viewModel,
+    this.showHeader = true,
   });
 
   final double scale;
   final VoidCallback? onManageTap;
+
+  /// 외부에서 주입하는 ViewModel. null 이면 내부에서 생성·해제한다.
+  final TeamAlarmViewModel? viewModel;
+
+  /// false 면 '구독 팀 알림 설정' 타이틀 줄을 감춘다.
+  /// 화면 헤더가 이미 같은 맥락을 알려 주는 경우에 쓴다.
+  final bool showHeader;
 
   @override
   State<SubscriptionAlarmSection> createState() =>
@@ -30,7 +41,11 @@ class SubscriptionAlarmSection extends StatefulWidget {
 }
 
 class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
-  final TeamAlarmViewModel _viewModel = TeamAlarmViewModel();
+  /// 주입받지 않았을 때만 만드는 내부 ViewModel. dispose 책임도 여기에 있다.
+  TeamAlarmViewModel? _owned;
+
+  TeamAlarmViewModel get _viewModel =>
+      widget.viewModel ?? (_owned ??= TeamAlarmViewModel());
 
   /// 구독 팀 알림 목록을 다시 불러온다.
   /// 구독 관리 화면에서 팀 구독을 변경하고 돌아왔을 때 호출한다.
@@ -38,7 +53,8 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
 
   @override
   void dispose() {
-    _viewModel.dispose();
+    // 주입받은 ViewModel 은 준 쪽이 해제한다.
+    _owned?.dispose();
     super.dispose();
   }
 
@@ -64,37 +80,39 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 헤더: 타이틀 + 구독 관리.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                l.subscriptionTeamAlarmSettings,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 17 * scale,
-                  height: 25 / 17,
-                  color: AppColors.narText,
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onManageTap,
-                child: Text(
-                  l.subscriptionManage,
+          if (widget.showHeader) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  l.subscriptionTeamAlarmSettings,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14 * scale,
-                    height: 1.55,
-                    color: AppColors.narTextTertiary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 17 * scale,
+                    height: 25 / 17,
+                    color: AppColors.narText,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16 * scale),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onManageTap,
+                  child: Text(
+                    l.subscriptionManage,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14 * scale,
+                      height: 1.55,
+                      color: AppColors.narTextTertiary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16 * scale),
+          ],
           _buildCard(scale),
         ],
       ),

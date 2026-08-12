@@ -450,6 +450,96 @@ class AppLocalizationsKo extends AppLocalizations {
   String get teamAutoSetBanner => '설문 기반으로 응원하는 팀이 자동으로 설정됐어요!';
 
   @override
+  String get myActivity => '내 활동';
+
+  @override
+  String get screenSetting => '화면 설정';
+
+  @override
+  String get generalSetting => '일반 설정';
+
+  @override
+  String get customerSupport => '고객 지원';
+
+  @override
+  String get account => '계정';
+
+  @override
+  String get narWebsiteDescription => '선수 스탯부터 상세 경기 데이터까지, 한눈에 분석해 보세요';
+
+  @override
+  String get quietHoursTitle => '방해 금지 모드';
+
+  @override
+  String get quietHoursDescription => '설정된 시간 동안 푸시 알림 없이 앱 내 알림함에만 쌓입니다';
+
+  @override
+  String get mySubscriptionSetting => '마이 구독 설정';
+
+  @override
+  String get matchListSetting => '경기리스트 설정';
+
+  @override
+  String get calendarSetting => '캘린더 설정';
+
+  @override
+  String get accountSetting => '계정 설정';
+
+  @override
+  String get withdrawTitle => '회원 탈퇴';
+
+  @override
+  String withdrawHeadline(String nickname) {
+    return '$nickname님\n와딩을 떠나시는건가요.. 다시 돌아오실거죠?..';
+  }
+
+  @override
+  String get withdrawWarningData =>
+      '계정을 탈퇴하면 구독,알림,평점 등 모든 데이터가 삭제되며 되돌릴 수 없습니다.';
+
+  @override
+  String get withdrawWarningImmediate => '완료를 누를시 즉시 탈퇴됩니다.';
+
+  @override
+  String get withdrawFeedback =>
+      '와딩은 소중한 피드백으로 매일 성장하고 있어요.\n아쉬웠던 점을 알려주시면 바로 해결해 드릴게요.';
+
+  @override
+  String get withdrawSubmit => '와딩 회원 탈퇴하기';
+
+  @override
+  String get accountNickname => '닉네임';
+
+  @override
+  String get accountEmail => '이메일';
+
+  @override
+  String get logoutConfirmTitle => '로그아웃 하시겠습니까?';
+
+  @override
+  String logoutConfirmMessage(String email) {
+    return '현재 로그인된 $email 계정에서 로그아웃됩니다.';
+  }
+
+  @override
+  String get logoutConfirmButton => '로그아웃';
+
+  @override
+  String get calendarWeekStartDescription => '주 시작 요일(월요일/일요일)을 설정합니다.';
+
+  @override
+  String get spoilerCard => '스포 방지 카드';
+
+  @override
+  String get spoilerCardDescription => '스코어 스포 방지 카드를 ON/OFF 할 수 있습니다';
+
+  @override
+  String get screenSettingMatchList => '경기 리스트';
+
+  @override
+  String get screenSettingCalendar => '캘린더';
+
+  @override
   String get myReviewRating => '내 리뷰/평점';
 
   @override
@@ -779,6 +869,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get teamAlarmLoadFailed => '팀 알림 정보를 불러오지 못했어요';
+
+  @override
+  String get teamAlarmSaveFailed => '팀 알림 설정을 저장하지 못했어요';
 
   @override
   String get profileLoadFailed => '프로필을 불러오지 못했어요';

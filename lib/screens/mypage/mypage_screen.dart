@@ -5,28 +5,26 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
-import '../../components/common_button.dart';
 import '../../components/guest_lock_overlay.dart';
-import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
 import '../../config/app_language.dart';
-import '../../repository/auth/auth_service.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
-import 'component/calendar_week_start_section.dart';
 import 'component/language_setting_sheet.dart';
+import 'component/mypage_card_section.dart';
 import 'component/quiet_hours_section.dart';
-import 'component/subscription_alarm_section.dart';
-import '../login/login_screen.dart';
+import '../account_setting/account_setting_screen.dart';
+import '../calendar_setting/calendar_setting_screen.dart';
 import '../match_list/match_list_screen.dart';
+import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_review/my_review_screen.dart';
+import '../my_subscription_setting/my_subscription_setting_screen.dart';
 import '../notice/notice_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
-import '../subscription/subscription_settings_screen.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.
 class MypageScreen extends StatefulWidget {
@@ -38,7 +36,6 @@ class MypageScreen extends StatefulWidget {
 
 class _MypageScreenState extends State<MypageScreen> {
   final MypageViewModel _viewModel = MypageViewModel();
-  final _subscriptionAlarmKey = GlobalKey<SubscriptionAlarmSectionState>();
 
   @override
   void dispose() {
@@ -56,53 +53,6 @@ class _MypageScreenState extends State<MypageScreen> {
     if (updated == true) {
       await _viewModel.load();
     }
-  }
-
-  /// 로그아웃 — 소셜·자체 토큰을 정리하고 로그인 화면으로 되돌린다.
-  Future<void> _logout() async {
-    await AuthService.instance.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  /// 회원탈퇴 — 확인 다이얼로그 후 계정 삭제, 로그인 화면으로 이동.
-  Future<void> _withdraw() async {
-    final l = AppLocalizations.of(context)!;
-    final confirmed = await showNarConfirmDialog(
-      context: context,
-      title: l.withdrawConfirmTitle,
-      message: l.withdrawConfirmMessage,
-      confirmLabel: l.withdrawConfirmButton,
-    );
-    if (confirmed != true || !mounted) return;
-    try {
-      await AuthService.instance.withdraw();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.withdrawFailed)),
-      );
-      return;
-    }
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  /// 구독 관리 — 구독 설정 화면으로 이동.
-  /// 돌아오면 팀 구독이 바뀌었을 수 있으니 구독 팀 알림 설정을 새로고침한다.
-  Future<void> _goToSubscriptionSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const SubscriptionSettingsScreen(),
-      ),
-    );
-    await _subscriptionAlarmKey.currentState?.reload();
   }
 
   /// 외부 URL을 기본 브라우저(또는 앱)로 연다.
@@ -189,59 +139,122 @@ class _MypageScreenState extends State<MypageScreen> {
                             )
                           : const SizedBox.shrink(),
                     ),
-                    SizedBox(height: 20 * scale),
-                    SubscriptionAlarmSection(
-                      key: _subscriptionAlarmKey,
-                      scale: scale,
-                      onManageTap: _goToSubscriptionSettings,
-                    ),
-                    SizedBox(height: 16 * scale),
-                    QuietHoursSection(scale: scale),
-                    SizedBox(height: 16 * scale),
-                    CalendarWeekStartSection(scale: scale),
-                    SizedBox(height: 16 * scale),
+                    SizedBox(height: 11 * scale),
+                    // 내 활동 — 리뷰/평점 등 사용자 활동 진입점.
+                    // 행을 늘리려면 items 에 MypageCardItem 만 추가하면 된다.
                     ListenableBuilder(
                       listenable: _viewModel,
-                      builder: (context, _) => _MypageLinkRow(
-                        title: AppLocalizations.of(context)!.myReviewRating,
-                        count: _viewModel.reviewCount,
+                      builder: (context, _) => MypageCardSection(
                         scale: scale,
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const MyReviewScreen(),
-                            ),
-                          );
-                          // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
-                          await _viewModel.load();
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 16 * scale),
-                    _MypageLinkRow(
-                      title: AppLocalizations.of(context)!.notice,
-                      scale: scale,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const NoticeScreen(),
+                        label: AppLocalizations.of(context)!.myActivity,
+                        items: [
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.myReviewRating,
+                            count: _viewModel.reviewCount,
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const MyReviewScreen(),
+                                ),
+                              );
+                              // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
+                              await _viewModel.load();
+                            },
                           ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 16 * scale),
-                    _MypageLinkRow(
-                      title: AppLocalizations.of(context)!.customerService,
-                      scale: scale,
-                      onTap: () => _launchUrl(
-                        'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
+                        ],
                       ),
                     ),
                     SizedBox(height: 16 * scale),
-                    _MypageLinkRow(
-                      title: AppLocalizations.of(context)!.narWebsite,
+                    // 화면 설정 — 화면별 표시 설정 진입점.
+                    // 하위 설정 화면이 준비되면 각 항목에 onTap 만 연결하면 된다.
+                    MypageCardSection(
                       scale: scale,
-                      onTap: () => _launchUrl('https://nar.kr/'),
+                      label: AppLocalizations.of(context)!.screenSetting,
+                      items: [
+                        MypageCardItem(
+                          title: AppLocalizations.of(context)!.mySubscription,
+                          leadingIcon: 'assets/icons/empty-stars.svg',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    const MySubscriptionSettingScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        MypageCardItem(
+                          title: AppLocalizations.of(
+                            context,
+                          )!.screenSettingMatchList,
+                          leadingIcon: 'assets/icons/layout-list.svg',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const MatchListSettingScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        MypageCardItem(
+                          title: AppLocalizations.of(
+                            context,
+                          )!.screenSettingCalendar,
+                          leadingIcon: 'assets/icons/calendar-event.svg',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const CalendarSettingScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16 * scale),
+                    // 일반 설정 — 방해 금지 모드.
+                    QuietHoursSection(scale: scale),
+                    SizedBox(height: 16 * scale),
+                    // 고객 지원 — 공지사항·문의·계정·나르지지 웹사이트.
+                    // '계정'은 하위 화면이 준비되면 onTap 만 연결하면 된다.
+                    MypageCardSection(
+                      scale: scale,
+                      label: AppLocalizations.of(context)!.customerSupport,
+                      items: [
+                        MypageCardItem(
+                          title: AppLocalizations.of(context)!.notice,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const NoticeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        MypageCardItem(
+                          title: AppLocalizations.of(context)!.customerService,
+                          onTap: () => _launchUrl(
+                            'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
+                          ),
+                        ),
+                        MypageCardItem(
+                          title: AppLocalizations.of(context)!.account,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AccountSettingScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        MypageCardItem(
+                          title: AppLocalizations.of(context)!.narWebsite,
+                          description: AppLocalizations.of(
+                            context,
+                          )!.narWebsiteDescription,
+                          onTap: () => _launchUrl('https://nar.kr/'),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 16 * scale),
                     ListenableBuilder(
@@ -253,26 +266,6 @@ class _MypageScreenState extends State<MypageScreen> {
                             : '',
                         scale: scale,
                       ),
-                    ),
-                    // 맨 아래 로그아웃/회원탈퇴 — 80 간격 후, 가운데 정렬·40 간격.
-                    SizedBox(height: 80 * scale),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CommonButton(
-                          label: AppLocalizations.of(context)!.logout,
-                          variant: CommonButtonVariant.logout,
-                          scale: scale,
-                          onPressed: _logout,
-                        ),
-                        SizedBox(width: 40 * scale),
-                        CommonButton(
-                          label: AppLocalizations.of(context)!.withdraw,
-                          variant: CommonButtonVariant.text,
-                          scale: scale,
-                          onPressed: _withdraw,
-                        ),
-                      ],
                     ),
                     // 하단 네비에 가리지 않도록 여백.
                     SizedBox(height: 166 * scale),
@@ -538,92 +531,6 @@ class _TeamBadge extends StatelessWidget {
         fit: BoxFit.cover,
         fadeInDuration: const Duration(milliseconds: 150),
         errorWidget: (_, _, _) => placeholder,
-      ),
-    );
-  }
-}
-
-/// 마이페이지 진입 행 (padding 좌20 우10, 높이 44).
-///
-/// 좌측 타이틀 + 우측 chevron. [count] 가 주어지면 chevron 앞에
-/// 'N건'을 그라데이션 텍스트로 표시한다.
-/// 예) '내 리뷰/평점'(건수 표시), '고객센터/문의'(건수 없음).
-class _MypageLinkRow extends StatelessWidget {
-  const _MypageLinkRow({
-    required this.title,
-    required this.scale,
-    this.count,
-    this.onTap,
-  });
-
-  final String title;
-  final int? count;
-  final double scale;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        height: 44 * scale,
-        child: Padding(
-          padding: EdgeInsets.only(left: 20 * scale, right: 10 * scale),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 17 * scale,
-                  height: 25 / 17,
-                  color: AppColors.narText,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (count != null) ...[
-                    // 'N건' — narBg 그라데이션 텍스트.
-                    ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.narBg.createShader(bounds),
-                      child: Text(
-                        l.countUnit(count!),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14 * scale,
-                          height: 25 / 14,
-                          // ShaderMask 가 덮어쓰므로 흰색이어야 그라데이션이 보인다.
-                          color: AppColors.narText,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10 * scale),
-                  ],
-                  SizedBox(
-                    width: 44 * scale,
-                    height: 44 * scale,
-                    child: Center(
-                      child: SvgPicture.asset(
-                        'assets/icons/chevron-right.svg',
-                        width: 24 * scale,
-                        height: 24 * scale,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

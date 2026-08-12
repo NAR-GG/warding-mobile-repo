@@ -155,6 +155,44 @@
   "withdrawConfirmButton": "Delete",
   "withdrawFailed": "Account deletion failed. Please try again later.",
   "teamAutoSetBanner": "Your cheer team has been automatically set based on your survey!",
+  "myActivity": "My Activity",
+  "screenSetting": "Display Settings",
+  "generalSetting": "General Settings",
+  "customerSupport": "Support",
+  "account": "Account",
+  "narWebsiteDescription": "Analyze everything from player stats to detailed match data at a glance",
+  "quietHoursTitle": "Do Not Disturb",
+  "quietHoursDescription": "Notifications arrive silently in your in-app inbox during the set hours",
+  "mySubscriptionSetting": "My Subscription Settings",
+  "matchListSetting": "Match List Settings",
+  "calendarSetting": "Calendar Settings",
+  "accountSetting": "Account Settings",
+  "withdrawTitle": "Delete Account",
+  "withdrawHeadline": "{nickname}\nAre you leaving Warding.. You'll come back, right?..",
+  "@withdrawHeadline": {
+    "placeholders": {
+      "nickname": { "type": "String" }
+    }
+  },
+  "withdrawWarningData": "Deleting your account erases all data including subscriptions, notifications, and ratings. This cannot be undone.",
+  "withdrawWarningImmediate": "Tapping Done deletes your account immediately.",
+  "withdrawFeedback": "Warding grows every day on your feedback.\nTell us what fell short and we'll fix it right away.",
+  "withdrawSubmit": "Delete my Warding account",
+  "accountNickname": "Nickname",
+  "accountEmail": "Email",
+  "logoutConfirmTitle": "Log out?",
+  "logoutConfirmMessage": "You will be logged out of {email}.",
+  "@logoutConfirmMessage": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "logoutConfirmButton": "Log out",
+  "calendarWeekStartDescription": "Choose which day the week starts on (Monday/Sunday).",
+  "spoilerCard": "Spoiler Guard Card",
+  "spoilerCardDescription": "Turn the score spoiler guard card on or off",
+  "screenSettingMatchList": "Match List",
+  "screenSettingCalendar": "Calendar",
   "myReviewRating": "My Reviews/Ratings",
   "customerService": "Support/Inquiry",
   "notice": "Notices",
@@ -281,6 +319,7 @@
   "subscriptionLoadFailed": "Failed to load subscriptions",
   "notificationLoadFailed": "Failed to load notifications.",
   "teamAlarmLoadFailed": "Failed to load team alarm settings",
+  "teamAlarmSaveFailed": "Failed to save team alarm settings",
   "profileLoadFailed": "Failed to load profile",
   "requiredField": "This field is required.",
   "tagFormatError": "2-5 alphanumeric characters required.",
