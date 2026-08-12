@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../styles/app_colors.dart';
+import 'nar_live_dot.dart';
 
 /// 라이브 진행중 표시 배지. 빨간 점 + LIVE 텍스트, 둥근 8.
 /// 시간 배지([NarBadge])와 동일한 높이(24)라 그대로 자리에 교체 가능.
+/// 점은 [NarLiveDot] 이라 천천히 깜박인다.
 class NarLiveBadge extends StatelessWidget {
   const NarLiveBadge({super.key, this.scale = 1});
 
@@ -23,14 +25,7 @@ class NarLiveBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6 * scale,
-            height: 6 * scale,
-            decoration: const BoxDecoration(
-              color: AppColors.liveAccent,
-              shape: BoxShape.circle,
-            ),
-          ),
+          NarLiveDot(scale: scale),
           SizedBox(width: 6 * scale),
           Text(
             'LIVE',
