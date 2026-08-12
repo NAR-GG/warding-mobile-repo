@@ -3,6 +3,7 @@ import '../../../l10n/app_localizations.dart';
 
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/match_status.dart';
 import '../../../util/match_title_l10n.dart';
 import '../../../viewmodel/match_day/match_day_viewmodel.dart';
 import '../../match_detail/match_detail_screen.dart';
@@ -65,6 +66,8 @@ class MatchDayView extends StatelessWidget {
         return MatchCard(
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
+          // index 1 은 날짜 헤더 바로 아래 첫 카드 — 위 구분선을 끈다.
+          showTopBorder: index > 1,
           time: m.scheduledTime,
           label: _localizeMatchTitle(context, m.matchTitle),
           homeName: _shortName(m.teamA),
@@ -77,7 +80,13 @@ class MatchDayView extends StatelessWidget {
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),
           liveSetLabel: _isLive(m.matchStatus)
-              ? l.setInProgress(m.sets.length.clamp(1, 99))
+              ? l.setInProgress(
+                  liveSetNumber(
+                    homeScore: m.teamA.score,
+                    awayScore: m.teamB.score,
+                    setsPlayed: m.sets.length,
+                  ),
+                )
               : null,
           leagueInfo: m.leagueInfo,
           spoilerPreventionEnabled: spoilerPreventionEnabled,
@@ -106,11 +115,8 @@ class MatchDayView extends StatelessWidget {
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
 
-  /// matchStatus 값이 'live'/'in_progress'/'ongoing' 이면 라이브로 본다 (대소문자 무시).
-  bool _isLive(String status) {
-    final s = status.toLowerCase();
-    return s == 'live' || s == 'in_progress' || s == 'ongoing';
-  }
+  /// 라이브 판정은 표기 흔들림(`inProgress` 등)을 흡수하는 공용 유틸에 맡긴다.
+  bool _isLive(String status) => isLiveMatchStatus(status);
 
   /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열 (경기리스트와 동일).
   String _relativeLabel(DateTime date, AppLocalizations l) {
