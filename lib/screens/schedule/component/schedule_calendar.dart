@@ -48,20 +48,22 @@ class ScheduleCalendar extends StatefulWidget {
 }
 
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
-  /// 월(月)별 슬라이드 시작 위치(beginX). +1: 오른쪽에서 들어와 왼쪽으로
-  /// 나감(다음 달), -1: 그 반대(이전 달).
+  /// 지금까지 겪은 월 전환 횟수. 매 전환마다 하나씩 늘려 [CalendarMonthGrid]의
+  /// key로 쓴다.
   ///
-  /// 예전엔 이 값을 `_direction` 필드 하나에 담아 모든 자식이 공유해서
-  /// 읽었다. 그런데 월 전환 애니메이션(300ms)이 끝나기 전에 또 스와이프하면
-  /// AnimatedSwitcher 안에 아직 빠져나가는 중인 이전 그리드가 남아있는 채로
-  /// 새 전환이 시작되고, 그 이전 그리드가 transitionBuilder 에서 방금 덮어쓴
-  /// `_direction`을 다시 읽어버려 방향이 갑자기 바뀌며 화면 중간에 튀었다
-  /// (연속 스와이프 시 날짜가 밀리는 버그).
-  ///
-  /// 전환이 시작되는 그 순간, 관련된 두 달(새로 들어오는 달·빠지는 달)의
-  /// beginX 를 각자의 키로 고정해 두면 이후 다른 전환이 일어나도 영향받지
-  /// 않는다.
-  final Map<DateTime, double> _beginXByMonth = {};
+  /// 예전엔 그리드 key를 `ValueKey(month)`로, 즉 달 값 그 자체로 줬다.
+  /// 그러면 왕복으로 빠르게 스와이프할 때(예: 8월→9월→8월) 아직 빠져나가는
+  /// 중인 '옛 8월' 그리드와 새로 들어오는 '새 8월' 그리드가 같은 key를
+  /// 갖게 되고, AnimatedSwitcher가 둘을 같은 자식으로 오인해 위치가 튀었다
+  /// (스와이프 시 날짜가 밀리는 버그). 전환마다 고유하게 증가하는 값을
+  /// key로 쓰면 같은 달로 왕복해도 절대 겹치지 않는다.
+  int _generation = 0;
+
+  /// 세대(generation)별 슬라이드 시작 위치(beginX). +1: 오른쪽에서 들어와
+  /// 왼쪽으로 나감(다음 달), -1: 그 반대(이전 달). 전환이 시작되는 순간
+  /// 관련된 두 세대(새로 들어오는 쪽·빠지는 쪽)에 각각 고정해 두면 이후
+  /// 다른 전환이 일어나도 영향받지 않는다.
+  final Map<int, double> _beginXByGeneration = {0: 1};
 
   /// 드래그 중 누적된 가로 이동량. 빠른 플릭이 아니라 천천히 끝까지 미는
   /// 드래그도 인식하려면 속도뿐 아니라 이동 거리도 봐야 한다.
@@ -73,8 +75,10 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     // 월 변경 방향에 맞춰 슬라이드 방향을 정한다 (스와이프·날짜피커 공통).
     if (widget.month != oldWidget.month) {
       final forward = widget.month.isAfter(oldWidget.month);
-      _beginXByMonth[widget.month] = forward ? 1 : -1;
-      _beginXByMonth[oldWidget.month] = forward ? -1 : 1;
+      final previousGeneration = _generation;
+      _generation++;
+      _beginXByGeneration[_generation] = forward ? 1 : -1;
+      _beginXByGeneration[previousGeneration] = forward ? -1 : 1;
     }
   }
 
@@ -109,11 +113,11 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 );
               },
               transitionBuilder: (child, animation) {
-                // 이 자식(달)이 화면에 들어올 때 고정된 시작 위치를 그대로
+                // 이 자식(세대)이 화면에 들어올 때 고정된 시작 위치를 그대로
                 // 쓴다 — 그 사이 다른 전환이 일어나도 바뀌지 않는다.
                 final key = child.key;
-                final childMonth = key is ValueKey<DateTime> ? key.value : month;
-                final beginX = _beginXByMonth[childMonth] ?? 1;
+                final generation = key is ValueKey<int> ? key.value : _generation;
+                final beginX = _beginXByGeneration[generation] ?? 1;
                 return ClipRect(
                   child: SlideTransition(
                     position: Tween<Offset>(
@@ -125,7 +129,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
                 );
               },
               child: CalendarMonthGrid(
-                key: ValueKey(month),
+                key: ValueKey(_generation),
                 month: month,
                 scale: scale,
                 weekStart: widget.weekStart,
