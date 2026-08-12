@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../../model/live_match_activity.dart';
-import '../../model/match_game.dart';
 import '../../model/team_notification_subscription.dart';
 import '../match/match_detail_repository.dart';
 import '../match/match_subscription_repository.dart';
@@ -30,7 +28,7 @@ class LiveMatchActivityController {
   /// 앱 시작·포그라운드 복귀 시 호출한다. 진행 중(세트 간 휴식 포함)인
   /// 경기가 하나라도 있으면 그 카드는 서버가 관리하므로 건드리지 않는다.
   ///
-  /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 오늘 경기를
+  /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 경기(오늘·어제)를
   /// 훑는다. 앞쪽이 후보가 훨씬 적어 대부분 거기서 끝난다.
   Future<void> dismissStaleCards() async {
     if (!await _service.isSupported()) return;
@@ -41,7 +39,7 @@ class LiveMatchActivityController {
       final subscribedIds = await _subscribedMatchIds() ?? const <String>{};
       if (await _anyOngoing(subscribedIds)) return;
 
-      // 오늘 경기 목록은 인증이 필요 없다. 이쪽 조회까지 실패했다면 후보를
+      // 날짜별 경기 목록은 인증이 필요 없다. 이쪽 조회까지 실패했다면 후보를
       // 다 보지 못한 것이라, 진행 중인 카드를 잘못 내리지 않도록 멈춘다.
       final todays = await _todayMatchIdsOfSubscribedTeams();
       if (todays == null) return;
@@ -67,20 +65,24 @@ class LiveMatchActivityController {
     return ongoing.any((v) => v);
   }
 
-  /// 해당 경기가 아직 카드를 유지해야 하는 상태인지.
+  /// 해당 경기가 아직 카드를 유지해야 하는 상태인지. 서버 `matchStatus` 하나만 본다.
   ///
-  /// 세트 진행 중뿐 아니라 세트 간 휴식([LiveMatchPhase.setEnded])도
-  /// 포함한다 — 그때 내리면 서버가 "다음 세트 준비 중"으로 갱신해 둔
-  /// 카드를 끊어버린다.
+  /// 예전엔 세트 목록(`/matches/{id}/games`)에서 국면을 추론했는데, 그 API 는 아직
+  /// 치르지 않은 세트를 아예 내려주지 않는다 — 세트 상태는 라이브 스토어의 gameId 로
+  /// 만들어지고 시작 전 세트는 gameId 가 없다. 그래서 **세트 사이에는 목록이 항상
+  /// "전부 ENDED"** 였고, 경기 종료로 오판해 진행 중인 경기의 카드를 [endAll] 로
+  /// 즉시 지웠다(실측: bo3 2:0 으로 끝난 경기 응답이 2세트뿐, SCHEDULED 세트는
+  /// 애초에 존재하지 않는다 → `setEnded` 분기는 도달 불가였다).
+  ///
+  /// 서버 상태가 늦게 `completed` 로 바뀌면 카드가 조금 더 남는다. 그건 서버의 매치
+  /// 종료 푸시와 orphan 스윕(5분)이 만회한다. 반대로 잘못 지우면 앱이 해제를 서버에
+  /// 알리지 않으므로 서버는 카드가 살아있다고 믿고 그 경기 내내 재생성하지 못한다 —
+  /// 늦게 닫는 건 만회되고 잘못 닫는 건 복구 불가라, 의심스러우면 두는 쪽이 싸다.
   Future<bool> _isOngoing(String matchId) async {
     final match = await MatchDetailRepository.instance.fetchMatch(matchId);
     if (match == null) return false;
-    // 서버 상태가 '예정'이면 세트 목록까지 받아볼 필요도 없다.
-    if (isScheduledStatus(match.matchStatus)) return false;
-
-    final (games, _) = await MatchDetailRepository.instance.fetchGames(matchId);
-    final phase = resolvePhase(games);
-    return phase == LiveMatchPhase.playing || phase == LiveMatchPhase.setEnded;
+    return !isScheduledStatus(match.matchStatus) &&
+        !isFinishedStatus(match.matchStatus);
   }
 
   /// 알림을 켠 경기 ID 목록. 조회에 실패하면 null.
@@ -97,7 +99,10 @@ class LiveMatchActivityController {
     }
   }
 
-  /// 구독(또는 응원) 팀이 나오는 오늘 경기의 ID 목록. 조회에 실패하면 null.
+  /// 구독(또는 응원) 팀이 나오는 경기의 ID 목록(오늘 + 어제). 조회에 실패하면 null.
+  ///
+  /// 어제까지 보는 이유: 자정을 넘긴 경기(늦게 시작한 장기 bo5)는 오늘 목록에 없어서
+  /// 후보에서 빠지고, 그러면 "진행 중인 경기 없음" 으로 판정돼 살아있는 카드를 지웠다.
   Future<List<String>?> _todayMatchIdsOfSubscribedTeams() async {
     final codes = {
       for (final s in await _loadTeamSubs())
@@ -106,16 +111,22 @@ class LiveMatchActivityController {
     if (codes.isEmpty) return const [];
 
     try {
-      final matches = await ScheduleRepository.instance
-          .fetchMatchesByDate(DateTime.now(), leagues: const ['ALL']);
+      final now = DateTime.now();
+      final days = await Future.wait([
+        ScheduleRepository.instance.fetchMatchesByDate(now, leagues: const ['ALL']),
+        ScheduleRepository.instance.fetchMatchesByDate(
+            now.subtract(const Duration(days: 1)),
+            leagues: const ['ALL']),
+      ]);
       return [
-        for (final m in matches)
-          if (codes.contains(m.teamA.teamCode) ||
-              codes.contains(m.teamB.teamCode))
-            m.matchId,
+        for (final matches in days)
+          for (final m in matches)
+            if (codes.contains(m.teamA.teamCode) ||
+                codes.contains(m.teamB.teamCode))
+              m.matchId,
       ];
     } catch (e) {
-      debugPrint('[LiveActivity] 오늘 경기 조회 실패: $e');
+      debugPrint('[LiveActivity] 경기 목록 조회 실패: $e');
       return null;
     }
   }
@@ -148,25 +159,7 @@ class LiveMatchActivityController {
 
   // ── 상태 해석 ───────────────────────────────
 
-  /// 세트 목록에서 현재 국면을 판단한다. 아직 시작 전이면 null.
-  ///
-  /// 세트가 하나도 없거나 전부 `SCHEDULED` 면 경기가 시작되지 않은 것이므로
-  /// null 을 돌려준다.
-  @visibleForTesting
-  LiveMatchPhase? resolvePhase(List<MatchGame> games) {
-    if (games.any((g) => g.isLive)) return LiveMatchPhase.playing;
-    if (games.isNotEmpty && games.every((g) => g.isEnded)) {
-      return LiveMatchPhase.matchEnded;
-    }
-    // 진행 중인 세트는 없지만 끝난 세트가 있으면 세트 간 휴식.
-    if (games.any((g) => g.isEnded)) return LiveMatchPhase.setEnded;
-    return null;
-  }
-
   /// 서버가 내려준 matchStatus 가 '아직 시작 전'을 뜻하는지.
-  ///
-  /// 세트 API 가 늦게 갱신되는 경우를 막는 2차 방어선이다. 값이 비어 있거나
-  /// 모르는 값이면 false 를 돌려 세트 데이터 판정에 맡긴다.
   ///
   /// 실제 서버(`GET /api/mobile/matches/{id}`)는 시작 전 경기에 `unstarted`
   /// 를 내려준다. 나머지 값은 서버 구현이 바뀌어도 걸리도록 함께 둔 것이다.
@@ -182,6 +175,20 @@ class LiveMatchActivityController {
         s.contains('ready') ||
         status.contains('예정') ||
         status.contains('대기');
+  }
+
+  /// 서버가 내려준 matchStatus 가 '경기 종료'를 뜻하는지.
+  ///
+  /// 실제 서버는 `completed` 를 내려준다. 나머지 값은 서버 구현이 바뀌어도 걸리도록
+  /// 함께 둔 것이다. 모르는 값이면 false — 진행 중으로 보고 카드를 남긴다.
+  @visibleForTesting
+  bool isFinishedStatus(String status) {
+    final s = status.toLowerCase();
+    return s.contains('complet') ||
+        s.contains('finish') ||
+        s.contains('ended') ||
+        status.contains('종료') ||
+        status.contains('완료');
   }
 }
 
