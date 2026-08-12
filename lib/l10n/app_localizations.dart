@@ -889,6 +889,174 @@ abstract class AppLocalizations {
   /// **'설문 기반으로 응원하는 팀이 자동으로 설정됐어요!'**
   String get teamAutoSetBanner;
 
+  /// No description provided for @myActivity.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 활동'**
+  String get myActivity;
+
+  /// No description provided for @screenSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'화면 설정'**
+  String get screenSetting;
+
+  /// No description provided for @generalSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'일반 설정'**
+  String get generalSetting;
+
+  /// No description provided for @customerSupport.
+  ///
+  /// In ko, this message translates to:
+  /// **'고객 지원'**
+  String get customerSupport;
+
+  /// No description provided for @account.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정'**
+  String get account;
+
+  /// No description provided for @narWebsiteDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 스탯부터 상세 경기 데이터까지, 한눈에 분석해 보세요'**
+  String get narWebsiteDescription;
+
+  /// No description provided for @quietHoursTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'방해 금지 모드'**
+  String get quietHoursTitle;
+
+  /// No description provided for @quietHoursDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정된 시간 동안 푸시 알림 없이 앱 내 알림함에만 쌓입니다'**
+  String get quietHoursDescription;
+
+  /// No description provided for @mySubscriptionSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이 구독 설정'**
+  String get mySubscriptionSetting;
+
+  /// No description provided for @matchListSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기리스트 설정'**
+  String get matchListSetting;
+
+  /// No description provided for @calendarSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'캘린더 설정'**
+  String get calendarSetting;
+
+  /// No description provided for @accountSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정 설정'**
+  String get accountSetting;
+
+  /// No description provided for @withdrawTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'회원 탈퇴'**
+  String get withdrawTitle;
+
+  /// No description provided for @withdrawHeadline.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님\n와딩을 떠나시는건가요.. 다시 돌아오실거죠?..'**
+  String withdrawHeadline(String nickname);
+
+  /// No description provided for @withdrawWarningData.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정을 탈퇴하면 구독,알림,평점 등 모든 데이터가 삭제되며 되돌릴 수 없습니다.'**
+  String get withdrawWarningData;
+
+  /// No description provided for @withdrawWarningImmediate.
+  ///
+  /// In ko, this message translates to:
+  /// **'완료를 누를시 즉시 탈퇴됩니다.'**
+  String get withdrawWarningImmediate;
+
+  /// No description provided for @withdrawFeedback.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩은 소중한 피드백으로 매일 성장하고 있어요.\n아쉬웠던 점을 알려주시면 바로 해결해 드릴게요.'**
+  String get withdrawFeedback;
+
+  /// No description provided for @withdrawSubmit.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩 회원 탈퇴하기'**
+  String get withdrawSubmit;
+
+  /// No description provided for @accountNickname.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임'**
+  String get accountNickname;
+
+  /// No description provided for @accountEmail.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일'**
+  String get accountEmail;
+
+  /// No description provided for @logoutConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그아웃 하시겠습니까?'**
+  String get logoutConfirmTitle;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 로그인된 {email} 계정에서 로그아웃됩니다.'**
+  String logoutConfirmMessage(String email);
+
+  /// No description provided for @logoutConfirmButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그아웃'**
+  String get logoutConfirmButton;
+
+  /// No description provided for @calendarWeekStartDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'주 시작 요일(월요일/일요일)을 설정합니다.'**
+  String get calendarWeekStartDescription;
+
+  /// No description provided for @spoilerCard.
+  ///
+  /// In ko, this message translates to:
+  /// **'스포 방지 카드'**
+  String get spoilerCard;
+
+  /// No description provided for @spoilerCardDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'스코어 스포 방지 카드를 ON/OFF 할 수 있습니다'**
+  String get spoilerCardDescription;
+
+  /// No description provided for @screenSettingMatchList.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 리스트'**
+  String get screenSettingMatchList;
+
+  /// No description provided for @screenSettingCalendar.
+  ///
+  /// In ko, this message translates to:
+  /// **'캘린더'**
+  String get screenSettingCalendar;
+
   /// No description provided for @myReviewRating.
   ///
   /// In ko, this message translates to:
@@ -1536,6 +1704,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'팀 알림 정보를 불러오지 못했어요'**
   String get teamAlarmLoadFailed;
+
+  /// No description provided for @teamAlarmSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'팀 알림 설정을 저장하지 못했어요'**
+  String get teamAlarmSaveFailed;
 
   /// No description provided for @profileLoadFailed.
   ///

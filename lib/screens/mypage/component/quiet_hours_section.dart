@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../../components/nar_toggle.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/mypage/quiet_hours_viewmodel.dart';
+import 'mypage_card_section.dart';
 import 'quiet_hours_time_sheet.dart';
 
-/// 마이페이지 — 알림 잠자기 섹션 (양옆 20 패딩).
+/// 마이페이지 — '일반 설정' 섹션. 현재 방해 금지 모드 한 항목을 담는다.
 ///
-/// 구독 팀 알림 설정 **아래**에 온다.
+/// '화면 설정' 섹션 **아래**에 온다. 카드 껍데기는 [MypageCardSection] 을
+/// 공유하고, 토글 아래 시작/종료 시각 선택은 ON 일 때만 펼친다.
 class QuietHoursSection extends StatefulWidget {
   const QuietHoursSection({super.key, this.scale = 1});
 
@@ -59,59 +60,38 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
 
   Widget _buildSection(double scale) {
     final l = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l.quietHours,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              fontSize: 17 * scale,
-              height: 25 / 17,
-              color: AppColors.narText,
-            ),
-          ),
-          SizedBox(height: 16 * scale),
-          _buildCard(scale, l),
-        ],
-      ),
+    final settings = _viewModel.settings;
+    return MypageCardSection(
+      scale: scale,
+      label: l.generalSetting,
+      children: [
+        MypageCardToggleRow(
+          scale: scale,
+          title: l.quietHoursTitle,
+          description: l.quietHoursDescription,
+          value: settings.enabled,
+          onChanged: _viewModel.isSaving
+              ? null
+              : (v) => _viewModel.setEnabled(v),
+          extra: _buildDetail(scale, l),
+        ),
+      ],
     );
   }
 
-  Widget _buildCard(double scale, AppLocalizations l) {
+  /// 토글이 ON 일 때만 펼치는 시작/종료 시각 선택 + 에러 안내.
+  /// OFF 면 설명 문구만 남기고 접는다.
+  Widget? _buildDetail(double scale, AppLocalizations l) {
     final settings = _viewModel.settings;
     final error = _viewModel.errorMessage;
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narDark600,
-        borderRadius: BorderRadius.circular(10 * scale),
-      ),
+    if (!settings.enabled && error == null) return null;
+    return Padding(
+      padding: EdgeInsets.only(left: 12 * scale, top: 8 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _Row(
-            label: l.quietHoursUse,
-            scale: scale,
-            trailing: NarToggle(
-              value: settings.enabled,
-              onChanged: _viewModel.isSaving
-                  ? null
-                  : (v) => _viewModel.setEnabled(v),
-              scale: scale,
-            ),
-          ),
           if (settings.enabled) ...[
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 20 * scale,
-                vertical: 6 * scale,
-              ),
-              child: Container(height: 1, color: AppColors.narLine),
-            ),
             _Row(
               label: l.quietHoursStart,
               scale: scale,
@@ -125,47 +105,22 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
               trailing: _TimeValue(label: _label(l, settings.end), scale: scale),
             ),
           ],
-          Padding(
-            padding: EdgeInsets.fromLTRB(20 * scale, 6 * scale, 20 * scale, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  // "무음으로 쌓인다"는 동작이 눈에 보이지 않아 유저가 껐다고 착각하기 쉽다.
-                  // 그래서 ON 안내에 실제 설정 시각을 넣는다.
-                  settings.enabled
-                      ? l.quietHoursOnHint(
-                          _label(l, settings.start),
-                          _label(l, settings.end),
-                        )
-                      : l.quietHoursOffHint,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12 * scale,
-                    height: 1.5,
-                    color: AppColors.narTextTertiarySub,
-                  ),
+          // 에러는 설명을 대체하지 않고 아래에 덧붙인다. 대체하면 유저가
+          // 이 기능이 무엇인지 설명을 잃는다.
+          if (error != null)
+            Padding(
+              padding: EdgeInsets.only(top: 4 * scale),
+              child: Text(
+                error,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12 * scale,
+                  height: 1.5,
+                  color: AppColors.narTextRed,
                 ),
-                // 에러는 안내를 대체하지 않고 아래에 덧붙인다. 대체하면 유저가
-                // 이 기능이 무엇인지 설명을 잃는다.
-                if (error != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: 4 * scale),
-                    child: Text(
-                      error,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12 * scale,
-                        height: 1.5,
-                        color: AppColors.narTextRed,
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -179,8 +134,8 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
   }
 }
 
-/// 라벨 + 우측 위젯 한 행. 팀 알림 행의 좌측 들여쓰기(60)는 팀 로고 정렬용이라
-/// 여기선 쓰지 않고 좌우 20으로 맞춘다.
+/// 라벨 + 우측 위젯 한 행. 좌우 패딩은 부모(카드 안쪽 들여쓰기)가 잡으므로
+/// 여기선 상하 간격만 준다.
 class _Row extends StatelessWidget {
   const _Row({
     required this.label,
@@ -197,7 +152,7 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 5 * scale),
+      padding: EdgeInsets.symmetric(vertical: 5 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,

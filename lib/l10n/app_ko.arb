@@ -270,6 +270,44 @@
   "withdrawConfirmButton": "탈퇴",
   "withdrawFailed": "회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.",
   "teamAutoSetBanner": "설문 기반으로 응원하는 팀이 자동으로 설정됐어요!",
+  "myActivity": "내 활동",
+  "screenSetting": "화면 설정",
+  "generalSetting": "일반 설정",
+  "customerSupport": "고객 지원",
+  "account": "계정",
+  "narWebsiteDescription": "선수 스탯부터 상세 경기 데이터까지, 한눈에 분석해 보세요",
+  "quietHoursTitle": "방해 금지 모드",
+  "quietHoursDescription": "설정된 시간 동안 푸시 알림 없이 앱 내 알림함에만 쌓입니다",
+  "mySubscriptionSetting": "마이 구독 설정",
+  "matchListSetting": "경기리스트 설정",
+  "calendarSetting": "캘린더 설정",
+  "accountSetting": "계정 설정",
+  "withdrawTitle": "회원 탈퇴",
+  "withdrawHeadline": "{nickname}님\n와딩을 떠나시는건가요.. 다시 돌아오실거죠?..",
+  "@withdrawHeadline": {
+    "placeholders": {
+      "nickname": { "type": "String" }
+    }
+  },
+  "withdrawWarningData": "계정을 탈퇴하면 구독,알림,평점 등 모든 데이터가 삭제되며 되돌릴 수 없습니다.",
+  "withdrawWarningImmediate": "완료를 누를시 즉시 탈퇴됩니다.",
+  "withdrawFeedback": "와딩은 소중한 피드백으로 매일 성장하고 있어요.\n아쉬웠던 점을 알려주시면 바로 해결해 드릴게요.",
+  "withdrawSubmit": "와딩 회원 탈퇴하기",
+  "accountNickname": "닉네임",
+  "accountEmail": "이메일",
+  "logoutConfirmTitle": "로그아웃 하시겠습니까?",
+  "logoutConfirmMessage": "현재 로그인된 {email} 계정에서 로그아웃됩니다.",
+  "@logoutConfirmMessage": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "logoutConfirmButton": "로그아웃",
+  "calendarWeekStartDescription": "주 시작 요일(월요일/일요일)을 설정합니다.",
+  "spoilerCard": "스포 방지 카드",
+  "spoilerCardDescription": "스코어 스포 방지 카드를 ON/OFF 할 수 있습니다",
+  "screenSettingMatchList": "경기 리스트",
+  "screenSettingCalendar": "캘린더",
   "myReviewRating": "내 리뷰/평점",
   "customerService": "고객센터/문의",
   "notice": "공지사항",
@@ -411,6 +449,7 @@
   "subscriptionLoadFailed": "구독 정보를 불러오지 못했어요",
   "notificationLoadFailed": "알림을 불러오지 못했습니다.",
   "teamAlarmLoadFailed": "팀 알림 정보를 불러오지 못했어요",
+  "teamAlarmSaveFailed": "팀 알림 설정을 저장하지 못했어요",
   "profileLoadFailed": "프로필을 불러오지 못했어요",
   "requiredField": "필수 입력 항목입니다.",
   "tagFormatError": "영문/숫자 2~5자로 입력하세요.",

@@ -462,6 +462,101 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your cheer team has been automatically set based on your survey!';
 
   @override
+  String get myActivity => 'My Activity';
+
+  @override
+  String get screenSetting => 'Display Settings';
+
+  @override
+  String get generalSetting => 'General Settings';
+
+  @override
+  String get customerSupport => 'Support';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get narWebsiteDescription =>
+      'Analyze everything from player stats to detailed match data at a glance';
+
+  @override
+  String get quietHoursTitle => 'Do Not Disturb';
+
+  @override
+  String get quietHoursDescription =>
+      'Notifications arrive silently in your in-app inbox during the set hours';
+
+  @override
+  String get mySubscriptionSetting => 'My Subscription Settings';
+
+  @override
+  String get matchListSetting => 'Match List Settings';
+
+  @override
+  String get calendarSetting => 'Calendar Settings';
+
+  @override
+  String get accountSetting => 'Account Settings';
+
+  @override
+  String get withdrawTitle => 'Delete Account';
+
+  @override
+  String withdrawHeadline(String nickname) {
+    return '$nickname\nAre you leaving Warding.. You\'ll come back, right?..';
+  }
+
+  @override
+  String get withdrawWarningData =>
+      'Deleting your account erases all data including subscriptions, notifications, and ratings. This cannot be undone.';
+
+  @override
+  String get withdrawWarningImmediate =>
+      'Tapping Done deletes your account immediately.';
+
+  @override
+  String get withdrawFeedback =>
+      'Warding grows every day on your feedback.\nTell us what fell short and we\'ll fix it right away.';
+
+  @override
+  String get withdrawSubmit => 'Delete my Warding account';
+
+  @override
+  String get accountNickname => 'Nickname';
+
+  @override
+  String get accountEmail => 'Email';
+
+  @override
+  String get logoutConfirmTitle => 'Log out?';
+
+  @override
+  String logoutConfirmMessage(String email) {
+    return 'You will be logged out of $email.';
+  }
+
+  @override
+  String get logoutConfirmButton => 'Log out';
+
+  @override
+  String get calendarWeekStartDescription =>
+      'Choose which day the week starts on (Monday/Sunday).';
+
+  @override
+  String get spoilerCard => 'Spoiler Guard Card';
+
+  @override
+  String get spoilerCardDescription =>
+      'Turn the score spoiler guard card on or off';
+
+  @override
+  String get screenSettingMatchList => 'Match List';
+
+  @override
+  String get screenSettingCalendar => 'Calendar';
+
+  @override
   String get myReviewRating => 'My Reviews/Ratings';
 
   @override
@@ -796,6 +891,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teamAlarmLoadFailed => 'Failed to load team alarm settings';
+
+  @override
+  String get teamAlarmSaveFailed => 'Failed to save team alarm settings';
 
   @override
   String get profileLoadFailed => 'Failed to load profile';
