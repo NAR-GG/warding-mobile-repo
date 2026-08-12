@@ -93,13 +93,24 @@ class NarDetailHeader extends StatelessWidget {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      backButton,
-                      SizedBox(width: 16 * scale),
-                      Text(title, style: titleStyle),
-                    ],
+                  // 우측 슬롯 폭은 내용에 따라 달라진다(스포방지 토글 등).
+                  // 제목이 길어도 슬롯을 밀어내지 않도록 제목만 줄인다.
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        backButton,
+                        SizedBox(width: 16 * scale),
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: titleStyle,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   ?trailing,
                 ],

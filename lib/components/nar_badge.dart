@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../styles/app_colors.dart';
+import 'nar_live_dot.dart';
 
 /// 공용 작은 배지 (높이 24, 둥근 8).
 /// 다크 배경 + 회색 테두리 + 흰 텍스트. 시간/태그 등 짧은 라벨에 쓴다.
@@ -78,6 +79,7 @@ class NarBadgeSide extends StatelessWidget {
 /// LIVE 라이트 뱃지 (높이 24). 빨간 점 + 'LIVE' 텍스트.
 /// 옅은 빨강 배경 + 빨강 보더 + 빨강 텍스트의 라이트 톤. 시안 'nar_badge_LIVE'.
 /// 시간 뱃지([NarBadge])와 동일한 높이라 자리 교체 가능.
+/// 점은 [NarLiveDot] 이라 천천히 깜박인다.
 class NarBadgeLive extends StatelessWidget {
   const NarBadgeLive({super.key, this.scale = 1});
 
@@ -97,14 +99,7 @@ class NarBadgeLive extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6 * scale,
-            height: 6 * scale,
-            decoration: const BoxDecoration(
-              color: AppColors.liveAccent,
-              shape: BoxShape.circle,
-            ),
-          ),
+          NarLiveDot(scale: scale),
           SizedBox(width: 6 * scale),
           Text(
             'LIVE',

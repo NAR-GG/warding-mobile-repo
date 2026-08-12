@@ -50,17 +50,24 @@ class _MatchCardSkeletonState extends State<MatchCardSkeleton>
             ),
           ),
         );
-        Widget teamColumn() => Column(
-          children: [
-            box(w: 50 * scale, h: 50 * scale, r: 8), // 로고
-            SizedBox(height: 4 * scale),
-            box(w: 36 * scale, h: 16 * scale), // 팀명
-          ],
+        // 실제 카드([MatchCard])의 팀 컬럼과 같은 폭 80 고정.
+        Widget teamColumn() => SizedBox(
+          width: 80 * scale,
+          child: Column(
+            children: [
+              box(w: 50 * scale, h: 50 * scale, r: 8), // 로고
+              SizedBox(height: 4 * scale),
+              box(w: 36 * scale, h: 16 * scale), // 팀명
+            ],
+          ),
         );
+        // 카드와 같은 padding 10px 16px 24px — 로딩→실데이터 전환 시 점프 방지.
         return Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 20 * scale,
-            vertical: 10 * scale,
+          padding: EdgeInsets.only(
+            top: 10 * scale,
+            left: 16 * scale,
+            right: 16 * scale,
+            bottom: 24 * scale,
           ),
           child: Column(
             children: [
@@ -74,16 +81,17 @@ class _MatchCardSkeletonState extends State<MatchCardSkeleton>
                 ],
               ),
               SizedBox(height: 20 * scale),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  teamColumn(),
-                  SizedBox(width: 42 * scale),
-                  box(w: 60 * scale, h: 28 * scale), // 스코어
-                  SizedBox(width: 42 * scale),
-                  teamColumn(),
-                ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    teamColumn(),
+                    box(w: 60 * scale, h: 28 * scale), // 스코어
+                    teamColumn(),
+                  ],
+                ),
               ),
             ],
           ),

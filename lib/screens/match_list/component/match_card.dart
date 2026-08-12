@@ -38,6 +38,7 @@ class MatchCard extends StatelessWidget {
     this.scale = 1,
     this.leagueInfo = '',
     this.spoilerPreventionEnabled = true,
+    this.showTopBorder = true,
   });
 
   /// 경기 예약 알림 구독 API(`/match-subscriptions`)에 쓰는 경기 ID.
@@ -72,6 +73,10 @@ class MatchCard extends StatelessWidget {
   /// 스포방지 on/off. false 면 [_SpoilerOverlay] 없이 스코어를 바로 보여준다.
   final bool spoilerPreventionEnabled;
 
+  /// 위쪽 1px 구분선을 그릴지. 날짜 헤더 바로 아래 첫 카드는 헤더와 붙어
+  /// 선이 겹쳐 보이므로 false 로 끈다. LIVE 카드는 위 보더가 없어 무관.
+  final bool showTopBorder;
+
   bool get _isAlarmEligibleLeague {
     final info = leagueInfo.toUpperCase();
     return info.contains('LCK') ||
@@ -82,15 +87,16 @@ class MatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = isLive
-        ? EdgeInsets.only(
-            top: 10 * scale,
-            left: 20 * scale,
-            right: 20 * scale,
-            bottom: 24 * scale,
-          )
-        : EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 10 * scale);
+    // 시안 공통: padding 10px 16px 24px.
+    final padding = EdgeInsets.only(
+      top: 10 * scale,
+      left: 16 * scale,
+      right: 16 * scale,
+      bottom: 24 * scale,
+    );
 
+    // LIVE: 배경 narDark600 + 왼쪽 3px 보더.
+    // 예정·종료: 배경 narBgTertiary + 위쪽 1px 보더(카드 구분선 역할).
     final decoration = isLive
         ? const BoxDecoration(
             color: AppColors.narDark600,
@@ -98,7 +104,14 @@ class MatchCard extends StatelessWidget {
               left: BorderSide(color: AppColors.liveSideBorder, width: 3),
             ),
           )
-        : null;
+        : BoxDecoration(
+            color: AppColors.narBgTertiary,
+            border: showTopBorder
+                ? const Border(
+                    top: BorderSide(color: AppColors.narLine2, width: 1),
+                  )
+                : null,
+          );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -149,39 +162,41 @@ class MatchCard extends StatelessWidget {
               ],
             ),
             SizedBox(height: 20 * scale),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _TeamColumn(
-                  name: homeName,
-                  logoUrl: homeLogoUrl,
-                  scale: scale,
-                ),
-                SizedBox(width: 20.5 * scale),
-                _SpoilerOverlay(
-                  enabled: spoilerPreventionEnabled,
-                  scale: scale,
-                  child: isLive
-                      ? _LiveScore(
-                          home: homeScore,
-                          away: awayScore,
-                          setLabel: liveSetLabel,
-                          scale: scale,
-                        )
-                      : _ScoreRow(
-                          home: homeScore,
-                          away: awayScore,
-                          scale: scale,
-                        ),
-                ),
-                SizedBox(width: 20.5 * scale),
-                _TeamColumn(
-                  name: awayName,
-                  logoUrl: awayLogoUrl,
-                  scale: scale,
-                ),
-              ],
+            // 시안 'box': 헤더보다 좌우 16 안쪽, 팀 컬럼 80 고정 + space-between.
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _TeamColumn(
+                    name: homeName,
+                    logoUrl: homeLogoUrl,
+                    scale: scale,
+                  ),
+                  _SpoilerOverlay(
+                    enabled: spoilerPreventionEnabled,
+                    scale: scale,
+                    child: isLive
+                        ? _LiveScore(
+                            home: homeScore,
+                            away: awayScore,
+                            setLabel: liveSetLabel,
+                            scale: scale,
+                          )
+                        : _ScoreRow(
+                            home: homeScore,
+                            away: awayScore,
+                            scale: scale,
+                          ),
+                  ),
+                  _TeamColumn(
+                    name: awayName,
+                    logoUrl: awayLogoUrl,
+                    scale: scale,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -354,42 +369,49 @@ class _TeamColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLogo = logoUrl != null && logoUrl!.isNotEmpty;
-    return Column(
-      children: [
-        Container(
-          width: 50 * scale,
-          height: 50 * scale,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.narLine2,
-            borderRadius: BorderRadius.circular(8),
+    // 시안 폭 80 고정 — 스코어를 카드 정중앙에 두려면 양쪽 폭이 같아야 한다.
+    return SizedBox(
+      width: 80 * scale,
+      child: Column(
+        children: [
+          Container(
+            width: 50 * scale,
+            height: 50 * scale,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.narLine2,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: hasLogo
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: resolveImageUrl(logoUrl)!,
+                      width: 40 * scale,
+                      height: 40 * scale,
+                      fit: BoxFit.contain,
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  )
+                : null,
           ),
-          child: hasLogo
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: CachedNetworkImage(
-                    imageUrl: resolveImageUrl(logoUrl)!,
-                    width: 40 * scale,
-                    height: 40 * scale,
-                    fit: BoxFit.contain,
-                    fadeInDuration: const Duration(milliseconds: 150),
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  ),
-                )
-              : null,
-        ),
-        SizedBox(height: 4 * scale),
-        Text(
-          name,
-          style: TextStyle(
-            fontFamily: 'SF Pro',
-            fontWeight: FontWeight.w600,
-            fontSize: 16 * scale,
-            height: 19 / 16,
-            color: AppColors.narTextTertiary,
+          SizedBox(height: 4 * scale),
+          Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'SF Pro',
+              fontWeight: FontWeight.w600,
+              fontSize: 16 * scale,
+              height: 19 / 16,
+              color: AppColors.narTextTertiary,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -427,8 +449,8 @@ class _ScoreRow extends StatelessWidget {
   }
 }
 
-/// 라이브 스코어. 큰 숫자 + 아래 'SET N 진행중' 라벨.
-/// 점수 색: 앞서는 쪽 scoreWin, 뒤지는 쪽 narDark600(배경과 거의 동일), 동점은 narDark200.
+/// 라이브 스코어. 큰 숫자(28/700) + gap 8 + 아래 'SET N 진행중' 라벨(12/400).
+/// 시안 색: 앞서는 쪽 scoreWin(#FA5252), 나머지 숫자와 콜론은 흰색.
 class _LiveScore extends StatelessWidget {
   const _LiveScore({
     required this.home,
@@ -442,11 +464,9 @@ class _LiveScore extends StatelessWidget {
   final String? setLabel;
   final double scale;
 
-  Color _colorFor(int self, int other) {
-    if (self > other) return AppColors.scoreWin;
-    if (self < other) return AppColors.narDark600;
-    return AppColors.narDark200;
-  }
+  /// 앞서는 쪽만 빨강, 나머지(뒤지는 쪽·동점)는 흰색.
+  Color _colorFor(int self, int other) =>
+      self > other ? AppColors.scoreWin : AppColors.narText;
 
   TextStyle _bigStyle(Color c) => TextStyle(
     fontFamily: 'SF Pro',
@@ -467,7 +487,7 @@ class _LiveScore extends StatelessWidget {
           children: [
             Text('$home', style: _bigStyle(_colorFor(home, away))),
             SizedBox(width: 14 * scale),
-            Text(':', style: _bigStyle(AppColors.narDark200)),
+            Text(':', style: _bigStyle(AppColors.narText)),
             SizedBox(width: 14 * scale),
             Text('$away', style: _bigStyle(_colorFor(away, home))),
           ],
@@ -527,9 +547,7 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
           // 공개 전에는 실제 스코어를 아예 그리지 않는다 — 흐림만으로는
           // 숫자가 비쳐 스포일러가 새기 때문에 0:0 더미를 깔아 둔다.
           Center(
-            child: revealed
-                ? widget.child
-                : _ScoreRow(home: 0, away: 0, scale: scale),
+            child: revealed ? widget.child : _SpoilerDummyScore(scale: scale),
           ),
           if (!revealed)
             Positioned.fill(
@@ -582,6 +600,43 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 스포방지 오버레이 아래 깔리는 0:0 더미 스코어.
+/// 실제 스코어([_ScoreRow]/[_LiveScore])보다 큰 시안(36/700, narText2)이고
+/// 배경 narDark600 + radius 14 로 오버레이 뒤를 가린다.
+class _SpoilerDummyScore extends StatelessWidget {
+  const _SpoilerDummyScore({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontFamily: 'SF Pro',
+      fontWeight: FontWeight.w700,
+      fontSize: 36 * scale,
+      height: 43 / 36,
+      color: AppColors.narText2,
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.narDark600,
+        borderRadius: BorderRadius.circular(14 * scale),
+      ),
+      alignment: Alignment.center,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('0', style: style),
+          SizedBox(width: 14 * scale),
+          Text(':', style: style),
+          SizedBox(width: 14 * scale),
+          Text('0', style: style),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import '../../components/scroll_to_top_button.dart';
 import '../../components/search_select_box.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
+import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
@@ -147,8 +148,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
+    // 어림 계산용 실제 높이. 틀리면 대상까지 못 가거나 지나쳐서 오늘로 이동이 어긋난다.
+    // 헤더: MatchDateHeader 가 height 38 고정.
+    // 카드: 위 10 + 헤더행 24 + 간격 20 + 팀행 73(로고 50 + 4 + 팀명 19) + 아래 24 = 151.
     const headerH = 38.0;
-    const cardH = 140.0;
+    const cardH = 151.0;
     var offset = 0.0;
     for (final day in _viewModel.schedule) {
       if (_isSameDate(day.date, target)) {
@@ -160,8 +164,19 @@ class _MatchListScreenState extends State<MatchListScreen> {
       }
       offset += headerH * scale + day.matches.length * cardH * scale;
     }
-    final max = _scrollController.position.maxScrollExtent;
-    _scrollController.jumpTo(offset.clamp(0.0, max));
+    final position = _scrollController.position;
+    final max = position.maxScrollExtent;
+    // 어림값은 실제와 어긋날 수 있다(카드 높이가 시안과 달라지거나, 첫 카드의
+    // 구분선 유무로 1px 씩 밀리는 등). 어림값이 실제보다 작으면 대상이 화면
+    // 아래에 남아 렌더되지 않는데, 다음 프레임에 같은 값을 다시 계산하면
+    // 제자리걸음만 하다 포기하게 된다. 그래서 이미 그 지점에 가 있는데도 대상이
+    // 안 보이면 한 화면씩 더 내려 반드시 아래로 나아가게 한다.
+    final estimated = offset.clamp(0.0, max);
+    final stuck = (position.pixels - estimated).abs() < 1;
+    final next = stuck
+        ? (position.pixels + position.viewportDimension * 0.8).clamp(0.0, max)
+        : estimated;
+    _scrollController.jumpTo(next);
     // 다음 프레임에 다시 시도(렌더 확장으로 max 가 늘어나 점점 아래로 접근).
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _scrollToTarget(attempt: attempt + 1));
@@ -263,6 +278,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
                       Expanded(
                         child: Text(
                           l.matchList,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'SF Pro Display',
                             fontWeight: FontWeight.w700,
@@ -273,15 +290,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: 129 * scale,
-                        child: ListenableBuilder(
-                          listenable: _viewModel,
-                          builder: (context, _) => NarSpoilerToggle(
-                            value: _viewModel.spoilerPreventionEnabled,
-                            onChanged: _viewModel.setSpoilerPreventionEnabled,
-                            scale: scale,
-                          ),
+                      // 시안 폭은 123('스포방지 ON' 기준)이지만 OFF·영문 라벨은
+                      // 더 길다. 고정폭을 주면 그만큼 넘쳐 오버플로가 나므로
+                      // 내용 폭을 그대로 쓰게 두고 제목이 양보하게 한다.
+                      ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => NarSpoilerToggle(
+                          value: _viewModel.spoilerPreventionEnabled,
+                          onChanged: _viewModel.setSpoilerPreventionEnabled,
+                          scale: scale,
                         ),
                       ),
                     ],
@@ -472,9 +489,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
           );
         }
         final m = (item as _CardItem).match;
+        // 날짜 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
+        // reverse 면 인덱스가 아래→위라 화면상 헤더 아래 카드는 인덱스상 헤더 '앞'이다.
+        final neighborIndex = _viewModel.listReversed ? index + 1 : index - 1;
+        final showTopBorder = !(neighborIndex >= 0 &&
+            neighborIndex < items.length &&
+            items[neighborIndex] is _HeaderItem);
         return MatchCard(
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
+          showTopBorder: showTopBorder,
           time: m.scheduledTime,
           label: _localizeMatchTitle(context, m.matchTitle),
           homeName: _shortName(m.teamA),
@@ -487,7 +511,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),
           liveSetLabel: _isLive(m.matchStatus)
-              ? AppLocalizations.of(context)!.setInProgress((m.sets.length).clamp(1, 99))
+              ? AppLocalizations.of(context)!.setInProgress(
+                  liveSetNumber(
+                    homeScore: m.teamA.score,
+                    awayScore: m.teamB.score,
+                    setsPlayed: m.sets.length,
+                  ),
+                )
               : null,
           leagueInfo: m.leagueInfo,
           spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
@@ -539,11 +569,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
 
-  /// matchStatus 값이 'live'/'in_progress'/'ongoing' 이면 라이브로 본다 (대소문자 무시).
-  bool _isLive(String status) {
-    final s = status.toLowerCase();
-    return s == 'live' || s == 'in_progress' || s == 'ongoing';
-  }
+  /// 라이브 판정은 표기 흔들림(`inProgress` 등)을 흡수하는 공용 유틸에 맡긴다.
+  bool _isLive(String status) => isLiveMatchStatus(status);
 
   /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열.
   String _relativeLabel(BuildContext context, DateTime date) {
