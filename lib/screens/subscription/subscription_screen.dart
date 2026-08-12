@@ -17,6 +17,7 @@ import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
 import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
@@ -57,6 +58,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     super.initState();
     debugPrint('[Subscription][perf] 화면 진입 ${DateTime.now()}');
     WidgetsBinding.instance.addObserver(this);
+    // 앱이 떠 있는 채로 푸시가 오면(이 화면에 머물러 있을 때 특히) 복귀 이벤트가 없어
+    // 피드가 갱신되지 않았다. FcmService 가 수신 때 올리는 카운터를 듣고 다시 읽는다.
+    feedRefreshTick.addListener(_reloadFeed);
     _loadPlayers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('[Subscription][perf] 첫 프레임 ${DateTime.now()}');
@@ -79,6 +83,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    feedRefreshTick.removeListener(_reloadFeed);
     _feedViewModel.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -93,6 +98,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       _feedViewModel.refreshNotificationPermission();
     }
   }
+
+  /// 푸시 수신 신호로 피드를 다시 읽는다.
+  void _reloadFeed() => _feedViewModel.load();
 
   /// OP.GG 등 외부 URL을 기본 브라우저로 연다.
   Future<void> _launchUrl(String url) async {
