@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../config/secure_storage.dart';
 
@@ -23,11 +22,12 @@ class SoloRankNotificationStore {
   /// 피드에 보관하는 최대 개수(최신 우선).
   static const _maxItems = 50;
 
-  final _storage = secureStorage;
-
   /// 저장된 알림을 최신순으로 읽는다.
+  ///
+  /// 푸시 수신은 기기 잠금 중 백그라운드에서도 일어나 Keychain 이 안 열릴 수
+  /// 있다 — 그때는 빈 목록으로 접는다 (Sentry WARDING-APP-FLUTTER-K).
   Future<List<SoloRankNotification>> loadAll() async {
-    final raw = await _storage.read(key: _key);
+    final raw = await readOrNull(_key);
     if (raw == null || raw.isEmpty) return const [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
@@ -59,6 +59,11 @@ class SoloRankNotificationStore {
 
   Future<void> _save(List<SoloRankNotification> items) async {
     final encoded = jsonEncode(items.map((e) => e.toJson()).toList());
-    await _storage.write(key: _key, value: encoded);
+    try {
+      await writeWithDuplicateRecovery(key: _key, value: encoded);
+    } catch (e) {
+      // 저장 실패가 푸시 수신 처리를 죽이면 안 된다 — 이 알림만 유실된다.
+      debugPrint('[SoloRankStore] 저장 실패: $e');
+    }
   }
 }

@@ -30,7 +30,14 @@ class DeviceRepository {
     required String fcmToken,
     required String platform,
   }) async {
-    final jwt = await _auth.jwt;
+    final String? jwt;
+    try {
+      jwt = await _auth.jwt;
+    } on SecureStorageUnavailableException {
+      // FCM 토큰 등록은 잠금 중 백그라운드에서도 불린다 — 다음 기회에 등록된다.
+      debugPrint('[Device] 토큰 읽기 불가 — 등록 생략');
+      return;
+    }
     if (jwt == null || jwt.isEmpty) {
       debugPrint('[Device] 비로그인 상태 — 토큰 등록 생략');
       return;

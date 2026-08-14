@@ -6,6 +6,7 @@ import '../../util/api_client.dart' as http;
 import '../../config/api_config.dart';
 import '../../model/notice.dart';
 import '../auth/auth_service.dart';
+import '../../config/secure_storage.dart';
 
 /// 공지사항 API (`/api/notices`). 공개 API라 인증이 필수는 아니지만,
 /// ADMIN 계정 토큰을 실어 보내면 임시저장 공지도 내려온다 (앱 검수용).
@@ -18,8 +19,13 @@ class NoticeRepository {
   /// 로그인 상태면 토큰 헤더를 만든다. 만료 토큰이어도 서버가 비회원 취급할 뿐이라
   /// 갱신 시도는 하지 않는다 (ADMIN 검수 용도 한정).
   Future<Map<String, String>?> _optionalAuthHeaders() async {
-    final jwt = await AuthService.instance.jwt;
-    return jwt == null ? null : {'Authorization': 'Bearer $jwt'};
+    try {
+      final jwt = await AuthService.instance.jwt;
+      return jwt == null ? null : {'Authorization': 'Bearer $jwt'};
+    } on SecureStorageUnavailableException {
+      // 토큰을 못 읽으면 비회원으로 조회한다 — 공지는 비회원도 볼 수 있다.
+      return null;
+    }
   }
 
   /// 공지 목록을 조회한다 (발행분만, 고정 먼저, 최신순).

@@ -24,6 +24,7 @@ import '../repository/schedule/schedule_repository.dart';
 import '../util/match_detail_router.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
+import '../config/secure_storage.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
 ///
@@ -575,7 +576,14 @@ class HomeWidgetService {
   /// 반환해 이번 위젯 갱신만 조용히 건너뛴다(위젯은 이전 데이터 유지).
   /// 위젯 경로에서는 절대 재발급·로그아웃하지 않는다.
   static Future<UserProfile?> _fetchMeWithoutRefresh() async {
-    final token = await AuthService.instance.jwt;
+    final String? token;
+    try {
+      token = await AuthService.instance.jwt;
+    } on SecureStorageUnavailableException {
+      // 위젯 갱신은 기기 잠금 중에도 돈다 — 못 읽으면 이번 갱신만 건너뛴다.
+      debugPrint('[HomeWidget] 토큰 읽기 불가 — 이번 갱신 건너뜀');
+      return null;
+    }
     if (token == null || token.isEmpty) return null;
     final response = await http.get(
       Uri.parse(ApiConfig.meUrl),

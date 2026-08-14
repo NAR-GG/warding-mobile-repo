@@ -15,6 +15,7 @@ import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../login/login_screen.dart';
 import 'match_alarm_sheet.dart';
+import '../../../config/secure_storage.dart';
 
 /// 경기 한 건 카드. 헤더(알림 벨/시간·LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
 /// [isLive] 가 true 면 카드 배경/왼쪽 보더/LIVE 칩/스코어 색 분기.
@@ -290,7 +291,13 @@ class _AlarmBellState extends State<_AlarmBell> {
 
   Future<void> _handleTap() async {
     // 경기 알림은 회원 기반(서버도 로그인 필수) — 비회원은 로그인 화면으로 보낸다.
-    final jwt = await AuthService.instance.jwt;
+    final String? jwt;
+    try {
+      jwt = await AuthService.instance.jwt;
+    } on SecureStorageUnavailableException {
+      // 잠금으로 토큰을 못 읽은 것뿐 — 로그인 유저를 로그인 화면으로 보내면 안 된다.
+      return;
+    }
     if (!mounted) return;
     if (jwt == null || jwt.isEmpty) {
       await Navigator.of(context).push(

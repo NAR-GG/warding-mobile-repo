@@ -23,14 +23,22 @@ class OnboardingPreferenceRepository {
 
   final FlutterSecureStorage _storage;
 
-  /// 온보딩 선택값을 저장한다.
+  /// 온보딩 선택값을 저장한다. 실패해도 온보딩 진행은 막지 않는다.
   Future<void> saveSelection(OnboardingSelection selection) async {
-    await _storage.write(key: _key, value: jsonEncode(selection.toJson()));
+    try {
+      await writeWithDuplicateRecovery(
+        key: _key,
+        value: jsonEncode(selection.toJson()),
+        storage: _storage,
+      );
+    } catch (e) {
+      debugPrint('[OnboardingPreference] 저장 실패: $e');
+    }
   }
 
   /// 저장된 선택값을 읽는다. 없거나 손상됐으면 null.
   Future<OnboardingSelection?> loadSelection() async {
-    final raw = await _storage.read(key: _key);
+    final raw = await readOrNull(_key, storage: _storage);
     if (raw == null || raw.isEmpty) return null;
     try {
       return OnboardingSelection.fromJson(
@@ -43,6 +51,10 @@ class OnboardingPreferenceRepository {
 
   /// 저장된 선택값을 지운다 (동기화 완료·온보딩 건너뛰기 시).
   Future<void> clear() async {
-    await _storage.delete(key: _key);
+    try {
+      await _storage.delete(key: _key);
+    } catch (e) {
+      debugPrint('[OnboardingPreference] 삭제 실패: $e');
+    }
   }
 }
