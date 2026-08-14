@@ -44,6 +44,21 @@ class _MatchListScreenState extends State<MatchListScreen> {
   int? _scrolledForVersion;
   DateTime? _targetDate;
 
+  /// 정렬 드롭다운 행을 접었는지. 목록을 내리면 접고, 올리면 다시 펼친다.
+  /// (필터가 늘어나 목록 영역이 좁아진 것에 대한 보정)
+  bool _sortBarCollapsed = false;
+
+  /// 마지막으로 방향을 판정한 스크롤 오프셋. 손떨림 수준의 미세한 움직임으로
+  /// 접힘/펼침이 깜빡이지 않도록 [_sortBarToggleDelta] 이상 움직였을 때만 반영한다.
+  double _lastScrollOffset = 0;
+
+  /// 접힘/펼침을 뒤집는 데 필요한 최소 스크롤 이동량(px).
+  static const double _sortBarToggleDelta = 12;
+
+  /// '맨 위로'가 부른 재조회인지. true 면 이번 로드 완료 후 '오늘 날짜로 이동'을
+  /// 건너뛰고 목록 맨 위에 그대로 둔다.
+  bool _skipScrollToToday = false;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +91,24 @@ class _MatchListScreenState extends State<MatchListScreen> {
       return;
     }
     _scrolledForVersion = _viewModel.scheduleVersion;
+    // 새로 조회한 목록은 처음부터 다시 보는 셈이라 정렬 행도 펼친 상태로 되돌린다.
+    if (_sortBarCollapsed) {
+      setState(() => _sortBarCollapsed = false);
+    }
+    _lastScrollOffset = 0;
+
+    // '맨 위로'가 부른 재조회면 오늘 날짜를 찾아가지 않고 목록 맨 위에 둔다.
+    // 서버가 정렬 방향대로 내려주므로 맨 위는 언제나 오프셋 0 이다.
+    if (_skipScrollToToday) {
+      _skipScrollToToday = false;
+      _targetDate = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        _scrollController.jumpTo(0);
+      });
+      return;
+    }
+
     _targetDate = _findTargetDate();
     debugPrint('[MatchList][perf] 데이터 로드 끝, 스크롤 예약 ${DateTime.now()}');
     // 정렬 변경으로 다시 스크롤할 때는 이전 오프셋이 남아 있으면 어림 계산(jumpTo)이
@@ -86,23 +119,33 @@ class _MatchListScreenState extends State<MatchListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTarget());
   }
 
-  /// 최신→과거 순 목록에서 오늘 이하(=오늘 또는 가장 가까운 과거)인 첫 그룹의 날짜.
-  /// 전부 미래면 가장 가까운(마지막) 그룹으로 폴백한다.
+  /// 자동 스크롤 대상 날짜 — 오늘 이하(=오늘 또는 가장 가까운 과거)인 그룹.
+  /// 전부 미래면 오늘에 가장 가까운 그룹으로 폴백한다.
   ///
-  /// '오늘 이후'는 서버가 오늘부터 오름차순으로 내려주므로 첫 그룹이 곧 대상이다
+  /// '오늘 이후'는 서버가 오늘 이전을 잘라내고 내려주므로 첫 그룹이 곧 대상이다
   /// (오늘 경기가 없으면 가장 가까운 예정일).
+  ///
+  /// 그 외 정렬은 과거 경기도 함께 오므로 오늘 이하인 첫 그룹을 찾는다. 담긴
+  /// 순서는 서버 `sort` 에 따라 과거→미래일 수도, 최신→과거일 수도 있어
+  /// ([MatchListViewModel.scheduleAscending]) 방향에 맞춰 훑는다.
   DateTime? _findTargetDate() {
     final schedule = _viewModel.schedule;
     if (schedule.isEmpty) return null;
-    if (_viewModel.scheduleAscending) return schedule.first.date;
+    if (_viewModel.upcomingOnly) return schedule.first.date;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    for (final day in schedule) {
+    // 과거→미래로 담겼으면 뒤에서부터 훑어야 '오늘 이하 중 가장 늦은 날'을
+    // 먼저 만난다(최신→과거면 앞에서부터가 그렇다).
+    final ordered = _viewModel.scheduleAscending
+        ? schedule.reversed.toList()
+        : schedule;
+    for (final day in ordered) {
       final d = DateTime(day.date.year, day.date.month, day.date.day);
       if (!d.isAfter(today)) return day.date;
     }
-    return schedule.last.date;
+    // 전부 미래면 오늘에 가장 가까운(=가장 이른) 그룹으로 폴백한다.
+    return _viewModel.scheduleAscending ? schedule.first.date : schedule.last.date;
   }
 
   bool _isSameDate(DateTime a, DateTime b) =>
@@ -126,7 +169,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
     // 대상 헤더가 그려졌으면 정밀 정렬하고 끝낸다.
     // 화면 위에서 35% 지점: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
-    // (reverse:true 인 오름차순에서는 alignment 0 이 아래쪽 기준이라 0.65.)
     final ctx = _todayHeaderKey.currentContext;
     if (ctx != null) {
       debugPrint(
@@ -134,7 +176,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       Scrollable.ensureVisible(
         ctx,
         duration: Duration.zero,
-        alignment: _viewModel.listReversed ? 0.65 : 0.35,
+        alignment: 0.35,
       );
       return;
     }
@@ -150,18 +192,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
     final scale = width.clamp(320.0, 430.0) / 375;
     // 어림 계산용 실제 높이. 틀리면 대상까지 못 가거나 지나쳐서 오늘로 이동이 어긋난다.
     // 헤더: MatchDateHeader 가 height 38 고정.
-    // 카드: 위 10 + 헤더행 24 + 간격 20 + 팀행 73(로고 50 + 4 + 팀명 19) + 아래 24 = 151.
+    // 카드: 위 10 + 헤더행 24 + 간격 20 + 스코어행 77 + 아래 24 = 155.
+    // 스코어행은 스포방지 오버레이가 116×77 을 고정으로 잡아서, 팀 컬럼(73)이
+    // 아니라 이쪽이 행 높이를 정한다.
     const headerH = 38.0;
-    const cardH = 151.0;
+    const cardH = 155.0;
     var offset = 0.0;
     for (final day in _viewModel.schedule) {
-      if (_isSameDate(day.date, target)) {
-        // 뒤집어 그릴 때(reverse:true)는 헤더가 그 날짜 카드들 뒤 인덱스라 카드 높이만큼 더한다.
-        if (_viewModel.listReversed) {
-          offset += day.matches.length * cardH * scale;
-        }
-        break;
-      }
+      if (_isSameDate(day.date, target)) break;
       offset += headerH * scale + day.matches.length * cardH * scale;
     }
     final position = _scrollController.position;
@@ -196,6 +234,40 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// 정렬 옵션 선택 바텀시트.
+  /// '맨 위로' — 목록을 첫 페이지부터 다시 조회해 처음 상태로 되돌린다.
+  ///
+  /// 무한 스크롤로 쌓인 페이지가 정리되고 목록이 처음 상태로 돌아간다.
+  /// 이 재조회로는 '오늘 날짜로 이동'을 타지 않게 [_skipScrollToToday] 를
+  /// 세워 둔다 — 사용자가 원한 건 맨 위다.
+  void _scrollToTop() {
+    _skipScrollToToday = true;
+    if (_sortBarCollapsed) {
+      _lastScrollOffset = 0;
+      setState(() => _sortBarCollapsed = false);
+    }
+    _viewModel.retryLoadMatches();
+  }
+
+  /// 경기 상세로 이동한다.
+  ///
+  /// 상세는 pushReplacement 가 아니라 push 라 돌아와도 이 화면의 State 가
+  /// 그대로 살아 있다. 접힌 채로 나갔다면 정렬 행이 숨은 상태로 되돌아오는데,
+  /// 목록을 다시 보는 시점이니 펼친 상태로 맞춰 준다.
+  Future<void> _openMatchDetail(ScheduleMatch m) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
+      ),
+    );
+    if (!mounted || !_sortBarCollapsed) return;
+    // 방향 판정 기준점도 지금 위치로 옮긴다 — 그대로 두면 상세를 보는 동안
+    // 벌어진 차이가 다음 스크롤 한 번에 몰려 곧바로 다시 접힌다.
+    if (_scrollController.hasClients) {
+      _lastScrollOffset = _scrollController.offset;
+    }
+    setState(() => _sortBarCollapsed = false);
+  }
+
   Future<void> _showSortSheet() async {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
@@ -236,6 +308,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// 스크롤이 끝에서 300px 이내면 이전 7일 추가 fetch.
+  /// 함께 스크롤 방향을 보고 정렬 드롭다운 행의 접힘 여부를 갱신한다.
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final remaining =
@@ -244,6 +317,33 @@ class _MatchListScreenState extends State<MatchListScreen> {
     if (remaining < 300) {
       _viewModel.loadMoreMatches();
     }
+    _updateSortBarVisibility();
+  }
+
+  /// 스크롤 방향에 따라 정렬 행을 접거나 편다.
+  ///
+  /// 목록을 더 보려고 내리면 접고(숨김), 되돌아 올리면 편다(노출).
+  ///
+  /// 초기 진입·정렬 변경 시의 자동 스크롤([_scrollToTarget])은 jumpTo 를 반복하며
+  /// 오프셋이 크게 튀는데, 그 사이 접힘 상태가 흔들리면 목록 높이가 바뀌어
+  /// 어림 계산이 어긋난다. 그래서 자동 스크롤이 끝날 때까지는 관여하지 않는다.
+  void _updateSortBarVisibility() {
+    final offset = _scrollController.offset;
+    if (_scrolledForVersion != _viewModel.scheduleVersion ||
+        _viewModel.loadingMatches ||
+        _viewModel.loadingMore) {
+      _lastScrollOffset = offset;
+      return;
+    }
+
+    final delta = offset - _lastScrollOffset;
+    if (delta.abs() < _sortBarToggleDelta) return;
+    _lastScrollOffset = offset;
+
+    // 목록 맨 위에서는 항상 펼친 상태로 둔다(오버스크롤 튕김으로 접히는 것 방지).
+    final collapsed = offset <= 0 ? false : delta > 0;
+    if (collapsed == _sortBarCollapsed) return;
+    setState(() => _sortBarCollapsed = collapsed);
   }
 
   @override
@@ -323,6 +423,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                                   options: MatchListViewModel.seasons,
                                   value: _viewModel.selectedSeason,
                                   onChanged: _viewModel.selectSeason,
+                                  sheetTitle: l.season,
                                   scale: scale,
                                 ),
                               ),
@@ -336,6 +437,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                                   options: _viewModel.leagues,
                                   value: _viewModel.selectedLeague,
                                   onChanged: _viewModel.selectLeague,
+                                  sheetTitle: l.league,
                                   hint: _viewModel.loadingLeagues
                                       ? l.loading
                                       : l.select,
@@ -347,18 +449,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
                           ],
                         ),
                       ),
+                      // 시즌·리그 행 아래 간격 + 구분선.
+                      // 구분선은 각 블록이 '자기 아래'만 그린다. 그래야 리그 '전체'로
+                      // 팀 셀렉터가 숨어도 정렬 행 위 선이 그대로 남는다.
+                      SizedBox(height: 12 * scale),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppColors.narLine,
+                      ),
                       // 리그 '전체'(ALL)는 팀 스코프가 없어 팀 목록이 '전체'뿐이므로
                       // 팀 멀티셀렉트 필터를 숨긴다.
                       if (_viewModel.selectedLeague !=
                           MatchListViewModel.allLeagueLabel) ...[
-                        SizedBox(height: 12 * scale),
                         Container(
                           decoration: const BoxDecoration(
                             border: Border(
-                              top: BorderSide(
-                                color: AppColors.narLine,
-                                width: 1,
-                              ),
                               bottom: BorderSide(
                                 color: AppColors.narLine,
                                 width: 1,
@@ -377,23 +483,38 @@ class _MatchListScreenState extends State<MatchListScreen> {
                         ),
                       ],
                       // 정렬(최근순/오래된순) — 팀 멀티 셀렉터 아래, 오른쪽 정렬.
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 11 * scale,
-                          horizontal: 16 * scale,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            SizedBox(
-                              width: 110 * scale,
-                              child: NarDropdown(
-                                value: _viewModel.sortOrder,
-                                onTap: _showSortSheet,
-                                scale: scale,
+                      // 필터가 많아 목록 영역이 좁으므로, 목록을 내리는 동안에는
+                      // 위로 말려 들어가고 다시 올리면 펼쳐진다.
+                      ClipRect(
+                        child: AnimatedAlign(
+                          alignment: Alignment.bottomCenter,
+                          heightFactor: _sortBarCollapsed ? 0 : 1,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          child: AnimatedOpacity(
+                            opacity: _sortBarCollapsed ? 0 : 1,
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOut,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 11 * scale,
+                                horizontal: 16 * scale,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  SizedBox(
+                                    width: 110 * scale,
+                                    child: NarDropdown(
+                                      value: _viewModel.sortOrder,
+                                      onTap: _showSortSheet,
+                                      scale: scale,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -414,16 +535,19 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 scrollController: _scrollController,
                 scale: scale,
                 bottom: 110,
-                reverse: _viewModel.listReversed,
+                onPressed: _scrollToTop,
               ),
             ),
             Positioned(
               left: 0,
               right: 0,
               bottom: 26,
+              // 정렬 행 접힘과 같은 스크롤 방향 판정을 재사용한다 —
+              // 한 번의 스와이프에 둘이 함께 반응해야 어색하지 않다.
               child: AppBottomNav(
                 currentTab: AppNavTab.list,
                 onTabSelected: _onTabSelected,
+                compact: _sortBarCollapsed,
               ),
             ),
           ],
@@ -433,7 +557,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   Widget _buildList(BuildContext context, double scale) {
-    final items = _flatten(_viewModel.schedule, reversed: _viewModel.listReversed);
+    final items = _flatten(_viewModel.schedule);
     final loading = _viewModel.loadingMatches || _viewModel.loadingMore;
 
     // 결과가 비어있을 때 — 에러면 재시도 안내, 로딩 중이면 스켈레톤, 아니면 빈 상태 메시지.
@@ -449,7 +573,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
           physics: const NeverScrollableScrollPhysics(),
           padding: EdgeInsets.only(bottom: 120 * scale),
           itemCount: 5,
-          itemBuilder: (_, _) => MatchCardSkeleton(scale: scale),
+          // 첫 장은 실제 카드와 같이 위 구분선을 끈다(날짜 헤더 아래 첫 카드 규칙).
+          itemBuilder: (_, index) =>
+              MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
         );
       }
       return Center(
@@ -465,10 +591,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
     return ListView.builder(
       controller: _scrollController,
-      // 데이터는 항상 최신→과거 순. 오름차순(기본 '오래된 순')은 reverse 로 뒤집어
-      // 위=과거, 아래=미래로 보여준다. 과거 페이지 append 가 스크롤 점프 없이
-      // 위쪽으로 늘어나고, 기존 _onScroll(maxScrollExtent 근처) 트리거도 그대로 맞는다.
-      reverse: _viewModel.listReversed,
+      // 담긴 순서가 곧 화면 순서다(서버 sort). 다음 페이지는 뒤에 append 되므로
+      // 스크롤 점프가 없고, _onScroll(maxScrollExtent 근처) 트리거도 그대로 맞는다.
       padding: EdgeInsets.only(bottom: 120 * scale),
       itemCount: items.length + 1,
       itemBuilder: (context, index) {
@@ -490,8 +614,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
         }
         final m = (item as _CardItem).match;
         // 날짜 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
-        // reverse 면 인덱스가 아래→위라 화면상 헤더 아래 카드는 인덱스상 헤더 '앞'이다.
-        final neighborIndex = _viewModel.listReversed ? index + 1 : index - 1;
+        final neighborIndex = index - 1;
         final showTopBorder = !(neighborIndex >= 0 &&
             neighborIndex < items.length &&
             items[neighborIndex] is _HeaderItem);
@@ -521,11 +644,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
               : null,
           leagueInfo: m.leagueInfo,
           spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
-            ),
-          ),
+          onTap: () => _openMatchDetail(m),
           scale: scale,
         );
       },
@@ -544,24 +663,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return const SizedBox.shrink();
   }
 
-  /// schedule(날짜별 그룹, 최신→과거 순) 을 [_HeaderItem, _CardItem, ...] 평탄화.
-  ///
-  /// [ascending] 이면 ListView 가 reverse:true 로 그리므로(인덱스 0 이 화면 맨 아래),
-  /// 헤더를 그 날짜 카드들 '뒤'에 넣어야 화면에선 헤더가 카드 위에 온다.
-  /// 카드 순서도 뒤집혀 날짜 안에서 이른 시간이 위로 온다.
   /// 날짜 그룹을 헤더+카드 1차원 목록으로 편다.
-  ///
-  /// [reversed] 는 `ListView.reverse` 로 뒤집어 그리는지다. 뒤집어 그리면
-  /// 인덱스가 아래에서 위로 쌓이므로, 헤더가 화면에서 카드 위에 오려면
-  /// 인덱스상으로는 카드 뒤에 와야 한다.
-  List<_ListItem> _flatten(List<ScheduleDay> schedule, {required bool reversed}) {
+  /// 담긴 순서가 곧 화면 순서라(서버 sort) 헤더는 항상 그 날짜 카드들 앞에 온다.
+  List<_ListItem> _flatten(List<ScheduleDay> schedule) {
     final out = <_ListItem>[];
     for (final day in schedule) {
-      if (!reversed) out.add(_HeaderItem(day.date));
+      out.add(_HeaderItem(day.date));
       for (final m in day.matches) {
         out.add(_CardItem(m));
       }
-      if (reversed) out.add(_HeaderItem(day.date));
     }
     return out;
   }

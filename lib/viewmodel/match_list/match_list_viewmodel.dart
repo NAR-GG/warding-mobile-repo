@@ -121,11 +121,9 @@ class MatchListViewModel extends ChangeNotifier {
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
 
-  /// 정렬 순서 옵션. fetch 방향은 '오늘 이후'만 과거→미래고 나머지는 최신→과거다
-  /// ([scheduleAscending]). 표시 방향은 View 가 [listReversed] 로 맞춘다.
-  /// 기본은 '오래된 순'(위가 과거, 아래가 미래).
-  /// 표시용 라벨 목록 — l10n 에서 가져온다.
-  /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정.
+  /// 정렬 순서 옵션 라벨 — l10n 에서 가져온다.
+  /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정이고 기본은 '오래된 순'.
+  /// 방향은 서버가 `sort` 로 처리하므로 받은 순서가 곧 화면 순서다.
   List<String> get sortOrders => [
         appStrings?.sortRecent ?? 'Recent',
         appStrings?.sortOldest ?? 'Oldest',
@@ -150,33 +148,19 @@ class MatchListViewModel extends ChangeNotifier {
 
   /// [schedule] 이 담긴 순서가 과거→미래인지.
   ///
-  /// '오늘 이후'만 서버에 `from=오늘` 을 보내 오름차순으로 받으므로 true 고,
-  /// 나머지 정렬은 최신→과거 순으로 담긴다.
-  bool get scheduleAscending => upcomingOnly;
-
-  /// View 가 리스트를 뒤집어 그려야 하는지(`ListView.reverse`).
-  ///
-  /// 화면은 [ascending] 이 원하는 방향으로 보여야 하는데, 저장 순서가 이미
-  /// 그 방향([scheduleAscending])이면 뒤집을 필요가 없다.
-  bool get listReversed => ascending && !scheduleAscending;
+  /// 서버에 `sort` 를 보내 정렬 방향을 맡기므로 요청한 방향대로 담긴다.
+  /// 담긴 순서가 곧 화면 순서라 View 가 뒤집을 일이 없다.
+  bool get scheduleAscending => ascending;
 
   void selectSortOrder(String order) {
     final idx = sortOrders.indexOf(order);
     if (idx < 0 || idx == _sortOrderIndex) return;
-    final wasUpcomingOnly = upcomingOnly;
     _sortOrderIndex = idx;
     _persistFilter();
-    // '오늘 이후' 를 켜고 끌 때는 필터 조건 자체가 바뀌므로 첫 페이지부터 다시 받는다.
-    // (누적본에는 이미 걸러진 과거 경기가 없어 되돌릴 수 없다.)
+    // 정렬은 서버가 처리한다(sort=ASC/DESC). 방향이 바뀌면 커서를 이어 쓸 수
+    // 없으므로 어느 전환이든 첫 페이지부터 다시 받는다.
     // _reloadSchedule 이 버전을 올리고 notify 하므로 여기선 따로 알리지 않는다.
-    if (wasUpcomingOnly != upcomingOnly) {
-      _reloadSchedule();
-      return;
-    }
-    // 재조회가 필요 없는 전환(최근순↔오래된 순)도 표시 방향이 뒤집히므로
-    // 버전을 올려 View 가 오늘 날짜로 다시 스크롤하게 한다.
-    _scheduleVersion++;
-    notifyListeners();
+    _reloadSchedule();
   }
 
   /// 카드 스코어 블러(스포방지) on/off. 저장된 값이 없으면 on(기존 동작 유지).
@@ -227,9 +211,8 @@ class MatchListViewModel extends ChangeNotifier {
   /// 무한 스크롤로 누적된 날짜별 경기 그룹. 담긴 순서는 서버 응답 방향과 같다.
   final List<ScheduleDay> _schedule = [];
 
-  /// 담긴 순서는 [scheduleAscending] 이 알려준다 — '오늘 이후'는 과거→미래,
-  /// 나머지는 최신→과거. 어느 쪽이든 다음 페이지가 뒤에 append 되므로 스크롤
-  /// 점프가 없다. 표시 방향은 View 가 [listReversed] 로 맞춘다.
+  /// 담긴 순서는 서버 `sort` 를 따르며 [scheduleAscending] 이 알려준다.
+  /// 어느 방향이든 다음 페이지가 뒤에 append 되므로 스크롤 점프가 없다.
   List<ScheduleDay> get schedule => List.unmodifiable(_schedule);
 
   /// 다음 페이지 커서. 첫 페이지는 null (커서 생략).
@@ -417,13 +400,13 @@ class MatchListViewModel extends ChangeNotifier {
       var newMatches = await _fetchNextPage();
 
       // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
-      //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
-      //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
-      //    '오늘 이후'는 서버에 from=오늘 을 보내 첫 페이지가 곧 오늘부터라,
-      //    오늘 이하 조건은 보지 않는다(화면 채우기 조건만 남는다).
+      //    미만), 초기 '오늘로 스크롤' 대상인 오늘 그룹이 아직 안 왔으면 계속
+      //    당겨온다([_hasReachedToday] 가 담긴 방향까지 감안한다).
+      //    '오늘 이후'는 서버에 from=오늘 을 보내 첫 페이지가 곧 오늘부터라
+      //    그 조건은 보지 않는다(화면 채우기 조건만 남는다).
       final needPrefetch =
           (newMatches < _minMatchesPerLoad ||
-              (!upcomingOnly && !_hasTodayOrPastLoaded())) &&
+              (!upcomingOnly && !_hasReachedToday())) &&
           _hasMore;
 
       // 첫 페이지는 즉시 노출하되, prefetch 가 필요하면 loadingMore 를 같은 프레임에
@@ -437,7 +420,7 @@ class MatchListViewModel extends ChangeNotifier {
         while (_hasMore &&
             attempts < _maxCatchUpPages &&
             (newMatches < _minMatchesPerLoad ||
-                (!upcomingOnly && !_hasTodayOrPastLoaded()))) {
+                (!upcomingOnly && !_hasReachedToday()))) {
           newMatches += await _fetchNextPage();
           attempts++;
           _notify();
@@ -472,9 +455,11 @@ class MatchListViewModel extends ChangeNotifier {
       size: _pageSize,
       league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
-      // '오늘 이후' 는 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
-      // 다른 정렬은 from 없이 최신→과거 순 그대로 받는다.
+      // '오늘 이후' 는 오늘 이전 경기를 서버에서 잘라낸다(from).
       from: upcomingOnly ? _todayParam() : null,
+      // 정렬 방향은 서버에 맡긴다 — 받은 순서 그대로 그리면 되므로 View 가
+      // 뒤집을 필요가 없다.
+      sort: ascending ? 'ASC' : 'DESC',
     );
     _cursor = page.nextCursor;
     _hasMore = page.hasNext && page.nextCursor != null;
@@ -511,7 +496,8 @@ class MatchListViewModel extends ChangeNotifier {
     }
   }
 
-  /// 매치 목록(최신→과거 순)을 같은 날짜끼리 [ScheduleDay] 로 묶는다. 순서 보존.
+  /// 매치 목록을 같은 날짜끼리 [ScheduleDay] 로 묶는다. 받은 순서를 그대로 보존해
+  /// 정렬 방향(서버 `sort`)에 상관없이 동작한다.
   /// `date` 가 null 인 매치는 직전 그룹에 합쳐(없으면 epoch 날짜로) 표시한다.
   List<ScheduleDay> _groupByDate(List<ScheduleMatch> matches) {
     final out = <ScheduleDay>[];
@@ -546,15 +532,18 @@ class MatchListViewModel extends ChangeNotifier {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  /// [_schedule] 에 오늘(이하) 날짜 경기가 하나라도 로드됐는지.
-  /// 초기 '오늘로 스크롤' 이 동작하려면 이 조건이 참이어야 한다.
-  /// (schedule 은 최신→과거 순이라 마지막 그룹이 오늘 이하면 참.)
-  bool _hasTodayOrPastLoaded() {
+  /// 초기 '오늘로 스크롤' 대상까지 로드됐는지.
+  ///
+  /// 커서는 한 방향으로만 진행하므로, 오늘에 '도달'했다는 뜻은 정렬 방향에 따라
+  /// 다르다. 최신→과거(DESC)면 미래부터 오니 오늘 이하가 나와야 도달이고,
+  /// 과거→미래(ASC)면 과거부터 오니 오늘 이상이 나와야 도달이다.
+  bool _hasReachedToday() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final ascendingOrder = scheduleAscending;
     for (final day in _schedule) {
       final d = DateTime(day.date.year, day.date.month, day.date.day);
-      if (!d.isAfter(today)) return true;
+      if (ascendingOrder ? !d.isBefore(today) : !d.isAfter(today)) return true;
     }
     return false;
   }

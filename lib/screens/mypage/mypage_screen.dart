@@ -37,9 +37,13 @@ class MypageScreen extends StatefulWidget {
 class _MypageScreenState extends State<MypageScreen> {
   final MypageViewModel _viewModel = MypageViewModel();
 
+  /// 목록을 내리는 동안 하단 네비를 살짝 줄이는 상태.
+  final BottomNavShrinkController _navShrink = BottomNavShrinkController();
+
   @override
   void dispose() {
     _viewModel.dispose();
+    _navShrink.dispose();
     super.dispose();
   }
 
@@ -84,192 +88,195 @@ class _MypageScreenState extends State<MypageScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            GuestLockOverlay(
-              scale: scale,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _MypageHeader(
-                      scale: scale,
-                      onGlobeTap: () {
-                        showLanguageSettingSheet(
-                          context: context,
-                          currentLanguage: AppLanguage.toLabel(AppLanguage.instance.current),
-                          onChanged: (lang) {
-                            AppLanguage.instance.setLanguage(AppLanguage.fromLabel(lang));
-                          },
-                        );
-                      },
-                      onBellTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SubscriptionScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(height: 4 * scale),
-                    ListenableBuilder(
-                      listenable: _viewModel,
-                      builder: (context, _) => _MypageProfile(
+            NotificationListener<ScrollNotification>(
+              onNotification: _navShrink.handleNotification,
+              child: GuestLockOverlay(
+                scale: scale,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _MypageHeader(
                         scale: scale,
-                        onEditTap: _goToProfileEdit,
-                        nickname: _viewModel.nickname,
-                        email: _viewModel.email,
-                        favoriteTeam: _viewModel.favoriteTeam,
-                        profileImageUrl: _viewModel.profileImageUrl,
+                        onGlobeTap: () {
+                          showLanguageSettingSheet(
+                            context: context,
+                            currentLanguage: AppLanguage.toLabel(AppLanguage.instance.current),
+                            onChanged: (lang) {
+                              AppLanguage.instance.setLanguage(AppLanguage.fromLabel(lang));
+                            },
+                          );
+                        },
+                        onBellTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const SubscriptionScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
-                    // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
-                    // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
-                    ListenableBuilder(
-                      listenable: _viewModel,
-                      builder: (context, _) => _viewModel.showTeamBanner
-                          ? NarBanner(
-                              scale: scale,
-                              onTap: _goToProfileEdit,
-                              icon: SvgPicture.asset(
-                                'assets/icons/heart.svg',
-                                width: 24 * scale,
-                                height: 24 * scale,
-                              ),
-                              text: AppLocalizations.of(context)!.teamAutoSetBanner,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    SizedBox(height: 11 * scale),
-                    // 내 활동 — 리뷰/평점 등 사용자 활동 진입점.
-                    // 행을 늘리려면 items 에 MypageCardItem 만 추가하면 된다.
-                    ListenableBuilder(
-                      listenable: _viewModel,
-                      builder: (context, _) => MypageCardSection(
+                      SizedBox(height: 4 * scale),
+                      ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _MypageProfile(
+                          scale: scale,
+                          onEditTap: _goToProfileEdit,
+                          nickname: _viewModel.nickname,
+                          email: _viewModel.email,
+                          favoriteTeam: _viewModel.favoriteTeam,
+                          profileImageUrl: _viewModel.profileImageUrl,
+                        ),
+                      ),
+                      // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
+                      // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
+                      // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
+                      ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _viewModel.showTeamBanner
+                            ? NarBanner(
+                                scale: scale,
+                                onTap: _goToProfileEdit,
+                                icon: SvgPicture.asset(
+                                  'assets/icons/heart.svg',
+                                  width: 24 * scale,
+                                  height: 24 * scale,
+                                ),
+                                text: AppLocalizations.of(context)!.teamAutoSetBanner,
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      SizedBox(height: 11 * scale),
+                      // 내 활동 — 리뷰/평점 등 사용자 활동 진입점.
+                      // 행을 늘리려면 items 에 MypageCardItem 만 추가하면 된다.
+                      ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => MypageCardSection(
+                          scale: scale,
+                          label: AppLocalizations.of(context)!.myActivity,
+                          items: [
+                            MypageCardItem(
+                              title: AppLocalizations.of(context)!.myReviewRating,
+                              count: _viewModel.reviewCount,
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const MyReviewScreen(),
+                                  ),
+                                );
+                                // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
+                                await _viewModel.load();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16 * scale),
+                      // 화면 설정 — 화면별 표시 설정 진입점.
+                      // 하위 설정 화면이 준비되면 각 항목에 onTap 만 연결하면 된다.
+                      MypageCardSection(
                         scale: scale,
-                        label: AppLocalizations.of(context)!.myActivity,
+                        label: AppLocalizations.of(context)!.screenSetting,
                         items: [
                           MypageCardItem(
-                            title: AppLocalizations.of(context)!.myReviewRating,
-                            count: _viewModel.reviewCount,
-                            onTap: () async {
-                              await Navigator.of(context).push(
+                            title: AppLocalizations.of(context)!.mySubscription,
+                            leadingIcon: 'assets/icons/empty-stars.svg',
+                            onTap: () {
+                              Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => const MyReviewScreen(),
+                                  builder: (_) =>
+                                      const MySubscriptionSettingScreen(),
                                 ),
                               );
-                              // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
-                              await _viewModel.load();
+                            },
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(
+                              context,
+                            )!.screenSettingMatchList,
+                            leadingIcon: 'assets/icons/layout-list.svg',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const MatchListSettingScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(
+                              context,
+                            )!.screenSettingCalendar,
+                            leadingIcon: 'assets/icons/calendar-event.svg',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const CalendarSettingScreen(),
+                                ),
+                              );
                             },
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 16 * scale),
-                    // 화면 설정 — 화면별 표시 설정 진입점.
-                    // 하위 설정 화면이 준비되면 각 항목에 onTap 만 연결하면 된다.
-                    MypageCardSection(
-                      scale: scale,
-                      label: AppLocalizations.of(context)!.screenSetting,
-                      items: [
-                        MypageCardItem(
-                          title: AppLocalizations.of(context)!.mySubscription,
-                          leadingIcon: 'assets/icons/empty-stars.svg',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) =>
-                                    const MySubscriptionSettingScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        MypageCardItem(
-                          title: AppLocalizations.of(
-                            context,
-                          )!.screenSettingMatchList,
-                          leadingIcon: 'assets/icons/layout-list.svg',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const MatchListSettingScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        MypageCardItem(
-                          title: AppLocalizations.of(
-                            context,
-                          )!.screenSettingCalendar,
-                          leadingIcon: 'assets/icons/calendar-event.svg',
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const CalendarSettingScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16 * scale),
-                    // 일반 설정 — 방해 금지 모드.
-                    QuietHoursSection(scale: scale),
-                    SizedBox(height: 16 * scale),
-                    // 고객 지원 — 공지사항·문의·계정·나르지지 웹사이트.
-                    // '계정'은 하위 화면이 준비되면 onTap 만 연결하면 된다.
-                    MypageCardSection(
-                      scale: scale,
-                      label: AppLocalizations.of(context)!.customerSupport,
-                      items: [
-                        MypageCardItem(
-                          title: AppLocalizations.of(context)!.notice,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const NoticeScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        MypageCardItem(
-                          title: AppLocalizations.of(context)!.customerService,
-                          onTap: () => _launchUrl(
-                            'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
-                          ),
-                        ),
-                        MypageCardItem(
-                          title: AppLocalizations.of(context)!.account,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const AccountSettingScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        MypageCardItem(
-                          title: AppLocalizations.of(context)!.narWebsite,
-                          description: AppLocalizations.of(
-                            context,
-                          )!.narWebsiteDescription,
-                          onTap: () => _launchUrl('https://nar.kr/'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16 * scale),
-                    ListenableBuilder(
-                      listenable: _viewModel,
-                      builder: (context, _) => _AppInfoRow(
-                        versionStatus: AppLocalizations.of(context)!.latestVersion,
-                        versionLabel: _viewModel.appVersion.isNotEmpty
-                            ? AppLocalizations.of(context)!.currentVersion(_viewModel.appVersion)
-                            : '',
+                      SizedBox(height: 16 * scale),
+                      // 일반 설정 — 방해 금지 모드.
+                      QuietHoursSection(scale: scale),
+                      SizedBox(height: 16 * scale),
+                      // 고객 지원 — 공지사항·문의·계정·나르지지 웹사이트.
+                      // '계정'은 하위 화면이 준비되면 onTap 만 연결하면 된다.
+                      MypageCardSection(
                         scale: scale,
+                        label: AppLocalizations.of(context)!.customerSupport,
+                        items: [
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.notice,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const NoticeScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.customerService,
+                            onTap: () => _launchUrl(
+                              'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
+                            ),
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.account,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AccountSettingScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.narWebsite,
+                            description: AppLocalizations.of(
+                              context,
+                            )!.narWebsiteDescription,
+                            onTap: () => _launchUrl('https://nar.kr/'),
+                          ),
+                        ],
                       ),
-                    ),
-                    // 하단 네비에 가리지 않도록 여백.
-                    SizedBox(height: 166 * scale),
-                  ],
+                      SizedBox(height: 16 * scale),
+                      ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _AppInfoRow(
+                          versionStatus: AppLocalizations.of(context)!.latestVersion,
+                          versionLabel: _viewModel.appVersion.isNotEmpty
+                              ? AppLocalizations.of(context)!.currentVersion(_viewModel.appVersion)
+                              : '',
+                          scale: scale,
+                        ),
+                      ),
+                      // 하단 네비에 가리지 않도록 여백.
+                      SizedBox(height: 166 * scale),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -277,9 +284,13 @@ class _MypageScreenState extends State<MypageScreen> {
               left: 0,
               right: 0,
               bottom: 26,
-              child: AppBottomNav(
-                currentTab: AppNavTab.mypage,
-                onTabSelected: (tab) => _onTabSelected(context, tab),
+              child: ListenableBuilder(
+                listenable: _navShrink,
+                builder: (context, _) => AppBottomNav(
+                  currentTab: AppNavTab.mypage,
+                  onTabSelected: (tab) => _onTabSelected(context, tab),
+                  compact: _navShrink.compact,
+                ),
               ),
             ),
           ],

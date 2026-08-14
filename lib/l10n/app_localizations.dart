@@ -1537,6 +1537,12 @@ abstract class AppLocalizations {
   /// **'검색어를 입력...'**
   String get searchInputHint;
 
+  /// No description provided for @noSearchResults.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 결과가 없어요'**
+  String get noSearchResults;
+
   /// No description provided for @loginRequired.
   ///
   /// In ko, this message translates to:

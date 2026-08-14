@@ -51,7 +51,7 @@ class NarFilterSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SheetHeader(
+        NarSheetHeader(
           title: title,
           scale: scale,
           onReset: onReset,
@@ -72,16 +72,23 @@ class NarFilterSheet extends StatelessWidget {
   }
 }
 
-/// 시트 헤더 — 위아래 24 간격, [초기화] · [title] · [닫기].
+/// 바텀시트 공용 헤더 — 위아래 24 간격, [초기화] · [title] · [닫기].
 ///
 /// 초기화·닫기 아이콘이 양옆 44×44 로 같은 크기라, space-between 만으로도
-/// 가운데 타이틀이 정확히 중앙에 온다.
-class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({
+/// 가운데 타이틀이 정확히 중앙에 온다. [showReset] 이 false 면 왼쪽은
+/// 같은 크기의 빈 자리로 남겨 타이틀 중앙 정렬을 유지한다.
+///
+/// [NarFilterSheet] 뿐 아니라 조회 버튼이 없는 시트(예: 검색 선택 시트)도
+/// 같은 헤더를 쓰도록 공개해 둔다.
+class NarSheetHeader extends StatelessWidget {
+  const NarSheetHeader({
+    super.key,
     required this.title,
     required this.scale,
     required this.onClose,
     this.onReset,
+    this.showReset = true,
+    this.verticalPadding = 24,
   });
 
   final String title;
@@ -89,20 +96,32 @@ class _SheetHeader extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback? onReset;
 
+  /// 왼쪽 초기화 버튼을 그릴지. false 면 자리만 비워 둔다.
+  final bool showReset;
+
+  /// 헤더 위아래 여백(시안 기준값 — [scale] 이 곱해진다).
+  /// 헤더 바로 아래에 본문이 붙는 시트는 기본값 24 를 쓰고, 검색창처럼
+  /// 자체 여백을 가진 요소가 이어지면 줄여 쓴다.
+  final double verticalPadding;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 24 * scale), // 위아래 24
+      padding: EdgeInsets.symmetric(vertical: verticalPadding * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _IconButton(
-            icon: 'assets/icons/reset.svg',
-            // reset.svg 는 viewBox 44 (버튼 영역째 그려짐) — 44 로 렌더.
-            iconSize: 44,
-            scale: scale,
-            onTap: onReset,
-          ),
+          if (showReset)
+            _IconButton(
+              icon: 'assets/icons/reset.svg',
+              // reset.svg 는 viewBox 44 (버튼 영역째 그려짐) — 44 로 렌더.
+              iconSize: 44,
+              scale: scale,
+              onTap: onReset,
+            )
+          else
+            // 오른쪽 닫기 버튼과 같은 폭 — 타이틀이 가운데 오게 자리만 잡는다.
+            SizedBox(width: 44 * scale),
           Text(
             title,
             style: TextStyle(

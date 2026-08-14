@@ -114,10 +114,11 @@ class ApiConfig {
   /// 모바일 경기 리스트 커서 페이지 조회 (인증 불필요).
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. [cursor] 는 첫 페이지에서 생략.
   ///
-  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜(KST 00:00) 이후 경기를 과거→미래
-  /// 오름차순으로 받는다. 정렬 방향은 서버가 [from] 유무로 정하므로 별도
-  /// 파라미터는 없다. 방향이 바뀌면 커서도 이어 쓸 수 없으니 첫 페이지부터
-  /// 다시 받아야 한다.
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜(KST 00:00) 이후 경기만 받는다.
+  ///
+  /// [sort] 는 시간 정렬 방향(`ASC` = 과거→미래, `DESC` = 최신→과거).
+  /// 생략하면 서버 기본값(`DESC`)이다. 방향이 바뀌면 커서를 이어 쓸 수 없으니
+  /// 첫 페이지부터 다시 받아야 한다.
   static String matchesUrl({
     required String league,
     int size = 20,
@@ -126,6 +127,7 @@ class ApiConfig {
     int? seasonYear,
     String? split,
     String? from,
+    String? sort,
   }) {
     final query = StringBuffer('league=$league&size=$size');
     if (cursor != null && cursor.isNotEmpty) {
@@ -135,6 +137,7 @@ class ApiConfig {
     if (seasonYear != null) query.write('&seasonYear=$seasonYear');
     if (split != null && split.isNotEmpty) query.write('&split=$split');
     if (from != null && from.isNotEmpty) query.write('&from=$from');
+    if (sort != null && sort.isNotEmpty) query.write('&sort=$sort');
     return '$apiBaseUrl/mobile/matches?$query';
   }
 

@@ -222,8 +222,10 @@ class ScheduleRepository {
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
   /// `nextCursor` 를 [cursor] 로 넘겨 이어 받는다 (첫 페이지는 cursor 생략).
   ///
-  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기를 오름차순으로 받는다.
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기만 받는다.
   /// '오늘 이후' 필터가 쓰는 경로다.
+  ///
+  /// [sort] 는 시간 정렬 방향(`ASC`/`DESC`). 생략하면 서버 기본값(`DESC`).
   ///
   /// 같은 조건(같은 커서 포함)의 요청이 이미 떠 있거나 방금 끝났으면
   /// ([_calendarCacheTtl] 이내) 그 결과를 재사용한다.
@@ -235,6 +237,7 @@ class ScheduleRepository {
     int? seasonYear,
     String? split,
     String? from,
+    String? sort,
   }) {
     final url = ApiConfig.matchesUrl(
       league: league,
@@ -244,6 +247,7 @@ class ScheduleRepository {
       seasonYear: seasonYear,
       split: split,
       from: from,
+      sort: sort,
     );
 
     final cached = _matchesCache[url];

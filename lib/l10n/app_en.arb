@@ -284,6 +284,7 @@
   "searchHint": "Search teams or players..",
   "selectHint": "Select",
   "searchInputHint": "Enter search term...",
+  "noSearchResults": "No search results",
 
   "loginRequired": "Login required",
 

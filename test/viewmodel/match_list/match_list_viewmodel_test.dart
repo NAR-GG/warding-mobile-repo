@@ -41,6 +41,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
         )).thenAnswer(
         (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
   });
@@ -62,6 +63,7 @@ void main() {
           size: any(named: 'size'),
           league: captureAny(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
         )).captured;
     expect(captured, contains('ALL'));
   });
@@ -75,6 +77,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: captureAny(named: 'seasonYear'),
+          sort: any(named: 'sort'),
         )).captured;
     // 기본 시즌은 seasons.last = '2026'.
     expect(captured, contains(2026));
@@ -92,6 +95,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: captureAny(named: 'seasonYear'),
+          sort: any(named: 'sort'),
         )).captured;
     expect(captured, contains(2025));
   });
@@ -130,6 +134,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
           from: any(named: 'from'),
         )).thenAnswer((inv) async =>
         pages[inv.namedArguments[const Symbol('cursor')]] ??
@@ -149,6 +154,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
           from: captureAny(named: 'from'),
         )).captured;
     final todayParam = '${day.year}-'
@@ -159,8 +165,111 @@ void main() {
     // 서버가 오늘부터 주므로 첫 그룹이 곧 오늘이고, 당겨오는 catch-up 이 없다.
     expect(vm.schedule.first.date, day);
     expect(vm.scheduleAscending, isTrue);
-    expect(vm.listReversed, isFalse);
     expect(vm.schedule.any((d) => d.date.isBefore(day)), isFalse);
+  });
+
+  test('sort=ASC 로 과거부터 받으면 오늘 그룹이 올 때까지 계속 당겨온다', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    ScheduleMatch match(String id, DateTime d) => ScheduleMatch(
+          matchId: id,
+          scheduledTime: '18:00',
+          leagueInfo: 'LCK',
+          matchTitle: 'A vs B',
+          matchStatus: 'unstarted',
+          isSynced: false,
+          date: d,
+          teamA: const MatchTeam(
+              teamName: 'A', teamCode: 'A', teamImageUrl: '', score: 0),
+          teamB: const MatchTeam(
+              teamName: 'B', teamCode: 'B', teamImageUrl: '', score: 0),
+        );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 서버가 sort=ASC 를 지원해 가장 과거부터 내려주는 상황.
+    // 1페이지는 한참 과거(오늘 그룹 없음), 2페이지에서 오늘이 나온다.
+    final pages = <String?, MatchPage>{
+      null: MatchPage(
+        matches: [
+          for (var i = 30; i > 20; i--)
+            match('old\$i', today.subtract(Duration(days: i))),
+        ],
+        nextCursor: 'c1',
+        hasNext: true,
+      ),
+      'c1': MatchPage(
+        matches: [
+          match('past', today.subtract(const Duration(days: 1))),
+          match('today', today),
+        ],
+        nextCursor: null,
+        hasNext: false,
+      ),
+    };
+    when(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
+          from: any(named: 'from'),
+        )).thenAnswer((inv) async =>
+        pages[inv.namedArguments[#cursor] as String?] ??
+        const MatchPage(matches: [], nextCursor: null, hasNext: false));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    // 과거→미래로 담겼음을 인지하고, 오늘 그룹까지 캐치업했어야 한다.
+    expect(vm.scheduleAscending, isTrue);
+    expect(
+      vm.schedule.any((d) =>
+          d.date.year == today.year &&
+          d.date.month == today.month &&
+          d.date.day == today.day),
+      isTrue,
+      reason: 'ASC 응답에서 오늘 그룹까지 prefetch 되지 않았다',
+    );
+  });
+
+  test('정렬 방향은 서버에 sort 로 넘긴다', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    when(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
+          from: any(named: 'from'),
+        )).thenAnswer(
+        (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    // 기본은 '오래된 순' → ASC.
+    var sent = verify(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+          sort: captureAny(named: 'sort'),
+          from: any(named: 'from'),
+        )).captured;
+    expect(sent.every((v) => v == 'ASC'), isTrue);
+
+    // '최근순'으로 바꾸면 DESC 로 다시 받는다.
+    vm.selectSortOrder(vm.sortOrders[0]);
+    await pumpEventQueue();
+    sent = verify(() => sched.fetchMatches(
+          cursor: any(named: 'cursor'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+          sort: captureAny(named: 'sort'),
+          from: any(named: 'from'),
+        )).captured;
+    expect(sent, contains('DESC'));
   });
 
   test("'오늘 이후'가 아니면 from 을 보내지 않는다", () async {
@@ -170,6 +279,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
           from: any(named: 'from'),
         )).thenAnswer(
         (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
@@ -178,15 +288,15 @@ void main() {
     await pumpEventQueue();
 
     expect(vm.upcomingOnly, isFalse);
-    expect(vm.scheduleAscending, isFalse);
-    // 기본 '오래된 순'은 최신→과거로 받아 View 가 뒤집어 그린다.
-    expect(vm.listReversed, isTrue);
+    // 기본 '오래된 순'은 서버에 sort=ASC 를 보내 과거→미래로 받는다.
+    expect(vm.scheduleAscending, isTrue);
 
     final sentFrom = verify(() => sched.fetchMatches(
           cursor: any(named: 'cursor'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+          sort: any(named: 'sort'),
           from: captureAny(named: 'from'),
         )).captured;
     expect(sentFrom.every((v) => v == null), isTrue);
@@ -223,6 +333,7 @@ void main() {
             size: any(named: 'size'),
             league: captureAny(named: 'league'),
             seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
           )).captured;
       expect(captured, contains('LCK'));
     });
