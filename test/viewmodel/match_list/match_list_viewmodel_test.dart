@@ -406,4 +406,168 @@ void main() {
       expect(vm.sortOrder, vm.sortOrders[1]); // 기본 '오래된 순'
     });
   });
+
+  /// 오래된 순(ASC)은 시즌 첫 경기부터 내려와, 오늘까지 오려면 페이지를 16번
+  /// 넘게 당겨야 한다(2026-08 실측, 시즌 말 19번). 서버가 오늘 커서를 주면
+  /// 그 페이지부터 바로 받아 한 번에 닿는다.
+  ///
+  /// 서버 작업이 끝나기 전까지는 해당 필드가 응답에 없으므로, **없을 때 기존
+  /// 동작이 그대로 유지되는지**가 이 그룹의 핵심이다.
+  group('오늘 커서', () {
+    ScheduleMatch match(String date) => ScheduleMatch(
+          matchId: 'm$date',
+          scheduledTime: '18:00',
+          leagueInfo: 'LCK',
+          matchTitle: 'A vs B',
+          matchStatus: 'unstarted',
+          isSynced: false,
+          date: DateTime.parse(date),
+          teamA: const MatchTeam(
+              teamName: 'A', teamCode: 'A', teamImageUrl: '', score: 0),
+          teamB: const MatchTeam(
+              teamName: 'B', teamCode: 'B', teamImageUrl: '', score: 0),
+        );
+
+    String todayStr() {
+      final n = DateTime.now();
+      return '${n.year}-${n.month.toString().padLeft(2, '0')}-'
+          '${n.day.toString().padLeft(2, '0')}';
+    }
+
+    test('서버가 오늘 커서를 안 주면 기존대로 첫 페이지를 그대로 쓴다', () async {
+      when(() => sched.fetchMatches(
+            cursor: any(named: 'cursor'),
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => MatchPage(
+            matches: [match(todayStr())],
+            nextCursor: null,
+            hasNext: false,
+          ));
+
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      expect(vm.schedule.length, 1);
+      expect(vm.hasPrev, isFalse, reason: '과거 커서가 없으면 위로 받을 것도 없다');
+    });
+
+    test('오늘 커서를 주면 그 커서로 다시 받아 오늘부터 시작한다', () async {
+      final today = todayStr();
+      when(() => sched.fetchMatches(
+            cursor: null,
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => MatchPage(
+            // 첫 페이지는 시즌 초라 오늘이 없다.
+            matches: [match('2026-01-14')],
+            nextCursor: 'c2',
+            hasNext: true,
+            todayCursor: 'today-cursor',
+            prevCursor: 'p1',
+            hasPrev: true,
+          ));
+      when(() => sched.fetchMatches(
+            cursor: 'today-cursor',
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => MatchPage(
+            matches: [match(today)],
+            nextCursor: null,
+            hasNext: false,
+            prevCursor: 'p1',
+            hasPrev: true,
+          ));
+
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      // 오늘 커서로 다시 받았으므로 시즌 초 경기는 목록에 남지 않는다.
+      expect(vm.schedule.length, 1);
+      expect(vm.schedule.first.date.day, DateTime.now().day);
+      expect(vm.hasPrev, isTrue, reason: '위로 올리면 과거를 받을 수 있어야 한다');
+    });
+
+    test('과거 페이지는 목록 앞에 붙는다', () async {
+      final today = todayStr();
+      when(() => sched.fetchMatches(
+            cursor: any(named: 'cursor'),
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => MatchPage(
+            matches: [match(today)],
+            nextCursor: null,
+            hasNext: false,
+            prevCursor: 'p1',
+            hasPrev: true,
+          ));
+      when(() => sched.fetchMatches(
+            cursor: 'p1',
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+            direction: 'PREV',
+          )).thenAnswer((_) async => MatchPage(
+            matches: [match('2026-08-01'), match('2026-08-02')],
+            nextCursor: null,
+            hasNext: false,
+            prevCursor: null,
+            hasPrev: false,
+          ));
+
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+      final beforeCount = vm.schedule.length;
+
+      await vm.loadPreviousMatches();
+      await pumpEventQueue();
+
+      expect(vm.schedule.length, greaterThan(beforeCount));
+      expect(vm.schedule.first.date.month, 8);
+      expect(vm.schedule.first.date.day, 1, reason: '과거가 맨 앞에 와야 한다');
+      expect(vm.hasPrev, isFalse, reason: '더 없으면 다시 요청하지 않는다');
+    });
+
+    test('hasPrev 가 false 면 과거 요청을 보내지 않는다', () async {
+      when(() => sched.fetchMatches(
+            cursor: any(named: 'cursor'),
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+          )).thenAnswer((_) async => MatchPage(
+            matches: [match(todayStr())],
+            nextCursor: null,
+            hasNext: false,
+          ));
+
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      await vm.loadPreviousMatches();
+      await pumpEventQueue();
+
+      verifyNever(() => sched.fetchMatches(
+            cursor: any(named: 'cursor'),
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+            sort: any(named: 'sort'),
+            direction: 'PREV',
+          ));
+    });
+  });
 }

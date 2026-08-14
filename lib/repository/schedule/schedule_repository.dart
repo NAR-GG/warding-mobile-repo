@@ -16,11 +16,33 @@ class MatchPage {
     required this.matches,
     required this.nextCursor,
     required this.hasNext,
+    this.todayCursor,
+    this.prevCursor,
+    this.hasPrev = false,
   });
 
   final List<ScheduleMatch> matches;
   final String? nextCursor;
   final bool hasNext;
+
+  /// 오늘 날짜가 포함된 페이지의 커서.
+  ///
+  /// `sort=ASC`(오래된 순)는 시즌 첫 경기부터 내려오므로, 오늘까지 오려면
+  /// 페이지를 16번 넘게 당겨야 한다(2026-08 실측, 시즌 말은 19번). 서버가 이
+  /// 커서를 함께 주면 앱은 오늘이 든 페이지부터 바로 받아 자동 스크롤할 수 있다.
+  ///
+  /// 서버 미지원이거나 오늘 경기가 없는 시즌이면 null — 그때는 기존처럼
+  /// 페이지를 당겨 오늘을 찾는다.
+  final String? todayCursor;
+
+  /// 이전(과거) 방향으로 한 페이지 더 받기 위한 커서.
+  ///
+  /// [todayCursor] 로 목록 중간부터 시작하면 위쪽(과거)이 비어 있다.
+  /// 사용자가 위로 올렸을 때 이 커서로 과거를 이어받는다.
+  final String? prevCursor;
+
+  /// 위쪽(과거)에 더 받을 페이지가 있는지.
+  final bool hasPrev;
 }
 
 /// 경기 일정 관련 API (`/api/mobile/schedules`).
@@ -238,6 +260,7 @@ class ScheduleRepository {
     String? split,
     String? from,
     String? sort,
+    String? direction,
   }) {
     final url = ApiConfig.matchesUrl(
       league: league,
@@ -248,6 +271,7 @@ class ScheduleRepository {
       split: split,
       from: from,
       sort: sort,
+      direction: direction,
     );
 
     final cached = _matchesCache[url];
@@ -299,7 +323,32 @@ class ScheduleRepository {
       matches: matches,
       nextCursor: data['nextCursor'] as String?,
       hasNext: data['hasNext'] as bool? ?? false,
+      // 아래 세 필드는 서버 추가 예정분이라 확정 이름을 모른다. 이름이 정해지면
+      // 후보를 줄이면 되고, 그때까지 어느 쪽으로 오든 받는다. 없으면 null/false 라
+      // 기존 동작(페이지를 당겨 오늘을 찾음)이 그대로 유지된다.
+      todayCursor: _firstString(data, const ['todayCursor', 'currentCursor']),
+      prevCursor:
+          _firstString(data, const ['prevCursor', 'previousCursor', 'beforeCursor']),
+      hasPrev: _firstBool(data, const ['hasPrev', 'hasPrevious', 'hasBefore']),
     );
+  }
+
+  /// [keys] 중 먼저 발견되는 문자열 값. 없으면 null.
+  static String? _firstString(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value is String && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  /// [keys] 중 먼저 발견되는 불린 값. 없으면 false.
+  static bool _firstBool(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value is bool) return value;
+    }
+    return false;
   }
 
   /// 필터 모달의 리그·팀 옵션을 조회한다 (인증 불필요).

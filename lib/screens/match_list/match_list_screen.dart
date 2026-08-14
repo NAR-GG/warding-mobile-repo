@@ -317,7 +317,43 @@ class _MatchListScreenState extends State<MatchListScreen> {
     if (remaining < 300) {
       _viewModel.loadMoreMatches();
     }
+    // 위쪽 끝에 닿으면 과거를 이어받는다. 서버가 오늘 커서를 줘서 목록 중간부터
+    // 시작한 경우에만 받을 게 있고([MatchListViewModel.hasPrev]), 첫 페이지부터
+    // 순서대로 받았다면 VM 이 그냥 무시한다.
+    //
+    // 자동 스크롤([_scrollToTarget])이 jumpTo 로 0 근처를 지나갈 수 있으므로,
+    // 그 사이에는 트리거하지 않는다.
+    if (_scrollController.position.pixels < 300 &&
+        _scrolledForVersion == _viewModel.scheduleVersion) {
+      _loadPreviousKeepingOffset();
+    }
     _updateSortBarVisibility();
+  }
+
+  /// 과거 페이지를 받아 목록 앞에 붙이되, 사용자가 보던 위치를 유지한다.
+  ///
+  /// 위에 항목이 끼어들면 그만큼 콘텐츠가 아래로 밀려, 보고 있던 카드가 화면
+  /// 밖으로 튀어나간다. 붙이기 전후의 maxScrollExtent 차이가 곧 늘어난 높이라,
+  /// 그만큼 오프셋을 더해 주면 화면에 보이는 내용은 그대로 남는다.
+  Future<void> _loadPreviousKeepingOffset() async {
+    if (!_viewModel.hasPrev || _viewModel.loadingPrevious) return;
+    final before = _scrollController.hasClients
+        ? _scrollController.position.maxScrollExtent
+        : 0.0;
+
+    await _viewModel.loadPreviousMatches();
+
+    if (!mounted || !_scrollController.hasClients) return;
+    // 새 항목이 실제로 배치된 다음 프레임에 재야 늘어난 높이가 반영돼 있다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final grew = position.maxScrollExtent - before;
+      if (grew <= 0) return;
+      position.jumpTo(
+        (position.pixels + grew).clamp(0.0, position.maxScrollExtent),
+      );
+    });
   }
 
   /// 스크롤 방향에 따라 정렬 행을 접거나 편다.

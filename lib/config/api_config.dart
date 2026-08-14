@@ -119,6 +119,10 @@ class ApiConfig {
   /// [sort] 는 시간 정렬 방향(`ASC` = 과거→미래, `DESC` = 최신→과거).
   /// 생략하면 서버 기본값(`DESC`)이다. 방향이 바뀌면 커서를 이어 쓸 수 없으니
   /// 첫 페이지부터 다시 받아야 한다.
+  /// [direction] 은 [cursor] 로부터 어느 쪽으로 더 받을지 (`NEXT`=미래·기본,
+  /// `PREV`=과거). 오늘 커서로 목록 중간부터 시작하면 위쪽이 비어 있어,
+  /// 사용자가 위로 올릴 때 `PREV` 로 과거를 이어받는다.
+  /// 생략하면 서버 기본(`NEXT`)이라 기존 호출은 그대로 동작한다.
   static String matchesUrl({
     required String league,
     int size = 20,
@@ -128,6 +132,7 @@ class ApiConfig {
     String? split,
     String? from,
     String? sort,
+    String? direction,
   }) {
     final query = StringBuffer('league=$league&size=$size');
     if (cursor != null && cursor.isNotEmpty) {
@@ -138,6 +143,9 @@ class ApiConfig {
     if (split != null && split.isNotEmpty) query.write('&split=$split');
     if (from != null && from.isNotEmpty) query.write('&from=$from');
     if (sort != null && sort.isNotEmpty) query.write('&sort=$sort');
+    if (direction != null && direction.isNotEmpty) {
+      query.write('&direction=$direction');
+    }
     return '$apiBaseUrl/mobile/matches?$query';
   }
 
