@@ -1,7 +1,11 @@
 /// 한국어 챔피언명 → 영어 챔피언명 매핑.
 ///
 /// 서버/FCM에서 한국어 챔피언명이 오면 영어 로케일에서 이 맵으로 변환한다.
-/// 매핑에 없으면 원본 그대로 반환한다.
+/// 매핑에 없으면 원본 그대로 반환한다(= 영어 화면에 한글이 그대로 노출된다).
+///
+/// Riot Data Dragon 의 ko_KR/en_US 챔피언 데이터를 대조해 만든다. 신챔이 나오면
+/// 아래에서 최신 버전을 받아 다시 생성한다:
+/// `https://ddragon.leagueoflegends.com/cdn/<version>/data/{ko_KR,en_US}/champion.json`
 const Map<String, String> championKoToEn = {
   '가렌': 'Garen',
   '갈리오': 'Galio',
@@ -9,9 +13,10 @@ const Map<String, String> championKoToEn = {
   '그라가스': 'Gragas',
   '그레이브즈': 'Graves',
   '그웬': 'Gwen',
-  '나미': 'Nami',
   '나르': 'Gnar',
+  '나미': 'Nami',
   '나서스': 'Nasus',
+  '나피리': 'Naafiri',
   '노틸러스': 'Nautilus',
   '녹턴': 'Nocturne',
   '누누와 윌럼프': 'Nunu & Willump',
@@ -32,6 +37,7 @@ const Map<String, String> championKoToEn = {
   '렉사이': "Rek'Sai",
   '렐': 'Rell',
   '렝가': 'Rengar',
+  '로크': 'Locke',
   '루시안': 'Lucian',
   '룰루': 'Lulu',
   '르블랑': 'LeBlanc',
@@ -43,6 +49,7 @@ const Map<String, String> championKoToEn = {
   '마오카이': 'Maokai',
   '말자하': 'Malzahar',
   '말파이트': 'Malphite',
+  '멜': 'Mel',
   '모데카이저': 'Mordekaiser',
   '모르가나': 'Morgana',
   '문도 박사': 'Dr. Mundo',
@@ -53,14 +60,18 @@ const Map<String, String> championKoToEn = {
   '바이': 'Vi',
   '베이가': 'Veigar',
   '베인': 'Vayne',
+  '벡스': 'Vex',
   '벨베스': "Bel'Veth",
   '벨코즈': "Vel'Koz",
   '볼리베어': 'Volibear',
   '브라움': 'Braum',
   '브라이어': 'Briar',
+  '브랜드': 'Brand',
   '블라디미르': 'Vladimir',
   '블리츠크랭크': 'Blitzcrank',
+  '비에고': 'Viego',
   '빅토르': 'Viktor',
+  '뽀삐': 'Poppy',
   '사미라': 'Samira',
   '사이온': 'Sion',
   '사일러스': 'Sylas',
@@ -74,8 +85,8 @@ const Map<String, String> championKoToEn = {
   '쉔': 'Shen',
   '쉬바나': 'Shyvana',
   '스몰더': 'Smolder',
-  '스카너': 'Skarner',
   '스웨인': 'Swain',
+  '스카너': 'Skarner',
   '시비르': 'Sivir',
   '신 짜오': 'Xin Zhao',
   '신드라': 'Syndra',
@@ -91,6 +102,7 @@ const Map<String, String> championKoToEn = {
   '아트록스': 'Aatrox',
   '아펠리오스': 'Aphelios',
   '알리스타': 'Alistar',
+  '암베사': 'Ambessa',
   '애니': 'Annie',
   '애니비아': 'Anivia',
   '애쉬': 'Ashe',
@@ -107,13 +119,17 @@ const Map<String, String> championKoToEn = {
   '우디르': 'Udyr',
   '우르곳': 'Urgot',
   '워윅': 'Warwick',
+  '유나라': 'Yunara',
   '유미': 'Yuumi',
   '이렐리아': 'Irelia',
   '이블린': 'Evelynn',
+  '이즈리얼': 'Ezreal',
   '일라오이': 'Illaoi',
+  '자르반 4세': 'Jarvan IV',
   '자야': 'Xayah',
   '자이라': 'Zyra',
   '자크': 'Zac',
+  '자헨': 'Zaahen',
   '잔나': 'Janna',
   '잭스': 'Jax',
   '제드': 'Zed',
@@ -138,6 +154,7 @@ const Map<String, String> championKoToEn = {
   '케넨': 'Kennen',
   '케이틀린': 'Caitlyn',
   '케인': 'Kayn',
+  '케일': 'Kayle',
   '코그모': "Kog'Maw",
   '코르키': 'Corki',
   '퀸': 'Quinn',
@@ -154,6 +171,7 @@ const Map<String, String> championKoToEn = {
   '트린다미어': 'Tryndamere',
   '트위스티드 페이트': 'Twisted Fate',
   '트위치': 'Twitch',
+  '티모': 'Teemo',
   '파이크': 'Pyke',
   '판테온': 'Pantheon',
   '피들스틱': 'Fiddlesticks',
@@ -162,10 +180,6 @@ const Map<String, String> championKoToEn = {
   '하이머딩거': 'Heimerdinger',
   '헤카림': 'Hecarim',
   '흐웨이': 'Hwei',
-  // 2024-2025 신챔
-  '나아피리': 'Naafiri',
-  '멜': 'Mel',
-  '앰블레사': 'Ambessa',
 };
 
 /// 한국어 챔피언명을 영어로 변환한다. 매핑에 없으면 원본 그대로 반환.
