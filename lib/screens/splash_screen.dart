@@ -280,9 +280,11 @@ class _SplashScreenState extends State<SplashScreen>
       await upgrader.initialize();
       if (!upgrader.isUpdateAvailable()) return;
 
-      // l10n 문자열과 스토어 URL 을 async 전에 캡처한다.
+      // await 이후에 navigatorKey 에서 context 를 새로 얻는다 — 이 위젯의
+      // context 를 async gap across 로 들고 오는 게 아니라, 지금 살아있는
+      // navigator 의 것을 그때그때 읽으므로 안전하다.
       final ctx = navigatorKey.currentContext;
-      if (ctx == null) return;
+      if (ctx == null || !ctx.mounted) return;
       final l = AppLocalizations.of(ctx);
       if (l == null) return;
       final title = l.updateAvailableTitle;

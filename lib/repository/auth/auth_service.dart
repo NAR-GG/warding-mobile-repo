@@ -534,9 +534,17 @@ class AuthService {
   /// 응답이 '인증 만료'를 의미하는지. 백엔드가 만료 시 로그인 페이지(HTML)로
   /// 302 리다이렉트하므로 상태코드와 Content-Type 으로 함께 판별한다.
   bool _isAuthExpired(http.Response response) {
-    if (response.statusCode == 401 || response.statusCode == 302) return true;
-    final contentType = response.headers['content-type'] ?? '';
-    return contentType.contains('text/html');
+    if (response.statusCode == 401) return true;
+    // 302 + HTML 이면 로그인 페이지로 보내진 것 — 만료로 본다.
+    //
+    // content-type 만으로 판단하면 안 된다. 게이트웨이(nginx·ALB)가 502·503·504
+    // 에러 페이지를 text/html 로 내려주기 때문에, 서버가 아플 때의 5xx 를
+    // '인증 만료'로 오판해 불필요한 재발급·토큰 로테이션을 유발한다.
+    if (response.statusCode == 302) {
+      final contentType = response.headers['content-type'] ?? '';
+      return contentType.contains('text/html') || contentType.isEmpty;
+    }
+    return false;
   }
 
   /// 회원 탈퇴 (`DELETE /api/auth/me`). 서버가 계정과 연관 데이터를 모두

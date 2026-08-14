@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'api_client.dart' as http;
 
@@ -306,8 +304,6 @@ class HomeWidgetService {
       final response = await http.get(Uri.parse(imageUrl));
       if (response.statusCode != 200) return;
 
-      // App Group 공유 폴더에 저장
-      final dir = await HomeWidget.getWidgetData<String>('widget_dir');
       // home_widget은 앱 그룹 UserDefaults만 지원하므로
       // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
       await HomeWidget.saveWidgetData<String>(

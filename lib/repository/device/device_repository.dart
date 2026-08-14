@@ -67,7 +67,10 @@ class DeviceRepository {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final id = data['deviceId'];
       if (id != null) {
-        await _storage.write(key: _deviceIdKey, value: id.toString());
+        await writeWithDuplicateRecovery(
+          key: _deviceIdKey,
+          value: id.toString(),
+        );
       }
     } catch (_) {
       // 응답 본문이 비었거나 형식이 달라도 등록 자체는 성공으로 본다.
