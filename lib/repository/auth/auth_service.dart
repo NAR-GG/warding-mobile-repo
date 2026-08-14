@@ -311,10 +311,13 @@ class AuthService {
         (data['refreshToken'] ?? data['refresh_token']) as String?;
     final isOnboarded = data['isOnboarded'] as bool? ?? false;
 
-    await _storage.write(key: _jwtKey, value: jwt);
+    // 접근성이 갈린 잔여 항목 때문에 write 가 -25299(duplicate)로 튕기면
+    // 로그인은 성공했는데 토큰이 저장되지 않아 '로그인이 안 되는' 것처럼 보인다
+    // (Sentry WARDING-APP-FLUTTER-12/10/W/V/11/R). 지우고 다시 쓴다.
+    await writeWithDuplicateRecovery(key: _jwtKey, value: jwt);
     _setCachedJwt(jwt);
     if (refreshToken != null && refreshToken.isNotEmpty) {
-      await _storage.write(key: _refreshKey, value: refreshToken);
+      await writeWithDuplicateRecovery(key: _refreshKey, value: refreshToken);
     }
 
     // 로그인 성공 → Sentry에 사용자 ID 설정 + info 로그
@@ -325,9 +328,15 @@ class AuthService {
     return AuthResult(jwt: jwt, isOnboarded: isOnboarded);
   }
 
+  /// 저장된 Access Token.
+  ///
+  /// 기기 잠금 등으로 Keychain 을 **읽지 못하면**
+  /// [SecureStorageUnavailableException] 을 던진다 — null 로 접으면
+  /// 호출부가 '비로그인'으로 오해해 로그인 화면으로 보내버린다
+  /// (Sentry WARDING-APP-FLUTTER-C, 491명 로그아웃의 경로).
   Future<String?> get jwt async {
     if (_jwtCached) return _cachedJwt;
-    final value = await _storage.read(key: _jwtKey);
+    final value = await readOrThrowIfLocked(_jwtKey);
     // null 은 캐싱하지 않는다 — 기기 잠금 중 Keychain 접근성 불일치 등으로
     // 진짜 로그인 상태인데도 일시적으로 null 이 읽히는 경우가 있었다(과거
     // -25308 오탐 로그아웃 사고, splash_screen.dart 참고). 캐싱해버리면 그
@@ -338,7 +347,10 @@ class AuthService {
     return value;
   }
 
-  Future<String?> get refreshToken => _storage.read(key: _refreshKey);
+  /// 저장된 Refresh Token. 잠금 등으로 읽지 못하면
+  /// [SecureStorageUnavailableException] — [_doRefresh] 가 이를 일시 장애로
+  /// 처리한다. null 로 접으면 '리프레시 토큰 없음'이 되어 강제 로그아웃된다.
+  Future<String?> get refreshToken => readOrThrowIfLocked(_refreshKey);
 
   /// 로그인 회원 정보를 조회한다 (`GET /api/auth/me`).
   /// 만료 시 [authorizedRequest] 가 토큰을 자동 갱신·재시도한다.
@@ -408,7 +420,14 @@ class AuthService {
   }
 
   Future<RefreshResult> _doRefresh() async {
-    final refresh = await refreshToken;
+    final String? refresh;
+    try {
+      refresh = await refreshToken;
+    } on SecureStorageUnavailableException catch (e) {
+      // 기기 잠금 등으로 못 읽었을 뿐 — 토큰이 없다는 뜻이 아니다.
+      debugPrint('[Auth] 리프레시 토큰 읽기 불가(일시 장애로 처리): $e');
+      return const RefreshResult.transient();
+    }
     if (refresh == null || refresh.isEmpty) {
       debugPrint('[Auth] refreshToken 없음 — 재발급 불가 (재로그인 필요)');
       return const RefreshResult.invalid();
@@ -442,10 +461,10 @@ class AuthService {
         debugPrint('[Auth] 재발급 응답에 accessToken 없음: ${response.body}');
         return const RefreshResult.transient();
       }
-      await _storage.write(key: _jwtKey, value: newJwt);
+      await writeWithDuplicateRecovery(key: _jwtKey, value: newJwt);
       _setCachedJwt(newJwt);
       if (newRefresh != null && newRefresh.isNotEmpty) {
-        await _storage.write(key: _refreshKey, value: newRefresh);
+        await writeWithDuplicateRecovery(key: _refreshKey, value: newRefresh);
       }
       debugPrint('[Auth] 토큰 재발급 성공');
       return RefreshResult.success(newJwt);
@@ -464,6 +483,8 @@ class AuthService {
   Future<http.Response> authorizedRequest(
     Future<http.Response> Function(String accessToken) send,
   ) async {
+    // 잠금으로 못 읽은 경우는 [SecureStorageUnavailableException] 이 그대로
+    // 올라간다 — '토큰 없음'과 구분되어야 호출부가 로그아웃으로 오해하지 않는다.
     final token = await jwt;
     if (token == null || token.isEmpty) {
       throw Exception('로그인이 필요합니다 (토큰 없음)');
@@ -513,9 +534,17 @@ class AuthService {
   /// 응답이 '인증 만료'를 의미하는지. 백엔드가 만료 시 로그인 페이지(HTML)로
   /// 302 리다이렉트하므로 상태코드와 Content-Type 으로 함께 판별한다.
   bool _isAuthExpired(http.Response response) {
-    if (response.statusCode == 401 || response.statusCode == 302) return true;
-    final contentType = response.headers['content-type'] ?? '';
-    return contentType.contains('text/html');
+    if (response.statusCode == 401) return true;
+    // 302 + HTML 이면 로그인 페이지로 보내진 것 — 만료로 본다.
+    //
+    // content-type 만으로 판단하면 안 된다. 게이트웨이(nginx·ALB)가 502·503·504
+    // 에러 페이지를 text/html 로 내려주기 때문에, 서버가 아플 때의 5xx 를
+    // '인증 만료'로 오판해 불필요한 재발급·토큰 로테이션을 유발한다.
+    if (response.statusCode == 302) {
+      final contentType = response.headers['content-type'] ?? '';
+      return contentType.contains('text/html') || contentType.isEmpty;
+    }
+    return false;
   }
 
   /// 회원 탈퇴 (`DELETE /api/auth/me`). 서버가 계정과 연관 데이터를 모두

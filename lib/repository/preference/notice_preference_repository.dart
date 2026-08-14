@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../config/secure_storage.dart';
 
@@ -17,17 +16,23 @@ class NoticePreferenceRepository {
 
   static const _key = 'dismissed_notice_ids';
 
-  final _storage = secureStorage;
-
   /// 닫은 공지 id를 목록에 추가한다.
   Future<void> addDismissedId(int noticeId) async {
-    final ids = await loadDismissedIds()..add(noticeId);
-    await _storage.write(key: _key, value: jsonEncode(ids.toList()));
+    final ids = await loadDismissedIds();
+    ids.add(noticeId);
+    try {
+      await writeWithDuplicateRecovery(
+        key: _key,
+        value: jsonEncode(ids.toList()),
+      );
+    } catch (e) {
+      debugPrint('[NoticePreference] 저장 실패: $e');
+    }
   }
 
   /// 닫은 공지 id 목록. 없거나 손상됐으면 빈 셋.
   Future<Set<int>> loadDismissedIds() async {
-    final raw = await _storage.read(key: _key);
+    final raw = await readOrNull(_key);
     if (raw == null || raw.isEmpty) return {};
     try {
       return {for (final id in jsonDecode(raw) as List) (id as num).toInt()};

@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'api_client.dart' as http;
 
@@ -21,9 +19,10 @@ import '../repository/preference/calendar_week_start_preference_repository.dart'
 import '../repository/preference/filter_preference_repository.dart';
 import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
-import '../screens/match_detail/match_detail_screen.dart';
+import '../util/match_detail_router.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
+import '../config/secure_storage.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
 ///
@@ -305,8 +304,6 @@ class HomeWidgetService {
       final response = await http.get(Uri.parse(imageUrl));
       if (response.statusCode != 200) return;
 
-      // App Group 공유 폴더에 저장
-      final dir = await HomeWidget.getWidgetData<String>('widget_dir');
       // home_widget은 앱 그룹 UserDefaults만 지원하므로
       // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
       await HomeWidget.saveWidgetData<String>(
@@ -406,6 +403,21 @@ class HomeWidgetService {
       return;
     }
 
+    final uri = Uri.tryParse(urlStr);
+    if (uri == null) return;
+
+    // Live Activity 카드 / 다이나믹 아일랜드: warding://match/{matchId}?tab=rating&set=N
+    //
+    // 경기 상세는 URL 문자열 기준 중복 필터를 타지 않는다. 같은 경기라도
+    // 누른 위치에 따라 쿼리가 달라서(카드 본문은 tab 없음, 평점 줄은
+    // ?tab=rating&set=N) 문자열로는 중복을 못 걸러내고, 반대로 사용자가 3초
+    // 안에 카드 → 평점으로 옮겨 누르면 멀쩡한 탭 전환이 씹힌다.
+    // 중복 방지는 [MatchDetailRouter] 가 스택 상태로 처리한다.
+    if (uri.host == 'match') {
+      _openMatchDetail(uri);
+      return;
+    }
+
     // 보류분과 채널 전달이 겹쳐 같은 URL 이 두 번 오면 뒤엣것은 버린다.
     final at = _lastHandledAt;
     if (!skipDuplicateCheck &&
@@ -417,14 +429,6 @@ class HomeWidgetService {
     }
     _lastHandledUrl = urlStr;
     _lastHandledAt = DateTime.now();
-    final uri = Uri.tryParse(urlStr);
-    if (uri == null) return;
-
-    // Live Activity 카드: warding://match/{matchId}?tab=rating&set=N
-    if (uri.host == 'match') {
-      _openMatchDetail(uri);
-      return;
-    }
 
     final action = uri.path.replaceAll('/', '');
 
@@ -477,17 +481,11 @@ class HomeWidgetService {
     };
     final set = int.tryParse(uri.queryParameters['set'] ?? '');
 
-    final nav = navigatorKey.currentState;
-    if (nav == null) return;
-
-    nav.push(
-      MaterialPageRoute(
-        builder: (_) => MatchDetailScreen(
-          matchId: matchId,
-          initialTabIndex: tabIndex,
-          initialSet: set,
-        ),
-      ),
+    // 같은 경기 상세가 이미 떠 있으면 새로 쌓지 않고 탭·세트만 갈아끼운다.
+    MatchDetailRouter.open(
+      matchId: matchId,
+      tabIndex: tabIndex,
+      setNumber: set,
     );
   }
 
@@ -574,7 +572,14 @@ class HomeWidgetService {
   /// 반환해 이번 위젯 갱신만 조용히 건너뛴다(위젯은 이전 데이터 유지).
   /// 위젯 경로에서는 절대 재발급·로그아웃하지 않는다.
   static Future<UserProfile?> _fetchMeWithoutRefresh() async {
-    final token = await AuthService.instance.jwt;
+    final String? token;
+    try {
+      token = await AuthService.instance.jwt;
+    } on SecureStorageUnavailableException {
+      // 위젯 갱신은 기기 잠금 중에도 돈다 — 못 읽으면 이번 갱신만 건너뛴다.
+      debugPrint('[HomeWidget] 토큰 읽기 불가 — 이번 갱신 건너뜀');
+      return null;
+    }
     if (token == null || token.isEmpty) return null;
     final response = await http.get(
       Uri.parse(ApiConfig.meUrl),

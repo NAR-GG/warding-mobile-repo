@@ -17,7 +17,6 @@ import 'repository/live_activity/live_activity_service.dart';
 import 'repository/live_activity/live_match_activity_controller.dart';
 import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
-import 'screens/schedule/schedule_screen.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/home_widget_service.dart';
@@ -193,6 +192,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             scaffoldBackgroundColor: AppColors.narDark800,
           ),
           home: const SplashScreen(),
+          // 이 앱은 named route 를 쓰지 않고 `home:` + Navigator.push 로만
+          // 화면을 쌓는다. 그런데 OS 가 초기 라우트를 '/' 가 아닌 값으로
+          // 넘겨줄 때가 있다(딥링크·위젯/알림 탭 실행 등). 그러면 라우트를
+          // 만들 수 없어 WidgetsApp 의 기본 _onUnknownRoute 가 돌고,
+          // 거기서 null check 가 터져 시작 크래시가 된다
+          // (Sentry WARDING-APP-FLUTTER-4, 177 events / 86 users).
+          //
+          // 알 수 없는 라우트는 그냥 첫 화면으로 보낸다 — 딥링크 자체는
+          // FcmService.consumePendingDeepLink / HomeWidgetService 가
+          // 스플래시 이후에 따로 처리하므로 여기서 잃는 것은 없다.
+          onUnknownRoute: (settings) => MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => const SplashScreen(),
+          ),
         );
       },
     );

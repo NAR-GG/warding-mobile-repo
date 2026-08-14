@@ -172,7 +172,13 @@ class _SplashScreenState extends State<SplashScreen>
       // 스플래시가 떠 있는 동안 첫 화면(일정)의 캘린더를 미리 받아둔다.
       // 실패해도 화면 진입을 막지 않는다 — 그때는 일정 화면이 평소대로
       // 직접 부르고 에러 UI 도 거기서 처리한다.
-      final prefetch = _prefetchCalendar();
+      //
+      // 에러 핸들러를 여기서 바로 붙인다. 아래 unawaited() 로 떼어놓는 순간
+      // 이 Future 의 예외는 _bootstrap 의 try/catch 가 아니라 zone 으로 올라가
+      // '처리되지 않은 크래시'로 잡힌다.
+      final prefetch = _prefetchCalendar().catchError((Object e) {
+        debugPrint('[Splash] 캘린더 프리페치 실패(무시): $e');
+      });
 
       final results = await Future.wait([
         Future<void>.delayed(_minSplashDuration),
@@ -185,6 +191,10 @@ class _SplashScreenState extends State<SplashScreen>
       // 묶어두면 프리페치가 오히려 손해다. 이 경우에도 요청은 이미 떠 있어
       // 일정 화면의 조회가 그 요청에 합류한다.
       unawaited(prefetch);
+    } on SecureStorageUnavailableException {
+      // 잠금으로 토큰을 '읽지 못한' 것 — 없는 게 아니다. 재시도에 맡긴다.
+      _scheduleRetry();
+      return;
     } on PlatformException {
       // Keychain 접근 불가(-25308: 기기 잠금 + 백그라운드 launch 등).
       // '토큰 없음'이 아니므로 LoginScreen 으로 보내면 안 된다.
@@ -270,9 +280,11 @@ class _SplashScreenState extends State<SplashScreen>
       await upgrader.initialize();
       if (!upgrader.isUpdateAvailable()) return;
 
-      // l10n 문자열과 스토어 URL 을 async 전에 캡처한다.
+      // await 이후에 navigatorKey 에서 context 를 새로 얻는다 — 이 위젯의
+      // context 를 async gap across 로 들고 오는 게 아니라, 지금 살아있는
+      // navigator 의 것을 그때그때 읽으므로 안전하다.
       final ctx = navigatorKey.currentContext;
-      if (ctx == null) return;
+      if (ctx == null || !ctx.mounted) return;
       final l = AppLocalizations.of(ctx);
       if (l == null) return;
       final title = l.updateAvailableTitle;

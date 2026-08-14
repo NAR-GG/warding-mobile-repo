@@ -17,6 +17,7 @@ class ScheduleHeader extends StatelessWidget {
   const ScheduleHeader({
     super.key,
     required this.monthLabel,
+    this.monthLabelWidget,
     this.summary,
     this.onMonthTap,
     this.onFilterTap,
@@ -27,6 +28,22 @@ class ScheduleHeader extends StatelessWidget {
 
   /// 'yyyy.MM' 형식 월 라벨. 예: '2026.04'.
   final String monthLabel;
+
+  /// 월 라벨 자리에 대신 그릴 위젯. 캘린더 스와이프 진행률에 맞춰 라벨을
+  /// 함께 움직이려고 [ScheduleCalendar] 가 넘겨준다. null 이면 [monthLabel]
+  /// 을 정적 텍스트로 그린다.
+  final Widget? monthLabelWidget;
+
+  /// 월 라벨 텍스트 스타일. 라벨을 밖에서 그릴 때도 같은 스타일을 쓰도록
+  /// 공개한다.
+  static TextStyle monthLabelStyle(double scale) => TextStyle(
+    fontFamily: 'SF Pro Display',
+    fontWeight: FontWeight.w700,
+    fontSize: 22 * scale,
+    height: 1.4, // 140%
+    letterSpacing: 0,
+    color: AppColors.narText,
+  );
 
   /// 월 아래 요약 텍스트. null 이면 l.monthlyScheduleSummary 를 사용한다.
   final String? summary;
@@ -68,17 +85,8 @@ class ScheduleHeader extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        monthLabel,
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 22 * scale,
-                          height: 1.4, // 140%
-                          letterSpacing: 0,
-                          color: AppColors.narText,
-                        ),
-                      ),
+                      monthLabelWidget ??
+                          Text(monthLabel, style: monthLabelStyle(scale)),
                       SizedBox(width: 8 * scale),
                       SvgPicture.asset(
                         'assets/icons/nar_calendar.svg',

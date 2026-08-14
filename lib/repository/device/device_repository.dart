@@ -30,7 +30,14 @@ class DeviceRepository {
     required String fcmToken,
     required String platform,
   }) async {
-    final jwt = await _auth.jwt;
+    final String? jwt;
+    try {
+      jwt = await _auth.jwt;
+    } on SecureStorageUnavailableException {
+      // FCM 토큰 등록은 잠금 중 백그라운드에서도 불린다 — 다음 기회에 등록된다.
+      debugPrint('[Device] 토큰 읽기 불가 — 등록 생략');
+      return;
+    }
     if (jwt == null || jwt.isEmpty) {
       debugPrint('[Device] 비로그인 상태 — 토큰 등록 생략');
       return;
@@ -60,7 +67,10 @@ class DeviceRepository {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final id = data['deviceId'];
       if (id != null) {
-        await _storage.write(key: _deviceIdKey, value: id.toString());
+        await writeWithDuplicateRecovery(
+          key: _deviceIdKey,
+          value: id.toString(),
+        );
       }
     } catch (_) {
       // 응답 본문이 비었거나 형식이 달라도 등록 자체는 성공으로 본다.

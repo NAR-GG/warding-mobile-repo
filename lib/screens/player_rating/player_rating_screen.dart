@@ -21,6 +21,7 @@ import 'component/player_comment_section.dart';
 import 'component/rating_comment_sheet.dart';
 import 'component/rating_distribution_section.dart';
 import 'component/subscribed_rating_banner.dart';
+import '../../config/secure_storage.dart';
 
 /// 선수 평점 상세 페이지.
 ///
@@ -150,7 +151,13 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
 
   /// 평점·코멘트 남기기 바텀시트를 띄운다. 미로그인 시 로그인 화면으로 이동한다.
   Future<void> _openRatingSheet() async {
-    final token = await AuthService.instance.jwt;
+    final String? token;
+    try {
+      token = await AuthService.instance.jwt;
+    } on SecureStorageUnavailableException {
+      // 잠금으로 토큰을 못 읽은 것뿐 — 로그인 유저를 로그인 화면으로 보내면 안 된다.
+      return;
+    }
     if (!mounted) return;
     if (token == null || token.isEmpty) {
       Navigator.of(context).push(

@@ -268,7 +268,7 @@ class _TeamLogo extends StatelessWidget {
   }
 }
 
-/// 알림 토글 한 행: 라벨 + [NarToggle] (padding 2/20/2/60).
+/// 알림 토글 한 행: 라벨 + [NarToggle] (padding 4/20/4/60).
 class _AlarmRow extends StatelessWidget {
   const _AlarmRow({
     required this.label,
@@ -285,7 +285,7 @@ class _AlarmRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+      padding: EdgeInsets.fromLTRB(60 * scale, 4 * scale, 20 * scale, 4 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -358,7 +358,7 @@ class _TeamAlarmBlockSkeletonState extends State<_TeamAlarmBlockSkeleton>
         );
         Widget alarmRow() => Padding(
           padding:
-              EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+              EdgeInsets.fromLTRB(60 * scale, 4 * scale, 20 * scale, 4 * scale),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

@@ -9,10 +9,18 @@ import 'calendar_today_badge.dart';
 ///
 /// 주(week) 시작 요일은 [weekStart]로 설정한다(기본값 월요일). 이전·다음
 /// 달 날짜로 빈 칸을 채워 7×N 격자를 만든다. 각 주 행 높이는 부모가 준
-/// 가용 세로 공간을 주 수로 나눠 동적으로 정해서, 주 수가 몇 개든 그리드
-/// 전체가 스크롤 없이 뷰포트 안에 다 들어오게 한다. 다만 화면이 너무 작아
-/// 계산된 행 높이가 [_minRowHeight] 밑으로 떨어지면(콘텐츠가 눌려 안 보이는
-/// 것을 막기 위해) 그 최소값을 지키고, 그 경우에 한해 세로로 스크롤된다.
+/// 가용 세로 공간을 그 달의 실제 주 수(4~6)로 나눠 정한다 — 주 수가 몇이든
+/// 그리드가 뷰포트를 세로로 꽉 채우고 아래 여백이 남지 않는다.
+///
+/// 한때는 실제 주 수 대신 최대 주 수(6)로 고정해 나눴다. 그때는 월 전환이
+/// `AnimatedSwitcher` 여서 두 달 그리드가 잠시 같은 자리에 겹쳐 보였고,
+/// 셀 높이가 서로 다르면 날짜가 밀리는 것처럼 보였기 때문이다. 지금은
+/// [ScheduleCalendar] 가 `PageView` 라 달마다 페이지가 분리돼 겹치지 않으므로
+/// 그 제약이 사라졌다.
+///
+/// 화면이 너무 작아 계산된 행 높이가 [minRowHeight] 밑으로 떨어지면
+/// (콘텐츠가 눌려 안 보이는 것을 막기 위해) 그 최소값을 지키고, 그 경우에
+/// 한해 세로로 스크롤된다.
 class CalendarMonthGrid extends StatelessWidget {
   const CalendarMonthGrid({
     super.key,
@@ -37,42 +45,54 @@ class CalendarMonthGrid extends StatelessWidget {
   /// 경기가 있는 날짜 칸을 탭하면 그 날짜로 호출한다. null 이면 탭 비활성.
   final ValueChanged<DateTime>? onDateTap;
 
-  /// 날짜 숫자 + 경기 칩이 눌리지 않고 보이는 최소 행 높이.
-  static const double _minRowHeight = 64.0;
+  /// 날짜 숫자 + 경기 칩이 눌리지 않고 보이는 최소 행 높이(스케일 적용 전).
+  /// 스켈레톤도 같은 값을 써야 로딩 전후로 칸 높이가 바뀌지 않는다.
+  static const double minRowHeight = 64.0;
+
+  /// [availableHeight] 를 [weekCount] 주로 나눈 행 높이. 너무 좁아 [minRowHeight]
+  /// 밑으로 떨어지면 최소값을 지킨다(그 경우 그리드가 뷰포트를 넘어 스크롤된다).
+  ///
+  /// 스켈레톤과 실제 그리드가 같은 높이를 쓰도록 계산을 여기 모아 둔다.
+  static double rowHeightFor({
+    required double availableHeight,
+    required int weekCount,
+    required double scale,
+  }) {
+    final floor = minRowHeight * scale;
+    if (!availableHeight.isFinite) return floor;
+    final fit = availableHeight / weekCount;
+    return fit > floor ? fit : floor;
+  }
 
   @override
   Widget build(BuildContext context) {
     // 그리드 시작일이 속한 주에서, 설정된 시작 요일까지 거슬러 올라갈 일수.
     final leadingDays = weekStart.leadingDays(month);
-    // 이번 달 일수 (다음 달 0일 = 이번 달 말일).
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
-    // 앞쪽 빈 칸 + 이번 달 일수를 7로 올림 → 필요한 주 수.
-    final weekCount = ((leadingDays + daysInMonth) / 7).ceil();
+    // 이 달 그리드에 필요한 주 수 — 스켈레톤도 같은 계산을 쓴다.
+    final weekCount = weekStart.weekCount(month);
     final today = DateTime.now();
 
     // today 가 그리드에서 몇 번째 주에 있는지 (그리드 밖이면 -1).
     final gridStart = DateTime(month.year, month.month, 1 - leadingDays);
-    final todayOffset =
-        DateTime(
-          today.year,
-          today.month,
-          today.day,
-        ).difference(gridStart).inDays;
-    final todayWeek =
-        (todayOffset >= 0 && todayOffset < weekCount * 7)
-            ? todayOffset ~/ 7
-            : -1;
+    final todayOffset = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(gridStart).inDays;
+    final todayWeek = (todayOffset >= 0 && todayOffset < weekCount * 7)
+        ? todayOffset ~/ 7
+        : -1;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final minRowHeight = _minRowHeight * scale;
         final availableHeight = constraints.maxHeight;
-        // 가용 세로 공간을 주 수로 균등 분배 → 그리드가 정확히 뷰포트를
-        // 채운다. 공간이 무한(바운드 없는 부모)이면 최소값으로 대체.
-        final fitRowHeight =
-            availableHeight.isFinite ? availableHeight / weekCount : minRowHeight;
-        final rowHeight =
-            fitRowHeight > minRowHeight ? fitRowHeight : minRowHeight;
+        // 가용 세로 공간을 이 달의 실제 주 수로 균등 분배 → 주 수가 몇이든
+        // 그리드가 정확히 뷰포트를 채운다.
+        final rowHeight = rowHeightFor(
+          availableHeight: availableHeight,
+          weekCount: weekCount,
+          scale: scale,
+        );
         final totalHeight = rowHeight * weekCount;
         final needsScroll = totalHeight > availableHeight;
         final cellWidth = constraints.maxWidth / 7;
@@ -104,8 +124,8 @@ class CalendarMonthGrid extends StatelessWidget {
                               // 경기가 있는 날만 탭 가능(다른 달·빈 날은 matchesOf 가 [] 라 비활성).
                               onTap:
                                   (onDateTap != null && dayMatches.isNotEmpty)
-                                      ? () => onDateTap!(date)
-                                      : null,
+                                  ? () => onDateTap!(date)
+                                  : null,
                               // 마지막 열 오른쪽엔 세로 테두리 없음.
                               showRightBorder: dow != 6,
                               // 첫 주만 위쪽 테두리. 이후 행은 윗 행의 아래

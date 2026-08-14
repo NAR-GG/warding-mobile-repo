@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../config/app_globals.dart';
-import '../../screens/match_detail/match_detail_screen.dart';
 import '../../screens/subscription/subscription_screen.dart';
+import '../../util/match_detail_router.dart';
 import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
 import '../notification/live_match_notification_store.dart';
@@ -156,10 +156,14 @@ class FcmService {
       );
       SentryLogger.info(module: 'FCM', eventName: 'registerToken');
     } catch (e) {
+      // reason 에 타입만 담으면 Sentry 이슈가 'Exception' 한 덩어리로 뭉쳐
+      // 원인을 못 가른다(WARDING-APP-FLUTTER-1, 1.3K events / 744 users 가
+      // 메시지 없이 쌓인 이유). 메시지까지 실어 상태코드·네트워크·인증을
+      // 구분할 수 있게 한다.
       SentryLogger.warning(
         module: 'FCM',
         eventName: 'registerToken',
-        reason: e.runtimeType.toString(),
+        reason: '${e.runtimeType}: $e',
         error: e,
       );
       // 토큰 등록 실패가 로그인 흐름을 막지 않도록 삼킨다.
@@ -301,13 +305,14 @@ class FcmService {
       }
       // 경기 상세를 '라이브 이벤트' 탭(index 1)으로 연다. 헤더용 match 객체는
       // 푸시에 없으므로 null 로 두면 상세 화면이 matchId 로 데이터를 로드한다.
-      navigatorKey.currentState?.push(
-        MaterialPageRoute<void>(
-          builder: (_) => MatchDetailScreen(
-            matchId: matchId,
-            initialTabIndex: 1,
-          ),
-        ),
+      //
+      // 라우터를 거치므로 푸시를 연달아 눌러도 상세가 겹겹이 쌓이지 않고
+      // 이미 떠 있는 화면의 탭·세트만 바뀐다.
+      final setNumber = int.tryParse((data['setNumber'] ?? '').toString());
+      MatchDetailRouter.open(
+        matchId: matchId,
+        tabIndex: 1,
+        setNumber: setNumber,
       );
       return;
     }
