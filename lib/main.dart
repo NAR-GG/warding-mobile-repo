@@ -70,11 +70,20 @@ Future<void> main() async {
   // Firebase/FCM 준비, 언어 설정 로드, 홈 위젯 App Group 설정은 서로 의존하지
   // 않는데 예전엔 순서대로 await 해서 앱을 켤 때마다 첫 프레임이 그만큼
   // 늦어졌다. 동시에 돌려 가장 느린 하나의 시간만 걸리게 한다.
-  await Future.wait([
-    _initFirebaseMessaging(),
-    AppLanguage.instance.load(),
-    HomeWidgetService.init(),
-  ]);
+  //
+  // 실패·지연은 삼켜야 한다. 여기서 예외가 나거나 응답이 안 오면 runApp 이
+  // 아예 호출되지 않아 화면이 영원히 검게 남는다 — 사용자에겐 '앱이 안 열림'
+  // 이고, 스토어 심사에선 손상된 기능(로드 문제)으로 리젝된다. 알림·위젯이
+  // 준비되지 않은 앱이 열리는 게 안 열리는 앱보다 낫다.
+  try {
+    await Future.wait([
+      _initFirebaseMessaging(),
+      AppLanguage.instance.load(),
+      HomeWidgetService.init(),
+    ]).timeout(const Duration(seconds: 8));
+  } catch (e) {
+    debugPrint('[main] 시작 초기화 실패·지연(무시하고 앱은 띄운다): $e');
+  }
   KakaoSdk.init(nativeAppKey: ApiConfig.kakaoNativeAppKey);
   // 백그라운드 위젯 갱신 콜백 등록
   HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback);
@@ -85,30 +94,40 @@ Future<void> main() async {
   HomeWidgetService.listenWidgetActions();
 
   if (kReleaseMode) {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = const String.fromEnvironment(
-          'SENTRY_DSN',
-          defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
-        );
-        options.environment = const String.fromEnvironment(
-          'APP_ENV',
-          defaultValue: 'production',
-        );
-        options.sendDefaultPii = true;
-        // 비용 절감을 위해 트레이스·프로파일 샘플링 비율을 낮춘다.
-        options.tracesSampleRate = 0.1;
-        options.profilesSampleRate = 0.1;
-        // 민감 정보 마스킹
-        options.beforeSend = (event, hint) {
-          event.request?.headers.remove('Authorization');
-          return event;
-        };
-      },
-      appRunner: () => runApp(
-        SentryWidget(child: const MyApp()),
-      ),
-    );
+    // Sentry 초기화도 runApp 앞을 막고 있다 — 게다가 릴리즈 전용이라 디버그
+    // 실행으로는 절대 드러나지 않는다. 실패하든 늦든 앱은 떠야 하므로,
+    // appRunner 가 돌았는지를 보고 안 돌았으면 Sentry 없이 직접 띄운다.
+    var started = false;
+    try {
+      await SentryFlutter.init(
+        (options) {
+          options.dsn = const String.fromEnvironment(
+            'SENTRY_DSN',
+            defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
+          );
+          options.environment = const String.fromEnvironment(
+            'APP_ENV',
+            defaultValue: 'production',
+          );
+          options.sendDefaultPii = true;
+          // 비용 절감을 위해 트레이스·프로파일 샘플링 비율을 낮춘다.
+          options.tracesSampleRate = 0.1;
+          options.profilesSampleRate = 0.1;
+          // 민감 정보 마스킹
+          options.beforeSend = (event, hint) {
+            event.request?.headers.remove('Authorization');
+            return event;
+          };
+        },
+        appRunner: () {
+          started = true;
+          runApp(SentryWidget(child: const MyApp()));
+        },
+      ).timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('[main] Sentry 초기화 실패·지연: $e');
+    }
+    if (!started) runApp(const MyApp());
   } else {
     runApp(const MyApp());
   }
