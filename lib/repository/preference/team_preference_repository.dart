@@ -21,14 +21,25 @@ class TeamPreferenceRepository {
 
   final _storage = secureStorage;
 
-  /// 선호 팀을 저장한다.
+  /// 선호 팀을 저장한다. 실패해도 화면 동작은 막지 않는다.
   Future<void> savePreferredTeam(Team team) async {
-    await _storage.write(key: _key, value: jsonEncode(team.toJson()));
+    try {
+      await writeWithDuplicateRecovery(
+        key: _key,
+        value: jsonEncode(team.toJson()),
+      );
+    } catch (e) {
+      debugPrint('[TeamPreference] 저장 실패: $e');
+    }
   }
 
   /// 저장된 선호 팀을 읽는다. 없거나 손상됐으면 null.
+  ///
+  /// 선호 팀은 못 읽어도 '없음'으로 굴러가면 되는 값이라 잠금 실패도 null 로
+  /// 접는다. 예전엔 잠금 중 백그라운드 호출에서 -25308 이 그대로 올라와
+  /// 크래시로 잡혔다 (Sentry WARDING-APP-FLUTTER-6, 112명).
   Future<Team?> loadPreferredTeam() async {
-    final raw = await _storage.read(key: _key);
+    final raw = await readOrNull(_key);
     if (raw == null || raw.isEmpty) return null;
     try {
       return Team.fromJson(jsonDecode(raw) as Map<String, dynamic>);
@@ -40,6 +51,10 @@ class TeamPreferenceRepository {
 
   /// 저장된 선호 팀을 지운다 (온보딩 건너뛰기 시).
   Future<void> clearPreferredTeam() async {
-    await _storage.delete(key: _key);
+    try {
+      await _storage.delete(key: _key);
+    } catch (e) {
+      debugPrint('[TeamPreference] 삭제 실패: $e');
+    }
   }
 }

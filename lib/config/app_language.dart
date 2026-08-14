@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'secure_storage.dart';
 
@@ -19,8 +17,6 @@ class AppLanguage extends ChangeNotifier {
   static final AppLanguage instance = AppLanguage._();
 
   static const _key = 'app_language';
-  final _storage = secureStorage;
-
   AppLang _current = AppLang.ko;
 
   /// 현재 선택된 언어.
@@ -35,13 +31,8 @@ class AppLanguage extends ChangeNotifier {
   /// (-25308: 재부팅 후 첫 잠금해제 전 prewarming 등)로 앱 시작이
   /// 죽지 않게 방어한다 — 표시 언어일 뿐이라 ko 폴백으로 충분.
   Future<void> load() async {
-    final String? raw;
-    try {
-      raw = await _storage.read(key: _key);
-    } on PlatformException {
-      _current = AppLang.ko;
-      return;
-    }
+    // 표시 언어일 뿐이라 못 읽으면 ko 폴백으로 충분하다.
+    final raw = await readOrNull(_key);
     if (raw == 'en') {
       _current = AppLang.en;
     } else {
@@ -53,7 +44,12 @@ class AppLanguage extends ChangeNotifier {
   Future<void> setLanguage(AppLang lang) async {
     if (_current == lang) return;
     _current = lang;
-    await _storage.write(key: _key, value: lang.name);
+    try {
+      await writeWithDuplicateRecovery(key: _key, value: lang.name);
+    } catch (e) {
+      // 저장 실패해도 이번 실행의 언어 전환은 유지한다.
+      debugPrint('[AppLanguage] 저장 실패: $e');
+    }
     notifyListeners();
   }
 

@@ -169,4 +169,64 @@ void main() {
       expect(await auth.jwt, 'old-jwt');
     });
   });
+
+  group('만료 판별', () {
+    // 게이트웨이(nginx·ALB)는 502·503·504 에러 페이지를 text/html 로 내려준다.
+    // content-type 만 보고 만료로 판단하면 서버가 아플 때의 5xx 를 '인증 만료'로
+    // 오판해 불필요한 재발급·토큰 로테이션이 돈다.
+    test('5xx + text/html 은 만료가 아니다 — 재발급을 시도하지 않는다', () async {
+      // _doRefresh 는 예외를 잡아 transient 로 접으므로, 여기서 fail() 을
+      // 던지면 삼켜져 테스트가 통과해버린다. 호출 횟수를 세서 밖에서 검증한다.
+      var refreshCalls = 0;
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          if (request.url.path == '/api/auth/refresh') {
+            refreshCalls++;
+            return http.Response(
+              jsonEncode({'accessToken': 'should-not-be-used'}),
+              200,
+            );
+          }
+          return http.Response('예상 밖 요청', 500);
+        }),
+      );
+
+      var sendCalls = 0;
+      final response = await auth.authorizedRequest((token) async {
+        sendCalls++;
+        return http.Response(
+          '<html><body>502 Bad Gateway</body></html>',
+          502,
+          headers: {'content-type': 'text/html'},
+        );
+      });
+
+      expect(refreshCalls, 0, reason: '5xx HTML 을 만료로 오판해 재발급하면 안 된다');
+      expect(sendCalls, 1, reason: '재시도하지 않고 한 번만 보낸다');
+      expect(response.statusCode, 502, reason: '응답을 그대로 호출부에 돌려준다');
+      expect(await auth.jwt, 'old-jwt', reason: '토큰은 건드리지 않는다');
+    });
+
+    test('302 + text/html(로그인 페이지)은 만료로 보고 재발급한다', () async {
+      mockRefreshEndpoint(
+        (_) => http.Response(jsonEncode({'accessToken': 'new-jwt'}), 200),
+      );
+
+      var calls = 0;
+      final response = await auth.authorizedRequest((token) async {
+        calls++;
+        if (calls == 1) {
+          return http.Response(
+            '<html>login</html>',
+            302,
+            headers: {'content-type': 'text/html'},
+          );
+        }
+        return http.Response('ok', 200);
+      });
+
+      expect(response.statusCode, 200);
+      expect(await auth.jwt, 'new-jwt');
+    });
+  });
 }
