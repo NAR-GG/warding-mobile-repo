@@ -8,11 +8,44 @@ import 'calendar_weekday_header.dart';
 // CalendarMatch 를 함께 노출 — 이 파일만 import 해도 타입을 쓸 수 있다.
 export 'calendar_match.dart';
 
+/// 캘린더의 좌우 스와이프 진행 상태.
+///
+/// [page] 는 [month] 를 0 으로 둔 스크롤 위치(월 단위 실수)다. 0 이면 기준
+/// 달에 정착한 상태, +1 이면 다음 달, -0.4 면 이전 달 쪽으로 40% 진행한
+/// 상태. 헤더 월 라벨을 이 값에 물려 그리면 그리드와 타이밍이 어긋나지 않는다.
+@immutable
+class CalendarScrollProgress {
+  const CalendarScrollProgress({required this.month, required this.page});
+
+  /// page 0 에 해당하는 기준 월.
+  final DateTime month;
+
+  /// 기준 월로부터의 스크롤 위치(월 단위).
+  final double page;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CalendarScrollProgress &&
+      other.month == month &&
+      other.page == page;
+
+  @override
+  int get hashCode => Object.hash(month, page);
+}
+
 /// 월간 경기 캘린더.
 ///
 /// 요일 헤더([CalendarWeekdayHeader])와 월간 그리드([CalendarMonthGrid])로
-/// 구성된다. 월이 바뀌면 그리드가 좌우로 슬라이드 전환되고, 좌우 스와이프로
-/// 월을 넘길 수 있다([onMonthShift]).
+/// 구성된다. 그리드는 [PageView] 위에 얹혀 있어 좌우로 스와이프하면 손가락을
+/// 실시간으로 따라오고, 손을 떼면 가까운 달로 정착(settle)한 뒤에야
+/// [onMonthShift] 로 알린다.
+///
+/// 예전엔 `AnimatedSwitcher` 로 만들었다. 그 구조에서는 손을 떼는 순간
+/// ViewModel 의 월이 먼저 바뀌어 헤더 라벨이 즉시 새 달로 튀고, 그리드는
+/// 그때부터 300ms 슬라이드를 시작해서 둘의 타이밍이 눈에 띄게 어긋났다.
+/// PageView 는 스크롤 진행률([PageController.page])을 노출하므로, 그 값을
+/// [scrollProgress] 로 밖에 알려 준다. 헤더가 이 노티파이어를 구독해 월
+/// 라벨을 그리면 라벨과 그리드가 항상 같은 프레임에서 함께 움직인다.
 class ScheduleCalendar extends StatefulWidget {
   const ScheduleCalendar({
     super.key,
@@ -22,12 +55,13 @@ class ScheduleCalendar extends StatefulWidget {
     this.selectedDate,
     this.onDateTap,
     this.weekStart = CalendarWeekStart.monday,
+    this.scrollProgress,
   });
 
   /// 표시할 월 (1일 0시로 정규화된 DateTime).
   final DateTime month;
 
-  /// 일(day) → 그 날의 경기 목록.
+  /// 일(day) → 그 날의 경기 목록. [month] 의 데이터만 담는다.
   final Map<int, List<CalendarMatch>> matchesByDay;
 
   /// 좌우 스와이프로 월을 넘길 때 호출. 인자는 이동량(-1: 이전, +1: 다음).
@@ -43,43 +77,167 @@ class ScheduleCalendar extends StatefulWidget {
   /// 캘린더 시작 요일 설정. 요일 헤더·월간 그리드에 그대로 전달한다.
   final CalendarWeekStart weekStart;
 
+  /// 스와이프 진행률을 밖으로 알리는 통로.
+  ///
+  /// 페이지가 스크롤되는 동안 매 프레임 갱신된다. 헤더가 이걸 구독해
+  /// [CalendarMonthLabel] 로 월 라벨을 그리면, 라벨이 그리드와 정확히 같은
+  /// 프레임·같은 진행률로 움직인다. null 이면 캘린더는 그리드만 그린다.
+  final ValueNotifier<CalendarScrollProgress>? scrollProgress;
+
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
 }
 
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
-  /// 지금까지 겪은 월 전환 횟수. 매 전환마다 하나씩 늘려 [CalendarMonthGrid]의
-  /// key로 쓴다.
+  /// PageView 의 가운데 기준점. 이 인덱스가 [ScheduleCalendar.month] 에
+  /// 해당하고, 좌우로 이 값만큼 달을 넘길 수 있다. 실질적으로 무한(±10000
+  /// 개월 ≈ ±833년)이라 사용자가 끝에 닿을 일은 없다.
+  static const int _initialPage = 10000;
+
+  late final PageController _controller = PageController(
+    initialPage: _initialPage,
+  );
+
+  /// 현재 기준 월. [_initialPage] 가 가리키는 달이다.
   ///
-  /// 예전엔 그리드 key를 `ValueKey(month)`로, 즉 달 값 그 자체로 줬다.
-  /// 그러면 왕복으로 빠르게 스와이프할 때(예: 8월→9월→8월) 아직 빠져나가는
-  /// 중인 '옛 8월' 그리드와 새로 들어오는 '새 8월' 그리드가 같은 key를
-  /// 갖게 되고, AnimatedSwitcher가 둘을 같은 자식으로 오인해 위치가 튀었다
-  /// (스와이프 시 날짜가 밀리는 버그). 전환마다 고유하게 증가하는 값을
-  /// key로 쓰면 같은 달로 왕복해도 절대 겹치지 않는다.
-  int _generation = 0;
+  /// 위젯의 [ScheduleCalendar.month] 를 그대로 쓰지 않는 이유: 스와이프로
+  /// 페이지가 넘어가면 컨트롤러의 위치는 이미 옆 페이지에 가 있는데, 곧이어
+  /// 부모가 새 month 를 내려준다. 그때 기준을 새 month 로 바꾸면 같은 이동이
+  /// 두 번 반영돼 두 달치가 건너뛰어진다. 그래서 기준은 여기서 따로 들고,
+  /// 부모가 스와이프 이외의 경로(날짜 피커·필터 초기화)로 월을 바꿨을 때만
+  /// 갱신한다.
+  late DateTime _baseMonth = widget.month;
 
-  /// 세대(generation)별 슬라이드 시작 위치(beginX). +1: 오른쪽에서 들어와
-  /// 왼쪽으로 나감(다음 달), -1: 그 반대(이전 달). 전환이 시작되는 순간
-  /// 관련된 두 세대(새로 들어오는 쪽·빠지는 쪽)에 각각 고정해 두면 이후
-  /// 다른 전환이 일어나도 영향받지 않는다.
-  final Map<int, double> _beginXByGeneration = {0: 1};
+  /// 스와이프로 방금 요청한 월. 부모가 이 값을 반영해서 내려주는 build 는
+  /// '내가 만든 변화'이므로 페이지를 되돌리지 않는다.
+  DateTime? _pendingMonth;
 
-  /// 드래그 중 누적된 가로 이동량. 빠른 플릭이 아니라 천천히 끝까지 미는
-  /// 드래그도 인식하려면 속도뿐 아니라 이동 거리도 봐야 한다.
-  double _dragDx = 0;
+  /// 외부 월 변경을 페이지에 반영하려고 우리가 스크롤을 움직이는 중인지.
+  ///
+  /// [PageView.onPageChanged] 는 사용자의 스와이프인지 프로그램적 이동인지
+  /// 구분해 주지 않는다. 그대로 두면 날짜 피커로 9월을 골랐을 때 우리가 건
+  /// animateToPage 가 onPageChanged 를 울려 [ScheduleCalendar.onMonthShift]
+  /// 를 한 번 더 내보내고, 부모는 그걸 스와이프로 알아들어 10월까지
+  /// 가버린다. 이 플래그가 켜진 동안의 onPageChanged 는 무시한다.
+  bool _programmaticScroll = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_publishProgress);
+    // 첫 프레임엔 컨트롤러가 아직 뷰포트에 안 붙어 page 가 null 이다.
+    // 정착 상태(page 0)를 먼저 알려 헤더가 빈 라벨을 그리지 않게 한다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _publishProgress());
+  }
+
+  /// 현재 스크롤 위치를 [ScheduleCalendar.scrollProgress] 로 밀어낸다.
+  void _publishProgress() {
+    final notifier = widget.scrollProgress;
+    if (notifier == null || !mounted) return;
+    final position =
+        _controller.hasClients && _controller.position.haveDimensions
+        ? (_controller.page ?? _initialPage.toDouble())
+        : _initialPage.toDouble();
+    notifier.value = CalendarScrollProgress(
+      month: _baseMonth,
+      page: position - _initialPage,
+    );
+  }
 
   @override
   void didUpdateWidget(ScheduleCalendar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 월 변경 방향에 맞춰 슬라이드 방향을 정한다 (스와이프·날짜피커 공통).
-    if (widget.month != oldWidget.month) {
-      final forward = widget.month.isAfter(oldWidget.month);
-      final previousGeneration = _generation;
-      _generation++;
-      _beginXByGeneration[_generation] = forward ? 1 : -1;
-      _beginXByGeneration[previousGeneration] = forward ? -1 : 1;
+    if (widget.month == oldWidget.month) return;
+
+    // 스와이프로 내가 요청한 월이 돌아온 것 — 페이지는 이미 그 자리에 있다.
+    if (_pendingMonth == widget.month) {
+      _pendingMonth = null;
+      return;
     }
+
+    // 외부(날짜 피커·필터 초기화 등)에서 월이 바뀐 경우. 페이지를 새 달로
+    // 옮겨, 그리드와 라벨이 같은 곡선으로 함께 이동하게 한다.
+    _pendingMonth = null;
+    final target = widget.month;
+    final delta = _monthDelta(_baseMonth, target);
+    // 한 칸 차이면 스와이프와 같은 느낌으로 애니메이션, 그 이상 멀면
+    // 중간 달들을 훑는 대신 곧바로 점프한다.
+    if (delta.abs() == 1 && _controller.hasClients) {
+      _programmaticScroll = true;
+      _controller
+          .animateToPage(
+            _initialPage + delta,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() => _recenter(target));
+    } else {
+      _recenter(target);
+    }
+  }
+
+  /// 기준 월을 [month] 로 옮기고 페이지 인덱스를 가운데로 되돌린다.
+  /// 화면상 보이는 달은 그대로이므로 사용자에겐 아무 변화가 없다.
+  void _recenter(DateTime month) {
+    if (!mounted) return;
+    setState(() => _baseMonth = month);
+    if (_controller.hasClients) {
+      _controller.jumpToPage(_initialPage);
+      _programmaticScroll = false;
+    }
+    // 인덱스가 이미 가운데면 jumpToPage 가 리스너를 울리지 않는다. 그래도
+    // 기준 월은 바뀌었으니 진행률은 직접 다시 알린다.
+    _publishProgress();
+  }
+
+  void _onPageChanged(int page) {
+    // 우리가 건 스크롤이면 월 이동을 알리지 않는다 — 부모가 이미 그 달로
+    // 바꿔 놓은 상태라, 알리면 같은 이동이 두 번 반영된다.
+    if (_programmaticScroll) return;
+    final delta = page - _initialPage;
+    if (delta == 0) return;
+    final month = _monthAt(delta);
+    _pendingMonth = month;
+    widget.onMonthShift?.call(delta);
+    // 페이지가 정착한 뒤 기준을 옮겨 인덱스를 다시 가운데로 되돌린다.
+    // 프레임 중간에 jumpToPage 를 부르면 스크롤 애니메이션과 충돌하므로
+    // 다음 프레임으로 미룬다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(month));
+  }
+
+  /// 기준 월에서 [delta] 개월 떨어진 달. DateTime 생성자가 12월 초과·0 이하
+  /// 월을 연도까지 정규화한다.
+  DateTime _monthAt(int delta) =>
+      DateTime(_baseMonth.year, _baseMonth.month + delta);
+
+  /// [from] → [to] 의 개월 차.
+  static int _monthDelta(DateTime from, DateTime to) =>
+      (to.year - from.year) * 12 + (to.month - from.month);
+
+  @override
+  void dispose() {
+    _controller.removeListener(_publishProgress);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// 페이지 [delta] 위치의 월 그리드. 기준 월(0)이 아닌 이웃 달은 아직
+  /// 데이터가 없으므로 날짜 칸만 그린다 — 스와이프로 들어온 뒤 조회가
+  /// 끝나면 경기 칩이 채워진다.
+  Widget _buildPage(int delta, double scale) {
+    final month = _monthAt(delta);
+    final matchesByDay = delta == 0 ? widget.matchesByDay : null;
+    return CalendarMonthGrid(
+      month: month,
+      scale: scale,
+      weekStart: widget.weekStart,
+      selectedDate: widget.selectedDate,
+      onDateTap: widget.onDateTap,
+      matchesOf: (date) {
+        if (matchesByDay == null || date.month != month.month) return const [];
+        return matchesByDay[date.day] ?? const [];
+      },
+    );
   }
 
   @override
@@ -87,91 +245,25 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
-    final month = widget.month;
-    final matchesByDay = widget.matchesByDay;
-
-    final calendar = Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CalendarWeekdayHeader(scale: scale, weekStart: widget.weekStart),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeOut,
-              // 그리드가 화면보다 짧을 때 기본 center 정렬이면 요일 헤더와
-              // 사이가 떠 보인다. 위(top)에 붙도록 정렬을 바꾼다.
-              layoutBuilder: (currentChild, previousChildren) {
-                return Stack(
-                  alignment: Alignment.topCenter,
-                  children: [
-                    ...previousChildren,
-                    ?currentChild,
-                  ],
-                );
-              },
-              transitionBuilder: (child, animation) {
-                // 이 자식(세대)이 화면에 들어올 때 고정된 시작 위치를 그대로
-                // 쓴다 — 그 사이 다른 전환이 일어나도 바뀌지 않는다.
-                final key = child.key;
-                final generation = key is ValueKey<int> ? key.value : _generation;
-                final beginX = _beginXByGeneration[generation] ?? 1;
-                return ClipRect(
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(beginX, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
-              child: CalendarMonthGrid(
-                key: ValueKey(_generation),
-                month: month,
-                scale: scale,
-                weekStart: widget.weekStart,
-                selectedDate: widget.selectedDate,
-                onDateTap: widget.onDateTap,
-                matchesOf:
-                    (date) =>
-                        date.month == month.month
-                            ? (matchesByDay[date.day] ?? const [])
-                            : const [],
-              ),
+            child: PageView.builder(
+              controller: _controller,
+              physics: widget.onMonthShift == null
+                  ? const NeverScrollableScrollPhysics()
+                  : const PageScrollPhysics(),
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, index) =>
+                  _buildPage(index - _initialPage, scale),
             ),
           ),
         ],
       ),
-    );
-
-    final onShift = widget.onMonthShift;
-    if (onShift == null) return calendar;
-
-    // 좌우 스와이프로 월 이동 — 왼쪽으로 밀면 다음 달, 오른쪽이면 이전 달.
-    // 빠른 플릭은 속도(primaryVelocity, logical px/s)로, 천천히 끝까지 미는
-    // 드래그는 누적 이동 거리(_dragDx)로 판단한다. 둘 중 하나만 기준을
-    // 넘어도 넘긴다 — 속도만 보면 느리지만 화면 절반 넘게 민 드래그를
-    // 놓쳐서 "잘 안 넘어간다"는 느낌을 준다.
-    const velocityThreshold = 200.0;
-    final distanceThreshold = 60 * scale;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onHorizontalDragStart: (_) => _dragDx = 0,
-      onHorizontalDragUpdate: (details) => _dragDx += details.delta.dx,
-      onHorizontalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (velocity < -velocityThreshold ||
-            (velocity <= 0 && _dragDx < -distanceThreshold)) {
-          onShift(1);
-        } else if (velocity > velocityThreshold ||
-            (velocity >= 0 && _dragDx > distanceThreshold)) {
-          onShift(-1);
-        }
-      },
-      child: calendar,
     );
   }
 }

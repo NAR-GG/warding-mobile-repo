@@ -14,6 +14,7 @@ import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
 import '../subscription/subscription_screen.dart';
+import 'component/calendar_month_label.dart';
 import 'component/filter_sheet.dart';
 import 'component/month_picker_sheet.dart';
 import 'component/schedule_calendar.dart';
@@ -40,6 +41,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     initialMonth: widget.initialMonth,
   );
 
+  /// 캘린더 좌우 스와이프 진행률. 캘린더가 매 프레임 갱신하고, 헤더의 월
+  /// 라벨이 이걸 구독한다 — 라벨이 그리드와 같은 프레임에 같은 진행률로
+  /// 움직여야 "날짜만 먼저 바뀌는" 어긋남이 생기지 않는다.
+  late final ValueNotifier<CalendarScrollProgress> _calendarProgress =
+      ValueNotifier(
+        CalendarScrollProgress(month: _viewModel.displayMonth, page: 0),
+      );
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +61,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           if (mounted) _openFilter();
         }
       }
+
       _viewModel.addListener(listener);
     }
   }
@@ -60,7 +70,22 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.dispose();
+    _calendarProgress.dispose();
     super.dispose();
+  }
+
+  /// 헤더 라벨 진행률을 ViewModel 의 현재 월에 맞춘다. 캘린더가 화면에
+  /// 없을 때(스켈레톤·에러) 쓰인다. build 중이므로 통지는 다음 프레임으로
+  /// 미룬다 — 빌드 도중 리스너를 깨우면 setState 충돌이 난다.
+  void _syncProgressToViewModel() {
+    final synced = CalendarScrollProgress(
+      month: _viewModel.displayMonth,
+      page: 0,
+    );
+    if (_calendarProgress.value == synced) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _calendarProgress.value = synced;
+    });
   }
 
   /// 백그라운드로 갔다 돌아왔을 때 다시 불러온다.
@@ -136,7 +161,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   void _openNotice(Notice notice) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => NoticeDetailScreen(notice: notice, showListButton: true),
+        builder: (_) =>
+            NoticeDetailScreen(notice: notice, showListButton: true),
       ),
     );
   }
@@ -150,10 +176,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     double scale,
   ) {
     if (_viewModel.matchesByDay.isEmpty) {
-      if (_viewModel.isLoading) {
-        return ScheduleCalendarSkeleton(scale: scale);
-      }
-      if (_viewModel.error != null) {
+      if (_viewModel.isLoading || _viewModel.error != null) {
+        // 캘린더가 화면에서 빠진 동안은 진행률을 갱신해 줄 주체가 없다.
+        // 그 사이 월이 바뀌면(필터 초기화 등) 헤더 라벨이 옛 달에 멈추므로
+        // 여기서 직접 맞춰 준다.
+        _syncProgressToViewModel();
+        if (_viewModel.isLoading) {
+          return ScheduleCalendarSkeleton(
+            month: _viewModel.displayMonth,
+            scale: scale,
+            weekStart: _viewModel.weekStart,
+          );
+        }
         return LoadError(
           message: '${_viewModel.error}',
           onRetry: _viewModel.loadCalendar,
@@ -167,6 +201,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       selectedDate: _viewModel.selectedDate,
       onDateTap: _openDay,
       weekStart: _viewModel.weekStart,
+      scrollProgress: _calendarProgress,
     );
   }
 
@@ -210,6 +245,15 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     const SizedBox(height: 12),
                     ScheduleHeader(
                       monthLabel: _viewModel.monthLabel,
+                      // 캘린더 스와이프 진행률에 물린 라벨 — 그리드와 같은
+                      // 프레임에 같은 진행률로 움직인다.
+                      monthLabelWidget: ValueListenableBuilder(
+                        valueListenable: _calendarProgress,
+                        builder: (context, progress, _) => CalendarMonthLabel(
+                          progress: progress,
+                          scale: scale,
+                        ),
+                      ),
                       onMonthTap: _openMonthPicker,
                       onFilterTap: _openFilter,
                       preferredTeam: _viewModel.preferredTeam,
