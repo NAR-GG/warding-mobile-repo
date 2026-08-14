@@ -295,6 +295,24 @@ class MatchDetailViewModel extends ChangeNotifier {
     return games.first.gameOrder;
   }
 
+  /// 이미 열려 있는 상세에 딥링크(Live Activity·다이나믹 아일랜드·푸시)가
+  /// 다시 들어왔을 때 탭·세트를 갈아끼운다. 화면을 새로 만들지 않으므로
+  /// 로딩 깜빡임이나 스크롤 위치 손실이 없다.
+  ///
+  /// [setNumber] 가 아직 없는 세트(로드 전이거나 범위 밖)면 무시하고 탭만 바꾼다.
+  void applyDeepLink({required int tabIndex, int? setNumber}) {
+    if (setNumber != null &&
+        setNumber != _currentSet &&
+        _games.any((g) => g.gameOrder == setNumber)) {
+      // [selectSet] 은 활성 탭 기준으로 다시 로드하므로 탭을 먼저 바꿔 둔다.
+      _activeTab = tabIndex;
+      selectSet(setNumber);
+    } else {
+      setActiveTab(tabIndex);
+    }
+    _safeNotify();
+  }
+
   /// 세트 변경. 활성 탭의 데이터만 즉시 다시 로드한다(나머지는 지연 로딩 재적용).
   Future<void> selectSet(int setNumber) async {
     if (setNumber == _currentSet) return;

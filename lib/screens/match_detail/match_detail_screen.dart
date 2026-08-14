@@ -48,12 +48,26 @@ class MatchDetailScreen extends StatefulWidget {
   final int? initialSet;
 
   @override
-  State<MatchDetailScreen> createState() => _MatchDetailScreenState();
+  State<MatchDetailScreen> createState() => MatchDetailScreenState();
 }
 
-class _MatchDetailScreenState extends State<MatchDetailScreen> {
+/// 딥링크 라우터가 이미 떠 있는 상세를 재사용할 수 있게 public 이다.
+/// ([MatchDetailRouter] 가 GlobalKey 로 이 State 를 잡아 탭·세트를 갈아끼운다.)
+class MatchDetailScreenState extends State<MatchDetailScreen> {
   List<String> _buildTabs(AppLocalizations l) => [l.championPick, l.liveEvent, l.tabPlayerRating];
   late int _tabIndex = widget.initialTabIndex;
+
+  /// 이 화면이 보여주고 있는 경기. 라우터가 같은 경기인지 판단할 때 쓴다.
+  String get matchId => widget.matchId;
+
+  /// 이미 떠 있는 상태에서 같은 경기 딥링크가 또 들어왔을 때 호출된다.
+  /// 화면을 새로 쌓지 않고 탭·세트만 바꾼다.
+  void applyDeepLink({required int tabIndex, int? setNumber}) {
+    if (!mounted) return;
+    // 탭 인덱스는 화면 로컬 상태(_tabIndex)와 뷰모델(_activeTab) 양쪽에 있다.
+    setState(() => _tabIndex = tabIndex);
+    _viewModel.applyDeepLink(tabIndex: tabIndex, setNumber: setNumber);
+  }
 
   late final MatchDetailViewModel _viewModel = MatchDetailViewModel(
     matchId: widget.matchId,

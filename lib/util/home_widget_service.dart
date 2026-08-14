@@ -21,7 +21,7 @@ import '../repository/preference/calendar_week_start_preference_repository.dart'
 import '../repository/preference/filter_preference_repository.dart';
 import '../repository/preference/team_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
-import '../screens/match_detail/match_detail_screen.dart';
+import '../util/match_detail_router.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
 
@@ -406,6 +406,21 @@ class HomeWidgetService {
       return;
     }
 
+    final uri = Uri.tryParse(urlStr);
+    if (uri == null) return;
+
+    // Live Activity 카드 / 다이나믹 아일랜드: warding://match/{matchId}?tab=rating&set=N
+    //
+    // 경기 상세는 URL 문자열 기준 중복 필터를 타지 않는다. 같은 경기라도
+    // 누른 위치에 따라 쿼리가 달라서(카드 본문은 tab 없음, 평점 줄은
+    // ?tab=rating&set=N) 문자열로는 중복을 못 걸러내고, 반대로 사용자가 3초
+    // 안에 카드 → 평점으로 옮겨 누르면 멀쩡한 탭 전환이 씹힌다.
+    // 중복 방지는 [MatchDetailRouter] 가 스택 상태로 처리한다.
+    if (uri.host == 'match') {
+      _openMatchDetail(uri);
+      return;
+    }
+
     // 보류분과 채널 전달이 겹쳐 같은 URL 이 두 번 오면 뒤엣것은 버린다.
     final at = _lastHandledAt;
     if (!skipDuplicateCheck &&
@@ -417,14 +432,6 @@ class HomeWidgetService {
     }
     _lastHandledUrl = urlStr;
     _lastHandledAt = DateTime.now();
-    final uri = Uri.tryParse(urlStr);
-    if (uri == null) return;
-
-    // Live Activity 카드: warding://match/{matchId}?tab=rating&set=N
-    if (uri.host == 'match') {
-      _openMatchDetail(uri);
-      return;
-    }
 
     final action = uri.path.replaceAll('/', '');
 
@@ -477,17 +484,11 @@ class HomeWidgetService {
     };
     final set = int.tryParse(uri.queryParameters['set'] ?? '');
 
-    final nav = navigatorKey.currentState;
-    if (nav == null) return;
-
-    nav.push(
-      MaterialPageRoute(
-        builder: (_) => MatchDetailScreen(
-          matchId: matchId,
-          initialTabIndex: tabIndex,
-          initialSet: set,
-        ),
-      ),
+    // 같은 경기 상세가 이미 떠 있으면 새로 쌓지 않고 탭·세트만 갈아끼운다.
+    MatchDetailRouter.open(
+      matchId: matchId,
+      tabIndex: tabIndex,
+      setNumber: set,
     );
   }
 
