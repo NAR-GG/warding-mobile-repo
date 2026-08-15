@@ -16,7 +16,6 @@ class MatchPage {
     required this.matches,
     required this.nextCursor,
     required this.hasNext,
-    this.todayCursor,
     this.prevCursor,
     this.hasPrev = false,
   });
@@ -25,20 +24,10 @@ class MatchPage {
   final String? nextCursor;
   final bool hasNext;
 
-  /// 오늘 날짜가 포함된 페이지의 커서.
-  ///
-  /// `sort=ASC`(오래된 순)는 시즌 첫 경기부터 내려오므로, 오늘까지 오려면
-  /// 페이지를 16번 넘게 당겨야 한다(2026-08 실측, 시즌 말은 19번). 서버가 이
-  /// 커서를 함께 주면 앱은 오늘이 든 페이지부터 바로 받아 자동 스크롤할 수 있다.
-  ///
-  /// 서버 미지원이거나 오늘 경기가 없는 시즌이면 null — 그때는 기존처럼
-  /// 페이지를 당겨 오늘을 찾는다.
-  final String? todayCursor;
-
   /// 이전(과거) 방향으로 한 페이지 더 받기 위한 커서.
   ///
-  /// [todayCursor] 로 목록 중간부터 시작하면 위쪽(과거)이 비어 있다.
-  /// 사용자가 위로 올렸을 때 이 커서로 과거를 이어받는다.
+  /// `around` 로 오늘 앞뒤를 함께 받았거나 `before` 로 과거를 이어받은
+  /// 응답에 채워진다. 더 과거가 없으면 null.
   final String? prevCursor;
 
   /// 위쪽(과거)에 더 받을 페이지가 있는지.
@@ -244,10 +233,17 @@ class ScheduleRepository {
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
   /// `nextCursor` 를 [cursor] 로 넘겨 이어 받는다 (첫 페이지는 cursor 생략).
   ///
-  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기만 받는다.
-  /// '오늘 이후' 필터가 쓰는 경로다.
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기만, 과거→미래 오름차순으로
+  /// 받는다. '오늘 이후' 필터와, 진입 시 받은 `around` 창을 미래 방향으로
+  /// 이어받을 때 쓰는 경로다.
   ///
-  /// [sort] 는 시간 정렬 방향(`ASC`/`DESC`). 생략하면 서버 기본값(`DESC`).
+  /// [around] (`yyyy-MM-dd`) 를 주면 그 날짜를 기준으로 과거 절반 + 미래 절반을
+  /// 한 번에 받는다 — 진입 시 '오늘' 그룹에 한 번의 요청으로 닿기 위한 경로다.
+  ///
+  /// [before] 는 이전 응답의 `prevCursor` 를 그대로 넘겨 그보다 과거를
+  /// 이어받는다 (위로 스크롤).
+  ///
+  /// [around] / [before] / [cursor] 는 서로 배타적이다.
   ///
   /// 같은 조건(같은 커서 포함)의 요청이 이미 떠 있거나 방금 끝났으면
   /// ([_calendarCacheTtl] 이내) 그 결과를 재사용한다.
@@ -259,8 +255,8 @@ class ScheduleRepository {
     int? seasonYear,
     String? split,
     String? from,
-    String? sort,
-    String? direction,
+    String? around,
+    String? before,
   }) {
     final url = ApiConfig.matchesUrl(
       league: league,
@@ -270,8 +266,8 @@ class ScheduleRepository {
       seasonYear: seasonYear,
       split: split,
       from: from,
-      sort: sort,
-      direction: direction,
+      around: around,
+      before: before,
     );
 
     final cached = _matchesCache[url];
@@ -323,32 +319,9 @@ class ScheduleRepository {
       matches: matches,
       nextCursor: data['nextCursor'] as String?,
       hasNext: data['hasNext'] as bool? ?? false,
-      // 아래 세 필드는 서버 추가 예정분이라 확정 이름을 모른다. 이름이 정해지면
-      // 후보를 줄이면 되고, 그때까지 어느 쪽으로 오든 받는다. 없으면 null/false 라
-      // 기존 동작(페이지를 당겨 오늘을 찾음)이 그대로 유지된다.
-      todayCursor: _firstString(data, const ['todayCursor', 'currentCursor']),
-      prevCursor:
-          _firstString(data, const ['prevCursor', 'previousCursor', 'beforeCursor']),
-      hasPrev: _firstBool(data, const ['hasPrev', 'hasPrevious', 'hasBefore']),
+      prevCursor: data['prevCursor'] as String?,
+      hasPrev: data['hasPrev'] as bool? ?? false,
     );
-  }
-
-  /// [keys] 중 먼저 발견되는 문자열 값. 없으면 null.
-  static String? _firstString(Map<String, dynamic> data, List<String> keys) {
-    for (final key in keys) {
-      final value = data[key];
-      if (value is String && value.isNotEmpty) return value;
-    }
-    return null;
-  }
-
-  /// [keys] 중 먼저 발견되는 불린 값. 없으면 false.
-  static bool _firstBool(Map<String, dynamic> data, List<String> keys) {
-    for (final key in keys) {
-      final value = data[key];
-      if (value is bool) return value;
-    }
-    return false;
   }
 
   /// 필터 모달의 리그·팀 옵션을 조회한다 (인증 불필요).
