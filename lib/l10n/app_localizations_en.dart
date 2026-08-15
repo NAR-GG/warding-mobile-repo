@@ -806,6 +806,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchInputHint => 'Enter search term...';
 
   @override
+  String get noSearchResults => 'No search results';
+
+  @override
   String get loginRequired => 'Login required';
 
   @override

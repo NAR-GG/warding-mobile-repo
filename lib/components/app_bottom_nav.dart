@@ -7,12 +7,12 @@ import '../styles/app_colors.dart';
 
 enum AppNavTab { schedule, list, subscription, mypage }
 
-
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,
     this.currentTab = AppNavTab.schedule,
     required this.onTabSelected,
+    this.compact = false,
   });
 
   /// 현재 활성 탭. 기본값은 경기일정([AppNavTab.schedule]).
@@ -20,6 +20,13 @@ class AppBottomNav extends StatelessWidget {
 
   /// 탭 선택 콜백.
   final ValueChanged<AppNavTab> onTabSelected;
+
+  /// 축소 표시 여부. 목록을 내리는 동안 살짝 작아져 콘텐츠를 덜 가린다.
+  /// 스크롤 방향에 맞춰 켜고 끄려면 [BottomNavShrinkController] 를 쓴다.
+  final bool compact;
+
+  /// 축소 시 배율. 라벨까지 같이 줄어들어 읽기 힘들어지지 않도록 완만하게 잡았다.
+  static const double _compactFactor = 0.82;
 
   /// 탭 순서·아이콘 정의 (디자인 시안 순서). 라벨은 build에서 l10n으로 가져온다.
   static const List<({String icon, AppNavTab tab})> _items = [
@@ -63,18 +70,18 @@ class AppBottomNav extends StatelessWidget {
             // overflow 가 났다. Flexible 로 감싸 남는 폭에 맞춰 줄어들게 한다
             // (라벨은 아래 Text 의 ellipsis 가 처리).
             ? Flexible(
-                child: _NavItemActive(
-                  icon: item.icon,
-                  label: labels[item.tab]!,
-                  scale: scale,
-                  onTap: () => onTabSelected(item.tab),
-                ),
-              )
-            : _NavItemInactive(
+              child: _NavItemActive(
                 icon: item.icon,
+                label: labels[item.tab]!,
                 scale: scale,
                 onTap: () => onTabSelected(item.tab),
               ),
+            )
+            : _NavItemInactive(
+              icon: item.icon,
+              scale: scale,
+              onTap: () => onTabSelected(item.tab),
+            ),
       );
 
       if (i != _items.length - 1) {
@@ -94,20 +101,32 @@ class AppBottomNav extends StatelessWidget {
       ),
     );
 
+    // 축소는 AnimatedScale 로 통째로 줄인다. LiquidGlass 는 셰이더로 유리를
+    // 그려서 내부 치수를 따로 애니메이션하면 굴절 모양이 프레임마다 다시 잡혀
+    // 일렁인다. 통째 스케일이면 그려진 결과만 축소돼 매끄럽다.
+    //
+    // alignment 를 bottomCenter 로 둬서 줄어들 때 아래쪽 여백(각 화면의
+    // Positioned bottom)이 유지된 채 위쪽으로만 작아진다.
+    //
     // 유리 효과는 셰이더용 지오메트리 이미지를 `toImageSync(w.ceil(),
     // h.ceil())` 로 만드는데, 그 크기는 렌더 트랜스폼과 devicePixelRatio 에서
     // 나온다. 화면에 실제 면적이 없는 프레임(탭 전환·라우트 전환 중간,
-    // 축소 애니메이션, 오프스크린 프리워밍)에서는 0 으로 떨어져
+    // 축소 애니메이션 도중, 오프스크린 프리워밍)에서는 0 으로 떨어져
     // 'Invalid image dimensions.' 로 죽는다
     // (Sentry WARDING-APP-FLUTTER-A, 3.6K events / 925 users — 전체 1위).
-    //
-    // 효과는 장식일 뿐이라 앱을 죽일 이유가 없다. 그릴 면적이 있는 프레임에서만
-    // 유리를 얹고, 그 밖에는 같은 치수의 불투명 배경으로 대체한다.
+    // 위 축소 애니메이션이 정확히 그 조건을 매 프레임 만들므로,
+    // [_GlassOrFallback] 이 면적을 확인한 프레임에서만 유리를 얹는다.
     return Center(
-      child: _GlassOrFallback(
-        scale: scale,
-        settings: _glassSettings,
-        child: bar,
+      child: AnimatedScale(
+        scale: compact ? _compactFactor : 1,
+        alignment: Alignment.bottomCenter,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: _GlassOrFallback(
+          scale: scale,
+          settings: _glassSettings,
+          child: bar,
+        ),
       ),
     );
   }
@@ -197,6 +216,84 @@ class _FallbackNavBackground extends StatelessWidget {
       ),
       child: child,
     );
+  }
+}
+
+/// 스크롤 방향을 보고 [AppBottomNav] 의 축소 여부를 들고 있는 컨트롤러.
+///
+/// 화면마다 스크롤 주체가 달라(ListView·SingleChildScrollView·컨트롤러 없음)
+/// [ScrollController] 를 넘겨받는 대신 [ScrollNotification] 을 듣는다.
+/// 스크롤 영역을 [NotificationListener] 로 감싸 [handleNotification] 에 연결하고,
+/// [AppBottomNav] 는 이 컨트롤러를 구독해 [AppBottomNav.compact] 를 받는다.
+///
+/// 화면 State 에서 만들고 [dispose] 해 쓴다:
+/// ```dart
+/// final _navShrink = BottomNavShrinkController();
+/// // build:
+/// NotificationListener<ScrollNotification>(
+///   onNotification: _navShrink.handleNotification,
+///   child: ...,
+/// )
+/// ListenableBuilder(
+///   listenable: _navShrink,
+///   builder: (_, _) => AppBottomNav(..., compact: _navShrink.compact),
+/// )
+/// ```
+class BottomNavShrinkController extends ChangeNotifier {
+  /// 축소/복귀를 뒤집는 데 필요한 최소 스크롤 이동량(px).
+  /// 손떨림 수준의 움직임으로 크기가 깜빡이지 않게 한다.
+  static const double _toggleDelta = 12;
+
+  bool _compact = false;
+  double _accumulated = 0;
+
+  /// 지금 축소 상태인지.
+  bool get compact => _compact;
+
+  void _set(bool value) {
+    if (_compact == value) return;
+    _compact = value;
+    notifyListeners();
+  }
+
+  /// [NotificationListener.onNotification] 에 그대로 넘긴다.
+  /// 알림을 소비하지 않으므로(항상 false) 다른 리스너에도 그대로 전파된다.
+  bool handleNotification(ScrollNotification n) {
+    // 가로 스크롤(경기일정 주간 페이저 등)은 무시한다.
+    if (n.metrics.axis != Axis.vertical) return false;
+    if (n is! ScrollUpdateNotification) return false;
+
+    final delta = n.scrollDelta;
+    if (delta == null) return false;
+
+    // reverse:true 인 목록(경기리스트 오름차순 정렬)은 offset 증가가 화면상
+    // '위로 올라감'이라 방향이 뒤집힌다. 실제로 어느 쪽으로 밀었는지는
+    // axisDirection 으로 판단한다(reverse 면 up).
+    final reversed = n.metrics.axisDirection == AxisDirection.up;
+    final scrolledDown = reversed ? delta < 0 : delta > 0;
+
+    // 맨 위(=목록 시작)에서는 항상 원래 크기로 둔다. 오버스크롤 튕김으로
+    // 작아지는 걸 막는다. reverse 목록에서는 offset 최대치가 목록 시작이다.
+    final atTop =
+        reversed
+            ? n.metrics.pixels >= n.metrics.maxScrollExtent - 1
+            : n.metrics.pixels <= n.metrics.minScrollExtent + 1;
+    if (atTop) {
+      _accumulated = 0;
+      _set(false);
+      return false;
+    }
+
+    // 같은 방향으로 연속해 움직인 양만 누적하고, 방향이 바뀌면 리셋한다.
+    if (scrolledDown == (_accumulated > 0)) {
+      _accumulated += scrolledDown ? delta.abs() : -delta.abs();
+    } else {
+      _accumulated = scrolledDown ? delta.abs() : -delta.abs();
+    }
+
+    if (_accumulated.abs() < _toggleDelta) return false;
+    _set(_accumulated > 0);
+    return false;
   }
 }
 

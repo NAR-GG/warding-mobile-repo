@@ -23,7 +23,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
   final MemberNotificationRepository _repo;
   bool _disposed = false;
 
-  // ponytail: 첫 페이지 50건만. 무한 스크롤은 피드가 길어지면 추가.
+  /// 한 번에 받아오는 건수. 목록 끝에 닿으면 [loadMore] 로 다음 페이지를 잇는다.
   static const int _pageSize = 50;
 
   List<MemberNotification> _notifications = const [];
@@ -34,6 +34,17 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  /// 다음 페이지를 이어 받는 중인지. 하단 스켈레톤 표시에 쓴다.
+  bool _isLoadingMore = false;
+  bool get isLoadingMore => _isLoadingMore;
+
+  /// 마지막으로 받은 페이지 번호.
+  int _page = 0;
+
+  /// 서버에 다음 페이지가 남았는지. false 면 [loadMore] 는 아무것도 하지 않는다.
+  bool _hasMore = false;
+  bool get hasMore => _hasMore;
 
   String? _error;
   String? get error => _error;
@@ -65,7 +76,8 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     }
   }
 
-  /// 서버에서 알림을 다시 읽는다(진입·복귀 시).
+  /// 서버에서 알림을 처음부터 다시 읽는다(진입·복귀·당겨서 새로고침).
+  /// 이어받던 페이지 상태도 초기화한다.
   Future<void> load() async {
     _isLoading = true;
     _error = null;
@@ -74,11 +86,45 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
       final pageData = await _repo.fetchNotifications(page: 0, size: _pageSize);
       _notifications = pageData.notifications;
       _unreadCount = pageData.unreadCount;
+      _page = pageData.page;
+      _hasMore = pageData.hasMore;
     } catch (e, st) {
       _error = appStrings?.notificationLoadFailed ?? 'Failed to load notifications.';
       debugPrint('[Feed] load 에러: $e\n$st');
     } finally {
       _isLoading = false;
+      _notify();
+    }
+  }
+
+  /// 다음 페이지를 이어 받는다(목록 끝에 닿았을 때).
+  ///
+  /// 중복 호출·마지막 페이지·초기 로딩 중에는 아무것도 하지 않는다.
+  /// 실패해도 [error] 를 세우지 않는다 — 이미 받은 목록은 그대로 보이는 게
+  /// 나아서, 다음 스크롤에 자연히 재시도된다.
+  Future<void> loadMore() async {
+    if (_isLoadingMore || _isLoading || !_hasMore) return;
+    _isLoadingMore = true;
+    _notify();
+    try {
+      final pageData = await _repo.fetchNotifications(
+        page: _page + 1,
+        size: _pageSize,
+      );
+      // 중복 id 는 걸러낸다 — 이어받는 사이 새 알림이 쌓이면 서버 페이지가
+      // 한 칸씩 밀려 같은 건이 다시 내려올 수 있다.
+      final seen = _notifications.map((n) => n.id).toSet();
+      _notifications = [
+        ..._notifications,
+        ...pageData.notifications.where((n) => !seen.contains(n.id)),
+      ];
+      _unreadCount = pageData.unreadCount;
+      _page = pageData.page;
+      _hasMore = pageData.hasMore;
+    } catch (e, st) {
+      debugPrint('[Feed] loadMore 에러: $e\n$st');
+    } finally {
+      _isLoadingMore = false;
       _notify();
     }
   }

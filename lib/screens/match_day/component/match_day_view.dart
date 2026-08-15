@@ -38,7 +38,9 @@ class MatchDayView extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.only(bottom: 24 * scale),
         itemCount: 4,
-        itemBuilder: (_, _) => MatchCardSkeleton(scale: scale),
+        // 첫 장은 실제 카드와 같이 위 구분선을 끈다(날짜 헤더 아래 첫 카드 규칙).
+        itemBuilder: (_, index) =>
+            MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
       );
     }
 

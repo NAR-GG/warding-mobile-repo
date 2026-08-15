@@ -16,11 +16,22 @@ class MatchPage {
     required this.matches,
     required this.nextCursor,
     required this.hasNext,
+    this.prevCursor,
+    this.hasPrev = false,
   });
 
   final List<ScheduleMatch> matches;
   final String? nextCursor;
   final bool hasNext;
+
+  /// 이전(과거) 방향으로 한 페이지 더 받기 위한 커서.
+  ///
+  /// `around` 로 오늘 앞뒤를 함께 받았거나 `before` 로 과거를 이어받은
+  /// 응답에 채워진다. 더 과거가 없으면 null.
+  final String? prevCursor;
+
+  /// 위쪽(과거)에 더 받을 페이지가 있는지.
+  final bool hasPrev;
 }
 
 /// 경기 일정 관련 API (`/api/mobile/schedules`).
@@ -222,8 +233,17 @@ class ScheduleRepository {
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. 다음 페이지는 응답의
   /// `nextCursor` 를 [cursor] 로 넘겨 이어 받는다 (첫 페이지는 cursor 생략).
   ///
-  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기를 오름차순으로 받는다.
-  /// '오늘 이후' 필터가 쓰는 경로다.
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜 이후 경기만, 과거→미래 오름차순으로
+  /// 받는다. '오늘 이후' 필터와, 진입 시 받은 `around` 창을 미래 방향으로
+  /// 이어받을 때 쓰는 경로다.
+  ///
+  /// [around] (`yyyy-MM-dd`) 를 주면 그 날짜를 기준으로 과거 절반 + 미래 절반을
+  /// 한 번에 받는다 — 진입 시 '오늘' 그룹에 한 번의 요청으로 닿기 위한 경로다.
+  ///
+  /// [before] 는 이전 응답의 `prevCursor` 를 그대로 넘겨 그보다 과거를
+  /// 이어받는다 (위로 스크롤).
+  ///
+  /// [around] / [before] / [cursor] 는 서로 배타적이다.
   ///
   /// 같은 조건(같은 커서 포함)의 요청이 이미 떠 있거나 방금 끝났으면
   /// ([_calendarCacheTtl] 이내) 그 결과를 재사용한다.
@@ -235,6 +255,8 @@ class ScheduleRepository {
     int? seasonYear,
     String? split,
     String? from,
+    String? around,
+    String? before,
   }) {
     final url = ApiConfig.matchesUrl(
       league: league,
@@ -244,6 +266,8 @@ class ScheduleRepository {
       seasonYear: seasonYear,
       split: split,
       from: from,
+      around: around,
+      before: before,
     );
 
     final cached = _matchesCache[url];
@@ -295,6 +319,8 @@ class ScheduleRepository {
       matches: matches,
       nextCursor: data['nextCursor'] as String?,
       hasNext: data['hasNext'] as bool? ?? false,
+      prevCursor: data['prevCursor'] as String?,
+      hasPrev: data['hasPrev'] as bool? ?? false,
     );
   }
 

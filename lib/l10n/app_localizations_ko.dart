@@ -785,6 +785,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get searchInputHint => '검색어를 입력...';
 
   @override
+  String get noSearchResults => '검색 결과가 없어요';
+
+  @override
   String get loginRequired => '로그인 후 사용 가능';
 
   @override

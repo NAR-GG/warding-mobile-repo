@@ -19,6 +19,26 @@ void main() {
   late MockCategoryRepository cat;
   late MockScheduleRepository sched;
 
+  ScheduleMatch match(String id, DateTime d) => ScheduleMatch(
+        matchId: id,
+        scheduledTime: '18:00',
+        leagueInfo: 'LCK',
+        matchTitle: 'A vs B',
+        matchStatus: 'unstarted',
+        isSynced: false,
+        date: d,
+        teamA:
+            const MatchTeam(teamName: 'A', teamCode: 'A', teamImageUrl: '', score: 0),
+        teamB:
+            const MatchTeam(teamName: 'B', teamCode: 'B', teamImageUrl: '', score: 0),
+      );
+
+  String dateParam(DateTime d) => '${d.year}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  const emptyPage = MatchPage(matches: [], nextCursor: null, hasNext: false);
+
   setUp(() {
     cat = MockCategoryRepository();
     sched = MockScheduleRepository();
@@ -36,13 +56,35 @@ void main() {
             ));
     when(() => cat.fetchTree(year: any(named: 'year')))
         .thenAnswer((_) async => const CategoryTree(seasons: []));
+
+    // 뷰모델이 만들 수 있는 네 가지 호출 모양(진입=around, 오늘이후 진입=from,
+    // 미래 이어받기=cursor+from, 과거 이어받기=before) 을 모두 빈 응답으로
+    // 기본 커버해 둔다. 각 테스트는 필요한 모양만 더 구체적으로 재정의한다.
+    when(() => sched.fetchMatches(
+          around: any(named: 'around'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => emptyPage);
+    when(() => sched.fetchMatches(
+          from: any(named: 'from'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => emptyPage);
     when(() => sched.fetchMatches(
           cursor: any(named: 'cursor'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer(
-        (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
+          from: any(named: 'from'),
+        )).thenAnswer((_) async => emptyPage);
+    when(() => sched.fetchMatches(
+          before: any(named: 'before'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => emptyPage);
   });
 
   test('리그 목록은 맨 앞 전체 + 경기일정 필터 옵션(ALLOWED_LEAGUES)에서 온다', () async {
@@ -52,13 +94,13 @@ void main() {
     expect(vm.leagues, ['전체', 'LCK', 'MSI']);
   });
 
-  test('기본 선택 리그는 전체이고 첫 조회에 ALL 을 보낸다', () async {
+  test('기본 선택 리그는 전체이고 진입 조회에 ALL 을 보낸다', () async {
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
 
     expect(vm.selectedLeague, '전체');
     final captured = verify(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+          around: any(named: 'around'),
           size: any(named: 'size'),
           league: captureAny(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
@@ -71,7 +113,7 @@ void main() {
     await pumpEventQueue();
 
     final captured = verify(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+          around: any(named: 'around'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: captureAny(named: 'seasonYear'),
@@ -88,7 +130,7 @@ void main() {
     await pumpEventQueue();
 
     final captured = verify(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+          around: any(named: 'around'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: captureAny(named: 'seasonYear'),
@@ -96,44 +138,40 @@ void main() {
     expect(captured, contains(2025));
   });
 
-  test("'오늘 이후'는 from=오늘 을 보내고 첫 페이지가 곧 오늘부터다", () async {
-    // sortOrders 가 l10n(GlobalKey) 을 읽으므로 바인딩이 필요하다.
+  test('진입 시 오늘 날짜를 around 로 보낸다', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    final today = DateTime.now();
-    final day = DateTime(today.year, today.month, today.day);
-    ScheduleMatch match(String id, DateTime d) => ScheduleMatch(
-          matchId: id,
-          scheduledTime: '18:00',
-          leagueInfo: 'LCK',
-          matchTitle: 'A vs B',
-          matchStatus: 'unstarted',
-          isSynced: false,
-          date: d,
-          teamA: const MatchTeam(
-              teamName: 'A', teamCode: 'A', teamImageUrl: '', score: 0),
-          teamB: const MatchTeam(
-              teamName: 'B', teamCode: 'B', teamImageUrl: '', score: 0),
-        );
-    // from 을 주면 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
-    final pages = <String?, MatchPage>{
-      null: MatchPage(
-        matches: [
-          for (var i = 0; i < 3; i++) match('today$i', day),
-          for (var i = 0; i < 2; i++) match('soon$i', day.add(const Duration(days: 1))),
-        ],
-        nextCursor: 'c1',
-        hasNext: true,
-      ),
-    };
-    when(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    expect(vm.upcomingOnly, isFalse);
+    final sentAround = verify(() => sched.fetchMatches(
+          around: captureAny(named: 'around'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
+        )).captured;
+    expect(sentAround, contains(dateParam(DateTime.now())));
+  });
+
+  test("'오늘 이후'는 from=오늘 을 보내고 첫 페이지가 곧 오늘부터다", () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final today = DateTime.now();
+    final day = DateTime(today.year, today.month, today.day);
+    // from 을 주면 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
+    when(() => sched.fetchMatches(
           from: any(named: 'from'),
-        )).thenAnswer((inv) async =>
-        pages[inv.namedArguments[const Symbol('cursor')]] ??
-        const MatchPage(matches: [], nextCursor: null, hasNext: false));
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            for (var i = 0; i < 3; i++) match('today$i', day),
+            for (var i = 0; i < 2; i++)
+              match('soon$i', day.add(const Duration(days: 1))),
+          ],
+          nextCursor: 'c1',
+          hasNext: true,
+        ));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -145,51 +183,204 @@ void main() {
 
     // 오늘 날짜를 from 으로 보낸다.
     final sentFrom = verify(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+          from: captureAny(named: 'from'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-          from: captureAny(named: 'from'),
         )).captured;
-    final todayParam = '${day.year}-'
-        '${day.month.toString().padLeft(2, '0')}-'
-        '${day.day.toString().padLeft(2, '0')}';
-    expect(sentFrom, contains(todayParam));
+    expect(sentFrom, contains(dateParam(day)));
 
     // 서버가 오늘부터 주므로 첫 그룹이 곧 오늘이고, 당겨오는 catch-up 이 없다.
     expect(vm.schedule.first.date, day);
     expect(vm.scheduleAscending, isTrue);
-    expect(vm.listReversed, isFalse);
     expect(vm.schedule.any((d) => d.date.isBefore(day)), isFalse);
+    // '오늘 이후'는 과거를 보여주지 않는다.
+    expect(vm.hasPrev, isFalse);
   });
 
-  test("'오늘 이후'가 아니면 from 을 보내지 않는다", () async {
+  test('around 응답은 과거→미래 순 그대로 오래된 순 화면에 담긴다', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     when(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+          around: any(named: 'around'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-          from: any(named: 'from'),
-        )).thenAnswer(
-        (_) async => const MatchPage(matches: [], nextCursor: null, hasNext: false));
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            for (var i = -2; i <= 2; i++)
+              match('d$i', today.add(Duration(days: i))),
+          ],
+          nextCursor: 'next',
+          hasNext: true,
+          prevCursor: 'prev',
+          hasPrev: true,
+        ));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
 
-    expect(vm.upcomingOnly, isFalse);
-    expect(vm.scheduleAscending, isFalse);
-    // 기본 '오래된 순'은 최신→과거로 받아 View 가 뒤집어 그린다.
-    expect(vm.listReversed, isTrue);
+    // 기본은 '오래된 순'(ascending) → 받은 순서 그대로.
+    expect(vm.scheduleAscending, isTrue);
+    expect(vm.schedule.first.date, today.subtract(const Duration(days: 2)));
+    expect(vm.schedule.last.date, today.add(const Duration(days: 2)));
+    expect(vm.hasPrev, isTrue);
+    expect(vm.hasMore, isTrue);
+  });
 
-    final sentFrom = verify(() => sched.fetchMatches(
-          cursor: any(named: 'cursor'),
+  test('최근순은 around 응답을 뒤집어 담는다', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    when(() => sched.fetchMatches(
+          around: any(named: 'around'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-          from: captureAny(named: 'from'),
-        )).captured;
-    expect(sentFrom.every((v) => v == null), isTrue);
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            for (var i = -2; i <= 2; i++)
+              match('d$i', today.add(Duration(days: i))),
+          ],
+          nextCursor: 'next',
+          hasNext: true,
+          prevCursor: 'prev',
+          hasPrev: true,
+        ));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    vm.selectSortOrder(vm.sortOrders[0]); // '최근순'
+    await pumpEventQueue();
+
+    expect(vm.scheduleAscending, isFalse);
+    expect(vm.schedule.first.date, today.add(const Duration(days: 2)));
+    expect(vm.schedule.last.date, today.subtract(const Duration(days: 2)));
+    // 최근순에서 아래쪽(과거)을 더 받을 수 있어야 hasMore, 위쪽(미래)을
+    // 더 받을 수 있어야 hasPrev.
+    expect(vm.hasMore, isTrue);
+    expect(vm.hasPrev, isTrue);
+  });
+
+  test('아래로 스크롤(최근순) 하면 과거를 before 로 받아 뒤집어 append 한다', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    when(() => sched.fetchMatches(
+          around: any(named: 'around'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            for (var i = -2; i <= 2; i++)
+              match('d$i', today.add(Duration(days: i))),
+          ],
+          nextCursor: 'next',
+          hasNext: true,
+          prevCursor: 'prev1',
+          hasPrev: true,
+        ));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+    vm.selectSortOrder(vm.sortOrders[0]); // '최근순'
+    await pumpEventQueue();
+
+    when(() => sched.fetchMatches(
+          before: 'prev1',
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            match('p1', today.subtract(const Duration(days: 4))),
+            match('p2', today.subtract(const Duration(days: 3))),
+          ],
+          nextCursor: null,
+          hasNext: false,
+          prevCursor: null,
+          hasPrev: false,
+        ));
+
+    // 최근순에서 화면 '아래쪽 끝' 트리거 = loadMoreMatches, 더 과거를 받아야 한다.
+    await vm.loadMoreMatches();
+    await pumpEventQueue();
+
+    expect(vm.schedule.first.date, today.add(const Duration(days: 2)));
+    expect(vm.schedule.last.date, today.subtract(const Duration(days: 4)));
+    expect(vm.hasMore, isFalse, reason: '더 없으면 다시 요청하지 않는다');
+  });
+
+  test('위로 스크롤 하면 before 로 과거를 이어받아 맨 앞에 붙인다(오래된 순)', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    when(() => sched.fetchMatches(
+          around: any(named: 'around'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            for (var i = 0; i <= 4; i++) match('d$i', today.add(Duration(days: i))),
+          ],
+          nextCursor: null,
+          hasNext: false,
+          prevCursor: 'prev1',
+          hasPrev: true,
+        ));
+
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+    final beforeCount = vm.schedule.length;
+
+    when(() => sched.fetchMatches(
+          before: 'prev1',
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        )).thenAnswer((_) async => MatchPage(
+          matches: [
+            match('2026-08-01', DateTime(2026, 8, 1)),
+            match('2026-08-02', DateTime(2026, 8, 2)),
+          ],
+          nextCursor: null,
+          hasNext: false,
+          prevCursor: null,
+          hasPrev: false,
+        ));
+
+    await vm.loadPreviousMatches();
+    await pumpEventQueue();
+
+    expect(vm.schedule.length, greaterThan(beforeCount));
+    expect(vm.schedule.first.date.month, 8);
+    expect(vm.schedule.first.date.day, 1, reason: '과거가 맨 앞에 와야 한다');
+    expect(vm.hasPrev, isFalse, reason: '더 없으면 다시 요청하지 않는다');
+  });
+
+  test('hasPrev 가 false 면 과거 요청을 보내지 않는다', () async {
+    final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+    await pumpEventQueue();
+
+    expect(vm.hasPrev, isFalse);
+
+    await vm.loadPreviousMatches();
+    await pumpEventQueue();
+
+    verifyNever(() => sched.fetchMatches(
+          before: any(named: 'before'),
+          size: any(named: 'size'),
+          league: any(named: 'league'),
+          seasonYear: any(named: 'seasonYear'),
+        ));
   });
 
   group('필터 저장·복원', () {
@@ -219,7 +410,7 @@ void main() {
 
       expect(vm.selectedLeague, 'LCK');
       final captured = verify(() => sched.fetchMatches(
-            cursor: any(named: 'cursor'),
+            around: any(named: 'around'),
             size: any(named: 'size'),
             league: captureAny(named: 'league'),
             seasonYear: any(named: 'seasonYear'),
@@ -255,7 +446,6 @@ void main() {
     });
 
     test('정렬 변경 시 저장하고, 다음 실행에 복원한다', () async {
-      // sortOrders 가 l10n(GlobalKey) 을 읽으므로 바인딩이 필요하다.
       TestWidgetsFlutterBinding.ensureInitialized();
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
           .thenAnswer((_) async => null);

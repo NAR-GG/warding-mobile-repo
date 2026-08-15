@@ -99,10 +99,8 @@ class MatchListViewModel extends ChangeNotifier {
   /// 커서 페이지 한 번에 받는 경기 수.
   ///
   /// 서버가 실제로 내려주는 상한이 50이다(그 이상 요청해도 50으로 잘림,
-  /// 2026-08-12 실측). '전체' 리그는 오늘까지 캐치업하는 데 페이지가 여러 장
-  /// 필요한데, 커서 체인이라 병렬화가 안 돼 페이지 수만큼 순차 왕복이
-  /// 그대로 로딩 시간이 된다. 서버 상한까지 크게 받아 왕복 횟수를 줄인다
-  /// (20 기준 9왕복 → 50 기준 4왕복, 2026-08 ALL 실측).
+  /// 2026-08-12 실측). 커서 체인이라 페이지 요청은 병렬화가 안 돼 순차 왕복이
+  /// 그대로 로딩 시간이 된다. 서버 상한까지 크게 받아 왕복 횟수를 줄인다.
   static const int _pageSize = 50;
 
   /// 한 번의 reload/loadMore 호출에서 최소로 모아야 하는 매치 수.
@@ -112,20 +110,13 @@ class MatchListViewModel extends ChangeNotifier {
   /// 자동 prefetch 최대 시도 횟수. 결과가 적을 때 추가 페이지를 커서로 더 받는다.
   static const int _maxPrefetchPages = 5;
 
-  /// 초기 진입 시 '오늘' 그룹으로 스크롤하려면 오늘 이하 경기가 최소 한 건은
-  /// 로드돼 있어야 한다. '전체'(ALL) 리그는 최신 페이지가 전부 미래(예정) 경기라
-  /// 오늘 이하가 나올 때까지 더 당겨야 하므로 catch-up 최대 페이지를 넉넉히 둔다.
-  /// (2026-08 시점 ALL 기준 오늘까지 9페이지. 시즌 초는 예정 경기가 더 많다.)
-  static const int _maxCatchUpPages = 20;
-
   /// 선택 가능한 시즌 목록.
   static const List<String> seasons = ['2025', '2026'];
 
-  /// 정렬 순서 옵션. fetch 방향은 '오늘 이후'만 과거→미래고 나머지는 최신→과거다
-  /// ([scheduleAscending]). 표시 방향은 View 가 [listReversed] 로 맞춘다.
-  /// 기본은 '오래된 순'(위가 과거, 아래가 미래).
-  /// 표시용 라벨 목록 — l10n 에서 가져온다.
-  /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정.
+  /// 정렬 순서 옵션 라벨 — l10n 에서 가져온다.
+  /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정이고 기본은 '오래된 순'.
+  /// 서버는 정렬 파라미터를 지원하지 않으므로(항상 과거→미래로 내려준다)
+  /// 표시 방향은 앱이 처리한다([ascending]).
   List<String> get sortOrders => [
         appStrings?.sortRecent ?? 'Recent',
         appStrings?.sortOldest ?? 'Oldest',
@@ -150,33 +141,20 @@ class MatchListViewModel extends ChangeNotifier {
 
   /// [schedule] 이 담긴 순서가 과거→미래인지.
   ///
-  /// '오늘 이후'만 서버에 `from=오늘` 을 보내 오름차순으로 받으므로 true 고,
-  /// 나머지 정렬은 최신→과거 순으로 담긴다.
-  bool get scheduleAscending => upcomingOnly;
-
-  /// View 가 리스트를 뒤집어 그려야 하는지(`ListView.reverse`).
-  ///
-  /// 화면은 [ascending] 이 원하는 방향으로 보여야 하는데, 저장 순서가 이미
-  /// 그 방향([scheduleAscending])이면 뒤집을 필요가 없다.
-  bool get listReversed => ascending && !scheduleAscending;
+  /// 서버 응답은 항상 과거→미래 오름차순이라, '최근순'(비 ascending)일 때는
+  /// [_fetchEntryPage]/[_extendBottom]/[_extendTop] 이 받은 페이지를 뒤집어
+  /// 담는다. 담긴 순서가 곧 화면 순서라 View 가 다시 뒤집을 일은 없다.
+  bool get scheduleAscending => ascending;
 
   void selectSortOrder(String order) {
     final idx = sortOrders.indexOf(order);
     if (idx < 0 || idx == _sortOrderIndex) return;
-    final wasUpcomingOnly = upcomingOnly;
     _sortOrderIndex = idx;
     _persistFilter();
-    // '오늘 이후' 를 켜고 끌 때는 필터 조건 자체가 바뀌므로 첫 페이지부터 다시 받는다.
-    // (누적본에는 이미 걸러진 과거 경기가 없어 되돌릴 수 없다.)
+    // 표시 방향이 바뀌면 지금까지 쌓인 페이지·커서를 그대로 쓸 수 없으므로
+    // 첫 페이지부터 다시 받는다.
     // _reloadSchedule 이 버전을 올리고 notify 하므로 여기선 따로 알리지 않는다.
-    if (wasUpcomingOnly != upcomingOnly) {
-      _reloadSchedule();
-      return;
-    }
-    // 재조회가 필요 없는 전환(최근순↔오래된 순)도 표시 방향이 뒤집히므로
-    // 버전을 올려 View 가 오늘 날짜로 다시 스크롤하게 한다.
-    _scheduleVersion++;
-    notifyListeners();
+    _reloadSchedule();
   }
 
   /// 카드 스코어 블러(스포방지) on/off. 저장된 값이 없으면 on(기존 동작 유지).
@@ -224,26 +202,48 @@ class MatchListViewModel extends ChangeNotifier {
   Set<String> _selectedTeams = {allTeamsLabel};
   Set<String> get selectedTeams => _selectedTeams;
 
-  /// 무한 스크롤로 누적된 날짜별 경기 그룹. 담긴 순서는 서버 응답 방향과 같다.
+  /// 무한 스크롤로 누적된 날짜별 경기 그룹. 담긴 순서는 화면 표시 방향과 같다
+  /// ([scheduleAscending]).
   final List<ScheduleDay> _schedule = [];
 
-  /// 담긴 순서는 [scheduleAscending] 이 알려준다 — '오늘 이후'는 과거→미래,
-  /// 나머지는 최신→과거. 어느 쪽이든 다음 페이지가 뒤에 append 되므로 스크롤
-  /// 점프가 없다. 표시 방향은 View 가 [listReversed] 로 맞춘다.
+  /// 어느 방향이든 다음 페이지가 뒤/앞에 이어붙으므로 스크롤 점프가 없다.
   List<ScheduleDay> get schedule => List.unmodifiable(_schedule);
 
-  /// 다음 페이지 커서. 첫 페이지는 null (커서 생략).
+  /// 미래 방향 다음 페이지 커서(`from`+`cursor` 축). 첫 페이지는 null.
   String? _cursor;
 
-  /// 더 받을 페이지가 있는지. 서버 응답의 `hasNext` 로 갱신한다.
-  bool _hasMore = true;
-  bool get hasMore => _hasMore;
+  /// 미래 방향으로 더 받을 페이지가 있는지. 서버 응답의 `hasNext` 로 갱신한다.
+  bool _hasFutureMore = true;
+
+  /// 과거 방향 다음 페이지 커서(`before` 축). `around` 진입이나 `before` 응답이
+  /// 채운다.
+  String? _prevCursor;
+
+  /// 과거 방향으로 더 받을 페이지가 있는지. 서버 응답의 `hasPrev` 로 갱신한다.
+  bool _hasPastMore = false;
+
+  /// 화면 **아래쪽 끝**에 더 받을 페이지가 있는지 — [ascending] 이면 미래,
+  /// 아니면 과거 방향을 본다. [loadMoreMatches] 가 이 값을 기준으로 판단한다.
+  bool get hasMore => ascending ? _hasFutureMore : _hasPastMore;
+
+  /// 화면 **위쪽 끝**에 더 받을 페이지가 있는지 — [hasMore] 와 반대 방향을 본다.
+  /// [loadPreviousMatches] 가 이 값을 기준으로 판단한다.
+  bool get hasPrev => ascending ? _hasPastMore : _hasFutureMore;
+
+  /// [_reloadSchedule] 진입 시 쓴 기준 날짜(`yyyy-MM-dd`, 오늘). 미래 방향
+  /// 페이지를 이어받을 때(`from`+`cursor`) 같은 오름차순 축을 유지하려고 보관한다.
+  String? _forwardAnchor;
 
   bool _loadingMatches = true;
   bool get loadingMatches => _loadingMatches;
 
   bool _loadingMore = false;
   bool get loadingMore => _loadingMore;
+
+  /// 과거 페이지를 받는 중인지. [loadingMore](미래 방향)와 구분해야 위/아래를
+  /// 동시에 당길 때 서로를 막지 않는다.
+  bool _loadingPrevious = false;
+  bool get loadingPrevious => _loadingPrevious;
 
   /// 마지막 [_reloadSchedule] 실패 시 에러. 성공하면 null.
   Object? _error;
@@ -291,19 +291,19 @@ class MatchListViewModel extends ChangeNotifier {
     _reloadSchedule();
   }
 
-  /// 무한 스크롤이 끝에 도달했을 때 호출. 커서로 다음 페이지를 가져온다.
+  /// 무한 스크롤이 화면 **아래쪽 끝**에 도달했을 때 호출한다.
   /// 클라 팀 필터 결과가 [_minMatchesPerLoad] 미만이면 자동으로 다음 페이지까지 prefetch.
   Future<void> loadMoreMatches() async {
-    if (_loadingMatches || _loadingMore || !_hasMore) return;
+    if (_loadingMatches || _loadingMore || !hasMore) return;
     _loadingMore = true;
     _notify();
     try {
       var newMatches = 0;
       var attempts = 0;
-      while (_hasMore &&
+      while (hasMore &&
           newMatches < _minMatchesPerLoad &&
           attempts < _maxPrefetchPages) {
-        newMatches += await _fetchNextPage();
+        newMatches += await _extendBottom();
         attempts++;
         _notify(); // 매 페이지마다 즉시 반영해 점진 표시.
       }
@@ -410,35 +410,33 @@ class MatchListViewModel extends ChangeNotifier {
     _error = null;
     _schedule.clear();
     _cursor = null;
-    _hasMore = true;
+    _hasFutureMore = true;
+    _prevCursor = null;
+    _hasPastMore = false;
+    _forwardAnchor = _todayParam();
     _notify();
     try {
-      // 1) 첫 페이지.
-      var newMatches = await _fetchNextPage();
+      // 1) 진입 페이지. '오늘 이후'가 아니면 `around=오늘` 로 과거 절반 + 미래
+      //    절반을 한 번에 받아, 오래된 순이든 최근순이든 첫 응답부터 오늘에
+      //    바로 닿는다(캐치업 페이지가 필요 없다).
+      var newMatches = await _fetchEntryPage();
 
-      // 2) prefetch 필요 판단 — 화면이 안 찰 만큼 결과가 적거나(_minMatchesPerLoad
-      //    미만), 초기 '오늘로 스크롤' 대상인 오늘 이하 경기가 아직 안 왔으면
-      //    ('전체'는 최신 페이지가 전부 미래 예정 경기) 계속 당겨온다.
-      //    '오늘 이후'는 서버에 from=오늘 을 보내 첫 페이지가 곧 오늘부터라,
-      //    오늘 이하 조건은 보지 않는다(화면 채우기 조건만 남는다).
-      final needPrefetch =
-          (newMatches < _minMatchesPerLoad ||
-              (!upcomingOnly && !_hasTodayOrPastLoaded())) &&
-          _hasMore;
+      // 2) prefetch 필요 판단 — 클라 팀 필터 결과가 [_minMatchesPerLoad] 미만이면
+      //    화면이 안 차 스크롤이 안 트리거된다. 아래쪽으로 계속 당겨 채운다.
+      final needPrefetch = newMatches < _minMatchesPerLoad && hasMore;
 
       // 첫 페이지는 즉시 노출하되, prefetch 가 필요하면 loadingMore 를 같은 프레임에
-      // 켜서 View 의 초기 '오늘로 스크롤' 이 prefetch(오늘 데이터 도착)까지 기다리게 한다.
+      // 켜서 View 의 초기 '오늘로 스크롤' 이 prefetch 도착까지 기다리게 한다.
       _loadingMatches = false;
       _loadingMore = needPrefetch;
       _notify();
 
       if (needPrefetch) {
         var attempts = 1;
-        while (_hasMore &&
-            attempts < _maxCatchUpPages &&
-            (newMatches < _minMatchesPerLoad ||
-                (!upcomingOnly && !_hasTodayOrPastLoaded()))) {
-          newMatches += await _fetchNextPage();
+        while (hasMore &&
+            attempts < _maxPrefetchPages &&
+            newMatches < _minMatchesPerLoad) {
+          newMatches += await _extendBottom();
           attempts++;
           _notify();
         }
@@ -446,7 +444,8 @@ class MatchListViewModel extends ChangeNotifier {
         _notify();
       }
     } catch (e) {
-      _hasMore = false;
+      _hasFutureMore = false;
+      _hasPastMore = false;
       _loadingMatches = false;
       _loadingMore = false;
       _error = e;
@@ -464,26 +463,124 @@ class MatchListViewModel extends ChangeNotifier {
           ? allLeagueCode
           : league;
 
-  /// 현재 커서로 한 페이지를 받아 [_schedule] 에 날짜별로 누적한다.
-  /// 커서·hasNext 를 갱신하고, 누적된(필터 통과) 매치 수를 반환한다.
-  Future<int> _fetchNextPage() async {
+  /// 화면 진입/필터 변경 시 첫 페이지를 받는다.
+  ///
+  /// '오늘 이후'는 서버가 `from` 으로 오늘부터 잘라 오름차순으로 주므로 그대로
+  /// 쓴다(과거를 보여줄 일이 없어 [_hasPastMore] 는 항상 false).
+  ///
+  /// 그 외(최근순·오래된 순)는 `around=오늘` 로 과거 절반 + 미래 절반을 한 번에
+  /// 받는다. 응답은 항상 과거→미래 오름차순이므로, 화면이 내림차순(최근순)이면
+  /// 뒤집어서 담는다.
+  Future<int> _fetchEntryPage() async {
+    if (upcomingOnly) {
+      final page = await _scheduleRepository.fetchMatches(
+        from: _forwardAnchor,
+        size: _pageSize,
+        league: _effectiveLeagueCode(_selectedLeague),
+        seasonYear: int.tryParse(_selectedSeason),
+      );
+      _cursor = page.nextCursor;
+      _hasFutureMore = page.hasNext && page.nextCursor != null;
+      final filtered = _applyFilters(page.matches);
+      _mergeIntoSchedule(filtered);
+      return filtered.length;
+    }
+
+    final page = await _scheduleRepository.fetchMatches(
+      around: _forwardAnchor,
+      size: _pageSize,
+      league: _effectiveLeagueCode(_selectedLeague),
+      seasonYear: int.tryParse(_selectedSeason),
+    );
+    _cursor = page.nextCursor;
+    _hasFutureMore = page.hasNext && page.nextCursor != null;
+    _prevCursor = page.prevCursor;
+    _hasPastMore = page.hasPrev && page.prevCursor != null;
+    final filtered = _applyFilters(page.matches); // 과거→미래 순.
+    _mergeIntoSchedule(ascending ? filtered : filtered.reversed.toList());
+    return filtered.length;
+  }
+
+  /// 미래 방향 한 페이지를 받는다(`from`+`cursor` 축). 서버 응답은 항상
+  /// 과거→미래 오름차순이다. [_hasFutureMore]/[_cursor] 를 갱신한다.
+  Future<List<ScheduleMatch>> _fetchFuturePage() async {
     final page = await _scheduleRepository.fetchMatches(
       cursor: _cursor,
       size: _pageSize,
       league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
-      // '오늘 이후' 는 서버가 오늘부터 과거→미래 오름차순으로 내려준다.
-      // 다른 정렬은 from 없이 최신→과거 순 그대로 받는다.
-      from: upcomingOnly ? _todayParam() : null,
+      from: _forwardAnchor,
     );
     _cursor = page.nextCursor;
-    _hasMore = page.hasNext && page.nextCursor != null;
-    final filtered = _applyFilters(page.matches);
-    _mergeIntoSchedule(filtered);
-    return filtered.length;
+    _hasFutureMore = page.hasNext && page.nextCursor != null;
+    return _applyFilters(page.matches);
   }
 
-  /// 서버 `from` 파라미터에 쓸 오늘 날짜(`yyyy-MM-dd`).
+  /// 과거 방향 한 페이지를 받는다(`before` 축). 서버 응답은 항상 과거→미래
+  /// 오름차순이다. [_hasPastMore]/[_prevCursor] 를 갱신한다.
+  Future<List<ScheduleMatch>> _fetchPastPage() async {
+    final page = await _scheduleRepository.fetchMatches(
+      before: _prevCursor,
+      size: _pageSize,
+      league: _effectiveLeagueCode(_selectedLeague),
+      seasonYear: int.tryParse(_selectedSeason),
+    );
+    _prevCursor = page.prevCursor;
+    _hasPastMore = page.hasPrev && page.prevCursor != null;
+    return _applyFilters(page.matches);
+  }
+
+  /// 화면 **아래쪽 끝**을 한 페이지 더 받아 채운다. [ascending] 이면 미래를
+  /// 받은 그대로 append, 아니면 과거를 받아 뒤집어 append(더 먼 과거가 더
+  /// 아래로 가야 하므로). 받은(필터 통과) 매치 수를 반환한다.
+  Future<int> _extendBottom() async {
+    if (ascending) {
+      final matches = await _fetchFuturePage();
+      _mergeIntoSchedule(matches);
+      return matches.length;
+    }
+    final matches = await _fetchPastPage();
+    _mergeIntoSchedule(matches.reversed.toList());
+    return matches.length;
+  }
+
+  /// 화면 **위쪽 끝**을 한 페이지 더 받아 채운다. [_extendBottom] 과 대칭이다.
+  Future<int> _extendTop() async {
+    if (ascending) {
+      final matches = await _fetchPastPage();
+      _prependIntoSchedule(matches);
+      return matches.length;
+    }
+    final matches = await _fetchFuturePage();
+    _prependIntoSchedule(matches.reversed.toList());
+    return matches.length;
+  }
+
+  /// 사용자가 목록 위쪽 끝에 닿았을 때 호출. [hasPrev] 가 false 면(더 없거나
+  /// '오늘 이후' 모드) 아무것도 하지 않는다.
+  Future<void> loadPreviousMatches() async {
+    if (_loadingMatches || _loadingPrevious || !hasPrev) return;
+    _loadingPrevious = true;
+    _notify();
+    try {
+      var newMatches = 0;
+      var attempts = 0;
+      while (hasPrev &&
+          newMatches < _minMatchesPerLoad &&
+          attempts < _maxPrefetchPages) {
+        newMatches += await _extendTop();
+        attempts++;
+        _notify();
+      }
+    } catch (_) {
+      // 과거 로드 실패는 목록 사용을 막지 않는다 — 다음 시도에 다시 받는다.
+    } finally {
+      _loadingPrevious = false;
+      _notify();
+    }
+  }
+
+  /// 서버 `from`/`around` 파라미터에 쓸 오늘 날짜(`yyyy-MM-dd`).
   String _todayParam() {
     final now = DateTime.now();
     return '${now.year}-'
@@ -511,7 +608,32 @@ class MatchListViewModel extends ChangeNotifier {
     }
   }
 
-  /// 매치 목록(최신→과거 순)을 같은 날짜끼리 [ScheduleDay] 로 묶는다. 순서 보존.
+  /// 과거 방향으로 받은 페이지를 목록 **앞**에 붙인다.
+  ///
+  /// 오늘 커서로 목록 중간부터 시작한 경우, 사용자가 위로 올리면 과거 페이지를
+  /// 받아 여기로 들어온다. 서버가 이어지는 순서대로 내려주므로 그대로 앞에
+  /// 붙이면 되고, 경계 날짜가 겹치면 한 그룹으로 합친다.
+  void _prependIntoSchedule(List<ScheduleMatch> matches) {
+    final groups = _groupByDate(matches);
+    if (groups.isEmpty) return;
+    if (_schedule.isNotEmpty &&
+        _isSameDate(groups.last.date, _schedule.first.date)) {
+      final first = _schedule.removeAt(0);
+      _schedule.insert(
+        0,
+        ScheduleDay(
+          date: first.date,
+          matches: [...groups.last.matches, ...first.matches],
+        ),
+      );
+      _schedule.insertAll(0, groups.take(groups.length - 1));
+    } else {
+      _schedule.insertAll(0, groups);
+    }
+  }
+
+  /// 매치 목록을 같은 날짜끼리 [ScheduleDay] 로 묶는다. 받은 순서를 그대로 보존해
+  /// 정렬 방향(서버 `sort`)에 상관없이 동작한다.
   /// `date` 가 null 인 매치는 직전 그룹에 합쳐(없으면 epoch 날짜로) 표시한다.
   List<ScheduleDay> _groupByDate(List<ScheduleMatch> matches) {
     final out = <ScheduleDay>[];
@@ -544,19 +666,6 @@ class MatchListViewModel extends ChangeNotifier {
   bool _isSameDate(DateTime? a, DateTime? b) {
     if (a == null || b == null) return a == null && b == null;
     return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  /// [_schedule] 에 오늘(이하) 날짜 경기가 하나라도 로드됐는지.
-  /// 초기 '오늘로 스크롤' 이 동작하려면 이 조건이 참이어야 한다.
-  /// (schedule 은 최신→과거 순이라 마지막 그룹이 오늘 이하면 참.)
-  bool _hasTodayOrPastLoaded() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    for (final day in _schedule) {
-      final d = DateTime(day.date.year, day.date.month, day.date.day);
-      if (!d.isAfter(today)) return true;
-    }
-    return false;
   }
 
   /// 클라이언트 팀 필터: teamA/teamB.teamName. 리그는 서버 파라미터로 거른다

@@ -53,6 +53,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 날짜 칩에 표시할, 캘린더에서 마지막으로 고른 날짜. null 이면 미선택.
   DateTime? _selectedDate;
 
+  /// 목록을 내리는 동안 하단 네비를 살짝 줄이는 상태.
+  final BottomNavShrinkController _navShrink = BottomNavShrinkController();
+
   @override
   void initState() {
     super.initState();
@@ -61,9 +64,41 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     // 앱이 떠 있는 채로 푸시가 오면(이 화면에 머물러 있을 때 특히) 복귀 이벤트가 없어
     // 피드가 갱신되지 않았다. FcmService 가 수신 때 올리는 카운터를 듣고 다시 읽는다.
     feedRefreshTick.addListener(_reloadFeed);
+    _scrollController.addListener(_onScroll);
+    // 필터로 걸러 화면이 덜 찼으면 스크롤이 생기지 않아 _onScroll 이 안 불린다.
+    // 피드가 갱신될 때마다 화면이 찼는지 확인해 필요하면 다음 페이지를 당긴다.
+    _feedViewModel.addListener(_maybeFillViewport);
     _loadPlayers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('[Subscription][perf] 첫 프레임 ${DateTime.now()}');
+    });
+  }
+
+  /// 스크롤이 끝에서 300px 이내면 다음 페이지를 이어 받는다.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final remaining =
+        _scrollController.position.maxScrollExtent -
+        _scrollController.position.pixels;
+    if (remaining < 300) _feedViewModel.loadMore();
+  }
+
+  /// 목록이 뷰포트를 못 채웠으면(=스크롤이 안 생겼으면) 다음 페이지를 당긴다.
+  ///
+  /// 이 피드는 받아온 50건을 클라이언트에서 필터링하므로, 필터를 켜면 남는
+  /// 건수가 적어 스크롤이 아예 없을 수 있다. 그러면 [_onScroll] 이 영영 안 불려
+  /// 뒤 페이지에 있는, 필터에 걸리는 알림을 못 보게 된다.
+  void _maybeFillViewport() {
+    if (!_feedViewModel.hasMore ||
+        _feedViewModel.isLoading ||
+        _feedViewModel.isLoadingMore) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.position.maxScrollExtent <= 0) {
+        _feedViewModel.loadMore();
+      }
     });
   }
 
@@ -84,8 +119,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     feedRefreshTick.removeListener(_reloadFeed);
+    _feedViewModel.removeListener(_maybeFillViewport);
     _feedViewModel.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _navShrink.dispose();
     super.dispose();
   }
 
@@ -126,6 +164,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   static const String _keyAll = 'ALL';
   static const String _keySetStart = 'SET_START';
   static const String _keySetEnd = 'SET_END';
+  static const String _keyLiveEvent = 'LIVE_EVENT';
 
   /// 칩 내부 키 → 서버 알림 타입. 'ALL'은 null.
   MemberNotificationType? _chipToType(String chip) {
@@ -134,6 +173,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         return MemberNotificationType.setStart;
       case _keySetEnd:
         return MemberNotificationType.setEnd;
+      case _keyLiveEvent:
+        return MemberNotificationType.liveEvent;
       default:
         return null;
     }
@@ -265,6 +306,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         lastDay = day;
       }
       children.add(_buildNotification(n, scale, l));
+    }
+    // 다음 페이지를 이어 받는 중이면 하단에 스켈레톤을 붙인다.
+    if (_feedViewModel.isLoadingMore) {
+      children.add(NotificationCardSkeleton(scale: scale));
+      children.add(NotificationCardSkeleton(scale: scale));
     }
     return children;
   }
@@ -486,139 +532,154 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       _keyAll: l.eventTypeAll,
       _keySetStart: l.eventTypeSetStart,
       _keySetEnd: l.eventTypeSetEnd,
+      _keyLiveEvent: l.liveEvent,
     };
-    final eventTypeKeys = [_keyAll, _keySetStart, _keySetEnd];
+    final eventTypeKeys = [_keyAll, _keySetStart, _keySetEnd, _keyLiveEvent];
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
         child: Stack(
           children: [
-            GuestLockOverlay(
-              scale: scale,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _SubscriptionHeader(
-                    scale: scale,
-                    onClearTap: _confirmClearAll,
-                    onSettingsTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubscriptionSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  // 알림 권한 미허용 안내 배너 — 온보딩을 건너뛰었거나
-                  // '허용 안 함'을 눌러 권한이 없는 동안 계속 노출된다.
-                  ListenableBuilder(
-                    listenable: _feedViewModel,
-                    builder: (context, _) =>
-                        _feedViewModel.notificationPermissionGranted
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: EdgeInsets.only(top: 14 * scale),
-                            child: NarBanner(
-                              scale: scale,
-                              onTap: _feedViewModel.requestNotificationPermission,
-                              icon: SvgPicture.asset(
-                                'assets/icons/bell.svg',
-                                width: 24 * scale,
-                                height: 24 * scale,
-                              ),
-                              text: l.enableNotificationPermission,
-                            ),
+            NotificationListener<ScrollNotification>(
+              onNotification: _navShrink.handleNotification,
+              child: GuestLockOverlay(
+                scale: scale,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SubscriptionHeader(
+                      scale: scale,
+                      onClearTap: _confirmClearAll,
+                      onSettingsTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SubscriptionSettingsScreen(),
                           ),
-                  ),
-                  SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
-                  NarChipMultiSelect(
-                    options: eventTypeKeys,
-                    labelBuilder: (key) => eventTypeLabels[key] ?? key,
-                    selectedValues: _selectedTypes,
-                    onChanged: _onTypesChanged,
-                    pinned: const {_keyAll}, // _keyAll 은 항상 맨 앞 고정
-                    scale: scale,
-                    trailing: [
-                      (
-                        widget: PlayerFilterChip(
-                          players: _players,
-                          selected: _selectedPlayers,
-                          scale: scale,
-                          onTap: _openPlayerSelect,
-                          onClear: () => setState(() {
-                            _selectedPlayers = {};
-                            _syncAll();
-                          }),
-                        ),
-                        // 선택되면(보라 활성) 앞으로 정렬에 참여.
-                        selected: _selectedPlayers.isNotEmpty,
-                      ),
-                      // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
-                      (
-                        widget: DateFilterChip(
-                          selectedDate: _selectedDate,
-                          scale: scale,
-                          onTap: _openDatePicker,
-                          onClear: () => setState(() => _selectedDate = null),
-                        ),
-                        // 선택되면(보라 활성) 앞으로 정렬에 참여.
-                        selected: _selectedDate != null,
-                      ),
-                    ],
-                  ),
-                  // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
-                  Expanded(
-                    child: ListenableBuilder(
-                      listenable: _feedViewModel,
-                      builder: (context, _) {
-                        final vm = _feedViewModel;
-                        if (vm.isLoading && vm.notifications.isEmpty) {
-                          return ListView.builder(
-                            padding: EdgeInsets.only(bottom: 120 * scale),
-                            itemCount: 6,
-                            itemBuilder: (_, _) =>
-                                NotificationCardSkeleton(scale: scale),
-                          );
-                        }
-                        if (vm.error != null && vm.notifications.isEmpty) {
-                          return _centerMessage(vm.error!, scale);
-                        }
-                        final items = vm.notifications
-                            .where(_matchesFilter)
-                            .toList();
-                        return RefreshIndicator(
-                          onRefresh: vm.load,
-                          child: items.isEmpty
-                              ? ListView(
-                                  // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(height: 120 * scale),
-                                    _centerMessage(l.noNotifications, scale),
-                                  ],
-                                )
-                              // ponytail: SingleChildScrollView+Column 으로 모든 항목을
-                              // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
-                              // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
-                              // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
-                              : SingleChildScrollView(
-                                  controller: _scrollController,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: EdgeInsets.only(bottom: 120 * scale),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: _buildFeedChildren(items, scale, l),
-                                  ),
-                                ),
                         );
                       },
                     ),
-                  ),
-                ],
+                    // 알림 권한 미허용 안내 배너 — 온보딩을 건너뛰었거나
+                    // '허용 안 함'을 눌러 권한이 없는 동안 계속 노출된다.
+                    ListenableBuilder(
+                      listenable: _feedViewModel,
+                      builder: (context, _) =>
+                          _feedViewModel.notificationPermissionGranted
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                padding: EdgeInsets.only(top: 14 * scale),
+                                child: NarBanner(
+                                  scale: scale,
+                                  onTap:
+                                      _feedViewModel
+                                          .requestNotificationPermission,
+                                  icon: SvgPicture.asset(
+                                    'assets/icons/bell.svg',
+                                    width: 24 * scale,
+                                    height: 24 * scale,
+                                  ),
+                                  text: l.enableNotificationPermission,
+                                ),
+                              ),
+                    ),
+                    SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
+                    NarChipMultiSelect(
+                      options: eventTypeKeys,
+                      labelBuilder: (key) => eventTypeLabels[key] ?? key,
+                      selectedValues: _selectedTypes,
+                      onChanged: _onTypesChanged,
+                      pinned: const {_keyAll}, // _keyAll 은 항상 맨 앞 고정
+                      scale: scale,
+                      trailing: [
+                        (
+                          widget: PlayerFilterChip(
+                            players: _players,
+                            selected: _selectedPlayers,
+                            scale: scale,
+                            onTap: _openPlayerSelect,
+                            onClear: () => setState(() {
+                              _selectedPlayers = {};
+                              _syncAll();
+                            }),
+                          ),
+                          // 선택되면(보라 활성) 앞으로 정렬에 참여.
+                          selected: _selectedPlayers.isNotEmpty,
+                        ),
+                        // 날짜 점프 칩 — 필터가 아니라 캘린더에서 고른 날짜로 스크롤.
+                        (
+                          widget: DateFilterChip(
+                            selectedDate: _selectedDate,
+                            scale: scale,
+                            onTap: _openDatePicker,
+                            onClear: () => setState(() => _selectedDate = null),
+                          ),
+                          // 선택되면(보라 활성) 앞으로 정렬에 참여.
+                          selected: _selectedDate != null,
+                        ),
+                      ],
+                    ),
+                    // 알림 피드 — 네비바에 가리지 않게 하단 패딩.
+                    Expanded(
+                      child: ListenableBuilder(
+                        listenable: _feedViewModel,
+                        builder: (context, _) {
+                          final vm = _feedViewModel;
+                          if (vm.isLoading && vm.notifications.isEmpty) {
+                            return ListView.builder(
+                              padding: EdgeInsets.only(bottom: 120 * scale),
+                              itemCount: 6,
+                              itemBuilder: (_, _) =>
+                                  NotificationCardSkeleton(scale: scale),
+                            );
+                          }
+                          if (vm.error != null && vm.notifications.isEmpty) {
+                            return _centerMessage(vm.error!, scale);
+                          }
+                          final items =
+                              vm.notifications.where(_matchesFilter).toList();
+                          return RefreshIndicator(
+                            onRefresh: vm.load,
+                            child:
+                                items.isEmpty
+                                    ? ListView(
+                                      // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        SizedBox(height: 120 * scale),
+                                        _centerMessage(
+                                          l.noNotifications,
+                                          scale,
+                                        ),
+                                      ],
+                                    )
+                                    // ponytail: SingleChildScrollView+Column 으로 모든 항목을
+                                    // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
+                                    // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
+                                    // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
+                                    : SingleChildScrollView(
+                                      controller: _scrollController,
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: EdgeInsets.only(
+                                        bottom: 120 * scale,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: _buildFeedChildren(
+                                          items,
+                                          scale,
+                                          l,
+                                        ),
+                                      ),
+                                    ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             // 하단 네비(bottom 26 + 높이 72) 위로 띄운다.
@@ -631,9 +692,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               left: 0,
               right: 0,
               bottom: 26,
-              child: AppBottomNav(
-                currentTab: AppNavTab.subscription,
-                onTabSelected: _onTabSelected,
+              child: ListenableBuilder(
+                listenable: _navShrink,
+                builder: (context, _) => AppBottomNav(
+                  currentTab: AppNavTab.subscription,
+                  onTabSelected: _onTabSelected,
+                  compact: _navShrink.compact,
+                ),
               ),
             ),
           ],

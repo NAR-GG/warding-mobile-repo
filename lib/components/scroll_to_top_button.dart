@@ -15,10 +15,19 @@ class ScrollToTopButton extends StatefulWidget {
     this.bottom = 23,
     this.showAfter = 300,
     this.reverse = false,
+    this.onPressed,
   });
 
   final ScrollController scrollController;
   final double scale;
+
+  /// 탭 동작을 화면이 직접 처리하고 싶을 때. null 이면 [scrollController] 를
+  /// 맨 위로 animateTo 한다.
+  ///
+  /// 무한 스크롤로 페이지가 쌓인 목록은 lazy 렌더 탓에 maxScrollExtent 가
+  /// 실제보다 작게 잡혀 animateTo 로 끝까지 못 갈 수 있다. 그런 화면은
+  /// 목록을 다시 조회하는 식으로 여기서 직접 처리한다.
+  final VoidCallback? onPressed;
 
   /// 대상 ListView 가 reverse:true 면 같이 true 로. 화면 '맨 위'가
   /// maxScrollExtent 쪽이 되므로 표시 조건과 스크롤 목적지를 뒤집는다.
@@ -63,12 +72,16 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
     if (show != _visible) setState(() => _visible = show);
   }
 
-  Future<void> _scrollToTop() {
-    if (!widget.scrollController.hasClients) return Future.value();
-    // ponytail: reverse 무한 리스트는 lazy 렌더로 maxScrollExtent 가 실제보다 작게
-    // 잡혀 한 번에 못 갈 수 있음. 부족하면 사용자가 한 번 더 누르는 걸로 충분.
-    return widget.scrollController.animateTo(
-      widget.reverse ? widget.scrollController.position.maxScrollExtent : 0,
+  /// 맨 위로 이동한다. [ScrollToTopButton.onPressed] 가 있으면 그쪽에 맡긴다.
+  Future<void> _scrollToTop() async {
+    if (widget.onPressed != null) {
+      widget.onPressed!();
+      return;
+    }
+    final controller = widget.scrollController;
+    if (!controller.hasClients) return;
+    await controller.animateTo(
+      widget.reverse ? controller.position.maxScrollExtent : 0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );

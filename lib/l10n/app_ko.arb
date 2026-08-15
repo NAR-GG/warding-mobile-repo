@@ -409,6 +409,7 @@
   "searchHint": "팀 또는 선수 검색..",
   "selectHint": "선택",
   "searchInputHint": "검색어를 입력...",
+  "noSearchResults": "검색 결과가 없어요",
 
   "loginRequired": "로그인 후 사용 가능",
 
