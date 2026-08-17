@@ -6,6 +6,7 @@ import '../../../components/app_select_box.dart';
 import '../../../components/nar_filter_sheet.dart';
 import '../../../components/labeled_field.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/league_icon.dart';
 import '../../../viewmodel/schedule/filter_viewmodel.dart';
 
 /// 경기 필터 바텀시트.
@@ -74,6 +75,7 @@ class _FilterSheetState extends State<FilterSheet> {
                     onTapBox: () =>
                         _viewModel.toggleDropdown(FilterDropdown.league),
                     onToggle: _viewModel.toggleLeague,
+                    leadingBuilder: leagueIconWidget,
                     scale: scale,
                   ),
                 ),
@@ -114,6 +116,7 @@ class _SelectField extends StatelessWidget {
     required this.onTapBox,
     required this.onToggle,
     required this.scale,
+    this.leadingBuilder,
   });
 
   /// 미선택('전체') 시 박스에 보일 기본 문구.
@@ -130,6 +133,10 @@ class _SelectField extends StatelessWidget {
 
   /// 셀렉트 박스 탭 콜백.
   final VoidCallback onTapBox;
+
+  /// 드롭다운 항목 이름 앞에 둘 아이콘. null 이거나 항목에 대해 null 을
+  /// 돌려주면 아이콘 없이 텍스트만 표시한다(리그 필드에만 준다).
+  final Widget? Function(String)? leadingBuilder;
 
   /// 체크박스 항목 탭 콜백(토글).
   final ValueChanged<String> onToggle;
@@ -155,7 +162,12 @@ class _SelectField extends StatelessWidget {
         ),
         if (isOpen) ...[
           SizedBox(height: 4 * scale), // 셀렉트 박스 ↔ 드롭다운 간격 4
-          _DropdownList(options: options, onToggle: onToggle, scale: scale),
+          _DropdownList(
+            options: options,
+            onToggle: onToggle,
+            scale: scale,
+            leadingBuilder: leadingBuilder,
+          ),
         ],
       ],
     );
@@ -168,11 +180,13 @@ class _DropdownList extends StatelessWidget {
     required this.options,
     required this.onToggle,
     required this.scale,
+    this.leadingBuilder,
   });
 
   final List<FilterOption> options;
   final ValueChanged<String> onToggle;
   final double scale;
+  final Widget? Function(String)? leadingBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +214,7 @@ class _DropdownList extends StatelessWidget {
                   option: option,
                   onTap: () => onToggle(option.name),
                   scale: scale,
+                  leading: leadingBuilder?.call(option.name),
                 ),
             ],
           ),
@@ -218,11 +233,15 @@ class _DropdownItem extends StatelessWidget {
     required this.option,
     required this.onTap,
     required this.scale,
+    this.leading,
   });
 
   final FilterOption option;
   final VoidCallback onTap;
   final double scale;
+
+  /// 항목 이름 앞에 둘 아이콘 위젯. null 이면 텍스트만(체크박스 자리는 그대로 유지).
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -250,23 +269,40 @@ class _DropdownItem extends StatelessWidget {
           horizontal: 16 * scale,
           vertical: 11.5 * scale,
         ),
-        child: isSelected
-            ? Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/check.svg',
-                    width: 16 * scale,
-                    height: 16 * scale,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.narText,
-                      BlendMode.srcIn,
-                    ),
+        child: Row(
+          children: [
+            if (leading != null) ...[
+              SizedBox(
+                width: 22 * scale,
+                height: 22 * scale,
+                // 옆 텍스트와 같은 색을 따라가게 — 선택 여부에 따라 함께 바뀐다.
+                // 다색 로고를 그대로 두면 텍스트와 안 어울리고, 원본이 배경과
+                // 비슷한 색이면(LCS) 안 보이는 문제도 있었다.
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    isSelected ? AppColors.narText : AppColors.narText3,
+                    BlendMode.srcIn,
                   ),
-                  SizedBox(width: 4 * scale),
-                  Expanded(child: text),
-                ],
-              )
-            : text,
+                  child: leading,
+                ),
+              ),
+              SizedBox(width: 6 * scale),
+            ],
+            if (isSelected) ...[
+              SvgPicture.asset(
+                'assets/icons/check.svg',
+                width: 16 * scale,
+                height: 16 * scale,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.narText,
+                  BlendMode.srcIn,
+                ),
+              ),
+              SizedBox(width: 4 * scale),
+            ],
+            Expanded(child: text),
+          ],
+        ),
       ),
     );
   }

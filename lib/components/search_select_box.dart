@@ -25,6 +25,7 @@ class SearchSelectBox extends StatefulWidget {
     this.searchHint,
     this.sheetTitle,
     this.labelBuilder,
+    this.leadingBuilder,
     this.scale = 1,
   });
 
@@ -50,6 +51,10 @@ class SearchSelectBox extends StatefulWidget {
   /// 옵션 문자열을 표시용 라벨로 변환. null 이면 옵션 문자열 그대로 표시.
   final String Function(String)? labelBuilder;
 
+  /// 옵션 문자열 앞에 둘 아이콘. null 이거나 옵션에 대해 null 을 돌려주면
+  /// 아이콘 없이 텍스트만 표시한다(예: 리그 선택엔 주고 시즌 선택엔 안 줌).
+  final Widget? Function(String)? leadingBuilder;
+
   /// 비율 스케일. 시안(폭 375) 기준 수치에 곱한다.
   final double scale;
 
@@ -73,6 +78,7 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
         title: widget.sheetTitle ?? widget.hint ?? '',
         searchHint: widget.searchHint ?? l.searchInputHint,
         labelBuilder: widget.labelBuilder,
+        leadingBuilder: widget.leadingBuilder,
         scale: widget.scale,
       ),
     );
@@ -93,6 +99,8 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
   /// 내부 공간을 깎지 않게 한다(시안의 38·padding 8 을 그대로 유지).
   Widget _buildBox(double scale, String resolvedHint) {
     final radius = BorderRadius.circular(10 * scale);
+    final leading =
+        widget.value != null ? widget.leadingBuilder?.call(widget.value!) : null;
     return GestureDetector(
       onTap: _openSheet,
       behavior: HitTestBehavior.opaque,
@@ -117,6 +125,23 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
         ),
         child: Row(
           children: [
+            if (leading != null) ...[
+              SizedBox(
+                width: 20 * scale,
+                height: 20 * scale,
+                // 아이콘도 텍스트와 같은 색을 따라가게 — 리그 아이콘은 다색
+                // 로고라 그대로 두면 텍스트와 안 어울리고, 원본이 배경과
+                // 비슷한 색이면(LCS) 안 보이는 문제도 있었다.
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.narTextSecondary, // #FFFFFF — 아래 텍스트와 동일
+                    BlendMode.srcIn,
+                  ),
+                  child: leading,
+                ),
+              ),
+              SizedBox(width: 6 * scale),
+            ],
             Expanded(
               child: Text(
                 widget.value != null
@@ -159,6 +184,7 @@ class _SearchSelectSheet extends StatefulWidget {
     required this.title,
     required this.searchHint,
     required this.labelBuilder,
+    required this.leadingBuilder,
     required this.scale,
   });
 
@@ -167,6 +193,7 @@ class _SearchSelectSheet extends StatefulWidget {
   final String title;
   final String searchHint;
   final String Function(String)? labelBuilder;
+  final Widget? Function(String)? leadingBuilder;
   final double scale;
 
   @override
@@ -322,6 +349,7 @@ class _SearchSelectSheetState extends State<_SearchSelectSheet> {
   /// 최소 44 는 되어야 오조작이 없다.
   Widget _buildOption(String option, double scale) {
     final selected = option == widget.value;
+    final leading = widget.leadingBuilder?.call(option);
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(option),
       behavior: HitTestBehavior.opaque,
@@ -336,6 +364,21 @@ class _SearchSelectSheetState extends State<_SearchSelectSheet> {
         ),
         child: Row(
           children: [
+            if (leading != null) ...[
+              SizedBox(
+                width: 22 * scale,
+                height: 22 * scale,
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    // 옆 텍스트와 같은 색 — 선택 여부에 따라 함께 바뀐다.
+                    selected ? AppColors.narRed500 : AppColors.narTextSecondary,
+                    BlendMode.srcIn,
+                  ),
+                  child: leading,
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+            ],
             Expanded(
               child: Text(
                 widget.labelBuilder?.call(option) ?? option,
