@@ -38,29 +38,38 @@ class MypageViewModel extends ChangeNotifier {
   /// [FlutterSecureStorage] 를 재사용한다(패키지 추가 불필요).
   final _storage = secureStorage;
 
-  /// '설문 기반 응원팀 자동설정' 안내 배너를 한 번이라도 노출했는지 저장하는 키.
-  static const _teamBannerSeenKey = 'mypage_team_banner_seen';
+  /// '설문 기반 응원팀 자동설정' 안내 배너를 **눌러 봤는지** 저장하는 키.
+  ///
+  /// 값이 남아 있는 저장소를 그대로 쓰면, 예전 규칙(노출만 해도 '봤음')으로
+  /// 이미 true 가 찍힌 사용자에게 배너가 영영 안 뜬다. 그래서 키 이름을 바꿔
+  /// 판정 기준이 달라졌음을 저장소에도 반영한다.
+  static const _teamBannerTappedKey = 'mypage_team_banner_tapped';
 
   /// 응원팀 자동설정 안내 배너 노출 여부.
-  /// 최초 진입 시 한 번만 노출하고, 노출과 동시에 '봤음'으로 저장해 다시 뜨지 않는다.
+  /// 사용자가 배너를 한 번 누를 때까지 마이페이지에 들어올 때마다 계속 노출한다.
   bool _showTeamBanner = false;
   bool get showTeamBanner => _showTeamBanner;
 
-  /// 저장된 '봤음' 플래그를 확인해 배너 노출 여부를 정한다.
-  /// 아직 안 봤으면 이번에 노출하고, 즉시 '봤음'으로 저장한다(다음 진입부턴 숨김).
+  /// 저장된 '눌러 봤음' 플래그를 확인해 배너 노출 여부를 정한다.
+  /// 아직 안 눌렀으면 노출한다 — 여기서는 저장하지 않는다.
+  ///
+  /// 배너 문구가 '설문 기반으로 자동 설정됐다'는 회원 전용 안내라
+  /// 비회원(JWT 없음)에게는 띄우지 않는다.
   Future<void> _loadTeamBanner() async {
-    final seen = await _storage.read(key: _teamBannerSeenKey);
-    if (seen == 'true') return;
+    final jwt = await _auth.jwt;
+    if (jwt == null || jwt.isEmpty) return;
+    final tapped = await _storage.read(key: _teamBannerTappedKey);
+    if (tapped == 'true') return;
     _showTeamBanner = true;
     _notify();
-    await _storage.write(key: _teamBannerSeenKey, value: 'true');
   }
 
-  /// 배너를 탭/닫아 즉시 숨긴다. (노출 시 이미 '봤음' 저장되어 재진입에도 안 뜬다.)
-  void dismissTeamBanner() {
+  /// 배너를 눌러 숨긴다. 이때만 '눌러 봤음'을 저장해 다시 뜨지 않게 한다.
+  Future<void> dismissTeamBanner() async {
     if (!_showTeamBanner) return;
     _showTeamBanner = false;
     _notify();
+    await _storage.write(key: _teamBannerTappedKey, value: 'true');
   }
 
   UserProfile? _profile;
