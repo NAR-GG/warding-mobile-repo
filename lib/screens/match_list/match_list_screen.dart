@@ -198,10 +198,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
     // 스코어행은 스포방지 오버레이가 116×77 을 고정으로 잡아서, 팀 컬럼(73)이
     // 아니라 이쪽이 행 높이를 정한다.
     // 리그헤더: '전체' 필터일 때만 날짜 그룹 안에 리그별로 하나씩 더 낀다
-    // (MatchLeagueHeader — 위아래 패딩 10*2 + 로고 30 ≈ 50).
+    // (MatchLeagueHeader — 위아래 패딩 10*2 + 로고 34 ≈ 54).
     const headerH = 38.0;
     const cardH = 155.0;
-    const leagueHeaderH = 50.0;
+    const leagueHeaderH = 54.0;
     final groupByLeague =
         _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
     var offset = 0.0;
