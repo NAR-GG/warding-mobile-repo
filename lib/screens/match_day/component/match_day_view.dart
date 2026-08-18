@@ -22,12 +22,21 @@ class MatchDayView extends StatelessWidget {
     required this.date,
     required this.viewModel,
     required this.spoilerPreventionEnabled,
+    required this.revealedMatchIds,
+    required this.onSpoilerReveal,
     required this.scale,
   });
 
   final DateTime date;
   final MatchDayViewModel viewModel;
   final bool spoilerPreventionEnabled;
+
+  /// 사용자가 스코어를 공개한 경기 ID. 카드가 파괴·재생성돼도 공개 상태가
+  /// 유지되도록 화면이 들고 내려준다.
+  final Set<String> revealedMatchIds;
+
+  /// 스포방지 오버레이를 탭했을 때. 인자는 그 경기 ID.
+  final ValueChanged<String> onSpoilerReveal;
   final double scale;
 
   @override
@@ -137,6 +146,8 @@ class MatchDayView extends StatelessWidget {
           : null,
       leagueInfo: m.leagueInfo,
       spoilerPreventionEnabled: spoilerPreventionEnabled,
+      spoilerRevealed: revealedMatchIds.contains(m.matchId),
+      onSpoilerReveal: () => onSpoilerReveal(m.matchId),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),

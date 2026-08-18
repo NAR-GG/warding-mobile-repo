@@ -29,8 +29,8 @@ class MatchLeagueHeader extends StatelessWidget {
         children: [
           if (icon != null) ...[
             SizedBox(
-              width: 30 * scale,
-              height: 30 * scale,
+              width: 34 * scale,
+              height: 34 * scale,
               child: ColorFiltered(
                 colorFilter: const ColorFilter.mode(
                   AppColors.narText,
@@ -46,8 +46,8 @@ class MatchLeagueHeader extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'SF Pro',
               fontWeight: FontWeight.w600,
-              fontSize: 20 * scale,
-              height: 24 / 20,
+              fontSize: 24 * scale,
+              height: 28 / 24,
               color: AppColors.narText,
             ),
           ),

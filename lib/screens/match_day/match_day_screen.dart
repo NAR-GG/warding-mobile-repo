@@ -36,11 +36,28 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
   );
   final PageController _pageController = PageController(initialPage: 1);
 
+  /// 사용자가 스포방지를 풀어 스코어를 공개한 경기 ID.
+  ///
+  /// 카드가 아니라 화면이 들고 있어야 한다 — 목록은 뷰포트를 벗어난 카드를
+  /// 파괴했다가 다시 만들기 때문에, 카드 State 에 두면 스크롤로 화면 밖에
+  /// 나갔다 돌아온 카드가 다시 가려진다. 날짜를 스와이프해 돌아왔을 때도
+  /// 같은 이유로 유지된다.
+  final Set<String> _revealedMatchIds = {};
+
   @override
   void dispose() {
     _pageController.dispose();
     _pager.dispose();
     super.dispose();
+  }
+
+  /// 스포방지 토글. 다시 켤 때는 개별로 풀어 둔 카드도 함께 되돌린다 —
+  /// 사용자가 기대하는 건 '전부 다시 가려짐'이다.
+  void _onSpoilerToggleChanged(bool value) {
+    if (value && _revealedMatchIds.isNotEmpty) {
+      setState(_revealedMatchIds.clear);
+    }
+    _pager.setSpoilerPreventionEnabled(value);
   }
 
   void _onPageChanged(int index) {
@@ -71,7 +88,7 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
                 listenable: _pager,
                 builder: (context, _) => NarSpoilerToggle(
                   value: _pager.spoilerPreventionEnabled,
-                  onChanged: _pager.setSpoilerPreventionEnabled,
+                  onChanged: _onSpoilerToggleChanged,
                   // 헤더 슬롯 높이가 34 라 시안 패딩 8(총 38)은 세로로 넘친다.
                   verticalPadding: 0,
                   scale: scale,
@@ -95,6 +112,9 @@ class _MatchDayScreenState extends State<MatchDayScreen> {
                         viewModel: page,
                         spoilerPreventionEnabled:
                             _pager.spoilerPreventionEnabled,
+                        revealedMatchIds: _revealedMatchIds,
+                        onSpoilerReveal: (matchId) =>
+                            setState(() => _revealedMatchIds.add(matchId)),
                         scale: scale,
                       ),
                     );
