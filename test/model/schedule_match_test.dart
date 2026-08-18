@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/model/schedule_match.dart';
 
+import '../support/l10n_test_setup.dart';
+
 void main() {
   Map<String, dynamic> baseJson() => {
         'matchId': 'm1',
@@ -38,7 +40,12 @@ void main() {
     expect(match.effectiveStreamLinks.last.url, 'https://play.sooplive.co.kr/aflol');
   });
 
-  test('streamLinks 가 없으면(구버전 서버) liveStreamUrl 하나로 폴백한다', () {
+  // 폴백 링크의 label 을 appStrings 로 채우므로 로케일 호스트가 필요하다.
+  testWidgets('streamLinks 가 없으면(구버전 서버) liveStreamUrl 하나로 폴백한다', (
+    WidgetTester tester,
+  ) async {
+    await pumpAppStringsHost(tester);
+
     final json = baseJson()..['liveStreamUrl'] = 'https://play.sooplive.co.kr/aflol';
 
     final match = ScheduleMatch.fromJson(json);
