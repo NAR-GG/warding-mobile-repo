@@ -64,9 +64,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 접힘/펼침을 뒤집는 데 필요한 최소 스크롤 이동량(px).
   static const double _sortBarToggleDelta = 12;
 
-  /// '맨 위로'가 부른 재조회인지. true 면 이번 로드 완료 후 '오늘 날짜로 이동'을
-  /// 건너뛰고 목록 맨 위에 그대로 둔다.
-  bool _skipScrollToToday = false;
+  /// '맨 위로'로 올라가는 중인지. 목록 위쪽 끝(오프셋 0)이 곧 목적지인데,
+  /// 도착하면 [_onScroll] 의 과거 이어받기 조건(pixels < 300)에 걸려 과거
+  /// 페이지가 앞에 붙고 그만큼 오프셋이 밀려 내려간다. 올라가는 동안에는
+  /// 그 트리거를 막는다.
+  bool _suppressPrevLoad = false;
 
   @override
   void initState() {
@@ -105,18 +107,6 @@ class _MatchListScreenState extends State<MatchListScreen> {
       setState(() => _sortBarCollapsed = false);
     }
     _lastScrollOffset = 0;
-
-    // '맨 위로'가 부른 재조회면 오늘 날짜를 찾아가지 않고 목록 맨 위에 둔다.
-    // 서버가 정렬 방향대로 내려주므로 맨 위는 언제나 오프셋 0 이다.
-    if (_skipScrollToToday) {
-      _skipScrollToToday = false;
-      _targetDate = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scrollController.hasClients) return;
-        _scrollController.jumpTo(0);
-      });
-      return;
-    }
 
     _targetDate = _findTargetDate();
     debugPrint('[MatchList][perf] 데이터 로드 끝, 스크롤 예약 ${DateTime.now()}');
@@ -253,18 +243,31 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// 정렬 옵션 선택 바텀시트.
-  /// '맨 위로' — 목록을 첫 페이지부터 다시 조회해 처음 상태로 되돌린다.
+  /// '맨 위로' — 지금 목록의 최상단으로 올린다.
   ///
-  /// 무한 스크롤로 쌓인 페이지가 정리되고 목록이 처음 상태로 돌아간다.
-  /// 이 재조회로는 '오늘 날짜로 이동'을 타지 않게 [_skipScrollToToday] 를
-  /// 세워 둔다 — 사용자가 원한 건 맨 위다.
+  /// 재조회하지 않는다. 진입 페이지를 `around=오늘` 로 받는 구조라
+  /// ([MatchListViewModel] 참고) 다시 조회해도 목록 앞은 '오늘'이 아니라
+  /// '오늘보다 과거 절반'의 시작일 뿐이라, 재조회는 네트워크만 쓰고 사용자가
+  /// 있던 자리에서 거의 움직이지 않는다. 이미 받아 둔 목록의 오프셋 0 이
+  /// 곧 화면상 맨 위다.
   void _scrollToTop() {
-    _skipScrollToToday = true;
+    if (!_scrollController.hasClients) return;
     if (_sortBarCollapsed) {
       _lastScrollOffset = 0;
       setState(() => _sortBarCollapsed = false);
     }
-    _viewModel.retryLoadMatches();
+    // 도착 지점(0)은 과거 이어받기 트리거 구간이기도 하다. 올라가는 동안
+    // 과거가 앞에 붙으면 그만큼 아래로 밀려 맨 위에 닿지 못한다.
+    _suppressPrevLoad = true;
+    _scrollController
+        .animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        )
+        .whenComplete(() {
+          if (mounted) _suppressPrevLoad = false;
+        });
   }
 
   /// 스포방지 토글. 다시 켤 때는 개별로 풀어 둔 카드도 함께 되돌린다 —
@@ -345,13 +348,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
     if (remaining < 300) {
       _viewModel.loadMoreMatches();
     }
-    // 위쪽 끝에 닿으면 과거를 이어받는다. 서버가 오늘 커서를 줘서 목록 중간부터
+    // 위쪽 끝에 닿으면 과거를 이어받는다. `around=오늘` 진입이라 목록 중간부터
     // 시작한 경우에만 받을 게 있고([MatchListViewModel.hasPrev]), 첫 페이지부터
     // 순서대로 받았다면 VM 이 그냥 무시한다.
     //
-    // 자동 스크롤([_scrollToTarget])이 jumpTo 로 0 근처를 지나갈 수 있으므로,
-    // 그 사이에는 트리거하지 않는다.
+    // 자동 스크롤([_scrollToTarget])이 jumpTo 로 0 근처를 지나갈 수 있고,
+    // '맨 위로'([_scrollToTop])의 목적지도 0 이라 그 사이에는 트리거하지 않는다.
     if (_scrollController.position.pixels < 300 &&
+        !_suppressPrevLoad &&
         _scrolledForVersion == _viewModel.scheduleVersion) {
       _loadPreviousKeepingOffset();
     }
