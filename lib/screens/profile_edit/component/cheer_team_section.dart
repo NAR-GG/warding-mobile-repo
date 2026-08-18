@@ -15,9 +15,9 @@ class CheerTeam {
   final String? imageUrl;
 }
 
-/// 응원 팀 설정 요약 행 (양옆 0, padding 상하 10, 높이 70).
+/// 응원 팀 설정 요약 행 (양옆 0, 높이 75).
 ///
-/// 좌측: '응원 팀 설정' + 설명 문구.
+/// 좌측: '응원 팀 설정' + 설명 문구 2줄(뱃지 / 캘린더 필터).
 /// 우측: 현재 선택된 팀 로고를 담은 46×46 다크 박스.
 class CheerTeamSettingRow extends StatelessWidget {
   const CheerTeamSettingRow({
@@ -37,8 +37,11 @@ class CheerTeamSettingRow extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: SizedBox(
-        height: 70 * scale,
+      // 시안 높이는 75(타이틀 25 + 설명 25×2)지만 고정하지 않는다.
+      // Pretendard 미등록 상태의 fallback 폰트는 line-height 가 조금 더 커서
+      // 딱 맞춘 높이에서 1px 씩 넘쳤다. 최소 높이만 주고 내용에 맞춰 늘린다.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: 75 * scale),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -58,16 +61,20 @@ class CheerTeamSettingRow extends StatelessWidget {
                       color: AppColors.narText,
                     ),
                   ),
-                  Text(
+                  for (final line in [
                     l.cheerTeamDescription,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14 * scale,
-                      height: 25 / 14,
-                      color: AppColors.narText2,
+                    l.cheerTeamDescriptionCalendar,
+                  ])
+                    Text(
+                      line,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14 * scale,
+                        height: 25 / 14,
+                        color: AppColors.narText2,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

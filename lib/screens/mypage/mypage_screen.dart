@@ -48,16 +48,22 @@ class _MypageScreenState extends State<MypageScreen> {
     super.dispose();
   }
 
-  /// 프로필 수정 화면으로 이동. 이동 시 안내 배너는 더 이상 노출하지 않는다.
+  /// 프로필 수정 화면으로 이동.
   /// 수정 화면이 `true` 로 pop 하면 회원 정보(닉네임·응원팀)를 새로고침한다.
   Future<void> _goToProfileEdit() async {
-    _viewModel.dismissTeamBanner();
     final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(builder: (_) => const ProfileEditScreen()),
     );
     if (updated == true) {
       await _viewModel.load();
     }
+  }
+
+  /// 안내 배너를 눌러 프로필 수정으로 이동. 배너는 이때만 영구히 숨긴다 —
+  /// 프로필의 '수정' 버튼으로 들어가는 건 배너를 본 것으로 치지 않는다.
+  Future<void> _onTeamBannerTap() async {
+    await _viewModel.dismissTeamBanner();
+    await _goToProfileEdit();
   }
 
   /// 외부 URL을 기본 브라우저(또는 앱)로 연다.
@@ -128,15 +134,15 @@ class _MypageScreenState extends State<MypageScreen> {
                           profileImageUrl: _viewModel.profileImageUrl,
                         ),
                       ),
-                      // 응원팀 자동 설정 안내 배너 — 최초 진입 시 한 번만 노출.
-                      // 노출과 동시에 '봤음'으로 저장돼 재진입엔 뜨지 않고,
-                      // 탭해 프로필 수정으로 이동하면 즉시 사라진다.
+                      // 응원팀 자동 설정 안내 배너 — 사용자가 한 번 누를 때까지
+                      // 마이페이지에 들어올 때마다 계속 노출한다.
+                      // 누르면 '봤음'이 저장돼 그 뒤로는 뜨지 않는다.
                       ListenableBuilder(
                         listenable: _viewModel,
                         builder: (context, _) => _viewModel.showTeamBanner
                             ? NarBanner(
                                 scale: scale,
-                                onTap: _goToProfileEdit,
+                                onTap: _onTeamBannerTap,
                                 icon: SvgPicture.asset(
                                   'assets/icons/heart.svg',
                                   width: 24 * scale,

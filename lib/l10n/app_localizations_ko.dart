@@ -610,7 +610,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subscriptionTeamAlarmSettings => '구독 팀 알림 설정';
 
   @override
+  String get subscriptionAlarmDetailSettings => '구독 알림 세부 설정';
+
+  @override
+  String get soloRankStartAlarm => '솔랭 시작 알림';
+
+  @override
+  String get soloRankEndAlarm => '솔랭 종료 알림';
+
+  @override
+  String get noSubscribedPlayer => '구독중인 선수가 없어요.';
+
+  @override
   String get subscriptionManage => '구독 관리';
+
+  @override
+  String get teamPlayerSubscriptionManage => '팀/ 선수 구독 관리';
+
+  @override
+  String get subscriptionManageDescription => '마이구독 설정 페이지로 이동합니다.';
 
   @override
   String get noSubscribedTeam => '구독중인 팀이 없어요.';
@@ -637,7 +655,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cheerTeamSetting => '응원 팀 설정';
 
   @override
-  String get cheerTeamDescription => '응원 팀 설정시 닉네임 옆에 뱃지가 생겨요';
+  String get cheerTeamDescription => '1. 응원 팀 설정시 닉네임 옆에 뱃지가 생겨요';
+
+  @override
+  String get cheerTeamDescriptionCalendar => '2. 캘린더 일정에서 응원 팀 전용 필터가 생겨요';
 
   @override
   String get cumulativeReviewRating => '누적 리뷰/평점';
@@ -803,6 +824,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get watchBroadcastFallback => '중계 보기';
 
   @override
+  String get objectKill => '킬';
+
+  @override
   String get objectDragon => '드래곤';
 
   @override
@@ -875,6 +899,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get teamAlarmSaveFailed => '팀 알림 설정을 저장하지 못했어요';
+
+  @override
+  String get playerAlarmSaveFailed => '선수 알림 설정을 저장하지 못했어요';
 
   @override
   String get profileLoadFailed => '프로필을 불러오지 못했어요';

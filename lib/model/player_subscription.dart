@@ -13,6 +13,8 @@ class PlayerSubscription {
     required this.teamName,
     required this.teamImageUrl,
     required this.subscribed,
+    required this.startEnabled,
+    required this.endEnabled,
   });
 
   final int playerId;
@@ -30,8 +32,18 @@ class PlayerSubscription {
   /// 현재 사용자가 이 선수를 구독 중인지.
   final bool subscribed;
 
-  /// 구독 여부만 바꾼 복사본 — 토글 직후 로컬 상태 갱신에 쓴다.
-  PlayerSubscription copyWith({bool? subscribed}) {
+  /// 솔랭 시작 알림 ON/OFF.
+  final bool startEnabled;
+
+  /// 솔랭 종료 알림 ON/OFF.
+  final bool endEnabled;
+
+  /// 일부 값만 바꾼 복사본 — 토글 직후 로컬 상태 갱신에 쓴다.
+  PlayerSubscription copyWith({
+    bool? subscribed,
+    bool? startEnabled,
+    bool? endEnabled,
+  }) {
     return PlayerSubscription(
       playerId: playerId,
       playerName: playerName,
@@ -42,6 +54,8 @@ class PlayerSubscription {
       teamName: teamName,
       teamImageUrl: teamImageUrl,
       subscribed: subscribed ?? this.subscribed,
+      startEnabled: startEnabled ?? this.startEnabled,
+      endEnabled: endEnabled ?? this.endEnabled,
     );
   }
 
@@ -56,6 +70,8 @@ class PlayerSubscription {
       teamName: json['teamName'] as String? ?? '',
       teamImageUrl: json['teamImageUrl'] as String? ?? '',
       subscribed: json['subscribed'] as bool? ?? false,
+      startEnabled: json['startEnabled'] as bool? ?? true,
+      endEnabled: json['endEnabled'] as bool? ?? true,
     );
   }
 }
