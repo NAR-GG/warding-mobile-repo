@@ -342,7 +342,13 @@
   "languageEn": "English",
 
   "subscriptionTeamAlarmSettings": "구독 팀 알림 설정",
+  "subscriptionAlarmDetailSettings": "구독 알림 세부 설정",
+  "soloRankStartAlarm": "솔랭 시작 알림",
+  "soloRankEndAlarm": "솔랭 종료 알림",
+  "noSubscribedPlayer": "구독중인 선수가 없어요.",
   "subscriptionManage": "구독 관리",
+  "teamPlayerSubscriptionManage": "팀/ 선수 구독 관리",
+  "subscriptionManageDescription": "마이구독 설정 페이지로 이동합니다.",
   "noSubscribedTeam": "구독중인 팀이 없어요.",
 
   "profileEditTitle": "프로필 수정",
@@ -352,7 +358,8 @@
   "tagHint": "#태그",
   "done": "완료",
   "cheerTeamSetting": "응원 팀 설정",
-  "cheerTeamDescription": "응원 팀 설정시 닉네임 옆에 뱃지가 생겨요",
+  "cheerTeamDescription": "1. 응원 팀 설정시 닉네임 옆에 뱃지가 생겨요",
+  "cheerTeamDescriptionCalendar": "2. 캘린더 일정에서 응원 팀 전용 필터가 생겨요",
 
   "cumulativeReviewRating": "누적 리뷰/평점",
   "reviewView": "리뷰보기",
@@ -418,6 +425,7 @@
   "liveMatchNotification": "라이브 경기 알림",
   "watchBroadcastFallback": "중계 보기",
 
+  "objectKill": "킬",
   "objectDragon": "드래곤",
   "objectSubDragon": "{sub}드래곤",
   "@objectSubDragon": {

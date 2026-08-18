@@ -26,6 +26,7 @@ class NarTabBar extends StatelessWidget {
     required this.onChanged,
     this.variant = NarTabBarVariant.page,
     this.scale = 1,
+    this.compactHorizontalPadding = 20,
   });
 
   final List<String> tabs;
@@ -33,6 +34,10 @@ class NarTabBar extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final NarTabBarVariant variant;
   final double scale;
+
+  /// [NarTabBarVariant.compact] 의 좌우 패딩(기본 20).
+  /// 카드 안에서 쓸 때처럼 더 좁게 붙여야 하면 낮춘다(예: 8).
+  final double compactHorizontalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +109,13 @@ class NarTabBar extends StatelessWidget {
     );
   }
 
-  /// 콤팩트 탭. 컨테이너 좌패딩 20, 탭 간 gap 4, 탭마다 패딩 3/12.
+  /// 콤팩트 탭. 컨테이너 좌패딩 [compactHorizontalPadding], 탭 간 gap 4, 탭마다 패딩 3/12.
   /// 선택 탭은 w700 + 하단 narBg 그라데이션 stroke, 비선택은 w500 — narTextTertiary 단일 색.
   Widget _buildCompact() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: compactHorizontalPadding * scale,
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,

@@ -7,6 +7,7 @@ import '../../styles/app_colors.dart';
 import '../../viewmodel/subscription/team_alarm_viewmodel.dart';
 import '../subscription/subscription_settings_screen.dart';
 import 'component/subscription_alarm_section.dart';
+import 'component/subscription_manage_entry.dart';
 
 /// 마이 구독 설정 화면. 마이페이지 '화면 설정' 섹션의 '마이 구독' 진입점.
 ///
@@ -85,10 +86,16 @@ class _MySubscriptionSettingScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        SubscriptionManageEntry(
+                          scale: scale,
+                          onTap: _goToSubscriptionSettings,
+                        ),
+                        // 두 섹션 사이 간격 17. 세부 설정 섹션이 라벨 위쪽에
+                        // 자체 패딩 10 을 갖고 있어 나머지 7 만 여기서 준다.
+                        SizedBox(height: 7 * scale),
                         SubscriptionAlarmSection(
                           scale: scale,
                           viewModel: _viewModel,
-                          onManageTap: _goToSubscriptionSettings,
                         ),
                         // 하단 고정 버튼에 가리지 않도록 여백.
                         SizedBox(height: 114 * scale),
