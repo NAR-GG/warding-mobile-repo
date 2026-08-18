@@ -118,10 +118,12 @@ void main() {
     expect(find.text('3/3'), findsOneWidget);
     expect(find.text('와딩 사용자 편의성 맞춤 설정'), findsOneWidget);
 
-    // 6장은 섹션이 한 장뿐이라 진행 표시(진행바·페이지 숫자) 자체가 없다.
+    // 6장은 섹션이 한 장뿐이라 페이지 숫자('n/n')는 없지만, 점 진행바는
+    // 전체 6장 기준으로 계속 그린다.
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.byType(GuideProgressBar), findsNothing);
+    expect(find.byType(GuideProgressBar), findsOneWidget);
+    expect(find.text('6/6'), findsNothing);
     expect(find.text('다양한 와딩 위젯 제공'), findsOneWidget);
     expect(
       find.text('(위 이미지는 연출된 이미지 입니다. 실제 적용 화면은 상이할 수 있습니다.)'),
