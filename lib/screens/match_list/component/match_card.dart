@@ -39,6 +39,8 @@ class MatchCard extends StatelessWidget {
     this.scale = 1,
     this.leagueInfo = '',
     this.spoilerPreventionEnabled = true,
+    this.spoilerRevealed = false,
+    this.onSpoilerReveal,
     this.showTopBorder = true,
   });
 
@@ -73,6 +75,13 @@ class MatchCard extends StatelessWidget {
 
   /// 스포방지 on/off. false 면 [_SpoilerOverlay] 없이 스코어를 바로 보여준다.
   final bool spoilerPreventionEnabled;
+
+  /// 사용자가 이 경기의 스코어를 이미 공개했는지. 목록이 카드를 파괴·재생성해도
+  /// 공개 상태가 유지되도록 화면이 경기 단위로 들고 내려준다.
+  final bool spoilerRevealed;
+
+  /// 스포방지 오버레이를 탭했을 때. 화면이 [spoilerRevealed] 를 켜 준다.
+  final VoidCallback? onSpoilerReveal;
 
   /// 위쪽 1px 구분선을 그릴지. 날짜 헤더 바로 아래 첫 카드는 헤더와 붙어
   /// 선이 겹쳐 보이므로 false 로 끈다. LIVE 카드는 위 보더가 없어 무관.
@@ -182,6 +191,8 @@ class MatchCard extends StatelessWidget {
                   ),
                   _SpoilerOverlay(
                     enabled: spoilerPreventionEnabled,
+                    revealed: spoilerRevealed,
+                    onReveal: onSpoilerReveal,
                     scale: scale,
                     child: isLive
                         ? _LiveScore(
@@ -531,12 +542,18 @@ class _LiveScore extends StatelessWidget {
 /// 모든 카드 스코어 위에 깔리는 스포방지 오버레이.
 /// 시안에 맞춰 116×77 고정 영역을 차지하며, 양옆 [_TeamColumn] 을 침범하지 않는다.
 /// 공개 전에는 실제 스코어 대신 0:0 더미를 깔고 위에 흐림 + 텍스트를 덮는다.
-/// 탭하면 [_revealed=true] → 오버레이 사라지고 실제 스코어 노출.
+/// 탭하면 [onReveal] 로 알리고, 화면이 [revealed] 를 켜 주면 실제 스코어가 나온다.
 /// [enabled] 가 false 면(경기리스트 헤더 스포방지 토글 off) 오버레이 없이 바로 노출한다.
-class _SpoilerOverlay extends StatefulWidget {
+///
+/// 공개 여부를 이 위젯의 State 로 들지 않는다 — 목록은 뷰포트를 벗어난 카드를
+/// 파괴했다가 다시 만들기 때문에, 내부 State 면 스크롤로 화면 밖에 나갔다
+/// 돌아왔을 때 공개했던 카드가 다시 가려진다.
+class _SpoilerOverlay extends StatelessWidget {
   const _SpoilerOverlay({
     required this.child,
     required this.scale,
+    required this.revealed,
+    this.onReveal,
     this.enabled = true,
   });
 
@@ -544,18 +561,16 @@ class _SpoilerOverlay extends StatefulWidget {
   final double scale;
   final bool enabled;
 
-  @override
-  State<_SpoilerOverlay> createState() => _SpoilerOverlayState();
-}
+  /// 이 경기의 스코어를 이미 공개했는지. 화면이 경기 단위로 들고 있다.
+  final bool revealed;
 
-class _SpoilerOverlayState extends State<_SpoilerOverlay> {
-  bool _revealed = false;
+  /// 오버레이를 탭했을 때. 화면이 공개 상태를 기록한다.
+  final VoidCallback? onReveal;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final scale = widget.scale;
-    final revealed = _revealed || !widget.enabled;
+    final revealed = this.revealed || !enabled;
     return SizedBox(
       width: 116 * scale,
       height: 77 * scale,
@@ -565,13 +580,13 @@ class _SpoilerOverlayState extends State<_SpoilerOverlay> {
           // 공개 전에는 실제 스코어를 아예 그리지 않는다 — 흐림만으로는
           // 숫자가 비쳐 스포일러가 새기 때문에 0:0 더미를 깔아 둔다.
           Center(
-            child: revealed ? widget.child : _SpoilerDummyScore(scale: scale),
+            child: revealed ? child : _SpoilerDummyScore(scale: scale),
           ),
           if (!revealed)
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _revealed = true),
+                onTap: onReveal,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14 * scale),
                   child: BackdropFilter(

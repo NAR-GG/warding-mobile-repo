@@ -46,6 +46,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
   int? _scrolledForVersion;
   DateTime? _targetDate;
 
+  /// 사용자가 스포방지를 풀어 스코어를 공개한 경기 ID.
+  ///
+  /// 카드가 아니라 화면이 들고 있어야 한다 — [ListView.builder] 는 뷰포트를
+  /// 벗어난 카드를 파괴했다가 다시 만들기 때문에, 카드 State 에 두면 스크롤로
+  /// 화면 밖에 나갔다 돌아온 카드가 다시 가려진다.
+  final Set<String> _revealedMatchIds = {};
+
   /// 정렬 드롭다운 행을 접었는지. 목록을 내리면 접고, 올리면 다시 펼친다.
   /// (필터가 늘어나 목록 영역이 좁아진 것에 대한 보정)
   bool _sortBarCollapsed = false;
@@ -260,6 +267,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
     _viewModel.retryLoadMatches();
   }
 
+  /// 스포방지 토글. 다시 켤 때는 개별로 풀어 둔 카드도 함께 되돌린다 —
+  /// 사용자가 기대하는 건 '전부 다시 가려짐'이다.
+  void _onSpoilerToggleChanged(bool value) {
+    if (value && _revealedMatchIds.isNotEmpty) {
+      setState(_revealedMatchIds.clear);
+    }
+    _viewModel.setSpoilerPreventionEnabled(value);
+  }
+
   /// 경기 상세로 이동한다.
   ///
   /// 상세는 pushReplacement 가 아니라 push 라 돌아와도 이 화면의 State 가
@@ -445,7 +461,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                         listenable: _viewModel,
                         builder: (context, _) => NarSpoilerToggle(
                           value: _viewModel.spoilerPreventionEnabled,
-                          onChanged: _viewModel.setSpoilerPreventionEnabled,
+                          onChanged: _onSpoilerToggleChanged,
                           scale: scale,
                         ),
                       ),
@@ -674,6 +690,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
         return MatchCard(
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
+          spoilerRevealed: _revealedMatchIds.contains(m.matchId),
+          onSpoilerReveal: () =>
+              setState(() => _revealedMatchIds.add(m.matchId)),
           showTopBorder: showTopBorder,
           time: m.scheduledTime,
           label: _localizeMatchTitle(context, m.matchTitle),
