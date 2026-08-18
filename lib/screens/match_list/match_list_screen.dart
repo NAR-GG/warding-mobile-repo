@@ -12,6 +12,7 @@ import '../../components/scroll_to_top_button.dart';
 import '../../components/search_select_box.dart';
 import '../../model/schedule_match.dart';
 import '../../styles/app_colors.dart';
+import '../../util/league_icon.dart';
 import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
 import '../../util/tab_route.dart';
@@ -23,6 +24,7 @@ import '../subscription/subscription_screen.dart';
 import 'component/match_card.dart';
 import 'component/match_card_skeleton.dart';
 import 'component/match_date_header.dart';
+import 'component/match_league_header.dart';
 
 /// 경기 리스트 페이지. 하단 네비 '경기리스트' 탭에 해당한다.
 class MatchListScreen extends StatefulWidget {
@@ -195,12 +197,22 @@ class _MatchListScreenState extends State<MatchListScreen> {
     // 카드: 위 10 + 헤더행 24 + 간격 20 + 스코어행 77 + 아래 24 = 155.
     // 스코어행은 스포방지 오버레이가 116×77 을 고정으로 잡아서, 팀 컬럼(73)이
     // 아니라 이쪽이 행 높이를 정한다.
+    // 리그헤더: '전체' 필터일 때만 날짜 그룹 안에 리그별로 하나씩 더 낀다
+    // (MatchLeagueHeader — 위아래 패딩 10*2 + 로고 30 ≈ 50).
     const headerH = 38.0;
     const cardH = 155.0;
+    const leagueHeaderH = 50.0;
+    final groupByLeague =
+        _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
     var offset = 0.0;
     for (final day in _viewModel.schedule) {
       if (_isSameDate(day.date, target)) break;
       offset += headerH * scale + day.matches.length * cardH * scale;
+      if (groupByLeague) {
+        final leagueCount =
+            day.matches.map((m) => m.leagueInfo).toSet().length;
+        offset += leagueCount * leagueHeaderH * scale;
+      }
     }
     final position = _scrollController.position;
     final max = position.maxScrollExtent;
@@ -478,6 +490,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                                       ? l.loading
                                       : l.select,
                                   labelBuilder: (v) => v == MatchListViewModel.allLeagueLabel ? l.all : v,
+                                  leadingBuilder: leagueIconWidget,
                                   scale: scale,
                                 ),
                               ),
@@ -648,12 +661,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
             ),
           );
         }
+        if (item is _LeagueHeaderItem) {
+          return MatchLeagueHeader(leagueName: item.leagueName, scale: scale);
+        }
         final m = (item as _CardItem).match;
-        // 날짜 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
+        // 날짜 헤더·리그 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
         final neighborIndex = index - 1;
         final showTopBorder = !(neighborIndex >= 0 &&
             neighborIndex < items.length &&
-            items[neighborIndex] is _HeaderItem);
+            (items[neighborIndex] is _HeaderItem ||
+                items[neighborIndex] is _LeagueHeaderItem));
         return MatchCard(
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
@@ -701,12 +718,31 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
   /// 날짜 그룹을 헤더+카드 1차원 목록으로 편다.
   /// 담긴 순서가 곧 화면 순서라(서버 sort) 헤더는 항상 그 날짜 카드들 앞에 온다.
+  ///
+  /// 리그 필터가 '전체'면 여러 리그 경기가 날짜별로 섞여 오므로, 같은 날짜
+  /// 안에서 리그별로 다시 묶어(첫 등장 순서 유지) 그 앞에 리그 헤더를 낀다.
+  /// 특정 리그를 골랐으면 그 날 경기가 전부 한 리그라 헤더가 무의미해 생략한다.
   List<_ListItem> _flatten(List<ScheduleDay> schedule) {
+    final groupByLeague =
+        _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
     final out = <_ListItem>[];
     for (final day in schedule) {
       out.add(_HeaderItem(day.date));
+      if (!groupByLeague) {
+        for (final m in day.matches) {
+          out.add(_CardItem(m));
+        }
+        continue;
+      }
+      final byLeague = <String, List<ScheduleMatch>>{};
       for (final m in day.matches) {
-        out.add(_CardItem(m));
+        (byLeague[m.leagueInfo] ??= []).add(m);
+      }
+      for (final entry in byLeague.entries) {
+        out.add(_LeagueHeaderItem(entry.key));
+        for (final m in entry.value) {
+          out.add(_CardItem(m));
+        }
       }
     }
     return out;
@@ -745,6 +781,11 @@ sealed class _ListItem {
 class _HeaderItem extends _ListItem {
   const _HeaderItem(this.date);
   final DateTime date;
+}
+
+class _LeagueHeaderItem extends _ListItem {
+  const _LeagueHeaderItem(this.leagueName);
+  final String leagueName;
 }
 
 class _CardItem extends _ListItem {

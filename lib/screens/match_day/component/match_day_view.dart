@@ -10,6 +10,7 @@ import '../../match_detail/match_detail_screen.dart';
 import '../../match_list/component/match_card.dart';
 import '../../match_list/component/match_card_skeleton.dart';
 import '../../match_list/component/match_date_header.dart';
+import '../../match_list/component/match_league_header.dart';
 
 /// 특정 날짜 하나의 경기 리스트 본문(날짜 헤더 + 카드 리스트 + 로딩/빈 상태).
 ///
@@ -52,54 +53,96 @@ class MatchDayView extends StatelessWidget {
       );
     }
 
-    // 첫 항목은 날짜 그룹 헤더(경기리스트와 동일), 이후 경기 카드.
+    // 첫 항목은 날짜 그룹 헤더(경기리스트와 동일), 이후 리그 헤더(필요하면)+경기 카드.
+    final items = _buildItems(context, matches, l);
     return ListView.builder(
       padding: EdgeInsets.only(bottom: 24 * scale),
-      itemCount: matches.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return MatchDateHeader(
-            label: _relativeLabel(date, l),
-            dateText: _formatDate(date, l),
-            scale: scale,
-          );
-        }
-        final m = matches[index - 1];
-        return MatchCard(
-          key: ValueKey('match-${m.matchId}'),
-          matchId: m.matchId,
-          // index 1 은 날짜 헤더 바로 아래 첫 카드 — 위 구분선을 끈다.
-          showTopBorder: index > 1,
-          time: m.scheduledTime,
-          label: _localizeMatchTitle(context, m.matchTitle),
-          homeName: _shortName(m.teamA),
-          awayName: _shortName(m.teamB),
-          homeLogoUrl: m.teamA.teamImageUrl,
-          awayLogoUrl: m.teamB.teamImageUrl,
-          homeCode: m.teamA.teamCode,
-          awayCode: m.teamB.teamCode,
-          homeScore: m.teamA.score,
-          awayScore: m.teamB.score,
-          isLive: _isLive(m.matchStatus),
-          liveSetLabel: _isLive(m.matchStatus)
-              ? l.setInProgress(
-                  liveSetNumber(
-                    homeScore: m.teamA.score,
-                    awayScore: m.teamB.score,
-                    setsPlayed: m.sets.length,
-                  ),
-                )
-              : null,
-          leagueInfo: m.leagueInfo,
-          spoilerPreventionEnabled: spoilerPreventionEnabled,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
-            ),
-          ),
-          scale: scale,
-        );
-      },
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
+    );
+  }
+
+  /// 날짜 헤더 + (필요하면 리그 헤더로 묶인) 경기 카드들을 미리 만들어 둔다.
+  ///
+  /// [viewModel.leagues] 가 리그를 하나로 특정하지 않았으면(전체·다중 선택)
+  /// 여러 리그 경기가 섞여 오므로, 리그별로 묶어(첫 등장 순서 유지) 그 앞에
+  /// 리그 헤더([MatchLeagueHeader])를 낀다 — 경기리스트 탭과 동일한 규칙.
+  List<Widget> _buildItems(
+    BuildContext context,
+    List<ScheduleMatch> matches,
+    AppLocalizations l,
+  ) {
+    final leagues = viewModel.leagues;
+    final groupByLeague =
+        leagues.isEmpty || leagues.length > 1 || leagues.single == 'ALL';
+
+    final items = <Widget>[
+      MatchDateHeader(
+        label: _relativeLabel(date, l),
+        dateText: _formatDate(date, l),
+        scale: scale,
+      ),
+    ];
+
+    if (!groupByLeague) {
+      for (var i = 0; i < matches.length; i++) {
+        items.add(_buildCard(context, matches[i], showTopBorder: i > 0, l: l));
+      }
+      return items;
+    }
+
+    final byLeague = <String, List<ScheduleMatch>>{};
+    for (final m in matches) {
+      (byLeague[m.leagueInfo] ??= []).add(m);
+    }
+    for (final entry in byLeague.entries) {
+      items.add(MatchLeagueHeader(leagueName: entry.key, scale: scale));
+      for (var i = 0; i < entry.value.length; i++) {
+        items.add(_buildCard(context, entry.value[i], showTopBorder: i > 0, l: l));
+      }
+    }
+    return items;
+  }
+
+  /// 경기 카드 한 장. [showTopBorder] 는 자기 그룹(날짜/리그 헤더) 안 첫 카드면 false.
+  Widget _buildCard(
+    BuildContext context,
+    ScheduleMatch m, {
+    required bool showTopBorder,
+    required AppLocalizations l,
+  }) {
+    return MatchCard(
+      key: ValueKey('match-${m.matchId}'),
+      matchId: m.matchId,
+      showTopBorder: showTopBorder,
+      time: m.scheduledTime,
+      label: _localizeMatchTitle(context, m.matchTitle),
+      homeName: _shortName(m.teamA),
+      awayName: _shortName(m.teamB),
+      homeLogoUrl: m.teamA.teamImageUrl,
+      awayLogoUrl: m.teamB.teamImageUrl,
+      homeCode: m.teamA.teamCode,
+      awayCode: m.teamB.teamCode,
+      homeScore: m.teamA.score,
+      awayScore: m.teamB.score,
+      isLive: _isLive(m.matchStatus),
+      liveSetLabel: _isLive(m.matchStatus)
+          ? l.setInProgress(
+              liveSetNumber(
+                homeScore: m.teamA.score,
+                awayScore: m.teamB.score,
+                setsPlayed: m.sets.length,
+              ),
+            )
+          : null,
+      leagueInfo: m.leagueInfo,
+      spoilerPreventionEnabled: spoilerPreventionEnabled,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
+        ),
+      ),
+      scale: scale,
     );
   }
 
