@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/model/member_notification.dart';
 
+import '../support/l10n_test_setup.dart';
+
 void main() {
   test('fromJson: 솔랭 항목 타입·data 접근자 파싱', () {
     final n = MemberNotification.fromJson({
@@ -32,7 +34,12 @@ void main() {
     expect(n.createdAt, DateTime(2026, 6, 24, 19, 18, 21));
   });
 
-  test('fromJson: 팀 이벤트는 matchId 만, 알 수 없는 타입은 unknown', () {
+  // playerName 의 기본값이 appStrings 를 거치므로 로케일 호스트가 필요하다.
+  testWidgets('fromJson: 팀 이벤트는 matchId 만, 알 수 없는 타입은 unknown', (
+    WidgetTester tester,
+  ) async {
+    await pumpAppStringsHost(tester);
+
     final setEnd = MemberNotification.fromJson({
       'id': 1,
       'type': 'SET_END',
