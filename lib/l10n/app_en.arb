@@ -329,6 +329,7 @@
   "notificationLoadFailed": "Failed to load notifications.",
   "teamAlarmLoadFailed": "Failed to load team alarm settings",
   "teamAlarmSaveFailed": "Failed to save team alarm settings",
+  "playerAlarmSaveFailed": "Failed to save player alarm settings",
   "profileLoadFailed": "Failed to load profile",
   "requiredField": "This field is required.",
   "tagFormatError": "2-5 alphanumeric characters required.",

@@ -20,20 +20,24 @@ import 'player_alarm_card.dart';
 /// - 팀: 로고/팀명 + 알림 토글 3개 (`notification-subscriptions` API).
 /// - 선수: 아바타/이름 + 솔랭 알림 토글 2개 (`player-subscriptions` API).
 ///
-/// [viewModel] 을 주면 그 인스턴스를 쓰고(마이 구독 설정 화면처럼 '완료' 버튼과
-/// 상태를 공유할 때), 없으면 내부에서 만들어 토글 즉시 서버에 반영한다.
+/// [viewModel]/[playerViewModel] 을 주면 그 인스턴스를 쓰고(마이 구독 설정 화면처럼
+/// '완료' 버튼과 상태를 공유할 때), 없으면 내부에서 만들어 토글 즉시 서버에 반영한다.
 class SubscriptionAlarmSection extends StatefulWidget {
   const SubscriptionAlarmSection({
     super.key,
     this.scale = 1,
     this.viewModel,
+    this.playerViewModel,
     this.showHeader = true,
   });
 
   final double scale;
 
-  /// 외부에서 주입하는 ViewModel. null 이면 내부에서 생성·해제한다.
+  /// 외부에서 주입하는 팀 ViewModel. null 이면 내부에서 생성·해제한다.
   final TeamAlarmViewModel? viewModel;
+
+  /// 외부에서 주입하는 선수 ViewModel. null 이면 탭을 처음 열 때 내부에서 생성·해제한다.
+  final PlayerAlarmViewModel? playerViewModel;
 
   /// false 면 '구독 팀 알림 설정' 타이틀 줄을 감춘다.
   /// 화면 헤더가 이미 같은 맥락을 알려 주는 경우에 쓴다.
@@ -51,52 +55,55 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
   /// 0 = 팀, 1 = 선수.
   int _tabIndex = 0;
 
-  /// 팀별 라이브 이벤트 세부 항목 선택 상태 (teamId → 켜진 항목들).
-  ///
-  /// 서버 API 에 아직 필드가 없어 화면 상태로만 들고 있다. 필드가 생기면
-  /// [TeamNotificationSubscription] 으로 옮기고 이 맵은 지운다.
-  /// 키가 없는 팀은 '전체 켜짐'으로 본다 — 토글을 막 켠 직후 아무것도
-  /// 선택 안 된 상태로 보이지 않게.
-  final Map<int, Set<LiveEventKind>> _liveEventDetail = {};
-
-  Set<LiveEventKind> _detailOf(int teamId) =>
-      _liveEventDetail[teamId] ?? LiveEventKind.values.toSet();
+  /// 팀별 라이브 이벤트 세부 항목(킬/바론/드래곤/타워/억제기)을 [team] 필드에서 파생한다.
+  Set<LiveEventKind> _detailOf(TeamNotificationSubscription team) => {
+    if (team.killEnabled) LiveEventKind.kill,
+    if (team.baronEnabled) LiveEventKind.baron,
+    if (team.dragonEnabled) LiveEventKind.dragon,
+    if (team.towerEnabled) LiveEventKind.tower,
+    if (team.inhibitorEnabled) LiveEventKind.inhibitor,
+  };
 
   void _setDetail(int teamId, LiveEventKind kind, bool value) {
-    setState(() {
-      final next = {..._detailOf(teamId)};
-      if (value) {
-        next.add(kind);
-      } else {
-        next.remove(kind);
-      }
-      _liveEventDetail[teamId] = next;
-    });
+    switch (kind) {
+      case LiveEventKind.kill:
+        _viewModel.setKill(teamId, value);
+      case LiveEventKind.baron:
+        _viewModel.setBaron(teamId, value);
+      case LiveEventKind.dragon:
+        _viewModel.setDragon(teamId, value);
+      case LiveEventKind.tower:
+        _viewModel.setTower(teamId, value);
+      case LiveEventKind.inhibitor:
+        _viewModel.setInhibitor(teamId, value);
+    }
   }
 
   TeamAlarmViewModel get _viewModel =>
       widget.viewModel ?? (_owned ??= TeamAlarmViewModel());
 
-  /// 선수 탭 ViewModel. 탭을 처음 열 때 만든다 —
-  /// 선수 탭을 안 보는 사용자에게 구독 선수 조회를 태우지 않으려고.
-  PlayerAlarmViewModel? _playerViewModel;
+  /// 주입받지 않았을 때만 만드는 내부 선수 ViewModel. dispose 책임도 여기에 있다.
+  /// 탭을 처음 열 때 만든다 — 선수 탭을 안 보는 사용자에게 구독 선수 조회를
+  /// 태우지 않으려고.
+  PlayerAlarmViewModel? _ownedPlayers;
 
   PlayerAlarmViewModel get _players =>
-      _playerViewModel ??= PlayerAlarmViewModel();
+      widget.playerViewModel ?? (_ownedPlayers ??= PlayerAlarmViewModel());
 
   /// 구독 팀 알림 목록을 다시 불러온다.
-  /// 구독 관리 화면에서 팀 구독을 변경하고 돌아왔을 때 호출한다.
-  /// 선수 탭을 이미 열어 봤다면 선수 목록도 같이 갱신한다.
+  /// 구독 관리 화면에서 팀·선수 구독을 변경하고 돌아왔을 때 호출한다.
+  /// 저장 전 토글 변경은 그대로 살려 둔다. 선수 탭을 이미 열어 봤다면
+  /// 선수 목록도 같이 갱신한다.
   Future<void> reload() async {
-    await _viewModel.load();
-    await _playerViewModel?.load();
+    await _viewModel.load(keepUnsaved: true);
+    await (widget.playerViewModel ?? _ownedPlayers)?.load(keepUnsaved: true);
   }
 
   @override
   void dispose() {
     // 주입받은 ViewModel 은 준 쪽이 해제한다.
     _owned?.dispose();
-    _playerViewModel?.dispose();
+    _ownedPlayers?.dispose();
     super.dispose();
   }
 
@@ -205,7 +212,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
               _TeamAlarmBlock(
                 team: teams[i],
                 viewModel: _viewModel,
-                liveEventDetail: _detailOf(teams[i].teamId),
+                liveEventDetail: _detailOf(teams[i]),
                 onLiveEventDetailChanged: (kind, v) =>
                     _setDetail(teams[i].teamId, kind, v),
                 scale: scale,

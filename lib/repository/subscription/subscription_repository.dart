@@ -30,11 +30,21 @@ class SubscriptionRepository {
   /// 진행 중인 구독 선수 요청 + 캐시. `/api/mobile/me/...` 인증 API 들이
   /// 응답이 150ms~4.3s 로 들쭉날쭉해서(2026-08-12 실측) 마이구독 탭을
   /// 오갈 때마다 그대로 체감됐다. 짧게 캐시해 잦은 재방문을 가려준다.
-  /// [subscribePlayer]/[unsubscribePlayer] 는 이 캐시를 지워 다음 조회가
-  /// 최신 상태를 받게 한다.
+  /// [subscribePlayer]/[unsubscribePlayer]/[updatePlayerAlarm] 는 이 캐시를
+  /// 지워 다음 조회가 최신 상태를 받게 한다.
   Future<List<PlayerSubscription>>? _subscribedInFlight;
   (DateTime, List<PlayerSubscription>)? _subscribedCache;
   static const Duration _subscribedCacheTtl = Duration(seconds: 30);
+
+  void _invalidateSubscribedPlayersCache() => _subscribedCache = null;
+
+  /// 테스트 전용 — 싱글턴 인스턴스에 남은 캐시를 지워 테스트 간 상태가
+  /// 새지 않게 한다. [AuthService.resetJwtCacheForTesting] 와 같은 용도.
+  @visibleForTesting
+  void resetCacheForTesting() {
+    _subscribedCache = null;
+    _subscribedInFlight = null;
+  }
 
   /// 내 구독 선수 목록을 조회한다.
   Future<List<PlayerSubscription>> fetchSubscribedPlayers() {
@@ -126,6 +136,7 @@ class SubscriptionRepository {
       throw Exception('선수 구독 실패 (${response.statusCode})');
     }
     SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'playerId': playerId});
+    _invalidateSubscribedPlayersCache();
     return PlayerSubscription.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
@@ -150,6 +161,36 @@ class SubscriptionRepository {
       throw Exception('선수 구독 해제 실패 (${response.statusCode})');
     }
     SentryLogger.info(module: 'API', eventName: 'deleteSubscribe', extra: {'playerId': playerId});
+    _invalidateSubscribedPlayersCache();
+  }
+
+  /// 선수별 솔랭 시작/종료 알림을 변경한다.
+  ///
+  /// 성공 시 204 No Content(빈 바디)로 응답해 파싱하지 않는다.
+  Future<void> updatePlayerAlarm(
+    int playerId, {
+    required bool startEnabled,
+    required bool endEnabled,
+  }) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.put(
+        Uri.parse(ApiConfig.playerSubscriptionUrl(playerId)),
+        headers: _headers(token),
+        body: jsonEncode({'startEnabled': startEnabled, 'endEnabled': endEnabled}),
+      ),
+    );
+    debugPrint('[Subscription] 선수알림설정 → $playerId ← ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      SentryLogger.warning(
+        module: 'API',
+        eventName: 'postSubscribe',
+        reason: 'status_${response.statusCode}',
+        extra: {'endpoint': ApiConfig.playerSubscriptionUrl(playerId), 'statusCode': response.statusCode, 'playerId': playerId},
+      );
+      throw Exception('선수 알림 설정 변경 실패 (${response.statusCode})');
+    }
+    SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'playerId': playerId, 'action': 'updateAlarm'});
+    _invalidateSubscribedPlayersCache();
   }
 
   // ── 팀 알림 구독 ──────────────────────────────────────────────────
@@ -217,12 +258,19 @@ class SubscriptionRepository {
     );
   }
 
-  /// 팀별 알림 설정(세트 시작/종료·라이브)을 변경한다.
-  Future<TeamNotificationSubscription> updateTeamNotification(
+  /// 팀별 알림 설정(세트 시작/종료·라이브·라이브 이벤트 세부 항목)을 변경한다.
+  ///
+  /// 성공 시 204 No Content(빈 바디)로 응답해 파싱하지 않는다.
+  Future<void> updateTeamNotification(
     int teamId, {
     required bool setStartEnabled,
     required bool setEndEnabled,
     required bool liveEventEnabled,
+    required bool killEnabled,
+    required bool baronEnabled,
+    required bool dragonEnabled,
+    required bool towerEnabled,
+    required bool inhibitorEnabled,
   }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.put(
@@ -232,6 +280,11 @@ class SubscriptionRepository {
           'setStartEnabled': setStartEnabled,
           'setEndEnabled': setEndEnabled,
           'liveEventEnabled': liveEventEnabled,
+          'killEnabled': killEnabled,
+          'baronEnabled': baronEnabled,
+          'dragonEnabled': dragonEnabled,
+          'towerEnabled': towerEnabled,
+          'inhibitorEnabled': inhibitorEnabled,
         }),
       ),
     );
@@ -246,9 +299,6 @@ class SubscriptionRepository {
       throw Exception('팀 알림 설정 변경 실패 (${response.statusCode})');
     }
     SentryLogger.info(module: 'API', eventName: 'postSubscribe', extra: {'teamId': teamId, 'action': 'updateNotification'});
-    return TeamNotificationSubscription.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
   }
 
   /// 팀 알림 구독을 삭제한다.

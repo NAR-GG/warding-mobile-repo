@@ -41,9 +41,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
       final before = _saved.where((t) => t.teamId == team.teamId).firstOrNull;
       // 기준선에 없는 팀은 비교할 대상이 없으므로 변경으로 보지 않는다.
       if (before == null) continue;
-      if (before.setStartEnabled != team.setStartEnabled ||
-          before.setEndEnabled != team.setEndEnabled ||
-          before.liveEventEnabled != team.liveEventEnabled) {
+      if (_alarmFieldsDiffer(before, team)) {
         return true;
       }
     }
@@ -116,6 +114,50 @@ class TeamAlarmViewModel extends ChangeNotifier {
   Future<void> setLiveEvent(int teamId, bool value) =>
       _update(teamId, (t) => t.copyWith(liveEventEnabled: value));
 
+  /// 킬 이벤트 알림 토글.
+  Future<void> setKill(int teamId, bool value) {
+    debugPrint('[TeamAlarm] 킬 알림 토글 → team=$teamId value=$value');
+    return _update(teamId, (t) => t.copyWith(killEnabled: value));
+  }
+
+  /// 바론 이벤트 알림 토글.
+  Future<void> setBaron(int teamId, bool value) {
+    debugPrint('[TeamAlarm] 바론 알림 토글 → team=$teamId value=$value');
+    return _update(teamId, (t) => t.copyWith(baronEnabled: value));
+  }
+
+  /// 드래곤 이벤트 알림 토글.
+  Future<void> setDragon(int teamId, bool value) {
+    debugPrint('[TeamAlarm] 드래곤 알림 토글 → team=$teamId value=$value');
+    return _update(teamId, (t) => t.copyWith(dragonEnabled: value));
+  }
+
+  /// 타워 이벤트 알림 토글.
+  Future<void> setTower(int teamId, bool value) {
+    debugPrint('[TeamAlarm] 타워 알림 토글 → team=$teamId value=$value');
+    return _update(teamId, (t) => t.copyWith(towerEnabled: value));
+  }
+
+  /// 억제기 이벤트 알림 토글.
+  Future<void> setInhibitor(int teamId, bool value) {
+    debugPrint('[TeamAlarm] 억제기 알림 토글 → team=$teamId value=$value');
+    return _update(teamId, (t) => t.copyWith(inhibitorEnabled: value));
+  }
+
+  /// 저장 대상 필드가 둘 사이에 하나라도 다른지.
+  static bool _alarmFieldsDiffer(
+    TeamNotificationSubscription a,
+    TeamNotificationSubscription b,
+  ) =>
+      a.setStartEnabled != b.setStartEnabled ||
+      a.setEndEnabled != b.setEndEnabled ||
+      a.liveEventEnabled != b.liveEventEnabled ||
+      a.killEnabled != b.killEnabled ||
+      a.baronEnabled != b.baronEnabled ||
+      a.dragonEnabled != b.dragonEnabled ||
+      a.towerEnabled != b.towerEnabled ||
+      a.inhibitorEnabled != b.inhibitorEnabled;
+
   /// [teamId] 항목에 [change] 를 적용한다.
   ///
   /// [deferSave] 면 화면에만 반영하고 PUT 은 [save] 로 미룬다.
@@ -137,6 +179,11 @@ class TeamAlarmViewModel extends ChangeNotifier {
         setStartEnabled: after.setStartEnabled,
         setEndEnabled: after.setEndEnabled,
         liveEventEnabled: after.liveEventEnabled,
+        killEnabled: after.killEnabled,
+        baronEnabled: after.baronEnabled,
+        dragonEnabled: after.dragonEnabled,
+        towerEnabled: after.towerEnabled,
+        inhibitorEnabled: after.inhibitorEnabled,
       );
       _saved = _teams;
     } catch (e) {
@@ -166,9 +213,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
         (t) => t.teamId == team.teamId,
         orElse: () => team,
       );
-      if (before.setStartEnabled == team.setStartEnabled &&
-          before.setEndEnabled == team.setEndEnabled &&
-          before.liveEventEnabled == team.liveEventEnabled) {
+      if (!_alarmFieldsDiffer(before, team)) {
         continue;
       }
       try {
@@ -177,6 +222,11 @@ class TeamAlarmViewModel extends ChangeNotifier {
           setStartEnabled: team.setStartEnabled,
           setEndEnabled: team.setEndEnabled,
           liveEventEnabled: team.liveEventEnabled,
+          killEnabled: team.killEnabled,
+          baronEnabled: team.baronEnabled,
+          dragonEnabled: team.dragonEnabled,
+          towerEnabled: team.towerEnabled,
+          inhibitorEnabled: team.inhibitorEnabled,
         );
         // 성공한 팀은 기준선을 새 값으로 옮긴다.
         final i = saved.indexWhere((t) => t.teamId == team.teamId);

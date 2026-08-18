@@ -6,9 +6,9 @@ import '../../../styles/app_colors.dart';
 
 /// 라이브 이벤트 세부 항목 종류.
 ///
-/// 서버 API(`PUT /notification-subscriptions/{teamId}`)는 아직 이 항목들을
-/// 받지 않는다. 지금은 화면 상태로만 들고 있고, 필드가 생기면
-/// [TeamNotificationSubscription] 과 PUT body 에 그대로 얹으면 된다.
+/// `TeamNotificationSubscription` 의 killEnabled/baronEnabled/dragonEnabled/
+/// towerEnabled/inhibitorEnabled 에 각각 대응하며,
+/// `PUT /notification-subscriptions/{teamId}` 로 반영된다.
 enum LiveEventKind { kill, baron, dragon, tower, inhibitor }
 
 extension LiveEventKindLabel on LiveEventKind {

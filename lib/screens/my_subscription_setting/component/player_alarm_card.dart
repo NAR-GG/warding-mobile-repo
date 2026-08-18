@@ -124,13 +124,13 @@ class _PlayerAlarmBlock extends StatelessWidget {
         // 솔랭 알림 토글 2행.
         _PlayerAlarmRow(
           label: l.soloRankStartAlarm,
-          value: viewModel.soloRankStartOf(player.playerId),
+          value: player.startEnabled,
           onChanged: (v) => viewModel.setSoloRankStart(player.playerId, v),
           scale: scale,
         ),
         _PlayerAlarmRow(
           label: l.soloRankEndAlarm,
-          value: viewModel.soloRankEndOf(player.playerId),
+          value: player.endEnabled,
           onChanged: (v) => viewModel.setSoloRankEnd(player.playerId, v),
           scale: scale,
         ),

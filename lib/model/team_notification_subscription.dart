@@ -13,6 +13,11 @@ class TeamNotificationSubscription {
     required this.setStartEnabled,
     required this.setEndEnabled,
     required this.liveEventEnabled,
+    required this.killEnabled,
+    required this.baronEnabled,
+    required this.dragonEnabled,
+    required this.towerEnabled,
+    required this.inhibitorEnabled,
   });
 
   final int teamId;
@@ -35,12 +40,32 @@ class TeamNotificationSubscription {
   /// 라이브 이벤트 알림 ON/OFF.
   final bool liveEventEnabled;
 
+  /// 킬 이벤트 알림 ON/OFF.
+  final bool killEnabled;
+
+  /// 바론 이벤트 알림 ON/OFF.
+  final bool baronEnabled;
+
+  /// 드래곤 이벤트 알림 ON/OFF.
+  final bool dragonEnabled;
+
+  /// 타워 이벤트 알림 ON/OFF.
+  final bool towerEnabled;
+
+  /// 억제기 이벤트 알림 ON/OFF.
+  final bool inhibitorEnabled;
+
   /// 일부 값만 바꾼 복사본 — 토글 직후 로컬 상태 갱신에 쓴다.
   TeamNotificationSubscription copyWith({
     bool? subscribed,
     bool? setStartEnabled,
     bool? setEndEnabled,
     bool? liveEventEnabled,
+    bool? killEnabled,
+    bool? baronEnabled,
+    bool? dragonEnabled,
+    bool? towerEnabled,
+    bool? inhibitorEnabled,
   }) {
     return TeamNotificationSubscription(
       teamId: teamId,
@@ -52,6 +77,11 @@ class TeamNotificationSubscription {
       setStartEnabled: setStartEnabled ?? this.setStartEnabled,
       setEndEnabled: setEndEnabled ?? this.setEndEnabled,
       liveEventEnabled: liveEventEnabled ?? this.liveEventEnabled,
+      killEnabled: killEnabled ?? this.killEnabled,
+      baronEnabled: baronEnabled ?? this.baronEnabled,
+      dragonEnabled: dragonEnabled ?? this.dragonEnabled,
+      towerEnabled: towerEnabled ?? this.towerEnabled,
+      inhibitorEnabled: inhibitorEnabled ?? this.inhibitorEnabled,
     );
   }
 
@@ -66,6 +96,11 @@ class TeamNotificationSubscription {
       setStartEnabled: json['setStartEnabled'] as bool? ?? false,
       setEndEnabled: json['setEndEnabled'] as bool? ?? false,
       liveEventEnabled: json['liveEventEnabled'] as bool? ?? false,
+      killEnabled: json['killEnabled'] as bool? ?? true,
+      baronEnabled: json['baronEnabled'] as bool? ?? true,
+      dragonEnabled: json['dragonEnabled'] as bool? ?? true,
+      towerEnabled: json['towerEnabled'] as bool? ?? true,
+      inhibitorEnabled: json['inhibitorEnabled'] as bool? ?? true,
     );
   }
 }

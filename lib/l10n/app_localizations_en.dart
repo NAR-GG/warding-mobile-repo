@@ -925,6 +925,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teamAlarmSaveFailed => 'Failed to save team alarm settings';
 
   @override
+  String get playerAlarmSaveFailed => 'Failed to save player alarm settings';
+
+  @override
   String get profileLoadFailed => 'Failed to load profile';
 
   @override

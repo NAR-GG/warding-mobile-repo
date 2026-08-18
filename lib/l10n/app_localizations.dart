@@ -1765,6 +1765,12 @@ abstract class AppLocalizations {
   /// **'팀 알림 설정을 저장하지 못했어요'**
   String get teamAlarmSaveFailed;
 
+  /// No description provided for @playerAlarmSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 알림 설정을 저장하지 못했어요'**
+  String get playerAlarmSaveFailed;
+
   /// No description provided for @profileLoadFailed.
   ///
   /// In ko, this message translates to:

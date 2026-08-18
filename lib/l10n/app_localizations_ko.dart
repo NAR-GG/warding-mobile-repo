@@ -901,6 +901,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get teamAlarmSaveFailed => '팀 알림 설정을 저장하지 못했어요';
 
   @override
+  String get playerAlarmSaveFailed => '선수 알림 설정을 저장하지 못했어요';
+
+  @override
   String get profileLoadFailed => '프로필을 불러오지 못했어요';
 
   @override
