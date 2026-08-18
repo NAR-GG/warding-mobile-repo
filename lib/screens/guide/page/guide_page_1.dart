@@ -16,6 +16,8 @@ GuidePageData guidePage1(BuildContext context) {
   return GuidePageData(
     sectionIcon: 'assets/icons/empty-stars.svg',
     sectionLabel: l.guide1Section,
+    sectionIndex: 1,
+    sectionTotal: 2,
     headline: l.guide1Headline,
     description: l.guide1Description,
     stageBuilder: (context, scale) => const _Stage(),

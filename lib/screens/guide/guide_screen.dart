@@ -86,8 +86,6 @@ class _GuideScreenState extends State<GuideScreen> {
             height: panelHeight,
             child: _BottomPanel(
               page: widget.pages[_current],
-              current: _current,
-              total: widget.pages.length,
               scale: scale,
             ),
           ),
@@ -178,20 +176,21 @@ class _GuideHeader extends StatelessWidget {
 
 /// 하단 검정 패널 — 진행바 + 섹션 아이콘·라벨 + 안내 문구 + 페이지 표시.
 class _BottomPanel extends StatelessWidget {
-  const _BottomPanel({
-    required this.page,
-    required this.current,
-    required this.total,
-    required this.scale,
-  });
+  const _BottomPanel({required this.page, required this.scale});
 
   final GuidePageData page;
-  final int current;
-  final int total;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
+    // 진행 표시는 전체 장 수가 아니라 같은 섹션 안에서의 순번/장수를 쓴다
+    // ('마이 구독' 1/2·2/2, '마이 페이지' 1/3·2/3·3/3). 섹션이 한 장뿐이면
+    // (예: 위젯 소개) [sectionIndex]·[sectionTotal] 이 null 이라 진행 표시
+    // 자체를 그리지 않는다.
+    final sectionIndex = page.sectionIndex;
+    final sectionTotal = page.sectionTotal;
+    final showProgress = sectionIndex != null && sectionTotal != null;
+
     return ColoredBox(
       color: AppColors.narBgContent,
       child: SafeArea(
@@ -199,16 +198,17 @@ class _BottomPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: EdgeInsets.all(10 * scale),
-              child: Center(
-                child: GuideProgressBar(
-                  count: total,
-                  current: current,
-                  scale: scale,
+            if (showProgress)
+              Padding(
+                padding: EdgeInsets.all(10 * scale),
+                child: Center(
+                  child: GuideProgressBar(
+                    count: sectionTotal,
+                    current: sectionIndex - 1,
+                    scale: scale,
+                  ),
                 ),
               ),
-            ),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(
@@ -227,17 +227,19 @@ class _BottomPanel extends StatelessWidget {
                         Expanded(
                           child: _PanelText(page: page, scale: scale),
                         ),
-                        SizedBox(width: 16 * scale),
-                        Text(
-                          '${current + 1}/$total',
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14 * scale,
-                            height: 1.55,
-                            color: AppColors.narGuideAccent,
+                        if (showProgress) ...[
+                          SizedBox(width: 16 * scale),
+                          Text(
+                            '$sectionIndex/$sectionTotal',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14 * scale,
+                              height: 1.55,
+                              color: AppColors.narGuideAccent,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

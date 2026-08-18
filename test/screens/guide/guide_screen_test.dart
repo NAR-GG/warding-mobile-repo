@@ -92,34 +92,36 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('마이 구독'), findsOneWidget);
-    expect(find.text('1/6'), findsOneWidget);
+    // 진행 표시는 전체 장 수가 아니라 섹션 안에서의 순번/장수다 — '마이
+    // 구독'은 2장, '마이 페이지'는 3장.
+    expect(find.text('1/2'), findsOneWidget);
 
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.text('2/6'), findsOneWidget);
+    expect(find.text('2/2'), findsOneWidget);
 
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
     expect(find.text('마이 페이지'), findsOneWidget);
     expect(find.text('경기, 솔랭 알림을 커스텀 해보세요'), findsOneWidget);
-    expect(find.text('3/6'), findsOneWidget);
+    expect(find.text('1/3'), findsOneWidget);
 
     // 4장은 3장과 문구가 같고 무대만 다르다.
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.text('4/6'), findsOneWidget);
+    expect(find.text('2/3'), findsOneWidget);
     expect(find.text('마이 페이지'), findsOneWidget);
 
     // 5장은 같은 섹션이지만 문구가 다르다.
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.text('5/6'), findsOneWidget);
+    expect(find.text('3/3'), findsOneWidget);
     expect(find.text('와딩 사용자 편의성 맞춤 설정'), findsOneWidget);
 
-    // 6장은 섹션 아이콘이 없고 연출 고지 주석이 붙는다.
+    // 6장은 섹션이 한 장뿐이라 진행 표시(진행바·페이지 숫자) 자체가 없다.
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.text('6/6'), findsOneWidget);
+    expect(find.byType(GuideProgressBar), findsNothing);
     expect(find.text('다양한 와딩 위젯 제공'), findsOneWidget);
     expect(
       find.text('(위 이미지는 연출된 이미지 입니다. 실제 적용 화면은 상이할 수 있습니다.)'),
@@ -241,7 +243,19 @@ void main() {
   });
 
   testWidgets('스와이프하면 다음 장으로 넘어간다', (tester) async {
-    await tester.pumpWidget(_host(pages: 2));
+    // 진행 표시가 섹션 안 순번을 쓰므로, 실제로 다른 섹션 순번을 가진
+    // 두 장으로 넘어가는지 확인하려면 같은 장을 복제하면 안 된다.
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ko'),
+        home: Builder(
+          builder: (context) =>
+              GuideScreen(pages: [guidePage1(context), guidePage2(context)]),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
