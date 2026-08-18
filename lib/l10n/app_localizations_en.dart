@@ -1032,4 +1032,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarWeekStartSunday => 'Sunday';
+
+  @override
+  String get guideExit => 'Exit guide';
+
+  @override
+  String get guide1Section => 'My Subscription';
+
+  @override
+  String get guide1Headline =>
+      'Never miss your team\'s matches or your players\' solo queue';
+
+  @override
+  String get guide1Description =>
+      'The teams and players you picked during onboarding are subscribed automatically.';
+
+  @override
+  String get guide1CalloutPage => '1. On the My Subscription page';
+
+  @override
+  String get guide1CalloutSettings => '2. Tap the settings icon!';
+
+  @override
+  String get guide2Description =>
+      'Want to follow more teams or players? Add them anytime in My Subscription settings.';
+
+  @override
+  String get guide3Section => 'My Page';
+
+  @override
+  String get guide3Headline => 'Customize your match and solo queue alerts';
+
+  @override
+  String get guide3Description =>
+      'Fine-tune notifications for the teams and players you follow.';
+
+  @override
+  String get guide5Headline => 'Make Warding work the way you want';
+
+  @override
+  String get guide5Description =>
+      'Use Do Not Disturb, calendar start day, and more to tailor the app to you.';
+
+  @override
+  String get guide6Section => 'Home screen & live widgets';
+
+  @override
+  String get guide6Headline => 'Widgets for every screen';
+
+  @override
+  String get guide6Description =>
+      'Get the most out of Warding with calendar, live, and home screen widgets.';
+
+  @override
+  String get guide6Footnote =>
+      '(Image is for illustration only. Actual screens may differ.)';
+
+  @override
+  String get guide2CalloutAuto => '1. Teams you picked are subscribed';
+
+  @override
+  String get guide2CalloutAdd => '2. Add more teams anytime!';
+
+  @override
+  String get guide3CalloutMypage => '1. From My Page';
+
+  @override
+  String get guide3CalloutDisplay => '2. Display settings > My Subscription';
+
+  @override
+  String get guideMenu => 'Warding guide';
+
+  @override
+  String get guidePopupBadge => 'Get the most out of Warding';
+
+  @override
+  String get guidePopupTitle => 'Welcome! Here are some tips for using Warding';
+
+  @override
+  String get guidePopupMessage =>
+      'You can always find this again under [My Page > Warding Guide].';
+
+  @override
+  String get guidePopupDismiss => 'Maybe later';
+
+  @override
+  String get guidePopupConfirm => 'View guide';
 }

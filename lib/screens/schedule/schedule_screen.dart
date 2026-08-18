@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/guide_popup.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_banner.dart';
 import '../../model/notice.dart';
@@ -63,6 +64,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       }
 
       _viewModel.addListener(listener);
+    } else {
+      // 사용 가이드 팝업. 딥링크로 들어온 경우엔 띄우지 않는다 — 사용자가
+      // 의도한 화면(필터 모달) 위에 겹친다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) maybeShowGuidePopup(context);
+      });
     }
   }
 

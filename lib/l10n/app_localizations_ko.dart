@@ -1007,4 +1007,85 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get calendarWeekStartSunday => '일요일';
+
+  @override
+  String get guideExit => '가이드 종료하기';
+
+  @override
+  String get guide1Section => '마이 구독';
+
+  @override
+  String get guide1Headline => '좋아하는 팀 경기, 선수 솔랭 놓치지 않고 챙겨보세요';
+
+  @override
+  String get guide1Description => '온보딩에서 선택한 팀, 선수가 자동으로 구독돼요.';
+
+  @override
+  String get guide1CalloutPage => '1. 마이구독 페이지에서';
+
+  @override
+  String get guide1CalloutSettings => '2. 구독 설정 아이콘 클릭!';
+
+  @override
+  String get guide2Description => '응원하는 팀,선수가 더 있다면 마이구독 설정에서 언제든 추가할 수 있어요.';
+
+  @override
+  String get guide3Section => '마이 페이지';
+
+  @override
+  String get guide3Headline => '경기, 솔랭 알림을 커스텀 해보세요';
+
+  @override
+  String get guide3Description => '응원하는 팀,선수에 대한 알림 세부 설정을 커스텀 할 수 있어요.';
+
+  @override
+  String get guide5Headline => '와딩 사용자 편의성 맞춤 설정';
+
+  @override
+  String get guide5Description =>
+      '방해 금지 모드, 캘린더 시작 요일 설정 등을 이용하여 더 편리하게 앱을 사용해 보세요';
+
+  @override
+  String get guide6Section => '배경화면 위젯, 라이브 위젯';
+
+  @override
+  String get guide6Headline => '다양한 와딩 위젯 제공';
+
+  @override
+  String get guide6Description =>
+      '캘린더 위젯 ,라이브 위젯, 배경화면 위젯을 활용하여 와딩앱을 100% 활용해보세요.';
+
+  @override
+  String get guide6Footnote => '(위 이미지는 연출된 이미지 입니다. 실제 적용 화면은 상이할 수 있습니다.)';
+
+  @override
+  String get guide2CalloutAuto => '1. 온보딩에서 선택한 팀 자동 구독';
+
+  @override
+  String get guide2CalloutAdd => '2. 원하는 팀 추가 구독 설정 가능!';
+
+  @override
+  String get guide3CalloutMypage => '1. 마이페이지에서';
+
+  @override
+  String get guide3CalloutDisplay => '2. 화면설정> 마이구독 클릭!';
+
+  @override
+  String get guideMenu => '와딩 사용가이드';
+
+  @override
+  String get guidePopupBadge => '와딩 200% 즐기기';
+
+  @override
+  String get guidePopupTitle => '환영해요! 와딩 사용 꿀팁이 도착했어요';
+
+  @override
+  String get guidePopupMessage =>
+      '지금 보지 않아도 [마이페이지 > 와딩 사용가이드]에서 언제든 다시 볼 수 있어요.';
+
+  @override
+  String get guidePopupDismiss => '다음에 볼게요';
+
+  @override
+  String get guidePopupConfirm => '가이드 보기';
 }

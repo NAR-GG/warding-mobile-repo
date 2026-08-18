@@ -1968,6 +1968,162 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'일요일'**
   String get calendarWeekStartSunday;
+
+  /// No description provided for @guideExit.
+  ///
+  /// In ko, this message translates to:
+  /// **'가이드 종료하기'**
+  String get guideExit;
+
+  /// No description provided for @guide1Section.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이 구독'**
+  String get guide1Section;
+
+  /// No description provided for @guide1Headline.
+  ///
+  /// In ko, this message translates to:
+  /// **'좋아하는 팀 경기, 선수 솔랭 놓치지 않고 챙겨보세요'**
+  String get guide1Headline;
+
+  /// No description provided for @guide1Description.
+  ///
+  /// In ko, this message translates to:
+  /// **'온보딩에서 선택한 팀, 선수가 자동으로 구독돼요.'**
+  String get guide1Description;
+
+  /// No description provided for @guide1CalloutPage.
+  ///
+  /// In ko, this message translates to:
+  /// **'1. 마이구독 페이지에서'**
+  String get guide1CalloutPage;
+
+  /// No description provided for @guide1CalloutSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'2. 구독 설정 아이콘 클릭!'**
+  String get guide1CalloutSettings;
+
+  /// No description provided for @guide2Description.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원하는 팀,선수가 더 있다면 마이구독 설정에서 언제든 추가할 수 있어요.'**
+  String get guide2Description;
+
+  /// No description provided for @guide3Section.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이 페이지'**
+  String get guide3Section;
+
+  /// No description provided for @guide3Headline.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기, 솔랭 알림을 커스텀 해보세요'**
+  String get guide3Headline;
+
+  /// No description provided for @guide3Description.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원하는 팀,선수에 대한 알림 세부 설정을 커스텀 할 수 있어요.'**
+  String get guide3Description;
+
+  /// No description provided for @guide5Headline.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩 사용자 편의성 맞춤 설정'**
+  String get guide5Headline;
+
+  /// No description provided for @guide5Description.
+  ///
+  /// In ko, this message translates to:
+  /// **'방해 금지 모드, 캘린더 시작 요일 설정 등을 이용하여 더 편리하게 앱을 사용해 보세요'**
+  String get guide5Description;
+
+  /// No description provided for @guide6Section.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경화면 위젯, 라이브 위젯'**
+  String get guide6Section;
+
+  /// No description provided for @guide6Headline.
+  ///
+  /// In ko, this message translates to:
+  /// **'다양한 와딩 위젯 제공'**
+  String get guide6Headline;
+
+  /// No description provided for @guide6Description.
+  ///
+  /// In ko, this message translates to:
+  /// **'캘린더 위젯 ,라이브 위젯, 배경화면 위젯을 활용하여 와딩앱을 100% 활용해보세요.'**
+  String get guide6Description;
+
+  /// No description provided for @guide6Footnote.
+  ///
+  /// In ko, this message translates to:
+  /// **'(위 이미지는 연출된 이미지 입니다. 실제 적용 화면은 상이할 수 있습니다.)'**
+  String get guide6Footnote;
+
+  /// No description provided for @guide2CalloutAuto.
+  ///
+  /// In ko, this message translates to:
+  /// **'1. 온보딩에서 선택한 팀 자동 구독'**
+  String get guide2CalloutAuto;
+
+  /// No description provided for @guide2CalloutAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'2. 원하는 팀 추가 구독 설정 가능!'**
+  String get guide2CalloutAdd;
+
+  /// No description provided for @guide3CalloutMypage.
+  ///
+  /// In ko, this message translates to:
+  /// **'1. 마이페이지에서'**
+  String get guide3CalloutMypage;
+
+  /// No description provided for @guide3CalloutDisplay.
+  ///
+  /// In ko, this message translates to:
+  /// **'2. 화면설정> 마이구독 클릭!'**
+  String get guide3CalloutDisplay;
+
+  /// No description provided for @guideMenu.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩 사용가이드'**
+  String get guideMenu;
+
+  /// No description provided for @guidePopupBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩 200% 즐기기'**
+  String get guidePopupBadge;
+
+  /// No description provided for @guidePopupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'환영해요! 와딩 사용 꿀팁이 도착했어요'**
+  String get guidePopupTitle;
+
+  /// No description provided for @guidePopupMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 보지 않아도 [마이페이지 > 와딩 사용가이드]에서 언제든 다시 볼 수 있어요.'**
+  String get guidePopupMessage;
+
+  /// No description provided for @guidePopupDismiss.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음에 볼게요'**
+  String get guidePopupDismiss;
+
+  /// No description provided for @guidePopupConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'가이드 보기'**
+  String get guidePopupConfirm;
 }
 
 class _AppLocalizationsDelegate
