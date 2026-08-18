@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/guest_lock_overlay.dart';
+import '../../components/guide_popup.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
 import '../../config/app_language.dart';
@@ -236,6 +237,12 @@ class _MypageScreenState extends State<MypageScreen> {
                                 ),
                               );
                             },
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.guideMenu,
+                            // 직접 찾아 들어온 경로라 안내 팝업을 거치지 않고
+                            // 가이드 본문을 바로 연다.
+                            onTap: () => openGuideScreen(context),
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.customerService,

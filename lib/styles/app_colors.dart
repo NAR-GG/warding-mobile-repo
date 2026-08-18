@@ -78,6 +78,19 @@ class AppColors {
   static const Color narBgSecondary = Color(0xFF1A1B1E); // nar_BG_secondary
   static const Color narBottomSheetShadow = Color(0x1F101113); // #1011131F
 
+  // popup dialog (공용 팝업 모달) — 뒷배경 딤. #000000 70%
+  static const Color narPopupBarrier = Color(0xB3000000);
+
+  // 온보딩 사용 가이드 (전체화면 캐러셀)
+  /// 가이드 배경 위에 덮는 보라 오버레이. rgba(112,72,232,0.25)
+  static const Color narGuideOverlay = Color(0x407048E8);
+
+  /// 설명 말풍선 배경.
+  static const Color narGuideCallout = Color(0xFF2B02A4);
+
+  /// 하단 패널의 강조 텍스트·아이콘(섹션명, 페이지 표시).
+  static const Color narGuideAccent = Color(0xFFEAC5FF);
+
   // month picker (날짜 피커 모달)
   static const Color narButtonDisabledText = Color(
     0xFF5C5F66,
