@@ -106,6 +106,41 @@ void main() {
     expect(n.kda, isNull);
   });
 
+  test('솔랭 종료: gameDurationSeconds 를 읽는다', () {
+    final n = MemberNotification.fromJson({
+      'id': 12,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END', 'gameDurationSeconds': '1694'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    expect(n.gameDurationSeconds, 1694);
+  });
+
+  // 서버가 진행 중 매치·시계 이상이면 키를 뺀다. 구버전 서버도 키가 없다.
+  test('솔랭 종료: 경기 길이 키가 없거나 깨지면 null', () {
+    final noKey = MemberNotification.fromJson({
+      'id': 13,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    final empty = MemberNotification.fromJson({
+      'id': 14,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END', 'gameDurationSeconds': ''},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    final broken = MemberNotification.fromJson({
+      'id': 15,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END', 'gameDurationSeconds': 'abc'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    expect(noKey.gameDurationSeconds, isNull);
+    expect(empty.gameDurationSeconds, isNull);
+    expect(broken.gameDurationSeconds, isNull);
+  });
+
   test('솔랭 시작: eventType=START 는 종료가 아니다', () {
     final n = MemberNotification.fromJson({
       'id': 11,

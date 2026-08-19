@@ -845,24 +845,19 @@ abstract class AppLocalizations {
   /// No description provided for @rankStartTitle.
   ///
   /// In ko, this message translates to:
-  /// **'{playerName} 선수 랭크 시작 감지!'**
+  /// **'{playerName} 선수가 솔랭을 시작했어요'**
   String rankStartTitle(String playerName);
 
   /// No description provided for @rankStartBody.
   ///
   /// In ko, this message translates to:
-  /// **'지금 {playerName} 선수가 {champion}{particle} {queueType}를 시작했습니다'**
-  String rankStartBody(
-    String playerName,
-    String champion,
-    String particle,
-    String queueType,
-  );
+  /// **'{champion}{particle} {queueType} 플레이 중'**
+  String rankStartBody(String champion, String particle, String queueType);
 
   /// No description provided for @rankEndTitle.
   ///
   /// In ko, this message translates to:
-  /// **'{playerName} 선수가 솔랭 한 판을 마쳤어요'**
+  /// **'{playerName} 선수가 솔랭을 끝냈어요'**
   String rankEndTitle(String playerName);
 
   /// 승패를 아는 종료 알림. result 는 승리/패배. KDA 는 위젯에서 ' · 18/1/11' 로 덧붙인다
@@ -888,6 +883,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'패배'**
   String get rankEndLose;
+
+  /// 경기 길이. 본문 끝에 ' · 28분' 으로 덧붙는다. 초는 솔랭 결과에서 쓸모가 없어 분만 쓴다
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String rankEndDurationMinutes(int minutes);
 
   /// No description provided for @withdraw.
   ///

@@ -256,23 +256,22 @@
   },
 
   "soloRank": "솔로 랭크",
-  "rankStartTitle": "{playerName} 선수 랭크 시작 감지!",
+  "rankStartTitle": "{playerName} 선수가 솔랭을 시작했어요",
   "@rankStartTitle": {
     "placeholders": {
       "playerName": { "type": "String" }
     }
   },
-  "rankStartBody": "지금 {playerName} 선수가 {champion}{particle} {queueType}를 시작했습니다",
+  "rankStartBody": "{champion}{particle} {queueType} 플레이 중",
   "@rankStartBody": {
     "placeholders": {
-      "playerName": { "type": "String" },
       "champion": { "type": "String" },
       "particle": { "type": "String" },
       "queueType": { "type": "String" }
     }
   },
 
-  "rankEndTitle": "{playerName} 선수가 솔랭 한 판을 마쳤어요",
+  "rankEndTitle": "{playerName} 선수가 솔랭을 끝냈어요",
   "@rankEndTitle": {
     "placeholders": {
       "playerName": { "type": "String" }
@@ -296,6 +295,13 @@
   },
   "rankEndWin": "승리",
   "rankEndLose": "패배",
+  "rankEndDurationMinutes": "{minutes}분",
+  "@rankEndDurationMinutes": {
+    "description": "경기 길이. 본문 끝에 ' · 28분' 으로 덧붙는다. 초는 솔랭 결과에서 쓸모가 없어 분만 쓴다",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
 
   "withdraw": "회원탈퇴",
   "withdrawConfirmTitle": "회원탈퇴",

@@ -432,22 +432,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rankStartTitle(String playerName) {
-    return '$playerName ranked game detected!';
+    return '$playerName started a ranked game';
   }
 
   @override
-  String rankStartBody(
-    String playerName,
-    String champion,
-    String particle,
-    String queueType,
-  ) {
-    return '$playerName has started a $queueType game as $champion';
+  String rankStartBody(String champion, String particle, String queueType) {
+    return 'Playing $queueType as $champion';
   }
 
   @override
   String rankEndTitle(String playerName) {
-    return '$playerName finished a solo queue game';
+    return '$playerName finished a ranked game';
   }
 
   @override
@@ -465,6 +460,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankEndLose => 'Loss';
+
+  @override
+  String rankEndDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
 
   @override
   String get withdraw => 'Delete Account';
