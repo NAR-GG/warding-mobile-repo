@@ -54,7 +54,11 @@ class MatchDetailScreen extends StatefulWidget {
 /// 딥링크 라우터가 이미 떠 있는 상세를 재사용할 수 있게 public 이다.
 /// ([MatchDetailRouter] 가 GlobalKey 로 이 State 를 잡아 탭·세트를 갈아끼운다.)
 class MatchDetailScreenState extends State<MatchDetailScreen> {
-  List<String> _buildTabs(AppLocalizations l) => [l.championPick, l.liveEvent, l.tabPlayerRating];
+  List<String> _buildTabs(AppLocalizations l) => [
+    l.championPick,
+    l.liveEvent,
+    l.tabPlayerRating,
+  ];
   late int _tabIndex = widget.initialTabIndex;
 
   /// 이 화면이 보여주고 있는 경기. 라우터가 같은 경기인지 판단할 때 쓴다.
@@ -100,7 +104,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   /// 세트 번호 → '세트 N' 라벨.
-  String _setLabelOf(int order) => AppLocalizations.of(context)!.setLabel(order);
+  String _setLabelOf(int order) =>
+      AppLocalizations.of(context)!.setLabel(order);
 
   /// 현재 선택된 세트의 '세트 N' 라벨. (뷰모델의 currentSet 기준)
   String get _currentSet => _setLabelOf(_viewModel.currentSet);
@@ -167,8 +172,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     if (winnerCode != m.teamA.teamCode && winnerCode != m.teamB.teamCode) {
       return null;
     }
-    return AppLocalizations.of(context)!
-        .setWinner(_viewModel.currentSet, winnerCode);
+    return AppLocalizations.of(
+      context,
+    )!.setWinner(_viewModel.currentSet, winnerCode);
   }
 
   /// '중계 보기' 탭. 중계 채널이 복수(치지직/SOOP)면 선택 시트를 띄우고,
@@ -177,14 +183,18 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final links = _effectiveMatch?.effectiveStreamLinks ?? const [];
     if (links.isEmpty) return;
     if (links.length == 1) {
-      await launchUrl(Uri.parse(links.first.url),
-          mode: LaunchMode.externalApplication);
+      await launchUrl(
+        Uri.parse(links.first.url),
+        mode: LaunchMode.externalApplication,
+      );
       return;
     }
     final selected = await _showStreamPickerSheet(links);
     if (selected == null) return;
-    await launchUrl(Uri.parse(selected.url),
-        mode: LaunchMode.externalApplication);
+    await launchUrl(
+      Uri.parse(selected.url),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   /// 중계 채널 선택 바텀시트. 플랫폼별 로고 칩 + 이름/설명, 공식 채널엔 뱃지.
@@ -198,7 +208,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, 2 * scale),
+            padding: EdgeInsets.fromLTRB(
+              8 * scale,
+              4 * scale,
+              8 * scale,
+              2 * scale,
+            ),
             child: Text(
               AppLocalizations.of(context)!.broadcastChannelSelect,
               style: TextStyle(
@@ -241,7 +256,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
                         height: 38 * scale,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _brandColorOf(link.provider).withValues(alpha: 0.12),
+                          color: _brandColorOf(
+                            link.provider,
+                          ).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10 * scale),
                         ),
                         child: Text(
@@ -284,10 +301,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
                       if (link.description.contains('공식'))
                         Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 8 * scale, vertical: 3 * scale),
+                            horizontal: 8 * scale,
+                            vertical: 3 * scale,
+                          ),
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: AppColors.chzzkBrand.withValues(alpha: 0.35)),
+                              color: AppColors.chzzkBrand.withValues(
+                                alpha: 0.35,
+                              ),
+                            ),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -333,7 +355,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final orders = games.isEmpty
         ? [_viewModel.currentSet]
         : games.map((g) => g.gameOrder).toList();
-    final liveOrders = games.where((g) => g.isLive).map((g) => g.gameOrder).toSet();
+    final liveOrders = games
+        .where((g) => g.isLive)
+        .map((g) => g.gameOrder)
+        .toSet();
     final selected = await showAppBottomSheet<int>(
       context: context,
       child: Column(
@@ -391,14 +416,14 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
 
   /// 평점목록 응답의 선수를 UI 행 모델로 변환한다.
   PlayerRating _toPlayerRating(RatingPlayer p) => PlayerRating(
-        name: p.playerName,
-        position: positionFromRole(p.role),
-        rating: p.averageRating,
-        raterCount: p.ratingCount,
-        playerImageUrl: p.playerImageUrl,
-        participantId: p.participantId,
-        playerId: p.playerId,
-      );
+    name: p.playerName,
+    position: positionFromRole(p.role),
+    rating: p.averageRating,
+    raterCount: p.ratingCount,
+    playerImageUrl: p.playerImageUrl,
+    participantId: p.participantId,
+    playerId: p.playerId,
+  );
 
   /// 특정 진영의 팀 요약을 찾는다(없으면 0값).
   TeamRatingSummary _teamSummary(GameRatings? r, String side) {
@@ -407,12 +432,19 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       if (t.teamSide.toUpperCase() == side) return t;
     }
     return TeamRatingSummary(
-        teamSide: side, teamName: '', averageRating: 0, ratingCount: 0);
+      teamSide: side,
+      teamName: '',
+      averageRating: 0,
+      ratingCount: 0,
+    );
   }
 
   /// 선수 평점 행 탭 시 호출. 선수 평점 상세 페이지로 이동한다.
   Future<void> _openPlayerRating(
-      PlayerRating player, String teamName, BadgeSide side) async {
+    PlayerRating player,
+    String teamName,
+    BadgeSide side,
+  ) async {
     final gameId = _viewModel.currentGameId;
     if (gameId == null || gameId.isEmpty || player.participantId == 0) return;
     // playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답의 중복 표기
@@ -450,65 +482,74 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // 헤더·스코어·중계 버튼·탭바: 스크롤 시 함께 위로 밀려 올라간다.
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  NarDetailHeader(
-                    title: l.matchDetail,
-                    // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
-                    // 상태라 ListenableBuilder 로 라벨을 갱신한다.
-                    trailing: ListenableBuilder(
-                      listenable: _viewModel,
-                      builder: (context, _) => NarDropdown(
-                        variant: NarDropdownVariant.round,
-                        value: _currentSet,
-                        onTap: _showSetSheet,
-                        scale: scale,
+        child: RefreshIndicator(
+          onRefresh: _viewModel.refresh,
+          color: AppColors.narText,
+          backgroundColor: AppColors.narDark600,
+          child: CustomScrollView(
+            // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
+            // 당길 수 있어야 한다 — 그렇지 않으면 경기 전처럼 화면이 비었을 때만
+            // 새로고침이 막힌다.
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // 헤더·스코어·중계 버튼·탭바: 스크롤 시 함께 위로 밀려 올라간다.
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    NarDetailHeader(
+                      title: l.matchDetail,
+                      // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
+                      // 상태라 ListenableBuilder 로 라벨을 갱신한다.
+                      trailing: ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => NarDropdown(
+                          variant: NarDropdownVariant.round,
+                          value: _currentSet,
+                          onTap: _showSetSheet,
+                          scale: scale,
+                        ),
                       ),
+                      scale: scale,
                     ),
-                    scale: scale,
-                  ),
-                  _buildScoreSection(scale),
-                  SizedBox(height: 16 * scale),
-                  _buildActionButton(scale),
-                  SizedBox(height: 16 * scale),
-                  NarTabBar(
-                    tabs: _buildTabs(l),
-                    selectedIndex: _tabIndex,
-                    onChanged: (i) => setState(() {
-                      _tabIndex = i;
-                      // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
-                      _viewModel.setActiveTab(i);
-                    }),
-                    scale: scale,
-                  ),
-                ],
-              ),
-            ),
-            if (_tabIndex == 0)
-              SliverToBoxAdapter(
-                child: ListenableBuilder(
-                  listenable: _viewModel,
-                  builder: (context, _) => _buildChampionPickTab(scale),
+                    _buildScoreSection(scale),
+                    SizedBox(height: 16 * scale),
+                    _buildActionButton(scale),
+                    SizedBox(height: 16 * scale),
+                    NarTabBar(
+                      tabs: _buildTabs(l),
+                      selectedIndex: _tabIndex,
+                      onChanged: (i) => setState(() {
+                        _tabIndex = i;
+                        // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
+                        _viewModel.setActiveTab(i);
+                      }),
+                      scale: scale,
+                    ),
+                  ],
                 ),
               ),
-            if (_tabIndex == 1)
-              SliverToBoxAdapter(
-                child: ListenableBuilder(
-                  listenable: _viewModel,
-                  builder: (context, _) => _buildLiveEventTab(scale),
+              if (_tabIndex == 0)
+                SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (context, _) => _buildChampionPickTab(scale),
+                  ),
                 ),
-              ),
-            // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
-            // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
-            // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
-            // sticky collapse 가 동작하도록 한다.
-            if (_tabIndex == 2) _buildRatingTab(scale),
-          ],
+              if (_tabIndex == 1)
+                SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: _viewModel,
+                    builder: (context, _) => _buildLiveEventTab(scale),
+                  ),
+                ),
+              // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
+              // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
+              // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
+              // sticky collapse 가 동작하도록 한다.
+              if (_tabIndex == 2) _buildRatingTab(scale),
+            ],
+          ),
         ),
       ),
     );
@@ -559,8 +600,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         .map(_toPlayerRating)
         .toList();
     // 이 세트의 어떤 선수에게든 내 평점(myRating>0)이 있으면 상단 배너를 숨긴다.
-    final hasMyRating =
-        (r?.players ?? const <RatingPlayer>[]).any((p) => p.myRating > 0);
+    final hasMyRating = (r?.players ?? const <RatingPlayer>[]).any(
+      (p) => p.myRating > 0,
+    );
     return MatchDetailPlayerRatingSection(
       setLabel: _currentSet,
       showBanner: !hasMyRating,
@@ -679,8 +721,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       events: _viewModel.liveEvents,
       blueTeamImageUrl: _viewModel.blueTeamImageUrl,
       redTeamImageUrl: _viewModel.redTeamImageUrl,
-      initialLoading:
-          _viewModel.loadingEvents && _viewModel.liveEvents.isEmpty,
+      initialLoading: _viewModel.loadingEvents && _viewModel.liveEvents.isEmpty,
       errorMessage: _viewModel.eventsError,
       onReload: _viewModel.reloadLiveEvents,
       status: _viewModel.currentSetStatus,
@@ -737,7 +778,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         color: AppColors.narBgContent,
         child: MatchDetailLockedEmpty(
           message:
-              _viewModel.championError ?? AppLocalizations.of(context)!.championPickAfterMatchAlt,
+              _viewModel.championError ??
+              AppLocalizations.of(context)!.championPickAfterMatchAlt,
           scale: scale,
         ),
       );
