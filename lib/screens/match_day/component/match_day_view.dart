@@ -3,10 +3,10 @@ import '../../../l10n/app_localizations.dart';
 
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/match_detail_router.dart';
 import '../../../util/match_status.dart';
 import '../../../util/match_title_l10n.dart';
 import '../../../viewmodel/match_day/match_day_viewmodel.dart';
-import '../../match_detail/match_detail_screen.dart';
 import '../../match_list/component/match_card.dart';
 import '../../match_list/component/match_card_skeleton.dart';
 import '../../match_list/component/match_date_header.dart';
@@ -107,7 +107,9 @@ class MatchDayView extends StatelessWidget {
     for (final entry in byLeague.entries) {
       items.add(MatchLeagueHeader(leagueName: entry.key, scale: scale));
       for (var i = 0; i < entry.value.length; i++) {
-        items.add(_buildCard(context, entry.value[i], showTopBorder: i > 0, l: l));
+        items.add(
+          _buildCard(context, entry.value[i], showTopBorder: i > 0, l: l),
+        );
       }
     }
     return items;
@@ -148,10 +150,12 @@ class MatchDayView extends StatelessWidget {
       spoilerPreventionEnabled: spoilerPreventionEnabled,
       spoilerRevealed: revealedMatchIds.contains(m.matchId),
       onSpoilerReveal: () => onSpoilerReveal(m.matchId),
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
-        ),
+      // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
+      // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
+      onTap: () => MatchDetailRouter.open(
+        matchId: m.matchId,
+        match: m,
+        context: context,
       ),
       scale: scale,
     );
@@ -186,7 +190,8 @@ class MatchDayView extends StatelessWidget {
     return '';
   }
 
-  String _formatDate(DateTime d, AppLocalizations l) => l.monthDay(d.month, d.day);
+  String _formatDate(DateTime d, AppLocalizations l) =>
+      l.monthDay(d.month, d.day);
 
   String _localizeMatchTitle(BuildContext context, String title) =>
       localizeMatchTitle(title, AppLocalizations.of(context)!);
