@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
@@ -17,9 +18,9 @@ import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../util/match_detail_router.dart';
 import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
-import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -238,19 +239,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     } catch (_) {}
 
     if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MatchDetailScreen(
-          matchId: matchId,
-          match: match,
-          initialTabIndex: 1,
-        ),
-      ),
+    // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
+    // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
+    await MatchDetailRouter.open(
+      matchId: matchId,
+      match: match,
+      tabIndex: 1,
+      context: context,
     );
   }
 
   /// 알림 한 건을 타입에 맞는 카드로 그린다. 좌스와이프로 삭제, 탭으로 이동.
-  Widget _buildNotification(MemberNotification n, double scale, AppLocalizations l) {
+  Widget _buildNotification(
+    MemberNotification n,
+    double scale,
+    AppLocalizations l,
+  ) {
     final Widget card;
     if (n.type == MemberNotificationType.playerSoloRank) {
       card = RankStartNotification(
@@ -565,22 +569,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       listenable: _feedViewModel,
                       builder: (context, _) =>
                           _feedViewModel.notificationPermissionGranted
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                padding: EdgeInsets.only(top: 14 * scale),
-                                child: NarBanner(
-                                  scale: scale,
-                                  onTap:
-                                      _feedViewModel
-                                          .requestNotificationPermission,
-                                  icon: SvgPicture.asset(
-                                    'assets/icons/bell.svg',
-                                    width: 24 * scale,
-                                    height: 24 * scale,
-                                  ),
-                                  text: l.enableNotificationPermission,
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: EdgeInsets.only(top: 14 * scale),
+                              child: NarBanner(
+                                scale: scale,
+                                onTap: _feedViewModel
+                                    .requestNotificationPermission,
+                                icon: SvgPicture.asset(
+                                  'assets/icons/bell.svg',
+                                  width: 24 * scale,
+                                  height: 24 * scale,
                                 ),
+                                text: l.enableNotificationPermission,
                               ),
+                            ),
                     ),
                     SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                     NarChipMultiSelect(
@@ -635,45 +638,40 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           if (vm.error != null && vm.notifications.isEmpty) {
                             return _centerMessage(vm.error!, scale);
                           }
-                          final items =
-                              vm.notifications.where(_matchesFilter).toList();
-                          return RefreshIndicator(
+                          final items = vm.notifications
+                              .where(_matchesFilter)
+                              .toList();
+                          return AppRefreshIndicator(
                             onRefresh: vm.load,
-                            child:
-                                items.isEmpty
-                                    ? ListView(
-                                      // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      children: [
-                                        SizedBox(height: 120 * scale),
-                                        _centerMessage(
-                                          l.noNotifications,
-                                          scale,
-                                        ),
-                                      ],
-                                    )
-                                    // ponytail: SingleChildScrollView+Column 으로 모든 항목을
-                                    // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
-                                    // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
-                                    // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
-                                    : SingleChildScrollView(
-                                      controller: _scrollController,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      padding: EdgeInsets.only(
-                                        bottom: 120 * scale,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        children: _buildFeedChildren(
-                                          items,
-                                          scale,
-                                          l,
-                                        ),
+                            child: items.isEmpty
+                                ? ListView(
+                                    // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                    physics: AppRefreshIndicator.physics,
+                                    children: [
+                                      SizedBox(height: 120 * scale),
+                                      _centerMessage(l.noNotifications, scale),
+                                    ],
+                                  )
+                                // ponytail: SingleChildScrollView+Column 으로 모든 항목을
+                                // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
+                                // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
+                                // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
+                                : SingleChildScrollView(
+                                    controller: _scrollController,
+                                    physics: AppRefreshIndicator.physics,
+                                    padding: EdgeInsets.only(
+                                      bottom: 120 * scale,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: _buildFeedChildren(
+                                        items,
+                                        scale,
+                                        l,
                                       ),
                                     ),
+                                  ),
                           );
                         },
                       ),

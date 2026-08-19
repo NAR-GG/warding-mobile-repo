@@ -16,8 +16,8 @@ import '../../util/league_icon.dart';
 import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
 import '../../util/tab_route.dart';
+import '../../util/match_detail_router.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
-import '../match_detail/match_detail_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -144,7 +144,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
       if (!d.isAfter(today)) return day.date;
     }
     // 전부 미래면 오늘에 가장 가까운(=가장 이른) 그룹으로 폴백한다.
-    return _viewModel.scheduleAscending ? schedule.first.date : schedule.last.date;
+    return _viewModel.scheduleAscending
+        ? schedule.first.date
+        : schedule.last.date;
   }
 
   bool _isSameDate(DateTime a, DateTime b) =>
@@ -171,12 +173,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
     final ctx = _todayHeaderKey.currentContext;
     if (ctx != null) {
       debugPrint(
-          '[MatchList][perf] _scrollToTarget 완료 attempt=$attempt ${DateTime.now()}');
-      Scrollable.ensureVisible(
-        ctx,
-        duration: Duration.zero,
-        alignment: 0.35,
+        '[MatchList][perf] _scrollToTarget 완료 attempt=$attempt ${DateTime.now()}',
       );
+      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
       return;
     }
 
@@ -206,8 +205,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       if (_isSameDate(day.date, target)) break;
       offset += headerH * scale + day.matches.length * cardH * scale;
       if (groupByLeague) {
-        final leagueCount =
-            day.matches.map((m) => m.leagueInfo).toSet().length;
+        final leagueCount = day.matches.map((m) => m.leagueInfo).toSet().length;
         offset += leagueCount * leagueHeaderH * scale;
       }
     }
@@ -225,8 +223,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
         : estimated;
     _scrollController.jumpTo(next);
     // 다음 프레임에 다시 시도(렌더 확장으로 max 가 늘어나 점점 아래로 접근).
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _scrollToTarget(attempt: attempt + 1));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToTarget(attempt: attempt + 1),
+    );
   }
 
   /// 하단 네비 탭 선택. '경기리스트'를 제외한 탭이면 해당 화면으로 전환한다.
@@ -285,10 +284,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 그대로 살아 있다. 접힌 채로 나갔다면 정렬 행이 숨은 상태로 되돌아오는데,
   /// 목록을 다시 보는 시점이니 펼친 상태로 맞춰 준다.
   Future<void> _openMatchDetail(ScheduleMatch m) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => MatchDetailScreen(matchId: m.matchId, match: m),
-      ),
+    // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
+    // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
+    await MatchDetailRouter.open(
+      matchId: m.matchId,
+      match: m,
+      context: context,
     );
     if (!mounted || !_sortBarCollapsed) return;
     // 방향 판정 기준점도 지금 위치로 옮긴다 — 그대로 두면 상세를 보는 동안
@@ -423,7 +424,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
     // notify 유실(화면 재생성 중 VM dispose 등)에 대비해 build 후에도 스크롤을
     // 재시도한다. _scrolledForVersion 가드로 같은 조회 결과에 대한 실행은 한 번뿐이다.
     if (_scrolledForVersion != _viewModel.scheduleVersion) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeInitialScroll());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _maybeInitialScroll(),
+      );
     }
 
     return Scaffold(
@@ -509,7 +512,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
                                   hint: _viewModel.loadingLeagues
                                       ? l.loading
                                       : l.select,
-                                  labelBuilder: (v) => v == MatchListViewModel.allLeagueLabel ? l.all : v,
+                                  labelBuilder: (v) =>
+                                      v == MatchListViewModel.allLeagueLabel
+                                      ? l.all
+                                      : v,
                                   leadingBuilder: leagueIconWidget,
                                   scale: scale,
                                 ),
@@ -546,7 +552,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
                             onChanged: _viewModel.updateSelectedTeams,
                             // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
                             pinned: const {MatchListViewModel.allTeamsLabel},
-                            labelBuilder: (v) => v == MatchListViewModel.allTeamsLabel ? l.all : v,
+                            labelBuilder: (v) =>
+                                v == MatchListViewModel.allTeamsLabel
+                                ? l.all
+                                : v,
                             scale: scale,
                           ),
                         ),
@@ -669,7 +678,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
         final item = items[index];
         if (item is _HeaderItem) {
           // 자동 스크롤 대상 헤더에 GlobalKey 를 달아 정확히 맞춘다.
-          final key = (_targetDate != null && _isSameDate(item.date, _targetDate!))
+          final key =
+              (_targetDate != null && _isSameDate(item.date, _targetDate!))
               ? _todayHeaderKey
               : null;
           return KeyedSubtree(
@@ -687,10 +697,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
         final m = (item as _CardItem).match;
         // 날짜 헤더·리그 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
         final neighborIndex = index - 1;
-        final showTopBorder = !(neighborIndex >= 0 &&
-            neighborIndex < items.length &&
-            (items[neighborIndex] is _HeaderItem ||
-                items[neighborIndex] is _LeagueHeaderItem));
+        final showTopBorder =
+            !(neighborIndex >= 0 &&
+                neighborIndex < items.length &&
+                (items[neighborIndex] is _HeaderItem ||
+                    items[neighborIndex] is _LeagueHeaderItem));
         return MatchCard(
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
