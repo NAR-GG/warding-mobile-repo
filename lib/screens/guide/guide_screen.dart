@@ -227,17 +227,23 @@ class _BottomPanel extends StatelessWidget {
                         Expanded(
                           child: _PanelText(page: page, scale: scale),
                         ),
-                        SizedBox(width: 16 * scale),
-                        Text(
-                          '${current + 1}/$total',
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14 * scale,
-                            height: 1.55,
-                            color: AppColors.narGuideAccent,
+                        // 캐러셀 전체 진행은 위 점 인디케이터가 이미 보여주므로,
+                        // 이 숫자는 '지금 보는 주제 안에서 몇 번째인지'를 센다
+                        // (예: 마이 페이지 3장 중 2번째면 2/3). 한 장으로 끝나는
+                        // 주제는 늘 1/1 이라 알려 주는 바가 없어 아예 그리지 않는다.
+                        if (page.hasSectionStep) ...[
+                          SizedBox(width: 16 * scale),
+                          Text(
+                            '${page.sectionStep}/${page.sectionStepCount}',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14 * scale,
+                              height: 1.55,
+                              color: AppColors.narGuideAccent,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

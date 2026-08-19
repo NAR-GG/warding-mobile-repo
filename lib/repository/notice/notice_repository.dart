@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -56,10 +57,79 @@ class NoticeRepository {
     }
   }
 
+  /// 방금 받은 배너 공지 응답. [_promotedCacheTtl] 동안만 유효하다.
+  (DateTime, List<Notice>)? _promotedCache;
+
+  /// 진행 중인 배너 공지 요청. 같은 조회가 겹치면 여기에 합류한다.
+  Future<List<Notice>>? _promotedInFlight;
+
+  /// 배너 공지 캐시를 신뢰하는 시간.
+  ///
+  /// 스플래시에서 미리 받은 응답을 곧이어 열리는 일정 화면이 재사용하는 게
+  /// 목적이다. 배너가 캘린더보다 늦게 도착하면 그 순간 목록 위에 끼어들어
+  /// 캘린더를 통째로 밀어내므로(레이아웃 이동), 화면이 뜨기 전에 유무가
+  /// 확정돼 있어야 한다. 공지는 스코어처럼 시시각각 바뀌지 않아 캘린더보다
+  /// 길게 잡아도 되지만, 새 공지가 늦게 보이지 않도록 분 단위로 끊는다.
+  static const Duration _promotedCacheTtl = Duration(minutes: 5);
+
+  /// 배너 공지 요청 한 건이 살아 있을 수 있는 최대 시간.
+  ///
+  /// 백그라운드에 들어가면 OS 가 프로세스를 멈춰 소켓 타임아웃도 같이 얼어붙는다.
+  /// 상한이 없으면 그 요청이 영원히 진행 중으로 남아, 뒤따르는 조회가 계속
+  /// 거기에 합류한다.
+  static const Duration _promotedTimeout = Duration(seconds: 10);
+
+  /// 유효한 캐시가 있으면 그 배너 공지 목록, 없으면 null.
+  ///
+  /// [ScheduleViewModel] 이 **첫 프레임을 그리기 전에** 배너 유무를 정하는 데
+  /// 쓴다. 같은 값을 [fetchPromoted] 로 받으면 아무리 빨라도 한 프레임 뒤라,
+  /// 그 사이에 배너 없는 화면이 한 번 그려졌다가 배너가 끼어들며 캘린더를
+  /// 밀어낸다 — 스플래시에서 미리 받아 둔 보람이 사라진다.
+  List<Notice>? get cachedPromoted {
+    final cached = _promotedCache;
+    if (cached == null) return null;
+    if (DateTime.now().difference(cached.$1) >= _promotedCacheTtl) return null;
+    return cached.$2;
+  }
+
   /// 캘린더 상단 띠배너 대상 공지 목록 (최신 발행순, 최대 5건).
   /// 앱은 이 중 ✕로 닫지 않은 첫 건을 띄운다. 없으면 빈 목록.
-  Future<List<Notice>> fetchPromoted() async {
-    if (useMock) return [_mockNotices.first];
+  ///
+  /// 같은 조회가 이미 떠 있거나 방금 끝났으면 그 결과를 재사용한다.
+  /// [forceRefresh] 를 주면 캐시를 건너뛰고 새로 받는다.
+  Future<List<Notice>> fetchPromoted({bool forceRefresh = false}) {
+    if (useMock) return Future.value([_mockNotices.first]);
+
+    if (!forceRefresh) {
+      final cached = _promotedCache;
+      if (cached != null &&
+          DateTime.now().difference(cached.$1) < _promotedCacheTtl) {
+        debugPrint('[Notice] 배너 cache hit');
+        return Future.value(cached.$2);
+      }
+      final inFlight = _promotedInFlight;
+      if (inFlight != null) {
+        debugPrint('[Notice] 배너 요청 합류');
+        return inFlight;
+      }
+    }
+
+    final request = _fetchPromoted().timeout(_promotedTimeout).then((notices) {
+      _promotedCache = (DateTime.now(), notices);
+      return notices;
+    });
+    // 성공·실패 무관하게 진행 중 표시를 지운다. 실패한 요청이 남아 있으면
+    // 다음 조회가 이미 끝난 실패 future 에 합류해 계속 같은 에러만 받는다.
+    // 그 사이 새 요청이 들어와 있으면 그 쪽을 지우지 않도록 확인한다.
+    // 정리용 체인 자체의 에러는 여기서 삼킨다 — 원본 에러는 호출자가 받는다.
+    unawaited(request.whenComplete(() {
+      if (identical(_promotedInFlight, request)) _promotedInFlight = null;
+    }).catchError((_) => const <Notice>[]));
+    _promotedInFlight = request;
+    return request;
+  }
+
+  Future<List<Notice>> _fetchPromoted() async {
     final response = await http.get(Uri.parse(ApiConfig.promotedNoticeUrl));
     debugPrint('[Notice] 배너 ← ${response.statusCode}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -69,6 +139,15 @@ class NoticeRepository {
     return [
       for (final item in body) Notice.fromJson(item as Map<String, dynamic>),
     ];
+  }
+
+  /// 테스트 전용 — 캐시를 비워 다음 [fetchPromoted] 가 다시 네트워크를 보게 한다.
+  /// `instance` 는 테스트 파일 전체가 공유하는 싱글턴이라, 응답을 갈아끼우는
+  /// 테스트는 `setUp` 에서 이걸 불러야 이전 테스트 값이 남지 않는다.
+  @visibleForTesting
+  void resetPromotedCacheForTesting() {
+    _promotedCache = null;
+    _promotedInFlight = null;
   }
 
   // ── mock ─────────────────────────────────────────────────────────

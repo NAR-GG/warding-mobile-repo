@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -579,56 +579,79 @@ class _SpoilerOverlay extends StatelessWidget {
         children: [
           // 공개 전에는 실제 스코어를 아예 그리지 않는다 — 흐림만으로는
           // 숫자가 비쳐 스포일러가 새기 때문에 0:0 더미를 깔아 둔다.
-          Center(
-            child: revealed ? child : _SpoilerDummyScore(scale: scale),
-          ),
+          //
+          // 흐림은 이 더미에만 건다. 예전엔 위 오버레이가 BackdropFilter 로
+          // '뒤에 있는 것'을 흐렸는데, 그건 뒤 레이어 전체를 샘플링하는 연산이라
+          // 뷰포트에 뜬 카드 수만큼 곱해져 스크롤 프레임에 그대로 드러났다.
+          // 실제로 흐려야 할 대상은 이 더미 하나뿐이므로, 자기 서브트리만
+          // 처리하는 ImageFiltered 로 같은 그림을 훨씬 싸게 낸다.
+          if (revealed)
+            Center(child: child)
+          else
+            // 더미는 이 칸(116×77)을 꽉 채워야 한다. Center 로 두면 자연 크기를
+            // 그대로 요구해 좁은 화면에서 안쪽 Row 가 가로로 넘친다 — 예전엔
+            // 위 오버레이의 ClipRRect 가 가려 줬지만, 흐림이 이쪽으로 내려온
+            // 지금은 여기서 직접 크기를 묶고 잘라야 한다.
+            //
+            // 자르는 이유가 하나 더 있다: ImageFiltered 는 BackdropFilter 와
+            // 달리 자식을 클립하지 않아, 흐림이 번지면 모서리 밖으로 삐져나온다.
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14 * scale),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 2.5,
+                    sigmaY: 2.5,
+                    tileMode: TileMode.decal,
+                  ),
+                  child: _SpoilerDummyScore(scale: scale),
+                ),
+              ),
+            ),
           if (!revealed)
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onReveal,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14 * scale),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
-                    child: Container(
-                      alignment: Alignment.center,
-                      padding: EdgeInsets.all(11 * scale),
-                      decoration: BoxDecoration(
-                        color: const Color(0x66141517), // narDark800 + 40%
-                        borderRadius: BorderRadius.circular(14 * scale),
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.all(11 * scale),
+                  decoration: BoxDecoration(
+                    // 시안대로 narDark800 40% 를 얹는다. 흐림은 이 레이어가
+                    // 아니라 아래 더미 스코어가 직접 쓰므로(위 ImageFiltered),
+                    // 여기서는 BackdropFilter 없이 색만 덮으면 된다.
+                    color: AppColors.narSpoilerOverlayBg,
+                    borderRadius: BorderRadius.circular(14 * scale),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.spoilerBlock,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14 * scale,
+                          height: 1,
+                          color: AppColors.narTextTertiary,
+                        ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l.spoilerBlock,
-                            softWrap: false,
-                            overflow: TextOverflow.visible,
-                            style: TextStyle(
-                              fontFamily: 'Open Sans',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14 * scale,
-                              height: 1,
-                              color: AppColors.narTextTertiary,
-                            ),
-                          ),
-                          SizedBox(height: 4 * scale),
-                          Text(
-                            l.clickToSeeScore,
-                            softWrap: false,
-                            overflow: TextOverflow.visible,
-                            style: TextStyle(
-                              fontFamily: 'Open Sans',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 10 * scale,
-                              height: 1,
-                              color: AppColors.narText2,
-                            ),
-                          ),
-                        ],
+                      SizedBox(height: 4 * scale),
+                      Text(
+                        l.clickToSeeScore,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 10 * scale,
+                          height: 1,
+                          color: AppColors.narText2,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -662,15 +685,21 @@ class _SpoilerDummyScore extends StatelessWidget {
         borderRadius: BorderRadius.circular(14 * scale),
       ),
       alignment: Alignment.center,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('0', style: style),
-          SizedBox(width: 14 * scale),
-          Text(':', style: style),
-          SizedBox(width: 14 * scale),
-          Text('0', style: style),
-        ],
+      // 시안 그대로면 좁은 화면(320)에서 이 행이 칸(116)보다 넓어진다.
+      // 넘치는 대신 비율을 지키며 줄어들게 한다 — 어차피 흐림이 덮여 있어
+      // 몇 px 작아진 것은 드러나지 않지만, overflow 는 그대로 보인다.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('0', style: style),
+            SizedBox(width: 14 * scale),
+            Text(':', style: style),
+            SizedBox(width: 14 * scale),
+            Text('0', style: style),
+          ],
+        ),
       ),
     );
   }

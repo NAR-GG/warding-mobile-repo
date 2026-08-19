@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
@@ -207,7 +208,13 @@ class MatchListViewModel extends ChangeNotifier {
   final List<ScheduleDay> _schedule = [];
 
   /// 어느 방향이든 다음 페이지가 뒤/앞에 이어붙으므로 스크롤 점프가 없다.
-  List<ScheduleDay> get schedule => List.unmodifiable(_schedule);
+  ///
+  /// 읽기 전용 뷰를 매번 새로 만들지 않고 하나를 재사용한다.
+  /// [UnmodifiableListView] 는 [_schedule] 을 감싸기만 해서 뒤에서 목록이
+  /// 바뀌면 그대로 비치므로, 한 번 만들어 두면 계속 최신이다.
+  /// (예전엔 `List.unmodifiable` 로 호출마다 전체를 복사했는데, 화면 진입
+  /// 자동 스크롤이 프레임마다 이 getter 를 훑어서 그 복사가 그대로 쌓였다.)
+  late final List<ScheduleDay> schedule = UnmodifiableListView(_schedule);
 
   /// 미래 방향 다음 페이지 커서(`from`+`cursor` 축). 첫 페이지는 null.
   String? _cursor;

@@ -150,6 +150,63 @@ class _MatchListScreenState extends State<MatchListScreen> {
   bool _isSameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// [_estimatedOffsetTo] 결과 캐시와, 그 계산이 딛고 있던 목록 상태.
+  ///
+  /// 대상까지의 어림 높이는 목록 내용이 그대로면 매번 같은 값이 나온다. 그런데
+  /// [_scrollToTarget] 은 대상에 닿을 때까지 프레임마다 다시 부르므로(최대 40회),
+  /// 캐시가 없으면 그 사이 목록 전체를 40번 훑는다 — 화면 진입 직후, 즉 가장
+  /// 바빠야 할 구간에서 벌어지는 일이라 프레임 드랍으로 그대로 드러났다.
+  double? _cachedTargetOffset;
+  DateTime? _cachedOffsetTarget;
+  int? _cachedOffsetScheduleLength;
+  int? _cachedOffsetVersion;
+
+  /// [target] 날짜 그룹의 헤더가 목록 맨 위에서 얼마나 아래에 있을지 어림한다.
+  ///
+  /// 값이 틀리면 대상까지 못 가거나 지나쳐서 '오늘로 이동'이 어긋난다.
+  /// - 헤더: [MatchDateHeader] 가 height 38 고정.
+  /// - 카드: 위 10 + 헤더행 24 + 간격 20 + 스코어행 77 + 아래 24 = 155.
+  ///   스코어행은 스포방지 오버레이가 116×77 을 고정으로 잡아서, 팀 컬럼(73)이
+  ///   아니라 이쪽이 행 높이를 정한다.
+  /// - 리그헤더: '전체' 필터일 때만 날짜 그룹 안에 리그별로 하나씩 더 낀다
+  ///   ([MatchLeagueHeader] — 위아래 패딩 10*2 + 로고 34 ≈ 54).
+  double _estimatedOffsetTo(DateTime target) {
+    final schedule = _viewModel.schedule;
+    // 무한 스크롤로 페이지가 붙으면 길이가 변한다. 길이와 조회 버전이 그대로면
+    // 앞쪽 그룹 구성도 그대로라 이전에 잰 값을 그냥 쓴다.
+    if (_cachedTargetOffset != null &&
+        _cachedOffsetScheduleLength == schedule.length &&
+        _cachedOffsetVersion == _viewModel.scheduleVersion &&
+        _cachedOffsetTarget != null &&
+        _isSameDate(_cachedOffsetTarget!, target)) {
+      return _cachedTargetOffset!;
+    }
+
+    const headerH = 38.0;
+    const cardH = 155.0;
+    const leagueHeaderH = 54.0;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    final groupByLeague =
+        _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
+    var offset = 0.0;
+    for (final day in schedule) {
+      if (_isSameDate(day.date, target)) break;
+      offset += headerH * scale + day.matches.length * cardH * scale;
+      if (groupByLeague) {
+        final leagueCount =
+            day.matches.map((m) => m.leagueInfo).toSet().length;
+        offset += leagueCount * leagueHeaderH * scale;
+      }
+    }
+
+    _cachedTargetOffset = offset;
+    _cachedOffsetTarget = target;
+    _cachedOffsetScheduleLength = schedule.length;
+    _cachedOffsetVersion = _viewModel.scheduleVersion;
+    return offset;
+  }
+
   /// 대상 그룹 헤더로 스크롤한다.
   ///
   /// ListView.builder 는 lazy 라 아직 안 그려진 항목의 높이를 몰라
@@ -187,30 +244,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       return;
     }
 
-    final width = MediaQuery.of(context).size.width;
-    final scale = width.clamp(320.0, 430.0) / 375;
-    // 어림 계산용 실제 높이. 틀리면 대상까지 못 가거나 지나쳐서 오늘로 이동이 어긋난다.
-    // 헤더: MatchDateHeader 가 height 38 고정.
-    // 카드: 위 10 + 헤더행 24 + 간격 20 + 스코어행 77 + 아래 24 = 155.
-    // 스코어행은 스포방지 오버레이가 116×77 을 고정으로 잡아서, 팀 컬럼(73)이
-    // 아니라 이쪽이 행 높이를 정한다.
-    // 리그헤더: '전체' 필터일 때만 날짜 그룹 안에 리그별로 하나씩 더 낀다
-    // (MatchLeagueHeader — 위아래 패딩 10*2 + 로고 34 ≈ 54).
-    const headerH = 38.0;
-    const cardH = 155.0;
-    const leagueHeaderH = 54.0;
-    final groupByLeague =
-        _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
-    var offset = 0.0;
-    for (final day in _viewModel.schedule) {
-      if (_isSameDate(day.date, target)) break;
-      offset += headerH * scale + day.matches.length * cardH * scale;
-      if (groupByLeague) {
-        final leagueCount =
-            day.matches.map((m) => m.leagueInfo).toSet().length;
-        offset += leagueCount * leagueHeaderH * scale;
-      }
-    }
+    final offset = _estimatedOffsetTo(target);
     final position = _scrollController.position;
     final max = position.maxScrollExtent;
     // 어림값은 실제와 어긋날 수 있다(카드 높이가 시안과 달라지거나, 첫 카드의
@@ -739,6 +773,17 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return const SizedBox.shrink();
   }
 
+  /// [_flatten] 결과 캐시와, 그 계산이 딛고 있던 목록 상태.
+  ///
+  /// 평탄화 결과는 목록 내용이 그대로면 매번 같다. 그런데 [_buildList] 는
+  /// [ListenableBuilder] 안이라 VM 이 알릴 때마다 다시 도는데, 로딩 플래그
+  /// 하나가 바뀌었을 뿐인 알림(prefetch 페이지마다 여러 번)에도 목록 전체를
+  /// 새로 펴고 있었다. 목록이 실제로 변했을 때만 다시 편다.
+  List<_ListItem>? _cachedFlattened;
+  int? _cachedFlattenedLength;
+  int? _cachedFlattenedVersion;
+  bool? _cachedFlattenedGroupByLeague;
+
   /// 날짜 그룹을 헤더+카드 1차원 목록으로 편다.
   /// 담긴 순서가 곧 화면 순서라(서버 sort) 헤더는 항상 그 날짜 카드들 앞에 온다.
   ///
@@ -748,6 +793,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
   List<_ListItem> _flatten(List<ScheduleDay> schedule) {
     final groupByLeague =
         _viewModel.selectedLeague == MatchListViewModel.allLeagueLabel;
+    // 페이지가 앞뒤로 붙으면 그룹 수가 변한다. 길이·조회 버전·그룹핑 방식이
+    // 모두 그대로면 펴 놓은 결과도 그대로다.
+    final cached = _cachedFlattened;
+    if (cached != null &&
+        _cachedFlattenedLength == schedule.length &&
+        _cachedFlattenedVersion == _viewModel.scheduleVersion &&
+        _cachedFlattenedGroupByLeague == groupByLeague) {
+      return cached;
+    }
     final out = <_ListItem>[];
     for (final day in schedule) {
       out.add(_HeaderItem(day.date));
@@ -768,6 +822,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
         }
       }
     }
+    _cachedFlattened = out;
+    _cachedFlattenedLength = schedule.length;
+    _cachedFlattenedVersion = _viewModel.scheduleVersion;
+    _cachedFlattenedGroupByLeague = groupByLeague;
     return out;
   }
 

@@ -46,6 +46,11 @@ class ScheduleViewModel extends ChangeNotifier {
        _weekStartPreferences = weekStartPreferences ??
            CalendarWeekStartPreferenceRepository.instance {
     _weekStart = _weekStartPreferences.cachedValue ?? CalendarWeekStart.monday;
+    // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다.
+    // 배너는 캘린더 위에 얹혀 있어서, 뒤늦게 나타나면 캘린더를 아래로 밀고
+    // 높이까지 줄여 화면이 한 번 출렁인다.
+    _promotedNotices = _notices.cachedPromoted ?? const [];
+    _dismissedNoticeIds = _noticePreferences.cachedValue ?? const {};
     _init();
     _loadPreferredTeam();
     _loadPromotedNotice();
@@ -76,13 +81,20 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 배너 공지 목록을 불러온다. ✕로 닫았던 공지는 건너뛴다.
   /// 실패해도 캘린더 화면 자체는 정상 동작해야 하므로 조용히 무시한다.
+  ///
+  /// 생성자에서 캐시로 이미 맞춘 값과 결과가 같으면 알리지 않는다 — 스플래시가
+  /// 미리 받아 둔 경우가 그렇고, 거기서 notify 하면 배너가 그대로인데도 목록이
+  /// 다시 그려진다.
   Future<void> _loadPromotedNotice() async {
     try {
       final notices = await _notices.fetchPromoted();
-      if (notices.isEmpty) return;
-      _dismissedNoticeIds = await _noticePreferences.loadDismissedIds();
+      final dismissed = await _noticePreferences.loadDismissedIds();
+      if (_disposed) return;
+      final before = promotedNotice;
       _promotedNotices = notices;
-      notifyListeners();
+      _dismissedNoticeIds = dismissed;
+      // 공지가 내려갔으면 배너도 걷어야 하므로, 빈 목록이어도 그대로 반영한다.
+      if (promotedNotice?.id != before?.id) notifyListeners();
     } catch (e) {
       debugPrint('[Schedule] 배너 공지 조회 실패: $e');
     }

@@ -20,6 +20,8 @@ class GuidePageData {
   const GuidePageData({
     this.sectionIcon,
     required this.sectionLabel,
+    this.sectionStep,
+    this.sectionStepCount,
     required this.headline,
     required this.description,
     this.footnote,
@@ -32,6 +34,19 @@ class GuidePageData {
 
   /// 아이콘 아래 섹션명. 예) '마이 구독'.
   final String sectionLabel;
+
+  /// 같은 섹션 안에서 이 장이 몇 번째인지(1-based)와 그 섹션의 총 장수.
+  ///
+  /// 캐러셀 전체 진행은 아래 점 인디케이터([GuideProgressBar])가 보여주고,
+  /// 이 값은 섹션 라벨 옆에 '1/2' 처럼 붙어 "이 주제가 몇 장짜리인지"를 알린다.
+  /// 한 장으로 끝나는 섹션은 둘 다 null 로 두어 표시하지 않는다 — 늘 '1/1'
+  /// 이라 알려 주는 바가 없다.
+  final int? sectionStep;
+  final int? sectionStepCount;
+
+  /// 섹션 진행도를 표시할지. 두 값이 모두 있고 2장 이상일 때만.
+  bool get hasSectionStep =>
+      sectionStep != null && sectionStepCount != null && sectionStepCount! > 1;
 
   /// 굵은 안내 문구(20px). 예) '좋아하는 팀 경기, 선수 솔랭 놓치지 않고 챙겨보세요'.
   final String headline;
