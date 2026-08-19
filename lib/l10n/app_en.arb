@@ -147,13 +147,14 @@
   "matchStartNotificationBody": "{season} _ Your team {teamA} vs {teamB} match is starting.",
 
   "soloRank": "Solo Rank",
-  "rankStartTitle": "{playerName} ranked game detected!",
-  "rankStartBody": "{playerName} has started a {queueType} game as {champion}",
-  "rankEndTitle": "{playerName} finished a solo queue game",
+  "rankStartTitle": "{playerName} started a ranked game",
+  "rankStartBody": "Playing {queueType} as {champion}",
+  "rankEndTitle": "{playerName} finished a ranked game",
   "rankEndBodyResult": "{result} with {champion}",
   "rankEndBodyNoResult": "Game ended with {champion}",
   "rankEndWin": "Win",
   "rankEndLose": "Loss",
+  "rankEndDurationMinutes": "{minutes}m",
 
   "withdraw": "Delete Account",
   "withdrawConfirmTitle": "Delete Account",

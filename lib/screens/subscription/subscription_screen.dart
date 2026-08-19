@@ -286,6 +286,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         champion: n.championName,
         win: n.soloRankWin,
         kda: n.kda,
+        durationSeconds: n.gameDurationSeconds,
         dateTime: _formatAbsolute(n.createdAt),
         relativeTime: _formatRelative(n.createdAt, l),
         scale: scale,

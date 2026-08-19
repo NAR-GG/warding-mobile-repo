@@ -42,7 +42,7 @@ class RankStartNotification extends StatelessWidget {
     return NotificationCard(
       icon: 'assets/icons/headset.svg',
       title: l.rankStartTitle(playerName),
-      body: l.rankStartBody(playerName, resolvedChampion, particle, resolvedQueue),
+      body: l.rankStartBody(resolvedChampion, particle, resolvedQueue),
       dateTime: dateTime,
       relativeTime: relativeTime,
       scale: scale,

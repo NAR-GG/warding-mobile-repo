@@ -422,22 +422,17 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String rankStartTitle(String playerName) {
-    return '$playerName 선수 랭크 시작 감지!';
+    return '$playerName 선수가 솔랭을 시작했어요';
   }
 
   @override
-  String rankStartBody(
-    String playerName,
-    String champion,
-    String particle,
-    String queueType,
-  ) {
-    return '지금 $playerName 선수가 $champion$particle $queueType를 시작했습니다';
+  String rankStartBody(String champion, String particle, String queueType) {
+    return '$champion$particle $queueType 플레이 중';
   }
 
   @override
   String rankEndTitle(String playerName) {
-    return '$playerName 선수가 솔랭 한 판을 마쳤어요';
+    return '$playerName 선수가 솔랭을 끝냈어요';
   }
 
   @override
@@ -455,6 +450,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get rankEndLose => '패배';
+
+  @override
+  String rankEndDurationMinutes(int minutes) {
+    return '$minutes분';
+  }
 
   @override
   String get withdraw => '회원탈퇴';
