@@ -68,9 +68,11 @@ class MatchDayView extends StatelessWidget {
   Widget _buildList(BuildContext context, AppLocalizations l) {
     final matches = viewModel.matches;
     if (matches.isEmpty) {
+      // 경기가 없는 날도 날짜 헤더는 그대로 보여주고, 그 아래에 안내 문구만 둔다.
       return ListView(
         physics: AppRefreshIndicator.physics,
         children: [
+          _dateHeader(l),
           SizedBox(height: 120 * scale),
           _centerMessage(
             viewModel.error != null ? l.matchLoadFailed : l.noMatches,
@@ -90,6 +92,17 @@ class MatchDayView extends StatelessWidget {
     );
   }
 
+  /// 날짜 그룹 헤더 + 바로 아래 리그 헤더/카드와의 갭.
+  Widget _dateHeader(AppLocalizations l) => Padding(
+    padding: EdgeInsets.only(bottom: 8 * scale),
+    child: MatchDateHeader(
+      isToday: _isToday(date),
+      dateText: _formatDate(date, l),
+      todayLabel: l.today,
+      scale: scale,
+    ),
+  );
+
   /// 날짜 헤더 + (필요하면 리그 헤더로 묶인) 경기 카드들을 미리 만들어 둔다.
   ///
   /// [viewModel.leagues] 가 리그를 하나로 특정하지 않았으면(전체·다중 선택)
@@ -104,18 +117,7 @@ class MatchDayView extends StatelessWidget {
     final groupByLeague =
         leagues.isEmpty || leagues.length > 1 || leagues.single == 'ALL';
 
-    final items = <Widget>[
-      Padding(
-        // 날짜 헤더와 바로 아래 리그 헤더/카드 사이 갭.
-        padding: EdgeInsets.only(bottom: 8 * scale),
-        child: MatchDateHeader(
-          isToday: _isToday(date),
-          dateText: _formatDate(date, l),
-          todayLabel: l.today,
-          scale: scale,
-        ),
-      ),
-    ];
+    final items = <Widget>[_dateHeader(l)];
 
     if (!groupByLeague) {
       for (var i = 0; i < matches.length; i++) {
