@@ -889,6 +889,12 @@ abstract class AppLocalizations {
   /// **'패배'**
   String get rankEndLose;
 
+  /// 경기 길이. 본문 끝에 ' · 28분' 으로 덧붙는다. 초는 솔랭 결과에서 쓸모가 없어 분만 쓴다
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String rankEndDurationMinutes(int minutes);
+
   /// No description provided for @withdraw.
   ///
   /// In ko, this message translates to:

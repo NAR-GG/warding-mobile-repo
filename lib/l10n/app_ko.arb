@@ -296,6 +296,13 @@
   },
   "rankEndWin": "승리",
   "rankEndLose": "패배",
+  "rankEndDurationMinutes": "{minutes}분",
+  "@rankEndDurationMinutes": {
+    "description": "경기 길이. 본문 끝에 ' · 28분' 으로 덧붙는다. 초는 솔랭 결과에서 쓸모가 없어 분만 쓴다",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
 
   "withdraw": "회원탈퇴",
   "withdrawConfirmTitle": "회원탈퇴",

@@ -60,6 +60,35 @@ void main() {
     expect(weird.data, isEmpty);
   });
 
+  test('솔랭 종료: gameDurationSeconds 를 읽는다', () {
+    final n = MemberNotification.fromJson({
+      'id': 9,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'title': 't',
+      'body': 'b',
+      'data': {'eventType': 'END', 'win': 'true', 'gameDurationSeconds': '1694'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+
+    expect(n.gameDurationSeconds, 1694);
+  });
+
+  // 서버가 진행 중 매치·시계 이상이면 키를 뺀다. 구버전 서버도 키가 없다.
+  test('솔랭 종료: 경기 길이 키가 없거나 깨지면 null', () {
+    MemberNotification of(Map<String, dynamic> data) => MemberNotification.fromJson({
+          'id': 10,
+          'type': 'PLAYER_SOLO_RANK_STARTED',
+          'title': 't',
+          'body': 'b',
+          'data': data,
+          'createdAt': '2026-08-19T16:27:00',
+        });
+
+    expect(of({'eventType': 'END'}).gameDurationSeconds, isNull);
+    expect(of({'eventType': 'END', 'gameDurationSeconds': ''}).gameDurationSeconds, isNull);
+    expect(of({'eventType': 'END', 'gameDurationSeconds': 'abc'}).gameDurationSeconds, isNull);
+  });
+
   test('솔랭 종료: eventType/win/kda 를 읽는다', () {
     final n = MemberNotification.fromJson({
       'id': 8,

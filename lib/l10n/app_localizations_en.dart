@@ -467,6 +467,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankEndLose => 'Loss';
 
   @override
+  String rankEndDurationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
   String get withdraw => 'Delete Account';
 
   @override

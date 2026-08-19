@@ -12,8 +12,8 @@ import '../../../util/korean_particle.dart';
 /// 서버 문구는 한국어 고정이라 영어 로케일을 못 맞춘다. 그래서 승패([win])와
 /// KDA([kda]) 를 원자값으로 받아 로케일별로 편다.
 ///
-/// [win] 과 [kda] 는 각각 없을 수 있다. match-v5 결과를 못 읽은 종료 알림은
-/// 둘 다 비고, 그때는 '{챔피언} 경기 종료' 로만 표시한다.
+/// [win]·[kda]·[durationSeconds] 는 각각 없을 수 있다. match-v5 결과를 못 읽은 종료
+/// 알림은 셋 다 비고, 그때는 '{챔피언} 경기 종료' 로만 표시한다.
 class RankEndNotification extends StatelessWidget {
   const RankEndNotification({
     super.key,
@@ -23,6 +23,7 @@ class RankEndNotification extends StatelessWidget {
     required this.relativeTime,
     this.win,
     this.kda,
+    this.durationSeconds,
     this.scale = 1,
   });
 
@@ -37,6 +38,10 @@ class RankEndNotification extends StatelessWidget {
 
   /// 'K/D/A' 문자열 (예: '18/1/11'). null 이면 KDA 를 생략한다.
   final String? kda;
+
+  /// 경기 길이(초). null 이거나 1분 미만이면 표기를 생략한다 —
+  /// '0분' 은 정보가 아니라 오해를 만든다.
+  final int? durationSeconds;
 
   final String dateTime;
   final String relativeTime;
@@ -56,7 +61,9 @@ class RankEndNotification extends StatelessWidget {
       final result = win! ? l.rankEndWin : l.rankEndLose;
       final base = l.rankEndBodyResult(resolvedChampion, particle, result);
       // KDA 는 언어와 무관한 숫자라 로케일 문구 뒤에 그대로 붙인다.
-      body = (kda == null || kda!.isEmpty) ? base : '$base · $kda';
+      final withKda = (kda == null || kda!.isEmpty) ? base : '$base · $kda';
+      final minutes = (durationSeconds ?? 0) ~/ 60;
+      body = minutes < 1 ? withKda : '$withKda · ${l.rankEndDurationMinutes(minutes)}';
     }
 
     return NotificationCard(

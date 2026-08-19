@@ -60,6 +60,10 @@ class MemberNotification {
   /// 'K/D/A' 문자열(예: '18/1/11'). 셋 다 있을 때만 서버가 실어준다.
   String? get kda => _d('kda');
 
+  /// 경기 길이(초). 서버가 초로 싣고 표기 단위는 앱이 정한다.
+  /// 진행 중이거나 타임스탬프가 이상한 매치는 서버가 키를 빼므로 null 이다.
+  int? get gameDurationSeconds => int.tryParse(_d('gameDurationSeconds') ?? '');
+
   MemberNotification copyWith({bool? read}) => MemberNotification(
         id: id,
         type: type,

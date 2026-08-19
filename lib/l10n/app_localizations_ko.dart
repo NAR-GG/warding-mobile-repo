@@ -457,6 +457,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankEndLose => '패배';
 
   @override
+  String rankEndDurationMinutes(int minutes) {
+    return '$minutes분';
+  }
+
+  @override
   String get withdraw => '회원탈퇴';
 
   @override

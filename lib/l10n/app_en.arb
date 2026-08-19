@@ -154,6 +154,13 @@
   "rankEndBodyNoResult": "Game ended with {champion}",
   "rankEndWin": "Win",
   "rankEndLose": "Loss",
+  "rankEndDurationMinutes": "{minutes}m",
+  "@rankEndDurationMinutes": {
+    "description": "Game length appended to the body as ' · 28m'",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
 
   "withdraw": "Delete Account",
   "withdrawConfirmTitle": "Delete Account",
