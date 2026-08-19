@@ -348,6 +348,11 @@ class _AlarmBellState extends State<_AlarmBell> {
         setStartEnabled: result.setStart,
         setEndEnabled: result.setEnd,
         liveEventEnabled: result.liveEvent,
+        killEnabled: result.kill,
+        baronEnabled: result.baron,
+        dragonEnabled: result.dragon,
+        towerEnabled: result.tower,
+        inhibitorEnabled: result.inhibitor,
       );
       _showFeedback(l.matchAlarmRegistered);
 

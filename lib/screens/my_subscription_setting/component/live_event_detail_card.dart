@@ -31,7 +31,7 @@ extension LiveEventKindLabel on LiveEventKind {
 /// 라이브 이벤트 알림 세부 설정 카드.
 ///
 /// 라이브 이벤트 토글이 ON 일 때만 그 아래에 나타난다.
-/// 바깥 여백 padding 10/20/10/70 (알림 행 라벨보다 더 들여쓴다).
+/// 바깥 여백 padding 10/20/10/[leftPadding] (알림 행 라벨보다 더 들여쓴다).
 /// 카드는 narDark500 배경 + radius 10 + padding 4/8, 안에 항목 행을 쌓는다.
 /// 행 사이는 0.5 narLine2 구분선, 마지막 행에는 선이 없다.
 class LiveEventDetailCard extends StatelessWidget {
@@ -39,6 +39,7 @@ class LiveEventDetailCard extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onChanged,
+    this.leftPadding = 70,
     this.scale = 1,
   });
 
@@ -47,6 +48,10 @@ class LiveEventDetailCard extends StatelessWidget {
 
   /// 항목 탭. (종류, 켤지 여부)
   final void Function(LiveEventKind kind, bool value) onChanged;
+
+  /// 카드 좌측 들여쓰기. 마이 구독 설정(팀 알림)은 라벨이 60 들여쓴 자리라
+  /// 기본 70, 경기 알림 시트는 라벨이 20 이라 20 을 준다.
+  final double leftPadding;
 
   final double scale;
 
@@ -57,7 +62,7 @@ class LiveEventDetailCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        70 * scale,
+        leftPadding * scale,
         10 * scale,
         20 * scale,
         10 * scale,
