@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 
 import '../../../model/schedule_match.dart';
+import '../../../components/app_refresh_indicator.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/match_detail_router.dart';
 import '../../../util/match_status.dart';
@@ -43,6 +44,7 @@ class MatchDayView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
 
+    // 로딩 중에는 당기지 않는다 — 이미 받고 있는데 또 걸 이유가 없다.
     if (viewModel.isLoading) {
       return ListView.builder(
         physics: const NeverScrollableScrollPhysics(),
@@ -54,17 +56,34 @@ class MatchDayView extends StatelessWidget {
       );
     }
 
+    return AppRefreshIndicator(
+      onRefresh: viewModel.load,
+      child: _buildList(context, l),
+    );
+  }
+
+  /// 경기 목록. 결과가 없으면 안내 문구만 두되, 그 상태에서도 당길 수 있게
+  /// 스크롤 뷰 안에 담는다 — 조회 실패로 비어 있을 때가 새로고침이 가장
+  /// 필요한 순간이다.
+  Widget _buildList(BuildContext context, AppLocalizations l) {
     final matches = viewModel.matches;
     if (matches.isEmpty) {
-      return _centerMessage(
-        viewModel.error != null ? l.matchLoadFailed : l.noMatches,
-        scale,
+      return ListView(
+        physics: AppRefreshIndicator.physics,
+        children: [
+          SizedBox(height: 120 * scale),
+          _centerMessage(
+            viewModel.error != null ? l.matchLoadFailed : l.noMatches,
+            scale,
+          ),
+        ],
       );
     }
 
     // 첫 항목은 날짜 그룹 헤더(경기리스트와 동일), 이후 리그 헤더(필요하면)+경기 카드.
     final items = _buildItems(context, matches, l);
     return ListView.builder(
+      physics: AppRefreshIndicator.physics,
       padding: EdgeInsets.only(bottom: 24 * scale),
       itemCount: items.length,
       itemBuilder: (context, index) => items[index],

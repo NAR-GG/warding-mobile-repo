@@ -9,6 +9,7 @@ import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
 import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
@@ -482,15 +483,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: RefreshIndicator(
+        child: AppRefreshIndicator(
           onRefresh: _viewModel.refresh,
-          color: AppColors.narText,
-          backgroundColor: AppColors.narDark600,
           child: CustomScrollView(
             // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
-            // 당길 수 있어야 한다 — 그렇지 않으면 경기 전처럼 화면이 비었을 때만
-            // 새로고침이 막힌다.
-            physics: const AlwaysScrollableScrollPhysics(),
+            // 당길 수 있어야 한다.
+            physics: AppRefreshIndicator.physics,
             slivers: [
               // 헤더·스코어·중계 버튼·탭바: 스크롤 시 함께 위로 밀려 올라간다.
               SliverToBoxAdapter(

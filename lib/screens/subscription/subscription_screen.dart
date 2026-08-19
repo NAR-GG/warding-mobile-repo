@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
@@ -640,13 +641,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           final items = vm.notifications
                               .where(_matchesFilter)
                               .toList();
-                          return RefreshIndicator(
+                          return AppRefreshIndicator(
                             onRefresh: vm.load,
                             child: items.isEmpty
                                 ? ListView(
                                     // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
+                                    physics: AppRefreshIndicator.physics,
                                     children: [
                                       SizedBox(height: 120 * scale),
                                       _centerMessage(l.noNotifications, scale),
@@ -658,8 +658,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                 // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
                                 : SingleChildScrollView(
                                     controller: _scrollController,
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
+                                    physics: AppRefreshIndicator.physics,
                                     padding: EdgeInsets.only(
                                       bottom: 120 * scale,
                                     ),
