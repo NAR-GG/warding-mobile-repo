@@ -153,12 +153,11 @@ class _TeamPickFrame extends StatelessWidget {
         vertical: 14 * scale,
         horizontal: 7 * scale,
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
-        crossAxisAlignment:
-            isBlue ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isBlue
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: children,
       ),
     );
@@ -207,8 +206,9 @@ class _PicksRow extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Row(
-        mainAxisAlignment:
-            isBlue ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment: isBlue
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
           for (var i = 0; i < picks.length; i++)
             _ChampionPick(
@@ -289,9 +289,13 @@ class _ChampionBan extends StatelessWidget {
                     child: Container(
                       color: AppColors.narDark400,
                       child: hasImage
+                          // 세로 일러스트를 정사각 칸에 cover 로 넣으면 세로가
+                          // 크게 잘리는데, 중앙 기준이면 잘려 남는 것이 대개
+                          // 몸통·다리다. 위쪽을 보게 잘라 얼굴이 담기게 한다.
                           ? CachedNetworkImage(
                               imageUrl: resolveImageUrl(imageUrl)!,
                               fit: BoxFit.cover,
+                              alignment: const Alignment(0, -0.6),
                               fadeInDuration: const Duration(milliseconds: 150),
                               errorWidget: (_, _, _) => const SizedBox.shrink(),
                             )
@@ -321,7 +325,10 @@ class _ChampionBan extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.narGray500, width: 2 * scale),
+                border: Border.all(
+                  color: AppColors.narGray500,
+                  width: 2 * scale,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -360,11 +367,30 @@ class _ChampionPick extends StatelessWidget {
         children: [
           if (hasImage)
             Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: resolveImageUrl(imageUrl)!,
-                fit: BoxFit.cover,
-                fadeInDuration: const Duration(milliseconds: 150),
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              // 원본(308×560)은 챔피언 전신이 담긴 세로 일러스트다. 카드
+              // 비율(60×101)에 cover 로 맞추면 가로가 거의 딱 맞아떨어져
+              // 확대가 일어나지 않고, 전신이 그대로 축소돼 얼굴이 작게 보인다.
+              //
+              // 1.25배로 키우고 살짝 위를 보게 잘라 얼굴을 키운다. 밀려나는
+              // 하단 몸통은 아래 그라데이션과 선수명이 덮는 영역이라 잃는 게
+              // 없다.
+              //
+              // 배율을 이보다 올리면(1.35~) 얼굴이 위로 잘려 나가는 챔피언이
+              // 생긴다 — 원본마다 인물 위치가 달라서, 리신·칼리스타처럼 머리가
+              // 위쪽에 붙은 일러스트가 먼저 잘린다. 상단 정렬(topCenter)도
+              // 같은 이유로 쓰지 않는다.
+              child: ClipRect(
+                child: Transform.scale(
+                  scale: 1.25,
+                  alignment: const Alignment(0, -0.7),
+                  child: CachedNetworkImage(
+                    imageUrl: resolveImageUrl(imageUrl)!,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.7),
+                    fadeInDuration: const Duration(milliseconds: 150),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
               ),
             ),
           // 인셋 섀도우 근사 — 중앙부터 하단까지 narDark800 62% 그라데이션.
