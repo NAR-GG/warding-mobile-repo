@@ -92,6 +92,13 @@ class AuthService {
     _jwtCached = false;
   }
 
+  /// 테스트 전용 — 진행 중인 재발급 요청을 잊는다.
+  ///
+  /// [refreshAccessToken] 은 동시 호출을 하나로 합치므로, 앞 테스트가 남긴
+  /// future 가 그대로 살아 있으면 다음 테스트가 그 결과를 물려받는다.
+  @visibleForTesting
+  void resetRefreshForTesting() => _refreshing = null;
+
   /// 카카오 SDK로 로그인 → 받은 access token을 백엔드로 전달 → 자체 JWT 저장.
   Future<AuthResult> signInWithKakao() async {
     final OAuthToken token;
@@ -318,6 +325,25 @@ class AuthService {
     _setCachedJwt(jwt);
     if (refreshToken != null && refreshToken.isNotEmpty) {
       await writeWithDuplicateRecovery(key: _refreshKey, value: refreshToken);
+    } else {
+      // 응답에 리프레시 토큰이 없으면 이전 세션의 것을 반드시 지운다.
+      //
+      // 그냥 두면 새로 받은 access token 과 남의(또는 옛) refresh token 이
+      // 짝이 안 맞는 채로 남는다. 계정을 바꿔 로그인한 경우가 특히 그런데,
+      // 다음 재발급에서 서버가 그 토큰을 401 로 거절하면 방금 로그인한
+      // 사용자가 곧바로 로그아웃된다 — 원인이 로그인 시점에 심긴 탓에
+      // 재현도 추적도 어렵다.
+      debugPrint('[Auth] 로그인 응답에 refreshToken 없음 — 이전 토큰 제거');
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'loginWithoutRefreshToken',
+        reason: 'refresh_token_missing',
+      );
+      try {
+        await _storage.delete(key: _refreshKey);
+      } catch (e) {
+        debugPrint('[Auth] 이전 refreshToken 삭제 실패: $e');
+      }
     }
 
     // 로그인 성공 → Sentry에 사용자 ID 설정 + info 로그
@@ -336,7 +362,7 @@ class AuthService {
   /// (Sentry WARDING-APP-FLUTTER-C, 491명 로그아웃의 경로).
   Future<String?> get jwt async {
     if (_jwtCached) return _cachedJwt;
-    final value = await readOrThrowIfLocked(_jwtKey);
+    final value = await readOrThrowIfUnavailable(_jwtKey);
     // null 은 캐싱하지 않는다 — 기기 잠금 중 Keychain 접근성 불일치 등으로
     // 진짜 로그인 상태인데도 일시적으로 null 이 읽히는 경우가 있었다(과거
     // -25308 오탐 로그아웃 사고, splash_screen.dart 참고). 캐싱해버리면 그
@@ -350,7 +376,7 @@ class AuthService {
   /// 저장된 Refresh Token. 잠금 등으로 읽지 못하면
   /// [SecureStorageUnavailableException] — [_doRefresh] 가 이를 일시 장애로
   /// 처리한다. null 로 접으면 '리프레시 토큰 없음'이 되어 강제 로그아웃된다.
-  Future<String?> get refreshToken => readOrThrowIfLocked(_refreshKey);
+  Future<String?> get refreshToken => readOrThrowIfUnavailable(_refreshKey);
 
   /// 로그인 회원 정보를 조회한다 (`GET /api/auth/me`).
   /// 만료 시 [authorizedRequest] 가 토큰을 자동 갱신·재시도한다.
@@ -424,8 +450,15 @@ class AuthService {
     try {
       refresh = await refreshToken;
     } on SecureStorageUnavailableException catch (e) {
-      // 기기 잠금 등으로 못 읽었을 뿐 — 토큰이 없다는 뜻이 아니다.
+      // 못 읽었을 뿐 — 토큰이 없다는 뜻이 아니다. 잠금(-25308)이든 다른
+      // Keychain 오류든 마찬가지라, 여기서 로그아웃하면 멀쩡한 세션이 날아간다.
       debugPrint('[Auth] 리프레시 토큰 읽기 불가(일시 장애로 처리): $e');
+      SentryLogger.warning(
+        module: 'Auth',
+        eventName: 'refreshTokenUnreadable',
+        reason: e.cause.runtimeType.toString(),
+        error: e,
+      );
       return const RefreshResult.transient();
     }
     if (refresh == null || refresh.isEmpty) {

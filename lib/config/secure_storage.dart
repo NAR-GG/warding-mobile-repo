@@ -63,30 +63,36 @@ bool isKeychainDuplicateError(Object e) {
       message.contains('already exists in the keychain');
 }
 
-/// 잠금 등으로 읽지 못하면 [SecureStorageUnavailableException] 을 던지고,
-/// 그 밖의 실패는 null(값 없음)로 접는다.
+/// 읽지 못하면 [SecureStorageUnavailableException] 을 던진다.
+///
+/// **실패는 전부 예외다** — 잠금(-25308)뿐 아니라 어떤 이유로 실패했든
+/// "못 읽었다"는 사실만 확실하고 "값이 없다"는 것은 확인된 바 없다. null 은
+/// read 가 성공적으로 '저장된 적 없음'을 알려 준 경우에만 반환한다.
+///
+/// 예전에는 잠금만 예외로 올리고 나머지 실패(-25300 item not found, 복호화
+/// 실패, 플랫폼 채널 오류 등)를 null 로 접었다. 그런데 리프레시 토큰을 읽는
+/// 쪽에서는 null 이 곧 '재로그인 필요'라, 한 번의 읽기 실패가 그대로 강제
+/// 로그아웃이 됐다 — 토큰이 죽었다는 증거는 어디에도 없는데도. 잠금 계열만
+/// 특별 취급하는 한 이 구멍은 계속 남는다.
 ///
 /// 로컬 설정처럼 못 읽어도 기본값으로 굴러가면 되는 호출부는
 /// [readOrNull] 을 쓴다 — 이쪽은 잠금까지 null 로 접는다.
-Future<String?> readOrThrowIfLocked(
+Future<String?> readOrThrowIfUnavailable(
   String key, {
   FlutterSecureStorage? storage,
 }) async {
   try {
     return await (storage ?? secureStorage).read(key: key);
   } catch (e) {
-    if (isKeychainLockedError(e)) {
-      throw SecureStorageUnavailableException(e);
-    }
     debugPrint('[SecureStorage] read 실패($key): $e');
-    return null;
+    throw SecureStorageUnavailableException(e);
   }
 }
 
 /// 어떤 실패든 null 로 접고 읽는다 — 못 읽으면 기본값으로 굴러가는 값 전용.
 ///
 /// 로그인 여부·토큰처럼 null 의 의미가 큰 값에는 쓰면 안 된다
-/// ([readOrThrowIfLocked] 를 쓸 것).
+/// ([readOrThrowIfUnavailable] 를 쓸 것).
 Future<String?> readOrNull(String key, {FlutterSecureStorage? storage}) async {
   try {
     return await (storage ?? secureStorage).read(key: key);

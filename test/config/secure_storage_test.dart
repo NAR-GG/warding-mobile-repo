@@ -52,28 +52,50 @@ void main() {
     });
   });
 
-  group('readOrThrowIfLocked', () {
+  group('readOrThrowIfUnavailable', () {
     test('잠금 실패는 예외로 올려 보낸다 — null(값 없음)로 접지 않는다', () async {
       when(() => storage.read(key: any(named: 'key'))).thenThrow(lockedError());
 
       expect(
-        () => readOrThrowIfLocked('jwt', storage: storage),
+        () => readOrThrowIfUnavailable('jwt', storage: storage),
         throwsA(isA<SecureStorageUnavailableException>()),
       );
     });
 
-    test('잠금이 아닌 실패는 null 로 접는다', () async {
+    test('잠금이 아닌 실패도 예외다 — 못 읽은 것과 값이 없는 것은 다르다', () async {
+      // 예전엔 여기서 null 을 돌려줬다. 그 null 이 리프레시 토큰 경로에서
+      // '재로그인 필요'로 해석돼, 읽기 한 번 실패에 멀쩡한 세션이 날아갔다.
+      when(() => storage.read(key: any(named: 'key')))
+          .thenThrow(PlatformException(code: '-25300', message: 'not found'));
+
+      expect(
+        () => readOrThrowIfUnavailable('jwt', storage: storage),
+        throwsA(isA<SecureStorageUnavailableException>()),
+      );
+    });
+
+    test('PlatformException 이 아닌 실패도 예외다', () async {
       when(() => storage.read(key: any(named: 'key')))
           .thenThrow(Exception('알 수 없는 실패'));
 
-      expect(await readOrThrowIfLocked('jwt', storage: storage), isNull);
+      expect(
+        () => readOrThrowIfUnavailable('jwt', storage: storage),
+        throwsA(isA<SecureStorageUnavailableException>()),
+      );
+    });
+
+    test('저장된 적 없으면 null — 이건 read 가 성공적으로 알려 준 사실이다', () async {
+      when(() => storage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => null);
+
+      expect(await readOrThrowIfUnavailable('jwt', storage: storage), isNull);
     });
 
     test('정상 읽기는 값을 그대로 준다', () async {
       when(() => storage.read(key: any(named: 'key')))
           .thenAnswer((_) async => 'token');
 
-      expect(await readOrThrowIfLocked('jwt', storage: storage), 'token');
+      expect(await readOrThrowIfUnavailable('jwt', storage: storage), 'token');
     });
   });
 
