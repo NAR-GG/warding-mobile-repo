@@ -441,6 +441,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String rankEndTitle(String playerName) {
+    return '$playerName finished a solo queue game';
+  }
+
+  @override
+  String rankEndBodyResult(String champion, String particle, String result) {
+    return '$result with $champion';
+  }
+
+  @override
+  String rankEndBodyNoResult(String champion) {
+    return 'Game ended with $champion';
+  }
+
+  @override
+  String get rankEndWin => 'Win';
+
+  @override
+  String get rankEndLose => 'Loss';
+
+  @override
   String get withdraw => 'Delete Account';
 
   @override

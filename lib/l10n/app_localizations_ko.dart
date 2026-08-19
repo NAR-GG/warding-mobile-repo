@@ -431,6 +431,27 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String rankEndTitle(String playerName) {
+    return '$playerName 선수가 솔랭 한 판을 마쳤어요';
+  }
+
+  @override
+  String rankEndBodyResult(String champion, String particle, String result) {
+    return '$champion$particle $result';
+  }
+
+  @override
+  String rankEndBodyNoResult(String champion) {
+    return '$champion 경기 종료';
+  }
+
+  @override
+  String get rankEndWin => '승리';
+
+  @override
+  String get rankEndLose => '패배';
+
+  @override
   String get withdraw => '회원탈퇴';
 
   @override

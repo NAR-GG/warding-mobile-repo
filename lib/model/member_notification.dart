@@ -43,6 +43,23 @@ class MemberNotification {
   String? get championImageUrl => _d('championImageUrl');
   String? get opggUrl => _d('opggUrl');
 
+  // ── 솔랭 시작/종료 구분 ────────────────────────────────────────
+  // `type` 은 시작·종료 모두 PLAYER_SOLO_RANK_STARTED 다(앱 딥링크 라우팅 키라
+  // 서버가 바꾸지 않는다). 구분은 오직 data.eventType 으로 한다.
+
+  /// 솔랭 **종료** 알림인가. 시작 알림이면 false.
+  bool get isSoloRankEnd => _d('eventType') == 'END';
+
+  /// 승패. 종료 알림이라도 match-v5 결과를 못 읽었으면 키 자체가 없어 null.
+  bool? get soloRankWin => switch (_d('win')) {
+        'true' => true,
+        'false' => false,
+        _ => null,
+      };
+
+  /// 'K/D/A' 문자열(예: '18/1/11'). 셋 다 있을 때만 서버가 실어준다.
+  String? get kda => _d('kda');
+
   MemberNotification copyWith({bool? read}) => MemberNotification(
         id: id,
         type: type,

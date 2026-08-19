@@ -853,6 +853,36 @@ abstract class AppLocalizations {
     String queueType,
   );
 
+  /// No description provided for @rankEndTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{playerName} 선수가 솔랭 한 판을 마쳤어요'**
+  String rankEndTitle(String playerName);
+
+  /// 승패를 아는 종료 알림. result 는 승리/패배. KDA 는 위젯에서 ' · 18/1/11' 로 덧붙인다
+  ///
+  /// In ko, this message translates to:
+  /// **'{champion}{particle} {result}'**
+  String rankEndBodyResult(String champion, String particle, String result);
+
+  /// match-v5 결과를 못 읽어 승패를 모르는 종료 알림
+  ///
+  /// In ko, this message translates to:
+  /// **'{champion} 경기 종료'**
+  String rankEndBodyNoResult(String champion);
+
+  /// No description provided for @rankEndWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'승리'**
+  String get rankEndWin;
+
+  /// No description provided for @rankEndLose.
+  ///
+  /// In ko, this message translates to:
+  /// **'패배'**
+  String get rankEndLose;
+
   /// No description provided for @withdraw.
   ///
   /// In ko, this message translates to:

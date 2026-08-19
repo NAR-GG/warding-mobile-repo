@@ -148,6 +148,11 @@
   "soloRank": "Solo Rank",
   "rankStartTitle": "{playerName} ranked game detected!",
   "rankStartBody": "{playerName} has started a {queueType} game as {champion}",
+  "rankEndTitle": "{playerName} finished a solo queue game",
+  "rankEndBodyResult": "{result} with {champion}",
+  "rankEndBodyNoResult": "Game ended with {champion}",
+  "rankEndWin": "Win",
+  "rankEndLose": "Loss",
 
   "withdraw": "Delete Account",
   "withdrawConfirmTitle": "Delete Account",

@@ -29,6 +29,7 @@ import 'component/date_filter_chip.dart';
 import 'component/notification_card_skeleton.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
+import 'component/rank_end_notification.dart';
 import 'component/rank_start_notification.dart';
 import 'component/subscription_date_sheet.dart';
 import 'subscription_settings_screen.dart';
@@ -278,7 +279,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     AppLocalizations l,
   ) {
     final Widget card;
-    if (n.type == MemberNotificationType.playerSoloRank) {
+    if (n.type == MemberNotificationType.playerSoloRank && n.isSoloRankEnd) {
+      // 시작·종료가 같은 type 이라 data.eventType 으로만 갈린다.
+      card = RankEndNotification(
+        playerName: n.playerName,
+        champion: n.championName,
+        win: n.soloRankWin,
+        kda: n.kda,
+        dateTime: _formatAbsolute(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt, l),
+        scale: scale,
+      );
+    } else if (n.type == MemberNotificationType.playerSoloRank) {
       card = RankStartNotification(
         playerName: n.playerName,
         champion: n.championName,
