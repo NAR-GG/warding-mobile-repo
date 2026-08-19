@@ -9,6 +9,10 @@ class AppColors {
   static const Color narDark300 = Color(0xFF5C5F66);
   static const Color narDark600 = Color(0xFF25262B);
   static const Color narDark800 = Color(0xFF141517);
+
+  /// nar_dark_opacity62 — narDark800 62%. 시안의 인너 섀도우 색.
+  static const Color narDarkOpacity62 = Color(0x9E141517);
+
   static const Color narGray500 = Color(0xFFADB5BD); // gray/5
 
   static const Color narText = Color(0xFFFFFFFF);
