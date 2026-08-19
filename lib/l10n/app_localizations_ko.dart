@@ -60,6 +60,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String yearMonthDay(int year, int month, int day) {
+    return '$year년 $month월 $day일';
+  }
+
+  @override
   String get setStartAlarm => '세트 시작 알림';
 
   @override

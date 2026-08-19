@@ -24,30 +24,41 @@ class MatchLeagueHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final icon = leagueIconWidget(leagueName);
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10 * scale, horizontal: 14 * scale),
+      padding: EdgeInsets.only(
+        left: 20 * scale,
+        right: 20 * scale,
+        bottom: 4 * scale,
+      ),
       child: Row(
         children: [
           if (icon != null) ...[
+            // 시안 '경기 로고' 프레임 50×50(패딩 10) — 카드 팀 로고(50×50)와 세로로 맞춘다.
             SizedBox(
-              width: 34 * scale,
-              height: 34 * scale,
-              child: ColorFiltered(
-                colorFilter: const ColorFilter.mode(
-                  AppColors.narText,
-                  BlendMode.srcIn,
+              width: 50 * scale,
+              height: 50 * scale,
+              child: Center(
+                child: SizedBox(
+                  width: 30 * scale,
+                  height: 30 * scale,
+                  child: ColorFiltered(
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.narText,
+                      BlendMode.srcIn,
+                    ),
+                    child: icon,
+                  ),
                 ),
-                child: icon,
               ),
             ),
-            SizedBox(width: 8 * scale),
+            SizedBox(width: 10 * scale),
           ],
           Text(
             leagueName,
             style: TextStyle(
               fontFamily: 'SF Pro',
-              fontWeight: FontWeight.w600,
-              fontSize: 24 * scale,
-              height: 28 / 24,
+              fontWeight: FontWeight.w700,
+              fontSize: 18 * scale,
+              height: 21 / 18,
               color: AppColors.narText,
             ),
           ),

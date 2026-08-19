@@ -51,6 +51,14 @@ class AppColors {
     stops: [0.0076, 0.5153, 1.0],
   );
 
+  /// 날짜 헤더·라이브 카드 상단 구분선 — 왼쪽 narTextSecondary(흰색)에서
+  /// 오른쪽 narDark800(어두움)으로 옅어지는 그라데이션.
+  static const LinearGradient narFadeLine = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFFFFFFFF), Color(0xFF141517)],
+  );
+
   static const Color kakaoBg = Color(0xFFFEE500);
   static const Color kakaoText = Color(0xD9000000);
 
