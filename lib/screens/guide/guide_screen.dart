@@ -186,12 +186,24 @@ class _BottomPanel extends StatelessWidget {
   });
 
   final GuidePageData page;
+
+  /// 0-based 현재 장 — 캐러셀 전체(6장) 기준. 점 진행바는 항상 전체
+  /// 장수만큼 찍고 현재 위치만 하이라이트한다.
   final int current;
   final int total;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
+    // 페이지 숫자('1/2' 등)는 전체 장 수가 아니라 같은 섹션 안에서의
+    // 순번/장수를 쓴다 ('마이 구독' 1/2·2/2, '마이 페이지' 1/3·2/3·3/3).
+    // 섹션이 한 장뿐이면(예: 위젯 소개) [sectionIndex]·[sectionTotal] 이
+    // null 이라 숫자 표시를 그리지 않는다. 점 진행바는 이와 무관하게 항상
+    // 전체 6장 기준으로 그린다.
+    final sectionIndex = page.sectionIndex;
+    final sectionTotal = page.sectionTotal;
+    final showPageNumber = sectionIndex != null && sectionTotal != null;
+
     return ColoredBox(
       color: AppColors.narBgContent,
       child: SafeArea(
@@ -227,14 +239,10 @@ class _BottomPanel extends StatelessWidget {
                         Expanded(
                           child: _PanelText(page: page, scale: scale),
                         ),
-                        // 캐러셀 전체 진행은 위 점 인디케이터가 이미 보여주므로,
-                        // 이 숫자는 '지금 보는 주제 안에서 몇 번째인지'를 센다
-                        // (예: 마이 페이지 3장 중 2번째면 2/3). 한 장으로 끝나는
-                        // 주제는 늘 1/1 이라 알려 주는 바가 없어 아예 그리지 않는다.
-                        if (page.hasSectionStep) ...[
+                        if (showPageNumber) ...[
                           SizedBox(width: 16 * scale),
                           Text(
-                            '${page.sectionStep}/${page.sectionStepCount}',
+                            '$sectionIndex/$sectionTotal',
                             style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontWeight: FontWeight.w700,

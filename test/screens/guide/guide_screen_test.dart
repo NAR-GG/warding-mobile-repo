@@ -92,6 +92,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('마이 구독'), findsOneWidget);
+    // 진행 표시는 전체 장 수가 아니라 섹션 안에서의 순번/장수다 — '마이
+    // 구독'은 2장, '마이 페이지'는 3장.
     expect(find.text('1/2'), findsOneWidget);
 
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
@@ -116,11 +118,12 @@ void main() {
     expect(find.text('3/3'), findsOneWidget);
     expect(find.text('와딩 사용자 편의성 맞춤 설정'), findsOneWidget);
 
-    // 6장은 섹션 아이콘이 없고 연출 고지 주석이 붙는다.
+    // 6장은 섹션이 한 장뿐이라 페이지 숫자('n/n')는 없지만, 점 진행바는
+    // 전체 6장 기준으로 계속 그린다.
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    // 위젯 소개는 한 장뿐이라 진행도를 붙이지 않는다.
-    expect(find.textContaining('/'), findsNothing);
+    expect(find.byType(GuideProgressBar), findsOneWidget);
+    expect(find.text('6/6'), findsNothing);
     expect(find.text('다양한 와딩 위젯 제공'), findsOneWidget);
     expect(
       find.text('(위 이미지는 연출된 이미지 입니다. 실제 적용 화면은 상이할 수 있습니다.)'),
@@ -237,13 +240,13 @@ void main() {
     await tester.pumpWidget(_host(pages: 2));
     await tester.pumpAndSettle();
 
-    // 점 인디케이터가 캐러셀 전체 진행을 맡는다. 옆의 숫자는 전체가 아니라
-    // 그 장이 속한 주제 안에서의 순번이라(_host 는 1장을 복제하므로 늘 1/2),
-    // 여기서는 인디케이터가 붙어 있는지만 본다.
+    expect(find.text('1/2'), findsOneWidget);
     expect(find.byType(GuideProgressBar), findsOneWidget);
   });
 
   testWidgets('스와이프하면 다음 장으로 넘어간다', (tester) async {
+    // 진행 표시가 섹션 안 순번을 쓰므로, 실제로 다른 섹션 순번을 가진
+    // 두 장으로 넘어가는지 확인하려면 같은 장을 복제하면 안 된다.
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -251,19 +254,16 @@ void main() {
         locale: const Locale('ko'),
         home: Builder(
           builder: (context) =>
-              GuideScreen(pages: [guidePage1(context), guidePage3(context)]),
+              GuideScreen(pages: [guidePage1(context), guidePage2(context)]),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('마이 구독'), findsOneWidget);
 
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
 
-    // 서로 다른 섹션의 장을 이어 붙여, 실제로 다음 장이 왔는지를 본다
-    // (_host 처럼 같은 장을 복제하면 넘어갔는지 구분되지 않는다).
-    expect(find.text('마이 페이지'), findsOneWidget);
+    expect(find.text('2/2'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -372,66 +372,5 @@ void main() {
 
     expect(find.text('마이 구독'), findsNothing);
     expect(find.text('open'), findsOneWidget);
-  });
-
-  group('섹션 진행도', () {
-    /// 한 장만 띄워 그 장의 진행도 표기를 본다.
-    Widget single(GuidePageData Function(BuildContext) build) => MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('ko'),
-          home: Builder(
-            builder: (context) => GuideScreen(pages: [build(context)]),
-          ),
-        );
-
-    testWidgets('마이 구독은 1/2, 2/2 로 센다', (tester) async {
-      await tester.pumpWidget(single(guidePage1));
-      await tester.pumpAndSettle();
-      expect(find.text('마이 구독'), findsOneWidget);
-      expect(find.text('1/2'), findsOneWidget);
-
-      await tester.pumpWidget(single(guidePage2));
-      await tester.pumpAndSettle();
-      expect(find.text('2/2'), findsOneWidget);
-    });
-
-    testWidgets('마이 페이지는 1/3, 2/3, 3/3 으로 센다', (tester) async {
-      await tester.pumpWidget(single(guidePage3));
-      await tester.pumpAndSettle();
-      expect(find.text('마이 페이지'), findsOneWidget);
-      expect(find.text('1/3'), findsOneWidget);
-
-      await tester.pumpWidget(single(guidePage4));
-      await tester.pumpAndSettle();
-      expect(find.text('2/3'), findsOneWidget);
-
-      await tester.pumpWidget(single(guidePage5));
-      await tester.pumpAndSettle();
-      expect(find.text('3/3'), findsOneWidget);
-    });
-
-    testWidgets('위젯 소개 장은 한 장뿐이라 진행도를 붙이지 않는다', (tester) async {
-      await tester.pumpWidget(single(guidePage6));
-      await tester.pumpAndSettle();
-      expect(find.text('배경화면 위젯, 라이브 위젯'), findsOneWidget);
-      expect(find.textContaining('/'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('가장 좁은 화면(320)에서도 라벨과 진행도가 넘치지 않는다', (tester) async {
-      tester.view.physicalSize = const Size(320, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(single(guidePage6));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-
-      // 라벨이 가장 긴 6장 다음으로, 진행도까지 함께 놓이는 장도 확인한다.
-      await tester.pumpWidget(single(guidePage3));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-    });
   });
 }

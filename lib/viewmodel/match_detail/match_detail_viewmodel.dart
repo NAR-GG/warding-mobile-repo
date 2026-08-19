@@ -22,10 +22,10 @@ class MatchDetailViewModel extends ChangeNotifier {
     this.initialSet,
     MatchDetailRepository? repository,
     RatingRepository? ratingRepository,
-  })  : _matchInfo = initialMatch,
-        _activeTab = initialTabIndex,
-        _repository = repository ?? MatchDetailRepository.instance,
-        _ratingRepository = ratingRepository ?? RatingRepository.instance;
+  }) : _matchInfo = initialMatch,
+       _activeTab = initialTabIndex,
+       _repository = repository ?? MatchDetailRepository.instance,
+       _ratingRepository = ratingRepository ?? RatingRepository.instance;
 
   final String matchId;
 
@@ -225,8 +225,9 @@ class MatchDetailViewModel extends ChangeNotifier {
     // 띄우지 않는다 — 마이구독·딥링크처럼 matchId 만 있을 때만 필요하다.
     // games 응답 최상위에 팀 정보가 실려 오기도 하는데, 그때는 이 요청 결과를
     // 버린다. 헛요청 한 번이 순차 왕복보다 싸고, 실려 오는지는 미리 알 수 없다.
-    final matchInfoDone =
-        _matchInfo == null ? _loadMatchInfo() : Future<void>.value();
+    final matchInfoDone = _matchInfo == null
+        ? _loadMatchInfo()
+        : Future<void>.value();
 
     await _loadGames();
     // 탭 데이터(gameId 필요)는 세트 목록만 있으면 시작할 수 있다.
@@ -286,8 +287,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     }
     int? latestEnded;
     for (final g in games) {
-      if (g.isEnded &&
-          (latestEnded == null || g.gameOrder > latestEnded)) {
+      if (g.isEnded && (latestEnded == null || g.gameOrder > latestEnded)) {
         latestEnded = g.gameOrder;
       }
     }
@@ -326,6 +326,67 @@ class MatchDetailViewModel extends ChangeNotifier {
     _ratingsRequested = false;
     _safeNotify();
     await _loadCurrentSet();
+  }
+
+  /// 당겨서 새로고침. 지금 보고 있는 세트·탭을 그대로 두고 데이터만 다시 받는다.
+  ///
+  /// [load] 를 다시 부르지 않는 이유가 두 가지다.
+  /// - [_loadGames] 가 [_computeInitialSet] 으로 세트를 다시 고른다. 3세트를
+  ///   보다가 당기면 LIVE 세트로 튕겨 나간다.
+  /// - [_loadMatchInfo] 는 `_matchInfo == null` 일 때만 받는다. 진행 중 경기의
+  ///   스코어가 바뀌어도 갱신되지 않는다 — 새로고침에서 가장 보고 싶은 값인데도.
+  ///
+  /// 그래서 여기서는 경기 정보·세트 목록을 강제로 다시 받고, 탭 데이터는
+  /// 요청 플래그를 지워 활성 탭만 새로 받는다(나머지 탭은 전환할 때 받는다 —
+  /// 지연 로딩 규칙 그대로다).
+  Future<void> refresh() async {
+    _championPick = null;
+    _liveEventsData = null;
+    _ratings = null;
+    _championRequested = false;
+    _eventsRequested = false;
+    _ratingsRequested = false;
+    _championError = null;
+    _safeNotify();
+
+    // 스코어·세트 목록은 서로를 필요로 하지 않으므로 같이 띄운다.
+    await Future.wait([_refreshMatchInfo(), _refreshGames()]);
+    if (_disposed) return;
+    await _loadCurrentSet();
+  }
+
+  /// 스코어 카드용 경기 정보를 무조건 다시 받는다([_loadMatchInfo] 는 값이
+  /// 없을 때만 받으므로 새로고침에는 쓸 수 없다).
+  Future<void> _refreshMatchInfo() async {
+    try {
+      final info = await _repository.fetchMatch(matchId);
+      if (info != null) {
+        _matchInfo = info;
+        _safeNotify();
+      }
+    } catch (e) {
+      debugPrint('[MatchDetailVM] refresh match failed: $e');
+    }
+  }
+
+  /// 세트 목록을 다시 받되 **보고 있던 세트는 유지**한다.
+  /// 그 세트가 사라졌을 때만(드묾) 기본 선택 규칙으로 되돌린다.
+  Future<void> _refreshGames() async {
+    _loadingGames = true;
+    _safeNotify();
+    try {
+      final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
+      _games = games;
+      if (games.isNotEmpty && !games.any((g) => g.gameOrder == _currentSet)) {
+        _currentSet = _computeInitialSet(games);
+      }
+      // 위 _refreshMatchInfo 가 받아 온 값이 더 정확하므로 덮어쓰지 않는다.
+      _matchInfo ??= matchInfoFromGames;
+    } catch (e) {
+      debugPrint('[MatchDetailVM] refresh games failed: $e');
+    }
+    _loadingGames = false;
+    _safeNotify();
   }
 
   /// 진입 시(또는 세트 변경 후) 현재 활성 탭의 데이터만 로드한다.
@@ -393,7 +454,8 @@ class MatchDetailViewModel extends ChangeNotifier {
       _championPick = await _repository.fetchChampionPick(gameId);
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick failed: $e');
-      _championError = appStrings?.championPickLoadFailed ?? 'Failed to load champion picks';
+      _championError =
+          appStrings?.championPickLoadFailed ?? 'Failed to load champion picks';
       _championPick = null;
     } finally {
       _loadingChampion = false;
@@ -413,7 +475,8 @@ class MatchDetailViewModel extends ChangeNotifier {
       _liveEventsData = await _repository.fetchLiveEvents(gameId);
     } catch (e) {
       debugPrint('[MatchDetailVM] live events failed: $e');
-      _eventsError = appStrings?.liveEventLoadFailed ?? 'Failed to load live events';
+      _eventsError =
+          appStrings?.liveEventLoadFailed ?? 'Failed to load live events';
       _liveEventsData = null;
     } finally {
       _loadingEvents = false;
@@ -434,7 +497,9 @@ class MatchDetailViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('[MatchDetailVM] load ratings failed: $e');
-      _ratingsError = appStrings?.playerRatingLoadFailed2 ?? 'Failed to load player ratings';
+      _ratingsError =
+          appStrings?.playerRatingLoadFailed2 ??
+          'Failed to load player ratings';
       _ratings = null;
     } finally {
       _loadingRatings = false;

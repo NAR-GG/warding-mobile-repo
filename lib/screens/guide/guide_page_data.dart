@@ -20,13 +20,16 @@ class GuidePageData {
   const GuidePageData({
     this.sectionIcon,
     required this.sectionLabel,
-    this.sectionStep,
-    this.sectionStepCount,
+    this.sectionIndex,
+    this.sectionTotal,
     required this.headline,
     required this.description,
     this.footnote,
     required this.stageBuilder,
-  });
+  }) : assert(
+         (sectionIndex == null) == (sectionTotal == null),
+         'sectionIndex·sectionTotal 은 함께 주거나 함께 비운다.',
+       );
 
   /// 하단 패널 상단의 섹션 아이콘 asset 경로. 예) 'assets/icons/empty-stars.svg'.
   /// null 이면 아이콘 없이 [sectionLabel] 만 그린다.
@@ -35,18 +38,15 @@ class GuidePageData {
   /// 아이콘 아래 섹션명. 예) '마이 구독'.
   final String sectionLabel;
 
-  /// 같은 섹션 안에서 이 장이 몇 번째인지(1-based)와 그 섹션의 총 장수.
+  /// 같은 섹션 안에서 이 장의 1-based 순번. 예) '마이 구독' 2장 중 1장이면 1.
   ///
-  /// 캐러셀 전체 진행은 아래 점 인디케이터([GuideProgressBar])가 보여주고,
-  /// 이 값은 섹션 라벨 옆에 '1/2' 처럼 붙어 "이 주제가 몇 장짜리인지"를 알린다.
-  /// 한 장으로 끝나는 섹션은 둘 다 null 로 두어 표시하지 않는다 — 늘 '1/1'
-  /// 이라 알려 주는 바가 없다.
-  final int? sectionStep;
-  final int? sectionStepCount;
+  /// 진행바·페이지 표시는 전체 장 수가 아니라 이 섹션 안에서의 순번/총
+  /// 장수를 보여준다. [sectionTotal] 과 함께 null 이면 진행 표시 자체를
+  /// 그리지 않는다(섹션이 한 장뿐이라 진행률이 의미 없는 경우).
+  final int? sectionIndex;
 
-  /// 섹션 진행도를 표시할지. 두 값이 모두 있고 2장 이상일 때만.
-  bool get hasSectionStep =>
-      sectionStep != null && sectionStepCount != null && sectionStepCount! > 1;
+  /// 같은 섹션에 속한 전체 장 수.
+  final int? sectionTotal;
 
   /// 굵은 안내 문구(20px). 예) '좋아하는 팀 경기, 선수 솔랭 놓치지 않고 챙겨보세요'.
   final String headline;

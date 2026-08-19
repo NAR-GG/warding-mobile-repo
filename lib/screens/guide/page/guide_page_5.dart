@@ -13,8 +13,8 @@ GuidePageData guidePage5(BuildContext context) {
   return GuidePageData(
     sectionIcon: 'assets/icons/user.svg',
     sectionLabel: l.guide3Section,
-    sectionStep: 3,
-    sectionStepCount: 3,
+    sectionIndex: 3,
+    sectionTotal: 3,
     headline: l.guide5Headline,
     description: l.guide5Description,
     stageBuilder: (context, scale) => const _Stage(),

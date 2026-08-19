@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
@@ -17,10 +18,10 @@ import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../util/match_detail_router.dart';
 import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_layout.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
-import '../match_detail/match_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -260,19 +261,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     } catch (_) {}
 
     if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MatchDetailScreen(
-          matchId: matchId,
-          match: match,
-          initialTabIndex: 1,
-        ),
-      ),
+    // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
+    // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
+    await MatchDetailRouter.open(
+      matchId: matchId,
+      match: match,
+      tabIndex: 1,
+      context: context,
     );
   }
 
   /// 알림 한 건을 타입에 맞는 카드로 그린다. 좌스와이프로 삭제, 탭으로 이동.
-  Widget _buildNotification(MemberNotification n, double scale, AppLocalizations l) {
+  Widget _buildNotification(
+    MemberNotification n,
+    double scale,
+    AppLocalizations l,
+  ) {
     final Widget card;
     if (n.type == MemberNotificationType.playerSoloRank) {
       card = RankStartNotification(
@@ -331,8 +335,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     return switch (item) {
       FeedDateHeader(:final day) => _dateHeader(day, scale, l),
       FeedNotificationItem(:final notification) => RepaintBoundary(
-          child: _buildNotification(notification, scale, l),
-        ),
+        child: _buildNotification(notification, scale, l),
+      ),
     };
   }
 
@@ -540,10 +544,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     if (index < 0) return;
     _pendingJumpDate = day;
     _scrollController.jumpTo(
-      _layout.offsetOf(index).clamp(
-        0.0,
-        _scrollController.position.maxScrollExtent,
-      ),
+      _layout
+          .offsetOf(index)
+          .clamp(0.0, _scrollController.position.maxScrollExtent),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _settleJump());
   }
@@ -569,8 +572,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       return;
     }
     _scrollController.jumpTo(target);
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _settleJump(attempt: attempt + 1));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _settleJump(attempt: attempt + 1),
+    );
   }
 
   /// 그려진 항목의 실제 높이를 기록한다.
@@ -636,22 +640,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       listenable: _feedViewModel,
                       builder: (context, _) =>
                           _feedViewModel.notificationPermissionGranted
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                padding: EdgeInsets.only(top: 14 * scale),
-                                child: NarBanner(
-                                  scale: scale,
-                                  onTap:
-                                      _feedViewModel
-                                          .requestNotificationPermission,
-                                  icon: SvgPicture.asset(
-                                    'assets/icons/bell.svg',
-                                    width: 24 * scale,
-                                    height: 24 * scale,
-                                  ),
-                                  text: l.enableNotificationPermission,
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: EdgeInsets.only(top: 14 * scale),
+                              child: NarBanner(
+                                scale: scale,
+                                onTap: _feedViewModel
+                                    .requestNotificationPermission,
+                                icon: SvgPicture.asset(
+                                  'assets/icons/bell.svg',
+                                  width: 24 * scale,
+                                  height: 24 * scale,
                                 ),
+                                text: l.enableNotificationPermission,
                               ),
+                            ),
                     ),
                     SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                     NarChipMultiSelect(
@@ -710,51 +713,45 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           final items = _layout.items;
                           // 다음 페이지를 이어 받는 중이면 하단에 스켈레톤 2장.
                           final trailing = vm.isLoadingMore ? 2 : 0;
-                          return RefreshIndicator(
+                          return AppRefreshIndicator(
                             onRefresh: vm.load,
-                            child:
-                                items.isEmpty
-                                    ? ListView(
-                                      // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      children: [
-                                        SizedBox(height: 120 * scale),
-                                        _centerMessage(
-                                          l.noNotifications,
-                                          scale,
-                                        ),
-                                      ],
-                                    )
-                                    // 화면에 보이는 만큼만 만든다. 날짜 점프는
-                                    // 헤더의 인덱스를 찾아 그 앞까지의 높이로
-                                    // 직접 이동하므로([_scrollToDate]), 목록
-                                    // 전체를 미리 layout 할 이유가 없다.
-                                    : ListView.builder(
-                                      controller: _scrollController,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      padding: EdgeInsets.only(
-                                        bottom: 120 * scale,
-                                      ),
-                                      itemCount: items.length + trailing,
-                                      itemBuilder: (context, index) {
-                                        if (index >= items.length) {
-                                          return NotificationCardSkeleton(
-                                            scale: scale,
-                                          );
-                                        }
-                                        return _MeasuredFeedItem(
-                                          index: index,
-                                          onMeasured: _measureItem,
-                                          child: _buildFeedItem(
-                                            items[index],
-                                            scale,
-                                            l,
-                                          ),
-                                        );
-                                      },
+                            child: items.isEmpty
+                                ? ListView(
+                                    // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                    physics: AppRefreshIndicator.physics,
+                                    children: [
+                                      SizedBox(height: 120 * scale),
+                                      _centerMessage(l.noNotifications, scale),
+                                    ],
+                                  )
+                                // 화면에 보이는 만큼만 만든다. 날짜 점프는
+                                // 헤더의 인덱스를 찾아 그 앞까지의 높이로
+                                // 직접 이동하므로([_scrollToDate]), 목록
+                                // 전체를 미리 layout 할 이유가 없다.
+                                : ListView.builder(
+                                    controller: _scrollController,
+                                    physics: AppRefreshIndicator.physics,
+                                    padding: EdgeInsets.only(
+                                      bottom: 120 * scale,
                                     ),
+                                    itemCount: items.length + trailing,
+                                    itemBuilder: (context, index) {
+                                      if (index >= items.length) {
+                                        return NotificationCardSkeleton(
+                                          scale: scale,
+                                        );
+                                      }
+                                      return _MeasuredFeedItem(
+                                        index: index,
+                                        onMeasured: _measureItem,
+                                        child: _buildFeedItem(
+                                          items[index],
+                                          scale,
+                                          l,
+                                        ),
+                                      );
+                                    },
+                                  ),
                           );
                         },
                       ),
