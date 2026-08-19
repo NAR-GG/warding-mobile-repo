@@ -16,6 +16,7 @@ import '../config/secure_storage.dart';
 import '../l10n/app_localizations.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
+import '../repository/notice/notice_repository.dart';
 import '../repository/preference/filter_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
 import '../styles/app_colors.dart';
@@ -169,15 +170,27 @@ class _SplashScreenState extends State<SplashScreen>
       // 구 접근성 항목이라 null(→ko)로 폴백됐을 수 있다 — 다시 읽는다.
       await AppLanguage.instance.load();
 
-      // 스플래시가 떠 있는 동안 첫 화면(일정)의 캘린더를 미리 받아둔다.
+      // 스플래시가 떠 있는 동안 첫 화면(일정)이 곧바로 쓸 것들을 미리 받아둔다.
       // 실패해도 화면 진입을 막지 않는다 — 그때는 일정 화면이 평소대로
       // 직접 부르고 에러 UI 도 거기서 처리한다.
+      //
+      // 캘린더와 공지는 서로 다른 API 라 순서대로 기다릴 이유가 없다. 함께
+      // 띄워 둘 중 느린 하나의 시간만 걸리게 한다.
+      //
+      // 공지(띠배너)를 여기 함께 두는 이유는 캘린더와 다르다. 배너는 캘린더
+      // 위에 얹히는데, 늦게 도착하면 그 순간 목록에 끼어들어 캘린더를 아래로
+      // 밀어내고 높이까지 줄인다(=화면이 한 번 출렁인다). 화면이 뜨기 전에
+      // 유무가 확정돼 있으면 그 출렁임 자체가 생기지 않는다.
       //
       // 에러 핸들러를 여기서 바로 붙인다. 아래 unawaited() 로 떼어놓는 순간
       // 이 Future 의 예외는 _bootstrap 의 try/catch 가 아니라 zone 으로 올라가
       // '처리되지 않은 크래시'로 잡힌다.
-      final prefetch = _prefetchCalendar().catchError((Object e) {
-        debugPrint('[Splash] 캘린더 프리페치 실패(무시): $e');
+      final prefetch = Future.wait([
+        _prefetchCalendar(),
+        _prefetchPromotedNotice(),
+      ]).catchError((Object e) {
+        debugPrint('[Splash] 프리페치 실패(무시): $e');
+        return const <void>[];
       });
 
       final results = await Future.wait([
@@ -229,6 +242,20 @@ class _SplashScreenState extends State<SplashScreen>
       );
     } catch (e) {
       debugPrint('[Splash] 캘린더 프리페치 실패(무시): $e');
+    }
+  }
+
+  /// 일정 화면 상단 띠배너에 쓸 공지를 미리 받아 캐시에 채운다.
+  ///
+  /// [ScheduleViewModel] 이 생성되자마자 같은 조회를 거는데, 그때 이 결과가
+  /// 캐시에 있으면 배너 유무가 첫 프레임부터 정해진다 — 늦게 도착해 캘린더를
+  /// 밀어내는 일이 없어진다. 아직 진행 중이면 뷰모델의 조회가 같은 요청에
+  /// 합류하므로([NoticeRepository.fetchPromoted]) 왕복이 두 번 일어나지 않는다.
+  Future<void> _prefetchPromotedNotice() async {
+    try {
+      await NoticeRepository.instance.fetchPromoted();
+    } catch (e) {
+      debugPrint('[Splash] 공지 프리페치 실패(무시): $e');
     }
   }
 

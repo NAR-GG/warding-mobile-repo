@@ -20,6 +20,7 @@ import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../util/match_detail_router.dart';
 import '../../config/app_globals.dart';
+import '../../viewmodel/subscription/subscription_feed_layout.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -28,6 +29,7 @@ import 'component/date_filter_chip.dart';
 import 'component/notification_card_skeleton.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
+import 'component/rank_end_notification.dart';
 import 'component/rank_start_notification.dart';
 import 'component/subscription_date_sheet.dart';
 import 'subscription_settings_screen.dart';
@@ -45,14 +47,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 서버 알림 피드(`/api/mobile/me/notifications`).
   final SubscriptionFeedViewModel _feedViewModel = SubscriptionFeedViewModel();
 
-  /// 날짜 점프용. 날짜 헤더 위치로 ensureVisible 하려면 직접 잡아야 한다.
+  /// 날짜 점프·무한 스크롤용.
   final ScrollController _scrollController = ScrollController();
-
-  /// 날짜 헤더 GlobalKey 맵 (DateTime(y,m,d) → key). build 마다 다시 채운다.
-  final Map<DateTime, GlobalKey> _dateHeaderKeys = {};
 
   /// 날짜 칩에 표시할, 캘린더에서 마지막으로 고른 날짜. null 이면 미선택.
   DateTime? _selectedDate;
+
+  /// 목록 배치 — 평탄화·높이 어림·날짜 점프 좌표 계산을 담당한다.
+  final SubscriptionFeedLayout _layout = SubscriptionFeedLayout();
+
+  /// 날짜 점프 목적지. [_scrollToDate] 가 걸어두면 [_settleJump] 가 실측 높이로
+  /// 위치를 보정한 뒤 비운다.
+  DateTime? _pendingJumpDate;
 
   /// 목록을 내리는 동안 하단 네비를 살짝 줄이는 상태.
   final BottomNavShrinkController _navShrink = BottomNavShrinkController();
@@ -181,13 +187,30 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     }
   }
 
+  /// [_selectedTypes] 를 알림 타입으로 옮긴 것과, 그때 쓴 원본 Set.
+  ///
+  /// [_matchesFilter] 는 알림 **한 건마다** 불리는데, 여기서 매번 Set 을 새로
+  /// 만들면 피드 길이만큼 같은 Set 이 반복 생성된다(수백 건이면 수백 개).
+  /// 선택이 바뀔 때만 다시 만든다 — 갱신은 항상 `_selectedTypes` 에 새 Set 을
+  /// 대입하는 식이라 참조 비교로 충분하다.
+  Set<String>? _typeFilterSource;
+  Set<MemberNotificationType> _typeFilterCache = const {};
+
+  Set<MemberNotificationType> get _typeFilters {
+    if (!identical(_typeFilterSource, _selectedTypes)) {
+      _typeFilterSource = _selectedTypes;
+      _typeFilterCache = _selectedTypes
+          .map(_chipToType)
+          .whereType<MemberNotificationType>()
+          .toSet();
+    }
+    return _typeFilterCache;
+  }
+
   /// 선택된 칩/선수 필터에 알림 한 건이 걸리는지(클라이언트 필터링).
   /// 아무것도 안 골랐으면('전체') 모두 통과. 타입·선수는 OR 로 합친다.
   bool _matchesFilter(MemberNotification n) {
-    final typeFilters = _selectedTypes
-        .map(_chipToType)
-        .whereType<MemberNotificationType>()
-        .toSet();
+    final typeFilters = _typeFilters;
     final hasType = typeFilters.isNotEmpty;
     final hasPlayer = _selectedPlayers.isNotEmpty;
     if (!hasType && !hasPlayer) return true;
@@ -256,7 +279,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     AppLocalizations l,
   ) {
     final Widget card;
-    if (n.type == MemberNotificationType.playerSoloRank) {
+    if (n.type == MemberNotificationType.playerSoloRank && n.isSoloRankEnd) {
+      // 시작·종료가 같은 type 이라 data.eventType 으로만 갈린다.
+      card = RankEndNotification(
+        playerName: n.playerName,
+        champion: n.championName,
+        win: n.soloRankWin,
+        kda: n.kda,
+        dateTime: _formatAbsolute(n.createdAt),
+        relativeTime: _formatRelative(n.createdAt, l),
+        scale: scale,
+      );
+    } else if (n.type == MemberNotificationType.playerSoloRank) {
       card = RankStartNotification(
         playerName: n.playerName,
         champion: n.championName,
@@ -290,39 +324,37 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  /// 필터된 알림을 날짜별로 묶어 [날짜 헤더 + 카드들] 위젯 리스트로 만든다.
-  /// 날짜가 바뀌는 첫 항목 앞에 헤더를 끼우고, 그 헤더에 점프용 GlobalKey 를 단다.
-  /// (items 는 최신순이라 같은 날짜가 연속으로 모여 있다.)
-  List<Widget> _buildFeedChildren(
-    List<MemberNotification> items,
-    double scale,
-    AppLocalizations l,
-  ) {
-    _dateHeaderKeys.clear();
-    final children = <Widget>[];
-    DateTime? lastDay;
-    for (final n in items) {
-      final day = _dayOf(n.createdAt);
-      if (day != lastDay) {
-        final key = GlobalKey();
-        _dateHeaderKeys[day] = key;
-        children.add(_dateHeader(day, scale, key, l));
-        lastDay = day;
-      }
-      children.add(_buildNotification(n, scale, l));
-    }
-    // 다음 페이지를 이어 받는 중이면 하단에 스켈레톤을 붙인다.
-    if (_feedViewModel.isLoadingMore) {
-      children.add(NotificationCardSkeleton(scale: scale));
-      children.add(NotificationCardSkeleton(scale: scale));
-    }
-    return children;
+  /// 필터를 적용한 알림 목록을 [SubscriptionFeedLayout] 에 다시 펴 넣는다.
+  ///
+  /// 예전엔 build 안에서 `where(_matchesFilter).toList()` 로 매번 전체를 훑고
+  /// 위젯까지 전부 만들었다. 이 피드는 [SubscriptionFeedViewModel.loadMore] 로
+  /// 계속 누적되므로 그 비용이 알림이 쌓일수록 커졌고, 로딩 플래그 하나 바뀐
+  /// 알림에도 똑같이 반복됐다. 목록·필터가 실제로 변했을 때만 다시 편다.
+  void _rebuildFeedItems() {
+    _layout.rebuild(
+      source: _feedViewModel.notifications,
+      // 필터 갱신은 항상 새 Set 을 대입하는 식이라 참조가 곧 버전이다.
+      typeFilterToken: _selectedTypes,
+      playerFilterToken: _selectedPlayers,
+      matches: _matchesFilter,
+      dayOf: _dayOf,
+    );
+  }
+
+  /// 평탄화된 한 칸을 위젯으로. 카드는 자기 레이어만 다시 칠하도록 경계를 둔다
+  /// (스와이프 삭제 애니메이션이 이웃 카드까지 리페인트하지 않게).
+  Widget _buildFeedItem(FeedItem item, double scale, AppLocalizations l) {
+    return switch (item) {
+      FeedDateHeader(:final day) => _dateHeader(day, scale, l),
+      FeedNotificationItem(:final notification) => RepaintBoundary(
+        child: _buildNotification(notification, scale, l),
+      ),
+    };
   }
 
   /// 날짜 구분 헤더 — 'M월 D일'.
-  Widget _dateHeader(DateTime day, double scale, Key key, AppLocalizations l) {
+  Widget _dateHeader(DateTime day, double scale, AppLocalizations l) {
     return Padding(
-      key: key,
       padding: EdgeInsets.fromLTRB(
         20 * scale,
         16 * scale,
@@ -431,7 +463,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _syncAll() {
     final hasFilter =
         _selectedTypes.any((t) => t != _keyAll) || _selectedPlayers.isNotEmpty;
-    _selectedTypes = hasFilter ? (_selectedTypes..remove(_keyAll)) : {_keyAll};
+    // 제자리 remove 가 아니라 새 Set 을 만든다 — [_typeFilters] 캐시가 참조
+    // 비교로 갱신을 감지하므로, 같은 인스턴스를 고쳐 넘기면 선택이 바뀐 걸
+    // 알아채지 못한다.
+    _selectedTypes = hasFilter
+        ? _selectedTypes.where((t) => t != _keyAll).toSet()
+        : {_keyAll};
   }
 
   /// 이벤트 타입 필터 토글. _keyAll 을 고르면 세트 타입·선수 필터를 모두 비운다.
@@ -502,17 +539,63 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToDate(picked));
   }
 
-  /// 해당 날짜 헤더로 부드럽게 스크롤. 키가 없으면(점프 대상 없음) 무시.
+  /// 해당 날짜 헤더로 스크롤한다. 그 날짜 그룹이 없으면 아무것도 하지 않는다.
+  ///
+  /// 예전엔 헤더마다 [GlobalKey] 를 달고 [Scrollable.ensureVisible] 을 썼는데,
+  /// 그건 대상이 이미 layout 돼 있어야 동작해서 목록 전체를 실제로 그리는
+  /// (=가상화를 포기하는) 구조를 강요했다. 지금은 헤더가 평탄화 목록에서 몇
+  /// 번째 칸인지를 찾아 그 앞까지의 높이만큼 직접 이동한다.
+  ///
+  /// 아직 안 그려진 항목의 높이는 어림이라 한 번에 정확히 닿지 않을 수 있다.
+  /// 이동하면 그 구간이 실제로 렌더되면서 실측 높이가 채워지므로([_measureItem]),
+  /// 다음 프레임에 [_settleJump] 가 같은 계산을 다시 해 남은 오차를 좁힌다.
   void _scrollToDate(DateTime date) {
-    final ctx = _dateHeaderKeys[_dayOf(date)]?.currentContext;
-    if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      alignment: 0, // 화면 상단에 맞춤
+    if (!_scrollController.hasClients) return;
+    final day = _dayOf(date);
+    final index = _layout.indexOfDay(day);
+    if (index < 0) return;
+    _pendingJumpDate = day;
+    _scrollController.jumpTo(
+      _layout
+          .offsetOf(index)
+          .clamp(0.0, _scrollController.position.maxScrollExtent),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _settleJump());
+  }
+
+  /// 점프 직후, 새로 채워진 실측 높이로 목적지를 다시 재 오차를 좁힌다.
+  ///
+  /// 남은 오차가 1px 미만이거나 더 나아가지 못하면(이미 목록 끝) 끝낸다.
+  /// 반복 상한을 두는 이유는 어림과 실측이 미세하게 진동할 때 프레임 콜백이
+  /// 무한히 이어지는 것을 막기 위해서다.
+  void _settleJump({int attempt = 0}) {
+    final day = _pendingJumpDate;
+    if (day == null || !mounted || !_scrollController.hasClients) return;
+    const maxAttempts = 8;
+    final index = _layout.indexOfDay(day);
+    if (index < 0 || attempt >= maxAttempts) {
+      _pendingJumpDate = null;
+      return;
+    }
+    final position = _scrollController.position;
+    final target = _layout.offsetOf(index).clamp(0.0, position.maxScrollExtent);
+    if ((position.pixels - target).abs() < 1) {
+      _pendingJumpDate = null;
+      return;
+    }
+    _scrollController.jumpTo(target);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _settleJump(attempt: attempt + 1),
     );
   }
+
+  /// 그려진 항목의 실제 높이를 기록한다.
+  ///
+  /// [ListView.builder] 가 만든 칸에서 layout 이 끝난 뒤 불린다. setState 는
+  /// 하지 않는다 — 이 값은 다음 점프 계산에만 쓰이고 화면에 직접 나타나지
+  /// 않으므로, 여기서 rebuild 를 걸면 방금 끝난 layout 을 곧바로 다시
+  /// 요청하는 꼴이 된다.
+  void _measureItem(int index, double height) => _layout.measure(index, height);
 
   /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
@@ -638,9 +721,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           if (vm.error != null && vm.notifications.isEmpty) {
                             return _centerMessage(vm.error!, scale);
                           }
-                          final items = vm.notifications
-                              .where(_matchesFilter)
-                              .toList();
+                          _rebuildFeedItems();
+                          final items = _layout.items;
+                          // 다음 페이지를 이어 받는 중이면 하단에 스켈레톤 2장.
+                          final trailing = vm.isLoadingMore ? 2 : 0;
                           return AppRefreshIndicator(
                             onRefresh: vm.load,
                             child: items.isEmpty
@@ -652,25 +736,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                       _centerMessage(l.noNotifications, scale),
                                     ],
                                   )
-                                // ponytail: SingleChildScrollView+Column 으로 모든 항목을
-                                // 실제 layout 한다. ListView(children) 는 RenderSliverList 라
-                                // 화면 밖 헤더가 layout 안 돼 ensureVisible(날짜 점프)이 실패한다.
-                                // 첫 페이지(50건) 가정. 수천 건이면 scrollable_positioned_list 로 교체.
-                                : SingleChildScrollView(
+                                // 화면에 보이는 만큼만 만든다. 날짜 점프는
+                                // 헤더의 인덱스를 찾아 그 앞까지의 높이로
+                                // 직접 이동하므로([_scrollToDate]), 목록
+                                // 전체를 미리 layout 할 이유가 없다.
+                                : ListView.builder(
                                     controller: _scrollController,
                                     physics: AppRefreshIndicator.physics,
                                     padding: EdgeInsets.only(
                                       bottom: 120 * scale,
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: _buildFeedChildren(
-                                        items,
-                                        scale,
-                                        l,
-                                      ),
-                                    ),
+                                    itemCount: items.length + trailing,
+                                    itemBuilder: (context, index) {
+                                      if (index >= items.length) {
+                                        return NotificationCardSkeleton(
+                                          scale: scale,
+                                        );
+                                      }
+                                      return _MeasuredFeedItem(
+                                        index: index,
+                                        onMeasured: _measureItem,
+                                        child: _buildFeedItem(
+                                          items[index],
+                                          scale,
+                                          l,
+                                        ),
+                                      );
+                                    },
                                   ),
                           );
                         },
@@ -772,4 +864,57 @@ class _SubscriptionHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 자식이 실제로 차지한 높이를 재서 알려주는 래퍼.
+///
+/// 마이구독 피드는 알림 카드 높이가 서버 텍스트 길이에 따라 달라서, 날짜
+/// 점프가 쓸 위치를 상수로는 계산할 수 없다. 화면에 올라온 김에 실제 높이를
+/// 재 두면 그 뒤의 점프가 정확해진다.
+///
+/// layout 이 끝난 뒤(=[addPostFrameCallback]) 알린다 — layout 도중에 부모
+/// State 를 건드리면 같은 프레임에 다시 build 를 요청하는 꼴이 된다.
+class _MeasuredFeedItem extends StatefulWidget {
+  const _MeasuredFeedItem({
+    required this.index,
+    required this.onMeasured,
+    required this.child,
+  });
+
+  final int index;
+  final void Function(int index, double height) onMeasured;
+  final Widget child;
+
+  @override
+  State<_MeasuredFeedItem> createState() => _MeasuredFeedItemState();
+}
+
+class _MeasuredFeedItemState extends State<_MeasuredFeedItem> {
+  final GlobalKey _key = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMeasure();
+  }
+
+  @override
+  void didUpdateWidget(_MeasuredFeedItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 재활용으로 다른 인덱스를 맡게 됐으면 그 칸의 높이를 새로 잰다.
+    if (oldWidget.index != widget.index) _scheduleMeasure();
+  }
+
+  void _scheduleMeasure() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final box = _key.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.hasSize) return;
+      widget.onMeasured(widget.index, box.size.height);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      KeyedSubtree(key: _key, child: widget.child);
 }

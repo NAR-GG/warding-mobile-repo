@@ -9,6 +9,10 @@ class AppColors {
   static const Color narDark300 = Color(0xFF5C5F66);
   static const Color narDark600 = Color(0xFF25262B);
   static const Color narDark800 = Color(0xFF141517);
+
+  /// nar_dark_opacity62 — narDark800 62%. 시안의 인너 섀도우 색.
+  static const Color narDarkOpacity62 = Color(0x9E141517);
+
   static const Color narGray500 = Color(0xFFADB5BD); // gray/5
 
   static const Color narText = Color(0xFFFFFFFF);
@@ -164,6 +168,12 @@ class AppColors {
   // 같이 비칠 수 있다. 흰색 대신 그라데이션(narPlayedChampOverlay)과 같은 톤인
   // narDark800 을 써서, 비쳐도 눈에 띄지 않게 한다.
   static const Color narPlayedChampBg = narDark800; // 카드 배경(선수 이미지 자리)
+
+  /// 스포방지 오버레이 배경 — 시안의 narDark800 40%.
+  ///
+  /// 아래 더미 스코어가 이 반투명 너머로 흐릿하게 비쳐야 하므로 불투명으로
+  /// 바꾸지 않는다(흐림 자체는 더미 쪽 ImageFiltered 가 만든다).
+  static const Color narSpoilerOverlayBg = Color(0x66141517);
 
   /// 플레이한 챔프 카드 하단 inset 그림자 — inset 0 -63px 60px rgba(20,21,23,0.62).
   /// inset shadow를 표현 못 하므로 하단을 어둡게 덮는 세로 그라데이션으로 근사한다.

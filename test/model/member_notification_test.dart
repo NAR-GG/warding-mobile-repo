@@ -60,6 +60,64 @@ void main() {
     expect(weird.data, isEmpty);
   });
 
+  test('솔랭 종료: eventType/win/kda 를 읽는다', () {
+    final n = MemberNotification.fromJson({
+      'id': 8,
+      // 시작·종료 모두 같은 type 이라 eventType 으로만 갈린다.
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'title': 'Pyosik 선수가 솔랭 한 판을 마쳤어요',
+      'body': '리 신으로 승리 · 18/1/11',
+      'data': {
+        'type': 'PLAYER_SOLO_RANK_STARTED',
+        'eventType': 'END',
+        'win': 'true',
+        'kda': '18/1/11',
+        'playerName': 'Pyosik',
+        'championName': '리 신',
+      },
+      'createdAt': '2026-08-19T16:27:00',
+    });
+
+    expect(n.type, MemberNotificationType.playerSoloRank);
+    expect(n.isSoloRankEnd, isTrue);
+    expect(n.soloRankWin, isTrue);
+    expect(n.kda, '18/1/11');
+  });
+
+  test('솔랭 종료: 패배는 win=false', () {
+    final n = MemberNotification.fromJson({
+      'id': 9,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END', 'win': 'false', 'kda': '2/9/3'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    expect(n.soloRankWin, isFalse);
+  });
+
+  test('솔랭 종료: match-v5 결과를 못 읽으면 win·kda 가 없다', () {
+    final n = MemberNotification.fromJson({
+      'id': 10,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'END', 'championName': '리 신'},
+      'createdAt': '2026-08-19T16:27:00',
+    });
+    expect(n.isSoloRankEnd, isTrue);
+    expect(n.soloRankWin, isNull);
+    expect(n.kda, isNull);
+  });
+
+  test('솔랭 시작: eventType=START 는 종료가 아니다', () {
+    final n = MemberNotification.fromJson({
+      'id': 11,
+      'type': 'PLAYER_SOLO_RANK_STARTED',
+      'data': {'eventType': 'START', 'championName': '리 신'},
+      'createdAt': '2026-08-19T16:00:00',
+    });
+    expect(n.isSoloRankEnd, isFalse);
+    expect(n.soloRankWin, isNull);
+    expect(n.kda, isNull);
+  });
+
   test('MemberNotificationPage.fromJson: 미읽음 수·페이지 파싱', () {
     final page = MemberNotificationPage.fromJson({
       'notifications': [

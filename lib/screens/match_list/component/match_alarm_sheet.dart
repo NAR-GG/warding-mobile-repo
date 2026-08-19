@@ -6,20 +6,38 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/app_bottom_sheet.dart';
 import '../../../components/common_button.dart';
 import '../../../components/nar_toggle.dart';
+import '../../../screens/my_subscription_setting/component/live_event_detail_card.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 
 /// 경기 알림 설정 결과 — 켠 알림 종류. 확인으로 닫혀야만 반환된다.
-typedef MatchAlarmResult = ({bool setStart, bool setEnd, bool liveEvent});
+///
+/// 세부 항목(킬/바론/드래곤/타워/억제기)은 [liveEvent] 가 꺼져 있으면 서버가
+/// 어차피 안 쓰지만, 사용자가 라이브 이벤트를 다시 켰을 때 고른 조합이 남아
+/// 있도록 값 자체는 그대로 실어 보낸다.
+typedef MatchAlarmResult = ({
+  bool setStart,
+  bool setEnd,
+  bool liveEvent,
+  bool kill,
+  bool baron,
+  bool dragon,
+  bool tower,
+  bool inhibitor,
+});
 
 /// 경기 카드의 벨 아이콘을 탭했을 때 뜨는 '경기 알림 설정' 바텀시트를 띄운다.
 /// 하단 확인으로 닫히면 선택한 토글값을, 닫기(X)나 바깥 탭으로 닫히면 null 을 반환한다.
+///
+/// [initial] 을 주면 그 값으로 토글을 채운다(이미 구독 중인 경기를 수정할 때).
+/// 없으면 신규 구독 기본값(전부 ON)으로 연다.
 Future<MatchAlarmResult?> showMatchAlarmSheet({
   required BuildContext context,
   required String homeName,
   String? homeLogoUrl,
   required String awayName,
   String? awayLogoUrl,
+  MatchAlarmResult? initial,
 }) {
   return showAppBottomSheet<MatchAlarmResult>(
     context: context,
@@ -28,12 +46,15 @@ Future<MatchAlarmResult?> showMatchAlarmSheet({
       homeLogoUrl: homeLogoUrl,
       awayName: awayName,
       awayLogoUrl: awayLogoUrl,
+      initial: initial,
     ),
   );
 }
 
 /// 경기 알림 설정 시트 본문.
 /// 상단 [타이틀 + 대진 표시] · 닫기 버튼, 알림 토글 3행, 하단 확인 버튼.
+/// 라이브 이벤트가 ON 이면 그 아래에 세부 항목 카드([LiveEventDetailCard])를 편다
+/// — 마이 구독 설정의 팀 알림과 같은 컴포넌트·같은 규칙이다.
 ///
 /// 3종 모두 끄면 구독할 알림이 없으므로 확인 버튼을 비활성화한다.
 class MatchAlarmSheet extends StatefulWidget {
@@ -43,6 +64,7 @@ class MatchAlarmSheet extends StatefulWidget {
     this.homeLogoUrl,
     required this.awayName,
     this.awayLogoUrl,
+    this.initial,
   });
 
   final String homeName;
@@ -50,14 +72,42 @@ class MatchAlarmSheet extends StatefulWidget {
   final String awayName;
   final String? awayLogoUrl;
 
+  /// 초기 토글값. null 이면 신규 구독 기본값(전부 ON).
+  final MatchAlarmResult? initial;
+
   @override
   State<MatchAlarmSheet> createState() => _MatchAlarmSheetState();
 }
 
 class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
-  bool _setStart = true;
-  bool _setEnd = true;
-  bool _liveEvent = true;
+  late bool _setStart = widget.initial?.setStart ?? true;
+  late bool _setEnd = widget.initial?.setEnd ?? true;
+  late bool _liveEvent = widget.initial?.liveEvent ?? true;
+
+  /// 라이브 이벤트 세부 항목 중 켜져 있는 것들.
+  late Set<LiveEventKind> _detail = _initialDetail();
+
+  Set<LiveEventKind> _initialDetail() {
+    final i = widget.initial;
+    if (i == null) return LiveEventKind.values.toSet();
+    return {
+      if (i.kill) LiveEventKind.kill,
+      if (i.baron) LiveEventKind.baron,
+      if (i.dragon) LiveEventKind.dragon,
+      if (i.tower) LiveEventKind.tower,
+      if (i.inhibitor) LiveEventKind.inhibitor,
+    };
+  }
+
+  void _setDetailKind(LiveEventKind kind, bool value) {
+    setState(() {
+      if (value) {
+        _detail = {..._detail, kind};
+      } else {
+        _detail = {..._detail}..remove(kind);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +146,16 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
           onChanged: (v) => setState(() => _liveEvent = v),
           scale: scale,
         ),
+        // 라이브 이벤트가 켜져 있을 때만 세부 항목 카드를 편다.
+        // 마이 구독 설정과 달리 여기는 좌측 라벨 들여쓰기가 없어(시트는 20 패딩)
+        // 카드도 같은 20 에 맞춘다.
+        if (_liveEvent)
+          LiveEventDetailCard(
+            selected: _detail,
+            onChanged: _setDetailKind,
+            leftPadding: 20,
+            scale: scale,
+          ),
         SizedBox(height: 24 * scale),
         CommonButton(
           label: l.confirm,
@@ -106,6 +166,11 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
                     setStart: _setStart,
                     setEnd: _setEnd,
                     liveEvent: _liveEvent,
+                    kill: _detail.contains(LiveEventKind.kill),
+                    baron: _detail.contains(LiveEventKind.baron),
+                    dragon: _detail.contains(LiveEventKind.dragon),
+                    tower: _detail.contains(LiveEventKind.tower),
+                    inhibitor: _detail.contains(LiveEventKind.inhibitor),
                   ))
               : null,
         ),

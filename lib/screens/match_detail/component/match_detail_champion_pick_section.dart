@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../components/inner_shadow.dart';
 import '../../../components/nar_badge.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -153,12 +154,11 @@ class _TeamPickFrame extends StatelessWidget {
         vertical: 14 * scale,
         horizontal: 7 * scale,
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
-        crossAxisAlignment:
-            isBlue ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isBlue
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: children,
       ),
     );
@@ -207,8 +207,9 @@ class _PicksRow extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Row(
-        mainAxisAlignment:
-            isBlue ? MainAxisAlignment.start : MainAxisAlignment.end,
+        mainAxisAlignment: isBlue
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
         children: [
           for (var i = 0; i < picks.length; i++)
             _ChampionPick(
@@ -289,9 +290,13 @@ class _ChampionBan extends StatelessWidget {
                     child: Container(
                       color: AppColors.narDark400,
                       child: hasImage
+                          // 세로 일러스트를 정사각 칸에 cover 로 넣으면 세로가
+                          // 크게 잘리는데, 중앙 기준이면 잘려 남는 것이 대개
+                          // 몸통·다리다. 위쪽을 보게 잘라 얼굴이 담기게 한다.
                           ? CachedNetworkImage(
                               imageUrl: resolveImageUrl(imageUrl)!,
                               fit: BoxFit.cover,
+                              alignment: const Alignment(0, -0.6),
                               fadeInDuration: const Duration(milliseconds: 150),
                               errorWidget: (_, _, _) => const SizedBox.shrink(),
                             )
@@ -321,7 +326,10 @@ class _ChampionBan extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.narGray500, width: 2 * scale),
+                border: Border.all(
+                  color: AppColors.narGray500,
+                  width: 2 * scale,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -352,7 +360,6 @@ class _ChampionPick extends StatelessWidget {
       height: 101 * scale,
       decoration: BoxDecoration(
         color: AppColors.narDark500,
-        border: Border.all(color: AppColors.narLine, width: 1),
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,
@@ -367,14 +374,32 @@ class _ChampionPick extends StatelessWidget {
                 errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
             ),
-          // 인셋 섀도우 근사 — 중앙부터 하단까지 narDark800 62% 그라데이션.
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment(0, 0.1),
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x9E141517)],
+          // 시안: Inner shadow — X 0, Y -32, Blur 55, Spread 0,
+          // nar_dark_opacity62.
+          Positioned.fill(
+            child: InnerShadow(
+              color: AppColors.narDarkOpacity62,
+              offset: const Offset(0, -32) * scale,
+              blurRadius: 55 * scale,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          // 테두리 — 클립 안쪽에 그린다.
+          //
+          // 이 클립은 안티에일리어싱이라 경계 픽셀이 반투명해진다. 테두리를
+          // 경계에 딱 붙여 그리면 선의 바깥 절반이 그 반투명 구간에 걸려,
+          // 곡률이 큰 모서리에서 눈에 띄게 흐려진다. 0.5 안쪽으로 들여
+          // 1px 선이 온전히 불투명 영역 안에 들어오게 한다.
+          //
+          // 이미지 위에 겹치지만 선 굵기(1)만큼이라, 클립 자체를 걷어내고
+          // 바깥에 그리는 것보다 이미지가 카드를 채우는 데 유리하다.
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(0.5),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.narLine, width: 1),
+                  borderRadius: BorderRadius.circular(7.5),
                 ),
               ),
             ),

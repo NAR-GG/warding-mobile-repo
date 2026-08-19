@@ -264,6 +264,31 @@
     }
   },
 
+  "rankEndTitle": "{playerName} 선수가 솔랭 한 판을 마쳤어요",
+  "@rankEndTitle": {
+    "placeholders": {
+      "playerName": { "type": "String" }
+    }
+  },
+  "rankEndBodyResult": "{champion}{particle} {result}",
+  "@rankEndBodyResult": {
+    "description": "승패를 아는 종료 알림. result 는 승리/패배. KDA 는 위젯에서 ' · 18/1/11' 로 덧붙인다",
+    "placeholders": {
+      "champion": { "type": "String" },
+      "particle": { "type": "String" },
+      "result": { "type": "String" }
+    }
+  },
+  "rankEndBodyNoResult": "{champion} 경기 종료",
+  "@rankEndBodyNoResult": {
+    "description": "match-v5 결과를 못 읽어 승패를 모르는 종료 알림",
+    "placeholders": {
+      "champion": { "type": "String" }
+    }
+  },
+  "rankEndWin": "승리",
+  "rankEndLose": "패배",
+
   "withdraw": "회원탈퇴",
   "withdrawConfirmTitle": "회원탈퇴",
   "withdrawConfirmMessage": "계정과 구독·알림·평점 등 모든 데이터가\n삭제되며 되돌릴 수 없습니다.",
