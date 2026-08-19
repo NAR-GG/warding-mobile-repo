@@ -289,13 +289,11 @@ class _ChampionBan extends StatelessWidget {
                     child: Container(
                       color: AppColors.narDark400,
                       child: hasImage
-                          // 세로 일러스트를 정사각 칸에 cover 로 넣으면 세로가
-                          // 크게 잘리는데, 중앙 기준이면 잘려 남는 것이 대개
-                          // 몸통·다리다. 위쪽을 보게 잘라 얼굴이 담기게 한다.
+                          // 원본이 정사각 아이콘이고 이 칸도 정사각이라
+                          // 잘림 없이 그대로 들어간다 — 정렬 보정이 필요 없다.
                           ? CachedNetworkImage(
                               imageUrl: resolveImageUrl(imageUrl)!,
                               fit: BoxFit.cover,
-                              alignment: const Alignment(0, -0.6),
                               fadeInDuration: const Duration(milliseconds: 150),
                               errorWidget: (_, _, _) => const SizedBox.shrink(),
                             )
@@ -367,40 +365,50 @@ class _ChampionPick extends StatelessWidget {
         children: [
           if (hasImage)
             Positioned.fill(
-              // 원본(308×560)은 챔피언 전신이 담긴 세로 일러스트다. 카드
-              // 비율(60×101)에 cover 로 맞추면 가로가 거의 딱 맞아떨어져
-              // 확대가 일어나지 않고, 전신이 그대로 축소돼 얼굴이 작게 보인다.
+              // 원본은 챔피언 아이콘(128 정사각)이라 얼굴이 중앙에 있다.
+              // 카드(60×101)에 cover 로 넣으면 가로가 기준이 돼 위아래가
+              // 잘리는데, 얼굴은 그 중앙 밴드 안에 들어온다.
               //
-              // 1.25배로 키우고 살짝 위를 보게 잘라 얼굴을 키운다. 밀려나는
-              // 하단 몸통은 아래 그라데이션과 선수명이 덮는 영역이라 잃는 게
-              // 없다.
+              // 시안(`left:-78px` 로 밀어 넣은 185×209 이미지)이 노린 것도
+              // "얼굴이 카드 폭을 채우는" 그림이다. 다만 시안의 오프셋은
+              // 그 시안에 넣은 이미지에 맞춘 값이라, 인물 위치가 제각각인
+              // 전신 일러스트에 그대로 쓰면 챔피언마다 엉뚱한 데가 걸린다.
+              // 구도가 통일된 아이콘을 쓰면 오프셋 없이 같은 결과가 나온다.
               //
-              // 배율을 이보다 올리면(1.35~) 얼굴이 위로 잘려 나가는 챔피언이
-              // 생긴다 — 원본마다 인물 위치가 달라서, 리신·칼리스타처럼 머리가
-              // 위쪽에 붙은 일러스트가 먼저 잘린다. 상단 정렬(topCenter)도
-              // 같은 이유로 쓰지 않는다.
-              child: ClipRect(
-                child: Transform.scale(
-                  scale: 1.25,
-                  alignment: const Alignment(0, -0.7),
-                  child: CachedNetworkImage(
-                    imageUrl: resolveImageUrl(imageUrl)!,
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0, -0.7),
-                    fadeInDuration: const Duration(milliseconds: 150),
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  ),
-                ),
+              // 살짝 위(-0.25)를 보게 하는 것은 얼굴이 정중앙보다 조금 위에
+              // 오게 해, 아래 그라데이션·선수명이 턱을 덮지 않게 하기 위함이다.
+              child: CachedNetworkImage(
+                imageUrl: resolveImageUrl(imageUrl)!,
+                fit: BoxFit.cover,
+                alignment: const Alignment(0, -0.25),
+                fadeInDuration: const Duration(milliseconds: 150),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
             ),
-          // 인셋 섀도우 근사 — 중앙부터 하단까지 narDark800 62% 그라데이션.
+          // 시안의 `inset 0 -32px 55px rgba(20,21,23,0.62)`.
+          //
+          // 인셋 섀도우는 "위로 32 밀린 구멍"을 55 만큼 번지게 한 것이라 경계가
+          // 부드럽고, 짙은 하단뿐 아니라 카드 중간부터 이미 옅게 깔린다.
+          // 하단에서만 시작하는 2색 그라데이션으로 근사하면 그 중간 톤이 빠져
+          // 위쪽 절반이 시안보다 밝게 뜬다.
+          //
+          // stop 은 실제 섀도우의 세로 알파를 재서 맞췄다. 끝이 0x9E(62%)가
+          // 아니라 0x83 인 것은, 블러가 카드 밖까지 번지느라 카드 안에서는
+          // 최대 불투명도에 닿지 못하기 때문이다.
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment(0, 0.1),
+                  begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x9E141517)],
+                  colors: [
+                    Color(0x00141517),
+                    Color(0x09141517),
+                    Color(0x20141517),
+                    Color(0x51141517),
+                    Color(0x83141517),
+                  ],
+                  stops: [0, 0.25, 0.45, 0.7, 1],
                 ),
               ),
             ),

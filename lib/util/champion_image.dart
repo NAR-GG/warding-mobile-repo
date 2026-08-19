@@ -10,41 +10,46 @@ class ChampionImage {
 
   /// 챔피언 이미지 URL 을 해석한다.
   ///
-  /// [imageUrl] 이 있으면 [_toPortrait] 로 카드 비율에 맞는 변형을 고르고,
+  /// [imageUrl] 이 있으면 [_toSquare] 로 얼굴이 중앙에 오는 변형을 고르고,
   /// 없으면 [championName] 으로 Data Dragon 폴백 URL 을 만든다. 둘 다 없으면 null.
   static String? resolve(String? imageUrl, String? championName) {
-    if (imageUrl != null && imageUrl.isNotEmpty) return _toPortrait(imageUrl);
+    if (imageUrl != null && imageUrl.isNotEmpty) return _toSquare(imageUrl);
     return ddragonUrl(championName);
   }
 
-  /// CommunityDragon 스플래시 아트 URL 을 같은 챔피언의 `portrait` 변형으로
+  /// CommunityDragon 스플래시 아트 URL 을 같은 챔피언의 `square` 변형으로
   /// 바꾼다. 해당 형태가 아니면 그대로 둔다.
   ///
   /// 서버는 챔피언 픽·밴 이미지를 `.../champion/<id>/splash-art/centered` 로
-  /// 내려주는데, 이건 1280×720 **가로형** 스플래시(약 99KB)다. 그런데 앱에서
-  /// 이 이미지가 놓이는 자리는 60×101 **세로** 칸이라, `BoxFit.cover` 가 가로를
-  /// 잘라내며 챔피언이 크게 확대된다. 한 세트에 10장이라 용량도 1MB 가까이 된다.
+  /// 내려주는데, 이건 1280×720 **가로형** 스플래시(약 99KB)다. 앱에서 이
+  /// 이미지가 놓이는 자리는 60×101 픽 카드와 36.4 정사각 밴 칸이다.
   ///
-  /// 같은 CDN 이 제공하는 변형 중 카드 비율에 가장 가까운 것을 고른다.
+  /// 같은 CDN 이 제공하는 변형 중 `square`(챔피언 아이콘)를 쓴다.
   ///
-  /// | 변형 | 크기 | 세로/가로 | 용량 |
+  /// | 변형 | 크기 | 구도 | 용량 |
   /// |---|---|---|---|
-  /// | splash-art/centered | 1280×720 | 0.56 | 99KB |
-  /// | square | 128×128 | 1.00 | 30KB |
-  /// | **portrait** | **308×560** | **1.82** | **46KB** |
+  /// | splash-art/centered | 1280×720 | 전신·챔피언마다 제각각 | 99KB |
+  /// | portrait | 308×560 | 전신·챔피언마다 제각각 | 46KB |
+  /// | **square** | **128×128** | **얼굴 중앙 고정** | **25KB** |
   ///
-  /// 카드는 60×101 이라 1.68 이다 — `portrait`(1.82)가 거의 일치해 잘림이
-  /// 최소이고, 용량도 절반이 된다. `square` 는 더 가볍지만 정사각이라 세로로
-  /// 68% 확대돼 얼굴이 잘려 나간다.
+  /// 비율만 보면 카드(1.68)에 `portrait`(1.82)가 가깝지만, 그건 전신
+  /// 일러스트라 60px 폭에 전신이 다 들어가 얼굴이 아주 작게 보인다. 확대해서
+  /// 얼굴을 키우려 해도 인물 위치가 챔피언마다 달라(리신·칼리스타는 머리가
+  /// 위쪽, 크산테는 아래쪽) 한 배율·정렬로 전부 담을 수 없다 — 어떤 값을 잡아도
+  /// 일부 챔피언은 얼굴이 잘린다.
+  ///
+  /// `square` 는 챔피언 아이콘이라 **모든 챔피언이 얼굴 중앙 구도로 통일**돼
+  /// 있다. 시안이 의도한 "얼굴이 카드를 채우는" 그림이 확대·정렬 조정 없이
+  /// 나오고, 용량도 가장 작다.
   ///
   /// 경로만 갈아끼우므로 서버가 나중에 다른 변형을 주기 시작하면 이 함수는
   /// 자연히 지나친다(형태가 안 맞으면 원본 반환).
-  static String _toPortrait(String url) {
+  static String _toSquare(String url) {
     const marker = '/splash-art';
     final index = url.indexOf(marker);
     if (index < 0) return url;
     // '/splash-art' 뒤에 오는 것(`/centered` 등)까지 통째로 대체한다.
-    return '${url.substring(0, index)}/portrait';
+    return '${url.substring(0, index)}/square';
   }
 
   /// Data Dragon 키가 단순 "공백·아포스트로피 제거" 규칙과 다른 챔피언 예외 표.
