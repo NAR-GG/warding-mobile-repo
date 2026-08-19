@@ -60,6 +60,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String yearMonthDay(int year, int month, int day) {
+    return '$month/$day/$year';
+  }
+
+  @override
   String get setStartAlarm => 'Set Start Alarm';
 
   @override

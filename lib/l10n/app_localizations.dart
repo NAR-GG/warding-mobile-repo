@@ -188,6 +188,12 @@ abstract class AppLocalizations {
   /// **'{month}월 {day}일'**
   String monthDay(int month, int day);
 
+  /// No description provided for @yearMonthDay.
+  ///
+  /// In ko, this message translates to:
+  /// **'{year}년 {month}월 {day}일'**
+  String yearMonthDay(int year, int month, int day);
+
   /// No description provided for @setStartAlarm.
   ///
   /// In ko, this message translates to:

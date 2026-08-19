@@ -18,6 +18,7 @@
   "yesterday": "Yesterday",
   "tomorrow": "Tomorrow",
   "monthDay": "{month}/{day}",
+  "yearMonthDay": "{month}/{day}/{year}",
 
   "setStartAlarm": "Set Start Alarm",
   "setEndAlarm": "Set End Alarm",

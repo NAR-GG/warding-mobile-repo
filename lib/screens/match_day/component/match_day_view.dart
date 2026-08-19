@@ -105,10 +105,15 @@ class MatchDayView extends StatelessWidget {
         leagues.isEmpty || leagues.length > 1 || leagues.single == 'ALL';
 
     final items = <Widget>[
-      MatchDateHeader(
-        label: _relativeLabel(date, l),
-        dateText: _formatDate(date, l),
-        scale: scale,
+      Padding(
+        // 날짜 헤더와 바로 아래 리그 헤더/카드 사이 갭.
+        padding: EdgeInsets.only(bottom: 8 * scale),
+        child: MatchDateHeader(
+          isToday: _isToday(date),
+          dateText: _formatDate(date, l),
+          todayLabel: l.today,
+          scale: scale,
+        ),
       ),
     ];
 
@@ -197,20 +202,15 @@ class MatchDayView extends StatelessWidget {
   /// 라이브 판정은 표기 흔들림(`inProgress` 등)을 흡수하는 공용 유틸에 맡긴다.
   bool _isLive(String status) => isLiveMatchStatus(status);
 
-  /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열 (경기리스트와 동일).
-  String _relativeLabel(DateTime date, AppLocalizations l) {
+  bool _isToday(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(date.year, date.month, date.day);
-    final diff = d.difference(today).inDays;
-    if (diff == 0) return l.today;
-    if (diff == -1) return l.yesterday;
-    if (diff == 1) return l.tomorrow;
-    return '';
+    return d == today;
   }
 
   String _formatDate(DateTime d, AppLocalizations l) =>
-      l.monthDay(d.month, d.day);
+      l.yearMonthDay(d.year, d.month, d.day);
 
   String _localizeMatchTitle(BuildContext context, String title) =>
       localizeMatchTitle(title, AppLocalizations.of(context)!);

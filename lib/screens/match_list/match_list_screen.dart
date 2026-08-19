@@ -718,10 +718,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
               : null;
           return KeyedSubtree(
             key: key,
-            child: MatchDateHeader(
-              label: _relativeLabel(context, item.date),
-              dateText: _formatDate(context, item.date),
-              scale: scale,
+            child: Padding(
+              // 날짜 헤더와 바로 아래 리그 헤더/카드 사이 갭.
+              padding: EdgeInsets.only(bottom: 8 * scale),
+              child: MatchDateHeader(
+                isToday: _isToday(item.date),
+                dateText: _formatDate(context, item.date),
+                todayLabel: AppLocalizations.of(context)!.today,
+                scale: scale,
+              ),
             ),
           );
         }
@@ -846,21 +851,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 라이브 판정은 표기 흔들림(`inProgress` 등)을 흡수하는 공용 유틸에 맡긴다.
   bool _isLive(String status) => isLiveMatchStatus(status);
 
-  /// 오늘/어제/내일 만 라벨, 그 외는 빈 문자열.
-  String _relativeLabel(BuildContext context, DateTime date) {
-    final l = AppLocalizations.of(context)!;
+  bool _isToday(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(date.year, date.month, date.day);
-    final diff = d.difference(today).inDays;
-    if (diff == 0) return l.today;
-    if (diff == -1) return l.yesterday;
-    if (diff == 1) return l.tomorrow;
-    return '';
+    return d == today;
   }
 
   String _formatDate(BuildContext context, DateTime d) =>
-      AppLocalizations.of(context)!.monthDay(d.month, d.day);
+      AppLocalizations.of(context)!.yearMonthDay(d.year, d.month, d.day);
 
   String _localizeMatchTitle(BuildContext context, String title) =>
       localizeMatchTitle(title, AppLocalizations.of(context)!);

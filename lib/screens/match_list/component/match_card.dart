@@ -105,18 +105,19 @@ class MatchCard extends StatelessWidget {
       bottom: 24 * scale,
     );
 
-    // LIVE: 배경 narDark600 + 왼쪽 3px 보더 + (다른 카드와 동일한) 위쪽 1px 구분선.
+    // LIVE: 배경 narDark600 + 왼쪽 3px 보더 + 위쪽 2px 구분선(시안 'Line 16',
+    // narFadeLine 그라데이션 — border 로는 그라데이션을 못 그려 별도 바로 얹는다).
     // 예정·종료: 배경 narBgTertiary + 위쪽 1px 보더(카드 구분선 역할).
-    // 구분선은 두 상태 공통으로 showTopBorder 를 따른다 — 날짜 헤더 바로 아래
-    // 첫 카드만 꺼서 헤더와 선이 겹쳐 보이지 않게 한다.
+    //
+    // 예정·종료 카드는 날짜/리그 헤더 바로 아래 첫 카드일 때 위 구분선을 꺼서
+    // 헤더와 선이 겹쳐 보이지 않게 한다(showTopBorder). 라이브 카드는 그 규칙과
+    // 무관하게 항상 그린다 — 헤더 바로 아래 오더라도 라이브 카드는 시안대로
+    // 위 구분선으로 뚜렷하게 구분돼야 한다.
     final decoration = isLive
-        ? BoxDecoration(
+        ? const BoxDecoration(
             color: AppColors.narDark600,
             border: Border(
-              left: const BorderSide(color: AppColors.liveSideBorder, width: 3),
-              top: showTopBorder
-                  ? const BorderSide(color: AppColors.narLine2, width: 1)
-                  : BorderSide.none,
+              left: BorderSide(color: AppColors.liveSideBorder, width: 3),
             ),
           )
         : BoxDecoration(
@@ -131,92 +132,102 @@ class MatchCard extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        decoration: decoration,
-        padding: padding,
-        child: Column(
-          children: [
-            Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLive)
+            Container(
+              height: 2 * scale,
+              decoration: const BoxDecoration(gradient: AppColors.narFadeLine),
+            ),
+          Container(
+            decoration: decoration,
+            padding: padding,
+            child: Column(
               children: [
-                if (_isAlarmEligibleLeague) ...[
-                  _AlarmBell(
-                    matchId: matchId,
-                    homeName: homeName,
-                    homeLogoUrl: homeLogoUrl,
-                    homeCode: homeCode,
-                    awayName: awayName,
-                    awayLogoUrl: awayLogoUrl,
-                    awayCode: awayCode,
-                    scale: scale,
-                  ),
-                  SizedBox(width: 8 * scale),
-                ],
-                if (isLive)
-                  NarLiveBadge(scale: scale)
-                else
-                  NarBadge(label: time, scale: scale),
-                SizedBox(width: 8 * scale),
-                Expanded(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12 * scale,
-                      height: 18 / 12,
-                      color: AppColors.narText2,
+                Row(
+                  children: [
+                    if (_isAlarmEligibleLeague) ...[
+                      _AlarmBell(
+                        matchId: matchId,
+                        homeName: homeName,
+                        homeLogoUrl: homeLogoUrl,
+                        homeCode: homeCode,
+                        awayName: awayName,
+                        awayLogoUrl: awayLogoUrl,
+                        awayCode: awayCode,
+                        scale: scale,
+                      ),
+                      SizedBox(width: 8 * scale),
+                    ],
+                    if (isLive)
+                      NarLiveBadge(scale: scale)
+                    else
+                      NarBadge(label: time, scale: scale),
+                    SizedBox(width: 8 * scale),
+                    Expanded(
+                      child: Text(
+                        label,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12 * scale,
+                          height: 18 / 12,
+                          color: AppColors.narText2,
+                        ),
+                      ),
                     ),
-                  ),
+                    SvgPicture.asset(
+                      'assets/icons/chevron-right.svg',
+                      width: 18 * scale,
+                      height: 18 * scale,
+                    ),
+                  ],
                 ),
-                SvgPicture.asset(
-                  'assets/icons/chevron-right.svg',
-                  width: 18 * scale,
-                  height: 18 * scale,
+                SizedBox(height: 20 * scale),
+                // 시안 'box': 헤더보다 좌우 16 안쪽, 팀 컬럼 80 고정 + space-between.
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _TeamColumn(
+                        name: homeName,
+                        logoUrl: homeLogoUrl,
+                        scale: scale,
+                      ),
+                      _SpoilerOverlay(
+                        enabled: spoilerPreventionEnabled,
+                        revealed: spoilerRevealed,
+                        onReveal: onSpoilerReveal,
+                        scale: scale,
+                        child: isLive
+                            ? _LiveScore(
+                                home: homeScore,
+                                away: awayScore,
+                                setLabel: liveSetLabel,
+                                scale: scale,
+                              )
+                            : _ScoreRow(
+                                home: homeScore,
+                                away: awayScore,
+                                scale: scale,
+                              ),
+                      ),
+                      _TeamColumn(
+                        name: awayName,
+                        logoUrl: awayLogoUrl,
+                        scale: scale,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: 20 * scale),
-            // 시안 'box': 헤더보다 좌우 16 안쪽, 팀 컬럼 80 고정 + space-between.
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16 * scale),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _TeamColumn(
-                    name: homeName,
-                    logoUrl: homeLogoUrl,
-                    scale: scale,
-                  ),
-                  _SpoilerOverlay(
-                    enabled: spoilerPreventionEnabled,
-                    revealed: spoilerRevealed,
-                    onReveal: onSpoilerReveal,
-                    scale: scale,
-                    child: isLive
-                        ? _LiveScore(
-                            home: homeScore,
-                            away: awayScore,
-                            setLabel: liveSetLabel,
-                            scale: scale,
-                          )
-                        : _ScoreRow(
-                            home: homeScore,
-                            away: awayScore,
-                            scale: scale,
-                          ),
-                  ),
-                  _TeamColumn(
-                    name: awayName,
-                    logoUrl: awayLogoUrl,
-                    scale: scale,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

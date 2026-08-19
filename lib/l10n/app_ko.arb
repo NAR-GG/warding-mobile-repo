@@ -35,6 +35,14 @@
       "day": { "type": "int" }
     }
   },
+  "yearMonthDay": "{year}년 {month}월 {day}일",
+  "@yearMonthDay": {
+    "placeholders": {
+      "year": { "type": "int" },
+      "month": { "type": "int" },
+      "day": { "type": "int" }
+    }
+  },
 
   "setStartAlarm": "세트 시작 알림",
   "setEndAlarm": "세트 종료 알림",
