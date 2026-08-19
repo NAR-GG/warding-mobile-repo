@@ -1189,11 +1189,47 @@ abstract class AppLocalizations {
   /// **'구독 팀 알림 설정'**
   String get subscriptionTeamAlarmSettings;
 
+  /// No description provided for @subscriptionAlarmDetailSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 알림 세부 설정'**
+  String get subscriptionAlarmDetailSettings;
+
+  /// No description provided for @soloRankStartAlarm.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭 시작 알림'**
+  String get soloRankStartAlarm;
+
+  /// No description provided for @soloRankEndAlarm.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭 종료 알림'**
+  String get soloRankEndAlarm;
+
+  /// No description provided for @noSubscribedPlayer.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독중인 선수가 없어요.'**
+  String get noSubscribedPlayer;
+
   /// No description provided for @subscriptionManage.
   ///
   /// In ko, this message translates to:
   /// **'구독 관리'**
   String get subscriptionManage;
+
+  /// No description provided for @teamPlayerSubscriptionManage.
+  ///
+  /// In ko, this message translates to:
+  /// **'팀/ 선수 구독 관리'**
+  String get teamPlayerSubscriptionManage;
+
+  /// No description provided for @subscriptionManageDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이구독 설정 페이지로 이동합니다.'**
+  String get subscriptionManageDescription;
 
   /// No description provided for @noSubscribedTeam.
   ///
@@ -1246,8 +1282,14 @@ abstract class AppLocalizations {
   /// No description provided for @cheerTeamDescription.
   ///
   /// In ko, this message translates to:
-  /// **'응원 팀 설정시 닉네임 옆에 뱃지가 생겨요'**
+  /// **'1. 응원 팀 설정시 닉네임 옆에 뱃지가 생겨요'**
   String get cheerTeamDescription;
+
+  /// No description provided for @cheerTeamDescriptionCalendar.
+  ///
+  /// In ko, this message translates to:
+  /// **'2. 캘린더 일정에서 응원 팀 전용 필터가 생겨요'**
+  String get cheerTeamDescriptionCalendar;
 
   /// No description provided for @cumulativeReviewRating.
   ///
@@ -1573,6 +1615,12 @@ abstract class AppLocalizations {
   /// **'중계 보기'**
   String get watchBroadcastFallback;
 
+  /// No description provided for @objectKill.
+  ///
+  /// In ko, this message translates to:
+  /// **'킬'**
+  String get objectKill;
+
   /// No description provided for @objectDragon.
   ///
   /// In ko, this message translates to:
@@ -1716,6 +1764,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'팀 알림 설정을 저장하지 못했어요'**
   String get teamAlarmSaveFailed;
+
+  /// No description provided for @playerAlarmSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 알림 설정을 저장하지 못했어요'**
+  String get playerAlarmSaveFailed;
 
   /// No description provided for @profileLoadFailed.
   ///

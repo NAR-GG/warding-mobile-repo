@@ -16,6 +16,8 @@ PlayerSubscription _player(int id, {String? name, String role = 'MID'}) =>
       teamName: 'Team1',
       teamImageUrl: '',
       subscribed: false,
+      startEnabled: true,
+      endEnabled: true,
     );
 
 PlayerPage _page({

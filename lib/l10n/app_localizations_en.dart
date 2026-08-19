@@ -627,7 +627,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionTeamAlarmSettings => 'Team Alarm Settings';
 
   @override
+  String get subscriptionAlarmDetailSettings => 'Subscription Alarm Details';
+
+  @override
+  String get soloRankStartAlarm => 'Solo Rank Start Alarm';
+
+  @override
+  String get soloRankEndAlarm => 'Solo Rank End Alarm';
+
+  @override
+  String get noSubscribedPlayer => 'No subscribed players.';
+
+  @override
   String get subscriptionManage => 'Manage';
+
+  @override
+  String get teamPlayerSubscriptionManage => 'Team / Player Subscriptions';
+
+  @override
+  String get subscriptionManageDescription =>
+      'Go to the My Subscription settings page.';
 
   @override
   String get noSubscribedTeam => 'No subscribed teams.';
@@ -655,7 +674,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cheerTeamDescription =>
-      'Setting a cheer team adds a badge next to your nickname';
+      '1. Setting a cheer team adds a badge next to your nickname';
+
+  @override
+  String get cheerTeamDescriptionCalendar =>
+      '2. You also get a cheer-team filter in the calendar';
 
   @override
   String get cumulativeReviewRating => 'Total Reviews/Ratings';
@@ -824,6 +847,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchBroadcastFallback => 'Watch';
 
   @override
+  String get objectKill => 'Kill';
+
+  @override
   String get objectDragon => 'Dragon';
 
   @override
@@ -897,6 +923,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teamAlarmSaveFailed => 'Failed to save team alarm settings';
+
+  @override
+  String get playerAlarmSaveFailed => 'Failed to save player alarm settings';
 
   @override
   String get profileLoadFailed => 'Failed to load profile';

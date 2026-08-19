@@ -2,34 +2,42 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 
+import '../../../components/nar_tab_bar.dart';
 import '../../../components/nar_toggle.dart';
 import '../../../model/team_notification_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../viewmodel/subscription/player_alarm_viewmodel.dart';
 import '../../../viewmodel/subscription/team_alarm_viewmodel.dart';
+import 'live_event_detail_card.dart';
+import 'player_alarm_card.dart';
 
-/// 구독 팀 알림 설정 섹션 (양옆 20 패딩).
+/// 구독 알림 세부 설정 섹션 (양옆 20 패딩).
 ///
-/// 상단: '구독 팀 알림 설정' 타이틀 + '구독 관리' 액션.
-/// 하단: narDark600 카드 안에 팀별 블록(로고/팀명 + 알림 토글 3개).
-/// 구독중인 팀과 알림 설정은 `notification-subscriptions` API 로 받는다.
+/// 상단: '구독 알림 세부 설정' 라벨(15/600 회색).
+/// 그 아래: 팀/선수 콤팩트 탭 (카드 폭 기준 좌패딩 8).
+/// 하단: narDark600 카드 안에 탭별 블록.
+/// - 팀: 로고/팀명 + 알림 토글 3개 (`notification-subscriptions` API).
+/// - 선수: 아바타/이름 + 솔랭 알림 토글 2개 (`player-subscriptions` API).
 ///
-/// [viewModel] 을 주면 그 인스턴스를 쓰고(마이 구독 설정 화면처럼 '완료' 버튼과
-/// 상태를 공유할 때), 없으면 내부에서 만들어 토글 즉시 서버에 반영한다.
+/// [viewModel]/[playerViewModel] 을 주면 그 인스턴스를 쓰고(마이 구독 설정 화면처럼
+/// '완료' 버튼과 상태를 공유할 때), 없으면 내부에서 만들어 토글 즉시 서버에 반영한다.
 class SubscriptionAlarmSection extends StatefulWidget {
   const SubscriptionAlarmSection({
     super.key,
     this.scale = 1,
-    this.onManageTap,
     this.viewModel,
+    this.playerViewModel,
     this.showHeader = true,
   });
 
   final double scale;
-  final VoidCallback? onManageTap;
 
-  /// 외부에서 주입하는 ViewModel. null 이면 내부에서 생성·해제한다.
+  /// 외부에서 주입하는 팀 ViewModel. null 이면 내부에서 생성·해제한다.
   final TeamAlarmViewModel? viewModel;
+
+  /// 외부에서 주입하는 선수 ViewModel. null 이면 탭을 처음 열 때 내부에서 생성·해제한다.
+  final PlayerAlarmViewModel? playerViewModel;
 
   /// false 면 '구독 팀 알림 설정' 타이틀 줄을 감춘다.
   /// 화면 헤더가 이미 같은 맥락을 알려 주는 경우에 쓴다.
@@ -44,17 +52,58 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
   /// 주입받지 않았을 때만 만드는 내부 ViewModel. dispose 책임도 여기에 있다.
   TeamAlarmViewModel? _owned;
 
+  /// 0 = 팀, 1 = 선수.
+  int _tabIndex = 0;
+
+  /// 팀별 라이브 이벤트 세부 항목(킬/바론/드래곤/타워/억제기)을 [team] 필드에서 파생한다.
+  Set<LiveEventKind> _detailOf(TeamNotificationSubscription team) => {
+    if (team.killEnabled) LiveEventKind.kill,
+    if (team.baronEnabled) LiveEventKind.baron,
+    if (team.dragonEnabled) LiveEventKind.dragon,
+    if (team.towerEnabled) LiveEventKind.tower,
+    if (team.inhibitorEnabled) LiveEventKind.inhibitor,
+  };
+
+  void _setDetail(int teamId, LiveEventKind kind, bool value) {
+    switch (kind) {
+      case LiveEventKind.kill:
+        _viewModel.setKill(teamId, value);
+      case LiveEventKind.baron:
+        _viewModel.setBaron(teamId, value);
+      case LiveEventKind.dragon:
+        _viewModel.setDragon(teamId, value);
+      case LiveEventKind.tower:
+        _viewModel.setTower(teamId, value);
+      case LiveEventKind.inhibitor:
+        _viewModel.setInhibitor(teamId, value);
+    }
+  }
+
   TeamAlarmViewModel get _viewModel =>
       widget.viewModel ?? (_owned ??= TeamAlarmViewModel());
 
+  /// 주입받지 않았을 때만 만드는 내부 선수 ViewModel. dispose 책임도 여기에 있다.
+  /// 탭을 처음 열 때 만든다 — 선수 탭을 안 보는 사용자에게 구독 선수 조회를
+  /// 태우지 않으려고.
+  PlayerAlarmViewModel? _ownedPlayers;
+
+  PlayerAlarmViewModel get _players =>
+      widget.playerViewModel ?? (_ownedPlayers ??= PlayerAlarmViewModel());
+
   /// 구독 팀 알림 목록을 다시 불러온다.
-  /// 구독 관리 화면에서 팀 구독을 변경하고 돌아왔을 때 호출한다.
-  Future<void> reload() => _viewModel.load();
+  /// 구독 관리 화면에서 팀·선수 구독을 변경하고 돌아왔을 때 호출한다.
+  /// 저장 전 토글 변경은 그대로 살려 둔다. 선수 탭을 이미 열어 봤다면
+  /// 선수 목록도 같이 갱신한다.
+  Future<void> reload() async {
+    await _viewModel.load(keepUnsaved: true);
+    await (widget.playerViewModel ?? _ownedPlayers)?.load(keepUnsaved: true);
+  }
 
   @override
   void dispose() {
     // 주입받은 ViewModel 은 준 쪽이 해제한다.
     _owned?.dispose();
+    _ownedPlayers?.dispose();
     super.dispose();
   }
 
@@ -79,41 +128,45 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 헤더: 타이틀 + 구독 관리.
-          if (widget.showHeader) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  l.subscriptionTeamAlarmSettings,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 17 * scale,
-                    height: 25 / 17,
-                    color: AppColors.narText,
-                  ),
+          // 헤더: '구독 알림 세부 설정' 라벨 (padding 10 상하 → 높이 45).
+          if (widget.showHeader)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10 * scale),
+              child: Text(
+                l.subscriptionAlarmDetailSettings,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15 * scale,
+                  height: 25 / 15,
+                  color: AppColors.narText4,
                 ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.onManageTap,
-                  child: Text(
-                    l.subscriptionManage,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14 * scale,
-                      height: 1.55,
-                      color: AppColors.narTextTertiary,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            SizedBox(height: 16 * scale),
-          ],
-          _buildCard(scale),
+          // 팀 / 선수 탭. 카드 폭 기준 좌패딩 8.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: NarTabBar(
+              tabs: [l.tabTeam, l.tabPlayer],
+              selectedIndex: _tabIndex,
+              onChanged: (i) => setState(() => _tabIndex = i),
+              variant: NarTabBarVariant.compact,
+              compactHorizontalPadding: 8,
+              scale: scale,
+            ),
+          ),
+          // 콤팩트 탭의 활성 stroke 는 탭 박스 아래(-2)로 넘쳐 그려진다.
+          // Column 에서 뒤 형제인 카드가 위에 칠해져 가리므로 그만큼 띄운다.
+          SizedBox(height: 2 * scale),
+          if (_tabIndex == 0)
+            _buildCard(scale)
+          else
+            // 선수 탭은 자체 ViewModel 을 구독해 목록·토글을 그린다.
+            ListenableBuilder(
+              listenable: _players,
+              builder: (context, _) =>
+                  PlayerAlarmCard(viewModel: _players, scale: scale),
+            ),
         ],
       ),
     );
@@ -159,6 +212,9 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
               _TeamAlarmBlock(
                 team: teams[i],
                 viewModel: _viewModel,
+                liveEventDetail: _detailOf(teams[i]),
+                onLiveEventDetailChanged: (kind, v) =>
+                    _setDetail(teams[i].teamId, kind, v),
                 scale: scale,
               ),
             ],
@@ -173,11 +229,18 @@ class _TeamAlarmBlock extends StatelessWidget {
   const _TeamAlarmBlock({
     required this.team,
     required this.viewModel,
+    required this.liveEventDetail,
+    required this.onLiveEventDetailChanged,
     required this.scale,
   });
 
   final TeamNotificationSubscription team;
   final TeamAlarmViewModel viewModel;
+
+  /// 라이브 이벤트 세부 항목 중 켜져 있는 것들.
+  final Set<LiveEventKind> liveEventDetail;
+  final void Function(LiveEventKind kind, bool value) onLiveEventDetailChanged;
+
   final double scale;
 
   @override
@@ -231,6 +294,13 @@ class _TeamAlarmBlock extends StatelessWidget {
           onChanged: (v) => viewModel.setLiveEvent(team.teamId, v),
           scale: scale,
         ),
+        // 라이브 이벤트가 켜져 있을 때만 세부 항목 카드를 편다.
+        if (team.liveEventEnabled)
+          LiveEventDetailCard(
+            selected: liveEventDetail,
+            onChanged: onLiveEventDetailChanged,
+            scale: scale,
+          ),
       ],
     );
   }
@@ -268,7 +338,7 @@ class _TeamLogo extends StatelessWidget {
   }
 }
 
-/// 알림 토글 한 행: 라벨 + [NarToggle] (padding 4/20/4/60).
+/// 알림 토글 한 행: 라벨 + [NarToggle] (padding 2/20/2/60, 행 높이 38).
 class _AlarmRow extends StatelessWidget {
   const _AlarmRow({
     required this.label,
@@ -285,7 +355,7 @@ class _AlarmRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(60 * scale, 4 * scale, 20 * scale, 4 * scale),
+      padding: EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -296,6 +366,7 @@ class _AlarmRow extends StatelessWidget {
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w500,
               fontSize: 14 * scale,
+              height: 34 / 14,
               color: AppColors.narText,
             ),
           ),
@@ -358,7 +429,7 @@ class _TeamAlarmBlockSkeletonState extends State<_TeamAlarmBlockSkeleton>
         );
         Widget alarmRow() => Padding(
           padding:
-              EdgeInsets.fromLTRB(60 * scale, 4 * scale, 20 * scale, 4 * scale),
+              EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

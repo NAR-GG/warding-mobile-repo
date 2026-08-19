@@ -217,7 +217,13 @@
   "languageEn": "English",
 
   "subscriptionTeamAlarmSettings": "Team Alarm Settings",
+  "subscriptionAlarmDetailSettings": "Subscription Alarm Details",
+  "soloRankStartAlarm": "Solo Rank Start Alarm",
+  "soloRankEndAlarm": "Solo Rank End Alarm",
+  "noSubscribedPlayer": "No subscribed players.",
   "subscriptionManage": "Manage",
+  "teamPlayerSubscriptionManage": "Team / Player Subscriptions",
+  "subscriptionManageDescription": "Go to the My Subscription settings page.",
   "noSubscribedTeam": "No subscribed teams.",
 
   "profileEditTitle": "Edit Profile",
@@ -227,7 +233,8 @@
   "tagHint": "#Tag",
   "done": "Done",
   "cheerTeamSetting": "Cheer Team",
-  "cheerTeamDescription": "Setting a cheer team adds a badge next to your nickname",
+  "cheerTeamDescription": "1. Setting a cheer team adds a badge next to your nickname",
+  "cheerTeamDescriptionCalendar": "2. You also get a cheer-team filter in the calendar",
 
   "cumulativeReviewRating": "Total Reviews/Ratings",
   "reviewView": "View",
@@ -293,6 +300,7 @@
   "liveMatchNotification": "Live Match Notification",
   "watchBroadcastFallback": "Watch",
 
+  "objectKill": "Kill",
   "objectDragon": "Dragon",
   "objectSubDragon": "{sub} Dragon",
   "objectBaron": "Baron",
@@ -321,6 +329,7 @@
   "notificationLoadFailed": "Failed to load notifications.",
   "teamAlarmLoadFailed": "Failed to load team alarm settings",
   "teamAlarmSaveFailed": "Failed to save team alarm settings",
+  "playerAlarmSaveFailed": "Failed to save player alarm settings",
   "profileLoadFailed": "Failed to load profile",
   "requiredField": "This field is required.",
   "tagFormatError": "2-5 alphanumeric characters required.",
