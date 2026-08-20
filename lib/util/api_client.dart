@@ -50,6 +50,15 @@ Future<http.Response> get(
 }) =>
     _c.get(url, headers: headers).timeout(timeout ?? kDefaultApiTimeout);
 
+/// 본문 없이 헤더만 받는다. 주소가 살아 있는지만 확인할 때 쓴다 —
+/// [get] 으로 확인하면 쓰지도 않을 본문을 통째로 받게 된다.
+Future<http.Response> head(
+  Uri url, {
+  Map<String, String>? headers,
+  Duration? timeout,
+}) =>
+    _c.head(url, headers: headers).timeout(timeout ?? kDefaultApiTimeout);
+
 Future<http.Response> post(
   Uri url, {
   Map<String, String>? headers,

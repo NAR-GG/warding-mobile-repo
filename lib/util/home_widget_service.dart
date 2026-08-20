@@ -300,9 +300,17 @@ class HomeWidgetService {
       final imageUrl = resolveImageUrl(team.imageUrl);
       if (imageUrl == null) return;
 
-      // 이미지 다운로드
-      final response = await http.get(Uri.parse(imageUrl));
-      if (response.statusCode != 200) return;
+      // 주소가 살아 있는지만 확인한다. 실제로 그리는 것은 Swift 쪽이라
+      // 여기서 받은 바이트는 쓰이지 않으므로, 본문을 안 싣는 HEAD 로 묻는다
+      // (GET 이면 응원팀을 바꿀 때마다 로고를 통째로 받고 버리게 된다).
+      // HEAD 를 막아 둔 서버도 있어 405·501 이면 통과시킨다 — 주소가 틀린
+      // 것과는 다른 응답이다.
+      final response = await http.head(Uri.parse(imageUrl));
+      const headNotAllowed = {405, 501};
+      if (response.statusCode != 200 &&
+          !headNotAllowed.contains(response.statusCode)) {
+        return;
+      }
 
       // home_widget은 앱 그룹 UserDefaults만 지원하므로
       // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
