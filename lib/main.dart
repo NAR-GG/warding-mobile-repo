@@ -67,6 +67,14 @@ Future<void> _initFirebaseMessaging() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 디코딩된 이미지 캐시 상한. Flutter 기본값은 100MB 인데, 이 앱이 다루는
+  // 이미지는 팀 로고·선수 사진·챔피언 아이콘처럼 작은 것들이라 그만큼 필요
+  // 없다. 저사양 기기에서는 이 한도까지 차오르는 동안 GC 압력이 프레임을
+  // 잡아먹고, 심하면 OS 가 앱을 죽인다 — 그런데 Dart 예외가 아니라서
+  // Sentry 에는 아무것도 안 남는다.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 40 << 20; // 40MB
+
   // Firebase/FCM 준비, 언어 설정 로드, 홈 위젯 App Group 설정은 서로 의존하지
   // 않는데 예전엔 순서대로 await 해서 앱을 켤 때마다 첫 프레임이 그만큼
   // 늦어졌다. 동시에 돌려 가장 느린 하나의 시간만 걸리게 한다.

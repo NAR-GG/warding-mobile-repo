@@ -7,6 +7,7 @@ import '../../../model/match_game.dart';
 import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/champion_image.dart';
 import 'match_detail_locked_empty.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.
@@ -57,6 +58,30 @@ class MatchDetailLiveEventSection extends StatefulWidget {
 class _MatchDetailLiveEventSectionState
     extends State<MatchDetailLiveEventSection> {
   bool _loading = false;
+
+  /// 표시용으로 변환해 둔 이벤트 목록.
+  ///
+  /// 한 세트의 킬·오브젝트를 다 받으면 수십 건이라, 이걸 build 에서 매번
+  /// 다시 만들면 ViewModel 이 알릴 때마다(로딩 플래그가 바뀔 때마다) 전부
+  /// 새로 할당된다. 원본이 바뀔 때만 다시 만든다.
+  late List<_LiveEvent> _viewEvents;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewEvents = widget.events.map(_toViewEvent).toList(growable: false);
+  }
+
+  @override
+  void didUpdateWidget(MatchDetailLiveEventSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 팀 로고 URL 도 변환에 쓰이므로 함께 본다.
+    if (!identical(oldWidget.events, widget.events) ||
+        oldWidget.blueTeamImageUrl != widget.blueTeamImageUrl ||
+        oldWidget.redTeamImageUrl != widget.redTeamImageUrl) {
+      _viewEvents = widget.events.map(_toViewEvent).toList(growable: false);
+    }
+  }
 
   /// 백엔드 [MatchLiveEvent] → 표시용 [_LiveEvent] 매핑.
   /// KILL 은 killer→victim, 오브젝트는 팀(또는 출처)→오브젝트 라벨로 표현.
@@ -114,7 +139,7 @@ class _MatchDetailLiveEventSectionState
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
-    final events = widget.events.map(_toViewEvent).toList();
+    final events = _viewEvents;
     // 최초 로드 중이거나 리로드 진행 중이면 로딩 상태로 본다.
     final loading = _loading || widget.initialLoading;
     final hasError = widget.errorMessage != null && events.isEmpty;
@@ -391,25 +416,25 @@ class _LoadingSkeletonState extends State<_LoadingSkeleton>
       builder: (context, _) {
         // 그라데이션 begin/end Alignment 를 동일 방향으로 살짝 시프트 → 빛이 좌우로 흐르는 느낌.
         final shift = _controller.value * 0.5;
-        return Opacity(
-          opacity: 0.5,
-          child: Container(
-            height: 54 * scale,
-            padding: EdgeInsets.fromLTRB(
-              10 * scale,
-              8 * scale,
-              20 * scale,
-              8 * scale,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment(-1 - shift, 0),
-                end: Alignment(1 - shift, 0),
-                colors: const [
-                  Color(0xFF1A1B1E),
-                  Color(0xFF727784),
-                ],
-              ),
+        // 반투명은 Opacity 위젯 대신 색의 알파(0x80 = 50%)로 낸다. 채우기가
+        // 단색 그라데이션 하나뿐이라 결과는 같은데, Opacity 는 매 프레임
+        // 오프스크린 레이어(saveLayer)를 뜨게 해 애니메이션 내내 값을 치른다.
+        return Container(
+          height: 54 * scale,
+          padding: EdgeInsets.fromLTRB(
+            10 * scale,
+            8 * scale,
+            20 * scale,
+            8 * scale,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment(-1 - shift, 0),
+              end: Alignment(1 - shift, 0),
+              colors: const [
+                Color(0x801A1B1E),
+                Color(0x80727784),
+              ],
             ),
           ),
         );
@@ -673,6 +698,13 @@ class _ActorIcon extends StatelessWidget {
           ? CachedNetworkImage(
               imageUrl: resolveImageUrl(actor.championImageUrl)!,
               fit: BoxFit.cover,
+              memCacheWidth: decodeWidthFor(
+                context,
+                boxWidth: size,
+                boxHeight: size,
+                sourceWidth: kChampionImageWidth,
+                sourceHeight: kChampionImageHeight,
+              ),
               fadeInDuration: const Duration(milliseconds: 150),
               errorWidget: (_, _, _) => const SizedBox.shrink(),
             )

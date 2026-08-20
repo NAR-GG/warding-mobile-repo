@@ -37,6 +37,21 @@ class OnboardingViewModel extends ChangeNotifier {
     loadTeams();
   }
 
+  /// 리그·팀·선수 조회가 응답을 기다리는 동안 사용자가 뒤로 가거나 건너뛰면
+  /// 화면이 이 모델을 dispose 한다. 그 뒤에 `notifyListeners()` 가 불리면
+  /// 예외가 난다 — 온보딩은 탭해서 넘기는 화면이라 실제로 닿는다.
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
   final OnboardingRepository _repository;
   final VoidCallback _onFinish;
   final TeamPreferenceRepository _teamPreferences;
@@ -141,14 +156,14 @@ class OnboardingViewModel extends ChangeNotifier {
       await goNext();
       return;
     }
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 이전 단계로. 첫 단계에서는 호출하지 않는다([canGoBack] 확인).
   void goBack() {
     if (!canGoBack) return;
     _stepIndex--;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 온보딩 건너뛰기. 선호 팀·온보딩 selection 로컬 저장값을 지운 뒤 완료한다.
@@ -204,7 +219,7 @@ class OnboardingViewModel extends ChangeNotifier {
   Future<void> loadLeagues() async {
     _leaguesLoading = true;
     _leaguesError = null;
-    notifyListeners();
+    _safeNotify();
     try {
       _leagues = await _repository.fetchLeagues();
     } catch (e) {
@@ -212,20 +227,20 @@ class OnboardingViewModel extends ChangeNotifier {
       debugPrint('[Onboarding] loadLeagues 에러: $e');
     } finally {
       _leaguesLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   void selectLeague(String name) {
     _selectedLeagueName = name;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 온보딩용 팀 목록을 불러온다.
   Future<void> loadTeams() async {
     _teamsLoading = true;
     _teamsError = null;
-    notifyListeners();
+    _safeNotify();
     try {
       _teams = await _repository.fetchTeams();
     } catch (e) {
@@ -233,13 +248,13 @@ class OnboardingViewModel extends ChangeNotifier {
       debugPrint('[Onboarding] loadTeams 에러: $e');
     } finally {
       _teamsLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   void selectTeam(int id) {
     _selectedTeamId = id;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 온보딩용 선수 목록을 불러온다. 선택한 팀이 있으면 그 팀 선수만 조회한다.
@@ -250,7 +265,7 @@ class OnboardingViewModel extends ChangeNotifier {
     _playersTeamId = teamId;
     _playersLoading = true;
     _playersError = null;
-    notifyListeners();
+    _safeNotify();
     try {
       _players = await _repository.fetchPlayers(
         year: DateTime.now().year,
@@ -262,7 +277,7 @@ class OnboardingViewModel extends ChangeNotifier {
       debugPrint('[Onboarding] loadPlayers 에러: $e');
     } finally {
       _playersLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -271,7 +286,7 @@ class OnboardingViewModel extends ChangeNotifier {
     if (!_selectedPlayerIds.add(id)) {
       _selectedPlayerIds.remove(id);
     }
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 선수 단계의 '팀' 셀렉트에서 기준 팀을 바꾼다.
@@ -282,14 +297,14 @@ class OnboardingViewModel extends ChangeNotifier {
   Future<void> changePlayerTeam(int id) async {
     if (id == _selectedTeamId) return;
     _selectedTeamId = id;
-    notifyListeners();
+    _safeNotify();
     await loadPlayers();
   }
 
   void markNotificationDone() {
     if (_notificationDone) return;
     _notificationDone = true;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 알림 권한을 요청한다. 영구 거부 상태면 앱 설정으로 보낸다.

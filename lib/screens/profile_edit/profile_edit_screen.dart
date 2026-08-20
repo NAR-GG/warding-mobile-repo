@@ -10,6 +10,7 @@ import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_input.dart';
 import '../../styles/app_colors.dart';
+import '../../util/app_image.dart';
 import '../../viewmodel/profile_edit/profile_edit_viewmodel.dart';
 import 'component/cheer_team_section.dart';
 
@@ -235,9 +236,9 @@ class _ProfileAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => fallback,
       );
-    } else if (imageUrl != null && imageUrl!.isNotEmpty) {
+    } else if (resolveImageUrl(imageUrl)?.isNotEmpty ?? false) {
       avatar = CachedNetworkImage(
-        imageUrl: imageUrl!,
+        imageUrl: resolveImageUrl(imageUrl)!,
         width: size,
         height: size,
         fit: BoxFit.cover,

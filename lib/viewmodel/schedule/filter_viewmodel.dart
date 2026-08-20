@@ -56,6 +56,21 @@ class FilterViewModel extends ChangeNotifier {
     _load(_teamOptionsScopes());
   }
 
+  /// 이 모델은 바텀시트가 들고 있다. 시트를 내리면 dispose 되는데, 리그별
+  /// 병렬 조회가 그 뒤에 끝나면 `notifyListeners()` 가 예외를 던진다 —
+  /// 체크박스를 누르고 시트를 내리는 건 흔한 동작이라 실제로 닿는다.
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
   /// 리그·팀 드롭다운의 '전체' 가상 옵션 라벨. 선택 해제 시 이 상태로 돌아간다.
   static const String allLabel = '전체';
 
@@ -137,7 +152,7 @@ class FilterViewModel extends ChangeNotifier {
   /// 드롭다운을 펼치거나 접는다. 이미 펼친 걸 다시 누르면 접힌다.
   void toggleDropdown(FilterDropdown which) {
     _openDropdown = _openDropdown == which ? FilterDropdown.none : which;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 이름으로 리그 체크박스를 토글한다. '전체'를 선택하면 다른 선택을 모두 지운다.
@@ -154,7 +169,7 @@ class FilterViewModel extends ChangeNotifier {
       _selectedLeagueCodes = next;
     }
     _selectedTeamIds = {}; // 리그가 바뀌면 팀 선택은 초기화.
-    notifyListeners();
+    _safeNotify();
     _load(_teamOptionsScopes());
   }
 
@@ -163,7 +178,7 @@ class FilterViewModel extends ChangeNotifier {
     if (name == allLabel) {
       if (_selectedTeamIds.isEmpty) return; // 이미 '전체'.
       _selectedTeamIds = {};
-      notifyListeners();
+      _safeNotify();
       return;
     }
     final teamId = _teamIdOf(name);
@@ -171,7 +186,7 @@ class FilterViewModel extends ChangeNotifier {
     final next = Set<int>.from(_selectedTeamIds);
     next.contains(teamId) ? next.remove(teamId) : next.add(teamId);
     _selectedTeamIds = next;
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 초기화 — 리그·팀 선택을 모두 해제하고 전체로 되돌린다.
@@ -180,7 +195,7 @@ class FilterViewModel extends ChangeNotifier {
     _selectedTeamIds = {};
     _wasReset = true;
     _openDropdown = FilterDropdown.none;
-    notifyListeners();
+    _safeNotify();
     _load([allLeagueCode]);
   }
 
@@ -195,7 +210,7 @@ class FilterViewModel extends ChangeNotifier {
   Future<void> _load(List<String> leagues) async {
     final loadId = ++_loadId;
     _loading = true;
-    notifyListeners();
+    _safeNotify();
     try {
       final results = await Future.wait(
         leagues.map((l) => _repository.fetchFilterOptions(league: l)),
@@ -221,7 +236,7 @@ class FilterViewModel extends ChangeNotifier {
       // 비어 보인다.
       if (loadId == _loadId) {
         _loading = false;
-        notifyListeners();
+        _safeNotify();
       }
     }
   }

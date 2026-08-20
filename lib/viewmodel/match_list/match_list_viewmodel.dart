@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../l10n/app_strings.dart';
 
 import '../../model/category_tree.dart';
+import '../../model/schedule_filter_options.dart';
 import '../../model/schedule_match.dart';
 import '../../repository/category/category_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
@@ -168,7 +169,7 @@ class MatchListViewModel extends ChangeNotifier {
     final saved = await _spoilerPreferences.load();
     if (saved == _spoilerPreventionEnabled) return;
     _spoilerPreventionEnabled = saved;
-    notifyListeners();
+    _notify();
   }
 
   void setSpoilerPreventionEnabled(bool value) {
@@ -334,11 +335,17 @@ class MatchListViewModel extends ChangeNotifier {
     final previousLeagueCode = _effectiveLeagueCode(_selectedLeague);
     try {
       final year = int.parse(_selectedSeason);
-      final tree = await _categoryRepository.fetchTree(year: year);
-      _tree = tree;
+      // 두 조회는 서로 의존하지 않는데 예전엔 순서대로 기다렸다. 트리 조회가
+      // 0.9~2.7초까지 걸려서, 필터가 뜨는 시점이 두 응답의 합이 되고 있었다.
+      // 함께 띄워 느린 쪽 하나의 시간만 걸리게 한다.
+      final results = await Future.wait([
+        _categoryRepository.fetchTree(year: year),
+        _scheduleRepository.fetchFilterOptions(),
+      ]);
+      _tree = results[0] as CategoryTree;
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
-      final options = await _scheduleRepository.fetchFilterOptions();
+      final options = results[1] as ScheduleFilterOptions;
       // 서버가 이미 맨 앞에 '전체'(code ALL) 옵션을 포함해 내려준다.
       _leagues = options.leagues.map((l) => l.name).toList();
       if (_selectedLeague == null || !_leagues.contains(_selectedLeague)) {

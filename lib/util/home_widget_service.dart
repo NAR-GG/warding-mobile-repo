@@ -93,15 +93,18 @@ class HomeWidgetService {
               : leagues;
           try {
             final allMatches = <ScheduleMatch>[];
-            for (final league in leaguesForDetail) {
-              try {
-                final matches = await ScheduleRepository.instance
+            // 리그별 조회는 서로 의존하지 않는다. 순서대로 기다리면 선택한
+            // 리그 수만큼 왕복이 직렬로 쌓인다 — 함께 띄운다.
+            // 개별 리그 실패는 빈 목록으로 접어 기존 동작을 유지한다.
+            final perLeague = await Future.wait([
+              for (final league in leaguesForDetail)
+                ScheduleRepository.instance
                     .fetchMatchesByDate(now, leagues: [league],
-                        teamIds: teamIds.isNotEmpty ? teamIds : null);
-                allMatches.addAll(matches);
-              } catch (_) {
-                // 개별 리그 실패 무시
-              }
+                        teamIds: teamIds.isNotEmpty ? teamIds : null)
+                    .catchError((_) => <ScheduleMatch>[]),
+            ]);
+            for (final matches in perLeague) {
+              allMatches.addAll(matches);
             }
             // 캘린더에 있는 경기만 필터링 (캘린더 필터와 동기화)
             final filtered = allMatches
@@ -156,16 +159,18 @@ class HomeWidgetService {
       final leaguesForDetail = leagues.contains('ALL')
           ? const ['ALL']
           : leagues;
+      // 리그별 조회는 서로 의존하지 않으므로 함께 띄운다(위 경로와 동일).
+      // 개별 리그 실패는 빈 목록으로 접는다.
       final matches = <ScheduleMatch>[];
-      for (final league in leaguesForDetail) {
-        try {
-          final result = await ScheduleRepository.instance
+      final perLeague = await Future.wait([
+        for (final league in leaguesForDetail)
+          ScheduleRepository.instance
               .fetchMatchesByDate(now, leagues: [league],
-                  teamIds: teamIds.isNotEmpty ? teamIds : null);
-          matches.addAll(result);
-        } catch (_) {
-          // 개별 리그 실패 무시
-        }
+                  teamIds: teamIds.isNotEmpty ? teamIds : null)
+              .catchError((_) => <ScheduleMatch>[]),
+      ]);
+      for (final result in perLeague) {
+        matches.addAll(result);
       }
 
       final todayJson = <String, dynamic>{
@@ -300,9 +305,17 @@ class HomeWidgetService {
       final imageUrl = resolveImageUrl(team.imageUrl);
       if (imageUrl == null) return;
 
-      // 이미지 다운로드
-      final response = await http.get(Uri.parse(imageUrl));
-      if (response.statusCode != 200) return;
+      // 주소가 살아 있는지만 확인한다. 실제로 그리는 것은 Swift 쪽이라
+      // 여기서 받은 바이트는 쓰이지 않으므로, 본문을 안 싣는 HEAD 로 묻는다
+      // (GET 이면 응원팀을 바꿀 때마다 로고를 통째로 받고 버리게 된다).
+      // HEAD 를 막아 둔 서버도 있어 405·501 이면 통과시킨다 — 주소가 틀린
+      // 것과는 다른 응답이다.
+      final response = await http.head(Uri.parse(imageUrl));
+      const headNotAllowed = {405, 501};
+      if (response.statusCode != 200 &&
+          !headNotAllowed.contains(response.statusCode)) {
+        return;
+      }
 
       // home_widget은 앱 그룹 UserDefaults만 지원하므로
       // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
@@ -511,10 +524,11 @@ class HomeWidgetService {
 
     try {
       final now = DateTime.now();
-      final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+      // 저장된 필터를 그대로 보낸다('ALL' → 'LCK' 치환 제거). 스플래시가 미리
+      // 받아 둔 것과 같은 주소가 되므로 앱을 켤 때 캘린더를 두 번 받지도 않는다.
       final days = await ScheduleRepository.instance.fetchCalendar(
         now,
-        leagues: leagueParam,
+        leagues: leagues,
         teamIds: teamIds.isNotEmpty ? teamIds : null,
       );
       final matchesByDay = <int, List<CalendarMatchBrief>>{
@@ -682,10 +696,13 @@ class HomeWidgetService {
       }
     }
 
-    final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+    // 저장된 필터를 그대로 보낸다. 예전엔 'ALL' 을 'LCK' 로 바꿔 보냈는데,
+    // 이 위젯은 경기 일정 화면의 필터와 같은 것을 보여주기로 한 것이라
+    // 필터가 '전체'인데 위젯만 LCK 만 나오는 상태였다(8월 기준 경기 있는 날
+    // 31일 → 22일). 캘린더 API 는 'ALL' 을 그대로 받는다.
     final days = await ScheduleRepository.instance.fetchCalendar(
       month,
-      leagues: leagueParam,
+      leagues: leagues,
       teamIds: teamIds.isNotEmpty ? teamIds : null,
     );
     final matchesByDay = <int, List<CalendarMatchBrief>>{

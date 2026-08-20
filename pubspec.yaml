@@ -121,8 +121,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/Pretendard/Pretendard-Bold.otf
           weight: 700
-        - asset: assets/fonts/Pretendard/Pretendard-Black.otf
-          weight: 900
+        # Black(900) 은 싣지 않는다. 쓰는 곳이 경기 상세의 9px 중계사 칩
+        # 하나뿐이었는데 그 크기에서는 Bold 와 구분되지 않아 w700 으로 바꿨다.
+        # 웨이트 하나가 1.5MB 라 앱 용량에서 차지하는 몫이 작지 않다.
     - family: Open Sans
       fonts:
         - asset: assets/fonts/OpenSans/OpenSans-Regular.ttf

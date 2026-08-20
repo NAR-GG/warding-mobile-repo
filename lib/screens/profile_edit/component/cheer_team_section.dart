@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 응원 팀 항목.
 class CheerTeam {
@@ -237,11 +238,11 @@ class _TeamLogo extends StatelessWidget {
         shape: BoxShape.circle,
       ),
     );
-    final url = team?.imageUrl;
-    if (url == null || url.isEmpty) return placeholder;
+    final resolved = resolveImageUrl(team?.imageUrl);
+    if (resolved == null || resolved.isEmpty) return placeholder;
     return ClipOval(
       child: CachedNetworkImage(
-        imageUrl: url,
+        imageUrl: resolved,
         width: size,
         height: size,
         fit: BoxFit.cover,

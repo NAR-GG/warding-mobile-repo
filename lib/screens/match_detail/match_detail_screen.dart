@@ -266,7 +266,11 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
                           link.provider.toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w900,
+                            // 시안은 w900 이지만 9px 에서는 w700 과 구분되지
+                            // 않는다. 앱 전체에서 w900 을 쓰는 곳이 여기뿐이라,
+                            // 이것 하나 때문에 Pretendard-Black(1.5MB)을 통째로
+                            // 싣게 된다 — 눈에 보이지 않는 차이의 값이 아니다.
+                            fontWeight: FontWeight.w700,
                             fontSize: 9 * scale,
                             color: _brandColorOf(link.provider),
                           ),

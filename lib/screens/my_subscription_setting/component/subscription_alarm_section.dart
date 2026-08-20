@@ -416,15 +416,15 @@ class _TeamAlarmBlockSkeletonState extends State<_TeamAlarmBlockSkeleton>
       animation: _ctrl,
       builder: (context, _) {
         final opacity = 0.3 + (_ctrl.value * 0.3); // 0.3 ↔ 0.6 펄스
-        Widget box({double? w, required double h, double r = 4}) => Opacity(
-          opacity: opacity,
-          child: Container(
-            width: w,
-            height: h,
-            decoration: BoxDecoration(
-              color: AppColors.narLine2,
-              borderRadius: BorderRadius.circular(r),
-            ),
+        Widget box({double? w, required double h, double r = 4}) => Container(
+          width: w,
+          height: h,
+          decoration: BoxDecoration(
+            // 펄스는 Opacity 위젯 대신 색의 알파로 낸다 — 결과는 같은데
+            // Opacity 는 박스마다 오프스크린 레이어를 떠서, 한 화면에
+            // 스켈레톤이 여러 장 깔리면 그 비용이 장수만큼 곱해진다.
+            color: AppColors.narLine2.withValues(alpha: opacity),
+            borderRadius: BorderRadius.circular(r),
           ),
         );
         Widget alarmRow() => Padding(
