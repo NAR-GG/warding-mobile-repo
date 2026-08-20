@@ -3,34 +3,28 @@ import 'package:warding/util/champion_image.dart';
 
 /// 챔피언 이미지 URL 해석.
 ///
-/// 서버는 픽·밴 이미지를 CommunityDragon 스플래시 아트(`splash-art/centered`,
-/// 약 99KB)로 내려주는데, 앱에서 그 이미지가 놓이는 자리는 60×101 칸이다.
-/// 한 세트에 10장이면 1MB 가까이 받게 돼 그만큼 늦게 뜬다 — 같은 CDN 의
-/// `portrait`(약 30KB) 로 바꿔 받는다.
+/// 서버가 Cloudinary 를 거쳐 카드 비율(400×600)로 잘린 이미지를 내려주므로,
+/// 앱은 URL 을 손대지 않고 그대로 쓴다. 예전에 하던 `/splash-art/centered`
+/// → `/portrait` 치환은 Cloudinary 에 캐시되지 않은 변형을 만들어 오히려
+/// 더 크고 느려서 걷어냈다.
 void main() {
-  group('resolve — CommunityDragon 스플래시를 카드 비율 변형으로', () {
-    test('splash-art/centered 를 portrait 로 바꾼다', () {
+  group('resolve — 서버가 준 URL 을 그대로 쓴다', () {
+    test('Cloudinary 변환이 붙은 URL 을 건드리지 않는다', () {
+      const url =
+          'https://res.cloudinary.com/dvvurdffw/image/fetch/'
+          'f_webp,q_auto,w_400,h_600,c_fill,g_auto/'
+          'https://cdn.communitydragon.org/latest/champion/64/splash-art/centered';
+
       expect(
-        ChampionImage.resolve(
-          'https://cdn.communitydragon.org/latest/champion/2/splash-art/centered',
-          'Olaf',
-        ),
-        'https://cdn.communitydragon.org/latest/champion/2/portrait',
+        ChampionImage.resolve(url, 'LeeSin'),
+        url,
+        reason: '경로를 갈아끼우면 캐시 안 된 변형이 돼 더 크고 느려진다',
       );
     });
 
-    test('centered 가 없는 splash-art 도 portrait 로 바꾼다', () {
-      expect(
-        ChampionImage.resolve(
-          'https://cdn.communitydragon.org/latest/champion/64/splash-art',
-          'LeeSin',
-        ),
-        'https://cdn.communitydragon.org/latest/champion/64/portrait',
-      );
-    });
-
-    test('이미 portrait 면 그대로 둔다', () {
-      const url = 'https://cdn.communitydragon.org/latest/champion/2/portrait';
+    test('CommunityDragon 원본 URL 도 그대로 둔다', () {
+      const url =
+          'https://cdn.communitydragon.org/latest/champion/2/splash-art/centered';
 
       expect(ChampionImage.resolve(url, 'Olaf'), url);
     });
