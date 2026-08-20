@@ -56,6 +56,10 @@ int decodeWidthFor(
   return width > sourceWidth ? sourceWidth : width;
 }
 
+/// Data Dragon 스플래시 아트의 해상도. 챔피언과 무관하게 고정이다.
+const int kChampionSplashWidth = 1215;
+const int kChampionSplashHeight = 717;
+
 /// 챔피언 영문 키로 Data Dragon 스플래시 아트 URL 을 만든다(배경용).
 /// 스플래시 경로는 버전이 없어 패치와 무관하게 동작한다.
 ///

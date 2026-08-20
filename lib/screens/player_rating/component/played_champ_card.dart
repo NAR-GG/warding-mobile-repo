@@ -69,20 +69,33 @@ class PlayedChampCard extends StatelessWidget {
             // 기준으로 스케일링되며 크롭 여유가 매우 작아진다. 기기별 서브픽셀 반올림에
             // 따라 가장자리(어느 쪽이든)에 카드 배경이 얇은 선으로 비칠 수 있어, 이미지를
             // 클립 경계보다 넉넉히 크게(overscan) 그려 항상 여유를 확보한다.
-            // memCacheWidth 는 지정하지 않는다 — 카드가 기기 폭 대부분을 차지해 작게
-            // 캐싱하면 확대 렌더링되며 화질이 흐려진다.
+            //
+            // 디코딩 폭은 카드 실제 크기에 맞춰 제한한다. 원본은 1215×717 이라
+            // 한 장에 3.3MB 를 쓰는데, 이 카드는 목록에 쌓여서 10장만 스크롤해도
+            // 33MB 가 된다. 확대 렌더링을 걱정해 예전엔 제한하지 않았지만,
+            // 가장 넓은 기기(430pt @3x ≈ 1290px)에서도 원본 1215px 보다 커
+            // 어차피 확대해서 쓰던 상태다 — 즉 화질로 잃는 것이 없다.
             if (championSplashUrl(championName) != null)
               Positioned(
                 left: -6,
                 right: -6,
                 top: -6,
                 bottom: -6,
-                child: CachedNetworkImage(
-                  imageUrl: championSplashUrl(championName)!,
-                  fit: BoxFit.cover,
-                  alignment: const Alignment(0, -0.2),
-                  fadeInDuration: const Duration(milliseconds: 150),
-                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => CachedNetworkImage(
+                    imageUrl: championSplashUrl(championName)!,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.2),
+                    memCacheWidth: decodeWidthFor(
+                      context,
+                      boxWidth: constraints.maxWidth,
+                      boxHeight: constraints.maxHeight,
+                      sourceWidth: kChampionSplashWidth,
+                      sourceHeight: kChampionSplashHeight,
+                    ),
+                    fadeInDuration: const Duration(milliseconds: 150),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
             // 배경 위 어두운 세로 그라데이션(콘텐츠 가독성 + 하단 inset 그림자 근사).
