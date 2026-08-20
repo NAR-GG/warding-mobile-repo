@@ -17,6 +17,21 @@ class NoticeViewModel extends ChangeNotifier {
 
   static const _pageSize = 20;
 
+  /// 첫 조회가 생성자에서 시작되므로 화면이 뜨기도 전에 요청이 떠 있다.
+  /// 공지를 열자마자 뒤로 가면 dispose 뒤에 응답이 와서 `notifyListeners()`
+  /// 가 예외를 던진다 — 요청 시간 전체가 노출 구간이다.
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
   final List<Notice> _notices = [];
   List<Notice> get notices => List.unmodifiable(_notices);
 
@@ -36,7 +51,7 @@ class NoticeViewModel extends ChangeNotifier {
     if (_loading || !_hasMore) return;
     _loading = true;
     _failed = false;
-    notifyListeners();
+    _safeNotify();
     try {
       final page =
           await _repository.fetchNotices(page: _page, size: _pageSize);
@@ -48,7 +63,7 @@ class NoticeViewModel extends ChangeNotifier {
       _failed = _notices.isEmpty;
     } finally {
       _loading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 }
