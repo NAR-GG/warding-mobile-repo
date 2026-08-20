@@ -93,15 +93,18 @@ class HomeWidgetService {
               : leagues;
           try {
             final allMatches = <ScheduleMatch>[];
-            for (final league in leaguesForDetail) {
-              try {
-                final matches = await ScheduleRepository.instance
+            // 리그별 조회는 서로 의존하지 않는다. 순서대로 기다리면 선택한
+            // 리그 수만큼 왕복이 직렬로 쌓인다 — 함께 띄운다.
+            // 개별 리그 실패는 빈 목록으로 접어 기존 동작을 유지한다.
+            final perLeague = await Future.wait([
+              for (final league in leaguesForDetail)
+                ScheduleRepository.instance
                     .fetchMatchesByDate(now, leagues: [league],
-                        teamIds: teamIds.isNotEmpty ? teamIds : null);
-                allMatches.addAll(matches);
-              } catch (_) {
-                // 개별 리그 실패 무시
-              }
+                        teamIds: teamIds.isNotEmpty ? teamIds : null)
+                    .catchError((_) => <ScheduleMatch>[]),
+            ]);
+            for (final matches in perLeague) {
+              allMatches.addAll(matches);
             }
             // 캘린더에 있는 경기만 필터링 (캘린더 필터와 동기화)
             final filtered = allMatches
@@ -156,16 +159,18 @@ class HomeWidgetService {
       final leaguesForDetail = leagues.contains('ALL')
           ? const ['ALL']
           : leagues;
+      // 리그별 조회는 서로 의존하지 않으므로 함께 띄운다(위 경로와 동일).
+      // 개별 리그 실패는 빈 목록으로 접는다.
       final matches = <ScheduleMatch>[];
-      for (final league in leaguesForDetail) {
-        try {
-          final result = await ScheduleRepository.instance
+      final perLeague = await Future.wait([
+        for (final league in leaguesForDetail)
+          ScheduleRepository.instance
               .fetchMatchesByDate(now, leagues: [league],
-                  teamIds: teamIds.isNotEmpty ? teamIds : null);
-          matches.addAll(result);
-        } catch (_) {
-          // 개별 리그 실패 무시
-        }
+                  teamIds: teamIds.isNotEmpty ? teamIds : null)
+              .catchError((_) => <ScheduleMatch>[]),
+      ]);
+      for (final result in perLeague) {
+        matches.addAll(result);
       }
 
       final todayJson = <String, dynamic>{
@@ -519,10 +524,11 @@ class HomeWidgetService {
 
     try {
       final now = DateTime.now();
-      final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+      // 저장된 필터를 그대로 보낸다('ALL' → 'LCK' 치환 제거). 스플래시가 미리
+      // 받아 둔 것과 같은 주소가 되므로 앱을 켤 때 캘린더를 두 번 받지도 않는다.
       final days = await ScheduleRepository.instance.fetchCalendar(
         now,
-        leagues: leagueParam,
+        leagues: leagues,
         teamIds: teamIds.isNotEmpty ? teamIds : null,
       );
       final matchesByDay = <int, List<CalendarMatchBrief>>{
@@ -690,10 +696,13 @@ class HomeWidgetService {
       }
     }
 
-    final leagueParam = leagues.contains('ALL') ? const ['LCK'] : leagues;
+    // 저장된 필터를 그대로 보낸다. 예전엔 'ALL' 을 'LCK' 로 바꿔 보냈는데,
+    // 이 위젯은 경기 일정 화면의 필터와 같은 것을 보여주기로 한 것이라
+    // 필터가 '전체'인데 위젯만 LCK 만 나오는 상태였다(8월 기준 경기 있는 날
+    // 31일 → 22일). 캘린더 API 는 'ALL' 을 그대로 받는다.
     final days = await ScheduleRepository.instance.fetchCalendar(
       month,
-      leagues: leagueParam,
+      leagues: leagues,
       teamIds: teamIds.isNotEmpty ? teamIds : null,
     );
     final matchesByDay = <int, List<CalendarMatchBrief>>{

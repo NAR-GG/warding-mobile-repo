@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -80,6 +81,9 @@ class AuthService {
   void _setCachedJwt(String? value) {
     _cachedJwt = value;
     _jwtCached = true;
+    // 로그인·로그아웃·강제 로그아웃이 모두 이 지점을 지난다. 계정이 바뀌었는데
+    // 이전 사용자의 프로필이 남아 있으면 안 되므로 여기서 함께 버린다.
+    _invalidateMeCache();
   }
 
   /// 테스트 전용 — 인메모리 캐시를 지워 다음 [jwt] 읽기가 storage 를 다시 보게
@@ -378,9 +382,48 @@ class AuthService {
   /// 처리한다. null 로 접으면 '리프레시 토큰 없음'이 되어 강제 로그아웃된다.
   Future<String?> get refreshToken => readOrThrowIfUnavailable(_refreshKey);
 
+  /// 회원 정보 캐시. 경기일정·마이페이지·평점상세·프로필수정이 각자 이걸
+  /// 부르는데, 마이페이지 계열은 화면 셋(마이페이지·계정설정·회원탈퇴)이
+  /// 각각 ViewModel 을 만들어서 오가기만 해도 같은 요청이 여러 번 나갔다.
+  ///
+  /// 프로필은 사용자가 직접 바꾸기 전엔 변하지 않으므로, 짧은 TTL 로 충분하다.
+  (DateTime, UserProfile)? _meCache;
+  Future<UserProfile>? _meInFlight;
+  static const Duration _meCacheTtl = Duration(seconds: 60);
+
   /// 로그인 회원 정보를 조회한다 (`GET /api/auth/me`).
   /// 만료 시 [authorizedRequest] 가 토큰을 자동 갱신·재시도한다.
-  Future<UserProfile> fetchMe() async {
+  ///
+  /// 같은 요청이 이미 떠 있거나 방금 끝났으면([_meCacheTtl] 이내) 그 결과를
+  /// 재사용한다. 프로필을 고치거나 로그아웃하면 [_invalidateMeCache] 로 버린다.
+  Future<UserProfile> fetchMe() {
+    final cached = _meCache;
+    if (cached != null && DateTime.now().difference(cached.$1) < _meCacheTtl) {
+      return Future.value(cached.$2);
+    }
+    final inFlight = _meInFlight;
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchMe().then((me) {
+      _meCache = (DateTime.now(), me);
+      return me;
+    });
+    // 실패는 호출부가 각자 받는다. 여기서 한 번 더 받아 두지 않으면 대기 중인
+    // 리스너가 없을 때 '처리되지 않은 예외'로 올라온다.
+    unawaited(request.whenComplete(() {
+      if (identical(_meInFlight, request)) _meInFlight = null;
+    }).then<void>((_) {}, onError: (_) {}));
+    _meInFlight = request;
+    return request;
+  }
+
+  /// 캐시된 회원 정보를 버린다. 프로필 수정·로그아웃·탈퇴 후에 부른다.
+  void _invalidateMeCache() {
+    _meCache = null;
+    _meInFlight = null;
+  }
+
+  Future<UserProfile> _fetchMe() async {
     final response = await authorizedRequest(
       (token) => http.get(
         Uri.parse(ApiConfig.meUrl),
@@ -425,9 +468,14 @@ class AuthService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('프로필 수정 실패 (${response.statusCode})');
     }
-    return UserProfile.fromJson(
+    final updated = UserProfile.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
+    // 방금 바꾼 값으로 캐시를 갱신한다. 버리기만 하면 다음 화면이 다시 받아야
+    // 하는데, 응답이 이미 최신 프로필이라 그럴 이유가 없다.
+    _meCache = (DateTime.now(), updated);
+    _meInFlight = null;
+    return updated;
   }
 
   /// 진행 중인 재발급 요청. 동시에 여러 API가 만료를 감지해도 1회만 호출한다.

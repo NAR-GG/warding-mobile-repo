@@ -63,6 +63,20 @@ class ScheduleRepository {
   /// 이 시간이 지났으면 새로 받는다.
   static const Duration _calendarCacheTtl = Duration(seconds: 30);
 
+  /// 만료된 캐시 항목을 걷어낸다.
+  ///
+  /// TTL 은 읽을 때만 보므로, 다시 조회되지 않는 키는 만료된 뒤에도 파싱된
+  /// 응답을 그대로 붙들고 있었다. 캐시 키가 월·리그·팀 조합이라 필터를
+  /// 이것저것 만져 보는 사용자에게는 조합 수만큼 쌓인다. 쓸 때 함께 쓸어내
+  /// 실제 사용 범위 언저리로 유지한다.
+  static void _sweepExpired<T>(
+    Map<String, (DateTime, T)> cache,
+    Duration ttl,
+  ) {
+    final now = DateTime.now();
+    cache.removeWhere((_, entry) => now.difference(entry.$1) >= ttl);
+  }
+
   /// 캘린더 요청 한 건이 살아 있을 수 있는 최대 시간.
   ///
   /// 백그라운드에 들어가면 OS 가 프로세스를 멈춰 소켓 타임아웃도 같이 얼어붙는다.
@@ -108,6 +122,7 @@ class ScheduleRepository {
     final request = _fetchCalendar(url, monthStr)
         .timeout(_calendarTimeout)
         .then((days) {
+      _sweepExpired(_calendarCache, _calendarCacheTtl);
       _calendarCache[url] = (DateTime.now(), days);
       return days;
     });
@@ -187,6 +202,7 @@ class ScheduleRepository {
       // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
       // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
       if (!_hasLiveMatch(matches)) {
+        _sweepExpired(_matchesByDateCache, _calendarCacheTtl);
         _matchesByDateCache[url] = (DateTime.now(), matches);
       }
       return matches;
@@ -286,6 +302,7 @@ class ScheduleRepository {
       // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
       // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
       if (!_hasLiveMatch(page.matches)) {
+        _sweepExpired(_matchesCache, _calendarCacheTtl);
         _matchesCache[url] = (DateTime.now(), page);
       }
       return page;
@@ -324,11 +341,48 @@ class ScheduleRepository {
     );
   }
 
+  /// 필터 옵션 캐시 — 리그 코드별로 담는다.
+  ///
+  /// 이 응답은 리그·팀 명단이라 주 단위로나 바뀐다. 그런데 호출 빈도는
+  /// 앱에서 가장 높은 축이다: 경기 리스트 진입마다, 앱 시작 로고 프리페치,
+  /// 그리고 필터 시트에서 **리그 체크박스를 누를 때마다** 선택된 리그 수만큼
+  /// 다시 나간다(5개를 하나씩 켜면 1+2+3+4+5 = 15회). 세대 검사가 늦게 온
+  /// 응답을 버리긴 해도 요청 자체는 이미 나간 뒤다.
+  final Map<String, (DateTime, ScheduleFilterOptions)> _filtersCache = {};
+  final Map<String, Future<ScheduleFilterOptions>> _filtersInFlight = {};
+  static const Duration _filtersCacheTtl = Duration(minutes: 10);
+
   /// 필터 모달의 리그·팀 옵션을 조회한다 (인증 불필요).
   /// [league] 소속 팀 목록을 함께 받는다.
+  ///
+  /// 같은 리그 요청이 이미 떠 있거나 방금 끝났으면([_filtersCacheTtl] 이내)
+  /// 그 결과를 재사용한다.
   Future<ScheduleFilterOptions> fetchFilterOptions({
     String league = 'LCK',
-  }) async {
+  }) {
+    final cached = _filtersCache[league];
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _filtersCacheTtl) {
+      return Future.value(cached.$2);
+    }
+    final inFlight = _filtersInFlight[league];
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchFilterOptions(league).then((options) {
+      _sweepExpired(_filtersCache, _filtersCacheTtl);
+      _filtersCache[league] = (DateTime.now(), options);
+      return options;
+    });
+    unawaited(request.whenComplete(() {
+      if (identical(_filtersInFlight[league], request)) {
+        _filtersInFlight.remove(league);
+      }
+    }).then<void>((_) {}, onError: (_) {}));
+    _filtersInFlight[league] = request;
+    return request;
+  }
+
+  Future<ScheduleFilterOptions> _fetchFilterOptions(String league) async {
     final url = ApiConfig.mobileScheduleFiltersUrl(league: league);
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));
