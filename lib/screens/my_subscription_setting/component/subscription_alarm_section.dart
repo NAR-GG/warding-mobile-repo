@@ -210,6 +210,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
             for (var i = 0; i < teams.length; i++) ...[
               if (i > 0) SizedBox(height: 8 * scale),
               _TeamAlarmBlock(
+                key: ValueKey(teams[i].teamId),
                 team: teams[i],
                 viewModel: _viewModel,
                 liveEventDetail: _detailOf(teams[i]),
@@ -227,6 +228,7 @@ class SubscriptionAlarmSectionState extends State<SubscriptionAlarmSection> {
 /// 팀 한 블록: 팀 헤더(로고+팀명) + 알림 토글 3행.
 class _TeamAlarmBlock extends StatelessWidget {
   const _TeamAlarmBlock({
+    super.key,
     required this.team,
     required this.viewModel,
     required this.liveEventDetail,

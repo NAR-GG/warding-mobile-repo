@@ -105,14 +105,12 @@ class MatchCard extends StatelessWidget {
       bottom: 24 * scale,
     );
 
-    // LIVE: 배경 narDark600 + 왼쪽 3px 보더 + 위쪽 2px 구분선(시안 'Line 16',
-    // narFadeLine 그라데이션 — border 로는 그라데이션을 못 그려 별도 바로 얹는다).
-    // 예정·종료: 배경 narBgTertiary + 위쪽 1px 보더(카드 구분선 역할).
+    // LIVE: 배경 narDark600 + 왼쪽 3px 보더. 예정·종료: 배경 narBgTertiary +
+    // 위쪽 1px 보더(카드 구분선 역할).
     //
     // 예정·종료 카드는 날짜/리그 헤더 바로 아래 첫 카드일 때 위 구분선을 꺼서
-    // 헤더와 선이 겹쳐 보이지 않게 한다(showTopBorder). 라이브 카드는 그 규칙과
-    // 무관하게 항상 그린다 — 헤더 바로 아래 오더라도 라이브 카드는 시안대로
-    // 위 구분선으로 뚜렷하게 구분돼야 한다.
+    // 헤더와 선이 겹쳐 보이지 않게 한다(showTopBorder). 라이브 카드는 위쪽
+    // 보더 자체가 없어 이 분기와 무관하다.
     final decoration = isLive
         ? const BoxDecoration(
             color: AppColors.narDark600,
@@ -135,11 +133,6 @@ class MatchCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isLive)
-            Container(
-              height: 2 * scale,
-              decoration: const BoxDecoration(gradient: AppColors.narFadeLine),
-            ),
           Container(
             decoration: decoration,
             padding: padding,
