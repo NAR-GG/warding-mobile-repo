@@ -7,6 +7,7 @@ import '../../../components/inner_shadow.dart';
 import '../../../components/nar_badge.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/champion_image.dart';
 
 /// 경기 상세 — 챔피언 픽 탭 콘텐츠.
 ///
@@ -297,6 +298,13 @@ class _ChampionBan extends StatelessWidget {
                               imageUrl: resolveImageUrl(imageUrl)!,
                               fit: BoxFit.cover,
                               alignment: const Alignment(0, -0.6),
+                              memCacheWidth: decodeWidthFor(
+                                context,
+                                boxWidth: 36.4 * scale,
+                                boxHeight: 36.4 * scale,
+                                sourceWidth: kChampionImageWidth,
+                                sourceHeight: kChampionImageHeight,
+                              ),
                               fadeInDuration: const Duration(milliseconds: 150),
                               errorWidget: (_, _, _) => const SizedBox.shrink(),
                             )
@@ -370,6 +378,13 @@ class _ChampionPick extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: resolveImageUrl(imageUrl)!,
                 fit: BoxFit.cover,
+                memCacheWidth: decodeWidthFor(
+                  context,
+                  boxWidth: 60 * scale,
+                  boxHeight: 101 * scale,
+                  sourceWidth: kChampionImageWidth,
+                  sourceHeight: kChampionImageHeight,
+                ),
                 fadeInDuration: const Duration(milliseconds: 150),
                 errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),

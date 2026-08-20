@@ -7,6 +7,7 @@ import '../../../model/match_game.dart';
 import '../../../model/match_live_event.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/champion_image.dart';
 import 'match_detail_locked_empty.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.
@@ -673,6 +674,13 @@ class _ActorIcon extends StatelessWidget {
           ? CachedNetworkImage(
               imageUrl: resolveImageUrl(actor.championImageUrl)!,
               fit: BoxFit.cover,
+              memCacheWidth: decodeWidthFor(
+                context,
+                boxWidth: size,
+                boxHeight: size,
+                sourceWidth: kChampionImageWidth,
+                sourceHeight: kChampionImageHeight,
+              ),
               fadeInDuration: const Duration(milliseconds: 150),
               errorWidget: (_, _, _) => const SizedBox.shrink(),
             )

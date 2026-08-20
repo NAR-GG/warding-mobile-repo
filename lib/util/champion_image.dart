@@ -1,3 +1,10 @@
+/// 서버가 내려주는 챔피언 이미지의 해상도.
+///
+/// Cloudinary 변환(`w_400,h_600,c_fill,g_auto`)으로 고정돼 있다. 디코딩 폭을
+/// 계산할 때 원본 크기가 필요해서 상수로 둔다 — 서버 변환이 바뀌면 여기만 고친다.
+const int kChampionImageWidth = 400;
+const int kChampionImageHeight = 600;
+
 /// 챔피언 이미지 URL 보정 유틸.
 ///
 /// 백엔드가 [championImageUrl] 을 내려주면 그대로 쓰고, null/빈값이면 영어

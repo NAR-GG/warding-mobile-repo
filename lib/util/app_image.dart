@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import '../config/api_config.dart';
 
 /// 백엔드가 상대경로(`/images/...`)로 주는 이미지 URL에 API 호스트를 붙이고,
@@ -19,6 +21,39 @@ String? resolveImageUrl(String? url) {
     return 'https://${url.substring('http://'.length)}';
   }
   return url;
+}
+
+/// 표시 크기에 맞는 디코딩 가로폭([CachedNetworkImage.memCacheWidth])을 구한다.
+///
+/// 이미지가 차지하는 메모리는 **표시 크기가 아니라 디코딩된 해상도**로 정해진다
+/// (가로×세로×4바이트). 400×600 짜리를 38 칸에 그려도 0.92MB 를 그대로 쓴다.
+/// 챔피언 픽 탭처럼 한 화면에 20장이 깔리면 18MB 가 된다.
+///
+/// [boxWidth]·[boxHeight] 는 이미지가 놓이는 **칸의 논리 크기**다.
+/// `BoxFit.cover` 는 칸을 채우려고 원본을 확대하기도 하므로, 세로가 모자라
+/// 확대되는 만큼까지 고려해 가로폭을 정한다 — 칸 너비만 보고 자르면 세로로
+/// 늘어나며 흐려진다.
+///
+/// [sourceWidth]·[sourceHeight] 는 원본 해상도다. 서버가 카드 비율에 맞춰
+/// 주는 챔피언 이미지는 400×600 이다.
+///
+/// 원본보다 큰 값은 의미가 없으므로(확대 저장) 원본 크기로 자른다.
+int decodeWidthFor(
+  BuildContext context, {
+  required double boxWidth,
+  required double boxHeight,
+  required int sourceWidth,
+  required int sourceHeight,
+}) {
+  final dpr = MediaQuery.devicePixelRatioOf(context);
+  final needW = boxWidth * dpr;
+  final needH = boxHeight * dpr;
+  // cover 배율 — 가로·세로 중 더 많이 키워야 하는 쪽을 따른다.
+  final scale = (needW / sourceWidth) > (needH / sourceHeight)
+      ? needW / sourceWidth
+      : needH / sourceHeight;
+  final width = (sourceWidth * scale).ceil();
+  return width > sourceWidth ? sourceWidth : width;
 }
 
 /// 챔피언 영문 키로 Data Dragon 스플래시 아트 URL 을 만든다(배경용).
