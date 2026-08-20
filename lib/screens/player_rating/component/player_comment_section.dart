@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 한 선수 평점 코멘트.
 class PlayerComment {
@@ -184,10 +185,11 @@ Widget _circleImage(String? url, double size) {
       shape: BoxShape.circle,
     ),
   );
-  if (url == null || url.isEmpty) return placeholder;
+  final resolved = resolveImageUrl(url);
+  if (resolved == null || resolved.isEmpty) return placeholder;
   return ClipOval(
     child: CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: resolved,
       width: size,
       height: size,
       fit: BoxFit.cover,
@@ -205,10 +207,11 @@ Widget _profileImage(String? url, double size) {
     height: size,
     fit: BoxFit.cover,
   );
-  if (url == null || url.isEmpty) return ClipOval(child: fallback);
+  final resolved = resolveImageUrl(url);
+  if (resolved == null || resolved.isEmpty) return ClipOval(child: fallback);
   return ClipOval(
     child: CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: resolved,
       width: size,
       height: size,
       fit: BoxFit.cover,

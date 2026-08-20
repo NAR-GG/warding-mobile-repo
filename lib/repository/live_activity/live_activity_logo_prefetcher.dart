@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../model/schedule_filter_options.dart';
+import '../../util/app_image.dart';
 import '../schedule/schedule_repository.dart';
 import 'live_activity_service.dart';
 
@@ -69,19 +70,29 @@ class LiveActivityLogoPrefetcher {
       if (team.code.isEmpty || team.imageUrl.isEmpty) continue;
       if (!_done.add(team.code)) continue;
 
+      // 화면 렌더와 같은 규칙으로 주소를 다듬는다. 여기는 http 패키지로 직접
+      // 받는 경로라, 상대경로(`/images/...`)면 파싱에 실패하고 `http://` 면
+      // iOS ATS 에 막힌다 — 게다가 실패가 조용해서(아래 _done 되돌리기) 로고만
+      // 안 뜨고 만다. 캐시 키로도 쓰이므로 다듬은 주소로 통일한다.
+      final url = resolveImageUrl(team.imageUrl);
+      if (url == null || url.isEmpty) {
+        _done.remove(team.code);
+        continue;
+      }
+
       final fileName = '${team.code}.png';
 
       // 파일이 그대로 있고 URL 도 안 바뀌었으면 건너뛴다.
-      if (await _service.hasLogo(fileName, url: team.imageUrl)) continue;
+      if (await _service.hasLogo(fileName, url: url)) continue;
 
-      final base64 = await _service.fetchLogoBase64(team.imageUrl);
+      final base64 = await _service.fetchLogoBase64(url);
       // 실패하면 다음 기회에 다시 시도하도록 처리 표시를 되돌린다.
       if (base64 == null) {
         _done.remove(team.code);
         continue;
       }
 
-      if (await _service.cacheLogo(base64, fileName, url: team.imageUrl)) {
+      if (await _service.cacheLogo(base64, fileName, url: url)) {
         fetched++;
       } else {
         _done.remove(team.code);

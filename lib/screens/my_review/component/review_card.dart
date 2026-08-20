@@ -6,6 +6,7 @@ import '../../../components/common_button.dart';
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_star_rating.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 
 /// 내 리뷰 한 건.
 class MyReview {
@@ -243,11 +244,12 @@ class _Avatar extends StatelessWidget {
       height: size,
       fit: BoxFit.cover,
     );
+    final resolvedUrl = resolveImageUrl(url);
     return ClipOval(
-      child: (url == null || url!.isEmpty)
+      child: (resolvedUrl == null || resolvedUrl.isEmpty)
           ? fallback
           : CachedNetworkImage(
-              imageUrl: url!,
+              imageUrl: resolvedUrl,
               width: size,
               height: size,
               fit: BoxFit.cover,
@@ -277,10 +279,11 @@ class _SubscribeBadge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
     );
-    if (url != null && url!.isNotEmpty) {
+    final resolved = resolveImageUrl(url);
+    if (resolved != null && resolved.isNotEmpty) {
       return ClipOval(
         child: CachedNetworkImage(
-          imageUrl: url!,
+          imageUrl: resolved,
           width: size,
           height: size,
           fit: BoxFit.cover,

@@ -11,6 +11,7 @@ import '../../components/nar_banner.dart';
 import '../../model/team.dart';
 import '../../config/app_language.dart';
 import '../../styles/app_colors.dart';
+import '../../util/app_image.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
 import 'component/language_setting_sheet.dart';
@@ -511,11 +512,12 @@ class _ProfileImage extends StatelessWidget {
       height: size,
       fit: BoxFit.cover,
     );
-    final hasUrl = url != null && url!.isNotEmpty;
+    final resolvedUrl = resolveImageUrl(url);
+    final hasUrl = resolvedUrl != null && resolvedUrl.isNotEmpty;
     return ClipOval(
       child: hasUrl
           ? CachedNetworkImage(
-              imageUrl: url!,
+              imageUrl: resolvedUrl,
               width: size,
               height: size,
               fit: BoxFit.cover,
@@ -545,11 +547,11 @@ class _TeamBadge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
     );
-    final url = team?.imageUrl;
-    if (url == null || url.isEmpty) return placeholder;
+    final resolved = resolveImageUrl(team?.imageUrl);
+    if (resolved == null || resolved.isEmpty) return placeholder;
     return ClipOval(
       child: CachedNetworkImage(
-        imageUrl: url,
+        imageUrl: resolved,
         width: size,
         height: size,
         fit: BoxFit.cover,
