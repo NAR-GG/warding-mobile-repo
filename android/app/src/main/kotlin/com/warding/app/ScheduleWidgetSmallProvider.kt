@@ -30,6 +30,9 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
                 Log.e(TAG, "updateWidget failed for id=$appWidgetId", e)
             }
         }
+        // 캐시 재렌더링만으로는 데이터가 늙는다 — 실제 네트워크 재조회도 건다.
+        // (중 위젯과 동일한 이유. ScheduleWidgetProvider.onUpdate 주석 참고.)
+        WidgetRefreshTrigger.request(context)
     }
 
     // 런처가 위젯 크기를 재계산해 배정 옵션을 다시 보낼 때(리사이즈뿐 아니라, 이 기기에서는
@@ -83,7 +86,12 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
             // 경기 리스트 (미디움 위젯과 동일한 선택 로직: 지난 경기 최대 1개 + 실제 카드 최대 2개)
             views.removeAllViews(R.id.small_matches_container)
             val matches = todayData.matches
-            val displayResult = selectDisplayMatches(matches)
+            val displayResult = selectDisplayMatches(
+                matches,
+                slotsForHeight(
+                    ScheduleWidgetProvider.grantedHeightDp(context, appWidgetId),
+                ),
+            )
 
             for (displayMatch in displayResult.rows) {
                 val m = displayMatch.match
@@ -98,9 +106,8 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
                             Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
                         row.setInt(R.id.match_display, "setPaintFlags",
                             Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG)
-                        row.setTextColor(R.id.match_time, defaultTextColor)
-                        row.setTextColor(R.id.match_display, defaultTextColor)
-                        row.setInt(R.id.match_row_root, "setAlpha", 153) // 0.6 * 255
+                        row.setTextColor(R.id.match_time, fadedTextColor(defaultTextColor))
+                        row.setTextColor(R.id.match_display, fadedTextColor(defaultTextColor))
                     }
                     MatchRole.NEXT -> {
                         // 바로 다음 예정(또는 진행중) 경기: 실제 브랜드 그라데이션 텍스트 (다크/라이트 동일)
@@ -134,7 +141,11 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
             if (matches.isEmpty()) {
                 val emptyRow = RemoteViews(context.packageName, R.layout.match_row_small)
                 emptyRow.setTextViewText(R.id.match_time, "")
-                emptyRow.setTextViewText(R.id.match_display, "경기 없음")
+                // 날짜가 어긋난 데이터는 "경기 없음"이 아니다 — 아래에서 재조회를 건다.
+                emptyRow.setTextViewText(
+                    R.id.match_display,
+                    emptyMessage(context, todayData.isStale)
+                )
                 emptyRow.setTextColor(R.id.match_display, Color.parseColor("#A6A7AB"))
                 views.addView(R.id.small_matches_container, emptyRow)
             }
@@ -149,7 +160,21 @@ class ScheduleWidgetSmallProvider : AppWidgetProvider() {
                 views.setOnClickPendingIntent(R.id.widget_small_root, pendingIntent)
             }
 
+            // 앱을 아직 안 켜서 데이터를 받아올 수 없으면 안내를 겹친다.
+            WidgetRefreshTrigger.applyLockedOverlay(
+                context,
+                views,
+                hasData = !todayData.isStale,
+                compact = true,
+            )
+
             appWidgetManager.updateAppWidget(appWidgetId, views)
+
+            // 저장된 게 오늘 것이 아니면(자정 넘김·최초 배치) 디바운스를 무시하고
+            // 바로 다시 받아온다.
+            if (todayData.isStale) {
+                WidgetRefreshTrigger.request(context, force = true)
+            }
         }
     }
 }

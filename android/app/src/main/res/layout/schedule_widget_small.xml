@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 바깥 FrameLayout 은 "앱을 열어 주세요" 안내를 겹치기 위한 것이다
+     (schedule_widget.xml 과 같은 구조). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
     android:id="@+id/widget_small_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,7 +20,7 @@
         android:layout_height="wrap_content"
         android:text="07.26(일)"
         android:textColor="#FFFFFFFF"
-        android:textSize="16sp"
+        android:textSize="16dp"
         android:textStyle="bold"
         android:singleLine="true"
         android:paddingBottom="8dp" />
@@ -42,3 +48,7 @@
     </LinearLayout>
 
 </LinearLayout>
+
+    <include layout="@layout/widget_locked_overlay" />
+
+</FrameLayout>

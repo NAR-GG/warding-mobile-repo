@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 바깥 FrameLayout 은 "앱을 열어 주세요" 안내를 겹치기 위한 것이다
+     (schedule_widget.xml 과 같은 구조). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
     android:id="@+id/widget_large_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -41,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:text="26.07"
                 android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
+                android:textSize="16dp"
                 android:textStyle="bold"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp" />
@@ -111,13 +117,13 @@
         android:layout_width="match_parent"
         android:layout_height="19dp"
         android:orientation="horizontal">
-        <TextView android:id="@+id/large_wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="10sp" android:textStyle="bold" />
-        <TextView android:id="@+id/large_wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="10dp" android:textStyle="bold" />
+        <TextView android:id="@+id/large_wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="10dp" android:textStyle="bold" />
     </LinearLayout>
 
     <!-- 요일 아래 그라데이션 구분선 -->
@@ -139,3 +145,7 @@
         android:scrollbars="none" />
 
 </LinearLayout>
+
+    <include layout="@layout/widget_locked_overlay" />
+
+</FrameLayout>
