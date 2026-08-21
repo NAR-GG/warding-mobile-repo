@@ -51,8 +51,8 @@ class AppColors {
     stops: [0.0076, 0.5153, 1.0],
   );
 
-  /// 날짜 헤더·라이브 카드 상단 구분선 — 왼쪽 narTextSecondary(흰색)에서
-  /// 오른쪽 narDark800(어두움)으로 옅어지는 그라데이션.
+  /// 리그 헤더(LCK·LPL 등) 밑 시작줄 겸 구분줄 — 왼쪽 흰색에서 오른쪽
+  /// narDark800(어두움)으로 옅어지는 그라데이션.
   static const LinearGradient narFadeLine = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
