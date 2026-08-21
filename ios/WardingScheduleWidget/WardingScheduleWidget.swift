@@ -24,12 +24,34 @@ struct MatchBrief {
     let display: String
 }
 
+/// 위젯에 그릴 오늘 경기 데이터.
+///
+/// [isStale] 은 "저장된 게 오늘 것이 아니거나 아직 없다"는 뜻으로, 경기가 정말
+/// 없는 날([matches] 가 비었고 [isStale] 이 false)과 구분해야 한다. 전자는
+/// "경기 없음"이 아니라 "불러오는 중"으로 보여줘야 한다.
 struct TodayData {
     let dateStr: String
     let weekday: Int // 1=Mon ... 7=Sun
     let matches: [TodayMatch]
+    var isStale: Bool = false
 
-    static let empty = TodayData(dateStr: "", weekday: 1, matches: [])
+    static let empty = TodayData(dateStr: "", weekday: 1, matches: [], isStale: true)
+
+    /// 앱이 저장하는 것과 같은 `yyyy-MM-dd` 형식의 오늘 키
+    /// (`HomeWidgetService._saveTodayDetailed` 의 `date` 필드와 맞춰야 한다).
+    static func todayKey(_ date: Date = Date()) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    /// 저장된 JSON 의 `date` 가 오늘과 다르면 stale 로 접는다.
+    ///
+    /// 예전에는 `dateStr` 을 파싱만 해 두고 어디서도 쓰지 않아서, 자정을 넘기면
+    /// 캘린더의 오늘 강조만 옮겨가고 경기 목록은 어제 것이 그대로 남았다.
+    static func parse(dateStr: String, weekday: Int, matches: [TodayMatch]) -> TodayData {
+        guard dateStr == todayKey() else { return .empty }
+        return TodayData(dateStr: dateStr, weekday: weekday, matches: matches, isStale: false)
+    }
 }
 
 struct TodayMatch {
@@ -61,12 +83,42 @@ struct ScheduleProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
+        // 저장된 게 오늘 것이 아니면(자정 넘김·최초 설치) 여기서 직접 받아온다.
+        // 위젯 익스텐션은 타임라인 갱신 때 네트워크를 쓸 수 있고, 오늘 경기
+        // 엔드포인트는 인증이 필요 없다. 이게 없으면 앱을 켜기 전까지 위젯
+        // 데이터가 영영 갱신되지 않는다 (TodayMatchesFetcher 주석 참고).
+        if loadData().1.isStale {
+            TodayMatchesFetcher.refresh { _ in
+                self.buildTimeline(completion: completion)
+            }
+        } else {
+            buildTimeline(completion: completion)
+        }
+    }
+
+    private func buildTimeline(completion: @escaping (Timeline<ScheduleEntry>) -> Void) {
         let (cal, today, teamUrl, hasFilter, teamSelected, teamCode, sundayFirst) = loadData()
         downloadTeamImage(url: teamUrl) { image in
             let entry = ScheduleEntry(date: Date(), calendar: cal, today: today, teamImageUrl: teamUrl, teamImage: image, hasFilter: hasFilter, teamSelected: teamSelected, teamCode: teamCode, sundayFirst: sundayFirst)
-            let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
-            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+            completion(Timeline(entries: [entry], policy: .after(Self.nextRefreshDate())))
         }
+    }
+
+    /// 다음 타임라인 갱신 시각: 30분 뒤, 단 그 사이에 자정이 끼면 자정 직후.
+    ///
+    /// 30분 고정이면 23:50 에 갱신된 타임라인이 00:20 까지 살아 있어, 날짜가
+    /// 바뀐 뒤에도 최대 30분간 어제 데이터를 보여준다. 자정을 경계로 끊어
+    /// 날짜가 바뀌자마자 다시 그리게 한다.
+    static func nextRefreshDate(from now: Date = Date()) -> Date {
+        let inThirtyMinutes = now.addingTimeInterval(30 * 60)
+        guard let midnight = Calendar.current.nextDate(
+            after: now,
+            matching: DateComponents(hour: 0, minute: 0, second: 0),
+            matchingPolicy: .nextTime
+        ) else {
+            return inThirtyMinutes
+        }
+        return min(inThirtyMinutes, midnight)
     }
 
     private func downloadTeamImage(url: String?, completion: @escaping (UIImage?) -> Void) {
@@ -144,7 +196,7 @@ struct ScheduleProvider: TimelineProvider {
                 display: m["display"] as? String ?? ""
             )
         }
-        return TodayData(dateStr: dateStr, weekday: weekday, matches: matches)
+        return TodayData.parse(dateStr: dateStr, weekday: weekday, matches: matches)
     }
 }
 
@@ -281,7 +333,8 @@ struct MediumWidgetView: View {
                             .frame(width: 38, height: 20, alignment: .leading)
                     }
                     if filteredMatches.isEmpty {
-                        Text("경기 없음")
+                        // 날짜가 어긋난 데이터는 "경기 없음"이 아니다.
+                        Text(today.isStale ? "불러오는 중" : "경기 없음")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: 0xA6A7AB))
                             .frame(height: 20)
@@ -538,7 +591,8 @@ struct SmallWidgetView: View {
                             .frame(width: 38, height: 20, alignment: .leading)
                     }
                     if filteredMatches.isEmpty {
-                        Text("경기 없음")
+                        // 날짜가 어긋난 데이터는 "경기 없음"이 아니다.
+                        Text(today.isStale ? "불러오는 중" : "경기 없음")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color(hex: 0xA6A7AB))
                             .frame(height: 20)
@@ -697,23 +751,28 @@ struct LargeWidgetView: View {
     private var largeHeader: some View {
         HStack {
             // 좌: < 월 >
+            //
+            // iOS 17+ 는 앱을 열지 않고 위젯 안에서 월을 옮긴다. 예전 Link 방식은
+            // 앱이 열렸다 닫히고 화면 반영까지 12~16초가 걸렸다(로그 실측).
             HStack(spacing: 8) {
-                Link(destination: prevUrl) {
-                    Image("chevron-left")
-                        .renderingMode(.template)
-                        .resizable()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(textColor)
+                if #available(iOS 17.0, *) {
+                    Button(intent: ShiftMonthIntent(delta: -1)) {
+                        monthChevron("chevron-left")
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Link(destination: prevUrl) { monthChevron("chevron-left") }
                 }
                 Text(String(format: "%02d.%02d", displayYear % 100, displayMonth))
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(textColor)
-                Link(destination: nextUrl) {
-                    Image("chevron-right")
-                        .renderingMode(.template)
-                        .resizable()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(textColor)
+                if #available(iOS 17.0, *) {
+                    Button(intent: ShiftMonthIntent(delta: 1)) {
+                        monthChevron("chevron-right")
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Link(destination: nextUrl) { monthChevron("chevron-right") }
                 }
             }
             Spacer()
@@ -746,41 +805,66 @@ struct LargeWidgetView: View {
                             .foregroundColor(textColor)
                     }
                 }
-                // 팀 로고: 선택 시 그라데이션 보더, 미선택 시 보더 없음
-                ZStack {
-                    if entry.teamSelected {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
-                                    startPoint: .leading, endPoint: .trailing
-                                )
-                            )
-                            .frame(width: 36, height: 36)
-                        Circle()
-                            .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
-                            .frame(width: 32, height: 32)
-                    } else {
-                        Circle()
-                            .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
-                            .frame(width: 36, height: 36)
+                // 팀 로고: 누르면 응원팀 필터를 켜고 끈다(선택 시 그라데이션 보더).
+                //
+                // iOS 17+ 는 Button(intent:) 로 앱을 열지 않고 위젯 안에서 처리할
+                // 수 있다 — 안드로이드 팀 버튼도 앱을 열지 않으므로 동작이 맞는다.
+                // 그 이하에서는 탭이 없던 기존 모습 그대로 둔다.
+                if #available(iOS 17.0, *) {
+                    Button(intent: ToggleTeamFilterIntent()) {
+                        teamLogoBadge
                     }
-                    if let uiImage = entry.teamImage {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 25, height: 25)
-                            .clipShape(Circle())
-                    } else {
-                        Image(systemName: "shield.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(subtextColor)
-                    }
+                    .buttonStyle(.plain)
+                } else {
+                    teamLogoBadge
                 }
             }
         }
         .padding(.horizontal, 4)
         .frame(height: 36)
+    }
+
+    /// 월 이동 화살표 아이콘.
+    private func monthChevron(_ name: String) -> some View {
+        Image(name)
+            .renderingMode(.template)
+            .resizable()
+            .frame(width: 24, height: 24)
+            .foregroundColor(textColor)
+    }
+
+    /// 응원팀 로고 배지. 필터가 켜져 있으면 그라데이션 테두리를 두른다.
+    private var teamLogoBadge: some View {
+        ZStack {
+            if entry.teamSelected {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: 0xE87558), Color(hex: 0xC865C9), Color(hex: 0x791BB8)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 36, height: 36)
+                Circle()
+                    .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
+                    .frame(width: 32, height: 32)
+            } else {
+                Circle()
+                    .fill(isDark ? Color(hex: 0x1F2024) : Color.black)
+                    .frame(width: 36, height: 36)
+            }
+            if let uiImage = entry.teamImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 25, height: 25)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "shield.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(subtextColor)
+            }
+        }
     }
 
     private var largeWeekdayRow: some View {
@@ -948,7 +1032,8 @@ struct LockScreenWidgetView: View {
             }
 
             if teamMatches.isEmpty {
-                Text("오늘 경기 없음")
+                // 날짜가 어긋난 데이터는 "경기 없음"이 아니다.
+                Text(today.isStale ? "불러오는 중" : "오늘 경기 없음")
                     .font(.system(.caption, design: .default, weight: .medium))
                     .opacity(0.8)
             } else {

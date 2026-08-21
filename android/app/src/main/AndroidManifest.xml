@@ -106,6 +106,32 @@
                 android:resource="@xml/schedule_widget_large_info" />
         </receiver>
 
+        <!-- 위젯 버튼(필터 등) 클릭 처리. 딥링크 대신 이 경로를 쓰는 이유는
+             WidgetActionReceiver 주석 참고. -->
+        <receiver
+            android:name=".WidgetActionReceiver"
+            android:exported="false" />
+
+        <!-- 위젯 월 이동. 저장된 월을 먼저 옮겨 화면을 바꾼 뒤 조회를 요청한다
+             (JobIntentService 지연 때문에 반응이 느려 보이던 것 대응). -->
+        <receiver
+            android:name=".WidgetMonthShiftReceiver"
+            android:exported="false" />
+
+        <!-- 자정·시간 변경 시 위젯 갱신.
+             updatePeriodMillis(30분)는 도즈 모드에서 미뤄져 자정을 넘겨도 위젯이
+             어제 데이터를 들고 있을 수 있다. DATE_CHANGED 는 매니페스트 선언
+             리시버로 받을 수 있는(암시적 브로드캐스트 제한 예외) 액션이다. -->
+        <receiver
+            android:name=".WidgetDateChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".ScheduleWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"

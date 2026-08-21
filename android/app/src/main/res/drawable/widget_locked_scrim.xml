@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 앱을 아직 켜지 않아 데이터가 없을 때 위젯 내용 위에 까는 막.
+     앱의 비회원 오버레이(GuestLockOverlay)와 같은 색 — narDark800(#141517).
+
+     불투명도는 80% 로 둔다. 앱은 BackdropFilter 블러가 내용을 흐려 준 위에 40%
+     만 얹으면 되지만, RemoteViews 는 실시간 블러를 지원하지 않아 막만으로
+     가려야 한다. 60% 로는 밝은 배경의 위젯에서 뒤 캘린더 격자가 그대로 읽혀
+     버튼이 묻혔다. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#CC141517" />
+    <corners android:radius="21dp" />
+</shape>

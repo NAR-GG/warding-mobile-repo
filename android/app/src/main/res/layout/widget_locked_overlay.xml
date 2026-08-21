@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 앱을 아직 한 번도 켜지 않아 위젯이 스스로 데이터를 받아올 수 없을 때
+     내용 위에 겹쳐 보여주는 안내. 세 위젯(소·중·대)이 공유한다.
+
+     앱의 비회원 오버레이(GuestLockOverlay)와 같은 구성 — 막 위에 버튼 하나만
+     두고, 버튼 문구가 상태와 할 일을 함께 말한다("로그인 후 사용 가능" 처럼).
+     버튼은 NarButton 의 set1 variant 스펙을 따른다(높이 34, radius 8, 14sp).
+
+     RemoteViews 는 실시간 블러를 지원하지 않아 막으로만 가린다.
+     기본은 gone 이고, 프로바이더가 필요할 때만 visible 로 바꾼다. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_locked_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_locked_scrim"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/widget_locked_button"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:layout_gravity="center"
+        android:background="@drawable/widget_locked_button"
+        android:text="앱을 열어 일정 불러오기"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:maxWidth="240dp" />
+</FrameLayout>

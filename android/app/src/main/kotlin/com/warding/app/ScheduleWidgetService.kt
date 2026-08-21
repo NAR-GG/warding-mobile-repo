@@ -40,6 +40,13 @@ class ScheduleRemoteViewsFactory(
     // 크게) 오히려 마지막 주 행이 배정된 영역 밖으로 밀려나 잘릴 수 있어 하한선을 두지 않는다.
     private val chromeHeightDp = 14 + 24
 
+    // 날짜 숫자(8sp)와 경기 dot(3dp)이 겹치지 않고 들어가는 최소 행 높이.
+    // 배정 높이가 너무 낮아 이보다 작은 값이 계산되면 setMinimumHeight 를 아예
+    // 걸지 않는다 — 0 에 가까운 값을 강제하면 날짜 숫자가 뭉개져 첫 주가 사라진
+    // 것처럼 보인다. 그 경우 행은 wrap_content 자연 높이로 그려지고, 넘치는
+    // 만큼은 ListView 가 스크롤로 처리한다.
+    private val minUsableRowHeightDp = 11
+
     override fun onCreate() {
         Log.d(TAG, "Factory onCreate")
     }
@@ -64,6 +71,8 @@ class ScheduleRemoteViewsFactory(
         val gridHeightDp = (grantedHeightDp - chromeHeightDp).coerceAtLeast(0)
         val weeks = data.weekCount().coerceAtLeast(1)
         val rowHeightDp = gridHeightDp / weeks
+        // 글자도 못 담을 높이면 강제하지 않는다 (minUsableRowHeightDp 주석 참고).
+        if (rowHeightDp < minUsableRowHeightDp) return 0
         val density = context.resources.displayMetrics.density
         return (rowHeightDp * density).toInt()
     }

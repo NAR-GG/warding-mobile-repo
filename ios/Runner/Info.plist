@@ -109,6 +109,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<!-- 홈 위젯 오늘 경기 갱신 (AppDelegate.refreshTaskId 와 같아야 한다) -->
+		<string>com.warding.app.widgetrefresh</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

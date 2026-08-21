@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 위젯 잠금 안내의 "앱 열기" 버튼 배경.
+     앱의 공용 버튼(NarButton 의 set1 variant)과 같은 토큰을 쓴다 —
+     배경 narDark300(#5C5F66), radius 8dp. 마이페이지 비회원 오버레이
+     (GuestLockOverlay)가 쓰는 것과 같은 버튼이라 앱과 위젯의 인상이 맞는다. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FF5C5F66" />
+    <corners android:radius="8dp" />
+</shape>
