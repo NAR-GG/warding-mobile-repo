@@ -802,16 +802,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get matchLoadFailed => '경기를 불러오지 못했어요';
 
   @override
-  String get navSchedule => '경기일정';
+  String get navSchedule => '일정';
 
   @override
-  String get navMatchList => '경기리스트';
+  String get navMatchList => '리스트';
 
   @override
-  String get navSubscription => '마이 구독';
+  String get navCommunity => '커뮤니티';
 
   @override
-  String get navMyPage => '마이페이지';
+  String get navSubscription => '구독';
+
+  @override
+  String get navMyPage => '내정보';
 
   @override
   String get defaultCancel => '취소';
@@ -1141,4 +1144,178 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get guidePopupConfirm => '가이드 보기';
+
+  @override
+  String get communityTitle => '커뮤니티';
+
+  @override
+  String get communityTabAll => '전체';
+
+  @override
+  String get communityTabTeam => '팀';
+
+  @override
+  String get communityWrite => '글쓰기';
+
+  @override
+  String get communityEmpty => '아직 글이 없어요. 첫 글을 남겨보세요.';
+
+  @override
+  String communityLockedTitle(String team) {
+    return '$team 팬만 글을 쓸 수 있어요.';
+  }
+
+  @override
+  String get communityLockedBody => '하고 싶은 말이 있으면 전체 게시판에서 나눠보세요.';
+
+  @override
+  String get communityLockedAction => '전체로 가기';
+
+  @override
+  String get communityNoTeamTitle => '응원팀을 정하면 팀 게시판에 글을 쓸 수 있어요.';
+
+  @override
+  String get communityNoTeamAction => '응원팀 정하기';
+
+  @override
+  String get communityCommentHint => '댓글을 입력하세요';
+
+  @override
+  String communityCommentLocked(String team) {
+    return '$team 팬만 댓글을 쓸 수 있어요';
+  }
+
+  @override
+  String get communityCommentSubmit => '등록';
+
+  @override
+  String communityCommentCount(int count) {
+    return '댓글 $count';
+  }
+
+  @override
+  String communityReplyCount(int count) {
+    return '답글 $count개';
+  }
+
+  @override
+  String get communityReply => '답글';
+
+  @override
+  String get communityLike => '추천';
+
+  @override
+  String get communityScrap => '스크랩';
+
+  @override
+  String communityViewCount(String count) {
+    return '조회 $count';
+  }
+
+  @override
+  String get communityBoardAll => '전체 게시판';
+
+  @override
+  String communityBoardTeam(String team) {
+    return '$team 게시판';
+  }
+
+  @override
+  String get communityWriteTitleLabel => '제목';
+
+  @override
+  String get communityWriteTitleHint => '제목을 입력하세요';
+
+  @override
+  String get communityWriteBodyLabel => '내용';
+
+  @override
+  String get communityWriteBodyHint =>
+      '경기 이야기, 응원, 질문 무엇이든 좋아요.\n비방·도배는 신고 대상입니다.';
+
+  @override
+  String get communityWriteSubmit => '등록하기';
+
+  @override
+  String get communityMoreReport => '신고하기';
+
+  @override
+  String get communityMoreBlock => '이 사용자 차단';
+
+  @override
+  String get communityReportTitle => '신고 사유';
+
+  @override
+  String get communityReportAbuse => '욕설·비방';
+
+  @override
+  String get communityReportSpam => '도배·광고';
+
+  @override
+  String get communityReportSpoiler => '스포일러';
+
+  @override
+  String get communityReportEtc => '기타';
+
+  @override
+  String get communityReportSubmit => '신고하기';
+
+  @override
+  String get communityReportDone => '신고가 접수되었어요.';
+
+  @override
+  String get communityBlockDone => '이 사용자의 글이 보이지 않아요.';
+
+  @override
+  String get communityGuestWrite => '로그인하고 응원팀을 정하면 글을 쓸 수 있어요.';
+
+  @override
+  String get communityTabMyTeam => '우리팀';
+
+  @override
+  String get communityTabOtherTeams => '다른팀';
+
+  @override
+  String get communityRulesTitle => '커뮤니티 이용규칙';
+
+  @override
+  String get communityRulesSeeAll => '커뮤니티 이용규칙 전체 보기';
+
+  @override
+  String get communityAttachPhoto => '사진';
+
+  @override
+  String get communityAttachPoll => '투표';
+
+  @override
+  String communityPhotoCount(int count) {
+    return '$count/5';
+  }
+
+  @override
+  String get communityPollQuestionHint => '투표 주제를 입력하세요';
+
+  @override
+  String communityPollOptionHint(int index) {
+    return '항목 $index';
+  }
+
+  @override
+  String get communityPollAddOption => '항목 추가 (최대 5개)';
+
+  @override
+  String get communityPollHideResults => '투표해야 결과 보기';
+
+  @override
+  String get communityPollRemove => '투표 삭제';
+
+  @override
+  String communityPollPrompt(int count) {
+    return '$count명 참여 · 투표하면 결과가 보여요';
+  }
+
+  @override
+  String communityPollVoted(int count) {
+    return '$count명 참여';
+  }
 }

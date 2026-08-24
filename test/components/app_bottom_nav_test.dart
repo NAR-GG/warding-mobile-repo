@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/app_bottom_nav.dart';
 import 'package:warding/l10n/app_localizations.dart';
@@ -22,16 +23,37 @@ void main() {
     );
   }
 
-  testWidgets('정상 크기에서 네 탭이 모두 렌더된다', (tester) async {
+  testWidgets('정상 크기에서 다섯 탭이 모두 렌더된다', (tester) async {
     await tester.pumpWidget(
       wrap(AppBottomNav(currentTab: AppNavTab.schedule, onTabSelected: (_) {})),
     );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    // 활성 탭은 라벨까지, 비활성은 아이콘만 — 아이콘 4개가 항상 있어야 한다.
+    // 활성 탭은 라벨까지, 비활성은 아이콘만 — 아이콘 5개가 항상 있어야 한다.
     expect(find.byType(AppBottomNav), findsOneWidget);
+    expect(find.byType(SvgPicture), findsNWidgets(AppNavTab.values.length));
   });
+
+  // 탭이 4개에서 5개로 늘며 바 폭(335)에 맞추려고 gap 과 비활성 chip 을 줄였다.
+  // 라벨이 가장 긴 탭이 활성일 때가 최악이므로 그 상태로 세 폭을 다 밟는다.
+  for (final width in [320.0, 375.0, 430.0]) {
+    testWidgets('폭 $width 에서 다섯 탭이 overflow 없이 들어간다', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          AppBottomNav(currentTab: AppNavTab.mypage, onTabSelected: (_) {}),
+          size: Size(width, 800),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: '폭 $width 에서 RenderFlex overflow 가 나면 안 된다',
+      );
+    });
+  }
 
   testWidgets('탭을 누르면 콜백이 선택된 탭으로 불린다', (tester) async {
     final tapped = <AppNavTab>[];

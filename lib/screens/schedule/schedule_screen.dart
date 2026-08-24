@@ -10,6 +10,7 @@ import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
+import '../community/community_screen.dart';
 import '../match_day/match_day_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -306,6 +307,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.community) {
+      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
     } else if (tab == AppNavTab.subscription) {
       Navigator.of(
         context,
