@@ -831,10 +831,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMatchList => 'Matches';
 
   @override
-  String get navSubscription => 'My Sub';
+  String get navCommunity => 'Community';
 
   @override
-  String get navMyPage => 'My Page';
+  String get navSubscription => 'Subs';
+
+  @override
+  String get navMyPage => 'Me';
 
   @override
   String get defaultCancel => 'Cancel';
@@ -1173,4 +1176,178 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guidePopupConfirm => 'View guide';
+
+  @override
+  String get communityTitle => 'Community';
+
+  @override
+  String get communityTabAll => 'All';
+
+  @override
+  String get communityTabTeam => 'Teams';
+
+  @override
+  String get communityWrite => 'Write';
+
+  @override
+  String get communityEmpty => 'No posts yet. Be the first to write one.';
+
+  @override
+  String communityLockedTitle(String team) {
+    return 'Only $team fans can post here.';
+  }
+
+  @override
+  String get communityLockedBody => 'Share it on the All board instead.';
+
+  @override
+  String get communityLockedAction => 'Go to All';
+
+  @override
+  String get communityNoTeamTitle => 'Pick a team to post on team boards.';
+
+  @override
+  String get communityNoTeamAction => 'Pick my team';
+
+  @override
+  String get communityCommentHint => 'Write a comment';
+
+  @override
+  String communityCommentLocked(String team) {
+    return 'Only $team fans can comment';
+  }
+
+  @override
+  String get communityCommentSubmit => 'Post';
+
+  @override
+  String communityCommentCount(int count) {
+    return 'Comments $count';
+  }
+
+  @override
+  String communityReplyCount(int count) {
+    return '$count replies';
+  }
+
+  @override
+  String get communityReply => 'Reply';
+
+  @override
+  String get communityLike => 'Like';
+
+  @override
+  String get communityScrap => 'Save';
+
+  @override
+  String communityViewCount(String count) {
+    return 'Views $count';
+  }
+
+  @override
+  String get communityBoardAll => 'All board';
+
+  @override
+  String communityBoardTeam(String team) {
+    return '$team board';
+  }
+
+  @override
+  String get communityWriteTitleLabel => 'Title';
+
+  @override
+  String get communityWriteTitleHint => 'Enter a title';
+
+  @override
+  String get communityWriteBodyLabel => 'Body';
+
+  @override
+  String get communityWriteBodyHint =>
+      'Matches, cheers, questions — anything goes.\nAbuse and spam will be reported.';
+
+  @override
+  String get communityWriteSubmit => 'Post';
+
+  @override
+  String get communityMoreReport => 'Report';
+
+  @override
+  String get communityMoreBlock => 'Block this user';
+
+  @override
+  String get communityReportTitle => 'Reason';
+
+  @override
+  String get communityReportAbuse => 'Abuse';
+
+  @override
+  String get communityReportSpam => 'Spam or ads';
+
+  @override
+  String get communityReportSpoiler => 'Spoiler';
+
+  @override
+  String get communityReportEtc => 'Other';
+
+  @override
+  String get communityReportSubmit => 'Report';
+
+  @override
+  String get communityReportDone => 'Report submitted.';
+
+  @override
+  String get communityBlockDone => 'You will no longer see this user\'s posts.';
+
+  @override
+  String get communityGuestWrite => 'Sign in and pick a team to start posting.';
+
+  @override
+  String get communityTabMyTeam => 'My Team';
+
+  @override
+  String get communityTabOtherTeams => 'Other Teams';
+
+  @override
+  String get communityRulesTitle => 'Community Rules';
+
+  @override
+  String get communityRulesSeeAll => 'Read the full community rules';
+
+  @override
+  String get communityAttachPhoto => 'Photo';
+
+  @override
+  String get communityAttachPoll => 'Poll';
+
+  @override
+  String communityPhotoCount(int count) {
+    return '$count/5';
+  }
+
+  @override
+  String get communityPollQuestionHint => 'What are you asking?';
+
+  @override
+  String communityPollOptionHint(int index) {
+    return 'Option $index';
+  }
+
+  @override
+  String get communityPollAddOption => 'Add option (up to 5)';
+
+  @override
+  String get communityPollHideResults => 'Hide results until voted';
+
+  @override
+  String get communityPollRemove => 'Remove poll';
+
+  @override
+  String communityPollPrompt(int count) {
+    return '$count voted · vote to see results';
+  }
+
+  @override
+  String communityPollVoted(int count) {
+    return '$count voted';
+  }
 }

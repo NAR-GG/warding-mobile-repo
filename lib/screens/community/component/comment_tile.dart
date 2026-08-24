@@ -1,0 +1,223 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../../l10n/app_localizations.dart';
+import '../../../model/community_comment.dart';
+import '../../../styles/app_colors.dart';
+import 'author_line.dart';
+
+/// 댓글 한 줄. 답글([CommunityComment.parentId] 이 있는 것)이면 [isReply] 가
+/// true 이고 왼쪽으로 한 단 들여쓴다.
+///
+/// 들여쓰기는 딱 한 단까지다. 답글에 달린 답글도 같은 층에 쌓이고, 대신 본문
+/// 앞에 `@닉네임` 멘션이 붙는다 — 좁은 화면에서 무한 depth 는 읽을 수가 없다.
+class CommentTile extends StatelessWidget {
+  const CommentTile({
+    super.key,
+    required this.comment,
+    required this.scale,
+    required this.isReply,
+    required this.onLike,
+    required this.onReply,
+    required this.onMore,
+  });
+
+  final CommunityComment comment;
+  final double scale;
+  final bool isReply;
+  final VoidCallback onLike;
+  final VoidCallback onReply;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final avatar = (isReply ? 24.0 : 28.0) * scale;
+    final mention = comment.mention;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: (isReply ? 40.0 : 20.0) * scale,
+        right: 20 * scale,
+        top: 10 * scale,
+        bottom: 10 * scale,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: avatar,
+            height: avatar,
+            decoration: const BoxDecoration(
+              color: AppColors.narDark400,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: 9 * scale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: AuthorLine(
+                        name: comment.authorName,
+                        teamId: comment.authorTeamId,
+                        scale: scale,
+                        fontSize: 12,
+                        color: AppColors.narText,
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onMore,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+                        child: SvgPicture.asset(
+                          'assets/icons/dots.svg',
+                          width: 15 * scale,
+                          height: 15 * scale,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.narText2,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 3 * scale),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      if (mention != null)
+                        TextSpan(
+                          text: '$mention ',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.narViolet3,
+                          ),
+                        ),
+                      TextSpan(text: comment.body),
+                    ],
+                  ),
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13 * scale,
+                    height: 1.5,
+                    color: AppColors.narText3,
+                  ),
+                ),
+                SizedBox(height: 6 * scale),
+                Row(
+                  children: [
+                    Text(comment.timeAgo, style: _metaStyle(scale)),
+                    SizedBox(width: 12 * scale),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onLike,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            comment.liked
+                                ? 'assets/icons/thumb-up-filled.svg'
+                                : 'assets/icons/thumb-up.svg',
+                            width: 12 * scale,
+                            height: 12 * scale,
+                            colorFilter: ColorFilter.mode(
+                              comment.liked
+                                  ? AppColors.narTextRed
+                                  : AppColors.narText2,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            '${comment.likeCount}',
+                            style: _metaStyle(scale),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 12 * scale),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onReply,
+                      child: Text(l.communityReply, style: _metaStyle(scale)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "답글 N개" 접기·펼치기 줄. 기본은 접힌 상태다.
+class ReplyToggle extends StatelessWidget {
+  const ReplyToggle({
+    super.key,
+    required this.count,
+    required this.expanded,
+    required this.scale,
+    required this.onTap,
+  });
+
+  final int count;
+  final bool expanded;
+  final double scale;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 49 * scale,
+          right: 20 * scale,
+          top: 2 * scale,
+          bottom: 8 * scale,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              expanded ? Icons.expand_less : Icons.expand_more,
+              size: 15 * scale,
+              color: AppColors.narViolet3,
+            ),
+            SizedBox(width: 4 * scale),
+            Text(
+              l.communityReplyCount(count),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 12 * scale,
+                height: 1.45,
+                color: AppColors.narViolet3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+TextStyle _metaStyle(double scale) => TextStyle(
+  fontFamily: 'Pretendard',
+  fontWeight: FontWeight.w400,
+  fontSize: 11 * scale,
+  height: 1.45,
+  color: AppColors.narText2,
+);

@@ -19,6 +19,7 @@ import 'component/mypage_card_section.dart';
 import 'component/quiet_hours_section.dart';
 import '../account_setting/account_setting_screen.dart';
 import '../calendar_setting/calendar_setting_screen.dart';
+import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_review/my_review_screen.dart';
@@ -79,6 +80,8 @@ class _MypageScreenState extends State<MypageScreen> {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.community) {
+      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
     } else if (tab == AppNavTab.subscription) {
       Navigator.of(
         context,

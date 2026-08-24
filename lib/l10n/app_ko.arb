@@ -442,10 +442,11 @@
   "matchSchedule": "경기 일정",
   "matchLoadFailed": "경기를 불러오지 못했어요",
 
-  "navSchedule": "경기일정",
-  "navMatchList": "경기리스트",
-  "navSubscription": "마이 구독",
-  "navMyPage": "마이페이지",
+  "navSchedule": "일정",
+  "navMatchList": "리스트",
+  "navCommunity": "커뮤니티",
+  "navSubscription": "구독",
+  "navMyPage": "내정보",
 
   "defaultCancel": "취소",
   "defaultConfirm": "확인",
@@ -587,5 +588,88 @@
   "guidePopupTitle": "환영해요! 와딩 사용 꿀팁이 도착했어요",
   "guidePopupMessage": "지금 보지 않아도 [마이페이지 > 와딩 사용가이드]에서 언제든 다시 볼 수 있어요.",
   "guidePopupDismiss": "다음에 볼게요",
-  "guidePopupConfirm": "가이드 보기"
-}
+  "guidePopupConfirm": "가이드 보기",
+  "communityTitle": "커뮤니티",
+  "communityTabAll": "전체",
+  "communityTabTeam": "팀",
+  "communityWrite": "글쓰기",
+  "communityEmpty": "아직 글이 없어요. 첫 글을 남겨보세요.",
+  "communityLockedTitle": "{team} 팬만 글을 쓸 수 있어요.",
+  "@communityLockedTitle": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityLockedBody": "하고 싶은 말이 있으면 전체 게시판에서 나눠보세요.",
+  "communityLockedAction": "전체로 가기",
+  "communityNoTeamTitle": "응원팀을 정하면 팀 게시판에 글을 쓸 수 있어요.",
+  "communityNoTeamAction": "응원팀 정하기",
+  "communityCommentHint": "댓글을 입력하세요",
+  "communityCommentLocked": "{team} 팬만 댓글을 쓸 수 있어요",
+  "@communityCommentLocked": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityCommentSubmit": "등록",
+  "communityCommentCount": "댓글 {count}",
+  "@communityCommentCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityReplyCount": "답글 {count}개",
+  "@communityReplyCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityReply": "답글",
+  "communityLike": "추천",
+  "communityScrap": "스크랩",
+  "communityViewCount": "조회 {count}",
+  "@communityViewCount": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "communityBoardAll": "전체 게시판",
+  "communityBoardTeam": "{team} 게시판",
+  "@communityBoardTeam": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityWriteTitleLabel": "제목",
+  "communityWriteTitleHint": "제목을 입력하세요",
+  "communityWriteBodyLabel": "내용",
+  "communityWriteBodyHint": "경기 이야기, 응원, 질문 무엇이든 좋아요.\n비방·도배는 신고 대상입니다.",
+  "communityWriteSubmit": "등록하기",
+  "communityMoreReport": "신고하기",
+  "communityMoreBlock": "이 사용자 차단",
+  "communityReportTitle": "신고 사유",
+  "communityReportAbuse": "욕설·비방",
+  "communityReportSpam": "도배·광고",
+  "communityReportSpoiler": "스포일러",
+  "communityReportEtc": "기타",
+  "communityReportSubmit": "신고하기",
+  "communityReportDone": "신고가 접수되었어요.",
+  "communityBlockDone": "이 사용자의 글이 보이지 않아요.",
+  "communityGuestWrite": "로그인하고 응원팀을 정하면 글을 쓸 수 있어요.",
+
+  "communityTabMyTeam": "우리팀",
+  "communityTabOtherTeams": "다른팀",
+
+  "communityRulesTitle": "커뮤니티 이용규칙",
+  "communityRulesSeeAll": "커뮤니티 이용규칙 전체 보기",
+
+  "communityAttachPhoto": "사진",
+  "communityAttachPoll": "투표",
+  "communityPhotoCount": "{count}/5",
+  "@communityPhotoCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityPollQuestionHint": "투표 주제를 입력하세요",
+  "communityPollOptionHint": "항목 {index}",
+  "@communityPollOptionHint": {
+    "placeholders": { "index": { "type": "int" } }
+  },
+  "communityPollAddOption": "항목 추가 (최대 5개)",
+  "communityPollHideResults": "투표해야 결과 보기",
+  "communityPollRemove": "투표 삭제",
+  "communityPollPrompt": "{count}명 참여 · 투표하면 결과가 보여요",
+  "@communityPollPrompt": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityPollVoted": "{count}명 참여",
+  "@communityPollVoted": {
+    "placeholders": { "count": { "type": "int" } }
+  }}

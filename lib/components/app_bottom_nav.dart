@@ -5,7 +5,7 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 import '../styles/app_colors.dart';
 
-enum AppNavTab { schedule, list, subscription, mypage }
+enum AppNavTab { schedule, list, community, subscription, mypage }
 
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
@@ -32,9 +32,18 @@ class AppBottomNav extends StatelessWidget {
   static const List<({String icon, AppNavTab tab})> _items = [
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
     (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
+    (icon: 'assets/icons/message-circle.svg', tab: AppNavTab.community),
     (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
   ];
+
+  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 치수.
+  ///
+  /// 4탭 시절: 활성 113 + 비활성 44×3 + gap 16×3 + 패딩 24 = 317 ≤ 335.
+  /// 같은 값으로 5탭이면 113 + 44×4 + 16×4 + 24 = 377 로 42px 넘친다.
+  /// 아래 값이면 113 + 40×4 + 8×4 + 24 = 329 로 6px 여유가 남는다.
+  static const double _gap = 8;
+  static const double _inactiveSize = 40;
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
     thickness: 16,
@@ -54,6 +63,7 @@ class AppBottomNav extends StatelessWidget {
     final labels = {
       AppNavTab.schedule: l.navSchedule,
       AppNavTab.list: l.navMatchList,
+      AppNavTab.community: l.navCommunity,
       AppNavTab.subscription: l.navSubscription,
       AppNavTab.mypage: l.navMyPage,
     };
@@ -85,7 +95,7 @@ class AppBottomNav extends StatelessWidget {
       );
 
       if (i != _items.length - 1) {
-        children.add(SizedBox(width: 16 * scale)); // gap 16
+        children.add(SizedBox(width: _gap * scale));
       }
     }
 
@@ -361,7 +371,7 @@ class _NavItemActive extends StatelessWidget {
   }
 }
 
-/// 비활성 탭: 44x44 고정 chip, 아이콘만 표시.
+/// 비활성 탭: [AppBottomNav._inactiveSize] 정사각 고정 chip, 아이콘만 표시.
 class _NavItemInactive extends StatelessWidget {
   const _NavItemInactive({
     required this.icon,
@@ -379,8 +389,8 @@ class _NavItemInactive extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 44 * scale,
-        height: 44 * scale,
+        width: AppBottomNav._inactiveSize * scale,
+        height: AppBottomNav._inactiveSize * scale,
         child: Center(
           child: SvgPicture.asset(
             icon,
