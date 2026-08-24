@@ -153,8 +153,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   /// 위젯 딥링크로 필터를 연다. 이미 열려 있으면 다시 열지 않는다.
+  ///
+  /// 일정 화면이 스택에 살아 있어도 최상단이 아닐 수 있다 — 경기 상세·날짜별
+  /// 목록처럼 그 위에 뭔가를 push 한 상태(하단 탭 전환은 pushReplacement 라
+  /// 여기 해당하지 않는다). 이 경우 지금 보이는 화면은 그대로 두고 필터
+  /// 시트만 그 위에 얹으면, 사용자는 엉뚱한 화면에서 필터를 보게 된다.
+  /// 위에 쌓인 라우트를 걷어 일정 화면을 앞으로 가져온 뒤에 연다.
   void _openFilterFromWidget() {
     if (!mounted || _filterSheetOpen) return;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      Navigator.of(context).popUntil((r) => identical(r, route));
+    }
+    // popUntil 은 이 화면(ScheduleScreen) 은 걷지 않으므로 State 자체는 계속
+    // mounted 지만, 만약을 대비해 한 번 더 확인한다.
+    if (!mounted) return;
     _openFilter();
   }
 
