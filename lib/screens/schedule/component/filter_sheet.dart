@@ -15,31 +15,25 @@ import '../../../viewmodel/schedule/filter_viewmodel.dart';
 /// 둔다. 셀렉트 필드는 탭하면 아래로 체크박스 드롭다운이 펼쳐지며, 리그·팀
 /// 모두 다중 선택이다(전체 해제 시 '전체'로 되돌아간다). 선택값이 모달을
 /// 열 때(이전 값)와 달라져야 조회 버튼이 활성된다.
-/// 자체 [FilterViewModel] 을 소유하며 [showAppBottomSheet] 의 child 로 띄운다.
+/// [showAppBottomSheet] 의 child 로 띄운다.
+///
+/// ViewModel 은 **밖에서 옵션 조회까지 끝낸 뒤** 넘겨준다. 예전에는 시트가
+/// 직접 만들어 열자마자 조회했는데, 그 조회가 실패하면 리그·팀 목록이 빈 채로
+/// 시트가 떠서 선택값이 있어도 '전체/전체'로 보였다(이름↔코드 매핑이 없어서).
+/// 사용자가 그 화면에서 조회를 누르면 진짜 필터가 '전체'로 덮어써졌다.
+/// 지금은 실패하면 호출부가 시트를 아예 띄우지 않는다.
 class FilterSheet extends StatefulWidget {
-  const FilterSheet({super.key, this.initialLeagues, this.initialTeamIds});
+  const FilterSheet({super.key, required this.viewModel});
 
-  /// 모달을 열 때 이미 적용 중이던 리그 코드 목록.
-  final List<String>? initialLeagues;
-
-  /// 모달을 열 때 이미 적용 중이던 팀 ID 목록.
-  final List<int>? initialTeamIds;
+  /// 옵션 조회가 끝난 ViewModel. 소유권은 호출부에 있다(dispose 도 호출부가).
+  final FilterViewModel viewModel;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
 }
 
 class _FilterSheetState extends State<FilterSheet> {
-  late final FilterViewModel _viewModel = FilterViewModel(
-    initialLeagues: widget.initialLeagues,
-    initialTeamIds: widget.initialTeamIds,
-  );
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
+  FilterViewModel get _viewModel => widget.viewModel;
 
   @override
   Widget build(BuildContext context) {

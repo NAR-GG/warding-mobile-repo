@@ -40,6 +40,10 @@ class MatchListViewModel extends ChangeNotifier {
   /// 복원됐지만 아직 리그 목록 검증 전인 팀 선택. [_updateTeams] 가 1회 소비한다.
   Set<String>? _pendingRestoredTeams;
 
+  /// 저장된 필터를 읽지 못했는지. true 면 디스크에 값이 살아 있을 수 있어
+  /// 현재 화면 상태로 덮어쓰면 안 된다. [_persistFilter] 가 막는다.
+  bool _filterRestoreFailed = false;
+
   /// 마지막 사용 필터(시즌/리그/팀)를 복원한 뒤 리그 목록을 불러온다.
   /// 리그는 [_loadLeagues] 가 서버 목록과 대조해 없으면 '전체'로 되돌리고,
   /// 팀은 [_updateTeams] 가 현재 리그 팀 목록과 교집합만 살린다.
@@ -47,22 +51,24 @@ class MatchListViewModel extends ChangeNotifier {
     await _restoreSpoilerPreference();
     final saved =
         await _filterPreferences.load(FilterPreferenceRepository.matchListKey);
-    if (saved != null) {
-      final season = saved['season'] as String?;
+    _filterRestoreFailed = saved.readFailed;
+    final json = saved.json;
+    if (json != null) {
+      final season = json['season'] as String?;
       if (season != null && seasons.contains(season)) {
         _selectedSeason = season;
       }
-      final league = saved['league'] as String?;
+      final league = json['league'] as String?;
       if (league != null && league.isNotEmpty) {
         _selectedLeague = league;
       }
-      final teams = (saved['teams'] as List?)?.cast<String>();
+      final teams = (json['teams'] as List?)?.cast<String>();
       if (teams != null && teams.isNotEmpty) {
         _pendingRestoredTeams = teams.toSet();
       }
       // 라벨은 언어에 따라 바뀌므로 인덱스로 저장·복원한다. 저장 당시보다
       // 옵션이 줄어든 버전에서도 안전하도록 범위를 확인한다.
-      final sortOrder = saved['sortOrder'] as int?;
+      final sortOrder = json['sortOrder'] as int?;
       if (sortOrder != null && sortOrder >= 0 && sortOrder < _sortOrderCount) {
         _sortOrderIndex = sortOrder;
       }
@@ -78,7 +84,16 @@ class MatchListViewModel extends ChangeNotifier {
   }
 
   /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
+  ///
+  /// 복원에 실패했거나 리그 목록을 못 받은 상태에서는 저장하지 않는다 — 그때의
+  /// 화면은 사용자가 고른 필터가 아니라 '못 읽어서 기본값으로 서 있는' 상태라,
+  /// 여기서 쓰면 디스크의 멀쩡한 필터를 지운다. 선택은 이번 세션에만 적용되고
+  /// 다음 실행에서 읽기에 성공하면 원래 필터로 돌아온다.
   void _persistFilter() {
+    if (_filterRestoreFailed || _leaguesLoadFailed) {
+      debugPrint('[MatchList] 필터 복원/옵션 로드 실패 상태 — 저장 생략(기존 값 보존)');
+      return;
+    }
     unawaited(_filterPreferences.save(FilterPreferenceRepository.matchListKey, {
       'season': _selectedSeason,
       'league': _selectedLeague,
@@ -197,6 +212,11 @@ class MatchListViewModel extends ChangeNotifier {
   // '경기가 없어요' 빈 상태 문구가 스켈레톤보다 먼저 잠깐 보이지 않는다.
   bool _loadingLeagues = true;
   bool get loadingLeagues => _loadingLeagues;
+
+  /// 리그·팀 옵션을 못 받았는지. 이때의 [leagues]·[teams] 는 실제 선택지가 아니라
+  /// 자리를 채운 값이라, 이 상태에서 나온 선택을 저장하면 안 된다([_persistFilter]).
+  bool _leaguesLoadFailed = false;
+  bool get leaguesLoadFailed => _leaguesLoadFailed;
 
   List<String> _teams = const [allTeamsLabel];
   List<String> get teams => _teams;
@@ -354,13 +374,23 @@ class MatchListViewModel extends ChangeNotifier {
             : (_leagues.isNotEmpty ? _leagues.first : null);
       }
       _updateTeams();
+      _leaguesLoadFailed = false;
     } catch (_) {
-      // 옵션 로드 실패 시에도 '전체'(ALL)로는 조회할 수 있게 유지한다.
+      // 옵션 로드 실패. **선택값은 건드리지 않는다** — 저장된 리그 코드로도
+      // 서버 조회는 되므로 굳이 '전체'로 되돌릴 이유가 없고, 되돌리면 그 값이
+      // [_persistFilter] 를 타고 디스크의 진짜 필터를 덮어썼다(필터가 간헐적으로
+      // 전체로 풀리던 원인). 목록만 최소한으로 두고 복원분은 다음 성공까지 남긴다.
+      _leaguesLoadFailed = true;
       _tree = null;
-      _leagues = const [allLeagueLabel];
-      _selectedLeague = allLeagueLabel;
+      // 선택 중인 리그가 목록에 없으면 셀렉트가 빈 칸이 되므로 자기 자신은 넣어 둔다.
+      final current = _selectedLeague;
+      _leagues = [
+        allLeagueLabel,
+        if (current != null && current != allLeagueLabel) current,
+      ];
+      // 팀 목록은 카테고리 트리에서 나오는데 트리를 못 받았다. 선택은 그대로
+      // 두고(=조회에는 계속 적용된다) 목록만 비워, 복원분도 소비하지 않는다.
       _teams = const [allTeamsLabel];
-      _selectedTeams = {allTeamsLabel};
     } finally {
       _loadingLeagues = false;
       _notify();
@@ -373,14 +403,21 @@ class MatchListViewModel extends ChangeNotifier {
   }
 
   void _updateTeams() {
+    final tree = _tree;
+    final league = _selectedLeague;
+    // 트리를 못 받았으면 팀 목록을 산출할 수 없다. 복원분을 여기서 소비해
+    // 버리면 다음 성공적인 로드에서 되살릴 값이 사라지므로 그대로 남겨 둔다.
+    if (tree == null) {
+      _teams = const [allTeamsLabel];
+      return;
+    }
+
     // 앱 재시작 복원분은 1회만 소비한다. 리그가 '전체'라 팀 스코프가 없으면 버린다.
     final pendingRestored = _pendingRestoredTeams;
     _pendingRestoredTeams = null;
 
-    final tree = _tree;
-    final league = _selectedLeague;
     // '전체'(ALL) 리그는 특정 리그 팀 스코프가 없어 팀 필터를 '전체'만 둔다.
-    if (tree == null || league == null || league == allLeagueLabel) {
+    if (league == null || league == allLeagueLabel) {
       _teams = const [allTeamsLabel];
       _selectedTeams = {allTeamsLabel};
       return;

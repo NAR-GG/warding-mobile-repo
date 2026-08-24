@@ -1,4 +1,7 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
+import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/repository/preference/notice_preference_repository.dart';
 
@@ -60,4 +63,62 @@ void main() {
 
     expect(await repo.loadDismissedIds(), {1});
   });
+
+  group('읽기 실패 — 저장된 목록을 덮어쓰지 않는다', () {
+    // [FlutterSecureStorage.setMockInitialValues] 는 MethodChannel 이 아니라
+    // 플랫폼 구현체 자체를 갈아끼운다. 그래서 채널 핸들러로는 read 를 실패시킬
+    // 수 없고, 같은 자리에 '읽기만 실패하는' 구현체를 직접 끼워야 한다.
+    late _LockedStoragePlatform platform;
+
+    setUp(() {
+      platform = _LockedStoragePlatform({'dismissed_notice_ids': '[1,2,3]'});
+      FlutterSecureStoragePlatform.instance = platform;
+      repo.resetCacheForTesting();
+    });
+
+    test('기기 잠금(-25308)이면 저장을 건너뛴다', () async {
+      // 못 읽었으니 빈 셋으로 보이지만, 저장된 목록이 없다는 뜻은 아니다.
+      expect(await repo.loadDismissedIds(), isEmpty);
+
+      await repo.addDismissedId(42);
+
+      // 저장했다면 '[42]' 하나만 남아 1,2,3 이 전부 날아간다.
+      expect(platform.data['dismissed_notice_ids'], '[1,2,3]',
+          reason: '읽지 못한 상태의 목록으로 저장소를 덮어쓰면 안 된다');
+      expect(repo.cachedValue, isNull,
+          reason: '읽기 실패 상태의 목록을 캐시에 박으면 잠금 해제 후에도 다시 못 읽는다');
+    });
+
+    test('잠금이 풀리면 저장된 목록을 그대로 되찾는다', () async {
+      expect(await repo.loadDismissedIds(), isEmpty);
+      await repo.addDismissedId(42); // 저장 생략돼야 한다.
+
+      platform.locked = false;
+
+      expect(await repo.loadDismissedIds(), {1, 2, 3},
+          reason: '읽기 실패 중 닫은 42 때문에 1,2,3 이 사라지면 안 된다');
+    });
+  });
+}
+
+/// read 만 잠금 오류(-25308)로 실패하고 write/delete 는 정상인 저장소.
+/// 실제 기기 잠금 상황(쓰기는 되는데 읽기만 막힘)에 해당한다.
+class _LockedStoragePlatform extends TestFlutterSecureStoragePlatform {
+  _LockedStoragePlatform(super.data);
+
+  bool locked = true;
+
+  @override
+  Future<String?> read({
+    required String key,
+    required Map<String, String> options,
+  }) async {
+    if (locked) {
+      throw PlatformException(
+        code: '-25308',
+        message: 'User interaction is not allowed.',
+      );
+    }
+    return super.read(key: key, options: options);
+  }
 }

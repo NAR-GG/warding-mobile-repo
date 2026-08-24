@@ -623,10 +623,11 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
-        leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
-        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
-        teamSelected = (saved['teamSelected'] as bool?) ?? false;
+      final json = saved.json;
+      if (json != null) {
+        leagues = (json['leagues'] as List?)?.cast<String>() ?? ['ALL'];
+        teamIds = (json['teamIds'] as List?)?.cast<int>() ?? [];
+        teamSelected = (json['teamSelected'] as bool?) ?? false;
       }
     } catch (e) {
       debugPrint('[HomeWidget] 필터 복원 실패: $e');
@@ -816,10 +817,11 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
+      final json = saved.json;
+      if (json != null) {
         savedLeagues =
-            (saved['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
-        savedTeamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+            (json['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
+        savedTeamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
     } catch (e) {
       debugPrint('[HomeWidget] 저장된 필터 복원 실패: $e');

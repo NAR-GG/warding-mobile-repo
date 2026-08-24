@@ -1736,6 +1736,12 @@ abstract class AppLocalizations {
   /// **'경기 일정을 불러오지 못했어요'**
   String get scheduleLoadFailed;
 
+  /// No description provided for @filterLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'필터를 불러오지 못했어요. 잠시 후 다시 시도해 주세요'**
+  String get filterLoadFailed;
+
   /// No description provided for @playerRatingLoadFailed.
   ///
   /// In ko, this message translates to:

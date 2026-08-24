@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -229,11 +229,14 @@ class _SplashScreenState extends State<SplashScreen>
       List<int> teamIds = const [];
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
-        final savedLeagues = (saved['leagues'] as List?)?.cast<String>();
+      // 못 읽었으면(readFailed) 기본값으로 프리페치한다 — 화면도 같은 값을 쓰게
+      // 되므로 캐시는 여전히 맞는다. 저장은 하지 않으니 필터가 유실되지 않는다.
+      final json = saved.json;
+      if (json != null) {
+        final savedLeagues = (json['leagues'] as List?)?.cast<String>();
         leagues =
             savedLeagues != null && savedLeagues.isNotEmpty ? savedLeagues : ['ALL'];
-        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+        teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
       await ScheduleRepository.instance.fetchCalendar(
         DateTime.now(),
@@ -329,10 +332,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// 앱스토어/플레이스토어 최신 버전을 조회해, 현재 버전보다 높으면
   /// [NarAlertDialog] 팝업을 띄운다. 확인 누르면 스토어로 이동.
+  ///
+  /// `countryCode` 를 안 주면 upgrader 가 미국 스토어를 조회한다. 와딩은 한국
+  /// 스토어에만 있어서 조회 결과가 비고, `isUpdateAvailable()` 이 조용히 false 를
+  /// 돌려줘 팝업이 영영 안 떴다. `durationUntilAlertAgain` 기본값(3일)도 함께
+  /// 걷어낸다 — 스플래시는 앱을 켤 때마다 도는 자리라, 최신이 아니면 매번 알린다.
   Future<void> _checkForUpdate() async {
     try {
       final upgrader = Upgrader(
         languageCode: AppLanguage.instance.isKo ? 'ko' : 'en',
+        countryCode: 'KR',
+        durationUntilAlertAgain: Duration.zero,
+        debugLogging: kDebugMode,
       );
       await upgrader.initialize();
       if (!upgrader.isUpdateAvailable()) return;

@@ -5,6 +5,7 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/guide_popup.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_banner.dart';
+import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
@@ -223,20 +224,39 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
+  /// 필터 옵션을 먼저 받고, 성공했을 때만 시트를 띄운다.
+  ///
+  /// 옵션을 못 받으면 시트가 리그·팀 목록 없이 떠서 선택값이 있어도 '전체/전체'
+  /// 로 보이고, 그 상태에서 조회를 누르면 저장된 필터가 '전체'로 덮어써진다.
+  /// 빈 시트를 보여주느니 안 열고 안내하는 편이 낫다.
   Future<void> _showFilterSheet() async {
-    final result = await showAppBottomSheet<FilterResult>(
-      context: context,
-      child: FilterSheet(
-        initialLeagues: _viewModel.filterLeagues,
-        initialTeamIds: _viewModel.filterTeamIds,
-      ),
+    final filterViewModel = FilterViewModel(
+      initialLeagues: _viewModel.filterLeagues,
+      initialTeamIds: _viewModel.filterTeamIds,
     );
-    if (result != null) {
-      _viewModel.applyFilter(
-        leagues: result.leagues,
-        teamIds: result.teamIds,
-        resetMonth: result.resetMonth,
+    try {
+      await filterViewModel.firstLoad;
+      if (!mounted) return;
+      if (filterViewModel.loadFailed) {
+        final l = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.filterLoadFailed)),
+        );
+        return;
+      }
+      final result = await showAppBottomSheet<FilterResult>(
+        context: context,
+        child: FilterSheet(viewModel: filterViewModel),
       );
+      if (result != null) {
+        _viewModel.applyFilter(
+          leagues: result.leagues,
+          teamIds: result.teamIds,
+          resetMonth: result.resetMonth,
+        );
+      }
+    } finally {
+      filterViewModel.dispose();
     }
   }
 

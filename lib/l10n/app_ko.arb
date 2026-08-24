@@ -487,6 +487,7 @@
   "sortUpcoming": "오늘 이후",
 
   "scheduleLoadFailed": "경기 일정을 불러오지 못했어요",
+  "filterLoadFailed": "필터를 불러오지 못했어요. 잠시 후 다시 시도해 주세요",
   "playerRatingLoadFailed": "선수 평점을 불러오지 못했어요",
   "noPlayerRecordInSet": "이 세트에는 해당 선수 기록이 없어요",
   "setRatingLoadFailed": "세트 평점을 불러오지 못했어요",

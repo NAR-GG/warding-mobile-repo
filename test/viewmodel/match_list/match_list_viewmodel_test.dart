@@ -399,11 +399,11 @@ void main() {
 
     test('저장된 리그를 복원해 첫 조회에 반영한다', () async {
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => {
+          .thenAnswer((_) async => const FilterPreferenceResult.loaded({
                 'season': '2026',
                 'league': 'LCK',
                 'teams': ['전체'],
-              });
+              }));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -420,7 +420,8 @@ void main() {
 
     test('저장된 리그가 현재 목록에 없으면 전체로 폴백한다', () async {
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => {'league': 'LJL'});
+          .thenAnswer(
+              (_) async => const FilterPreferenceResult.loaded({'league': 'LJL'}));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -430,7 +431,7 @@ void main() {
 
     test('리그 변경 시 필터를 저장한다', () async {
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => null);
+          .thenAnswer((_) async => const FilterPreferenceResult.loaded(null));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -448,7 +449,7 @@ void main() {
     test('정렬 변경 시 저장하고, 다음 실행에 복원한다', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => null);
+          .thenAnswer((_) async => const FilterPreferenceResult.loaded(null));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -464,7 +465,7 @@ void main() {
 
       // 저장된 값으로 새로 띄우면 '오늘 이후'가 그대로 살아 있어야 한다.
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => saved);
+          .thenAnswer((_) async => FilterPreferenceResult.loaded(saved));
 
       final restored = buildVm();
       await pumpEventQueue();
@@ -476,13 +477,65 @@ void main() {
     test('저장된 정렬 인덱스가 범위를 벗어나면 기본값을 쓴다', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
       when(() => prefs.load(FilterPreferenceRepository.matchListKey))
-          .thenAnswer((_) async => {'sortOrder': 99});
+          .thenAnswer((_) async =>
+              const FilterPreferenceResult.loaded({'sortOrder': 99}));
 
       final vm = buildVm();
       await pumpEventQueue();
 
       expect(vm.upcomingOnly, isFalse);
       expect(vm.sortOrder, vm.sortOrders[1]); // 기본 '오래된 순'
+    });
+
+    // 아래 세 개는 "필터가 간헐적으로 전체로 풀린다"의 회귀 테스트다.
+    // 앱을 켜는 순간 네트워크가 나쁘면 저장된 필터가 '전체'로 덮어써졌다.
+
+    test('옵션 로드에 실패해도 복원된 리그 선택을 유지한다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async =>
+              const FilterPreferenceResult.loaded({'league': 'LCK'}));
+      when(() => sched.fetchFilterOptions(league: any(named: 'league')))
+          .thenThrow(Exception('network down'));
+      when(() => cat.fetchTree(year: any(named: 'year')))
+          .thenThrow(Exception('network down'));
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'LCK',
+          reason: '조회 실패가 선택값을 되돌리면 안 된다');
+      expect(vm.leaguesLoadFailed, isTrue);
+    });
+
+    test('옵션 로드 실패 상태에서는 필터를 저장하지 않는다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async =>
+              const FilterPreferenceResult.loaded({'league': 'LCK'}));
+      when(() => sched.fetchFilterOptions(league: any(named: 'league')))
+          .thenThrow(Exception('network down'));
+      when(() => cat.fetchTree(year: any(named: 'year')))
+          .thenThrow(Exception('network down'));
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      vm.selectLeague('전체');
+      await pumpEventQueue();
+
+      verifyNever(() => prefs.save(any(), any()));
+    });
+
+    test('저장값을 못 읽었으면(readFailed) 덮어쓰지 않는다', () async {
+      when(() => prefs.load(FilterPreferenceRepository.matchListKey))
+          .thenAnswer((_) async => const FilterPreferenceResult.failed());
+
+      final vm = buildVm();
+      await pumpEventQueue();
+
+      vm.selectLeague('LCK');
+      await pumpEventQueue();
+
+      verifyNever(() => prefs.save(any(), any()));
     });
   });
 }
