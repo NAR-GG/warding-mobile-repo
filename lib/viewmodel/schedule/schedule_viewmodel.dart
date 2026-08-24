@@ -192,6 +192,12 @@ class ScheduleViewModel extends ChangeNotifier {
   List<int> _teamIds = const [];
   List<int> get filterTeamIds => _teamIds;
 
+  /// 리그·팀 중 하나라도 '전체'가 아닌 값으로 필터링 중인지.
+  /// 헤더 필터 버튼에 선택 표시(테두리)를 줄지 판단하는 데 쓴다.
+  bool get hasActiveFilter =>
+      !(_leagues.length == 1 && _leagues.first == 'ALL') ||
+      _teamIds.isNotEmpty;
+
   /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
   /// 켜지면 선호 팀으로 캘린더를 필터링한다.
   bool _teamSelected = false;
@@ -272,10 +278,8 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 위젯에 필터/팀 선택 상태를 전달한다.
   void _updateWidgetFilterState() {
-    final hasFilter = !(_leagues.length == 1 && _leagues.first == 'ALL') ||
-        _teamIds.isNotEmpty;
     unawaited(HomeWidgetService.updateFilterState(
-      hasFilter: hasFilter,
+      hasFilter: hasActiveFilter,
       teamSelected: _teamSelected,
     ));
   }

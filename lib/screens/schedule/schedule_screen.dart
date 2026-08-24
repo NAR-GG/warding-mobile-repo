@@ -398,6 +398,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ),
                       onMonthTap: _openMonthPicker,
                       onFilterTap: _openFilter,
+                      hasActiveFilter: _viewModel.hasActiveFilter,
                       preferredTeam: _viewModel.preferredTeam,
                       teamSelected: _viewModel.teamSelected,
                       onTeamTap: _viewModel.toggleTeamSelected,
