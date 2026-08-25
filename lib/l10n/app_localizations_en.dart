@@ -921,6 +921,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleLoadFailed => 'Failed to load schedule';
 
   @override
+  String get filterLoadFailed =>
+      'Couldn\'t load filters. Please try again in a moment';
+
+  @override
   String get playerRatingLoadFailed => 'Failed to load player ratings';
 
   @override

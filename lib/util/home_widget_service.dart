@@ -562,14 +562,19 @@ class HomeWidgetService {
     final nav = navigatorKey.currentState;
     if (nav == null) return;
 
-    // 필터는 화면을 새로 만들지 않고, 떠 있는 일정 화면에 열라고 알리기만
+    // 필터는 일정 화면이 이미 보이면 화면을 새로 만들지 않고 열라고 알리기만
     // 한다. 라우트를 갈아끼우면 그 전환 도중에 모달을 열게 되어 모달이 곧바로
     // 함께 걷힌다.
     //
-    // 창구가 비어 있으면 요청만 남고 false 가 온다. 그때는 곧 만들어질 첫
-    // 화면(스플래시가 까는 것)이 그 요청을 집어 필터를 연다.
-    if (action == 'filter') {
-      openScheduleFilterIfVisible();
+    // 문제는 '보이지 않는' 경우다 — 경기 리스트 등 **다른 하단 탭**에 있으면
+    // 일정 화면 자체가 스택에 없어 [openScheduleFilterIfVisible] 이 false 를
+    // 돌려주는데, 예전엔 여기서 그냥 return 해 버려서 아무 일도 안 일어났다
+    // (요청은 [_filterRequestedBeforeReady] 로 남지만, 그걸 소비할 새
+    // ScheduleScreen 이 만들어질 계기 자체가 없다 — 하단 탭은 스택에 없던
+    // 화면을 되살리지 않는다). 이때는 아래 prev/next 와 같은 경로로 일정
+    // 화면을 만들어야 하고, 그 화면의 initState 가 남겨진 요청을 소비해
+    // 필터를 연다.
+    if (action == 'filter' && openScheduleFilterIfVisible()) {
       return;
     }
 
@@ -623,10 +628,11 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
-        leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
-        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
-        teamSelected = (saved['teamSelected'] as bool?) ?? false;
+      final json = saved.json;
+      if (json != null) {
+        leagues = (json['leagues'] as List?)?.cast<String>() ?? ['ALL'];
+        teamIds = (json['teamIds'] as List?)?.cast<int>() ?? [];
+        teamSelected = (json['teamSelected'] as bool?) ?? false;
       }
     } catch (e) {
       debugPrint('[HomeWidget] 필터 복원 실패: $e');
@@ -816,10 +822,11 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
+      final json = saved.json;
+      if (json != null) {
         savedLeagues =
-            (saved['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
-        savedTeamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+            (json['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
+        savedTeamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
     } catch (e) {
       debugPrint('[HomeWidget] 저장된 필터 복원 실패: $e');

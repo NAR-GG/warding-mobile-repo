@@ -326,6 +326,7 @@
   "sortUpcoming": "Upcoming",
 
   "scheduleLoadFailed": "Failed to load schedule",
+  "filterLoadFailed": "Couldn't load filters. Please try again in a moment",
   "playerRatingLoadFailed": "Failed to load player ratings",
   "noPlayerRecordInSet": "No player record in this set",
   "setRatingLoadFailed": "Failed to load set ratings",

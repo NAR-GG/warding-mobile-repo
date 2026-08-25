@@ -897,6 +897,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scheduleLoadFailed => '경기 일정을 불러오지 못했어요';
 
   @override
+  String get filterLoadFailed => '필터를 불러오지 못했어요. 잠시 후 다시 시도해 주세요';
+
+  @override
   String get playerRatingLoadFailed => '선수 평점을 불러오지 못했어요';
 
   @override

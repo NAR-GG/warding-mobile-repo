@@ -109,6 +109,10 @@ class ScheduleViewModel extends ChangeNotifier {
     unawaited(_noticePreferences.addDismissedId(notice.id));
   }
 
+  /// 저장된 필터를 읽지 못했는지. true 면 디스크에 값이 살아 있을 수 있어
+  /// 현재 화면 상태(기본값 '전체')로 덮어쓰면 안 된다. [_persistFilter] 가 막는다.
+  bool _filterRestoreFailed = false;
+
   /// 마지막 사용 필터를 복원한 뒤 첫 캘린더를 조회한다.
   /// 저장값이 없으면(첫 실행) 기본값 그대로 '전체'.
   Future<void> _init() async {
@@ -118,17 +122,28 @@ class ScheduleViewModel extends ChangeNotifier {
     // 첫 화면이 곧바로 교체되는 경로). 그대로 진행하면 죽은 뷰모델이 조회를
     // 걸어 로딩만 켜 두고 끝나, 다음에 뜬 화면이 멈춘 스피너를 물려받는다.
     if (_disposed) return;
-    if (saved != null) {
-      final leagues = (saved['leagues'] as List?)?.cast<String>();
+    _filterRestoreFailed = saved.readFailed;
+    final json = saved.json;
+    if (json != null) {
+      final leagues = (json['leagues'] as List?)?.cast<String>();
       _leagues = leagues != null && leagues.isNotEmpty ? leagues : ['ALL'];
-      _teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
-      _teamSelected = (saved['teamSelected'] as bool?) ?? false;
+      _teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
+      _teamSelected = (json['teamSelected'] as bool?) ?? false;
     }
     loadCalendar();
   }
 
   /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
+  ///
+  /// 복원에 실패한 상태에서는 저장하지 않는다 — 지금 화면은 저장값을 못 읽어
+  /// 기본값('전체')으로 서 있을 뿐이라, 여기서 쓰면 디스크의 멀쩡한 필터를
+  /// 지운다. 이 경우 사용자의 선택은 이번 세션에만 적용되고, 다음 실행에서
+  /// 저장값을 읽는 데 성공하면 원래 필터로 돌아온다.
   void _persistFilter() {
+    if (_filterRestoreFailed) {
+      debugPrint('[Schedule] 필터 복원 실패 상태 — 저장 생략(기존 값 보존)');
+      return;
+    }
     unawaited(_filterPreferences.save(FilterPreferenceRepository.scheduleKey, {
       'leagues': _leagues,
       'teamIds': _teamIds,
@@ -177,6 +192,12 @@ class ScheduleViewModel extends ChangeNotifier {
   List<int> _teamIds = const [];
   List<int> get filterTeamIds => _teamIds;
 
+  /// 리그·팀 중 하나라도 '전체'가 아닌 값으로 필터링 중인지.
+  /// 헤더 필터 버튼에 선택 표시(테두리)를 줄지 판단하는 데 쓴다.
+  bool get hasActiveFilter =>
+      !(_leagues.length == 1 && _leagues.first == 'ALL') ||
+      _teamIds.isNotEmpty;
+
   /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
   /// 켜지면 선호 팀으로 캘린더를 필터링한다.
   bool _teamSelected = false;
@@ -211,10 +232,20 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 헤더 팀 아이콘 선택 상태를 토글한다.
   /// 켜지면 선호 팀으로, 끄면 리그 전체로 캘린더를 다시 조회한다.
+  ///
+  /// 응원팀을 모르는 동안에는 아무것도 하지 않는다. 예전에는 그때도 토글이
+  /// 넘어가 `_teamIds` 를 비우고 저장까지 했다 — 저장된 팀 필터가 '전체'로
+  /// 덮어써지는 경로다. 헤더 아이콘은 응원팀이 있을 때만 그려지지만(그래서
+  /// 보통은 닿지 않는다), 조회가 끝나기 전 첫 프레임이나 조회 실패 후
+  /// 로컬 캐시까지 비었을 때는 [_preferredTeam] 이 null 인 채로 남는다.
   void toggleTeamSelected() {
-    _teamSelected = !_teamSelected;
     final preferredId = _preferredTeam?.id;
-    _teamIds = _teamSelected && preferredId != null ? [preferredId] : const [];
+    if (preferredId == null) {
+      debugPrint('[Schedule] 응원팀 미확정 — 팀 토글 무시');
+      return;
+    }
+    _teamSelected = !_teamSelected;
+    _teamIds = _teamSelected ? [preferredId] : const [];
     _persistFilter();
     _updateWidgetFilterState();
     _notify();
@@ -247,10 +278,8 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 위젯에 필터/팀 선택 상태를 전달한다.
   void _updateWidgetFilterState() {
-    final hasFilter = !(_leagues.length == 1 && _leagues.first == 'ALL') ||
-        _teamIds.isNotEmpty;
     unawaited(HomeWidgetService.updateFilterState(
-      hasFilter: hasFilter,
+      hasFilter: hasActiveFilter,
       teamSelected: _teamSelected,
     ));
   }

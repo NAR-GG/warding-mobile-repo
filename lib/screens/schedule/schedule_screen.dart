@@ -5,6 +5,7 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/guide_popup.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_banner.dart';
+import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
@@ -99,9 +100,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       // (`calendar cache hit`). 리스너만 걸어 두면 그 경우 모달이 영영 열리지
       // 않으므로, 첫 프레임에서 현재 상태를 먼저 확인하고 이미 끝나 있으면
       // 바로 연다. 아직 로딩 중이면 그때 리스너로 넘긴다.
+      //
+      // 실제로 여는 건 한 프레임 더 미룬다(addPostFrameCallback 안에서 다시
+      // addPostFrameCallback) — 이 화면은 위젯 딥링크로 방금 push/pushReplacement
+      // 된 참이라, 첫 프레임의 GPU 래스터(캘린더 6주치 그리드+헤더+배너를
+      // 처음 그리는 것)와 모달 오픈 애니메이션이 같은 프레임에 겹칠 수 있다.
+      // DevTools 로 실측한 결과 이 시점의 프레임 드랍(최악 42ms, GPURasterizer
+      // 프레임의 30~40%)은 대부분 하단 네비(LiquidGlass, saveLayer 다발)가
+      // 원인이라 이 지연만으로는 크게 개선되지 않았다 — 그래도 겹칠 여지를
+      // 줄이는 방향이라 부작용 없이 유지한다. 네비 자체의 렌더 비용은 앱
+      // 전역 공용 컴포넌트 문제라 이 화면 범위 밖이다.
       void openWhenReady() {
         if (!mounted) return;
-        _openFilterFromWidget();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _openFilterFromWidget();
+        });
       }
 
       void listener() {
@@ -153,8 +166,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   /// 위젯 딥링크로 필터를 연다. 이미 열려 있으면 다시 열지 않는다.
+  ///
+  /// 일정 화면이 스택에 살아 있어도 최상단이 아닐 수 있다 — 경기 상세·날짜별
+  /// 목록처럼 그 위에 뭔가를 push 한 상태(하단 탭 전환은 pushReplacement 라
+  /// 여기 해당하지 않는다). 이 경우 지금 보이는 화면은 그대로 두고 필터
+  /// 시트만 그 위에 얹으면, 사용자는 엉뚱한 화면에서 필터를 보게 된다.
+  /// 위에 쌓인 라우트를 걷어 일정 화면을 앞으로 가져온 뒤에 연다.
   void _openFilterFromWidget() {
     if (!mounted || _filterSheetOpen) return;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      Navigator.of(context).popUntil((r) => identical(r, route));
+    }
+    // popUntil 은 이 화면(ScheduleScreen) 은 걷지 않으므로 State 자체는 계속
+    // mounted 지만, 만약을 대비해 한 번 더 확인한다.
+    if (!mounted) return;
     _openFilter();
   }
 
@@ -224,20 +250,39 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
+  /// 필터 옵션을 먼저 받고, 성공했을 때만 시트를 띄운다.
+  ///
+  /// 옵션을 못 받으면 시트가 리그·팀 목록 없이 떠서 선택값이 있어도 '전체/전체'
+  /// 로 보이고, 그 상태에서 조회를 누르면 저장된 필터가 '전체'로 덮어써진다.
+  /// 빈 시트를 보여주느니 안 열고 안내하는 편이 낫다.
   Future<void> _showFilterSheet() async {
-    final result = await showAppBottomSheet<FilterResult>(
-      context: context,
-      child: FilterSheet(
-        initialLeagues: _viewModel.filterLeagues,
-        initialTeamIds: _viewModel.filterTeamIds,
-      ),
+    final filterViewModel = FilterViewModel(
+      initialLeagues: _viewModel.filterLeagues,
+      initialTeamIds: _viewModel.filterTeamIds,
     );
-    if (result != null) {
-      _viewModel.applyFilter(
-        leagues: result.leagues,
-        teamIds: result.teamIds,
-        resetMonth: result.resetMonth,
+    try {
+      await filterViewModel.firstLoad;
+      if (!mounted) return;
+      if (filterViewModel.loadFailed) {
+        final l = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.filterLoadFailed)),
+        );
+        return;
+      }
+      final result = await showAppBottomSheet<FilterResult>(
+        context: context,
+        child: FilterSheet(viewModel: filterViewModel),
       );
+      if (result != null) {
+        _viewModel.applyFilter(
+          leagues: result.leagues,
+          teamIds: result.teamIds,
+          resetMonth: result.resetMonth,
+        );
+      }
+    } finally {
+      filterViewModel.dispose();
     }
   }
 
@@ -356,6 +401,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ),
                       onMonthTap: _openMonthPicker,
                       onFilterTap: _openFilter,
+                      hasActiveFilter: _viewModel.hasActiveFilter,
                       preferredTeam: _viewModel.preferredTeam,
                       teamSelected: _viewModel.teamSelected,
                       onTeamTap: _viewModel.toggleTeamSelected,
