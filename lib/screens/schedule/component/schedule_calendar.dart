@@ -50,7 +50,7 @@ class ScheduleCalendar extends StatefulWidget {
   const ScheduleCalendar({
     super.key,
     required this.month,
-    required this.matchesByDay,
+    required this.matchesOfMonth,
     this.onMonthShift,
     this.selectedDate,
     this.onDateTap,
@@ -61,8 +61,12 @@ class ScheduleCalendar extends StatefulWidget {
   /// 표시할 월 (1일 0시로 정규화된 DateTime).
   final DateTime month;
 
-  /// 일(day) → 그 날의 경기 목록. [month] 의 데이터만 담는다.
-  final Map<int, List<CalendarMatch>> matchesByDay;
+  /// 어떤 달의 '일(day) → 그 날의 경기 목록' 을 돌려준다.
+  ///
+  /// [month] 하나만 받지 않는 이유: 스와이프 중에는 이웃 달 페이지가 함께
+  /// 보이므로, 그 달 데이터도 그려야 전환 중에 칩이 사라지지 않는다.
+  /// 아직 못 받은 달은 빈 맵을 돌려주면 날짜 칸만 그린다.
+  final Map<int, List<CalendarMatch>> Function(DateTime month) matchesOfMonth;
 
   /// 좌우 스와이프로 월을 넘길 때 호출. 인자는 이동량(-1: 이전, +1: 다음).
   /// null 이면 스와이프가 비활성된다.
@@ -111,6 +115,13 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
   /// 스와이프로 방금 요청한 월. 부모가 이 값을 반영해서 내려주는 build 는
   /// '내가 만든 변화'이므로 페이지를 되돌리지 않는다.
   DateTime? _pendingMonth;
+
+  /// 부모에게 알린 이동량의 누적치(기준 월 대비).
+  ///
+  /// 정착 전에 손가락을 되돌리면 페이지 인덱스가 왔다 갔다 하므로,
+  /// '지금 인덱스'가 아니라 '부모가 알고 있는 위치와의 차이'를 알려야
+  /// 부모의 월이 어긋나지 않는다.
+  int _reportedDelta = 0;
 
   /// 외부 월 변경을 페이지에 반영하려고 우리가 스크롤을 움직이는 중인지.
   ///
@@ -180,6 +191,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
   /// 화면상 보이는 달은 그대로이므로 사용자에겐 아무 변화가 없다.
   void _recenter(DateTime month) {
     if (!mounted) return;
+    _reportedDelta = 0;
     setState(() => _baseMonth = month);
     if (_controller.hasClients) {
       _controller.jumpToPage(_initialPage);
@@ -195,14 +207,37 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     // 바꿔 놓은 상태라, 알리면 같은 이동이 두 번 반영된다.
     if (_programmaticScroll) return;
     final delta = page - _initialPage;
-    if (delta == 0) return;
-    final month = _monthAt(delta);
-    _pendingMonth = month;
-    widget.onMonthShift?.call(delta);
-    // 페이지가 정착한 뒤 기준을 옮겨 인덱스를 다시 가운데로 되돌린다.
-    // 프레임 중간에 jumpToPage 를 부르면 스크롤 애니메이션과 충돌하므로
-    // 다음 프레임으로 미룬다.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(month));
+    if (delta == _reportedDelta) return;
+    // 부모가 알고 있는 위치에서의 차이만큼만 알린다. 정착 전에 손가락을
+    // 되돌려 인덱스가 제자리로 오면 여기서 -1 이 나가 부모도 같이 돌아온다.
+    widget.onMonthShift?.call(delta - _reportedDelta);
+    _reportedDelta = delta;
+    _pendingMonth = _monthAt(delta);
+  }
+
+  /// 스크롤이 완전히 멎은 뒤 기준 월을 옮기고 인덱스를 가운데로 되돌린다.
+  ///
+  /// PageView 의 onPageChanged 는 손을 뗀 뒤가 아니라 페이지 인덱스가
+  /// 반올림으로 넘어가는 순간(≈ 50%)에 울린다. 예전엔 거기서 다음 프레임에
+  /// 곧장 [_recenter] 를 불렀는데, jumpToPage 가 진행 중인 정착 애니메이션을
+  /// 끊고 남은 절반을 한 프레임에 순간이동시켰다. 그래서 스와이프 끝부분만
+  /// 갑자기 빨라지는 것처럼 보였다. 정착([ScrollEndNotification])까지
+  /// 기다렸다가 옮기면 처음부터 끝까지 같은 곡선으로 미끄러진다.
+  ///
+  /// 알림이 온 그 자리에서 곧바로 옮기지 않고 프레임 끝으로 미루는 이유:
+  /// [_recenter] 의 jumpToPage 가 다시 ScrollEndNotification 을 울리는데,
+  /// 그 시점엔 아직 위치가 옮겨지기 전(goIdle 이 먼저)이라 같은 판정이
+  /// 반복돼 스택이 넘친다. 한 프레임 뒤엔 위치가 가운데라 delta 가 0 이
+  /// 되어 멈춘다. 이미 멎은 뒤라 한 프레임은 눈에 띄지 않는다.
+  void _onScrollEnd() {
+    if (_programmaticScroll || !_controller.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _programmaticScroll || !_controller.hasClients) return;
+      final page = _controller.page ?? _initialPage.toDouble();
+      final delta = page.round() - _initialPage;
+      if (delta == 0) return;
+      _recenter(_monthAt(delta));
+    });
   }
 
   /// 기준 월에서 [delta] 개월 떨어진 달. DateTime 생성자가 12월 초과·0 이하
@@ -221,12 +256,11 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     super.dispose();
   }
 
-  /// 페이지 [delta] 위치의 월 그리드. 기준 월(0)이 아닌 이웃 달은 아직
-  /// 데이터가 없으므로 날짜 칸만 그린다 — 스와이프로 들어온 뒤 조회가
-  /// 끝나면 경기 칩이 채워진다.
+  /// 페이지 [delta] 위치의 월 그리드. 아직 데이터가 없는 달은 날짜 칸만
+  /// 그린다 — 부모가 그 달을 받아 오면 다음 build 에서 칩이 채워진다.
   Widget _buildPage(int delta, double scale) {
     final month = _monthAt(delta);
-    final matchesByDay = delta == 0 ? widget.matchesByDay : null;
+    final matchesByDay = widget.matchesOfMonth(month);
     return CalendarMonthGrid(
       month: month,
       scale: scale,
@@ -234,7 +268,9 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
       selectedDate: widget.selectedDate,
       onDateTap: widget.onDateTap,
       matchesOf: (date) {
-        if (matchesByDay == null || date.month != month.month) return const [];
+        // 앞뒤 달에서 넘어온 빈 칸은 그 달 페이지가 그린다 — 여기서 또
+        // 칩을 붙이면 같은 경기가 두 페이지에 나온다.
+        if (date.month != month.month) return const [];
         return matchesByDay[date.day] ?? const [];
       },
     );
@@ -252,14 +288,20 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
         children: [
           CalendarWeekdayHeader(scale: scale, weekStart: widget.weekStart),
           Expanded(
-            child: PageView.builder(
-              controller: _controller,
-              physics: widget.onMonthShift == null
-                  ? const NeverScrollableScrollPhysics()
-                  : const PageScrollPhysics(),
-              onPageChanged: _onPageChanged,
-              itemBuilder: (context, index) =>
-                  _buildPage(index - _initialPage, scale),
+            child: NotificationListener<ScrollEndNotification>(
+              onNotification: (notification) {
+                if (notification.depth == 0) _onScrollEnd();
+                return false;
+              },
+              child: PageView.builder(
+                controller: _controller,
+                physics: widget.onMonthShift == null
+                    ? const NeverScrollableScrollPhysics()
+                    : const PageScrollPhysics(),
+                onPageChanged: _onPageChanged,
+                itemBuilder: (context, index) =>
+                    _buildPage(index - _initialPage, scale),
+              ),
             ),
           ),
         ],

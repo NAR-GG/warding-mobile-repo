@@ -315,7 +315,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 데이터가 있거나, 성공했지만 그 달에 경기가 없는 경우)엔 캘린더 그대로.
   Widget _buildCalendarArea(
     BuildContext context,
-    Map<int, List<CalendarMatch>> matchesByDay,
+    Map<int, List<CalendarMatch>> Function(DateTime month) matchesOfMonth,
     double scale,
   ) {
     if (_viewModel.matchesByDay.isEmpty) {
@@ -339,7 +339,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
     return ScheduleCalendar(
       month: _viewModel.displayMonth,
-      matchesByDay: matchesByDay,
+      matchesOfMonth: matchesOfMonth,
       onMonthShift: _viewModel.shiftMonth,
       selectedDate: _viewModel.selectedDate,
       onDateTap: _openDay,
@@ -377,13 +377,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               listenable: _viewModel,
               builder: (context, _) {
                 // ViewModel 의 캘린더 경기 → 칸 칩용 (home, away) 변환.
-                final matchesByDay = <int, List<CalendarMatch>>{
-                  for (final entry in _viewModel.matchesByDay.entries)
-                    entry.key: [
-                      for (final m in entry.value)
-                        (home: m.blueTeamCode, away: m.redTeamCode),
-                    ],
-                };
+                // 스와이프 중에는 이웃 달도 그려야 하므로 달을 받아 변환한다.
+                Map<int, List<CalendarMatch>> matchesOfMonth(DateTime month) {
+                  return {
+                    for (final entry
+                        in _viewModel.matchesOfMonth(month).entries)
+                      entry.key: [
+                        for (final m in entry.value)
+                          (home: m.blueTeamCode, away: m.redTeamCode),
+                      ],
+                  };
+                }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -427,7 +431,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 72 * scale + 34),
-                        child: _buildCalendarArea(context, matchesByDay, scale),
+                        child: _buildCalendarArea(context, matchesOfMonth, scale),
                       ),
                     ),
                   ],

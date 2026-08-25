@@ -8,15 +8,15 @@ import 'calendar_today_badge.dart';
 /// 월간 날짜 그리드.
 ///
 /// 주(week) 시작 요일은 [weekStart]로 설정한다(기본값 월요일). 이전·다음
-/// 달 날짜로 빈 칸을 채워 7×N 격자를 만든다. 각 주 행 높이는 부모가 준
-/// 가용 세로 공간을 그 달의 실제 주 수(4~6)로 나눠 정한다 — 주 수가 몇이든
-/// 그리드가 뷰포트를 세로로 꽉 채우고 아래 여백이 남지 않는다.
+/// 달 날짜로 빈 칸을 채워 항상 7×[gridWeeks] 격자를 만들고, 가용 세로 공간을
+/// 그 행 수로 균등 분배한다.
 ///
-/// 한때는 실제 주 수 대신 최대 주 수(6)로 고정해 나눴다. 그때는 월 전환이
-/// `AnimatedSwitcher` 여서 두 달 그리드가 잠시 같은 자리에 겹쳐 보였고,
-/// 셀 높이가 서로 다르면 날짜가 밀리는 것처럼 보였기 때문이다. 지금은
-/// [ScheduleCalendar] 가 `PageView` 라 달마다 페이지가 분리돼 겹치지 않으므로
-/// 그 제약이 사라졌다.
+/// 한때는 그 달의 실제 주 수(4~6)로 나눴다. 주 수가 적은 달은 칸이 그만큼
+/// 커져 뷰포트를 꽉 채우니 한 화면만 보면 더 나았다. 그런데 [ScheduleCalendar]
+/// 의 `PageView` 는 스와이프 중 두 달을 나란히 보여 준다. 5주 달과 6주 달이
+/// 붙으면 칸 높이가 달라 가로 구분선이 서로 어긋나고, 전환이 미끄러지는 게
+/// 아니라 어긋난 두 격자가 지나가는 것처럼 보였다. 행 수를 고정하면 어느
+/// 달이든 격자 좌표가 같아서 선이 그대로 이어진다.
 ///
 /// 화면이 너무 작아 계산된 행 높이가 [minRowHeight] 밑으로 떨어지면
 /// (콘텐츠가 눌려 안 보이는 것을 막기 위해) 그 최소값을 지키고, 그 경우에
@@ -49,6 +49,10 @@ class CalendarMonthGrid extends StatelessWidget {
   /// 스켈레톤도 같은 값을 써야 로딩 전후로 칸 높이가 바뀌지 않는다.
   static const double minRowHeight = 64.0;
 
+  /// 그리드 행 수. 어느 달이든 이 수로 고정한다 — 한 달이 걸칠 수 있는
+  /// 최대 주 수라 이 달 날짜가 잘리는 경우는 없다. 스켈레톤도 같은 값을 쓴다.
+  static const int gridWeeks = 6;
+
   /// [availableHeight] 를 [weekCount] 주로 나눈 행 높이. 너무 좁아 [minRowHeight]
   /// 밑으로 떨어지면 최소값을 지킨다(그 경우 그리드가 뷰포트를 넘어 스크롤된다).
   ///
@@ -68,8 +72,8 @@ class CalendarMonthGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     // 그리드 시작일이 속한 주에서, 설정된 시작 요일까지 거슬러 올라갈 일수.
     final leadingDays = weekStart.leadingDays(month);
-    // 이 달 그리드에 필요한 주 수 — 스켈레톤도 같은 계산을 쓴다.
-    final weekCount = weekStart.weekCount(month);
+    // 달마다 다르지 않게 고정한다 — 이유는 클래스 주석 참고.
+    const weekCount = gridWeeks;
     final today = DateTime.now();
 
     // today 가 그리드에서 몇 번째 주에 있는지 (그리드 밖이면 -1).
@@ -86,8 +90,7 @@ class CalendarMonthGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableHeight = constraints.maxHeight;
-        // 가용 세로 공간을 이 달의 실제 주 수로 균등 분배 → 주 수가 몇이든
-        // 그리드가 정확히 뷰포트를 채운다.
+        // 가용 세로 공간을 고정 행 수로 균등 분배 → 어느 달이든 같은 좌표.
         final rowHeight = rowHeightFor(
           availableHeight: availableHeight,
           weekCount: weekCount,
