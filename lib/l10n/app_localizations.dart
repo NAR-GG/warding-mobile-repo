@@ -2408,23 +2408,41 @@ abstract class AppLocalizations {
   /// **'욕설·비방'**
   String get communityReportAbuse;
 
+  /// No description provided for @communityReportObscene.
+  ///
+  /// In ko, this message translates to:
+  /// **'음란물 유포'**
+  String get communityReportObscene;
+
+  /// No description provided for @communityReportAd.
+  ///
+  /// In ko, this message translates to:
+  /// **'상업적 광고 및 판매'**
+  String get communityReportAd;
+
+  /// No description provided for @communityReportFraud.
+  ///
+  /// In ko, this message translates to:
+  /// **'유출·사칭·사기'**
+  String get communityReportFraud;
+
   /// No description provided for @communityReportSpam.
   ///
   /// In ko, this message translates to:
-  /// **'도배·광고'**
+  /// **'도배'**
   String get communityReportSpam;
-
-  /// No description provided for @communityReportSpoiler.
-  ///
-  /// In ko, this message translates to:
-  /// **'스포일러'**
-  String get communityReportSpoiler;
 
   /// No description provided for @communityReportEtc.
   ///
   /// In ko, this message translates to:
   /// **'기타'**
   String get communityReportEtc;
+
+  /// No description provided for @communityReportEtcHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'어떤 점이 문제인지 알려주세요'**
+  String get communityReportEtcHint;
 
   /// No description provided for @communityReportSubmit.
   ///

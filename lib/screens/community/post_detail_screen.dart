@@ -114,8 +114,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       _toast(l.communityBlockDone);
       return;
     }
-    final reason = await showReportReasonSheet(context);
-    if (!mounted || reason == null) return;
+    final report = await showReportReasonSheet(context);
+    if (!mounted || report == null) return;
+    // 백엔드가 붙으면 여기서 사유·상세를 함께 보낸다.
+    debugPrint(
+      '[Community] 신고 reason=${report.reason} detail=${report.detail ?? "-"}',
+    );
     _toast(l.communityReportDone);
   }
 
