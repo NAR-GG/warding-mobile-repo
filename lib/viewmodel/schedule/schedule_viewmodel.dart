@@ -180,6 +180,25 @@ class ScheduleViewModel extends ChangeNotifier {
   Map<int, List<CalendarMatchBrief>> _matchesByDay = const {};
   Map<int, List<CalendarMatchBrief>> get matchesByDay => _matchesByDay;
 
+  /// [_matchesByDay] 가 실제로 어느 달 데이터인지.
+  ///
+  /// [displayMonth] 는 스와이프 즉시 바뀌지만, 그 달의 조회가 끝나기 전까지
+  /// [_matchesByDay] 는 이전 달 응답을 그대로 들고 있다. 그 사이에 이
+  /// 값과 [displayMonth] 가 어긋나므로, 화면은 둘이 같을 때만
+  /// [_matchesByDay] 를 캘린더에 넘겨야 다른 달의 날짜 칸에 엉뚱한 경기
+  /// 칩(같은 day 값)이 잠깐 새어 나가지 않는다.
+  DateTime? _matchesByDayMonth;
+  DateTime? get matchesByDayMonth => _matchesByDayMonth;
+
+  /// 캘린더 조회가 한 번이라도 성공한 적 있는지.
+  ///
+  /// 화면은 이 값이 false 일 때만(= 앱을 켜고 아직 그릴 그리드 자체가 없는
+  /// 최초 진입 상태) 로딩 스켈레톤·에러 안내를 보여준다. 이미 한 번 그린
+  /// 뒤에는 스와이프로 넘어간 달의 조회가 실패해도 그리드는 그대로 두고
+  /// (그 달 경기 칩만 비게) 그 위에 에러로 화면을 통째로 덮지 않는다.
+  bool _hasCalendarLoadedOnce = false;
+  bool get hasCalendarLoadedOnce => _hasCalendarLoadedOnce;
+
   /// 온보딩에서 고른 선호 팀. 없으면(건너뛰기 등) null.
   Team? _preferredTeam;
   Team? get preferredTeam => _preferredTeam;
@@ -329,6 +348,8 @@ class ScheduleViewModel extends ChangeNotifier {
       _matchesByDay = {
         for (final day in days) day.date.day: day.matches,
       };
+      _matchesByDayMonth = month;
+      _hasCalendarLoadedOnce = true;
       final total =
           _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료#$requestId: ${_matchesByDay.length}일, 총 $total경기');
@@ -346,6 +367,7 @@ class ScheduleViewModel extends ChangeNotifier {
       }
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';
       _matchesByDay = const {};
+      _matchesByDayMonth = null;
       debugPrint('[Schedule] loadCalendar#$requestId 에러: $e');
       debugPrint('$st');
     } finally {
@@ -356,6 +378,33 @@ class ScheduleViewModel extends ChangeNotifier {
         _notify();
       }
     }
+    // 화면에 없는 요청이라 이 조회의 성공·실패와 무관하게 조용히 시도한다 —
+    // 좌우로 스와이프하면 PageView 가 이미 그 페이지를 미리 그려 두므로,
+    // 사용자가 실제로 그 페이지에 닿기 전에 리포지토리 캐시를 데워 두면
+    // 그때는 캐시 히트로 곧장 채워져 펄스 스켈레톤이 보일 새도 없다.
+    unawaited(_prefetchNeighborMonths(month, leagues, teamIds));
+  }
+
+  /// [month] 양옆 달의 캘린더를 미리 조회해 리포지토리 캐시에 데운다.
+  ///
+  /// 화면 상태([_matchesByDay] 등)는 건드리지 않는다 — 사용자가 실제로 그
+  /// 달로 넘어갔을 때 [loadCalendar] 가 (캐시 덕에 즉시) 다시 조회해 반영한다.
+  /// 실패해도 무시한다 — 프리패치일 뿐 실제 필요한 조회가 아니다.
+  Future<void> _prefetchNeighborMonths(
+    DateTime month,
+    List<String> leagues,
+    List<int> teamIds,
+  ) async {
+    final prev = DateTime(month.year, month.month - 1);
+    final next = DateTime(month.year, month.month + 1);
+    await Future.wait([
+      _repository
+          .fetchCalendar(prev, leagues: leagues, teamIds: teamIds)
+          .catchError((_) => const <MatchCalendarDay>[]),
+      _repository
+          .fetchCalendar(next, leagues: leagues, teamIds: teamIds)
+          .catchError((_) => const <MatchCalendarDay>[]),
+    ]);
   }
 
   /// 응원 팀을 불러온다.

@@ -30,6 +30,7 @@ class CalendarMonthGrid extends StatelessWidget {
     this.selectedDate,
     this.onDateTap,
     this.weekStart = CalendarWeekStart.monday,
+    this.isLoading = false,
   });
 
   final DateTime month;
@@ -38,6 +39,10 @@ class CalendarMonthGrid extends StatelessWidget {
 
   /// 특정 날짜의 경기 목록을 반환한다.
   final List<CalendarMatch> Function(DateTime date) matchesOf;
+
+  /// 이 달의 경기 데이터가 아직 조회 중인지. true 면 각 날짜 칸이 칩 자리에
+  /// 펄스 스켈레톤을 보여준다.
+  final bool isLoading;
 
   /// 강조할 선택 날짜. null 이면 강조 없음.
   final DateTime? selectedDate;
@@ -141,6 +146,7 @@ class CalendarMonthGrid extends StatelessWidget {
                                   date.month == selectedDate!.month &&
                                   date.day == selectedDate!.day,
                               scale: scale,
+                              isLoading: isLoading && date.month == month.month,
                             ),
                           );
                         },

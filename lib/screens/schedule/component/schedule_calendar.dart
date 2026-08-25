@@ -8,44 +8,13 @@ import 'calendar_weekday_header.dart';
 // CalendarMatch 를 함께 노출 — 이 파일만 import 해도 타입을 쓸 수 있다.
 export 'calendar_match.dart';
 
-/// 캘린더의 좌우 스와이프 진행 상태.
-///
-/// [page] 는 [month] 를 0 으로 둔 스크롤 위치(월 단위 실수)다. 0 이면 기준
-/// 달에 정착한 상태, +1 이면 다음 달, -0.4 면 이전 달 쪽으로 40% 진행한
-/// 상태. 헤더 월 라벨을 이 값에 물려 그리면 그리드와 타이밍이 어긋나지 않는다.
-@immutable
-class CalendarScrollProgress {
-  const CalendarScrollProgress({required this.month, required this.page});
-
-  /// page 0 에 해당하는 기준 월.
-  final DateTime month;
-
-  /// 기준 월로부터의 스크롤 위치(월 단위).
-  final double page;
-
-  @override
-  bool operator ==(Object other) =>
-      other is CalendarScrollProgress &&
-      other.month == month &&
-      other.page == page;
-
-  @override
-  int get hashCode => Object.hash(month, page);
-}
-
 /// 월간 경기 캘린더.
 ///
 /// 요일 헤더([CalendarWeekdayHeader])와 월간 그리드([CalendarMonthGrid])로
 /// 구성된다. 그리드는 [PageView] 위에 얹혀 있어 좌우로 스와이프하면 손가락을
 /// 실시간으로 따라오고, 손을 떼면 가까운 달로 정착(settle)한 뒤에야
-/// [onMonthShift] 로 알린다.
-///
-/// 예전엔 `AnimatedSwitcher` 로 만들었다. 그 구조에서는 손을 떼는 순간
-/// ViewModel 의 월이 먼저 바뀌어 헤더 라벨이 즉시 새 달로 튀고, 그리드는
-/// 그때부터 300ms 슬라이드를 시작해서 둘의 타이밍이 눈에 띄게 어긋났다.
-/// PageView 는 스크롤 진행률([PageController.page])을 노출하므로, 그 값을
-/// [scrollProgress] 로 밖에 알려 준다. 헤더가 이 노티파이어를 구독해 월
-/// 라벨을 그리면 라벨과 그리드가 항상 같은 프레임에서 함께 움직인다.
+/// [onMonthShift] 로 알린다 — 구글/iOS 기본 캘린더 앱과 같은 스와이프
+/// 손맛이다.
 class ScheduleCalendar extends StatefulWidget {
   const ScheduleCalendar({
     super.key,
@@ -55,7 +24,7 @@ class ScheduleCalendar extends StatefulWidget {
     this.selectedDate,
     this.onDateTap,
     this.weekStart = CalendarWeekStart.monday,
-    this.scrollProgress,
+    this.isLoading = false,
   });
 
   /// 표시할 월 (1일 0시로 정규화된 DateTime).
@@ -63,6 +32,11 @@ class ScheduleCalendar extends StatefulWidget {
 
   /// 일(day) → 그 날의 경기 목록. [month] 의 데이터만 담는다.
   final Map<int, List<CalendarMatch>> matchesByDay;
+
+  /// [month] 의 경기 데이터가 아직 조회 중인지. true 면 [matchesByDay] 가
+  /// 비어 있어도 각 날짜 칸이 '경기 없음'이 아니라 '아직 모름'으로 펄스
+  /// 스켈레톤을 보여준다.
+  final bool isLoading;
 
   /// 좌우 스와이프로 월을 넘길 때 호출. 인자는 이동량(-1: 이전, +1: 다음).
   /// null 이면 스와이프가 비활성된다.
@@ -76,13 +50,6 @@ class ScheduleCalendar extends StatefulWidget {
 
   /// 캘린더 시작 요일 설정. 요일 헤더·월간 그리드에 그대로 전달한다.
   final CalendarWeekStart weekStart;
-
-  /// 스와이프 진행률을 밖으로 알리는 통로.
-  ///
-  /// 페이지가 스크롤되는 동안 매 프레임 갱신된다. 헤더가 이걸 구독해
-  /// [CalendarMonthLabel] 로 월 라벨을 그리면, 라벨이 그리드와 정확히 같은
-  /// 프레임·같은 진행률로 움직인다. null 이면 캘린더는 그리드만 그린다.
-  final ValueNotifier<CalendarScrollProgress>? scrollProgress;
 
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
@@ -122,29 +89,6 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
   bool _programmaticScroll = false;
 
   @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_publishProgress);
-    // 첫 프레임엔 컨트롤러가 아직 뷰포트에 안 붙어 page 가 null 이다.
-    // 정착 상태(page 0)를 먼저 알려 헤더가 빈 라벨을 그리지 않게 한다.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _publishProgress());
-  }
-
-  /// 현재 스크롤 위치를 [ScheduleCalendar.scrollProgress] 로 밀어낸다.
-  void _publishProgress() {
-    final notifier = widget.scrollProgress;
-    if (notifier == null || !mounted) return;
-    final position =
-        _controller.hasClients && _controller.position.haveDimensions
-        ? (_controller.page ?? _initialPage.toDouble())
-        : _initialPage.toDouble();
-    notifier.value = CalendarScrollProgress(
-      month: _baseMonth,
-      page: position - _initialPage,
-    );
-  }
-
-  @override
   void didUpdateWidget(ScheduleCalendar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.month == oldWidget.month) return;
@@ -156,7 +100,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     }
 
     // 외부(날짜 피커·필터 초기화 등)에서 월이 바뀐 경우. 페이지를 새 달로
-    // 옮겨, 그리드와 라벨이 같은 곡선으로 함께 이동하게 한다.
+    // 옮겨, 그리드가 같은 곡선으로 함께 이동하게 한다.
     _pendingMonth = null;
     final target = widget.month;
     final delta = _monthDelta(_baseMonth, target);
@@ -185,9 +129,6 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
       _controller.jumpToPage(_initialPage);
       _programmaticScroll = false;
     }
-    // 인덱스가 이미 가운데면 jumpToPage 가 리스너를 울리지 않는다. 그래도
-    // 기준 월은 바뀌었으니 진행률은 직접 다시 알린다.
-    _publishProgress();
   }
 
   void _onPageChanged(int page) {
@@ -199,10 +140,33 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     final month = _monthAt(delta);
     _pendingMonth = month;
     widget.onMonthShift?.call(delta);
-    // 페이지가 정착한 뒤 기준을 옮겨 인덱스를 다시 가운데로 되돌린다.
-    // 프레임 중간에 jumpToPage 를 부르면 스크롤 애니메이션과 충돌하므로
-    // 다음 프레임으로 미룬다.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(month));
+    // [onPageChanged] 는 목표 페이지가 '정해진' 시점에 불린다 — 손을 뗀 뒤
+    // 스프링이 그 페이지까지 미끄러져 들어가는 애니메이션은 아직 진행 중일
+    // 수 있다. 그 상태에서 바로 jumpToPage 로 되돌리면 진행 중이던 슬라이드가
+    // 중간에 끊기고 다음 페이지가 뚝 나타난다. 실제로 스크롤이 멈출 때까지
+    // 기다렸다가 되돌려야 스프링 애니메이션이 끝까지 재생된다.
+    _recenterWhenIdle(month);
+  }
+
+  /// [_controller] 의 스크롤이 실제로 멈춘 뒤 [_recenter] 를 실행한다.
+  /// 이미 멈춰 있으면(드문 경우) 다음 프레임에 바로 실행한다.
+  void _recenterWhenIdle(DateTime month) {
+    if (!_controller.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(month));
+      return;
+    }
+    final position = _controller.position;
+    if (!position.isScrollingNotifier.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(month));
+      return;
+    }
+    void listener() {
+      if (position.isScrollingNotifier.value) return;
+      position.isScrollingNotifier.removeListener(listener);
+      _recenter(month);
+    }
+
+    position.isScrollingNotifier.addListener(listener);
   }
 
   /// 기준 월에서 [delta] 개월 떨어진 달. DateTime 생성자가 12월 초과·0 이하
@@ -216,7 +180,6 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
 
   @override
   void dispose() {
-    _controller.removeListener(_publishProgress);
     _controller.dispose();
     super.dispose();
   }
@@ -226,13 +189,22 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
   /// 끝나면 경기 칩이 채워진다.
   Widget _buildPage(int delta, double scale) {
     final month = _monthAt(delta);
-    final matchesByDay = delta == 0 ? widget.matchesByDay : null;
+    // 부모가 실제로 표시하라고 내려준 달인지로 판단한다. delta == 0(즉
+    // _baseMonth) 이 아니라 이 값을 써야 하는 이유: 스와이프로 페이지가
+    // 넘어간 직후엔 onMonthShift 로 부모가 이미 새 달을 데이터로 내려주지만,
+    // _baseMonth 자체는 스크롤 애니메이션이 다 끝나야(비동기) 새 달로
+    // 갱신된다. 그 사이 프레임에서 delta == 0 으로 비교하면 사용자가 지금
+    // 보고 있는(방금 넘어온) 페이지가 옛 _baseMonth 기준 delta 0이 아니게
+    // 되어, 로딩 중인데도 스켈레톤이 전혀 뜨지 않는다.
+    final isWidgetMonth = month == widget.month;
+    final matchesByDay = isWidgetMonth ? widget.matchesByDay : null;
     return CalendarMonthGrid(
       month: month,
       scale: scale,
       weekStart: widget.weekStart,
       selectedDate: widget.selectedDate,
       onDateTap: widget.onDateTap,
+      isLoading: isWidgetMonth && widget.isLoading,
       matchesOf: (date) {
         if (matchesByDay == null || date.month != month.month) return const [];
         return matchesByDay[date.day] ?? const [];

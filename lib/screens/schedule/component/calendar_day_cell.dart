@@ -17,6 +17,7 @@ class CalendarDayCell extends StatelessWidget {
     required this.isSelected,
     required this.scale,
     this.onTap,
+    this.isLoading = false,
   });
 
   final DateTime date;
@@ -24,6 +25,11 @@ class CalendarDayCell extends StatelessWidget {
   final bool showRightBorder;
   final bool showTopBorder;
   final bool isToday;
+
+  /// 이 칸의 경기 데이터가 아직 조회 중인지. true 면 칩 자리에 펄스
+  /// 스켈레톤을 보여준다 — [matches] 가 비어 있어도 실제로 없는 것과
+  /// 아직 모르는 것을 구분해야 한다.
+  final bool isLoading;
 
   /// 날짜 피커에서 고른 날짜인지. true 면 칸 배경을 강조한다.
   final bool isSelected;
@@ -73,7 +79,11 @@ class CalendarDayCell extends StatelessWidget {
           ),
           // 경기 칩 세로 스택 — 남은 높이 안에서, 넘치면 dots.
           Expanded(
-            child: CalendarMatchChipStack(matches: matches, scale: scale),
+            child: CalendarMatchChipStack(
+              matches: matches,
+              scale: scale,
+              isLoading: isLoading,
+            ),
           ),
         ],
       ),

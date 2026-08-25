@@ -17,7 +17,6 @@ import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
 import '../subscription/subscription_screen.dart';
-import 'component/calendar_month_label.dart';
 import 'component/filter_sheet.dart';
 import '../../util/home_widget_service.dart';
 import 'component/month_picker_sheet.dart';
@@ -71,14 +70,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   late final ScheduleViewModel _viewModel = ScheduleViewModel(
     initialMonth: widget.initialMonth,
   );
-
-  /// 캘린더 좌우 스와이프 진행률. 캘린더가 매 프레임 갱신하고, 헤더의 월
-  /// 라벨이 이걸 구독한다 — 라벨이 그리드와 같은 프레임에 같은 진행률로
-  /// 움직여야 "날짜만 먼저 바뀌는" 어긋남이 생기지 않는다.
-  late final ValueNotifier<CalendarScrollProgress> _calendarProgress =
-      ValueNotifier(
-        CalendarScrollProgress(month: _viewModel.displayMonth, page: 0),
-      );
 
   @override
   void initState() {
@@ -149,7 +140,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       _activeScheduleScreen = null;
     }
     _viewModel.dispose();
-    _calendarProgress.dispose();
     super.dispose();
   }
 
@@ -186,20 +176,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   /// 필터 모달이 떠 있는지. 같은 딥링크가 연달아 와도 두 장 쌓이지 않게 한다.
   bool _filterSheetOpen = false;
-
-  /// 헤더 라벨 진행률을 ViewModel 의 현재 월에 맞춘다. 캘린더가 화면에
-  /// 없을 때(스켈레톤·에러) 쓰인다. build 중이므로 통지는 다음 프레임으로
-  /// 미룬다 — 빌드 도중 리스너를 깨우면 setState 충돌이 난다.
-  void _syncProgressToViewModel() {
-    final synced = CalendarScrollProgress(
-      month: _viewModel.displayMonth,
-      page: 0,
-    );
-    if (_calendarProgress.value == synced) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _calendarProgress.value = synced;
-    });
-  }
 
   /// 백그라운드로 갔다 돌아왔을 때 다시 불러온다.
   ///
@@ -310,33 +286,36 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  /// 캘린더 영역. 아직 데이터가 하나도 없는 상태(최초 진입·재시도 전)에서
-  /// 로딩 중이면 스켈레톤, 조회 실패면 안내+재시도를 보여준다. 그 외(성공해서
-  /// 데이터가 있거나, 성공했지만 그 달에 경기가 없는 경우)엔 캘린더 그대로.
+  /// 캘린더 영역. 앱을 켜고 나서 캘린더 조회가 한 번도 성공한 적 없는
+  /// 상태(최초 진입·재시도 전)에서만 로딩 스켈레톤·에러 안내를 보여준다.
+  /// 그 외(스와이프로 다른 달로 넘어갔지만 아직 그 달 응답을 못 받은 경우
+  /// 포함)엔 항상 그리드부터 그린다 — 날짜 칸은 API 응답과 무관하게 그릴 수
+  /// 있으니, 응답을 기다리는 동안 그리드를 스켈레톤으로 가릴 이유가 없다.
+  /// 경기 칩만 응답이 오는 대로 채워진다.
   Widget _buildCalendarArea(
     BuildContext context,
     Map<int, List<CalendarMatch>> matchesByDay,
     double scale,
   ) {
-    if (_viewModel.matchesByDay.isEmpty) {
-      if (_viewModel.isLoading || _viewModel.error != null) {
-        // 캘린더가 화면에서 빠진 동안은 진행률을 갱신해 줄 주체가 없다.
-        // 그 사이 월이 바뀌면(필터 초기화 등) 헤더 라벨이 옛 달에 멈추므로
-        // 여기서 직접 맞춰 준다.
-        _syncProgressToViewModel();
-        if (_viewModel.isLoading) {
-          return ScheduleCalendarSkeleton(
-            month: _viewModel.displayMonth,
-            scale: scale,
-            weekStart: _viewModel.weekStart,
-          );
-        }
+    if (!_viewModel.hasCalendarLoadedOnce) {
+      if (_viewModel.isLoading) {
+        return ScheduleCalendarSkeleton(
+          month: _viewModel.displayMonth,
+          scale: scale,
+          weekStart: _viewModel.weekStart,
+        );
+      }
+      if (_viewModel.error != null) {
         return LoadError(
           message: '${_viewModel.error}',
           onRetry: _viewModel.loadCalendar,
         );
       }
     }
+    // matchesByDayMonth 가 displayMonth 와 다르면(스와이프 직후, 아직 그
+    // 달 응답 전) 신선한 데이터가 없는 것 — 그 상태에서 로딩 중이면 칸마다
+    // '경기 없음'이 아니라 '아직 모름'으로 펄스 스켈레톤을 보여준다.
+    final matchesFresh = _viewModel.matchesByDayMonth == _viewModel.displayMonth;
     return ScheduleCalendar(
       month: _viewModel.displayMonth,
       matchesByDay: matchesByDay,
@@ -344,7 +323,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       selectedDate: _viewModel.selectedDate,
       onDateTap: _openDay,
       weekStart: _viewModel.weekStart,
-      scrollProgress: _calendarProgress,
+      isLoading: !matchesFresh && _viewModel.isLoading,
     );
   }
 
@@ -377,12 +356,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               listenable: _viewModel,
               builder: (context, _) {
                 // ViewModel 의 캘린더 경기 → 칸 칩용 (home, away) 변환.
+                //
+                // matchesByDay 는 이전 달 조회 응답을 들고 있을 수 있다(스와이프로
+                // displayMonth 는 즉시 바뀌지만 새 조회는 아직 진행 중인 구간).
+                // 그 달이 아니면 넘기지 않는다 — 안 그러면 같은 day 값의 칩이
+                // 잘못된 달의 날짜 칸에 잠깐 새어 나간다.
+                final matchesFresh =
+                    _viewModel.matchesByDayMonth == _viewModel.displayMonth;
                 final matchesByDay = <int, List<CalendarMatch>>{
-                  for (final entry in _viewModel.matchesByDay.entries)
-                    entry.key: [
-                      for (final m in entry.value)
-                        (home: m.blueTeamCode, away: m.redTeamCode),
-                    ],
+                  if (matchesFresh)
+                    for (final entry in _viewModel.matchesByDay.entries)
+                      entry.key: [
+                        for (final m in entry.value)
+                          (home: m.blueTeamCode, away: m.redTeamCode),
+                      ],
                 };
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -390,15 +377,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     const SizedBox(height: 12),
                     ScheduleHeader(
                       monthLabel: _viewModel.monthLabel,
-                      // 캘린더 스와이프 진행률에 물린 라벨 — 그리드와 같은
-                      // 프레임에 같은 진행률로 움직인다.
-                      monthLabelWidget: ValueListenableBuilder(
-                        valueListenable: _calendarProgress,
-                        builder: (context, progress, _) => CalendarMonthLabel(
-                          progress: progress,
-                          scale: scale,
-                        ),
-                      ),
                       onMonthTap: _openMonthPicker,
                       onFilterTap: _openFilter,
                       hasActiveFilter: _viewModel.hasActiveFilter,
