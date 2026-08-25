@@ -154,7 +154,8 @@ void main() {
     );
 
     final skeleton = measureSkeleton(tester);
-    expect(skeleton.rows, 5);
+    // 그리드와 같은 고정 행 수 — 달마다 달라지지 않는다.
+    expect(skeleton.rows, 6);
     expect(
       skeleton.rowHeight * skeleton.rows,
       closeTo(skeleton.bottom - skeleton.top, 0.5),
@@ -167,9 +168,8 @@ void main() {
     );
   });
 
-  testWidgets('시작 요일이 일요일이면 그 기준 주 수로 그린다', (tester) async {
+  testWidgets('시작 요일이 일요일이어도 그리드와 같은 행 수로 그린다', (tester) async {
     const height = 600.0;
-    // 2026.09 는 월요일 시작이면 5주, 일요일 시작이면 9/1(화)이 앞으로 밀려 6주.
     await pumpChild(
       tester,
       ScheduleCalendarSkeleton(

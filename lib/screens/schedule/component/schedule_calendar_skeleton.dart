@@ -59,7 +59,8 @@ class _ScheduleCalendarSkeletonState extends State<ScheduleCalendarSkeleton>
     final scale = widget.scale;
     const side = BorderSide(color: AppColors.narText4, width: 0.5);
     // 실제 그리드와 같은 계산 — 로딩이 끝나도 줄 수·칸 높이가 그대로다.
-    final weekCount = widget.weekStart.weekCount(widget.month);
+    // 실제 그리드와 같은 고정 행 수 — 로딩 전후로 칸 높이가 바뀌지 않는다.
+    const weekCount = CalendarMonthGrid.gridWeeks;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8 * scale),

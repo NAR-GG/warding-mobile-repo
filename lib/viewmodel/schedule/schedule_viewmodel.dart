@@ -176,9 +176,23 @@ class ScheduleViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 월 → 그 달의 일(day) → 칸에 표시할 경기 칩 목록.
+  ///
+  /// 표시 월만 들고 있으면 스와이프 중 나란히 보이는 이웃 달이 빈 그리드로
+  /// 나온다. 옆 달까지 미리 채워 두면 전환 중에도 칩이 끊기지 않는다.
+  /// 필터가 바뀌면 내용이 통째로 달라지므로 전부 버린다([_clearCalendarCache]).
+  final Map<DateTime, Map<int, List<CalendarMatchBrief>>> _calendarByMonth = {};
+
   /// 현재 월의 경기 캘린더 — 일(day) → 그 날 칸에 표시할 경기 칩 목록.
-  Map<int, List<CalendarMatchBrief>> _matchesByDay = const {};
-  Map<int, List<CalendarMatchBrief>> get matchesByDay => _matchesByDay;
+  Map<int, List<CalendarMatchBrief>> get matchesByDay =>
+      matchesOfMonth(_displayMonth);
+
+  /// [month] 의 일별 칩. 아직 안 받았으면 빈 맵.
+  Map<int, List<CalendarMatchBrief>> matchesOfMonth(DateTime month) =>
+      _calendarByMonth[_monthOf(month)] ?? const {};
+
+  /// 필터가 바뀌어 기존 월별 데이터가 모두 무효해졌을 때.
+  void _clearCalendarCache() => _calendarByMonth.clear();
 
   /// 온보딩에서 고른 선호 팀. 없으면(건너뛰기 등) null.
   Team? _preferredTeam;
@@ -246,6 +260,7 @@ class ScheduleViewModel extends ChangeNotifier {
     }
     _teamSelected = !_teamSelected;
     _teamIds = _teamSelected ? [preferredId] : const [];
+    _clearCalendarCache();
     _persistFilter();
     _updateWidgetFilterState();
     _notify();
@@ -270,6 +285,7 @@ class ScheduleViewModel extends ChangeNotifier {
       _displayMonth = _monthOf(DateTime.now());
       _selectedDate = null;
     }
+    _clearCalendarCache();
     _persistFilter();
     _updateWidgetFilterState();
     _notify();
@@ -326,16 +342,17 @@ class ScheduleViewModel extends ChangeNotifier {
         debugPrint('[Schedule] loadCalendar#$requestId 결과 폐기 (더 최신 조회 있음)');
         return;
       }
-      _matchesByDay = {
+      final byDay = {
         for (final day in days) day.date.day: day.matches,
       };
-      final total =
-          _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
-      debugPrint('[Schedule] 완료#$requestId: ${_matchesByDay.length}일, 총 $total경기');
+      _calendarByMonth[month] = byDay;
+      _pruneCalendarCache();
+      final total = byDay.values.fold<int>(0, (sum, l) => sum + l.length);
+      debugPrint('[Schedule] 완료#$requestId: ${byDay.length}일, 총 $total경기');
       // 홈 화면 위젯에 최신 캘린더 데이터 전달 (필터 포함)
       unawaited(HomeWidgetService.updateCalendar(
         month: month,
-        matchesByDay: _matchesByDay,
+        matchesByDay: byDay,
         leagues: leagues,
         teamIds: teamIds,
       ));
@@ -345,7 +362,7 @@ class ScheduleViewModel extends ChangeNotifier {
         return;
       }
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';
-      _matchesByDay = const {};
+      _calendarByMonth.remove(month);
       debugPrint('[Schedule] loadCalendar#$requestId 에러: $e');
       debugPrint('$st');
     } finally {
@@ -356,6 +373,56 @@ class ScheduleViewModel extends ChangeNotifier {
         _notify();
       }
     }
+
+    // 표시 월을 그린 다음 이웃 달을 채운다. 스와이프해서 나란히 보이는
+    // 순간에 옆 페이지가 빈 그리드로 나오지 않게 하려는 것뿐이라, 로딩
+    // 표시나 에러 상태는 건드리지 않는다.
+    if (requestId == _calendarRequestId) {
+      unawaited(_prefetchNeighbourMonths(month, leagues, teamIds));
+    }
+  }
+
+  /// [month] 의 앞뒤 달을 미리 받아 [_calendarByMonth] 에 채운다.
+  ///
+  /// 리포지토리가 URL 단위로 캐시하므로 이미 받은 달은 네트워크를 타지 않는다.
+  /// 실패는 무시한다 — 스와이프해서 실제로 그 달에 들어가면 다시 조회한다.
+  Future<void> _prefetchNeighbourMonths(
+    DateTime month,
+    List<String> leagues,
+    List<int> teamIds,
+  ) async {
+    for (final delta in const [1, -1]) {
+      final target = DateTime(month.year, month.month + delta);
+      if (_calendarByMonth.containsKey(target)) continue;
+      try {
+        final days = await _repository.fetchCalendar(
+          target,
+          leagues: leagues,
+          teamIds: teamIds,
+        );
+        // 기다리는 동안 필터가 바뀌었으면 이 결과는 다른 조건의 것이다.
+        if (!identical(leagues, _leagues) || !identical(teamIds, _teamIds)) {
+          return;
+        }
+        _calendarByMonth[target] = {
+          for (final day in days) day.date.day: day.matches,
+        };
+        _pruneCalendarCache();
+        _notify();
+      } catch (e) {
+        debugPrint('[Schedule] 이웃 달 프리페치 실패 ($target): $e');
+      }
+    }
+  }
+
+  /// 표시 월에서 2개월 넘게 떨어진 달은 버린다. 계속 스와이프해도 월별
+  /// 데이터가 무한히 쌓이지 않게 하는 상한이다.
+  void _pruneCalendarCache() {
+    _calendarByMonth.removeWhere((month, _) {
+      final delta = (month.year - _displayMonth.year) * 12 +
+          (month.month - _displayMonth.month);
+      return delta.abs() > 2;
+    });
   }
 
   /// 응원 팀을 불러온다.

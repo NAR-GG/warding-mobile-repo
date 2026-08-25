@@ -9,10 +9,17 @@ import 'package:warding/screens/schedule/component/schedule_header.dart';
 /// 부모(ScheduleScreen)와 같은 방식으로 캘린더를 감싼다 — onMonthShift 로
 /// 올라온 이동량을 month 에 반영해 다시 내려준다.
 class _Host extends StatefulWidget {
-  const _Host({required this.initialMonth, required this.progress});
+  const _Host({
+    required this.initialMonth,
+    required this.progress,
+    this.matchesOfMonth,
+  });
 
   final DateTime initialMonth;
   final ValueNotifier<CalendarScrollProgress> progress;
+
+  /// 달별 칩 데이터. null 이면 칩 없이 날짜 칸만 그린다.
+  final Map<int, List<CalendarMatch>> Function(DateTime month)? matchesOfMonth;
 
   @override
   State<_Host> createState() => _HostState();
@@ -42,7 +49,7 @@ class _HostState extends State<_Host> {
           height: 600,
           child: ScheduleCalendar(
             month: month,
-            matchesByDay: const {},
+            matchesOfMonth: widget.matchesOfMonth ?? (_) => const {},
             scrollProgress: widget.progress,
             onMonthShift: (delta) {
               shifts.add(delta);
@@ -179,7 +186,7 @@ void main() {
             height: 600,
             child: ScheduleCalendar(
               month: DateTime(2026, 8),
-              matchesByDay: const {},
+              matchesOfMonth: (_) => const {},
               scrollProgress: progress,
             ),
           ),
@@ -192,6 +199,90 @@ void main() {
 
     expect(progress.value.month, DateTime(2026, 8));
     expect(progress.value.page, 0);
+  });
+
+  testWidgets('손을 뗀 뒤 남은 거리도 프레임마다 조금씩 채운다', (tester) async {
+    final host = await pump(tester, DateTime(2026, 8));
+
+    // 기준 달(2026.08)에서 몇 달 떨어져 있는지 — 정착하면서 기준 월 자체가
+    // 옮겨지므로, 진행률만 보면 1 에서 0 으로 되돌아간 것처럼 보인다.
+    double absolutePage() {
+      final value = progress.value;
+      final months =
+          (value.month.year - 2026) * 12 + (value.month.month - 8);
+      return months + value.page;
+    }
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PageView)),
+    );
+    // 페이지 폭(375)의 절반을 살짝 넘긴 200px 까지만 끌고 손을 뗀다.
+    // 남은 절반 가까이를 정착 애니메이션이 채워야 한다.
+    for (var i = 0; i < 5; i++) {
+      await gesture.moveBy(const Offset(-40, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+
+    var previous = absolutePage();
+    expect(previous, greaterThan(0.5));
+    expect(previous, lessThan(0.6));
+
+    // 예전엔 인덱스가 넘어간 다음 프레임에 곧바로 recenter 해서, 남은
+    // 0.45 달치가 한 프레임에 순간이동했다(= 끝에서 확 가속). 한 프레임당
+    // 이동량에 상한을 걸어 그 점프를 막는다.
+    var frames = 0;
+    while (previous < 0.999 && frames < 120) {
+      await tester.pump(const Duration(milliseconds: 16));
+      final current = absolutePage();
+      expect(
+        current - previous,
+        lessThan(0.25),
+        reason: '$frames 번째 프레임에서 $previous → $current 로 건너뛰었다',
+      );
+      previous = current;
+      frames++;
+    }
+
+    await tester.pumpAndSettle();
+    expect(host.month, DateTime(2026, 9));
+    expect(host.shifts, [1]);
+  });
+
+  testWidgets('스와이프 중에는 나가는 달·들어오는 달 칩이 함께 보인다', (tester) async {
+    // 달마다 다른 팀 코드를 15일 칸에 하나씩 — 어느 페이지가 그려졌는지
+    // 칩 텍스트로 구분한다.
+    await tester.pumpWidget(
+      _Host(
+        initialMonth: DateTime(2026, 8),
+        progress: progress,
+        matchesOfMonth: (month) => {
+          15: [(home: 'M${month.month}', away: 'X')],
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('M8'), findsOneWidget);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(PageView)),
+    );
+    // 절반 못 미치게만 끌어 두 페이지가 함께 보이는 상태를 만든다.
+    for (var i = 0; i < 3; i++) {
+      await gesture.moveBy(const Offset(-40, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    // 예전엔 표시 월 하나만 받아서, 들어오는 9월 페이지가 빈 그리드였다.
+    expect(find.text('M8'), findsOneWidget, reason: '나가는 달');
+    expect(find.text('M9'), findsOneWidget, reason: '들어오는 달');
+
+    // 절반을 안 넘겼으니 제자리로 돌아온다 — 8월 칩만 남는다.
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('M8'), findsOneWidget);
+    expect(find.text('M9'), findsNothing);
   });
 
   _integrationTests();
@@ -242,7 +333,7 @@ class _HostWithLabelState extends State<_HostWithLabel> {
             Expanded(
               child: ScheduleCalendar(
                 month: month,
-                matchesByDay: const {},
+                matchesOfMonth: (_) => const {},
                 scrollProgress: progress,
                 onMonthShift: (delta) => setState(
                   () => month = DateTime(month.year, month.month + delta),
