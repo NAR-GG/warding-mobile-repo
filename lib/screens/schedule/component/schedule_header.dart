@@ -21,6 +21,7 @@ class ScheduleHeader extends StatelessWidget {
     this.summary,
     this.onMonthTap,
     this.onFilterTap,
+    this.hasActiveFilter = false,
     this.preferredTeam,
     this.teamSelected = false,
     this.onTeamTap,
@@ -53,6 +54,10 @@ class ScheduleHeader extends StatelessWidget {
 
   /// 필터 버튼 탭 콜백. null 이면 비활성.
   final VoidCallback? onFilterTap;
+
+  /// 리그·팀 필터가 '전체'가 아닌 값으로 걸려 있는지. true 면 응원팀
+  /// 아이콘과 같은 2px 테두리를 필터 버튼에 두른다.
+  final bool hasActiveFilter;
 
   /// 온보딩에서 고른 선호 팀. null 이면(건너뛰기 등) 팀 아이콘을 숨긴다.
   final Team? preferredTeam;
@@ -123,6 +128,7 @@ class ScheduleHeader extends StatelessWidget {
             onTap: onFilterTap,
             child: _CircleSlot(
               scale: scale,
+              bordered: hasActiveFilter,
               child: SvgPicture.asset(
                 'assets/icons/filter.svg',
                 width: 24 * scale,

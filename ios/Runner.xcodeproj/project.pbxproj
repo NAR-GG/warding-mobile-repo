@@ -7,9 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E6C6FB31480BBB4DC1F4E84 /* ShiftMonthIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0DD90DE7D67C07768D7122 /* ShiftMonthIntent.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		311F3E5EE690C8D589FC843A /* TodayMatchesFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CAA7508E1105035BBC519B0 /* TodayMatchesFetcher.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		4887DEE4D7C9F0D8BAAB1754 /* ToggleTeamFilterIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B37D521AC30A6093604359 /* ToggleTeamFilterIntent.swift */; };
 		4AAA8ACE95C9D3C4E2BD9230 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E16C81A72E909F1CF242EAEC /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		563D45342FF5F72B0087A938 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 563D45332FF5F72B0087A938 /* GoogleService-Info.plist */; };
 		565EF7923016ECCF00FEACD0 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 565EF7733016E5FC00FEACD0 /* WidgetKit.framework */; };
@@ -17,6 +20,7 @@
 		565EF79E3016ECD100FEACD0 /* WardingScheduleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 565EF7913016ECCF00FEACD0 /* WardingScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5B57AD57FEAC71D479207362 /* MatchLiveImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66018C684F06F8C4356E20BE /* MatchLiveImageStore.swift */; };
 		61A9700011B8840082DA543A /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E16C81A72E909F1CF242EAEC /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		6D4C28E7944937214B839A0D /* TodayMatchesFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CAA7508E1105035BBC519B0 /* TodayMatchesFetcher.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -25,6 +29,8 @@
 		98C00E53591E07719FE8ECA9 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 105E88755751A4F076394819 /* Pods_RunnerTests.framework */; };
 		9BA4BF1F19DFD6012637740C /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1D8CFD901D7691F5F8A8BC7 /* Pods_Runner.framework */; };
 		BBDD075BBDDDBAC3BF79008F /* MatchLiveImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66018C684F06F8C4356E20BE /* MatchLiveImageStore.swift */; };
+		CD753DCE448269DB7C54D73B /* ToggleTeamFilterIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B37D521AC30A6093604359 /* ToggleTeamFilterIntent.swift */; };
+		DB3D026F8C5A06283FDAD86F /* ShiftMonthIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0DD90DE7D67C07768D7122 /* ShiftMonthIntent.swift */; };
 		E662D57E2F45CEF3EB2D55A9 /* MatchLiveAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77E837BAB9B3F07073E8804 /* MatchLiveAttributes.swift */; };
 		EE6A798314189AEADF2323A4 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D9E22B42D87387617C9F69 /* LiveActivityPlugin.swift */; };
 		FF410D2B661CFF253E6F1C7A /* MatchLiveAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77E837BAB9B3F07073E8804 /* MatchLiveAttributes.swift */; };
@@ -76,8 +82,10 @@
 		105E88755751A4F076394819 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		1CAA7508E1105035BBC519B0 /* TodayMatchesFetcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TodayMatchesFetcher.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		38B37D521AC30A6093604359 /* ToggleTeamFilterIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ToggleTeamFilterIntent.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		404B79081E2C0B456A71368C /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		563D45332FF5F72B0087A938 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -103,6 +111,7 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D6369A9F70DF4D552EC8A03 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		C77E837BAB9B3F07073E8804 /* MatchLiveAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MatchLiveAttributes.swift; sourceTree = "<group>"; };
+		DC0DD90DE7D67C07768D7122 /* ShiftMonthIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShiftMonthIntent.swift; sourceTree = "<group>"; };
 		DD6C9FDCE6B90EF0F6480C9E /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		E16C81A72E909F1CF242EAEC /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
 		F1D8CFD901D7691F5F8A8BC7 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -194,6 +203,9 @@
 			children = (
 				C77E837BAB9B3F07073E8804 /* MatchLiveAttributes.swift */,
 				66018C684F06F8C4356E20BE /* MatchLiveImageStore.swift */,
+				1CAA7508E1105035BBC519B0 /* TodayMatchesFetcher.swift */,
+				38B37D521AC30A6093604359 /* ToggleTeamFilterIntent.swift */,
+				DC0DD90DE7D67C07768D7122 /* ShiftMonthIntent.swift */,
 			);
 			name = Shared;
 			path = Shared;
@@ -546,6 +558,9 @@
 			files = (
 				E662D57E2F45CEF3EB2D55A9 /* MatchLiveAttributes.swift in Sources */,
 				BBDD075BBDDDBAC3BF79008F /* MatchLiveImageStore.swift in Sources */,
+				6D4C28E7944937214B839A0D /* TodayMatchesFetcher.swift in Sources */,
+				4887DEE4D7C9F0D8BAAB1754 /* ToggleTeamFilterIntent.swift in Sources */,
+				DB3D026F8C5A06283FDAD86F /* ShiftMonthIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,6 +574,9 @@
 				FF410D2B661CFF253E6F1C7A /* MatchLiveAttributes.swift in Sources */,
 				5B57AD57FEAC71D479207362 /* MatchLiveImageStore.swift in Sources */,
 				EE6A798314189AEADF2323A4 /* LiveActivityPlugin.swift in Sources */,
+				311F3E5EE690C8D589FC843A /* TodayMatchesFetcher.swift in Sources */,
+				CD753DCE448269DB7C54D73B /* ToggleTeamFilterIntent.swift in Sources */,
+				0E6C6FB31480BBB4DC1F4E84 /* ShiftMonthIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

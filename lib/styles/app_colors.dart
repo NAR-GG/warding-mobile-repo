@@ -213,4 +213,8 @@ class AppColors {
 
   /// 스포방지 토글 트랙 inset 그림자 — inset 0 2px 4px rgba(0,0,0,0.14).
   static const Color narSpoilerTrackShadow = Color(0x24000000);
+
+  // 커뮤니티 — 답글 펼치기·멘션처럼 누를 수 있는 텍스트.
+  // 다크 배경 위에서 narChipActive(#7048E8) 는 너무 어두워 글자로 못 쓴다.
+  static const Color narViolet3 = Color(0xFFB197FC); // mantine violet/3
 }

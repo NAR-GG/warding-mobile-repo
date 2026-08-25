@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.17+39
+version: 1.0.18+40
 
 environment:
   sdk: ^3.11.5
@@ -43,6 +43,9 @@ dependencies:
   url_launcher: ^6.3.1
   http: ^1.6.0
   flutter_secure_storage: ^10.2.0
+  # 필터 등 비민감 로컬 설정용. Keychain 은 잠금 중 읽기 실패(-25308)·접근성
+  # 마이그레이션 같은 함정이 있어, 못 읽으면 '값 없음'으로 보여 설정이 풀렸다.
+  shared_preferences: ^2.3.2
   kakao_flutter_sdk_user: ^2.0.0+1
   flutter_naver_login: ^2.1.1
   permission_handler: ^12.0.1
@@ -63,6 +66,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.4
+  # 테스트에서 read 만 실패시키는 저장소를 흉내 내려면 플랫폼 인터페이스를
+  # 직접 서브클래싱해야 한다(flutter_secure_storage 가 전이 의존으로만 들여옴).
+  flutter_secure_storage_platform_interface: ^2.0.1
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your

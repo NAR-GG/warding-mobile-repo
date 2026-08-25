@@ -22,6 +22,7 @@ import '../../util/match_detail_router.dart';
 import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_layout.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
+import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -604,6 +605,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.community) {
+      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
     } else if (tab == AppNavTab.mypage) {
       Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
     }

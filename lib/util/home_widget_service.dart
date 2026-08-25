@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:home_widget/home_widget.dart';
@@ -77,6 +78,10 @@ class HomeWidgetService {
       final json = jsonEncode({'month': monthStr, 'days': daysJson});
       await HomeWidget.saveWidgetData<String>('calendar_data', json);
 
+      // iOS 위젯이 앱 없이 오늘 경기를 직접 받아올 때 같은 필터를 쓰도록
+      // 공유 저장소에 남긴다 (ios/Shared/TodayMatchesFetcher.swift).
+      await _saveWidgetFilters(leagues: leagues, teamIds: teamIds);
+
       // 오늘 경기: 상세 API(시간 포함)로 가져와서 위젯에 저장
       final now = DateTime.now();
       if (now.year == month.year && now.month == month.month) {
@@ -148,13 +153,47 @@ class HomeWidgetService {
     }
   }
 
+  /// 위젯이 스스로 조회할 때 쓸 리그·팀 필터를 공유 저장소에 남긴다.
+  ///
+  /// iOS 위젯은 앱을 거치지 않고 직접 오늘 경기를 받아오는데
+  /// (`ios/Shared/TodayMatchesFetcher.swift`), 그때 앱 화면과 같은 필터를 써야
+  /// 위젯만 다른 경기를 보여주는 일이 없다.
+  ///
+  /// 온보딩 직후처럼 캘린더 갱신([updateCalendar])이 아직 한 번도 안 돈
+  /// 상태에서도 필터가 남아 있도록, 응원팀이 정해지는 지점에서도 부른다
+  /// ([updatePreferredTeam]).
+  ///
+  /// `home_widget` 은 문자열·숫자·불린만 저장하므로 JSON 문자열로 넣는다.
+  static Future<void> _saveWidgetFilters({
+    required List<String> leagues,
+    required List<int> teamIds,
+  }) async {
+    try {
+      await HomeWidget.saveWidgetData<String>(
+        'widget_leagues',
+        jsonEncode(leagues),
+      );
+      await HomeWidget.saveWidgetData<String>(
+        'widget_team_ids',
+        jsonEncode(teamIds),
+      );
+    } catch (e) {
+      debugPrint('[HomeWidget] 위젯 필터 저장 실패: $e');
+    }
+  }
+
   /// 오늘 경기 리스트(시간·대진·상태)를 위젯에 전달한다.
+  ///
+  /// 조회에 실패해도 오늘 날짜로 빈 목록을 저장한다. 그냥 리턴하면 어제
+  /// 저장분이 남는데, 위젯은 저장된 `date` 로 오늘 것인지를 판정하므로
+  /// (Android `ScheduleWidgetProvider.loadTodayData`) 갱신이 계속 실패하는 동안
+  /// "불러오는 중"에서 벗어나지 못한다.
   static Future<void> _updateTodayMatches({
     List<String> leagues = const ['ALL'],
     List<int> teamIds = const [],
   }) async {
+    final now = DateTime.now();
     try {
-      final now = DateTime.now();
       // ALL이면 상세 API도 league=ALL 하나로 호출한다 (updateCalendar와 동일한 이유).
       final leaguesForDetail = leagues.contains('ALL')
           ? const ['ALL']
@@ -195,6 +234,7 @@ class HomeWidgetService {
       );
     } catch (e) {
       debugPrint('[HomeWidget] 오늘 경기 갱신 실패: $e');
+      await _saveTodayFromCalendar(now, const []);
     }
   }
 
@@ -331,6 +371,17 @@ class HomeWidgetService {
         'team_code',
         team.code,
       );
+      // 응원팀 ID 도 남긴다 — iOS 위젯이 앱 없이 조회할 때 팀 필터가 켜져
+      // 있으면(`team_selected`) 이 값을 쓴다. 온보딩 직후처럼 캘린더 갱신이
+      // 아직 안 돈 상태에서도 팀을 알 수 있어야 한다.
+      //
+      // `widget_team_ids`(실제 적용 필터)와는 다른 키다. 응원팀을 정해 둔 것과
+      // 팀 필터를 켠 것은 별개라, 여기서 적용 필터까지 건드리면 필터를 켠 적
+      // 없는 사용자에게 팀 경기만 보여주게 된다.
+      await HomeWidget.saveWidgetData<int>(
+        'preferred_team_id',
+        team.id,
+      );
 
       // 위젯 갱신 트리거 (잠금화면 포함)
       await HomeWidget.updateWidget(
@@ -373,15 +424,38 @@ class HomeWidgetService {
   static bool _splashReady = false;
   static String? _pendingWidgetUrl;
 
+  /// 위젯 버튼이 공유 저장소에 남긴 요청을 읽어 처리한다.
+  ///
+  /// 안드로이드 필터 버튼은 딥링크 대신 이 경로를 쓴다 — 앱을 여는 인텐트를
+  /// 캘린더와 똑같이 두어 태스크 재사용 동작을 맞추기 위해서다
+  /// (`WidgetActionReceiver` 주석 참고).
+  static Future<void> consumePendingAction() async {
+    try {
+      final action =
+          await HomeWidget.getWidgetData<String>('pending_widget_action');
+      if (action == null || action.isEmpty) return;
+      await HomeWidget.saveWidgetData<String>('pending_widget_action', '');
+      if (action == 'filter') {
+        debugPrint('[HomeWidget] 위젯 요청 처리: $action');
+        _handleWidgetUrl('warding://widget/filter', skipDuplicateCheck: true);
+      }
+    } catch (e) {
+      debugPrint('[HomeWidget] 위젯 요청 확인 실패: $e');
+    }
+  }
+
   /// 스플래시가 첫 화면 분기 내비게이션을 마친 직후 호출한다.
   /// 그 전에 도착해 보류해 둔 위젯 딥링크가 있으면 그 위에 push 한다.
   static void markSplashReady() {
     _splashReady = true;
+    _justPassedSplash = true;
     final pending = _pendingWidgetUrl;
     _pendingWidgetUrl = null;
     // 보류분은 아직 화면을 연 적이 없으므로 중복 필터를 건너뛴다. 채널이
     // 늦게 같은 URL 을 또 넘기면 그때 _lastHandledUrl 로 걸러진다.
     if (pending != null) _handleWidgetUrl(pending, skipDuplicateCheck: true);
+    // 위젯 버튼이 저장소에 남긴 요청(안드로이드 필터 버튼)도 함께 소비한다.
+    unawaited(consumePendingAction());
   }
 
   /// 마지막으로 처리한 URL과 그 시각. 같은 딥링크가 짧은 간격으로 두 번
@@ -397,6 +471,11 @@ class HomeWidgetService {
   static DateTime? _lastHandledAt;
   static const _duplicateWindow = Duration(seconds: 3);
 
+  /// 스플래시를 막 지난 직후인지. 콜드 스타트에서 같은 딥링크가 두 경로로
+  /// 도착하는 구간에서만 true 이고, 한 번 딥링크를 처리하면 내려간다.
+  /// 중복 필터를 이 구간으로 한정해, 앱이 떠 있는 동안의 재클릭은 통과시킨다.
+  static bool _justPassedSplash = false;
+
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
   static void _handleWidgetUrl(String urlStr, {bool skipDuplicateCheck = false}) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
@@ -410,8 +489,13 @@ class HomeWidgetService {
     //
     // [_splashReady] 는 한 번 true 가 되면 되돌아가지 않으므로, 스플래시를
     // 지난 뒤 도착하는 딥링크(백그라운드 복귀 등)는 그대로 통과한다.
-    if (!_splashReady) {
-      debugPrint('[HomeWidget] 스플래시 진행 중 — 딥링크 보류: $urlStr');
+    // [_splashReady] 는 static 이라 프로세스가 살아 있는 동안 유지된다. 그런데
+    // 위젯 백그라운드 갱신은 UI 없는 엔진에서 도는데, 그 엔진도 main() 을 거쳐
+    // 스플래시를 지나므로 플래그가 true 가 되어 버린다. 그 상태에서 딥링크가
+    // 통과하면 Navigator 에 실제 화면이 없어 아무 데도 못 간다(필터가 열리지
+    // 않던 원인). 화면이 실제로 붙어 있는지도 함께 본다.
+    if (!_splashReady || navigatorKey.currentState?.mounted != true) {
+      debugPrint('[HomeWidget] 화면 준비 전 — 딥링크 보류: $urlStr');
       _pendingWidgetUrl = urlStr;
       return;
     }
@@ -432,16 +516,28 @@ class HomeWidgetService {
     }
 
     // 보류분과 채널 전달이 겹쳐 같은 URL 이 두 번 오면 뒤엣것은 버린다.
+    //
+    // 단, 이 중복은 콜드 스타트에서만 생긴다 — 채널이 늦게 전달한 것과
+    // 스플래시가 [markSplashReady] 로 소비한 보류분이 겹치는 경우다. 앱이 이미
+    // 떠 있는 상태에서 같은 URL 이 또 오는 건 사용자가 위젯 버튼을 다시 누른
+    // 것이므로 막으면 안 된다.
     final at = _lastHandledAt;
+    final isColdStartWindow = at != null &&
+        DateTime.now().difference(at) < _duplicateWindow;
     if (!skipDuplicateCheck &&
+        _justPassedSplash &&
         _lastHandledUrl == urlStr &&
-        at != null &&
-        DateTime.now().difference(at) < _duplicateWindow) {
+        isColdStartWindow) {
       debugPrint('[HomeWidget] 같은 딥링크가 중복 도착해 무시: $urlStr');
       return;
     }
     _lastHandledUrl = urlStr;
     _lastHandledAt = DateTime.now();
+    // [_justPassedSplash] 는 여기서 내리지 않는다 — 보류분을 처리한 직후에
+    // 채널이 같은 URL 을 또 넘기는 것이 바로 걸러야 할 중복이다. 여기서 내리면
+    // 그 두 번째가 새 클릭으로 통과해, 첫 번째가 연 필터 위에 모달 없는 일정
+    // 화면이 다시 얹힌다. 플래그는 중복 창이 지나면 [isColdStartWindow] 가
+    // false 가 되면서 자연히 무력화된다.
 
     final action = uri.path.replaceAll('/', '');
 
@@ -466,14 +562,33 @@ class HomeWidgetService {
     final nav = navigatorKey.currentState;
     if (nav == null) return;
 
-    nav.push(
-      MaterialPageRoute(
-        builder: (_) => ScheduleScreen(
-          widgetAction: action == 'prev' || action == 'next' ? null : action,
-          initialMonth: targetMonth,
-        ),
-      ),
+    // 필터는 일정 화면이 이미 보이면 화면을 새로 만들지 않고 열라고 알리기만
+    // 한다. 라우트를 갈아끼우면 그 전환 도중에 모달을 열게 되어 모달이 곧바로
+    // 함께 걷힌다.
+    //
+    // 문제는 '보이지 않는' 경우다 — 경기 리스트 등 **다른 하단 탭**에 있으면
+    // 일정 화면 자체가 스택에 없어 [openScheduleFilterIfVisible] 이 false 를
+    // 돌려주는데, 예전엔 여기서 그냥 return 해 버려서 아무 일도 안 일어났다
+    // (요청은 [_filterRequestedBeforeReady] 로 남지만, 그걸 소비할 새
+    // ScheduleScreen 이 만들어질 계기 자체가 없다 — 하단 탭은 스택에 없던
+    // 화면을 되살리지 않는다). 이때는 아래 prev/next 와 같은 경로로 일정
+    // 화면을 만들어야 하고, 그 화면의 initState 가 남겨진 요청을 소비해
+    // 필터를 연다.
+    if (action == 'filter' && openScheduleFilterIfVisible()) {
+      return;
+    }
+
+    final route = MaterialPageRoute(
+      builder: (_) => ScheduleScreen(initialMonth: targetMonth),
     );
+
+    // 일정 화면이 스택에 없을 때만 새로 만든다. 첫 화면이면 교체하고,
+    // 아니면 그 위에 얹는다.
+    if (nav.canPop()) {
+      nav.push(route);
+    } else {
+      nav.pushReplacement(route);
+    }
   }
 
   /// Live Activity 딥링크로 경기 상세를 연다.
@@ -513,21 +628,28 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
-        leagues = (saved['leagues'] as List?)?.cast<String>() ?? ['ALL'];
-        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? [];
-        teamSelected = (saved['teamSelected'] as bool?) ?? false;
+      final json = saved.json;
+      if (json != null) {
+        leagues = (json['leagues'] as List?)?.cast<String>() ?? ['ALL'];
+        teamIds = (json['teamIds'] as List?)?.cast<int>() ?? [];
+        teamSelected = (json['teamSelected'] as bool?) ?? false;
       }
     } catch (e) {
       debugPrint('[HomeWidget] 필터 복원 실패: $e');
     }
 
     try {
-      final now = DateTime.now();
+      // 위젯이 보고 있는 달을 유지한다.
+      //
+      // 예전에는 무조건 DateTime.now() 로 받아 덮었는데, 그러면 위젯에서
+      // prev/next 로 다른 달을 보다가 앱을 켜는 순간 이번 달로 되돌아갔다
+      // (위젯의 월 이동은 앱을 열지 않고 위젯만 갱신하므로, 앱 시작 시 도는
+      // 이 갱신이 그 상태를 지워 버렸다).
+      final month = await _currentDisplayedMonth();
       // 저장된 필터를 그대로 보낸다('ALL' → 'LCK' 치환 제거). 스플래시가 미리
       // 받아 둔 것과 같은 주소가 되므로 앱을 켤 때 캘린더를 두 번 받지도 않는다.
       final days = await ScheduleRepository.instance.fetchCalendar(
-        now,
+        month,
         leagues: leagues,
         teamIds: teamIds.isNotEmpty ? teamIds : null,
       );
@@ -535,13 +657,28 @@ class HomeWidgetService {
         for (final day in days) day.date.day: day.matches,
       };
       await updateCalendar(
-        month: now,
+        month: month,
         matchesByDay: matchesByDay,
         leagues: leagues,
         teamIds: teamIds,
       );
     } catch (e) {
       debugPrint('[HomeWidget] 캘린더 갱신 실패: $e');
+      // 캘린더를 못 받아도 오늘 경기만은 따로 시도한다. 여기서 그냥 빠지면
+      // 어제 저장분이 남아 위젯이 계속 "불러오는 중"에 머문다.
+      try {
+        await _updateTodayMatches(leagues: leagues, teamIds: teamIds);
+        await HomeWidget.updateWidget(
+          androidName: _androidWidgetName,
+          iOSName: _iOSWidgetName,
+        );
+        await HomeWidget.updateWidget(
+          androidName: _androidSmallWidgetName,
+          iOSName: _iOSWidgetName,
+        );
+      } catch (e2) {
+        debugPrint('[HomeWidget] 오늘 경기 폴백도 실패: $e2');
+      }
     }
 
     // 필터 상태를 위젯에 전달
@@ -642,6 +779,13 @@ class HomeWidgetService {
 
   /// 위젯에 마지막으로 저장된 캘린더 데이터의 월(연/월)을 읽는다.
   /// 저장값이 없거나 파싱 실패 시 현재 실제 월로 폴백한다.
+  /// 위젯이 지금 보고 있는 달. 앱을 열 때 그 달로 맞추는 데 쓴다.
+  ///
+  /// 위젯의 prev/next 는 앱 UI 를 열지 않고 위젯만 갱신하므로, 위젯에서 7월로
+  /// 넘긴 뒤 앱을 열면 앱은 이번 달을 보여 서로 어긋난다. 진입 시 이 값으로
+  /// 맞춰 준다.
+  static Future<DateTime> widgetDisplayedMonth() => _currentDisplayedMonth();
+
   static Future<DateTime> _currentDisplayedMonth() async {
     try {
       final raw = await HomeWidget.getWidgetData<String>('calendar_data');
@@ -678,10 +822,11 @@ class HomeWidgetService {
     try {
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
+      final json = saved.json;
+      if (json != null) {
         savedLeagues =
-            (saved['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
-        savedTeamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+            (json['leagues'] as List?)?.cast<String>() ?? const ['ALL'];
+        savedTeamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
     } catch (e) {
       debugPrint('[HomeWidget] 저장된 필터 복원 실패: $e');
@@ -689,11 +834,17 @@ class HomeWidgetService {
 
     final leagues = hasFilter ? savedLeagues : const ['ALL'];
     var teamIds = hasFilter ? savedTeamIds : const <int>[];
-    if (teamSelected) {
-      final team = await _loadPreferredTeamForWidget();
-      if (team != null) {
-        teamIds = {...teamIds, team.id}.toList();
-      }
+
+    // 응원팀 토글은 자기 팀만 제어한다.
+    //
+    // 켜면 응원팀을 목록에 더하고, 끄면 응원팀을 목록에서 뺀다. 예전에는 켤
+    // 때만 더하고 끌 때는 아무것도 하지 않아서, 앱 필터에 그 팀이 저장돼 있으면
+    // (`savedTeamIds`) 토글을 꺼도 필터가 그대로 걸려 있었다.
+    final team = await _loadPreferredTeamForWidget();
+    if (team != null) {
+      teamIds = teamSelected
+          ? {...teamIds, team.id}.toList()
+          : teamIds.where((id) => id != team.id).toList();
     }
 
     // 저장된 필터를 그대로 보낸다. 예전엔 'ALL' 을 'LCK' 로 바꿔 보냈는데,
@@ -776,6 +927,30 @@ class HomeWidgetService {
     );
   }
 
+  /// 저장된 월(네이티브가 이미 옮겨 둔 값)의 캘린더를 받아 채운다.
+  ///
+  /// 안드로이드 월 이동은 네이티브가 먼저 월 라벨과 격자를 바꾸고
+  /// (`WidgetMonthShiftReceiver`) 이 조회를 요청한다. 여기서 월을 다시 계산하면
+  /// 두 번 옮겨지므로, 저장된 값을 그대로 쓴다.
+  static Future<void> _handleMonthFetch() async {
+    final hasFilter = await HomeWidget.getWidgetData<bool>(
+          'has_filter',
+          defaultValue: false,
+        ) ??
+        false;
+    final teamSelected = await HomeWidget.getWidgetData<bool>(
+          'team_selected',
+          defaultValue: false,
+        ) ??
+        false;
+    final month = await _currentDisplayedMonth();
+    await _refetchAndUpdate(
+      month: month,
+      hasFilter: hasFilter,
+      teamSelected: teamSelected,
+    );
+  }
+
   /// 위젯 백그라운드 인터랙션 진입점.
   ///
   /// `main.dart`의 `registerInteractivityCallback` 콜백에서 호출된다.
@@ -785,6 +960,12 @@ class HomeWidgetService {
     final action = uri?.path.replaceAll('/', '') ?? 'refresh';
     try {
       switch (action) {
+        // 안드로이드 월 이동. 네이티브(WidgetMonthShiftReceiver)가 저장된 월을
+        // 이미 옮겨 화면을 바꿔 뒀으므로, 여기서는 그 달의 데이터만 받아 채운다.
+        case 'month':
+          await _handleMonthFetch();
+          break;
+        // iOS 및 구버전 위젯 경로.
         case 'prev':
           await _handleMonthShift(-1);
           break;

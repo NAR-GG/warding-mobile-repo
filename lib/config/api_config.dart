@@ -326,6 +326,21 @@ class ApiConfig {
   static String deviceUrl(String deviceId) =>
       '$apiBaseUrl/mobile/me/devices/$deviceId';
 
+  // ── 약관·정책 (웹 문서) ─────────────────────────────────────────────
+
+  /// 약관·정책 문서가 사는 서비스 도메인. [host] 는 API 서버(`api.nar.kr`) 라
+  /// 사람이 읽는 문서를 걸 자리가 아니다.
+  static const String webHost = 'https://nar.kr';
+
+  /// 이용약관. **문서 자체는 다른 곳(노션 등)에 있어도 앱은 항상 우리 도메인을
+  /// 가리킨다.** 앱에 외부 서비스 URL 을 직접 박으면 그쪽 주소가 바뀔 때
+  /// 링크가 죽고, 고치려면 앱을 다시 심사받아야 한다. 도메인을 앞에 두면
+  /// 리다이렉트 대상만 갈아끼우면 된다.
+  static const String termsUrl = '$webHost/terms';
+
+  /// 개인정보처리방침. [termsUrl] 과 같은 이유로 우리 도메인을 쓴다.
+  static const String privacyUrl = '$webHost/privacy';
+
   /// 로그아웃 — Refresh Token 폐기. [deviceId] 전달 시 해당 FCM 기기도 비활성화.
   static String logoutUrl({String? deviceId}) {
     final base = '$apiBaseUrl/auth/logout';

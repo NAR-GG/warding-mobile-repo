@@ -95,6 +95,17 @@ class FilterViewModel extends ChangeNotifier {
   bool _loading = false;
   bool get loading => _loading;
 
+  /// 옵션 조회에 실패했는지. 실패하면 [_leagues]·[_teams] 가 비어 이름↔코드
+  /// 매핑이 없고, 그러면 선택값이 있어도 요약이 비어 '전체'처럼 보인다.
+  /// 그 화면에서 나온 결과를 적용하면 진짜 필터가 '전체'로 덮어써지므로
+  /// 시트를 아예 띄우지 않는다([loadFailed] 를 호출부가 확인한다).
+  bool _loadFailed = false;
+  bool get loadFailed => _loadFailed;
+
+  /// 첫 옵션 조회가 끝났을 때 완료되는 Future. 시트를 열기 전에 결과를 확인한다.
+  Future<void> get firstLoad => _firstLoad.future;
+  final Completer<void> _firstLoad = Completer<void>();
+
   FilterDropdown _openDropdown = FilterDropdown.none;
   FilterDropdown get openDropdown => _openDropdown;
 
@@ -225,12 +236,18 @@ class FilterViewModel extends ChangeNotifier {
       }
       _teams = mergedTeams.values.toList();
 
+      _loadFailed = false;
+
       // 실시간 카드 로고를 미리 저장해 둔다. 서버가 만든 카드는 앱 없이
       // 렌더되므로 그 전에 디스크에 있어야 로고가 보인다. 이미 받아둔 팀은
       // 존재 확인만 하고 넘어가고, 여기서 기다리지 않는다.
       unawaited(liveActivityLogoPrefetcher.prefetchTeams(_teams));
-    } catch (_) {
-      // 옵션 로드 실패 시 빈 목록 유지 — 모달은 떠 있되 항목만 비어 있다.
+    } catch (e) {
+      // 목록이 비면 이름↔코드 매핑이 없어 선택값이 있어도 '전체'로 보이고,
+      // 체크박스를 눌러도 [_leagueCodeOf] 가 null 이라 아무 반응이 없다.
+      // 호출부가 시트를 닫거나 띄우지 않도록 실패를 표시한다.
+      if (loadId == _loadId) _loadFailed = true;
+      debugPrint('[Filter] 옵션 조회 실패: $e');
     } finally {
       // 최신 조회만 로딩을 내린다. 구버전이 내리면 아직 받는 중인데 목록이
       // 비어 보인다.
@@ -238,6 +255,8 @@ class FilterViewModel extends ChangeNotifier {
         _loading = false;
         _safeNotify();
       }
+      // 첫 조회 결과를 기다리는 호출부(시트 열기 전 확인)를 깨운다.
+      if (!_firstLoad.isCompleted) _firstLoad.complete();
     }
   }
 

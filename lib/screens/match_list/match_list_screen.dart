@@ -18,6 +18,7 @@ import '../../util/match_title_l10n.dart';
 import '../../util/tab_route.dart';
 import '../../util/match_detail_router.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
+import '../community/community_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -266,6 +267,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+    } else if (tab == AppNavTab.community) {
+      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
     } else if (tab == AppNavTab.subscription) {
       Navigator.of(
         context,

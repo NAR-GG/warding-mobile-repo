@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 바깥 FrameLayout 은 "앱을 열어 주세요" 안내(widget_locked_overlay)를 내용 위에
+     겹치기 위한 것이다. 배경·클릭은 기존대로 widget_root 가 갖는다. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,7 +22,7 @@
         android:id="@+id/today_section"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="5"
         android:orientation="vertical"
         android:layout_marginEnd="9dp">
 
@@ -28,7 +34,7 @@
             android:gravity="center_vertical"
             android:text="07.26(일)"
             android:textColor="#FFFFFFFF"
-            android:textSize="16sp"
+            android:textSize="16dp"
             android:textStyle="bold"
             android:singleLine="true"
             android:paddingBottom="8dp" />
@@ -60,9 +66,14 @@
     </LinearLayout>
 
     <!-- 오른쪽: 미니 캘린더 -->
+    <!-- 고정폭이 아니라 비율로 나눈다(경기 5 : 캘린더 4). 예전엔 140dp 고정이라
+         폴더블 펼침·태블릿처럼 폭이 넓어져도 캘린더는 그대로고 경기 영역만
+         휑하게 늘어났다. minWidth 로 좁은 화면에서의 하한만 지킨다. -->
     <LinearLayout
         android:id="@+id/calendar_section"
-        android:layout_width="140dp"
+        android:layout_width="0dp"
+        android:layout_weight="4"
+        android:minWidth="126dp"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
@@ -71,13 +82,13 @@
             android:layout_width="match_parent"
             android:layout_height="14dp"
             android:orientation="horizontal">
-            <TextView android:id="@+id/wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="8sp" android:textStyle="bold" />
-            <TextView android:id="@+id/wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="8sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_mon" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="월" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_tue" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="화" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_wed" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="수" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_thu" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="목" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_fri" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="금" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_sat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="토" android:textColor="#FFFFFFFF" android:textSize="8dp" android:textStyle="bold" />
+            <TextView android:id="@+id/wd_sun" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="일" android:textColor="#FF9672AC" android:textSize="8dp" android:textStyle="bold" />
         </LinearLayout>
 
         <!-- 날짜 그리드 (ListView로 주 행 렌더) -->
@@ -92,3 +103,7 @@
     </LinearLayout>
 
 </LinearLayout>
+
+    <include layout="@layout/widget_locked_overlay" />
+
+</FrameLayout>

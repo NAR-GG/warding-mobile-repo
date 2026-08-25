@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -229,11 +229,14 @@ class _SplashScreenState extends State<SplashScreen>
       List<int> teamIds = const [];
       final saved = await FilterPreferenceRepository.instance
           .load(FilterPreferenceRepository.scheduleKey);
-      if (saved != null) {
-        final savedLeagues = (saved['leagues'] as List?)?.cast<String>();
+      // 못 읽었으면(readFailed) 기본값으로 프리페치한다 — 화면도 같은 값을 쓰게
+      // 되므로 캐시는 여전히 맞는다. 저장은 하지 않으니 필터가 유실되지 않는다.
+      final json = saved.json;
+      if (json != null) {
+        final savedLeagues = (json['leagues'] as List?)?.cast<String>();
         leagues =
             savedLeagues != null && savedLeagues.isNotEmpty ? savedLeagues : ['ALL'];
-        teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
+        teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
       await ScheduleRepository.instance.fetchCalendar(
         DateTime.now(),
@@ -273,9 +276,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (jwt != null) unawaited(FcmService.instance.registerToken());
     final destination =
         jwt == null ? const LoginScreen() : const ScheduleScreen();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => destination),
-    );
+    final route = MaterialPageRoute(builder: (_) => destination);
+    Navigator.of(context).pushReplacement(route);
     // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.
     //
     // pushReplacement 는 호출 즉시 끝나지 않는다 — 전환이 도는 동안 스택에는
@@ -283,14 +285,45 @@ class _SplashScreenState extends State<SplashScreen>
     // 얹힌다. 그러면 전환이 끝나며 상세까지 같이 걷혀 "들어갔다가 튕겨나오고"
     // 첫 화면만 남는다(Live Activity 카드를 눌렀을 때의 증상).
     //
-    // 다음 프레임으로 미루면 교체가 끝난 ScheduleScreen 위에 정상적으로 쌓인다.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 콜드 스타트(종료 상태에서 알림 탭) 딥링크는 initMessaging() 시점엔
-      // navigatorKey 가 아직 비어 있어 보류돼 있었다 — 첫 화면 분기 위에 push.
+    // 다음 프레임(addPostFrameCallback)만으로는 부족하다 — 전환 애니메이션은
+    // 여러 프레임에 걸쳐 돌아서, 한 프레임 뒤에도 교체가 끝나지 않았다. 그
+    // 사이에 push 한 화면은 전환이 마무리될 때 함께 걷힌다(위젯 필터 버튼을
+    // 눌렀을 때 필터 모달이 잠깐 떴다 사라지던 증상).
+    //
+    // 라우트가 실제로 화면에 자리잡은 뒤에 소비한다.
+    //
+    // `mounted` 로 막지 않는다 — pushReplacement 가 끝나면 스플래시 자신은
+    // dispose 되어 항상 false 다. 여기서 부르는 것은 이 State 가 아니라 전역
+    // 서비스라 위젯 생명주기와 무관하고, 막아 두면 보류된 딥링크가 영영
+    // 소비되지 않는다.
+    //
+    // 전환 애니메이션이 끝나는 시점을 컨트롤러에서 직접 듣는다. `didPush()` 의
+    // Future 는 애니메이션이 생략·중단되는 경로에서 완료되지 않을 수 있고,
+    // 프레임 콜백으로 스택 상태를 되풀이 확인하는 방식은 조건이 안 풀리면
+    // 매 프레임 자기를 다시 걸어 ANR 로 이어진다(실제로 22초 멈춤이 났다).
+    void consumeNow() {
       FcmService.instance.consumePendingDeepLink();
-
-      // 콜드 스타트 위젯·Live Activity 딥링크도 같은 이유로 보류돼 있었다.
       HomeWidgetService.markSplashReady();
+    }
+
+    // `route.animation` 은 라우트가 Navigator 에 설치된 뒤에야 생긴다.
+    // pushReplacement 직후에는 아직 null 이라 다음 프레임에 확인한다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final animation = route.animation;
+      if (animation == null || animation.isCompleted) {
+        consumeNow();
+        return;
+      }
+      void onStatus(AnimationStatus status) {
+        if (status != AnimationStatus.completed &&
+            status != AnimationStatus.dismissed) {
+          return;
+        }
+        animation.removeStatusListener(onStatus);
+        consumeNow();
+      }
+
+      animation.addStatusListener(onStatus);
     });
 
     // 화면 전환 후 업데이트 체크 (팝업은 NarAlertDialog 로 띄운다).
@@ -299,10 +332,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// 앱스토어/플레이스토어 최신 버전을 조회해, 현재 버전보다 높으면
   /// [NarAlertDialog] 팝업을 띄운다. 확인 누르면 스토어로 이동.
+  ///
+  /// `countryCode` 를 안 주면 upgrader 가 미국 스토어를 조회한다. 와딩은 한국
+  /// 스토어에만 있어서 조회 결과가 비고, `isUpdateAvailable()` 이 조용히 false 를
+  /// 돌려줘 팝업이 영영 안 떴다. `durationUntilAlertAgain` 기본값(3일)도 함께
+  /// 걷어낸다 — 스플래시는 앱을 켤 때마다 도는 자리라, 최신이 아니면 매번 알린다.
   Future<void> _checkForUpdate() async {
     try {
       final upgrader = Upgrader(
         languageCode: AppLanguage.instance.isKo ? 'ko' : 'en',
+        countryCode: 'KR',
+        durationUntilAlertAgain: Duration.zero,
+        debugLogging: kDebugMode,
       );
       await upgrader.initialize();
       if (!upgrader.isUpdateAvailable()) return;

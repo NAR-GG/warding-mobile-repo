@@ -109,6 +109,10 @@ class ScheduleViewModel extends ChangeNotifier {
     unawaited(_noticePreferences.addDismissedId(notice.id));
   }
 
+  /// 저장된 필터를 읽지 못했는지. true 면 디스크에 값이 살아 있을 수 있어
+  /// 현재 화면 상태(기본값 '전체')로 덮어쓰면 안 된다. [_persistFilter] 가 막는다.
+  bool _filterRestoreFailed = false;
+
   /// 마지막 사용 필터를 복원한 뒤 첫 캘린더를 조회한다.
   /// 저장값이 없으면(첫 실행) 기본값 그대로 '전체'.
   Future<void> _init() async {
@@ -118,17 +122,28 @@ class ScheduleViewModel extends ChangeNotifier {
     // 첫 화면이 곧바로 교체되는 경로). 그대로 진행하면 죽은 뷰모델이 조회를
     // 걸어 로딩만 켜 두고 끝나, 다음에 뜬 화면이 멈춘 스피너를 물려받는다.
     if (_disposed) return;
-    if (saved != null) {
-      final leagues = (saved['leagues'] as List?)?.cast<String>();
+    _filterRestoreFailed = saved.readFailed;
+    final json = saved.json;
+    if (json != null) {
+      final leagues = (json['leagues'] as List?)?.cast<String>();
       _leagues = leagues != null && leagues.isNotEmpty ? leagues : ['ALL'];
-      _teamIds = (saved['teamIds'] as List?)?.cast<int>() ?? const [];
-      _teamSelected = (saved['teamSelected'] as bool?) ?? false;
+      _teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
+      _teamSelected = (json['teamSelected'] as bool?) ?? false;
     }
     loadCalendar();
   }
 
   /// 현재 필터를 저장한다. 실패해도 조회는 계속되므로 기다리지 않는다.
+  ///
+  /// 복원에 실패한 상태에서는 저장하지 않는다 — 지금 화면은 저장값을 못 읽어
+  /// 기본값('전체')으로 서 있을 뿐이라, 여기서 쓰면 디스크의 멀쩡한 필터를
+  /// 지운다. 이 경우 사용자의 선택은 이번 세션에만 적용되고, 다음 실행에서
+  /// 저장값을 읽는 데 성공하면 원래 필터로 돌아온다.
   void _persistFilter() {
+    if (_filterRestoreFailed) {
+      debugPrint('[Schedule] 필터 복원 실패 상태 — 저장 생략(기존 값 보존)');
+      return;
+    }
     unawaited(_filterPreferences.save(FilterPreferenceRepository.scheduleKey, {
       'leagues': _leagues,
       'teamIds': _teamIds,
@@ -161,9 +176,23 @@ class ScheduleViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 월 → 그 달의 일(day) → 칸에 표시할 경기 칩 목록.
+  ///
+  /// 표시 월만 들고 있으면 스와이프 중 나란히 보이는 이웃 달이 빈 그리드로
+  /// 나온다. 옆 달까지 미리 채워 두면 전환 중에도 칩이 끊기지 않는다.
+  /// 필터가 바뀌면 내용이 통째로 달라지므로 전부 버린다([_clearCalendarCache]).
+  final Map<DateTime, Map<int, List<CalendarMatchBrief>>> _calendarByMonth = {};
+
   /// 현재 월의 경기 캘린더 — 일(day) → 그 날 칸에 표시할 경기 칩 목록.
-  Map<int, List<CalendarMatchBrief>> _matchesByDay = const {};
-  Map<int, List<CalendarMatchBrief>> get matchesByDay => _matchesByDay;
+  Map<int, List<CalendarMatchBrief>> get matchesByDay =>
+      matchesOfMonth(_displayMonth);
+
+  /// [month] 의 일별 칩. 아직 안 받았으면 빈 맵.
+  Map<int, List<CalendarMatchBrief>> matchesOfMonth(DateTime month) =>
+      _calendarByMonth[_monthOf(month)] ?? const {};
+
+  /// 필터가 바뀌어 기존 월별 데이터가 모두 무효해졌을 때.
+  void _clearCalendarCache() => _calendarByMonth.clear();
 
   /// 온보딩에서 고른 선호 팀. 없으면(건너뛰기 등) null.
   Team? _preferredTeam;
@@ -176,6 +205,12 @@ class ScheduleViewModel extends ChangeNotifier {
   /// 캘린더 조회에 적용 중인 팀 ID 목록. 비어 있으면 리그 전체.
   List<int> _teamIds = const [];
   List<int> get filterTeamIds => _teamIds;
+
+  /// 리그·팀 중 하나라도 '전체'가 아닌 값으로 필터링 중인지.
+  /// 헤더 필터 버튼에 선택 표시(테두리)를 줄지 판단하는 데 쓴다.
+  bool get hasActiveFilter =>
+      !(_leagues.length == 1 && _leagues.first == 'ALL') ||
+      _teamIds.isNotEmpty;
 
   /// 헤더 팀 아이콘 선택(2px 테두리) 상태.
   /// 켜지면 선호 팀으로 캘린더를 필터링한다.
@@ -211,10 +246,21 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 헤더 팀 아이콘 선택 상태를 토글한다.
   /// 켜지면 선호 팀으로, 끄면 리그 전체로 캘린더를 다시 조회한다.
+  ///
+  /// 응원팀을 모르는 동안에는 아무것도 하지 않는다. 예전에는 그때도 토글이
+  /// 넘어가 `_teamIds` 를 비우고 저장까지 했다 — 저장된 팀 필터가 '전체'로
+  /// 덮어써지는 경로다. 헤더 아이콘은 응원팀이 있을 때만 그려지지만(그래서
+  /// 보통은 닿지 않는다), 조회가 끝나기 전 첫 프레임이나 조회 실패 후
+  /// 로컬 캐시까지 비었을 때는 [_preferredTeam] 이 null 인 채로 남는다.
   void toggleTeamSelected() {
-    _teamSelected = !_teamSelected;
     final preferredId = _preferredTeam?.id;
-    _teamIds = _teamSelected && preferredId != null ? [preferredId] : const [];
+    if (preferredId == null) {
+      debugPrint('[Schedule] 응원팀 미확정 — 팀 토글 무시');
+      return;
+    }
+    _teamSelected = !_teamSelected;
+    _teamIds = _teamSelected ? [preferredId] : const [];
+    _clearCalendarCache();
     _persistFilter();
     _updateWidgetFilterState();
     _notify();
@@ -239,6 +285,7 @@ class ScheduleViewModel extends ChangeNotifier {
       _displayMonth = _monthOf(DateTime.now());
       _selectedDate = null;
     }
+    _clearCalendarCache();
     _persistFilter();
     _updateWidgetFilterState();
     _notify();
@@ -247,10 +294,8 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 위젯에 필터/팀 선택 상태를 전달한다.
   void _updateWidgetFilterState() {
-    final hasFilter = !(_leagues.length == 1 && _leagues.first == 'ALL') ||
-        _teamIds.isNotEmpty;
     unawaited(HomeWidgetService.updateFilterState(
-      hasFilter: hasFilter,
+      hasFilter: hasActiveFilter,
       teamSelected: _teamSelected,
     ));
   }
@@ -297,16 +342,17 @@ class ScheduleViewModel extends ChangeNotifier {
         debugPrint('[Schedule] loadCalendar#$requestId 결과 폐기 (더 최신 조회 있음)');
         return;
       }
-      _matchesByDay = {
+      final byDay = {
         for (final day in days) day.date.day: day.matches,
       };
-      final total =
-          _matchesByDay.values.fold<int>(0, (sum, l) => sum + l.length);
-      debugPrint('[Schedule] 완료#$requestId: ${_matchesByDay.length}일, 총 $total경기');
+      _calendarByMonth[month] = byDay;
+      _pruneCalendarCache();
+      final total = byDay.values.fold<int>(0, (sum, l) => sum + l.length);
+      debugPrint('[Schedule] 완료#$requestId: ${byDay.length}일, 총 $total경기');
       // 홈 화면 위젯에 최신 캘린더 데이터 전달 (필터 포함)
       unawaited(HomeWidgetService.updateCalendar(
         month: month,
-        matchesByDay: _matchesByDay,
+        matchesByDay: byDay,
         leagues: leagues,
         teamIds: teamIds,
       ));
@@ -316,7 +362,7 @@ class ScheduleViewModel extends ChangeNotifier {
         return;
       }
       _error = appStrings?.scheduleLoadFailed ?? 'Failed to load schedule';
-      _matchesByDay = const {};
+      _calendarByMonth.remove(month);
       debugPrint('[Schedule] loadCalendar#$requestId 에러: $e');
       debugPrint('$st');
     } finally {
@@ -327,6 +373,56 @@ class ScheduleViewModel extends ChangeNotifier {
         _notify();
       }
     }
+
+    // 표시 월을 그린 다음 이웃 달을 채운다. 스와이프해서 나란히 보이는
+    // 순간에 옆 페이지가 빈 그리드로 나오지 않게 하려는 것뿐이라, 로딩
+    // 표시나 에러 상태는 건드리지 않는다.
+    if (requestId == _calendarRequestId) {
+      unawaited(_prefetchNeighbourMonths(month, leagues, teamIds));
+    }
+  }
+
+  /// [month] 의 앞뒤 달을 미리 받아 [_calendarByMonth] 에 채운다.
+  ///
+  /// 리포지토리가 URL 단위로 캐시하므로 이미 받은 달은 네트워크를 타지 않는다.
+  /// 실패는 무시한다 — 스와이프해서 실제로 그 달에 들어가면 다시 조회한다.
+  Future<void> _prefetchNeighbourMonths(
+    DateTime month,
+    List<String> leagues,
+    List<int> teamIds,
+  ) async {
+    for (final delta in const [1, -1]) {
+      final target = DateTime(month.year, month.month + delta);
+      if (_calendarByMonth.containsKey(target)) continue;
+      try {
+        final days = await _repository.fetchCalendar(
+          target,
+          leagues: leagues,
+          teamIds: teamIds,
+        );
+        // 기다리는 동안 필터가 바뀌었으면 이 결과는 다른 조건의 것이다.
+        if (!identical(leagues, _leagues) || !identical(teamIds, _teamIds)) {
+          return;
+        }
+        _calendarByMonth[target] = {
+          for (final day in days) day.date.day: day.matches,
+        };
+        _pruneCalendarCache();
+        _notify();
+      } catch (e) {
+        debugPrint('[Schedule] 이웃 달 프리페치 실패 ($target): $e');
+      }
+    }
+  }
+
+  /// 표시 월에서 2개월 넘게 떨어진 달은 버린다. 계속 스와이프해도 월별
+  /// 데이터가 무한히 쌓이지 않게 하는 상한이다.
+  void _pruneCalendarCache() {
+    _calendarByMonth.removeWhere((month, _) {
+      final delta = (month.year - _displayMonth.year) * 12 +
+          (month.month - _displayMonth.month);
+      return delta.abs() > 2;
+    });
   }
 
   /// 응원 팀을 불러온다.

@@ -54,6 +54,19 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            // android.jar 스텁의 org.json 은 모든 메서드가 예외를 던진다.
+            // 테스트 의존성으로 넣은 실제 구현이 스텁보다 먼저 잡히도록
+            // 클래스패스 앞으로 당긴다 (returnDefaultValues 로 덮으면 파싱이
+            // 조용히 null 을 돌려줘 테스트가 의미를 잃는다).
+            all {
+                it.classpath = it.classpath.filter { f -> !f.name.equals("android.jar") } +
+                    it.classpath.filter { f -> f.name.equals("android.jar") }
+            }
+        }
+    }
+
     buildTypes {
         release {
             signingConfig = if (keystoreProperties.isNotEmpty()) {
@@ -78,4 +91,9 @@ flutter {
 dependencies {
     // flutter_local_notifications 디슈가링 런타임 라이브러리.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // 위젯 데이터 파싱 유닛 테스트용. org.json 은 안드로이드 SDK 스텁이라
+    // JVM 테스트에서 메서드가 전부 예외를 던지므로, 실제 구현을 따로 넣는다.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

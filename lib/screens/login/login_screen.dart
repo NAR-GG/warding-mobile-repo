@@ -10,6 +10,7 @@ import '../../repository/fcm/fcm_service.dart';
 import '../../repository/onboarding/onboarding_sync_service.dart';
 import '../../styles/app_colors.dart';
 import '../onboarding/onboarding_screen.dart';
+import 'component/login_consent_notice.dart';
 import '../schedule/schedule_screen.dart';
 import 'component/easy_login_divider.dart';
 import 'component/social_login_button.dart';
@@ -144,6 +145,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: const TextStyle(color: AppColors.narText2, fontSize: 16),
                 ),
               ),
+              const SizedBox(height: 12),
+              // 비회원으로 시작하는 경로도 커뮤니티를 읽으므로, 두 버튼을
+              // 모두 아래에 두고 화면 하단에 한 번만 깐다.
+              const LoginConsentNotice(),
               const Spacer(flex: 48),
             ],
           ),

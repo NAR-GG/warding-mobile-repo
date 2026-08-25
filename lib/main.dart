@@ -177,6 +177,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 포그라운드로 돌아올 때마다 고착 카드가 없는지 다시 살핀다.
     if (state == AppLifecycleState.resumed) {
       liveMatchActivityController.dismissStaleCards();
+      // 안드로이드 위젯 필터 버튼은 딥링크가 아니라 공유 저장소 요청 +
+      // 앱 재개(WidgetActionReceiver, FLAG_ACTIVITY_NEW_TASK) 방식이다.
+      // 예전엔 [ScheduleScreen] 만 이 요청을 소비했는데, 그러면 경기
+      // 리스트 등 다른 하단 탭에 있을 때(그 화면이 dispose 된 상태)는
+      // 아무도 저장소를 확인하지 않아 필터 버튼이 조용히 무반응이었다
+      // (실기기 갤럭시에서만 재현 — 에뮬레이터 딥링크 테스트는 이 경로를
+      // 타지 않는다). 앱이 살아 있는 한 항상 존재하는 루트에서 매번
+      // 확인해야 어느 화면에 있든 놓치지 않는다.
+      HomeWidgetService.consumePendingAction();
     }
   }
 

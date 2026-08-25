@@ -287,8 +287,9 @@
 
   "navSchedule": "Schedule",
   "navMatchList": "Matches",
-  "navSubscription": "My Sub",
-  "navMyPage": "My Page",
+  "navCommunity": "Community",
+  "navSubscription": "Subs",
+  "navMyPage": "Me",
 
   "defaultCancel": "Cancel",
   "defaultConfirm": "OK",
@@ -325,6 +326,7 @@
   "sortUpcoming": "Upcoming",
 
   "scheduleLoadFailed": "Failed to load schedule",
+  "filterLoadFailed": "Couldn't load filters. Please try again in a moment",
   "playerRatingLoadFailed": "Failed to load player ratings",
   "noPlayerRecordInSet": "No player record in this set",
   "setRatingLoadFailed": "Failed to load set ratings",
@@ -415,5 +417,100 @@
   "guidePopupTitle": "Welcome! Here are some tips for using Warding",
   "guidePopupMessage": "You can always find this again under [My Page > Warding Guide].",
   "guidePopupDismiss": "Maybe later",
-  "guidePopupConfirm": "View guide"
-}
+  "guidePopupConfirm": "View guide",
+  "communityTitle": "Community",
+  "communityTabAll": "All",
+  "communityTabTeam": "Teams",
+  "communityWrite": "Write",
+  "communityEmpty": "No posts yet. Be the first to write one.",
+  "communityLockedTitle": "Only {team} fans can post here.",
+  "@communityLockedTitle": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityLockedBody": "Share it on the All board instead.",
+  "communityLockedAction": "Go to All",
+  "communityNoTeamTitle": "Pick a team to post on team boards.",
+  "communityNoTeamAction": "Pick my team",
+  "communityCommentHint": "Write a comment",
+  "communityCommentLocked": "Only {team} fans can comment",
+  "@communityCommentLocked": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityCommentSubmit": "Post",
+  "communityCommentCount": "Comments {count}",
+  "@communityCommentCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityReplyCount": "{count} replies",
+  "@communityReplyCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityReply": "Reply",
+  "communityLike": "Like",
+  "communityScrap": "Save",
+  "communityViewCount": "Views {count}",
+  "@communityViewCount": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "communityBoardAll": "All board",
+  "communityBoardTeam": "{team} board",
+  "@communityBoardTeam": {
+    "placeholders": { "team": { "type": "String" } }
+  },
+  "communityWriteTitleLabel": "Title",
+  "communityWriteTitleHint": "Enter a title",
+  "communityWriteBodyLabel": "Body",
+  "communityWriteBodyHint": "Matches, cheers, questions — anything goes.\nAbuse and spam will be reported.",
+  "communityWriteSubmit": "Post",
+  "communityMoreReport": "Report",
+  "communityMoreBlock": "Block this user",
+  "communityReportTitle": "Reason",
+  "communityReportAbuse": "Abuse",
+  "communityReportObscene": "Sexual content",
+  "communityReportAd": "Advertising or selling",
+  "communityReportFraud": "Leaks, impersonation, scams",
+  "communityReportSpam": "Spam",
+  "communityReportEtc": "Other",
+  "communityReportEtcHint": "Tell us what the problem is",
+  "communityReportSubmit": "Report",
+  "communityReportDone": "Report submitted.",
+  "communityBlockDone": "You will no longer see this user's posts.",
+  "termsOfService": "Terms of Service",
+  "privacyPolicy": "Privacy Policy",
+  "loginConsentNotice": "By signing in you agree to the {terms} and {privacy}",
+  "@loginConsentNotice": {
+    "placeholders": {
+      "terms": { "type": "String" },
+      "privacy": { "type": "String" }
+    }
+  },
+  "communityGuestWrite": "Sign in and pick a team to start posting.",
+
+  "communityTabMyTeam": "My Team",
+  "communityTabOtherTeams": "Other Teams",
+
+  "communityRulesTitle": "Community Rules",
+  "communityRulesSeeAll": "Read the full community rules",
+
+  "communityAttachPhoto": "Photo",
+  "communityAttachPoll": "Poll",
+  "communityPhotoCount": "{count}/5",
+  "@communityPhotoCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityPollQuestionHint": "What are you asking?",
+  "communityPollOptionHint": "Option {index}",
+  "@communityPollOptionHint": {
+    "placeholders": { "index": { "type": "int" } }
+  },
+  "communityPollAddOption": "Add option (up to 5)",
+  "communityPollHideResults": "Hide results until voted",
+  "communityPollRemove": "Remove poll",
+  "communityPollPrompt": "{count} voted · vote to see results",
+  "@communityPollPrompt": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "communityPollVoted": "{count} voted",
+  "@communityPollVoted": {
+    "placeholders": { "count": { "type": "int" } }
+  }}

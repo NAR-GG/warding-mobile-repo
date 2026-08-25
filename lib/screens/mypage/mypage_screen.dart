@@ -9,6 +9,7 @@ import '../../components/guest_lock_overlay.dart';
 import '../../components/guide_popup.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
+import '../../config/api_config.dart';
 import '../../config/app_language.dart';
 import '../../styles/app_colors.dart';
 import '../../util/app_image.dart';
@@ -19,6 +20,7 @@ import 'component/mypage_card_section.dart';
 import 'component/quiet_hours_section.dart';
 import '../account_setting/account_setting_screen.dart';
 import '../calendar_setting/calendar_setting_screen.dart';
+import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_review/my_review_screen.dart';
@@ -79,6 +81,8 @@ class _MypageScreenState extends State<MypageScreen> {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+    } else if (tab == AppNavTab.community) {
+      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
     } else if (tab == AppNavTab.subscription) {
       Navigator.of(
         context,
@@ -266,6 +270,17 @@ class _MypageScreenState extends State<MypageScreen> {
                                 ),
                               );
                             },
+                          ),
+                          // 약관·개인정보처리방침은 스토어 심사가 앱 안에서
+                          // 열리는 것을 요구한다(로그인 화면 고지문과 별개로,
+                          // 로그인한 뒤에도 언제든 다시 볼 수 있어야 한다).
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.termsOfService,
+                            onTap: () => _launchUrl(ApiConfig.termsUrl),
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.privacyPolicy,
+                            onTap: () => _launchUrl(ApiConfig.privacyUrl),
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.narWebsite,
