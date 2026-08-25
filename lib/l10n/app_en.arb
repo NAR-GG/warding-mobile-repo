@@ -475,6 +475,15 @@
   "communityReportSubmit": "Report",
   "communityReportDone": "Report submitted.",
   "communityBlockDone": "You will no longer see this user's posts.",
+  "termsOfService": "Terms of Service",
+  "privacyPolicy": "Privacy Policy",
+  "loginConsentNotice": "By signing in you agree to the {terms} and {privacy}",
+  "@loginConsentNotice": {
+    "placeholders": {
+      "terms": { "type": "String" },
+      "privacy": { "type": "String" }
+    }
+  },
   "communityGuestWrite": "Sign in and pick a team to start posting.",
 
   "communityTabMyTeam": "My Team",

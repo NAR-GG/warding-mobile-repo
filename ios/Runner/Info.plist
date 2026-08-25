@@ -73,7 +73,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>프로필 사진을 변경하려면 사진 라이브러리 접근이 필요합니다.</string>
+	<string>프로필 사진을 바꾸거나 커뮤니티 글에 사진을 첨부하려면 사진 라이브러리 접근이 필요합니다.</string>
 	<key>NidAppName</key>
 	<string>와딩</string>
 	<key>NidClientID</key>

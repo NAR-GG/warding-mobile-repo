@@ -2462,6 +2462,24 @@ abstract class AppLocalizations {
   /// **'이 사용자의 글이 보이지 않아요.'**
   String get communityBlockDone;
 
+  /// No description provided for @termsOfService.
+  ///
+  /// In ko, this message translates to:
+  /// **'이용약관'**
+  String get termsOfService;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인정보처리방침'**
+  String get privacyPolicy;
+
+  /// No description provided for @loginConsentNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인 시 {terms} 및 {privacy}에 동의합니다'**
+  String loginConsentNotice(String terms, String privacy);
+
   /// No description provided for @communityGuestWrite.
   ///
   /// In ko, this message translates to:
