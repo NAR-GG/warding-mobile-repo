@@ -1252,13 +1252,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityReportAbuse => '욕설·비방';
 
   @override
-  String get communityReportSpam => '도배·광고';
+  String get communityReportObscene => '음란물 유포';
 
   @override
-  String get communityReportSpoiler => '스포일러';
+  String get communityReportAd => '상업적 광고 및 판매';
+
+  @override
+  String get communityReportFraud => '유출·사칭·사기';
+
+  @override
+  String get communityReportSpam => '도배';
 
   @override
   String get communityReportEtc => '기타';
+
+  @override
+  String get communityReportEtcHint => '어떤 점이 문제인지 알려주세요';
 
   @override
   String get communityReportSubmit => '신고하기';

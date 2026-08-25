@@ -1285,13 +1285,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityReportAbuse => 'Abuse';
 
   @override
-  String get communityReportSpam => 'Spam or ads';
+  String get communityReportObscene => 'Sexual content';
 
   @override
-  String get communityReportSpoiler => 'Spoiler';
+  String get communityReportAd => 'Advertising or selling';
+
+  @override
+  String get communityReportFraud => 'Leaks, impersonation, scams';
+
+  @override
+  String get communityReportSpam => 'Spam';
 
   @override
   String get communityReportEtc => 'Other';
+
+  @override
+  String get communityReportEtcHint => 'Tell us what the problem is';
 
   @override
   String get communityReportSubmit => 'Report';
