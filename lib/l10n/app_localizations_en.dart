@@ -1303,6 +1303,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityBlockDone => 'You will no longer see this user\'s posts.';
 
   @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String loginConsentNotice(String terms, String privacy) {
+    return 'By signing in you agree to the $terms and $privacy';
+  }
+
+  @override
   String get communityGuestWrite => 'Sign in and pick a team to start posting.';
 
   @override

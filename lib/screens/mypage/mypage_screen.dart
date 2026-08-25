@@ -9,6 +9,7 @@ import '../../components/guest_lock_overlay.dart';
 import '../../components/guide_popup.dart';
 import '../../components/nar_banner.dart';
 import '../../model/team.dart';
+import '../../config/api_config.dart';
 import '../../config/app_language.dart';
 import '../../styles/app_colors.dart';
 import '../../util/app_image.dart';
@@ -269,6 +270,17 @@ class _MypageScreenState extends State<MypageScreen> {
                                 ),
                               );
                             },
+                          ),
+                          // 약관·개인정보처리방침은 스토어 심사가 앱 안에서
+                          // 열리는 것을 요구한다(로그인 화면 고지문과 별개로,
+                          // 로그인한 뒤에도 언제든 다시 볼 수 있어야 한다).
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.termsOfService,
+                            onTap: () => _launchUrl(ApiConfig.termsUrl),
+                          ),
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.privacyPolicy,
+                            onTap: () => _launchUrl(ApiConfig.privacyUrl),
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.narWebsite,

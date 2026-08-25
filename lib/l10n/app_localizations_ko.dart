@@ -1270,6 +1270,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityBlockDone => '이 사용자의 글이 보이지 않아요.';
 
   @override
+  String get termsOfService => '이용약관';
+
+  @override
+  String get privacyPolicy => '개인정보처리방침';
+
+  @override
+  String loginConsentNotice(String terms, String privacy) {
+    return '로그인 시 $terms 및 $privacy에 동의합니다';
+  }
+
+  @override
   String get communityGuestWrite => '로그인하고 응원팀을 정하면 글을 쓸 수 있어요.';
 
   @override

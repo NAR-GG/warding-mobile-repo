@@ -644,6 +644,15 @@
   "communityReportSubmit": "신고하기",
   "communityReportDone": "신고가 접수되었어요.",
   "communityBlockDone": "이 사용자의 글이 보이지 않아요.",
+  "termsOfService": "이용약관",
+  "privacyPolicy": "개인정보처리방침",
+  "loginConsentNotice": "로그인 시 {terms} 및 {privacy}에 동의합니다",
+  "@loginConsentNotice": {
+    "placeholders": {
+      "terms": { "type": "String" },
+      "privacy": { "type": "String" }
+    }
+  },
   "communityGuestWrite": "로그인하고 응원팀을 정하면 글을 쓸 수 있어요.",
 
   "communityTabMyTeam": "우리팀",
