@@ -234,9 +234,14 @@ API 연동(2단계)에서 **화면과 모델을 지웠다** — 백엔드 커뮤
 
 `nar-back-repo/docs/community-api-handoff.md` 에 앱 쪽 답을 기다리는 항목이 둘 있다.
 
-1. ~~**쿨다운 잠금 바를 넣을지**~~ — **해결됨.** 백엔드가 `/api/auth/me` 대신
-   목록 응답에 `boardViewer { canWrite, reason, writableFrom }` 를 넣는 쪽으로
-   구현했고, 앱이 그대로 쓴다(`CommunityListViewModel.canWrite`). 판정 주체가
-   서버라 앱이 모르는 사유(쿨다운)도 잠금 바에 뜬다.
+1. **쿨다운 잠금 바 — 앱은 끝, 서버가 안 보낸다.**
+   앱은 목록 응답의 `boardViewer { canWrite, reason, writableFrom }` 를 읽어
+   그대로 잠금 바에 쓴다(`CommunityListViewModel.canWrite`). 서버 판정이 오면
+   로컬 규칙보다 우선한다 — 응원팀 변경 쿨다운은 앱이 알 수 없기 때문이다.
+
+   그런데 **서버 `PostListResponse` 는 `(posts, nextCursor)` 뿐이다**
+   (`CommunityDtos.java`). 필드를 채워 보내기 전까지 앱은 로컬 규칙으로만
+   판정하고, 쿨다운에 걸린 사용자는 **글을 다 쓰고 등록을 누른 뒤에야** 403 을
+   본다. 백엔드에 남은 건 이 필드 하나다.
 2. **마이페이지 내 글·댓글 추가 여부** — 이 문서의 B 가 그 답이다.
    스크랩까지 3종으로 간다.

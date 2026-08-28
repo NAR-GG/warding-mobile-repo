@@ -141,13 +141,32 @@ class CommunityListViewModel extends ChangeNotifier {
     }
   }
 
-  /// 상세에서 돌아왔을 때 그 글의 추천·댓글 수만 갱신한다. 목록 전체를 다시
-  /// 받으면 스크롤이 맨 위로 튄다.
+  /// 상세에서 돌아왔을 때 그 글의 수치만 갱신한다. 목록 전체를 다시 받으면
+  /// 스크롤이 맨 위로 튄다.
+  ///
+  /// **행을 통째로 바꾸지 않는다.** 상세 응답(`PostDetailResponse`)에는 목록
+  /// 전용 필드인 `bodyPreview`·`thumbnailUrl`·`imageCount` 가 없어서, 상세에서
+  /// 만든 요약으로 덮으면 글을 한 번 열었다 나온 순간 본문 미리보기와 썸네일이
+  /// 사라진다. 상세가 실제로 아는 값만 덮어쓴다.
   void applyPostUpdate(int? boardTeamId, CommunityRemotePost updated) {
     final posts = board(boardTeamId).posts;
     final index = posts.indexWhere((p) => p.id == updated.id);
     if (index < 0) return;
-    posts[index] = updated;
+    final old = posts[index];
+    posts[index] = CommunityRemotePost(
+      id: old.id,
+      boardTeamId: old.boardTeamId,
+      title: updated.title.isEmpty ? old.title : updated.title,
+      bodyPreview: old.bodyPreview,
+      author: updated.author ?? old.author,
+      viewCount: updated.viewCount,
+      likeCount: updated.likeCount,
+      commentCount: updated.commentCount,
+      edited: updated.edited,
+      createdAt: old.createdAt,
+      thumbnailUrl: old.thumbnailUrl,
+      imageCount: old.imageCount,
+    );
     _safeNotify();
   }
 

@@ -157,6 +157,43 @@ void main() {
       vm.dispose();
     });
 
+    test('상세에서 돌아와도 본문 미리보기·썸네일이 남는다', () async {
+      serve(
+        posts: [
+          {
+            'id': 1,
+            'title': 'test1',
+            'bodyPreview': '본문 앞 150자',
+            'thumbnailUrl': 'https://img/1.png',
+            'imageCount': 2,
+            'commentCount': 2,
+          },
+        ],
+      );
+      final vm = CommunityListViewModel();
+      await vm.init();
+
+      // 상세 응답에는 bodyPreview·thumbnailUrl·imageCount 가 아예 없다.
+      // 그걸로 목록 행을 덮으면 글을 한 번 열었다 나온 순간 미리보기가 사라진다.
+      final fromDetail = CommunityRemotePostDetail.fromJson({
+        'id': 1,
+        'title': 'test1',
+        'body': '전문',
+        'commentCount': 3,
+        'likeCount': 1,
+      }).summary;
+      vm.applyPostUpdate(null, fromDetail);
+
+      final row = vm.board(null).posts.single;
+      expect(row.bodyPreview, '본문 앞 150자');
+      expect(row.thumbnailUrl, 'https://img/1.png');
+      expect(row.imageCount, 2);
+      // 수치는 상세 것으로 갱신된다.
+      expect(row.commentCount, 3);
+      expect(row.likeCount, 1);
+      vm.dispose();
+    });
+
     test('다음 커서가 없으면 더 불러오지 않는다', () async {
       var calls = 0;
       serve(
