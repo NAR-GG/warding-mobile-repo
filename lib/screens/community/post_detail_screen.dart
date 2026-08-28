@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/nar_detail_header.dart';
+import '../../components/profile_avatar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
@@ -418,13 +419,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 34 * scale,
-                height: 34 * scale,
-                decoration: const BoxDecoration(
-                  color: AppColors.narDark400,
-                  shape: BoxShape.circle,
-                ),
+              ProfileAvatar(
+                url: post.author?.profileImageUrl,
+                size: 34 * scale,
               ),
               SizedBox(width: 9 * scale),
               Expanded(

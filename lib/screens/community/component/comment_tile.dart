@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../components/profile_avatar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/community_remote_comment.dart';
 import '../../../styles/app_colors.dart';
@@ -60,14 +61,7 @@ class CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: avatar,
-            height: avatar,
-            decoration: const BoxDecoration(
-              color: AppColors.narDark400,
-              shape: BoxShape.circle,
-            ),
-          ),
+          ProfileAvatar(url: comment.author?.profileImageUrl, size: avatar),
           SizedBox(width: 9 * scale),
           Expanded(
             child: Column(
