@@ -40,6 +40,12 @@ void main() {
       expect(comment.parentId, isNull);
     });
 
+    final statusMap = {
+      'DELETED': CommunityCommentStatus.deleted,
+      'BLOCKED': CommunityCommentStatus.blocked,
+      'HIDDEN': CommunityCommentStatus.hidden,
+    };
+
     for (final status in ['DELETED', 'BLOCKED', 'HIDDEN']) {
       test('$status 댓글은 body·author가 null이어도 행이 유지된다', () {
         final comment = CommunityRemoteComment.fromJson({
@@ -57,8 +63,25 @@ void main() {
         expect(comment.id, 4);
         expect(comment.body, isNull);
         expect(comment.author, isNull);
+        expect(comment.status, statusMap[status]);
       });
     }
+
+    test('알 수 없는 status는 VISIBLE으로 폴백한다', () {
+      final comment = CommunityRemoteComment.fromJson(const {
+        'id': 5,
+        'parentId': null,
+        'body': '본문',
+        'status': 'FOO',
+        'author': {'memberId': 1, 'nickname': 'a'},
+        'likeCount': 0,
+        'liked': false,
+        'mine': false,
+        'createdAt': '2026-08-26T21:00:00',
+      });
+
+      expect(comment.status, CommunityCommentStatus.visible);
+    });
   });
 
   group('CommunityRemoteCommentPage.fromJson', () {
