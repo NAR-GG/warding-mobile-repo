@@ -2282,6 +2282,12 @@ abstract class AppLocalizations {
   /// **'글쓰기'**
   String get communityWrite;
 
+  /// No description provided for @communityWriteCooldown.
+  ///
+  /// In ko, this message translates to:
+  /// **'{seconds}초 후 작성'**
+  String communityWriteCooldown(int seconds);
+
   /// No description provided for @communityEmpty.
   ///
   /// In ko, this message translates to:

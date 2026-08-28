@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../l10n/app_strings.dart';
@@ -53,11 +55,16 @@ class CommunityListViewModel extends ChangeNotifier {
   int? _myTeamId;
   int? get myTeamId => _myTeamId;
 
+  /// 작성 간격 카운트다운을 1초마다 다시 그리게 하는 타이머. 남은 게시판이
+  /// 없으면 멈춘다 — 아무도 안 기다리는데 초당 리빌드를 돌릴 이유가 없다.
+  Timer? _tick;
+
   bool _disposed = false;
 
   @override
   void dispose() {
     _disposed = true;
+    _tick?.cancel();
     super.dispose();
   }
 
@@ -109,6 +116,7 @@ class CommunityListViewModel extends ChangeNotifier {
       state.nextCursor = page.nextCursor;
       state.viewer = page.boardViewer;
       state.loaded = true;
+      _syncTick();
     } catch (e) {
       debugPrint('[CommunityListVM] load($boardTeamId) failed: $e');
       state.error = appStrings?.communityLoadFailed ?? 'Failed to load posts';
@@ -174,6 +182,32 @@ class CommunityListViewModel extends ChangeNotifier {
   void removePost(int? boardTeamId, int postId) {
     board(boardTeamId).posts.removeWhere((p) => p.id == postId);
     _safeNotify();
+  }
+
+  /// 이 게시판에 다시 쓸 수 있을 때까지 남은 초. 0 이면 지금 쓸 수 있다.
+  ///
+  /// 서버가 게시판별로 재서 목록 응답에 실어 준다(작성 간격 D-9). 앱이 직접
+  /// 세지 않는 이유는 간격 값이 서버 설정이고, 다른 기기에서 쓴 것도 잡혀야
+  /// 하기 때문이다.
+  int writeCooldownSeconds(int? boardTeamId) {
+    final until = board(boardTeamId).viewer?.nextWritableAt;
+    if (until == null) return 0;
+    final remaining = until.difference(DateTime.now()).inSeconds;
+    return remaining > 0 ? remaining + 1 : 0;
+  }
+
+  /// 카운트다운이 남은 게시판이 하나라도 있으면 초당 통지, 없으면 타이머를 끈다.
+  void _syncTick() {
+    final waiting = _boards.keys.any((id) => writeCooldownSeconds(id) > 0);
+    if (waiting) {
+      _tick ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        _safeNotify();
+        _syncTick();
+      });
+    } else {
+      _tick?.cancel();
+      _tick = null;
+    }
   }
 
   bool canWrite(int? boardTeamId) {

@@ -601,6 +601,8 @@
   "communityTabAll": "전체",
   "communityTabTeam": "팀",
   "communityWrite": "글쓰기",
+  "communityWriteCooldown": "{seconds}초 후 작성",
+  "@communityWriteCooldown": { "placeholders": { "seconds": { "type": "int" } } },
   "communityEmpty": "아직 글이 없어요. 첫 글을 남겨보세요.",
   "communityLockedTitle": "{team} 팬만 글을 쓸 수 있어요.",
   "@communityLockedTitle": {

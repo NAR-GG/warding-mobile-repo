@@ -275,10 +275,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final post = _vm.post;
     if (post == null) return l.communityTitle;
     if (post.boardTeamId == null) return l.communityBoardAll;
-    final team = communityTeam(post.boardTeamId);
-    if (team == null) return l.communityTitle;
-    final label = team.code.isNotEmpty ? team.code : team.name;
-    return l.communityBoardTeam(label);
+    final label = communityTeamLabel(post.boardTeamId);
+    return label.isEmpty ? l.communityTitle : l.communityBoardTeam(label);
   }
 
   Widget _content(AppLocalizations l, double scale) {
@@ -568,7 +566,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final locked = !_vm.canWrite;
     final ready = _comment.text.trim().isNotEmpty && !_vm.submitting;
     final replyTo = _replyTo;
-    final team = communityTeam(_vm.post?.boardTeamId);
+    final board = communityTeamLabel(_vm.post?.boardTeamId);
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -651,9 +649,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                     decoration: InputDecoration(
                       hintText: locked
-                          ? (team == null
+                          ? (board.isEmpty
                                 ? l.communityGuestWrite
-                                : l.communityCommentLocked(team.name))
+                                : l.communityCommentLocked(board))
                           : l.communityCommentHint,
                       hintStyle: TextStyle(
                         fontFamily: 'Pretendard',

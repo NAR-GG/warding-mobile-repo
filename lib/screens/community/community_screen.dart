@@ -112,6 +112,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _CommunityTab.otherTeams => _otherTeamId,
   };
 
+  /// 지금 탭의 남은 작성 간격(초). 간격은 게시판마다 따로 돈다 — 전체에 쓴
+  /// 직후에도 우리팀 게시판에는 바로 쓸 수 있다.
+  int get _cooldown => switch (_tab) {
+    _CommunityTab.all => _vm.writeCooldownSeconds(null),
+    _CommunityTab.myTeam => _vm.writeCooldownSeconds(_vm.myTeamId),
+    _CommunityTab.otherTeams => 0,
+  };
+
   /// 지금 탭에 글을 쓸 수 있는가. 다른팀 탭은 어떤 경우에도 못 쓴다 — 탭을
   /// 나눈 이유가 그것이다.
   bool get _canWriteHere => switch (_tab) {
@@ -219,9 +227,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     // 마지막 탭이 보라색으로 물들어 활성 탭처럼 보인다.
                     bottom: 128 * scale,
                     child: _WriteFab(
-                      label: l.communityWrite,
+                      // 작성 간격이 남았으면 남은 초를 버튼에 띄우고 잠근다.
+                      // 다 쓰고 등록에서 429 를 받는 것보다 낫다.
+                      label: _cooldown > 0
+                          ? l.communityWriteCooldown(_cooldown)
+                          : l.communityWrite,
                       scale: scale,
-                      onTap: _openWrite,
+                      onTap: _cooldown > 0 ? null : _openWrite,
                     ),
                   )
                 else if (_lockBar(l, scale) case final lock?)
@@ -255,9 +267,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   /// 어느 팀 게시판인지, 다른팀 탭에서 어떤 팀을 고른 상태인지 알 수 없다.
   String? _boardName(AppLocalizations l) {
     if (_tab == _CommunityTab.all) return l.communityBoardAll;
-    final team = communityTeam(_boardTeamId);
-    if (team == null) return null;
-    return l.communityBoardTeam(team.name);
+    final label = communityTeamLabel(_boardTeamId);
+    return label.isEmpty ? null : l.communityBoardTeam(label);
   }
 
   Widget _myTeamPage(AppLocalizations l, double scale) {
@@ -376,11 +387,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ).pushReplacement(tabRoute(const MypageScreen())),
       );
     }
-    final team = communityTeam(_otherTeamId);
+    final label = communityTeamLabel(_otherTeamId);
     return WriteLockBar(
-      title: team == null
+      title: label.isEmpty
           ? l.communityGuestWrite
-          : l.communityLockedTitle(team.name),
+          : l.communityLockedTitle(label),
       body: l.communityLockedBody,
       actionLabel: l.communityLockedAction,
       scale: scale,
@@ -643,10 +654,14 @@ class _WriteFab extends StatelessWidget {
 
   final String label;
   final double scale;
-  final VoidCallback onTap;
+
+  /// null 이면 잠긴 상태 — 그라데이션을 걷고 회색으로 떨어뜨린다.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final locked = onTap == null;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -654,7 +669,8 @@ class _WriteFab extends StatelessWidget {
         height: 44 * scale,
         padding: EdgeInsets.symmetric(horizontal: 18 * scale),
         decoration: BoxDecoration(
-          gradient: AppColors.narBg,
+          gradient: locked ? null : AppColors.narBg,
+          color: locked ? AppColors.narDark500 : null,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
@@ -664,8 +680,8 @@ class _WriteFab extends StatelessWidget {
               'assets/icons/pencil.svg',
               width: 16 * scale,
               height: 16 * scale,
-              colorFilter: const ColorFilter.mode(
-                AppColors.narText,
+              colorFilter: ColorFilter.mode(
+                locked ? AppColors.narText2 : AppColors.narText,
                 BlendMode.srcIn,
               ),
             ),
@@ -677,7 +693,7 @@ class _WriteFab extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 fontSize: 14 * scale,
                 height: 1.4,
-                color: AppColors.narText,
+                color: locked ? AppColors.narText2 : AppColors.narText,
               ),
             ),
           ],

@@ -1180,6 +1180,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityWrite => '글쓰기';
 
   @override
+  String communityWriteCooldown(int seconds) {
+    return '$seconds초 후 작성';
+  }
+
+  @override
   String get communityEmpty => '아직 글이 없어요. 첫 글을 남겨보세요.';
 
   @override

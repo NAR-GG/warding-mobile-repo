@@ -138,6 +138,45 @@ void main() {
       vm.dispose();
     });
 
+    test('작성 간격은 게시판마다 따로 남는다', () async {
+      loginAs();
+      // 전체 게시판만 간격이 남은 상태. 우리팀은 바로 쓸 수 있어야 한다.
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          if (request.url.path.endsWith('/auth/me')) {
+            return http.Response(
+              jsonEncode({'id': 1, 'favoriteTeamId': 39}),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          final board = request.url.queryParameters['boardTeamId'];
+          final until = DateTime.now().add(const Duration(seconds: 30));
+          return http.Response(
+            jsonEncode({
+              'posts': [],
+              'boardViewer': {
+                'canWrite': true,
+                if (board == null) 'nextWritableAt': until.toIso8601String(),
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+
+      final vm = CommunityListViewModel();
+      await vm.init();
+      await vm.load(39);
+
+      expect(vm.writeCooldownSeconds(null), greaterThan(0));
+      expect(vm.writeCooldownSeconds(39), 0);
+      // 간격은 자격과 별개다 — 기다리는 중에도 쓸 자격 자체는 있다.
+      expect(vm.canWrite(null), isTrue);
+      vm.dispose();
+    });
+
     test('이미 받아온 게시판은 다시 받지 않고, refresh 면 받는다', () async {
       var calls = 0;
       serve(onPosts: (_) => calls++);

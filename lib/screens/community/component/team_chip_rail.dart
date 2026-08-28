@@ -109,7 +109,9 @@ class _Chip extends StatelessWidget {
             TeamLogoDot(imageUrl: team.imageUrl, size: 14 * scale),
             SizedBox(width: 5 * scale),
             Text(
-              team.name,
+              // 팀 이름이 아니라 코드. 'Hanwha Life Esports' 칩 하나가 레일을
+              // 혼자 다 먹으면 나머지 팀은 스크롤해야 나온다.
+              team.code.isNotEmpty ? team.code : team.name,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,

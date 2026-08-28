@@ -24,6 +24,17 @@ Future<void> loadCommunityTeams() async {
   }
 }
 
+/// 게시판 이름으로 쓸 팀 **코드**(T1, HLE, GEN…).
+///
+/// API 의 팀 이름은 'Hanwha Life Esports' 처럼 길어서, 헤더 가운데 슬롯이나 팀
+/// 칩에 넣으면 잘리거나 레일을 혼자 다 먹는다. 코드는 어느 팀인지 알아보는 데
+/// 충분하면서 길이가 고르다. 팀 목록을 아직 못 받았으면 빈 문자열.
+String communityTeamLabel(int? teamId) {
+  final team = communityTeam(teamId);
+  if (team == null) return '';
+  return team.code.isNotEmpty ? team.code : team.name;
+}
+
 /// 게시판의 팀. 전체 게시판이거나 아직 팀 목록을 못 받았으면 null.
 Team? communityTeam(int? teamId) {
   if (teamId == null) return null;

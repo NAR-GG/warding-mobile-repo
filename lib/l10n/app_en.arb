@@ -429,6 +429,8 @@
   "communityTabAll": "All",
   "communityTabTeam": "Teams",
   "communityWrite": "Write",
+  "communityWriteCooldown": "Wait {seconds}s",
+  "@communityWriteCooldown": { "placeholders": { "seconds": { "type": "int" } } },
   "communityEmpty": "No posts yet. Be the first to write one.",
   "communityLockedTitle": "Only {team} fans can post here.",
   "@communityLockedTitle": {

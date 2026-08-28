@@ -1214,6 +1214,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWrite => 'Write';
 
   @override
+  String communityWriteCooldown(int seconds) {
+    return 'Wait ${seconds}s';
+  }
+
+  @override
   String get communityEmpty => 'No posts yet. Be the first to write one.';
 
   @override

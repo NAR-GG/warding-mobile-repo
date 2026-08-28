@@ -82,12 +82,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
-    final team = communityTeam(widget.boardTeamId);
-    // 상세와 같은 이유로 팀 코드를 쓴다 — 헤더 가운데 슬롯이 좁아 팀 이름
-    // ('Hanwha Life Esports')을 그대로 넣으면 '등록하기' 옆에서 잘린다.
-    final board = team == null
+    // 팀 목록을 아직 못 받았으면 라벨이 비는데, 그걸 전체 게시판으로 떨어뜨리면
+    // 팀 게시판에 쓰는 중에 헤더가 '전체 게시판' 이라고 거짓말을 한다.
+    final label = communityTeamLabel(widget.boardTeamId);
+    final board = widget.boardTeamId == null
         ? l.communityBoardAll
-        : l.communityBoardTeam(team.code.isNotEmpty ? team.code : team.name);
+        : (label.isEmpty ? l.communityTitle : l.communityBoardTeam(label));
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,

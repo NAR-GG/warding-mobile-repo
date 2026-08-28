@@ -113,22 +113,23 @@ void main() {
       expect(page.nextCursor, isNull);
     });
 
-    test('COOLDOWN 잠금 바를 파싱한다', () {
+    test('작성 간격은 자격과 별개로 파싱된다', () {
+      // 쓸 자격은 있는데 방금 써서 잠깐 기다리는 상태.
       final page = CommunityRemotePostPage.fromJson(const {
         'posts': [],
         'nextCursor': 42,
         'boardViewer': {
-          'canWrite': false,
-          'reason': 'COOLDOWN',
-          'writableFrom': '2026-09-20T21:00:00',
+          'canWrite': true,
+          'reason': null,
+          'nextWritableAt': '2026-09-20T21:00:00',
         },
       });
 
       expect(page.nextCursor, 42);
-      expect(page.boardViewer?.canWrite, isFalse);
-      expect(page.boardViewer?.reason, CommunityWriteLockReason.cooldown);
+      expect(page.boardViewer?.canWrite, isTrue);
+      expect(page.boardViewer?.reason, isNull);
       expect(
-        page.boardViewer?.writableFrom,
+        page.boardViewer?.nextWritableAt,
         DateTime.parse('2026-09-20T21:00:00'),
       );
     });

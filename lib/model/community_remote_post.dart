@@ -4,42 +4,39 @@ import 'community_post_image.dart';
 /// 팀 게시판 쓰기 잠금 사유.
 enum CommunityWriteLockReason {
   /// 내 응원팀이 아닌 팀 게시판.
-  notFan,
-
-  /// 응원팀을 바꾼 지 30일이 안 지남.
-  cooldown;
+  notFan;
 
   static CommunityWriteLockReason? fromApi(String? value) {
-    switch (value) {
-      case 'NOT_FAN':
-        return CommunityWriteLockReason.notFan;
-      case 'COOLDOWN':
-        return CommunityWriteLockReason.cooldown;
-      default:
-        return null;
-    }
+    return value == 'NOT_FAN' ? CommunityWriteLockReason.notFan : null;
   }
 }
 
-/// 팀 게시판 쓰기 잠금 바. 팀 게시판 + 로그인일 때만 목록 응답에 실린다.
+/// 이 게시판에 쓸 수 있는가. 로그인 상태면 전체 게시판에도 실린다.
+///
+/// **자격([canWrite])과 간격([nextWritableAt])은 별개다.** 자격이 있어도 방금
+/// 썼으면 잠깐 기다려야 한다 — 앞은 잠금 바, 뒤는 글쓰기 버튼 카운트다운으로
+/// 서로 다르게 그린다.
 class CommunityBoardViewer {
   const CommunityBoardViewer({
     required this.canWrite,
     this.reason,
-    this.writableFrom,
+    this.nextWritableAt,
   });
 
   final bool canWrite;
   final CommunityWriteLockReason? reason;
 
-  /// [reason]이 cooldown일 때 다시 쓸 수 있게 되는 시각.
-  final DateTime? writableFrom;
+  /// 작성 간격에 걸려 있으면 다음 작성 가능 시각, 아니면 null.
+  /// 간격은 게시판마다 따로 돈다.
+  final DateTime? nextWritableAt;
 
   factory CommunityBoardViewer.fromJson(Map<String, dynamic> json) {
     return CommunityBoardViewer(
       canWrite: json['canWrite'] as bool? ?? false,
       reason: CommunityWriteLockReason.fromApi(json['reason'] as String?),
-      writableFrom: DateTime.tryParse(json['writableFrom'] as String? ?? ''),
+      nextWritableAt: DateTime.tryParse(
+        json['nextWritableAt'] as String? ?? '',
+      ),
     );
   }
 }
