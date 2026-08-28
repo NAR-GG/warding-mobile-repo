@@ -96,13 +96,19 @@ class _QuietHoursSectionState extends State<QuietHoursSection> {
               label: l.quietHoursStart,
               scale: scale,
               onTap: () => _pickTime(isStart: true),
-              trailing: _TimeValue(label: _label(l, settings.start), scale: scale),
+              trailing: _TimeValue(
+                label: _label(l, settings.start),
+                scale: scale,
+              ),
             ),
             _Row(
               label: l.quietHoursEnd,
               scale: scale,
               onTap: () => _pickTime(isStart: false),
-              trailing: _TimeValue(label: _label(l, settings.end), scale: scale),
+              trailing: _TimeValue(
+                label: _label(l, settings.end),
+                scale: scale,
+              ),
             ),
           ],
           // 에러는 설명을 대체하지 않고 아래에 덧붙인다. 대체하면 유저가
@@ -189,7 +195,10 @@ class _TimeValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 5 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 10 * scale,
+        vertical: 5 * scale,
+      ),
       decoration: BoxDecoration(
         color: AppColors.narBgTertiary,
         border: Border.all(color: AppColors.narLine),

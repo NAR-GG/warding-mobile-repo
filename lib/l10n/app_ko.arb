@@ -391,6 +391,13 @@
   "noSubscribedTeam": "구독중인 팀이 없어요.",
 
   "profileEditTitle": "프로필 수정",
+  "profileTeamChangeConfirmTitle": "응원팀을 바꿀까요?",
+  "profileTeamChangeConfirmBody": "{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.",
+  "@profileTeamChangeConfirmBody": { "placeholders": { "team": { "type": "String" } } },
+  "profileTeamChangeConfirmOk": "바꾸기",
+  "profileTeamChangeLockedTitle": "응원팀은 30일에 한 번만 바꿀 수 있어요",
+  "profileTeamChangeLockedBody": "{date}부터 다시 바꿀 수 있어요.",
+  "@profileTeamChangeLockedBody": { "placeholders": { "date": { "type": "String" } } },
   "nameLabel": "이름",
   "nameHint": "이름을 입력하세요",
   "tagLabel": "태그",
@@ -676,9 +683,6 @@
   "communityMoreComments": "댓글 더 보기",
   "communityEdited": "수정됨",
   "communityWriteSubmitting": "등록 중…",
-  "communityCooldownTitle": "응원팀을 바꾼 지 얼마 안 됐어요.",
-  "communityCooldownBody": "{date}부터 팀 게시판에 쓸 수 있어요.",
-  "@communityCooldownBody": { "placeholders": { "date": { "type": "String" } } },
   "communityReplyingTo": "{nickname}님에게 답글",
   "@communityReplyingTo": { "placeholders": { "nickname": { "type": "String" } } },
 

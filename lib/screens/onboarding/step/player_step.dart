@@ -18,11 +18,7 @@ import '../component/onboarding_title.dart';
 /// 그리드에서 선수를 중복 선택한다. 목록·선택 상태는 [OnboardingViewModel]
 /// 에서 가져온다.
 class PlayerStep extends StatefulWidget {
-  const PlayerStep({
-    super.key,
-    required this.viewModel,
-    this.scale = 1.0,
-  });
+  const PlayerStep({super.key, required this.viewModel, this.scale = 1.0});
 
   final OnboardingViewModel viewModel;
 
@@ -118,10 +114,8 @@ class _PlayerStepState extends State<PlayerStep> {
               imageUrl: resolveImageUrl(player.imageUrl)!,
               fit: BoxFit.contain,
               fadeInDuration: const Duration(milliseconds: 150),
-              errorWidget: (_, _, _) => const Icon(
-                Icons.person_outline,
-                color: AppColors.narText2,
-              ),
+              errorWidget: (_, _, _) =>
+                  const Icon(Icons.person_outline, color: AppColors.narText2),
             ),
             mainTitle: player.name,
             onTap: () => _viewModel.togglePlayer(player.id),
@@ -286,7 +280,8 @@ class _TeamDropdownItem extends StatelessWidget {
             height: 22 / 16, // line-height 22px / font-size 16px
             letterSpacing: 0,
             color: isSelected
-                ? AppColors.narButton1Text // 선택 — #101113
+                ? AppColors
+                      .narButton1Text // 선택 — #101113
                 : AppColors.narDark200, // 미선택 — #909296
           ),
         ),

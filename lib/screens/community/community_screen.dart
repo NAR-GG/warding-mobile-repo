@@ -224,12 +224,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       onTap: _openWrite,
                     ),
                   )
-                else
+                else if (_lockBar(l, scale) case final lock?)
                   Positioned(
                     left: 16 * scale,
                     right: 16 * scale,
                     bottom: 122 * scale,
-                    child: _lockBar(l, scale),
+                    child: lock,
                   ),
                 Positioned(
                   left: 0,
@@ -348,9 +348,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  /// 쓰기가 막힌 이유는 넷 중 하나다 — 비회원 / 응원팀 미설정 / 응원팀 변경
-  /// 쿨다운 / 다른 팀 게시판. 각각 다음에 할 수 있는 행동이 다르다.
-  Widget _lockBar(AppLocalizations l, double scale) {
+  /// 쓰기가 막힌 이유는 셋 중 하나다 — 비회원 / 응원팀 미설정 / 다른 팀 게시판.
+  /// 각각 다음에 할 수 있는 행동이 다르다.
+  ///
+  /// **우리팀 게시판에는 잠금이 없다.** 응원팀이면 자기 게시판에는 언제나 쓴다.
+  /// 팀 갈아타기 제한(30일)은 프로필 수정의 팀 변경에서 막으므로 여기까지
+  /// 내려오지 않는다.
+  /// 띄울 안내가 없으면 null — 아무것도 그리지 않는다. 이유를 모르는 잠금에
+  /// 아무 문구나 붙이면 틀린 안내가 된다(예: 팀이 있는데 "응원팀을 정하세요").
+  Widget? _lockBar(AppLocalizations l, double scale) {
     if (!_vm.loggedIn) {
       return WriteLockBar(
         title: l.communityGuestWrite,
@@ -361,25 +367,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
     }
     if (_tab == _CommunityTab.myTeam) {
-      if (_vm.myTeamId == null) {
-        return WriteLockBar(
-          title: l.communityNoTeamTitle,
-          body: null,
-          actionLabel: l.communityNoTeamAction,
-          scale: scale,
-          onAction: () => Navigator.of(
-            context,
-          ).pushReplacement(tabRoute(const MypageScreen())),
-        );
-      }
-      // 응원팀인데도 못 쓰는 경우는 쿨다운뿐이다.
-      final until = _vm.writableFrom(_vm.myTeamId);
+      if (_vm.myTeamId != null) return null;
       return WriteLockBar(
-        title: l.communityCooldownTitle,
-        body: until == null ? null : l.communityCooldownBody(_date(until)),
-        actionLabel: l.communityLockedAction,
+        title: l.communityNoTeamTitle,
+        body: null,
+        actionLabel: l.communityNoTeamAction,
         scale: scale,
-        onAction: () => _goToTab(_CommunityTab.all),
+        onAction: () => Navigator.of(
+          context,
+        ).pushReplacement(tabRoute(const MypageScreen())),
       );
     }
     final team = communityTeam(_otherTeamId);
@@ -392,13 +388,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
       scale: scale,
       onAction: () => _goToTab(_CommunityTab.all),
     );
-  }
-
-  String _date(DateTime time) {
-    final local = time.toLocal();
-    final m = local.month.toString().padLeft(2, '0');
-    final d = local.day.toString().padLeft(2, '0');
-    return '${local.year}.$m.$d';
   }
 }
 

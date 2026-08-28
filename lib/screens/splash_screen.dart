@@ -185,13 +185,14 @@ class _SplashScreenState extends State<SplashScreen>
       // 에러 핸들러를 여기서 바로 붙인다. 아래 unawaited() 로 떼어놓는 순간
       // 이 Future 의 예외는 _bootstrap 의 try/catch 가 아니라 zone 으로 올라가
       // '처리되지 않은 크래시'로 잡힌다.
-      final prefetch = Future.wait([
-        _prefetchCalendar(),
-        _prefetchPromotedNotice(),
-      ]).catchError((Object e) {
-        debugPrint('[Splash] 프리페치 실패(무시): $e');
-        return const <void>[];
-      });
+      final prefetch =
+          Future.wait([
+            _prefetchCalendar(),
+            _prefetchPromotedNotice(),
+          ]).catchError((Object e) {
+            debugPrint('[Splash] 프리페치 실패(무시): $e');
+            return const <void>[];
+          });
 
       final results = await Future.wait([
         Future<void>.delayed(_minSplashDuration),
@@ -227,15 +228,17 @@ class _SplashScreenState extends State<SplashScreen>
       // 조건이 어긋나면 URL 이 달라져 캐시가 빗나가고 프리페치가 헛돈다.
       List<String> leagues = const ['ALL'];
       List<int> teamIds = const [];
-      final saved = await FilterPreferenceRepository.instance
-          .load(FilterPreferenceRepository.scheduleKey);
+      final saved = await FilterPreferenceRepository.instance.load(
+        FilterPreferenceRepository.scheduleKey,
+      );
       // 못 읽었으면(readFailed) 기본값으로 프리페치한다 — 화면도 같은 값을 쓰게
       // 되므로 캐시는 여전히 맞는다. 저장은 하지 않으니 필터가 유실되지 않는다.
       final json = saved.json;
       if (json != null) {
         final savedLeagues = (json['leagues'] as List?)?.cast<String>();
-        leagues =
-            savedLeagues != null && savedLeagues.isNotEmpty ? savedLeagues : ['ALL'];
+        leagues = savedLeagues != null && savedLeagues.isNotEmpty
+            ? savedLeagues
+            : ['ALL'];
         teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
       await ScheduleRepository.instance.fetchCalendar(
@@ -274,8 +277,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
-    final destination =
-        jwt == null ? const LoginScreen() : const ScheduleScreen();
+    final destination = jwt == null
+        ? const LoginScreen()
+        : const ScheduleScreen();
     final route = MaterialPageRoute(builder: (_) => destination);
     Navigator.of(context).pushReplacement(route);
     // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.
@@ -367,7 +371,8 @@ class _SplashScreenState extends State<SplashScreen>
       );
       if (confirmed == true) {
         const iosUrl = 'https://apps.apple.com/app/id6786755741';
-        const androidUrl = 'https://play.google.com/store/apps/details?id=com.warding.app';
+        const androidUrl =
+            'https://play.google.com/store/apps/details?id=com.warding.app';
         final url = Platform.isIOS ? iosUrl : androidUrl;
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       }

@@ -30,8 +30,8 @@ class CommunityBoardState {
 
 /// 커뮤니티 목록 화면 상태·로직.
 ///
-/// 쓰기 권한은 **서버 판정을 우선한다**([CommunityBoardViewer]). 앱은 "내
-/// 응원팀인가"만 알지, 응원팀을 바꾼 지 30일이 지났는지(쿨다운)는 모른다.
+/// 쓰기 권한은 **서버 판정을 우선한다**([CommunityBoardViewer]) — API 를 직접
+/// 부르는 경로까지 막는 최종 판정이 서버에 있고, 사유가 늘어도 앱을 안 고친다.
 /// 서버 판정이 아직 없을 때(전체 게시판·비로그인·로드 전)만 [canWriteToBoard]
 /// 로 떨어진다.
 class CommunityListViewModel extends ChangeNotifier {
@@ -185,13 +185,4 @@ class CommunityListViewModel extends ChangeNotifier {
       boardTeamId: boardTeamId,
     );
   }
-
-  /// 쓰기가 막힌 이유. 서버가 안 알려준 경우(전체 게시판·비로그인)는 null 이고,
-  /// 화면이 로그인·응원팀 미설정 문구로 직접 분기한다.
-  CommunityWriteLockReason? lockReason(int? boardTeamId) =>
-      board(boardTeamId).viewer?.reason;
-
-  /// 쿨다운이 풀리는 시각([CommunityWriteLockReason.cooldown] 일 때만).
-  DateTime? writableFrom(int? boardTeamId) =>
-      board(boardTeamId).viewer?.writableFrom;
 }

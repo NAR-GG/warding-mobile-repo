@@ -265,9 +265,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       if (!mounted) return;
       if (filterViewModel.loadFailed) {
         final l = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.filterLoadFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.filterLoadFailed)));
         return;
       }
       final result = await showAppBottomSheet<FilterResult>(
@@ -388,6 +388,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       ],
                   };
                 }
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -431,7 +432,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(bottom: 72 * scale + 34),
-                        child: _buildCalendarArea(context, matchesOfMonth, scale),
+                        child: _buildCalendarArea(
+                          context,
+                          matchesOfMonth,
+                          scale,
+                        ),
                       ),
                     ),
                   ],

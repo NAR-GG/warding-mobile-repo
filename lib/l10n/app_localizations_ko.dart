@@ -663,6 +663,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileEditTitle => '프로필 수정';
 
   @override
+  String get profileTeamChangeConfirmTitle => '응원팀을 바꿀까요?';
+
+  @override
+  String profileTeamChangeConfirmBody(String team) {
+    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.';
+  }
+
+  @override
+  String get profileTeamChangeConfirmOk => '바꾸기';
+
+  @override
+  String get profileTeamChangeLockedTitle => '응원팀은 30일에 한 번만 바꿀 수 있어요';
+
+  @override
+  String profileTeamChangeLockedBody(String date) {
+    return '$date부터 다시 바꿀 수 있어요.';
+  }
+
+  @override
   String get nameLabel => '이름';
 
   @override
@@ -1346,14 +1365,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communityWriteSubmitting => '등록 중…';
-
-  @override
-  String get communityCooldownTitle => '응원팀을 바꾼 지 얼마 안 됐어요.';
-
-  @override
-  String communityCooldownBody(String date) {
-    return '$date부터 팀 게시판에 쓸 수 있어요.';
-  }
 
   @override
   String communityReplyingTo(String nickname) {

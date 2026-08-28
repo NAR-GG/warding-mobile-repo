@@ -9,6 +9,8 @@ import '../../util/home_widget_service.dart';
 import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_input.dart';
+import '../../components/nar_button.dart';
+import '../../components/nar_popup_dialog.dart';
 import '../../styles/app_colors.dart';
 import '../../util/app_image.dart';
 import '../../viewmodel/profile_edit/profile_edit_viewmodel.dart';
@@ -60,12 +62,68 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _onDone() async {
+    // 응원팀은 30일에 한 번만 바꿀 수 있다. 되돌릴 수 없는 선택이라 저장 직전에
+    // 한 번 더 확인받는다 — 서버는 어차피 막지만, 막힌 뒤에 알면 늦다.
+    if (_viewModel.teamChanged && !await _confirmTeamChange()) return;
+
     final ok = await _viewModel.save();
     if (!ok || !mounted) return;
     // 응원팀 변경 시 위젯에 즉시 반영 (완료까지 대기)
     await HomeWidgetService.refreshFromApi();
     if (!mounted) return;
     Navigator.of(context).pop(true);
+  }
+
+  Future<bool> _confirmTeamChange() async {
+    final l = AppLocalizations.of(context)!;
+    final team = _viewModel.teams
+        .where((t) => t.id == _viewModel.favoriteTeamId)
+        .firstOrNull;
+
+    final confirmed = await showNarPopup<bool>(
+      context: context,
+      title: l.profileTeamChangeConfirmTitle,
+      message: l.profileTeamChangeConfirmBody(team?.name ?? ''),
+      actions: [
+        NarPopupAction(
+          label: l.cancel,
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        NarPopupAction(
+          label: l.profileTeamChangeConfirmOk,
+          variant: NarButtonVariant.type1,
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    );
+    return confirmed ?? false;
+  }
+
+  /// 쿨다운 중에 다른 팀을 눌렀을 때. 선택은 안 바뀌고 이유만 알려준다.
+  void _showTeamChangeLocked() {
+    final l = AppLocalizations.of(context)!;
+    final until = _viewModel.teamChangeAvailableFrom;
+    showNarPopup<void>(
+      context: context,
+      title: l.profileTeamChangeLockedTitle,
+      message: until == null
+          ? null
+          : l.profileTeamChangeLockedBody(_date(until)),
+      actions: [
+        NarPopupAction(
+          label: l.confirm,
+          variant: NarButtonVariant.type1,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
+    );
+  }
+
+  static String _date(DateTime time) {
+    final local = time.toLocal();
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '${local.year}.$m.$d';
   }
 
   @override
@@ -116,9 +174,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         ),
                         SizedBox(height: 55 * scale),
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20 * scale,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 20 * scale),
                           // 닉네임 = 이름 + 태그(영문/숫자 2~5자) 분리 입력.
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,9 +206,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         ),
                         SizedBox(height: 16 * scale),
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20 * scale,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 20 * scale),
                           child: CheerTeamSettingRow(
                             selectedTeam: selectedIndex == null
                                 ? null
@@ -162,14 +216,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         ),
                         SizedBox(height: 16 * scale),
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20 * scale,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 20 * scale),
                           child: CheerTeamList(
                             teams: cheerTeams,
                             selectedIndex: selectedIndex,
-                            onSelect: (i) =>
-                                _viewModel.selectTeam(_viewModel.teams[i].id),
+                            onSelect: (i) {
+                              if (!_viewModel.selectTeam(
+                                _viewModel.teams[i].id,
+                              )) {
+                                _showTeamChangeLocked();
+                              }
+                            },
                             scale: scale,
                           ),
                         ),

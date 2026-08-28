@@ -1280,6 +1280,36 @@ abstract class AppLocalizations {
   /// **'프로필 수정'**
   String get profileEditTitle;
 
+  /// No description provided for @profileTeamChangeConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원팀을 바꿀까요?'**
+  String get profileTeamChangeConfirmTitle;
+
+  /// No description provided for @profileTeamChangeConfirmBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.'**
+  String profileTeamChangeConfirmBody(String team);
+
+  /// No description provided for @profileTeamChangeConfirmOk.
+  ///
+  /// In ko, this message translates to:
+  /// **'바꾸기'**
+  String get profileTeamChangeConfirmOk;
+
+  /// No description provided for @profileTeamChangeLockedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원팀은 30일에 한 번만 바꿀 수 있어요'**
+  String get profileTeamChangeLockedTitle;
+
+  /// No description provided for @profileTeamChangeLockedBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{date}부터 다시 바꿀 수 있어요.'**
+  String profileTeamChangeLockedBody(String date);
+
   /// No description provided for @nameLabel.
   ///
   /// In ko, this message translates to:
@@ -2587,18 +2617,6 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'등록 중…'**
   String get communityWriteSubmitting;
-
-  /// No description provided for @communityCooldownTitle.
-  ///
-  /// In ko, this message translates to:
-  /// **'응원팀을 바꾼 지 얼마 안 됐어요.'**
-  String get communityCooldownTitle;
-
-  /// No description provided for @communityCooldownBody.
-  ///
-  /// In ko, this message translates to:
-  /// **'{date}부터 팀 게시판에 쓸 수 있어요.'**
-  String communityCooldownBody(String date);
 
   /// No description provided for @communityReplyingTo.
   ///

@@ -234,6 +234,13 @@
   "noSubscribedTeam": "No subscribed teams.",
 
   "profileEditTitle": "Edit Profile",
+  "profileTeamChangeConfirmTitle": "Change your team?",
+  "profileTeamChangeConfirmBody": "Switching to {team} locks your team for 30 days. Your community team board changes too.",
+  "@profileTeamChangeConfirmBody": { "placeholders": { "team": { "type": "String" } } },
+  "profileTeamChangeConfirmOk": "Change",
+  "profileTeamChangeLockedTitle": "You can change your team once every 30 days",
+  "profileTeamChangeLockedBody": "You can change it again from {date}.",
+  "@profileTeamChangeLockedBody": { "placeholders": { "date": { "type": "String" } } },
   "nameLabel": "Name",
   "nameHint": "Enter your name",
   "tagLabel": "Tag",
@@ -504,9 +511,6 @@
   "communityMoreComments": "Show more comments",
   "communityEdited": "edited",
   "communityWriteSubmitting": "Posting\u2026",
-  "communityCooldownTitle": "You changed your team recently.",
-  "communityCooldownBody": "You can post on the team board from {date}.",
-  "@communityCooldownBody": { "placeholders": { "date": { "type": "String" } } },
   "communityReplyingTo": "Replying to {nickname}",
   "@communityReplyingTo": { "placeholders": { "nickname": { "type": "String" } } },
 

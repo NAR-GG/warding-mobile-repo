@@ -81,12 +81,11 @@ class _MatchCardSkeletonState extends State<MatchCardSkeleton>
           // 카드와 같은 배경 — 로딩 중에도 카드 면이 이어져 보인다.
           decoration: BoxDecoration(
             color: AppColors.narBgTertiary,
-            border:
-                widget.showTopBorder
-                    ? const Border(
-                      top: BorderSide(color: AppColors.narLine2, width: 1),
-                    )
-                    : null,
+            border: widget.showTopBorder
+                ? const Border(
+                    top: BorderSide(color: AppColors.narLine2, width: 1),
+                  )
+                : null,
           ),
           // 카드와 같은 padding 10px 16px 24px — 로딩→실데이터 전환 시 점프 방지.
           padding: EdgeInsets.only(

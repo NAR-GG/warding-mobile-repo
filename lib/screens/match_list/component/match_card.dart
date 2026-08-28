@@ -296,9 +296,7 @@ class _AlarmBellState extends State<_AlarmBell> {
           ),
           backgroundColor: AppColors.narDark600,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -315,9 +313,9 @@ class _AlarmBellState extends State<_AlarmBell> {
     }
     if (!mounted) return;
     if (jwt == null || jwt.isEmpty) {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-      );
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
       // 로그인하고 돌아왔으면 구독 상태를 다시 읽는다(벨을 다시 탭해 설정 진행).
       _loadInitialState();
       return;
@@ -362,10 +360,12 @@ class _AlarmBellState extends State<_AlarmBell> {
 
       // 이 경기는 서버가 세트 시작에 맞춰 카드를 만든다. 그때 앱은 안 떠
       // 있으므로 지금 양 팀 로고를 미리 저장해 둔다.
-      unawaited(liveActivityLogoPrefetcher.prefetch([
-        LogoTarget(code: widget.homeCode, imageUrl: widget.homeLogoUrl ?? ''),
-        LogoTarget(code: widget.awayCode, imageUrl: widget.awayLogoUrl ?? ''),
-      ]));
+      unawaited(
+        liveActivityLogoPrefetcher.prefetch([
+          LogoTarget(code: widget.homeCode, imageUrl: widget.homeLogoUrl ?? ''),
+          LogoTarget(code: widget.awayCode, imageUrl: widget.awayLogoUrl ?? ''),
+        ]),
+      );
     } catch (_) {
       if (mounted) setState(() => _subscribed = false);
       _showFeedback(l.matchAlarmRegisterFailed);
@@ -379,7 +379,9 @@ class _AlarmBellState extends State<_AlarmBell> {
       behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
       child: SvgPicture.asset(
-        _subscribed ? 'assets/icons/bell-check.svg' : 'assets/icons/bell-plus.svg',
+        _subscribed
+            ? 'assets/icons/bell-check.svg'
+            : 'assets/icons/bell-plus.svg',
         width: 24 * widget.scale,
         height: 24 * widget.scale,
       ),

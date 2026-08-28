@@ -118,29 +118,23 @@ void main() {
       vm.dispose();
     });
 
-    test('서버 판정이 오면 응원팀이어도 그쪽을 따른다 (쿨다운)', () async {
+    test('서버가 못 쓴다고 하면 로컬 규칙보다 그쪽을 따른다', () async {
       loginAs();
       serve(
         favoriteTeamId: 39,
-        boardViewer: {
-          'canWrite': false,
-          'reason': 'COOLDOWN',
-          'writableFrom': '2026-09-20T00:00:00Z',
-        },
+        boardViewer: {'canWrite': false, 'reason': 'NOT_FAN'},
       );
       final vm = CommunityListViewModel();
       await vm.init();
       await vm.load(39);
 
-      // 로컬 규칙만 보면 내 응원팀이라 쓸 수 있어야 하지만, 응원팀을 바꾼 지
-      // 30일이 안 지난 건 앱이 알 수 없다. 서버 판정이 이긴다.
+      // 로컬 규칙만 보면 내 응원팀이라 쓸 수 있어야 한다. 판정의 최종 권한은
+      // 서버에 있고(API 직접 호출 경로까지 막는다) 앱은 그것을 따른다.
       expect(
         canWriteToBoard(loggedIn: true, myTeamId: 39, boardTeamId: 39),
         isTrue,
       );
       expect(vm.canWrite(39), isFalse);
-      expect(vm.lockReason(39), CommunityWriteLockReason.cooldown);
-      expect(vm.writableFrom(39), isNotNull);
       vm.dispose();
     });
 

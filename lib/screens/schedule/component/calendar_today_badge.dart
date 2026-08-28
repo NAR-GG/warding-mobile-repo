@@ -49,10 +49,7 @@ class _CalendarTodayBadgeState extends State<CalendarTodayBadge> {
       onEnd: () {
         if (!_visible && mounted) setState(() => _removed = true);
       },
-      child: SvgPicture.asset(
-        asset,
-        width: 30 * widget.scale,
-      ),
+      child: SvgPicture.asset(asset, width: 30 * widget.scale),
     );
   }
 }

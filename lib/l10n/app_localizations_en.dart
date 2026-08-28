@@ -681,6 +681,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEditTitle => 'Edit Profile';
 
   @override
+  String get profileTeamChangeConfirmTitle => 'Change your team?';
+
+  @override
+  String profileTeamChangeConfirmBody(String team) {
+    return 'Switching to $team locks your team for 30 days. Your community team board changes too.';
+  }
+
+  @override
+  String get profileTeamChangeConfirmOk => 'Change';
+
+  @override
+  String get profileTeamChangeLockedTitle =>
+      'You can change your team once every 30 days';
+
+  @override
+  String profileTeamChangeLockedBody(String date) {
+    return 'You can change it again from $date.';
+  }
+
+  @override
   String get nameLabel => 'Name';
 
   @override
@@ -1379,14 +1399,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communityWriteSubmitting => 'Posting…';
-
-  @override
-  String get communityCooldownTitle => 'You changed your team recently.';
-
-  @override
-  String communityCooldownBody(String date) {
-    return 'You can post on the team board from $date.';
-  }
 
   @override
   String communityReplyingTo(String nickname) {

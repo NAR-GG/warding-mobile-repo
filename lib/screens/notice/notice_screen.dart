@@ -67,7 +67,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
                     return Center(
                       child: _vm.loading
                           ? const CircularProgressIndicator(
-                              color: AppColors.narText2)
+                              color: AppColors.narText2,
+                            )
                           : Text(
                               _vm.failed ? l.noticeLoadFailed : l.noticeEmpty,
                               style: TextStyle(
@@ -81,7 +82,11 @@ class _NoticeScreenState extends State<NoticeScreen> {
                   return ListView.separated(
                     controller: _scrollController,
                     padding: EdgeInsets.fromLTRB(
-                        16 * scale, 12 * scale, 16 * scale, 24 * scale),
+                      16 * scale,
+                      12 * scale,
+                      16 * scale,
+                      24 * scale,
+                    ),
                     itemCount: _vm.notices.length,
                     separatorBuilder: (_, _) => SizedBox(height: 10 * scale),
                     itemBuilder: (context, index) {
@@ -120,7 +125,9 @@ class _NoticeCard extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final inner = Container(
       padding: EdgeInsets.symmetric(
-          horizontal: 16 * scale, vertical: 14 * scale),
+        horizontal: 16 * scale,
+        vertical: 14 * scale,
+      ),
       decoration: BoxDecoration(
         color: AppColors.narBgSecondary,
         borderRadius: BorderRadius.circular(13 * scale),

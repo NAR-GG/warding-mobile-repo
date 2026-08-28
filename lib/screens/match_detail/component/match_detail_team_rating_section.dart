@@ -90,8 +90,9 @@ class MatchDetailTeamRatingSection extends StatelessWidget {
               player: players[i],
               // 짝수 행만 narBgSecondary 배경(지브라).
               filled: i.isEven,
-              onTap:
-                  onPlayerTap == null ? null : () => onPlayerTap!(players[i]),
+              onTap: onPlayerTap == null
+                  ? null
+                  : () => onPlayerTap!(players[i]),
               scale: scale,
             ),
         ],
@@ -132,10 +133,7 @@ class _PlayerRatingRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _PlayerMini(
-                    imageUrl: player.playerImageUrl,
-                    scale: scale,
-                  ),
+                  _PlayerMini(imageUrl: player.playerImageUrl, scale: scale),
                   SizedBox(width: 6 * scale),
                   Flexible(
                     child: Column(
@@ -180,7 +178,10 @@ class _PlayerRatingRow extends StatelessWidget {
                 NarStarRating(rating: player.rating, scale: scale),
                 SizedBox(height: 2 * scale),
                 Text(
-                  AppLocalizations.of(context)!.playerRatingWithCount(player.rating.toStringAsFixed(1), player.raterCount),
+                  AppLocalizations.of(context)!.playerRatingWithCount(
+                    player.rating.toStringAsFixed(1),
+                    player.raterCount,
+                  ),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w600,
@@ -217,15 +218,14 @@ class _PlayerMini extends StatelessWidget {
         borderRadius: BorderRadius.circular(8 * scale),
       ),
       clipBehavior: Clip.antiAlias,
-      child:
-          hasImage
-              ? CachedNetworkImage(
-                imageUrl: resolveImageUrl(imageUrl)!,
-                fit: BoxFit.cover,
-                fadeInDuration: const Duration(milliseconds: 150),
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
-              )
-              : null,
+      child: hasImage
+          ? CachedNetworkImage(
+              imageUrl: resolveImageUrl(imageUrl)!,
+              fit: BoxFit.cover,
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            )
+          : null,
     );
   }
 }

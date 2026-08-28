@@ -83,8 +83,7 @@ class LiveEventDetailCard extends StatelessWidget {
               _LiveEventRow(
                 label: kinds[i].label(l),
                 value: selected.contains(kinds[i]),
-                onTap: () =>
-                    onChanged(kinds[i], !selected.contains(kinds[i])),
+                onTap: () => onChanged(kinds[i], !selected.contains(kinds[i])),
                 // 마지막 행은 구분선 없이 높이 34.
                 showDivider: i < kinds.length - 1,
                 scale: scale,
@@ -164,9 +163,7 @@ class _LiveEventRow extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 fontSize: 14 * scale,
                 height: 34 / 14,
-                color: value
-                    ? AppColors.narTextTertiary
-                    : AppColors.narDark300,
+                color: value ? AppColors.narTextTertiary : AppColors.narDark300,
               ),
             ),
           ],

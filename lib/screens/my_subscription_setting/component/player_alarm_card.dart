@@ -13,11 +13,7 @@ import '../../../viewmodel/subscription/player_alarm_viewmodel.dart';
 /// narDark600 카드 안에 선수별 블록(아바타/이름 + 솔랭 시작·종료 토글 2개)을 쌓는다.
 /// 팀 카드와 같은 골격이되 헤더 높이(45)와 토글 개수(2)만 다르다.
 class PlayerAlarmCard extends StatelessWidget {
-  const PlayerAlarmCard({
-    super.key,
-    required this.viewModel,
-    this.scale = 1,
-  });
+  const PlayerAlarmCard({super.key, required this.viewModel, this.scale = 1});
 
   final PlayerAlarmViewModel viewModel;
   final double scale;
@@ -187,7 +183,12 @@ class _PlayerAlarmRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+      padding: EdgeInsets.fromLTRB(
+        60 * scale,
+        2 * scale,
+        20 * scale,
+        2 * scale,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -260,8 +261,12 @@ class _PlayerAlarmBlockSkeletonState extends State<_PlayerAlarmBlockSkeleton>
           ),
         );
         Widget alarmRow() => Padding(
-          padding:
-              EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+          padding: EdgeInsets.fromLTRB(
+            60 * scale,
+            2 * scale,
+            20 * scale,
+            2 * scale,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
