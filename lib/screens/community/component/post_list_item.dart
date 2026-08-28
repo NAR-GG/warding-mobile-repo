@@ -9,21 +9,19 @@ import 'community_image.dart';
 
 /// 글 목록의 한 줄 — 제목 · 본문 미리보기 2줄 · 메타 · (있으면) 사진 썸네일.
 ///
-/// [showAuthorTeam] 을 false 로 주면 작성자 옆 팀 로고를 생략한다 — 팀
-/// 게시판은 전원이 같은 팀이라 로고가 정보를 주지 않는다.
+/// 팀 로고는 팀 게시판에서도 그린다. 전원이 같은 팀이라 정보량은 적지만,
+/// 게시판마다 작성자 줄 모양이 달라지는 쪽이 더 어색하다.
 class PostListItem extends StatelessWidget {
   const PostListItem({
     super.key,
     required this.post,
     required this.scale,
     required this.onTap,
-    this.showAuthorTeam = true,
   });
 
   final CommunityRemotePost post;
   final double scale;
   final VoidCallback onTap;
-  final bool showAuthorTeam;
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +99,7 @@ class PostListItem extends StatelessWidget {
                       _meta(ratingTimeAgo(post.createdAt), scale),
                       SizedBox(width: 9 * scale),
                       Flexible(
-                        child: AuthorLine(
-                          author: post.author,
-                          scale: scale,
-                          showTeam: showAuthorTeam,
-                        ),
+                        child: AuthorLine(author: post.author, scale: scale),
                       ),
                     ],
                   ),

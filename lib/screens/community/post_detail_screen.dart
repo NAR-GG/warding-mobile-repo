@@ -268,12 +268,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
+  /// 헤더에는 팀 **코드**를 쓴다. 가운데 슬롯이 좌우 아이콘 사이로 좁은데
+  /// 팀 이름은 'Hanwha Life Esports' 처럼 길어서 그대로 넣으면 잘린다.
+  /// 어느 게시판인지 알아보는 데는 코드로 충분하다(목록·칩은 전체 이름).
   String _boardName(AppLocalizations l) {
-    final boardTeamId = _vm.post?.boardTeamId;
-    if (_vm.post == null) return l.communityTitle;
-    if (boardTeamId == null) return l.communityBoardAll;
-    final team = communityTeam(boardTeamId);
-    return team == null ? l.communityTitle : l.communityBoardTeam(team.name);
+    final post = _vm.post;
+    if (post == null) return l.communityTitle;
+    if (post.boardTeamId == null) return l.communityBoardAll;
+    final team = communityTeam(post.boardTeamId);
+    if (team == null) return l.communityTitle;
+    final label = team.code.isNotEmpty ? team.code : team.name;
+    return l.communityBoardTeam(label);
   }
 
   Widget _content(AppLocalizations l, double scale) {

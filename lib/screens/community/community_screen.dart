@@ -340,8 +340,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           : _BoardList(
               state: state,
               scale: scale,
-              // 팀 게시판은 전원이 같은 팀이라 로고가 정보를 주지 않는다.
-              showAuthorTeam: boardTeamId == null,
               onLoadMore: () => _vm.loadMore(boardTeamId),
               onTap: (post) => _openPost(boardTeamId, post),
             ),
@@ -397,14 +395,12 @@ class _BoardList extends StatefulWidget {
   const _BoardList({
     required this.state,
     required this.scale,
-    required this.showAuthorTeam,
     required this.onLoadMore,
     required this.onTap,
   });
 
   final CommunityBoardState state;
   final double scale;
-  final bool showAuthorTeam;
   final VoidCallback onLoadMore;
   final ValueChanged<CommunityRemotePost> onTap;
 
@@ -461,7 +457,6 @@ class _BoardListState extends State<_BoardList> {
         return PostListItem(
           post: posts[i],
           scale: scale,
-          showAuthorTeam: widget.showAuthorTeam,
           onTap: () => widget.onTap(posts[i]),
         );
       },
