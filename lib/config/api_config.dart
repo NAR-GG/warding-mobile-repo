@@ -326,6 +326,107 @@ class ApiConfig {
   static String deviceUrl(String deviceId) =>
       '$apiBaseUrl/mobile/me/devices/$deviceId';
 
+  // ── 커뮤니티 (읽기는 비로그인 허용, 쓰기는 인증 필요) ────────────────
+
+  /// 게시글 목록. [boardTeamId] 생략 = 전체 게시판, 값 = 그 팀 게시판.
+  /// [size] 기본 20, 최대 50.
+  static String communityPostsUrl({
+    int? boardTeamId,
+    int? cursor,
+    int size = 20,
+  }) {
+    final query = StringBuffer('size=$size');
+    if (boardTeamId != null) query.write('&boardTeamId=$boardTeamId');
+    if (cursor != null) query.write('&cursor=$cursor');
+    return '$apiBaseUrl/mobile/community/posts?$query';
+  }
+
+  /// 게시글 작성(POST).
+  static String get communityCreatePostUrl =>
+      '$apiBaseUrl/mobile/community/posts';
+
+  /// 게시글 상세(GET) / 수정(PUT) / 삭제(DELETE).
+  static String communityPostUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId';
+
+  /// 조회수 +1(POST).
+  static String communityPostViewUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/view';
+
+  /// 추천 토글(POST).
+  static String communityPostLikeUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/like';
+
+  /// 스크랩 토글(POST).
+  static String communityPostScrapUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/scrap';
+
+  /// 댓글 목록(GET, 오래된 순). [size] 기본 50, 최대 100.
+  static String communityCommentsUrl(
+    int postId, {
+    int? cursor,
+    int size = 50,
+  }) {
+    final query = StringBuffer('size=$size');
+    if (cursor != null) query.write('&cursor=$cursor');
+    return '$apiBaseUrl/mobile/community/posts/$postId/comments?$query';
+  }
+
+  /// 댓글 작성(POST).
+  static String communityCreateCommentUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/comments';
+
+  /// 댓글 삭제(DELETE).
+  static String communityCommentUrl(int commentId) =>
+      '$apiBaseUrl/mobile/community/comments/$commentId';
+
+  /// 댓글 추천 토글(POST).
+  static String communityCommentLikeUrl(int commentId) =>
+      '$apiBaseUrl/mobile/community/comments/$commentId/like';
+
+  /// 신고 등록(POST).
+  static String get communityReportsUrl =>
+      '$apiBaseUrl/mobile/community/reports';
+
+  /// 차단(POST).
+  static String get communityBlocksUrl =>
+      '$apiBaseUrl/mobile/community/blocks';
+
+  /// 차단 해제(DELETE).
+  static String communityBlockUrl(int memberId) =>
+      '$apiBaseUrl/mobile/community/blocks/$memberId';
+
+  static String _meCommunityUrl(
+    String path, {
+    int? cursor,
+    int size = 20,
+  }) {
+    final query = StringBuffer('size=$size');
+    if (cursor != null) query.write('&cursor=$cursor');
+    return '$apiBaseUrl/mobile/me/community/$path?$query';
+  }
+
+  /// 내 스크랩 목록(GET, 최신순, 커서 = scrapId).
+  static String meCommunityScrapsUrl({int? cursor, int size = 20}) =>
+      _meCommunityUrl('scraps', cursor: cursor, size: size);
+
+  /// 내가 쓴 글 목록(GET, 최신순, 커서 = 글 id).
+  static String meCommunityPostsUrl({int? cursor, int size = 20}) =>
+      _meCommunityUrl('posts', cursor: cursor, size: size);
+
+  /// 좋아요한 글 목록(GET, 최신순, 커서 = likeId).
+  static String meCommunityLikesUrl({int? cursor, int size = 20}) =>
+      _meCommunityUrl('likes', cursor: cursor, size: size);
+
+  /// 내가 쓴 댓글 목록(GET, 최신순, 커서 = 댓글 id).
+  static String meCommunityCommentsUrl({int? cursor, int size = 20}) =>
+      _meCommunityUrl('comments', cursor: cursor, size: size);
+
+  /// 커뮤니티 사진 Cloudinary 서명 업로드용 파라미터 발급(POST, 인증 필요).
+  /// [profileImageSignatureUrl]과 달리 이미지 1장마다 새 publicId가 발급된다.
+  static String get communityImageSignatureUrl =>
+      '$apiBaseUrl/auth/me/community-image/signature';
+
   // ── 약관·정책 (웹 문서) ─────────────────────────────────────────────
 
   /// 약관·정책 문서가 사는 서비스 도메인. [host] 는 API 서버(`api.nar.kr`) 라
