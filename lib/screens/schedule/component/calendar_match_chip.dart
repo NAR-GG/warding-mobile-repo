@@ -5,7 +5,11 @@ import 'calendar_match.dart';
 
 /// 경기 칩 — 50×18, 라운드 8, 1px 테두리. 안에 [홈팀] vs [원정팀].
 class CalendarMatchChip extends StatelessWidget {
-  const CalendarMatchChip({super.key, required this.match, required this.scale});
+  const CalendarMatchChip({
+    super.key,
+    required this.match,
+    required this.scale,
+  });
 
   final CalendarMatch match;
   final double scale;

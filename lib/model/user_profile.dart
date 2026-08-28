@@ -13,6 +13,7 @@ class UserProfile {
     this.favoritePlayerIds = const [],
     this.profileImageUrl,
     this.isOnboarded = false,
+    this.favoriteTeamChangeAvailableFrom,
   });
 
   final int id;
@@ -43,6 +44,12 @@ class UserProfile {
 
   final bool isOnboarded;
 
+  /// 응원팀을 **다시 바꿀 수 있는 시각**. null 이면 지금 바꿀 수 있다.
+  ///
+  /// 응원팀은 30일에 한 번만 바꿀 수 있다. 이 값이 있으면 프로필 수정에서
+  /// 팀 선택 자체를 막는다 — 바꾼 뒤에 알려주면 되돌릴 방법이 없다.
+  final DateTime? favoriteTeamChangeAvailableFrom;
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final nickname = json['nickname'] as String? ?? '';
     // name·tag 가 응답에 없으면 nickname('name#tag')에서 분리한다(방어).
@@ -62,6 +69,9 @@ class UserProfile {
           .toList(),
       profileImageUrl: json['profileImageUrl'] as String?,
       isOnboarded: json['isOnboarded'] as bool? ?? false,
+      favoriteTeamChangeAvailableFrom: DateTime.tryParse(
+        json['favoriteTeamChangeAvailableFrom'] as String? ?? '',
+      ),
     );
   }
 }

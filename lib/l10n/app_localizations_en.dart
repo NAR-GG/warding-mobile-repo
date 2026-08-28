@@ -681,6 +681,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEditTitle => 'Edit Profile';
 
   @override
+  String get profileTeamChangeConfirmTitle => 'Change your team?';
+
+  @override
+  String profileTeamChangeConfirmBody(String team) {
+    return 'Switching to $team locks your team for 30 days. Your community team board changes too.';
+  }
+
+  @override
+  String get profileTeamChangeConfirmOk => 'Change';
+
+  @override
+  String get profileTeamChangeLockedTitle =>
+      'You can change your team once every 30 days';
+
+  @override
+  String profileTeamChangeLockedBody(String date) {
+    return 'You can change it again from $date.';
+  }
+
+  @override
   String get nameLabel => 'Name';
 
   @override
@@ -1194,6 +1214,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWrite => 'Write';
 
   @override
+  String communityWriteCooldown(int seconds) {
+    return 'Wait ${seconds}s';
+  }
+
+  @override
   String get communityEmpty => 'No posts yet. Be the first to write one.';
 
   @override
@@ -1244,8 +1269,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityScrap => 'Save';
 
   @override
-  String communityViewCount(String count) {
-    return 'Views $count';
+  String communityViewCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Views $countString';
   }
 
   @override
@@ -1338,40 +1367,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityRulesSeeAll => 'Read the full community rules';
 
   @override
-  String get communityAttachPhoto => 'Photo';
+  String get communityLoadFailed => 'Couldn\'t load posts.';
 
   @override
-  String get communityAttachPoll => 'Poll';
+  String get communityActionFailed => 'Couldn\'t complete the request.';
+
+  @override
+  String get communityWriteFailed => 'Couldn\'t post.';
+
+  @override
+  String get communityRetry => 'Retry';
+
+  @override
+  String get communityDeletedAuthor => 'Deleted user';
+
+  @override
+  String get communityCommentDeleted => 'This comment was deleted.';
+
+  @override
+  String get communityCommentBlocked => 'Comment from a blocked user.';
+
+  @override
+  String get communityCommentHidden => 'This comment is hidden.';
+
+  @override
+  String get communityBlockedPost => 'Post from a blocked user.';
+
+  @override
+  String get communityMoreDelete => 'Delete';
+
+  @override
+  String get communityMoreComments => 'Show more comments';
+
+  @override
+  String get communityEdited => 'edited';
+
+  @override
+  String get communityWriteSubmitting => 'Posting…';
+
+  @override
+  String communityReplyingTo(String nickname) {
+    return 'Replying to $nickname';
+  }
+
+  @override
+  String get communityAttachPhoto => 'Photo';
 
   @override
   String communityPhotoCount(int count) {
     return '$count/5';
-  }
-
-  @override
-  String get communityPollQuestionHint => 'What are you asking?';
-
-  @override
-  String communityPollOptionHint(int index) {
-    return 'Option $index';
-  }
-
-  @override
-  String get communityPollAddOption => 'Add option (up to 5)';
-
-  @override
-  String get communityPollHideResults => 'Hide results until voted';
-
-  @override
-  String get communityPollRemove => 'Remove poll';
-
-  @override
-  String communityPollPrompt(int count) {
-    return '$count voted · vote to see results';
-  }
-
-  @override
-  String communityPollVoted(int count) {
-    return '$count voted';
   }
 }

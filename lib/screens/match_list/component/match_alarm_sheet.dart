@@ -163,15 +163,15 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
           // 3종 모두 꺼져 있으면 구독 의미가 없어 비활성(onPressed=null).
           onPressed: (_setStart || _setEnd || _liveEvent)
               ? () => Navigator.of(context).pop((
-                    setStart: _setStart,
-                    setEnd: _setEnd,
-                    liveEvent: _liveEvent,
-                    kill: _detail.contains(LiveEventKind.kill),
-                    baron: _detail.contains(LiveEventKind.baron),
-                    dragon: _detail.contains(LiveEventKind.dragon),
-                    tower: _detail.contains(LiveEventKind.tower),
-                    inhibitor: _detail.contains(LiveEventKind.inhibitor),
-                  ))
+                  setStart: _setStart,
+                  setEnd: _setEnd,
+                  liveEvent: _liveEvent,
+                  kill: _detail.contains(LiveEventKind.kill),
+                  baron: _detail.contains(LiveEventKind.baron),
+                  dragon: _detail.contains(LiveEventKind.dragon),
+                  tower: _detail.contains(LiveEventKind.tower),
+                  inhibitor: _detail.contains(LiveEventKind.inhibitor),
+                ))
               : null,
         ),
       ],
@@ -224,7 +224,11 @@ class _Header extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _TeamBadge(name: homeName, logoUrl: homeLogoUrl, scale: scale),
+                    _TeamBadge(
+                      name: homeName,
+                      logoUrl: homeLogoUrl,
+                      scale: scale,
+                    ),
                     SizedBox(width: 12 * scale),
                     Text(
                       'VS',
@@ -238,7 +242,11 @@ class _Header extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 12 * scale),
-                    _TeamBadge(name: awayName, logoUrl: awayLogoUrl, scale: scale),
+                    _TeamBadge(
+                      name: awayName,
+                      logoUrl: awayLogoUrl,
+                      scale: scale,
+                    ),
                   ],
                 ),
               ],
@@ -267,7 +275,11 @@ class _Header extends StatelessWidget {
 
 /// 팀 로고(33 원형) + 팀명 한 쌍.
 class _TeamBadge extends StatelessWidget {
-  const _TeamBadge({required this.name, required this.logoUrl, required this.scale});
+  const _TeamBadge({
+    required this.name,
+    required this.logoUrl,
+    required this.scale,
+  });
 
   final String name;
   final String? logoUrl;
@@ -335,7 +347,10 @@ class _AlarmRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale, vertical: 2 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 20 * scale,
+        vertical: 2 * scale,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,

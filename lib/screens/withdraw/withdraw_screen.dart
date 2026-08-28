@@ -113,10 +113,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     SizedBox(height: 9 * scale),
                     _WarningRow(text: l.withdrawWarningData, scale: scale),
                     SizedBox(height: 9 * scale),
-                    _WarningRow(
-                      text: l.withdrawWarningImmediate,
-                      scale: scale,
-                    ),
+                    _WarningRow(text: l.withdrawWarningImmediate, scale: scale),
                     SizedBox(height: 32 * scale),
                   ],
                 ),

@@ -249,7 +249,8 @@ class _DropdownItem extends StatelessWidget {
         height: 22 / 16, // line-height 22px / font-size 16px
         letterSpacing: 0,
         color: isSelected
-            ? AppColors.narText // 선택 — #FFFFFF
+            ? AppColors
+                  .narText // 선택 — #FFFFFF
             : AppColors.narText3, // 미선택 — #C1C2C5
       ),
     );

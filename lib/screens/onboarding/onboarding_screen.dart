@@ -134,9 +134,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   child: CommonButton(
                     label: _viewModel.isLastStep ? l.startWarding : l.next,
                     scale: scale,
-                    onPressed: _viewModel.canProceed
-                        ? _viewModel.goNext
-                        : null,
+                    onPressed: _viewModel.canProceed ? _viewModel.goNext : null,
                   ),
                 ),
               ],

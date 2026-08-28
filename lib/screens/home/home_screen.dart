@@ -28,9 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       debugPrint('[Home] 로그아웃 에러: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.logoutFailed)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.logoutFailed)),
+      );
     } finally {
       if (mounted) setState(() => _isSigningOut = false);
     }

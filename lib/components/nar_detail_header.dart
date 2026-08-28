@@ -74,7 +74,21 @@ class NarDetailHeader extends StatelessWidget {
             ? Stack(
                 alignment: Alignment.center,
                 children: [
-                  Center(child: Text(title, style: titleStyle)),
+                  // 가운데 제목이 좌우 슬롯(뒤로가기 24, 우측 아이콘)을 침범하지
+                  // 않도록 양쪽에 자리를 비워 둔다. 제약이 없으면 긴 제목이
+                  // 아이콘 위로 그대로 넘어가 겹친다.
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 44 * scale),
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: titleStyle,
+                      ),
+                    ),
+                  ),
                   Positioned(
                     left: 0,
                     top: 0,

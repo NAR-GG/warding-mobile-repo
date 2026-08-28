@@ -357,7 +357,12 @@ class _AlarmRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+      padding: EdgeInsets.fromLTRB(
+        60 * scale,
+        2 * scale,
+        20 * scale,
+        2 * scale,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -430,8 +435,12 @@ class _TeamAlarmBlockSkeletonState extends State<_TeamAlarmBlockSkeleton>
           ),
         );
         Widget alarmRow() => Padding(
-          padding:
-              EdgeInsets.fromLTRB(60 * scale, 2 * scale, 20 * scale, 2 * scale),
+          padding: EdgeInsets.fromLTRB(
+            60 * scale,
+            2 * scale,
+            20 * scale,
+            2 * scale,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

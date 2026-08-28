@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../components/profile_avatar.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../model/community_comment.dart';
+import '../../../model/community_remote_comment.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/rating_mapping.dart';
 import 'author_line.dart';
 
-/// 댓글 한 줄. 답글([CommunityComment.parentId] 이 있는 것)이면 [isReply] 가
-/// true 이고 왼쪽으로 한 단 들여쓴다.
+/// 댓글 한 줄. 답글([CommunityRemoteComment.parentId] 이 있는 것)이면
+/// [isReply] 가 true 이고 왼쪽으로 한 단 들여쓴다.
 ///
 /// 들여쓰기는 딱 한 단까지다. 답글에 달린 답글도 같은 층에 쌓이고, 대신 본문
 /// 앞에 `@닉네임` 멘션이 붙는다 — 좁은 화면에서 무한 depth 는 읽을 수가 없다.
@@ -22,7 +24,7 @@ class CommentTile extends StatelessWidget {
     required this.onMore,
   });
 
-  final CommunityComment comment;
+  final CommunityRemoteComment comment;
   final double scale;
   final bool isReply;
   final VoidCallback onLike;
@@ -33,7 +35,21 @@ class CommentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final avatar = (isReply ? 24.0 : 28.0) * scale;
-    final mention = comment.mention;
+    final mention = comment.mentionNickname;
+
+    // 삭제·차단·숨김 댓글은 본문과 작성자가 안 온다. 행 자체는 남긴다 —
+    // 지우면 그 아래 답글들이 누구에게 단 건지 알 수 없게 된다.
+    if (comment.status != CommunityCommentStatus.visible) {
+      return _Placeholder(
+        text: switch (comment.status) {
+          CommunityCommentStatus.deleted => l.communityCommentDeleted,
+          CommunityCommentStatus.blocked => l.communityCommentBlocked,
+          _ => l.communityCommentHidden,
+        },
+        isReply: isReply,
+        scale: scale,
+      );
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -45,14 +61,7 @@ class CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: avatar,
-            height: avatar,
-            decoration: const BoxDecoration(
-              color: AppColors.narDark400,
-              shape: BoxShape.circle,
-            ),
-          ),
+          ProfileAvatar(url: comment.author?.profileImageUrl, size: avatar),
           SizedBox(width: 9 * scale),
           Expanded(
             child: Column(
@@ -62,8 +71,7 @@ class CommentTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AuthorLine(
-                        name: comment.authorName,
-                        teamId: comment.authorTeamId,
+                        author: comment.author,
                         scale: scale,
                         fontSize: 12,
                         color: AppColors.narText,
@@ -93,13 +101,13 @@ class CommentTile extends StatelessWidget {
                     children: [
                       if (mention != null)
                         TextSpan(
-                          text: '$mention ',
+                          text: '@$mention ',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColors.narViolet3,
                           ),
                         ),
-                      TextSpan(text: comment.body),
+                      TextSpan(text: comment.body ?? ''),
                     ],
                   ),
                   style: TextStyle(
@@ -113,7 +121,10 @@ class CommentTile extends StatelessWidget {
                 SizedBox(height: 6 * scale),
                 Row(
                   children: [
-                    Text(comment.timeAgo, style: _metaStyle(scale)),
+                    Text(
+                      ratingTimeAgo(comment.createdAt),
+                      style: _metaStyle(scale),
+                    ),
                     SizedBox(width: 12 * scale),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -154,6 +165,41 @@ class CommentTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 삭제·차단·숨김 댓글 자리. 작성자도 본문도 없으니 회색 한 줄로 둔다.
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({
+    required this.text,
+    required this.isReply,
+    required this.scale,
+  });
+
+  final String text;
+  final bool isReply;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: (isReply ? 40.0 : 20.0) * scale,
+        right: 20 * scale,
+        top: 12 * scale,
+        bottom: 12 * scale,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w400,
+          fontSize: 12.5 * scale,
+          height: 1.45,
+          color: AppColors.narText2,
+        ),
       ),
     );
   }

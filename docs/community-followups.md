@@ -195,6 +195,30 @@ scan)가 같은 인덱스 안에서 처리된다.
 
 ---
 
+# D. 투표 — API 가 없어 2단계에서 뺐다
+
+목업과 1차 더미에는 투표(주제 + 항목 2~5개 + "투표해야 결과 보기")가 있었다.
+API 연동(2단계)에서 **화면과 모델을 지웠다** — 백엔드 커뮤니티 API 에 투표가
+없어서, 남겨두면 눌러도 아무 일이 없는 버튼이 된다.
+
+지웠던 것: `model/community_poll.dart`, `component/poll_view.dart`, 글쓰기
+툴바의 '투표' 버튼, `communityPoll*` l10n 키. 되살릴 땐 git 히스토리에서
+`feat/community-api-wiring` 직전 커밋을 보면 된다.
+
+필요한 계약:
+
+| 항목 | 내용 |
+|---|---|
+| 테이블 | `community_poll(post_id, question, hide_results_until_voted)`, `community_poll_option(poll_id, label, vote_count)`, `community_poll_vote(option_id, member_id)` — `(poll_id, member_id)` 유니크로 1인 1표 |
+| 작성 | `POST /posts` 본문에 `poll` 오브젝트 추가 |
+| 조회 | 상세 응답에 `poll { question, hideResultsUntilVoted, options[], myOptionId }` |
+| 투표 | `POST /posts/{id}/poll/votes` — 항목 id, 멱등(다시 누르면 변경) |
+
+`vote_count` 는 조회수와 같은 이유로 역정규화한다 — 막대를 그릴 때마다
+`COUNT(*)` 를 돌릴 수는 없다.
+
+---
+
 # 순서 정리
 
 이 문서의 작업은 전부 **커뮤니티 API 연동 이후**다.
@@ -204,14 +228,31 @@ scan)가 같은 인덱스 안에서 처리된다.
 | C-2 | 계정 삭제 안내·개인정보처리방침 문구를 D-8 동작에 맞게 수정 | 문서 작업, 언제든 |
 | A | 알림함 분리 (앱 1~5, 백엔드 6) | 커뮤니티 연동 후 |
 | B | 내 활동 확장 — 인덱스는 이미 있고 API 만 필요 | 커뮤니티 연동 후 |
+| D | 투표 — 백엔드 계약부터 | 우선순위 낮음 |
 
 ## 백엔드가 남긴 미결 항목
 
 `nar-back-repo/docs/community-api-handoff.md` 에 앱 쪽 답을 기다리는 항목이 둘 있다.
 
-1. **쿨다운 잠금 바를 넣을지** — 넣으면 `/api/auth/me` 에
-   `teamBoardWritableFrom` 필드가 추가된다. 앱은 그 값 하나로 잠금 바 문구와
-   "N일 후 작성 가능" 표시를 처리한다. 안 넣으면 쓰기 시도 403 을 받고 나서야
-   알게 된다 — **글을 다 쓴 뒤에 막히는 것이라 넣는 쪽이 맞다.**
+1. **쿨다운 잠금 바 — 없앴다. 게이트를 팀 변경 시점으로 옮겼다.**
+   원래 규칙은 "팀을 바꾸면 30일간 그 팀 게시판에 못 쓴다"였다. 그러면 팀을
+   바꾼 사람이 자기 팀 게시판에 들어가서야 그 사실을 알게 되는데, 이미 바꾼
+   뒤라 되돌릴 수도 없다. 막을 거면 바꾸기 전에 막아야 한다.
+
+   바뀐 규칙 — **응원팀은 30일에 한 번만 바꿀 수 있고, 응원팀이면 자기 게시판에
+   언제나 쓴다.** 팀 갈아타며 게시판을 옮겨 다니는 걸 막는다는 목적은 같다.
+
+   | | 전 | 후 |
+   |---|---|---|
+   | 막는 지점 | 팀 게시판 쓰기 | 프로필 수정의 팀 변경 |
+   | 서버 | `CommunityWriteGuard` 의 COOLDOWN | `FavoriteTeamChangePolicy` |
+   | 앱이 아는 법 | 목록 응답 `boardViewer.reason` | `/auth/me` 의 `favoriteTeamChangeAvailableFrom` |
+   | 사용자가 아는 때 | 팀 게시판에 들어갔을 때 | 팀을 고르는 순간 |
+
+   앱은 팀 변경 시 확인 팝업을 띄우고("30일 동안 다시 바꿀 수 없어요"),
+   쿨다운 중이면 다른 팀 선택 자체를 거절한다. 서버는 `PUT /auth/me` 와
+   온보딩 재실행 양쪽에서 같은 검사를 한다(API 직접 호출 우회 차단).
+
+   `boardViewer` 는 남아 있고 `reason` 은 이제 `NOT_FAN` 만 나온다.
 2. **마이페이지 내 글·댓글 추가 여부** — 이 문서의 B 가 그 답이다.
    스크랩까지 3종으로 간다.

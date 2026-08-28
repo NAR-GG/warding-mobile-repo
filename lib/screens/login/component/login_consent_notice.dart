@@ -55,8 +55,7 @@ class LoginConsentNotice extends StatelessWidget {
         spans.add(TextSpan(text: rest));
         break;
       }
-      final isTermsFirst =
-          hasTerms && (!hasPrivacy || termsAt < privacyAt);
+      final isTermsFirst = hasTerms && (!hasPrivacy || termsAt < privacyAt);
       final at = isTermsFirst ? termsAt : privacyAt;
       final token = isTermsFirst ? termsToken : privacyToken;
 
@@ -66,9 +65,8 @@ class LoginConsentNotice extends StatelessWidget {
           text: isTermsFirst ? l.termsOfService : l.privacyPolicy,
           style: link,
           recognizer: TapGestureRecognizer()
-            ..onTap = () => _open(
-              isTermsFirst ? ApiConfig.termsUrl : ApiConfig.privacyUrl,
-            ),
+            ..onTap = () =>
+                _open(isTermsFirst ? ApiConfig.termsUrl : ApiConfig.privacyUrl),
         ),
       );
       rest = rest.substring(at + token.length);

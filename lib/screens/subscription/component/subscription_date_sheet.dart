@@ -128,8 +128,13 @@ class _WeekdayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final weekdays = [
-      l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
-      l.weekdayFri, l.weekdaySat, l.weekdaySun,
+      l.weekdayMon,
+      l.weekdayTue,
+      l.weekdayWed,
+      l.weekdayThu,
+      l.weekdayFri,
+      l.weekdaySat,
+      l.weekdaySun,
     ];
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 31.5 * scale),

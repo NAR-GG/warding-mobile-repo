@@ -54,9 +54,9 @@ class _AccountSettingScreenState extends State<AccountSettingScreen> {
 
   /// 회원탈퇴 — 안내와 확인은 별도 화면에서 받는다.
   Future<void> _goToWithdraw() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const WithdrawScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const WithdrawScreen()));
   }
 
   @override

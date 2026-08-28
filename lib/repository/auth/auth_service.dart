@@ -96,6 +96,11 @@ class AuthService {
     _jwtCached = false;
   }
 
+  /// 테스트 전용 — 캐시된 회원 정보를 버린다. 싱글턴이라 테스트 사이에
+  /// 60초 캐시가 넘어와서, 앞 테스트의 프로필로 뒤 테스트가 통과해버린다.
+  @visibleForTesting
+  void resetMeCacheForTesting() => _invalidateMeCache();
+
   /// 테스트 전용 — 진행 중인 재발급 요청을 잊는다.
   ///
   /// [refreshAccessToken] 은 동시 호출을 하나로 합치므로, 앞 테스트가 남긴

@@ -45,7 +45,8 @@ class _QuietHoursTimeSheetState extends State<QuietHoursTimeSheet> {
     _hourIndex = _hours.indexOf(widget.initial.hour % 12);
     // 5분 배수가 아닌 값이 서버에서 오더라도(구버전 데이터) 가장 가까운 칸에 붙인다.
     _minuteIndex =
-        (widget.initial.minute / kQuietHoursMinuteStep).round() % (60 ~/ kQuietHoursMinuteStep);
+        (widget.initial.minute / kQuietHoursMinuteStep).round() %
+        (60 ~/ kQuietHoursMinuteStep);
   }
 
   TimeOfDay get _selected {

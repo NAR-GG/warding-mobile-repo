@@ -104,7 +104,9 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.all(16 * scale),
                     child: _OverallRating(
-                      title: AppLocalizations.of(context)!.allPlayerRatingForSet(_setTitle),
+                      title: AppLocalizations.of(
+                        context,
+                      )!.allPlayerRatingForSet(_setTitle),
                       blueTeamName: blueTeamName,
                       redTeamName: redTeamName,
                       blueRating: blueRating,
@@ -119,28 +121,20 @@ class MatchDetailPlayerRatingSection extends StatelessWidget {
                   teamName: blueTeamName,
                   side: BadgeSide.blue,
                   players: bluePlayers,
-                  onPlayerTap:
-                      onPlayerTap == null
-                          ? null
-                          : (player) => onPlayerTap!(
-                            player,
-                            blueTeamName,
-                            BadgeSide.blue,
-                          ),
+                  onPlayerTap: onPlayerTap == null
+                      ? null
+                      : (player) =>
+                            onPlayerTap!(player, blueTeamName, BadgeSide.blue),
                   scale: scale,
                 ),
                 MatchDetailTeamRatingSection(
                   teamName: redTeamName,
                   side: BadgeSide.red,
                   players: redPlayers,
-                  onPlayerTap:
-                      onPlayerTap == null
-                          ? null
-                          : (player) => onPlayerTap!(
-                            player,
-                            redTeamName,
-                            BadgeSide.red,
-                          ),
+                  onPlayerTap: onPlayerTap == null
+                      ? null
+                      : (player) =>
+                            onPlayerTap!(player, redTeamName, BadgeSide.red),
                   scale: scale,
                 ),
               ],

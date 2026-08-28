@@ -23,21 +23,20 @@ Future<({double rating, String comment})?> showRatingCommentSheet({
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder:
-        (sheetContext) => Padding(
-          // 키보드가 올라오면 시트를 그만큼 밀어 올린다.
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: RatingCommentSheet(
-            teamName: teamName,
-            teamCode: teamCode,
-            playerName: playerName,
-            position: position,
-            initialRating: initialRating,
-            initialComment: initialComment,
-          ),
-        ),
+    builder: (sheetContext) => Padding(
+      // 키보드가 올라오면 시트를 그만큼 밀어 올린다.
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+      ),
+      child: RatingCommentSheet(
+        teamName: teamName,
+        teamCode: teamCode,
+        playerName: playerName,
+        position: position,
+        initialRating: initialRating,
+        initialComment: initialComment,
+      ),
+    ),
   );
 }
 
@@ -76,8 +75,9 @@ class RatingCommentSheet extends StatefulWidget {
 class _RatingCommentSheetState extends State<RatingCommentSheet> {
   static const int _maxLength = 150;
 
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialComment ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialComment ?? '',
+  );
   late double _rating = widget.initialRating;
   late int _length = (widget.initialComment ?? '').characters.length;
 
