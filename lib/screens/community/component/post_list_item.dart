@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../model/community_post.dart';
+import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/rating_mapping.dart';
 import 'author_line.dart';
 import 'community_image.dart';
 
 /// 글 목록의 한 줄 — 제목 · 본문 미리보기 2줄 · 메타 · (있으면) 사진 썸네일.
+///
+/// [showAuthorTeam] 을 false 로 주면 작성자 옆 팀 로고를 생략한다 — 팀
+/// 게시판은 전원이 같은 팀이라 로고가 정보를 주지 않는다.
 class PostListItem extends StatelessWidget {
   const PostListItem({
     super.key,
     required this.post,
     required this.scale,
     required this.onTap,
+    this.showAuthorTeam = true,
   });
 
-  final CommunityPost post;
+  final CommunityRemotePost post;
   final double scale;
   final VoidCallback onTap;
+  final bool showAuthorTeam;
 
   @override
   Widget build(BuildContext context) {
-    final thumb = post.images.isEmpty ? null : post.images.first;
+    final thumb = post.thumbnailUrl;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -57,7 +63,7 @@ class PostListItem extends StatelessWidget {
                   ),
                   SizedBox(height: 4 * scale),
                   Text(
-                    post.body,
+                    post.bodyPreview,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -92,13 +98,13 @@ class PostListItem extends StatelessWidget {
                         ),
                         SizedBox(width: 9 * scale),
                       ],
-                      _meta(post.timeAgo, scale),
+                      _meta(ratingTimeAgo(post.createdAt), scale),
                       SizedBox(width: 9 * scale),
                       Flexible(
                         child: AuthorLine(
-                          name: post.authorName,
-                          teamId: post.authorTeamId,
+                          author: post.author,
                           scale: scale,
+                          showTeam: showAuthorTeam,
                         ),
                       ),
                     ],
@@ -106,7 +112,7 @@ class PostListItem extends StatelessWidget {
                 ],
               ),
             ),
-            if (thumb != null) ...[
+            if (thumb != null && thumb.isNotEmpty) ...[
               SizedBox(width: 12 * scale),
               CommunityImage(
                 source: thumb,

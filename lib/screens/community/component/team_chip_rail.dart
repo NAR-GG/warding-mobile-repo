@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../model/community_post.dart';
+import '../../../model/team.dart';
 import '../../../styles/app_colors.dart';
-import '../community_teams.dart';
 import 'author_line.dart';
 
 /// 팀 게시판 전환용 가로 칩 레일.
@@ -12,25 +11,25 @@ import 'author_line.dart';
 class TeamChipRail extends StatelessWidget {
   const TeamChipRail({
     super.key,
-    required this.boards,
+    required this.teams,
     required this.selectedId,
     required this.myTeamId,
     required this.scale,
     required this.onSelected,
   });
 
-  final List<CommunityBoard> boards;
-  final int selectedId;
+  final List<Team> teams;
+  final int? selectedId;
   final int? myTeamId;
   final double scale;
   final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final ordered = [...boards];
+    final ordered = [...teams];
     final mine = myTeamId;
     if (mine != null) {
-      final index = ordered.indexWhere((b) => b.id == mine);
+      final index = ordered.indexWhere((t) => t.id == mine);
       if (index > 0) ordered.insert(0, ordered.removeAt(index));
     }
 
@@ -49,9 +48,9 @@ class TeamChipRail extends StatelessWidget {
             for (var i = 0; i < ordered.length; i++) ...[
               if (i > 0) SizedBox(width: 6 * scale),
               _Chip(
-                board: ordered[i],
+                team: ordered[i],
                 selected: ordered[i].id == selectedId,
-                isMine: ordered[i].id == mine,
+                isMine: mine != null && ordered[i].id == mine,
                 scale: scale,
                 onTap: () => onSelected(ordered[i].id),
               ),
@@ -65,14 +64,14 @@ class TeamChipRail extends StatelessWidget {
 
 class _Chip extends StatelessWidget {
   const _Chip({
-    required this.board,
+    required this.team,
     required this.selected,
     required this.isMine,
     required this.scale,
     required this.onTap,
   });
 
-  final CommunityBoard board;
+  final Team team;
   final bool selected;
   final bool isMine;
   final double scale;
@@ -107,10 +106,10 @@ class _Chip extends StatelessWidget {
               ),
               SizedBox(width: 3 * scale),
             ],
-            TeamLogoDot(teamId: board.id, size: 14 * scale),
+            TeamLogoDot(imageUrl: team.imageUrl, size: 14 * scale),
             SizedBox(width: 5 * scale),
             Text(
-              boardDisplayName(board),
+              team.name,
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,

@@ -2340,7 +2340,7 @@ abstract class AppLocalizations {
   ///
   /// In ko, this message translates to:
   /// **'조회 {count}'**
-  String communityViewCount(String count);
+  String communityViewCount(int count);
 
   /// No description provided for @communityBoardAll.
   ///
@@ -2510,65 +2510,113 @@ abstract class AppLocalizations {
   /// **'커뮤니티 이용규칙 전체 보기'**
   String get communityRulesSeeAll;
 
+  /// No description provided for @communityLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'글을 불러오지 못했어요.'**
+  String get communityLoadFailed;
+
+  /// No description provided for @communityActionFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요청을 처리하지 못했어요.'**
+  String get communityActionFailed;
+
+  /// No description provided for @communityWriteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'글을 등록하지 못했어요.'**
+  String get communityWriteFailed;
+
+  /// No description provided for @communityRetry.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 시도'**
+  String get communityRetry;
+
+  /// No description provided for @communityDeletedAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴한 사용자'**
+  String get communityDeletedAuthor;
+
+  /// No description provided for @communityCommentDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제된 댓글입니다.'**
+  String get communityCommentDeleted;
+
+  /// No description provided for @communityCommentBlocked.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자의 댓글입니다.'**
+  String get communityCommentBlocked;
+
+  /// No description provided for @communityCommentHidden.
+  ///
+  /// In ko, this message translates to:
+  /// **'숨김 처리된 댓글입니다.'**
+  String get communityCommentHidden;
+
+  /// No description provided for @communityBlockedPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자의 글입니다.'**
+  String get communityBlockedPost;
+
+  /// No description provided for @communityMoreDelete.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제하기'**
+  String get communityMoreDelete;
+
+  /// No description provided for @communityMoreComments.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글 더 보기'**
+  String get communityMoreComments;
+
+  /// No description provided for @communityEdited.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정됨'**
+  String get communityEdited;
+
+  /// No description provided for @communityWriteSubmitting.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록 중…'**
+  String get communityWriteSubmitting;
+
+  /// No description provided for @communityCooldownTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원팀을 바꾼 지 얼마 안 됐어요.'**
+  String get communityCooldownTitle;
+
+  /// No description provided for @communityCooldownBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{date}부터 팀 게시판에 쓸 수 있어요.'**
+  String communityCooldownBody(String date);
+
+  /// No description provided for @communityReplyingTo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님에게 답글'**
+  String communityReplyingTo(String nickname);
+
   /// No description provided for @communityAttachPhoto.
   ///
   /// In ko, this message translates to:
   /// **'사진'**
   String get communityAttachPhoto;
 
-  /// No description provided for @communityAttachPoll.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표'**
-  String get communityAttachPoll;
-
   /// No description provided for @communityPhotoCount.
   ///
   /// In ko, this message translates to:
   /// **'{count}/5'**
   String communityPhotoCount(int count);
-
-  /// No description provided for @communityPollQuestionHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표 주제를 입력하세요'**
-  String get communityPollQuestionHint;
-
-  /// No description provided for @communityPollOptionHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'항목 {index}'**
-  String communityPollOptionHint(int index);
-
-  /// No description provided for @communityPollAddOption.
-  ///
-  /// In ko, this message translates to:
-  /// **'항목 추가 (최대 5개)'**
-  String get communityPollAddOption;
-
-  /// No description provided for @communityPollHideResults.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표해야 결과 보기'**
-  String get communityPollHideResults;
-
-  /// No description provided for @communityPollRemove.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표 삭제'**
-  String get communityPollRemove;
-
-  /// No description provided for @communityPollPrompt.
-  ///
-  /// In ko, this message translates to:
-  /// **'{count}명 참여 · 투표하면 결과가 보여요'**
-  String communityPollPrompt(int count);
-
-  /// No description provided for @communityPollVoted.
-  ///
-  /// In ko, this message translates to:
-  /// **'{count}명 참여'**
-  String communityPollVoted(int count);
 }
 
 class _AppLocalizationsDelegate

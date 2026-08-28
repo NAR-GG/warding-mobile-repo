@@ -195,6 +195,30 @@ scan)가 같은 인덱스 안에서 처리된다.
 
 ---
 
+# D. 투표 — API 가 없어 2단계에서 뺐다
+
+목업과 1차 더미에는 투표(주제 + 항목 2~5개 + "투표해야 결과 보기")가 있었다.
+API 연동(2단계)에서 **화면과 모델을 지웠다** — 백엔드 커뮤니티 API 에 투표가
+없어서, 남겨두면 눌러도 아무 일이 없는 버튼이 된다.
+
+지웠던 것: `model/community_poll.dart`, `component/poll_view.dart`, 글쓰기
+툴바의 '투표' 버튼, `communityPoll*` l10n 키. 되살릴 땐 git 히스토리에서
+`feat/community-api-wiring` 직전 커밋을 보면 된다.
+
+필요한 계약:
+
+| 항목 | 내용 |
+|---|---|
+| 테이블 | `community_poll(post_id, question, hide_results_until_voted)`, `community_poll_option(poll_id, label, vote_count)`, `community_poll_vote(option_id, member_id)` — `(poll_id, member_id)` 유니크로 1인 1표 |
+| 작성 | `POST /posts` 본문에 `poll` 오브젝트 추가 |
+| 조회 | 상세 응답에 `poll { question, hideResultsUntilVoted, options[], myOptionId }` |
+| 투표 | `POST /posts/{id}/poll/votes` — 항목 id, 멱등(다시 누르면 변경) |
+
+`vote_count` 는 조회수와 같은 이유로 역정규화한다 — 막대를 그릴 때마다
+`COUNT(*)` 를 돌릴 수는 없다.
+
+---
+
 # 순서 정리
 
 이 문서의 작업은 전부 **커뮤니티 API 연동 이후**다.
@@ -204,14 +228,15 @@ scan)가 같은 인덱스 안에서 처리된다.
 | C-2 | 계정 삭제 안내·개인정보처리방침 문구를 D-8 동작에 맞게 수정 | 문서 작업, 언제든 |
 | A | 알림함 분리 (앱 1~5, 백엔드 6) | 커뮤니티 연동 후 |
 | B | 내 활동 확장 — 인덱스는 이미 있고 API 만 필요 | 커뮤니티 연동 후 |
+| D | 투표 — 백엔드 계약부터 | 우선순위 낮음 |
 
 ## 백엔드가 남긴 미결 항목
 
 `nar-back-repo/docs/community-api-handoff.md` 에 앱 쪽 답을 기다리는 항목이 둘 있다.
 
-1. **쿨다운 잠금 바를 넣을지** — 넣으면 `/api/auth/me` 에
-   `teamBoardWritableFrom` 필드가 추가된다. 앱은 그 값 하나로 잠금 바 문구와
-   "N일 후 작성 가능" 표시를 처리한다. 안 넣으면 쓰기 시도 403 을 받고 나서야
-   알게 된다 — **글을 다 쓴 뒤에 막히는 것이라 넣는 쪽이 맞다.**
+1. ~~**쿨다운 잠금 바를 넣을지**~~ — **해결됨.** 백엔드가 `/api/auth/me` 대신
+   목록 응답에 `boardViewer { canWrite, reason, writableFrom }` 를 넣는 쪽으로
+   구현했고, 앱이 그대로 쓴다(`CommunityListViewModel.canWrite`). 판정 주체가
+   서버라 앱이 모르는 사유(쿨다운)도 잠금 바에 뜬다.
 2. **마이페이지 내 글·댓글 추가 여부** — 이 문서의 B 가 그 답이다.
    스크랩까지 3종으로 간다.

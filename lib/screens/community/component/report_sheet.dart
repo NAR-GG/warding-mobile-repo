@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../../components/app_bottom_sheet.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../model/community_report.dart';
 import '../../../styles/app_colors.dart';
 
 /// `⋯` 메뉴에서 고른 동작.
-enum CommunityMoreAction { report, block }
+enum CommunityMoreAction { report, block, delete }
 
 /// `⋯` → 더보기 메뉴. 글과 댓글이 같은 시트를 쓴다.
 ///
-/// 신고를 고르면 이어서 [showReportReasonSheet] 로 사유를 받는다. 사유 없이
-/// 신고를 받으면 운영자가 왜 신고됐는지 알 수 없어 처리할 수가 없다.
-Future<CommunityMoreAction?> showCommunityMoreSheet(BuildContext context) {
+/// 내가 쓴 것([mine])이면 삭제만 뜬다 — 자기 글을 신고하거나 자기를 차단할
+/// 일은 없다. 남의 것이면 신고와 차단이 뜨고, 신고를 고르면 이어서
+/// [showReportReasonSheet] 로 사유를 받는다. 사유 없이 접수하면 운영자가 왜
+/// 신고됐는지 알 수 없어 처리할 수가 없다.
+Future<CommunityMoreAction?> showCommunityMoreSheet(
+  BuildContext context, {
+  required bool mine,
+}) {
   final l = AppLocalizations.of(context)!;
   final scale = MediaQuery.of(context).size.width.clamp(320.0, 430.0) / 375;
 
@@ -20,19 +26,31 @@ Future<CommunityMoreAction?> showCommunityMoreSheet(BuildContext context) {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _MenuRow(
-          label: l.communityMoreReport,
-          scale: scale,
-          danger: true,
-          onTap: () => Navigator.of(context).pop(CommunityMoreAction.report),
-        ),
-        _MenuRow(
-          label: l.communityMoreBlock,
-          scale: scale,
-          onTap: () => Navigator.of(context).pop(CommunityMoreAction.block),
-        ),
-      ],
+      children: mine
+          ? [
+              _MenuRow(
+                label: l.communityMoreDelete,
+                scale: scale,
+                danger: true,
+                onTap: () =>
+                    Navigator.of(context).pop(CommunityMoreAction.delete),
+              ),
+            ]
+          : [
+              _MenuRow(
+                label: l.communityMoreReport,
+                scale: scale,
+                danger: true,
+                onTap: () =>
+                    Navigator.of(context).pop(CommunityMoreAction.report),
+              ),
+              _MenuRow(
+                label: l.communityMoreBlock,
+                scale: scale,
+                onTap: () =>
+                    Navigator.of(context).pop(CommunityMoreAction.block),
+              ),
+            ],
     ),
   );
 }
@@ -41,32 +59,34 @@ Future<CommunityMoreAction?> showCommunityMoreSheet(BuildContext context) {
 ///
 /// 운영자가 처리하려면 "왜 신고됐는지"를 알아야 한다. 사유 코드만으로 설명이
 /// 안 되는 게 기타라, 기타를 고르면 상세를 받는다.
-typedef CommunityReport = ({String reason, String? detail});
+typedef CommunityReportInput = ({CommunityReportReason reason, String? detail});
 
 /// 신고 사유 선택 시트.
-Future<CommunityReport?> showReportReasonSheet(BuildContext context) {
+Future<CommunityReportInput?> showReportReasonSheet(BuildContext context) {
   final l = AppLocalizations.of(context)!;
   final scale = MediaQuery.of(context).size.width.clamp(320.0, 430.0) / 375;
 
-  return showAppBottomSheet<CommunityReport>(
+  return showAppBottomSheet<CommunityReportInput>(
     context: context,
     child: _ReasonPicker(
       title: l.communityReportTitle,
       submitLabel: l.communityReportSubmit,
-      etcLabel: l.communityReportEtc,
       etcHint: l.communityReportEtcHint,
       reasons: [
-        l.communityReportAbuse,
-        l.communityReportObscene,
-        l.communityReportAd,
-        l.communityReportFraud,
-        l.communityReportSpam,
-        l.communityReportEtc,
+        (value: CommunityReportReason.abuse, label: l.communityReportAbuse),
+        (value: CommunityReportReason.obscene, label: l.communityReportObscene),
+        (value: CommunityReportReason.ad, label: l.communityReportAd),
+        (value: CommunityReportReason.fraud, label: l.communityReportFraud),
+        (value: CommunityReportReason.spam, label: l.communityReportSpam),
+        (value: CommunityReportReason.etc, label: l.communityReportEtc),
       ],
       scale: scale,
     ),
   );
 }
+
+/// 신고 사유 한 줄 — API 로 보낼 코드와 화면에 보일 이름.
+typedef _Reason = ({CommunityReportReason value, String label});
 
 class _MenuRow extends StatelessWidget {
   const _MenuRow({
@@ -107,7 +127,6 @@ class _ReasonPicker extends StatefulWidget {
   const _ReasonPicker({
     required this.title,
     required this.submitLabel,
-    required this.etcLabel,
     required this.etcHint,
     required this.reasons,
     required this.scale,
@@ -115,12 +134,9 @@ class _ReasonPicker extends StatefulWidget {
 
   final String title;
   final String submitLabel;
-
-  /// 이 값과 같은 사유를 고르면 상세 입력칸이 열린다.
-  final String etcLabel;
   final String etcHint;
 
-  final List<String> reasons;
+  final List<_Reason> reasons;
   final double scale;
 
   @override
@@ -129,7 +145,7 @@ class _ReasonPicker extends StatefulWidget {
 
 class _ReasonPickerState extends State<_ReasonPicker> {
   final TextEditingController _detail = TextEditingController();
-  String? _selected;
+  CommunityReportReason? _selected;
 
   @override
   void initState() {
@@ -143,7 +159,7 @@ class _ReasonPickerState extends State<_ReasonPicker> {
     super.dispose();
   }
 
-  bool get _isEtc => _selected == widget.etcLabel;
+  bool get _isEtc => _selected == CommunityReportReason.etc;
 
   /// 기타는 상세를 적어야 보낼 수 있다. 사유 없이 접수해봐야 운영자가 처리를 못 한다.
   bool get _submittable =>
@@ -182,23 +198,23 @@ class _ReasonPickerState extends State<_ReasonPicker> {
             for (final reason in widget.reasons)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _selected = reason),
+                onTap: () => setState(() => _selected = reason.value),
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 10 * scale),
                   child: Row(
                     children: [
                       Icon(
-                        reason == selected
+                        reason.value == selected
                             ? Icons.radio_button_checked
                             : Icons.radio_button_unchecked,
                         size: 18 * scale,
-                        color: reason == selected
+                        color: reason.value == selected
                             ? AppColors.narChipActive
                             : AppColors.narLine2,
                       ),
                       SizedBox(width: 10 * scale),
                       Text(
-                        reason,
+                        reason.label,
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w500,

@@ -4,16 +4,16 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../l10n/app_localizations.dart';
-import '../../model/community_post.dart';
+import '../../model/community_remote_post.dart';
+import '../../model/team.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
+import '../../viewmodel/community/community_list_viewmodel.dart';
 import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
-import 'community_dummy.dart';
-import 'community_permission.dart';
 import 'community_teams.dart';
 import 'component/post_list_item.dart';
 import 'component/team_chip_rail.dart';
@@ -23,17 +23,14 @@ import 'post_write_screen.dart';
 
 /// 커뮤니티 — 전체 · 우리팀 · 다른팀.
 ///
-/// 읽기는 누구에게나 열려 있고, 글쓰기만 전체 게시판과 내 응원팀 게시판으로
-/// 제한된다([canWriteToBoard]). 그래서 목록 전체를 `GuestLockOverlay` 로 덮지
-/// 않는다 — 비회원도 읽을 수 있어야 하므로 쓰기 버튼에서만 막는다.
+/// 읽기는 누구에게나 열려 있고 쓰기만 전체 게시판과 내 응원팀 게시판으로
+/// 제한된다. 그래서 목록 전체를 `GuestLockOverlay` 로 덮지 않는다 — 비회원도
+/// 읽을 수 있어야 하므로 쓰기 버튼에서만 막는다.
 ///
 /// **우리팀을 다른팀과 분리한 이유**: 팀 탭 하나에 10개 팀을 칩으로 늘어놓으면
 /// 내 팀에 가려면 매번 레일에서 찾아야 하고, 무엇보다 쓸 수 있는 곳(내 팀)과 못
 /// 쓰는 곳(나머지)이 같은 탭에 섞여 잠금 바가 떴다 사라졌다 한다. 탭을 나누면
 /// "이 탭은 내가 쓰는 곳, 저 탭은 읽는 곳"이 고정된다.
-///
-/// 이번 회차는 백엔드 API 가 없어 [community_dummy] 의 정적 데이터를 쓴다.
-/// 그래서 ViewModel 없이 화면 안 [setState] 로만 상태를 둔다.
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
 
@@ -46,36 +43,25 @@ enum _CommunityTab { all, myTeam, otherTeams }
 
 class _CommunityScreenState extends State<CommunityScreen> {
   final PageController _pageController = PageController();
+  final CommunityListViewModel _vm = CommunityListViewModel();
 
   _CommunityTab _tab = _CommunityTab.all;
 
-  /// '다른팀' 탭에서 보고 있는 팀. 내 팀은 이 목록에서 빠진다.
-  late int _otherTeamId = _otherTeams.first.id;
-
-  /// 내 응원팀을 뺀 나머지 팀 게시판.
-  static List<CommunityBoard> get _otherTeams => [
-    for (final board in kDummyTeamBoards)
-      if (board.id != kDummyMyTeamId) board,
-  ];
-
-  int? get _boardId => switch (_tab) {
-    _CommunityTab.all => CommunityBoard.allId,
-    // 응원팀 미설정이면 '우리팀' 탭에 띄울 게시판 자체가 없다.
-    _CommunityTab.myTeam => kDummyMyTeamId,
-    _CommunityTab.otherTeams => _otherTeamId,
-  };
+  /// '다른팀' 탭에서 고른 팀. null 이면 아직 안 골랐다는 뜻이고, 팀 목록이
+  /// 도착하면 첫 번째 팀으로 정해진다.
+  int? _selectedOtherId;
 
   @override
   void initState() {
     super.initState();
-    // 게시글은 더미지만 팀 로고·이름은 실제 API 로 채운다. 실패해도 색 원
-    // 폴백으로 그려지므로 결과를 기다리거나 에러를 띄우지 않는다.
     loadCommunityTeams();
+    _vm.init();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _vm.dispose();
     super.dispose();
   }
 
@@ -101,27 +87,78 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  void _openWrite() {
-    if (!kDummyLoggedIn) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
-      return;
+  /// 내 응원팀을 뺀 나머지 팀.
+  List<Team> get _otherTeams => [
+    for (final team in communityTeams.value)
+      if (team.id != _vm.myTeamId) team,
+  ];
+
+  /// '다른팀' 탭에서 지금 보고 있는 팀.
+  int? get _otherTeamId {
+    final others = _otherTeams;
+    if (others.isEmpty) return null;
+    final selected = _selectedOtherId;
+    if (selected != null && others.any((t) => t.id == selected)) {
+      return selected;
     }
-    final boardId = _boardId;
-    if (boardId == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PostWriteScreen(initialBoardId: boardId),
-      ),
-    );
+    return others.first.id;
   }
 
-  /// 당겨서 새로고침. 더미라 다시 그릴 것이 없어 짧게 쉬었다 끝낸다.
-  /// 백엔드가 붙으면 여기서 리포지토리를 다시 부른다.
-  Future<void> _refresh() async {
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    if (mounted) setState(() {});
+  /// 지금 탭이 보여주는 게시판. null 은 **전체 게시판**을 뜻하므로, 팀을 아직
+  /// 못 정한 탭과 구분하려면 [_tab] 을 같이 봐야 한다.
+  int? get _boardTeamId => switch (_tab) {
+    _CommunityTab.all => null,
+    _CommunityTab.myTeam => _vm.myTeamId,
+    _CommunityTab.otherTeams => _otherTeamId,
+  };
+
+  /// 지금 탭에 글을 쓸 수 있는가. 다른팀 탭은 어떤 경우에도 못 쓴다 — 탭을
+  /// 나눈 이유가 그것이다.
+  bool get _canWriteHere => switch (_tab) {
+    _CommunityTab.all => _vm.canWrite(null),
+    _CommunityTab.myTeam => _vm.myTeamId != null && _vm.canWrite(_vm.myTeamId),
+    _CommunityTab.otherTeams => false,
+  };
+
+  Future<void> _openLogin() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+    await _vm.loadSession();
+    if (!mounted) return;
+    // 로그인하면 서버가 내려주는 쓰기 권한이 달라진다.
+    await _vm.load(_boardTeamId, refresh: true);
+  }
+
+  Future<void> _openWrite() async {
+    if (!_vm.loggedIn) {
+      await _openLogin();
+      return;
+    }
+    final boardTeamId = _boardTeamId;
+    if (_tab == _CommunityTab.myTeam && boardTeamId == null) return;
+
+    final createdId = await Navigator.of(context).push<int>(
+      MaterialPageRoute<int>(
+        builder: (_) => PostWriteScreen(boardTeamId: boardTeamId),
+      ),
+    );
+    if (createdId == null || !mounted) return;
+    await _vm.load(boardTeamId, refresh: true);
+  }
+
+  Future<void> _openPost(int? boardTeamId, CommunityRemotePost post) async {
+    final result = await Navigator.of(context).push<PostDetailResult>(
+      MaterialPageRoute<PostDetailResult>(
+        builder: (_) => PostDetailScreen(postId: post.id),
+      ),
+    );
+    if (result == null || !mounted) return;
+    if (result.removed) {
+      _vm.removePost(boardTeamId, post.id);
+    } else if (result.updated != null) {
+      _vm.applyPostUpdate(boardTeamId, result.updated!);
+    }
   }
 
   @override
@@ -129,124 +166,169 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
-    final canWrite = canWriteToBoard(
-      loggedIn: kDummyLoggedIn,
-      myTeamId: kDummyMyTeamId,
-      boardId: _boardId ?? CommunityBoard.allId,
-    );
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
+        // 팀 목록(로고·이름)과 게시글 상태는 출처가 달라 각각 구독한다.
+        child: ValueListenableBuilder<List<Team>>(
+          valueListenable: communityTeams,
+          builder: (context, _, _) => ListenableBuilder(
+            listenable: _vm,
+            builder: (context, _) => Stack(
               children: [
-                _Header(
-                  title: l.communityTitle,
-                  subtitle: _boardName(l),
-                  scale: scale,
-                ),
-                NarTabBar(
-                  tabs: [
-                    l.communityTabAll,
-                    l.communityTabMyTeam,
-                    l.communityTabOtherTeams,
+                Column(
+                  children: [
+                    _Header(
+                      title: l.communityTitle,
+                      subtitle: _boardName(l),
+                      scale: scale,
+                    ),
+                    NarTabBar(
+                      tabs: [
+                        l.communityTabAll,
+                        l.communityTabMyTeam,
+                        l.communityTabOtherTeams,
+                      ],
+                      selectedIndex: _tab.index,
+                      onChanged: (i) => _goToTab(_CommunityTab.values[i]),
+                      scale: scale,
+                    ),
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: _onPageChanged,
+                        children: [
+                          _board(
+                            null,
+                            scale,
+                            active: _tab == _CommunityTab.all,
+                          ),
+                          _myTeamPage(l, scale),
+                          _otherTeamsPage(l, scale),
+                        ],
+                      ),
+                    ),
                   ],
-                  selectedIndex: _tab.index,
-                  onChanged: (i) => _goToTab(_CommunityTab.values[i]),
-                  scale: scale,
                 ),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    onPageChanged: (i) =>
-                        setState(() => _tab = _CommunityTab.values[i]),
-                    children: [
-                      _board(CommunityBoard.allId, scale),
-                      _myTeamPage(l, scale),
-                      _otherTeamsPage(scale),
-                    ],
+                if (_canWriteHere)
+                  Positioned(
+                    right: 20 * scale,
+                    // 하단 네비(bottom 26 + 높이 72)와 넉넉히 띄운다. 바짝
+                    // 붙이면 네비의 유리 효과가 FAB 그라데이션을 굴절시켜
+                    // 마지막 탭이 보라색으로 물들어 활성 탭처럼 보인다.
+                    bottom: 128 * scale,
+                    child: _WriteFab(
+                      label: l.communityWrite,
+                      scale: scale,
+                      onTap: _openWrite,
+                    ),
+                  )
+                else
+                  Positioned(
+                    left: 16 * scale,
+                    right: 16 * scale,
+                    bottom: 122 * scale,
+                    child: _lockBar(l, scale),
+                  ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 26,
+                  child: AppBottomNav(
+                    currentTab: AppNavTab.community,
+                    onTabSelected: _onTabSelected,
                   ),
                 ),
               ],
             ),
-            if (canWrite)
-              Positioned(
-                right: 20 * scale,
-                // 하단 네비(bottom 26 + 높이 72)와 넉넉히 띄운다. 바짝 붙이면
-                // 네비의 유리 효과가 FAB 그라데이션을 굴절시켜 마지막 탭이
-                // 보라색으로 물들어 활성 탭처럼 보인다.
-                bottom: 128 * scale,
-                child: _WriteFab(
-                  label: l.communityWrite,
-                  scale: scale,
-                  onTap: _openWrite,
-                ),
-              )
-            else
-              Positioned(
-                left: 16 * scale,
-                right: 16 * scale,
-                bottom: 122 * scale,
-                child: _lockBar(l, scale),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 26,
-              child: AppBottomNav(
-                currentTab: AppNavTab.community,
-                onTabSelected: _onTabSelected,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  void _onPageChanged(int index) =>
+      setState(() => _tab = _CommunityTab.values[index]);
+
   /// 헤더 아래에 지금 보고 있는 게시판 이름을 붙인다. 탭 라벨('우리팀')만으로는
   /// 어느 팀 게시판인지, 다른팀 탭에서 어떤 팀을 고른 상태인지 알 수 없다.
   String? _boardName(AppLocalizations l) {
-    final boardId = _boardId;
-    if (boardId == null) return null;
-    if (boardId == CommunityBoard.allId) return l.communityBoardAll;
-    return l.communityBoardTeam(boardDisplayName(dummyBoard(boardId)));
+    if (_tab == _CommunityTab.all) return l.communityBoardAll;
+    final team = communityTeam(_boardTeamId);
+    if (team == null) return null;
+    return l.communityBoardTeam(team.name);
   }
 
   Widget _myTeamPage(AppLocalizations l, double scale) {
-    final myTeamId = kDummyMyTeamId;
+    if (!_vm.sessionLoaded) return const _Loading();
+    final myTeamId = _vm.myTeamId;
     if (myTeamId == null) {
-      return _Empty(message: l.communityNoTeamTitle, scale: scale);
+      return _Empty(
+        message: _vm.loggedIn ? l.communityNoTeamTitle : l.communityGuestWrite,
+        scale: scale,
+      );
     }
-    return _board(myTeamId, scale);
+    return _board(myTeamId, scale, active: _tab == _CommunityTab.myTeam);
   }
 
-  Widget _otherTeamsPage(double scale) {
+  Widget _otherTeamsPage(AppLocalizations l, double scale) {
+    final others = _otherTeams;
+    final selected = _otherTeamId;
+    if (others.isEmpty || selected == null) return const _Loading();
+
     return Column(
       children: [
         TeamChipRail(
-          boards: _otherTeams,
-          selectedId: _otherTeamId,
+          teams: others,
+          selectedId: selected,
           myTeamId: null, // 내 팀은 이 목록에 없으므로 별표도 없다.
           scale: scale,
-          onSelected: (id) => setState(() => _otherTeamId = id),
+          onSelected: (id) => setState(() => _selectedOtherId = id),
         ),
-        Expanded(child: _board(_otherTeamId, scale)),
+        Expanded(
+          child: _board(
+            selected,
+            scale,
+            active: _tab == _CommunityTab.otherTeams,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _board(int boardId, double scale) {
+  /// [active] 는 지금 보이는 탭인지. 안 보이는 탭까지 미리 받아오면 화면을
+  /// 열자마자 요청이 셋 나간다 — 정작 볼 게시판은 하나다.
+  ///
+  /// 로드 조건을 탭 전환 콜백이 아니라 여기서 보는 이유: 게시판이 정해지는
+  /// 시점이 탭 전환보다 늦을 수 있다(팀 목록·응원팀 조회가 아직 안 끝난 상태로
+  /// '다른팀'에 들어와 있을 수 있다). 그리면서 판단하면 그 순서를 안 탄다.
+  Widget _board(int? boardTeamId, double scale, {required bool active}) {
     final l = AppLocalizations.of(context)!;
-    final posts = dummyPosts(boardId);
+    final state = _vm.board(boardTeamId);
+
+    if (active && !state.loaded && !state.loading && state.error == null) {
+      // 빌드 중에 상태를 건드리면 안 되므로 프레임이 끝난 뒤에 부른다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _vm.load(boardTeamId);
+      });
+    }
+
+    if (state.loading && state.posts.isEmpty) return const _Loading();
+    if (state.error != null && state.posts.isEmpty) {
+      return _Retry(
+        message: state.error!,
+        label: l.communityRetry,
+        scale: scale,
+        onRetry: () => _vm.load(boardTeamId, refresh: true),
+      );
+    }
 
     return RefreshIndicator(
-      onRefresh: _refresh,
+      onRefresh: () => _vm.load(boardTeamId, refresh: true),
       color: AppColors.narText,
       backgroundColor: AppColors.narDark600,
-      child: posts.isEmpty
+      child: state.posts.isEmpty
           // 빈 목록에서도 당길 수 있어야 하므로 스크롤 가능한 리스트로 감싼다.
           ? ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -255,55 +337,145 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 _Empty(message: l.communityEmpty, scale: scale),
               ],
             )
-          : ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(bottom: 170 * scale),
-              itemCount: posts.length,
-              itemBuilder: (context, i) => PostListItem(
-                post: posts[i],
-                scale: scale,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => PostDetailScreen(post: posts[i]),
-                  ),
-                ),
-              ),
+          : _BoardList(
+              state: state,
+              scale: scale,
+              // 팀 게시판은 전원이 같은 팀이라 로고가 정보를 주지 않는다.
+              showAuthorTeam: boardTeamId == null,
+              onLoadMore: () => _vm.loadMore(boardTeamId),
+              onTap: (post) => _openPost(boardTeamId, post),
             ),
     );
   }
 
-  /// 쓰기가 막힌 이유는 셋 중 하나다 — 비회원 / 응원팀 미설정 / 다른 팀 게시판.
-  /// 각각 다음에 할 수 있는 행동이 다르므로 문구와 액션을 나눈다.
+  /// 쓰기가 막힌 이유는 넷 중 하나다 — 비회원 / 응원팀 미설정 / 응원팀 변경
+  /// 쿨다운 / 다른 팀 게시판. 각각 다음에 할 수 있는 행동이 다르다.
   Widget _lockBar(AppLocalizations l, double scale) {
-    if (!kDummyLoggedIn) {
+    if (!_vm.loggedIn) {
       return WriteLockBar(
         title: l.communityGuestWrite,
         body: null,
         actionLabel: l.loginRequired,
         scale: scale,
-        onAction: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen())),
+        onAction: _openLogin,
       );
     }
-    if (kDummyMyTeamId == null) {
+    if (_tab == _CommunityTab.myTeam) {
+      if (_vm.myTeamId == null) {
+        return WriteLockBar(
+          title: l.communityNoTeamTitle,
+          body: null,
+          actionLabel: l.communityNoTeamAction,
+          scale: scale,
+          onAction: () => Navigator.of(
+            context,
+          ).pushReplacement(tabRoute(const MypageScreen())),
+        );
+      }
+      // 응원팀인데도 못 쓰는 경우는 쿨다운뿐이다.
+      final until = _vm.writableFrom(_vm.myTeamId);
       return WriteLockBar(
-        title: l.communityNoTeamTitle,
-        body: null,
-        actionLabel: l.communityNoTeamAction,
+        title: l.communityCooldownTitle,
+        body: until == null ? null : l.communityCooldownBody(_date(until)),
+        actionLabel: l.communityLockedAction,
         scale: scale,
-        // 실제로는 온보딩 팀 스텝(또는 프로필 수정)으로 보낸다.
-        onAction: () => Navigator.of(
-          context,
-        ).pushReplacement(tabRoute(const MypageScreen())),
+        onAction: () => _goToTab(_CommunityTab.all),
       );
     }
+    final team = communityTeam(_otherTeamId);
     return WriteLockBar(
-      title: l.communityLockedTitle(boardDisplayName(dummyBoard(_otherTeamId))),
+      title: team == null
+          ? l.communityGuestWrite
+          : l.communityLockedTitle(team.name),
       body: l.communityLockedBody,
       actionLabel: l.communityLockedAction,
       scale: scale,
       onAction: () => _goToTab(_CommunityTab.all),
+    );
+  }
+
+  String _date(DateTime time) {
+    final local = time.toLocal();
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '${local.year}.$m.$d';
+  }
+}
+
+/// 무한 스크롤이 붙은 글 목록. 페이지마다 스크롤 위치가 따로 있어야 해서
+/// [ScrollController] 를 각자 든다.
+class _BoardList extends StatefulWidget {
+  const _BoardList({
+    required this.state,
+    required this.scale,
+    required this.showAuthorTeam,
+    required this.onLoadMore,
+    required this.onTap,
+  });
+
+  final CommunityBoardState state;
+  final double scale;
+  final bool showAuthorTeam;
+  final VoidCallback onLoadMore;
+  final ValueChanged<CommunityRemotePost> onTap;
+
+  @override
+  State<_BoardList> createState() => _BoardListState();
+}
+
+class _BoardListState extends State<_BoardList> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      if (_controller.position.pixels >=
+          _controller.position.maxScrollExtent - 200) {
+        widget.onLoadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final posts = widget.state.posts;
+    final scale = widget.scale;
+
+    return ListView.builder(
+      controller: _controller,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.only(bottom: 170 * scale),
+      itemCount: posts.length + (widget.state.loadingMore ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i >= posts.length) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 16 * scale),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.narText2,
+                ),
+              ),
+            ),
+          );
+        }
+        return PostListItem(
+          post: posts[i],
+          scale: scale,
+          showAuthorTeam: widget.showAuthorTeam,
+          onTap: () => widget.onTap(posts[i]),
+        );
+      },
     );
   }
 }
@@ -317,7 +489,7 @@ class _Header extends StatelessWidget {
 
   final String title;
 
-  /// 지금 보고 있는 게시판 이름. 우리팀 게시판이 없는 상태면 null.
+  /// 지금 보고 있는 게시판 이름. 아직 정해지지 않았으면 null.
   final String? subtitle;
 
   final double scale;
@@ -368,6 +540,22 @@ class _Header extends StatelessWidget {
   }
 }
 
+class _Loading extends StatelessWidget {
+  const _Loading();
+
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: SizedBox(
+      width: 24,
+      height: 24,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: AppColors.narText2,
+      ),
+    ),
+  );
+}
+
 class _Empty extends StatelessWidget {
   const _Empty({required this.message, required this.scale});
 
@@ -390,6 +578,73 @@ class _Empty extends StatelessWidget {
             color: AppColors.narText2,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 목록을 못 받았을 때. 빈 화면만 두면 사용자는 글이 없는 건지 실패한 건지
+/// 구분할 수 없다.
+class _Retry extends StatelessWidget {
+  const _Retry({
+    required this.message,
+    required this.label,
+    required this.scale,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String label;
+  final double scale;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40 * scale),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 14 * scale,
+                height: 1.5,
+                color: AppColors.narText2,
+              ),
+            ),
+          ),
+          SizedBox(height: 12 * scale),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onRetry,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 18 * scale,
+                vertical: 9 * scale,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.narDark600,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.narLine2, width: 1),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13 * scale,
+                  height: 1.45,
+                  color: AppColors.narText,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

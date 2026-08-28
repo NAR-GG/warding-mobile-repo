@@ -1211,8 +1211,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityScrap => '스크랩';
 
   @override
-  String communityViewCount(String count) {
-    return '조회 $count';
+  String communityViewCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '조회 $countString';
   }
 
   @override
@@ -1305,40 +1309,62 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityRulesSeeAll => '커뮤니티 이용규칙 전체 보기';
 
   @override
-  String get communityAttachPhoto => '사진';
+  String get communityLoadFailed => '글을 불러오지 못했어요.';
 
   @override
-  String get communityAttachPoll => '투표';
+  String get communityActionFailed => '요청을 처리하지 못했어요.';
+
+  @override
+  String get communityWriteFailed => '글을 등록하지 못했어요.';
+
+  @override
+  String get communityRetry => '다시 시도';
+
+  @override
+  String get communityDeletedAuthor => '탈퇴한 사용자';
+
+  @override
+  String get communityCommentDeleted => '삭제된 댓글입니다.';
+
+  @override
+  String get communityCommentBlocked => '차단한 사용자의 댓글입니다.';
+
+  @override
+  String get communityCommentHidden => '숨김 처리된 댓글입니다.';
+
+  @override
+  String get communityBlockedPost => '차단한 사용자의 글입니다.';
+
+  @override
+  String get communityMoreDelete => '삭제하기';
+
+  @override
+  String get communityMoreComments => '댓글 더 보기';
+
+  @override
+  String get communityEdited => '수정됨';
+
+  @override
+  String get communityWriteSubmitting => '등록 중…';
+
+  @override
+  String get communityCooldownTitle => '응원팀을 바꾼 지 얼마 안 됐어요.';
+
+  @override
+  String communityCooldownBody(String date) {
+    return '$date부터 팀 게시판에 쓸 수 있어요.';
+  }
+
+  @override
+  String communityReplyingTo(String nickname) {
+    return '$nickname님에게 답글';
+  }
+
+  @override
+  String get communityAttachPhoto => '사진';
 
   @override
   String communityPhotoCount(int count) {
     return '$count/5';
-  }
-
-  @override
-  String get communityPollQuestionHint => '투표 주제를 입력하세요';
-
-  @override
-  String communityPollOptionHint(int index) {
-    return '항목 $index';
-  }
-
-  @override
-  String get communityPollAddOption => '항목 추가 (최대 5개)';
-
-  @override
-  String get communityPollHideResults => '투표해야 결과 보기';
-
-  @override
-  String get communityPollRemove => '투표 삭제';
-
-  @override
-  String communityPollPrompt(int count) {
-    return '$count명 참여 · 투표하면 결과가 보여요';
-  }
-
-  @override
-  String communityPollVoted(int count) {
-    return '$count명 참여';
   }
 }

@@ -1244,8 +1244,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityScrap => 'Save';
 
   @override
-  String communityViewCount(String count) {
-    return 'Views $count';
+  String communityViewCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Views $countString';
   }
 
   @override
@@ -1338,40 +1342,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityRulesSeeAll => 'Read the full community rules';
 
   @override
-  String get communityAttachPhoto => 'Photo';
+  String get communityLoadFailed => 'Couldn\'t load posts.';
 
   @override
-  String get communityAttachPoll => 'Poll';
+  String get communityActionFailed => 'Couldn\'t complete the request.';
+
+  @override
+  String get communityWriteFailed => 'Couldn\'t post.';
+
+  @override
+  String get communityRetry => 'Retry';
+
+  @override
+  String get communityDeletedAuthor => 'Deleted user';
+
+  @override
+  String get communityCommentDeleted => 'This comment was deleted.';
+
+  @override
+  String get communityCommentBlocked => 'Comment from a blocked user.';
+
+  @override
+  String get communityCommentHidden => 'This comment is hidden.';
+
+  @override
+  String get communityBlockedPost => 'Post from a blocked user.';
+
+  @override
+  String get communityMoreDelete => 'Delete';
+
+  @override
+  String get communityMoreComments => 'Show more comments';
+
+  @override
+  String get communityEdited => 'edited';
+
+  @override
+  String get communityWriteSubmitting => 'Posting…';
+
+  @override
+  String get communityCooldownTitle => 'You changed your team recently.';
+
+  @override
+  String communityCooldownBody(String date) {
+    return 'You can post on the team board from $date.';
+  }
+
+  @override
+  String communityReplyingTo(String nickname) {
+    return 'Replying to $nickname';
+  }
+
+  @override
+  String get communityAttachPhoto => 'Photo';
 
   @override
   String communityPhotoCount(int count) {
     return '$count/5';
-  }
-
-  @override
-  String get communityPollQuestionHint => 'What are you asking?';
-
-  @override
-  String communityPollOptionHint(int index) {
-    return 'Option $index';
-  }
-
-  @override
-  String get communityPollAddOption => 'Add option (up to 5)';
-
-  @override
-  String get communityPollHideResults => 'Hide results until voted';
-
-  @override
-  String get communityPollRemove => 'Remove poll';
-
-  @override
-  String communityPollPrompt(int count) {
-    return '$count voted · vote to see results';
-  }
-
-  @override
-  String communityPollVoted(int count) {
-    return '$count voted';
   }
 }

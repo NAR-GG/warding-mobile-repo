@@ -450,7 +450,7 @@
   "communityScrap": "Save",
   "communityViewCount": "Views {count}",
   "@communityViewCount": {
-    "placeholders": { "count": { "type": "String" } }
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
   "communityBoardAll": "All board",
   "communityBoardTeam": "{team} board",
@@ -491,26 +491,28 @@
 
   "communityRulesTitle": "Community Rules",
   "communityRulesSeeAll": "Read the full community rules",
+  "communityLoadFailed": "Couldn't load posts.",
+  "communityActionFailed": "Couldn't complete the request.",
+  "communityWriteFailed": "Couldn't post.",
+  "communityRetry": "Retry",
+  "communityDeletedAuthor": "Deleted user",
+  "communityCommentDeleted": "This comment was deleted.",
+  "communityCommentBlocked": "Comment from a blocked user.",
+  "communityCommentHidden": "This comment is hidden.",
+  "communityBlockedPost": "Post from a blocked user.",
+  "communityMoreDelete": "Delete",
+  "communityMoreComments": "Show more comments",
+  "communityEdited": "edited",
+  "communityWriteSubmitting": "Posting\u2026",
+  "communityCooldownTitle": "You changed your team recently.",
+  "communityCooldownBody": "You can post on the team board from {date}.",
+  "@communityCooldownBody": { "placeholders": { "date": { "type": "String" } } },
+  "communityReplyingTo": "Replying to {nickname}",
+  "@communityReplyingTo": { "placeholders": { "nickname": { "type": "String" } } },
 
   "communityAttachPhoto": "Photo",
-  "communityAttachPoll": "Poll",
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollQuestionHint": "What are you asking?",
-  "communityPollOptionHint": "Option {index}",
-  "@communityPollOptionHint": {
-    "placeholders": { "index": { "type": "int" } }
-  },
-  "communityPollAddOption": "Add option (up to 5)",
-  "communityPollHideResults": "Hide results until voted",
-  "communityPollRemove": "Remove poll",
-  "communityPollPrompt": "{count} voted · vote to see results",
-  "@communityPollPrompt": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollVoted": "{count} voted",
-  "@communityPollVoted": {
-    "placeholders": { "count": { "type": "int" } }
-  }}
+  }
+}
