@@ -60,6 +60,17 @@ void main() {
       await repo.fetchPosts(boardTeamId: 39);
     });
 
+    test('cursor는 숫자 쿼리 파라미터로 실린다', () async {
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.url.query, contains('cursor=12'));
+          return http.Response('{"posts":[],"nextCursor":null}', 200);
+        }),
+      );
+
+      await repo.fetchPosts(cursor: 12);
+    });
+
     test('실패 응답은 CommunityApiException을 던진다', () async {
       api.setApiClientForTesting(
         MockClient((request) async {
@@ -205,17 +216,27 @@ void main() {
       await repo.deletePost(42);
     });
 
-    test('markPostViewed는 인증 없이 POST한다', () async {
+    test('markPostViewed는 로그인 상태면 Authorization 헤더를 싣는다', () async {
       api.setApiClientForTesting(
         MockClient((request) async {
           expect(request.method, 'POST');
           expect(request.url.path, '/api/mobile/community/posts/42/view');
-          expect(request.headers['Authorization'], isNull);
+          expect(request.headers['Authorization'], 'Bearer test-jwt');
           return http.Response('', 204);
         }),
       );
 
       await repo.markPostViewed(42);
+    });
+
+    test('markPostViewed는 실패 응답이어도 예외를 던지지 않는다', () async {
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          return http.Response('', 500);
+        }),
+      );
+
+      await expectLater(repo.markPostViewed(42), completes);
     });
   });
 

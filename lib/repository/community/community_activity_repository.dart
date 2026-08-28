@@ -41,7 +41,7 @@ class CommunityActivityRepository {
 
   /// 내 스크랩 목록 (최신순, 커서 = scrapId).
   Future<CommunityScrapPage> fetchScraps({
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) async {
     final response = await _get(
@@ -55,7 +55,7 @@ class CommunityActivityRepository {
 
   /// 내가 쓴 글 목록 (전체·팀 게시판 섞여서, 최신순).
   Future<CommunityRemotePostPage> fetchMyPosts({
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) async {
     final response = await _get(
@@ -69,7 +69,7 @@ class CommunityActivityRepository {
 
   /// 좋아요한 글 목록 (최신순, 커서 = likeId).
   Future<CommunityLikePage> fetchMyLikes({
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) async {
     final response = await _get(
@@ -83,7 +83,7 @@ class CommunityActivityRepository {
 
   /// 내가 쓴 댓글 목록 (최신순, 커서 = 댓글 id). 원글이 삭제된 댓글은 빠진다.
   Future<CommunityMyCommentPage> fetchMyComments({
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) async {
     final response = await _get(

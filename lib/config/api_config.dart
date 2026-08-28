@@ -332,14 +332,12 @@ class ApiConfig {
   /// [size] 기본 20, 최대 50.
   static String communityPostsUrl({
     int? boardTeamId,
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) {
     final query = StringBuffer('size=$size');
     if (boardTeamId != null) query.write('&boardTeamId=$boardTeamId');
-    if (cursor != null && cursor.isNotEmpty) {
-      query.write('&cursor=${Uri.encodeQueryComponent(cursor)}');
-    }
+    if (cursor != null) query.write('&cursor=$cursor');
     return '$apiBaseUrl/mobile/community/posts?$query';
   }
 
@@ -366,13 +364,11 @@ class ApiConfig {
   /// 댓글 목록(GET, 오래된 순). [size] 기본 50, 최대 100.
   static String communityCommentsUrl(
     int postId, {
-    String? cursor,
+    int? cursor,
     int size = 50,
   }) {
     final query = StringBuffer('size=$size');
-    if (cursor != null && cursor.isNotEmpty) {
-      query.write('&cursor=${Uri.encodeQueryComponent(cursor)}');
-    }
+    if (cursor != null) query.write('&cursor=$cursor');
     return '$apiBaseUrl/mobile/community/posts/$postId/comments?$query';
   }
 
@@ -402,30 +398,28 @@ class ApiConfig {
 
   static String _meCommunityUrl(
     String path, {
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) {
     final query = StringBuffer('size=$size');
-    if (cursor != null && cursor.isNotEmpty) {
-      query.write('&cursor=${Uri.encodeQueryComponent(cursor)}');
-    }
+    if (cursor != null) query.write('&cursor=$cursor');
     return '$apiBaseUrl/mobile/me/community/$path?$query';
   }
 
   /// 내 스크랩 목록(GET, 최신순, 커서 = scrapId).
-  static String meCommunityScrapsUrl({String? cursor, int size = 20}) =>
+  static String meCommunityScrapsUrl({int? cursor, int size = 20}) =>
       _meCommunityUrl('scraps', cursor: cursor, size: size);
 
   /// 내가 쓴 글 목록(GET, 최신순, 커서 = 글 id).
-  static String meCommunityPostsUrl({String? cursor, int size = 20}) =>
+  static String meCommunityPostsUrl({int? cursor, int size = 20}) =>
       _meCommunityUrl('posts', cursor: cursor, size: size);
 
   /// 좋아요한 글 목록(GET, 최신순, 커서 = likeId).
-  static String meCommunityLikesUrl({String? cursor, int size = 20}) =>
+  static String meCommunityLikesUrl({int? cursor, int size = 20}) =>
       _meCommunityUrl('likes', cursor: cursor, size: size);
 
   /// 내가 쓴 댓글 목록(GET, 최신순, 커서 = 댓글 id).
-  static String meCommunityCommentsUrl({String? cursor, int size = 20}) =>
+  static String meCommunityCommentsUrl({int? cursor, int size = 20}) =>
       _meCommunityUrl('comments', cursor: cursor, size: size);
 
   /// 커뮤니티 사진 Cloudinary 서명 업로드용 파라미터 발급(POST, 인증 필요).

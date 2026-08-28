@@ -48,6 +48,17 @@ void main() {
     expect(page.items.first.post.id, 42);
   });
 
+  test('fetchScraps는 cursor를 숫자 쿼리 파라미터로 싣는다', () async {
+    api.setApiClientForTesting(
+      MockClient((request) async {
+        expect(request.url.query, contains('cursor=12'));
+        return http.Response('{"items":[],"nextCursor":null}', 200);
+      }),
+    );
+
+    await repo.fetchScraps(cursor: 12);
+  });
+
   test('fetchMyPosts는 게시글 페이지 형태로 파싱한다', () async {
     api.setApiClientForTesting(
       MockClient((request) async {

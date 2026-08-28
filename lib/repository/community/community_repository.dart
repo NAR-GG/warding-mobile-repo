@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
@@ -53,7 +55,7 @@ class CommunityRepository {
   /// 게시글 목록. [boardTeamId] 생략 = 전체 게시판.
   Future<CommunityRemotePostPage> fetchPosts({
     int? boardTeamId,
-    String? cursor,
+    int? cursor,
     int size = 20,
   }) async {
     final response = await _optionalAuthGet(
@@ -141,11 +143,22 @@ class CommunityRepository {
   }
 
   /// 조회수 +1. 비로그인 포함, 중복 호출도 허용된다.
+  ///
+  /// 화면 표시와 무관한 집계 핑이라 실패해도 조용히 무시한다(spec §6.1:
+  /// "optional, 응답 무시") — [NoticeRepository.markViewed]와 동일한 패턴.
   Future<void> markPostViewed(int postId) async {
-    final response = await http.post(
-      Uri.parse(ApiConfig.communityPostViewUrl(postId)),
-    );
-    _checkOk(response, 'viewCommunityPost');
+    try {
+      final token = await _auth.jwt;
+      final response = (token == null || token.isEmpty)
+          ? await http.post(Uri.parse(ApiConfig.communityPostViewUrl(postId)))
+          : await http.post(
+              Uri.parse(ApiConfig.communityPostViewUrl(postId)),
+              headers: {'Authorization': 'Bearer $token'},
+            );
+      debugPrint('[Community] 조회수 $postId ← ${response.statusCode}');
+    } catch (e) {
+      debugPrint('[Community] 조회수 $postId 실패: $e');
+    }
   }
 
   /// 추천 토글. 더블탭해도 안전(멱등).
@@ -182,7 +195,7 @@ class CommunityRepository {
   /// 댓글 목록(오래된 순). 1단 스레드 조립은 호출부(뷰모델) 몫이다.
   Future<CommunityRemoteCommentPage> fetchComments(
     int postId, {
-    String? cursor,
+    int? cursor,
     int size = 50,
   }) async {
     final response = await _optionalAuthGet(
