@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:warding/model/community_remote_comment.dart';
 import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/repository/community/community_api_exception.dart';
 import 'package:warding/repository/community/community_repository.dart';
@@ -246,6 +247,94 @@ void main() {
       final scrapped = await repo.toggleScrap(42);
 
       expect(scrapped, isTrue);
+    });
+  });
+
+  group('comments', () {
+    test('fetchComments는 오래된 순 페이지를 파싱한다', () async {
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.url.path, '/api/mobile/community/posts/42/comments');
+          return http.Response.bytes(
+            utf8.encode(
+              '{"comments":[{"id":9,"parentId":5,"body":"답글","status":"VISIBLE",'
+              '"author":{"memberId":1,"nickname":"a"},"likeCount":1,"liked":false,'
+              '"mine":false,"createdAt":"2026-08-26T21:00:00"}],"nextCursor":9}',
+            ),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+
+      final page = await repo.fetchComments(42);
+
+      expect(page.comments, hasLength(1));
+      expect(page.comments.first.status, CommunityCommentStatus.visible);
+    });
+
+    test('createComment는 replyToCommentId를 대상 댓글 id 그대로 보낸다', () async {
+      loginAs('test-jwt');
+
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/api/mobile/community/posts/42/comments');
+          expect(request.body, contains('"replyToCommentId":5'));
+          return http.Response('{"id":10}', 200);
+        }),
+      );
+
+      final id = await repo.createComment(
+        42,
+        body: '답글',
+        replyToCommentId: 5,
+      );
+
+      expect(id, 10);
+    });
+
+    test('최상위 댓글이면 replyToCommentId를 보내지 않는다', () async {
+      loginAs('test-jwt');
+
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.body, isNot(contains('replyToCommentId')));
+          return http.Response('{"id":11}', 200);
+        }),
+      );
+
+      await repo.createComment(42, body: '최상위 댓글');
+    });
+
+    test('deleteComment는 DELETE로 호출한다', () async {
+      loginAs('test-jwt');
+
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.method, 'DELETE');
+          expect(request.url.path, '/api/mobile/community/comments/9');
+          return http.Response('', 204);
+        }),
+      );
+
+      await repo.deleteComment(9);
+    });
+
+    test('toggleCommentLike는 liked·likeCount를 반환한다', () async {
+      loginAs('test-jwt');
+
+      api.setApiClientForTesting(
+        MockClient((request) async {
+          expect(request.url.path, '/api/mobile/community/comments/9/like');
+          return http.Response('{"liked":true,"likeCount":2}', 200);
+        }),
+      );
+
+      final result = await repo.toggleCommentLike(9);
+
+      expect(result.liked, isTrue);
+      expect(result.likeCount, 2);
     });
   });
 }

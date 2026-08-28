@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
 import '../../util/sentry_logger.dart';
 import '../auth/auth_service.dart';
@@ -174,5 +175,75 @@ class CommunityRepository {
     _checkOk(response, 'toggleCommunityPostScrap');
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return data['scrapped'] as bool? ?? false;
+  }
+
+  // ── 댓글 ────────────────────────────────────────────────────────
+
+  /// 댓글 목록(오래된 순). 1단 스레드 조립은 호출부(뷰모델) 몫이다.
+  Future<CommunityRemoteCommentPage> fetchComments(
+    int postId, {
+    String? cursor,
+    int size = 50,
+  }) async {
+    final response = await _optionalAuthGet(
+      ApiConfig.communityCommentsUrl(postId, cursor: cursor, size: size),
+    );
+    _checkOk(response, 'fetchCommunityComments');
+    return CommunityRemoteCommentPage.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  /// 댓글을 작성하고 새 댓글 id를 반환한다. 답글이면 [replyToCommentId]에
+  /// **대상 댓글 id를 그대로** 넘긴다 — 답글의 답글이어도 마찬가지다. parent
+  /// 올려붙이기와 멘션 대상은 서버가 계산하므로 앱이 parentId를 직접
+  /// 계산하지 않는다.
+  Future<int> createComment(
+    int postId, {
+    required String body,
+    int? replyToCommentId,
+  }) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityCreateCommentUrl(postId)),
+        headers: _headers(token),
+        body: jsonEncode({
+          'body': body,
+          if (replyToCommentId != null) 'replyToCommentId': replyToCommentId,
+        }),
+      ),
+    );
+    _checkOk(response, 'createCommunityComment');
+    return ((jsonDecode(response.body) as Map<String, dynamic>)['id'] as num)
+        .toInt();
+  }
+
+  /// 댓글을 삭제한다(작성자만, 소프트 삭제).
+  Future<void> deleteComment(int commentId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.delete(
+        Uri.parse(ApiConfig.communityCommentUrl(commentId)),
+        headers: _headers(token),
+      ),
+    );
+    _checkOk(response, 'deleteCommunityComment');
+  }
+
+  /// 댓글 추천 토글.
+  Future<({bool liked, int likeCount})> toggleCommentLike(
+    int commentId,
+  ) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityCommentLikeUrl(commentId)),
+        headers: _headers(token),
+      ),
+    );
+    _checkOk(response, 'toggleCommunityCommentLike');
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return (
+      liked: data['liked'] as bool? ?? false,
+      likeCount: (data['likeCount'] as num?)?.toInt() ?? 0,
+    );
   }
 }
