@@ -126,7 +126,9 @@ class CommentTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      ratingTimeAgo(comment.createdAt),
+                      comment.edited
+                          ? '${ratingTimeAgo(comment.createdAt)} · ${l.communityEdited}'
+                          : ratingTimeAgo(comment.createdAt),
                       style: _metaStyle(scale),
                     ),
                     SizedBox(width: 12 * scale),

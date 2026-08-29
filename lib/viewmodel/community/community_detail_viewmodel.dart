@@ -185,6 +185,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
         likeCount: result.likeCount,
         liked: result.liked,
         mine: old.mine,
+        edited: old.edited,
         createdAt: old.createdAt,
       );
       _safeNotify();
@@ -216,6 +217,26 @@ class CommunityDetailViewModel extends ChangeNotifier {
           commentCount: current.commentCount + 1,
         );
       }
+      return true;
+    } catch (e) {
+      _fail(e);
+      return false;
+    } finally {
+      _submitting = false;
+      _safeNotify();
+    }
+  }
+
+  /// 댓글 본문 수정. 수정 결과(edited 포함)는 서버가 정하므로 다시 받는다.
+  Future<bool> updateComment(int commentId, String body) async {
+    final text = body.trim();
+    if (text.isEmpty || _submitting) return false;
+    _submitting = true;
+    _error = null;
+    _safeNotify();
+    try {
+      await _repository.updateComment(commentId, body: text);
+      await _loadComments();
       return true;
     } catch (e) {
       _fail(e);

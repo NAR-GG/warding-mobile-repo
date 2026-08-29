@@ -1386,6 +1386,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityBlockedPost => '차단한 사용자의 글입니다.';
 
   @override
+  String get communityMoreEdit => '수정하기';
+
+  @override
+  String get communityEditingComment => '댓글 수정 중';
+
+  @override
   String get communityMoreDelete => '삭제하기';
 
   @override

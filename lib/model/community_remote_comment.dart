@@ -35,6 +35,7 @@ class CommunityRemoteComment {
     required this.likeCount,
     required this.liked,
     required this.mine,
+    required this.edited,
     required this.createdAt,
     this.mentionNickname,
   });
@@ -55,6 +56,10 @@ class CommunityRemoteComment {
   final int likeCount;
   final bool liked;
   final bool mine;
+
+  /// 본문이 수정된 적 있으면 true — 시간 옆에 "(수정됨)"을 붙인다.
+  final bool edited;
+
   final DateTime? createdAt;
 
   factory CommunityRemoteComment.fromJson(Map<String, dynamic> json) {
@@ -71,6 +76,7 @@ class CommunityRemoteComment {
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       liked: json['liked'] as bool? ?? false,
       mine: json['mine'] as bool? ?? false,
+      edited: json['edited'] as bool? ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
     );
   }

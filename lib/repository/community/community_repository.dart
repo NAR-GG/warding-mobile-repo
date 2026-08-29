@@ -231,6 +231,18 @@ class CommunityRepository {
         .toInt();
   }
 
+  /// 댓글 본문을 수정한다(작성자만). 멘션·답글 관계는 서버가 안 바꾼다.
+  Future<void> updateComment(int commentId, {required String body}) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.put(
+        Uri.parse(ApiConfig.communityCommentUrl(commentId)),
+        headers: _headers(token),
+        body: jsonEncode({'body': body}),
+      ),
+    );
+    _checkOk(response, 'updateCommunityComment');
+  }
+
   /// 댓글을 삭제한다(작성자만, 소프트 삭제).
   Future<void> deleteComment(int commentId) async {
     final response = await _auth.authorizedRequest(

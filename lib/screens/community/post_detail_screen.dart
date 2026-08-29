@@ -17,6 +17,7 @@ import 'component/comment_tile.dart';
 import 'component/community_image.dart';
 import 'component/community_photo_viewer.dart';
 import 'component/report_sheet.dart';
+import 'post_write_screen.dart';
 
 /// 상세에서 돌아올 때 목록이 알아야 하는 것 — 추천·댓글 수가 바뀐 글, 또는
 /// 삭제·차단으로 목록에서 빠져야 한다는 신호.
@@ -44,6 +45,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   /// 답글을 달 대상. null 이면 새 댓글이다.
   CommunityRemoteComment? _replyTo;
+
+  /// 수정 중인 내 댓글. 있으면 입력창이 수정 모드가 된다(답글 상태와 상호 배타).
+  CommunityRemoteComment? _editingComment;
 
   final TextEditingController _comment = TextEditingController();
   final FocusNode _commentFocus = FocusNode();
@@ -108,21 +112,57 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     setState(() {
       _expanded.add(comment.parentId ?? comment.id);
       _replyTo = comment;
+      _editingComment = null;
     });
     _focusComment();
   }
 
+  /// 내 댓글 수정 — 기존 본문을 입력창에 채워 수정 모드로 전환한다.
+  void _startEditComment(CommunityRemoteComment comment) {
+    setState(() {
+      _replyTo = null;
+      _editingComment = comment;
+      _comment.text = comment.body ?? '';
+    });
+    _focusComment();
+  }
+
+  void _cancelEditComment() {
+    setState(() {
+      _editingComment = null;
+      _comment.clear();
+    });
+    _commentFocus.unfocus();
+  }
+
   Future<void> _submitComment() async {
-    final ok = await _vm.submitComment(
-      _comment.text,
-      replyToCommentId: _replyTo?.id,
-    );
+    final editing = _editingComment;
+    final ok = editing != null
+        ? await _vm.updateComment(editing.id, _comment.text)
+        : await _vm.submitComment(
+            _comment.text,
+            replyToCommentId: _replyTo?.id,
+          );
     if (!ok || !mounted) return;
     setState(() {
       _comment.clear();
       _replyTo = null;
+      _editingComment = null;
     });
     _commentFocus.unfocus();
+  }
+
+  /// 내 글 수정 — 글쓰기 화면을 수정 모드로 연다. 돌아오면 상세를 다시 받는다.
+  Future<void> _editPost() async {
+    final post = _vm.post;
+    if (post == null) return;
+    final result = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) =>
+            PostWriteScreen(boardTeamId: post.boardTeamId, edit: post),
+      ),
+    );
+    if (result != null && mounted) await _vm.load();
   }
 
   /// 글의 `⋯`. 내 글이면 삭제, 남의 글이면 신고·차단.
@@ -136,6 +176,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (!mounted || action == null) return;
 
     switch (action) {
+      case CommunityMoreAction.edit:
+        await _editPost();
       case CommunityMoreAction.delete:
         if (await _vm.deletePost()) _finishRemoved();
       case CommunityMoreAction.block:
@@ -151,6 +193,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (!mounted || action == null) return;
 
     switch (action) {
+      case CommunityMoreAction.edit:
+        _startEditComment(comment);
       case CommunityMoreAction.delete:
         await _vm.deleteComment(comment.id);
       case CommunityMoreAction.block:
@@ -597,6 +641,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 댓글 수정 중이면 입력창 위에 표시한다 — 안 그러면 새 댓글을 쓰는지
+          // 고치는 중인지 화면에 안 남는다. X 로 수정 취소(입력 내용도 버린다).
+          if (_editingComment != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8 * scale),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.communityEditingComment,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.5 * scale,
+                        height: 1.45,
+                        color: AppColors.narViolet3,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _cancelEditComment,
+                    child: Icon(
+                      Icons.close,
+                      size: 15 * scale,
+                      color: AppColors.narText2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // 답글 대상이 있으면 입력창 위에 누구에게 다는지 띄운다. 안 그러면
           // 답글 버튼을 눌렀는지 아닌지가 화면에 안 남는다.
           if (replyTo != null)

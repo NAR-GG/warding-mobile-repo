@@ -696,6 +696,8 @@
   "communityCommentBlocked": "차단한 사용자의 댓글입니다.",
   "communityCommentHidden": "숨김 처리된 댓글입니다.",
   "communityBlockedPost": "차단한 사용자의 글입니다.",
+  "communityMoreEdit": "수정하기",
+  "communityEditingComment": "댓글 수정 중",
   "communityMoreDelete": "삭제하기",
   "communityMoreComments": "댓글 더 보기",
   "communityEdited": "수정됨",

@@ -15,15 +15,32 @@ import '../../repository/community/community_repository.dart';
 class PostWriteViewModel extends ChangeNotifier {
   PostWriteViewModel({
     required this.boardTeamId,
+    this.editPostId,
+    List<String> initialImageUrls = const [],
     CommunityRepository? repository,
     CommunityImageRepository? imageRepository,
     ImagePicker? picker,
-  }) : _repository = repository ?? CommunityRepository.instance,
+  }) : _existingUrls = List.of(initialImageUrls),
+       _repository = repository ?? CommunityRepository.instance,
        _images = imageRepository ?? CommunityImageRepository.instance,
        _picker = picker ?? ImagePicker();
 
   /// null 이면 전체 게시판.
   final int? boardTeamId;
+
+  /// 수정 모드면 대상 글 id, 새 글이면 null.
+  final int? editPostId;
+
+  /// 수정 모드에서 글에 이미 붙어 있던 사진 URL. 화면에는 새 사진 앞에 그려지고,
+  /// 지우면 최종 imageUrls 에서 빠진다(서버의 전체 교체 계약).
+  final List<String> _existingUrls;
+  List<String> get existingImageUrls => List.unmodifiable(_existingUrls);
+
+  void removeExistingImage(int index) {
+    if (index < 0 || index >= _existingUrls.length) return;
+    _existingUrls.removeAt(index);
+    _safeNotify();
+  }
 
   final CommunityRepository _repository;
   final CommunityImageRepository _images;
@@ -61,7 +78,7 @@ class PostWriteViewModel extends ChangeNotifier {
   }
 
   Future<void> pickPhotos() async {
-    final remaining = maxPhotos - _photos.length;
+    final remaining = maxPhotos - _existingUrls.length - _photos.length;
     if (remaining <= 0) return;
     try {
       // maxWidth 가 없으면 아이폰 원본(4032×3024, q85 여도 2~4MB)이 그대로 올라간다.
@@ -105,7 +122,7 @@ class PostWriteViewModel extends ChangeNotifier {
     _safeNotify();
   }
 
-  /// 등록. 성공하면 새 글 id, 실패하면 null 을 주고 [error] 에 사유를 담는다.
+  /// 등록/수정. 성공하면 글 id, 실패하면 null 을 주고 [error] 에 사유를 담는다.
   Future<int?> submit({required String title, required String body}) async {
     if (_submitting) return null;
     _submitting = true;
@@ -116,10 +133,23 @@ class PostWriteViewModel extends ChangeNotifier {
       // 장만 마저 기다린다(Future.wait 는 입력 순서를 보존해 사진 순서가 유지된다).
       // 한 장이라도 실패하면 전체가 throw 되어 아래 catch 로 떨어진다 — 사진이 빠진 채
       // 글만 올라가는 것보다 낫다. 실패한 장은 다음 submit 에서 재업로드된다.
-      final urls = await Future.wait(
+      final uploaded = await Future.wait(
         // 선업로드가 실패해 맵에서 빠진 장은 여기서 재업로드된다.
         _photos.map((path) => _uploads[path] ?? _startUpload(path)),
       );
+      // 남긴 기존 사진 뒤에 새 사진 — 서버 imageUrls 는 전체 교체 계약이다.
+      final urls = [..._existingUrls, ...uploaded];
+      final editId = editPostId;
+      if (editId != null) {
+        await _repository.updatePost(
+          editId,
+          boardTeamId: boardTeamId,
+          title: title.trim(),
+          body: body.trim(),
+          imageUrls: urls,
+        );
+        return editId;
+      }
       return await _repository.createPost(
         boardTeamId: boardTeamId,
         title: title.trim(),

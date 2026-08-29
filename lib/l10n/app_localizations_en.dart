@@ -1421,6 +1421,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityBlockedPost => 'Post from a blocked user.';
 
   @override
+  String get communityMoreEdit => 'Edit';
+
+  @override
+  String get communityEditingComment => 'Editing comment';
+
+  @override
   String get communityMoreDelete => 'Delete';
 
   @override
