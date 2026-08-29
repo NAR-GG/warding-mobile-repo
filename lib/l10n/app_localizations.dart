@@ -1382,6 +1382,54 @@ abstract class AppLocalizations {
   /// **'삭제에 실패했어요. 잠시 후 다시 시도해주세요.'**
   String get deleteFailed2;
 
+  /// No description provided for @myCommunityActivity.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 활동'**
+  String get myCommunityActivity;
+
+  /// No description provided for @myCommunityPosts.
+  ///
+  /// In ko, this message translates to:
+  /// **'내가 쓴 글'**
+  String get myCommunityPosts;
+
+  /// No description provided for @myCommunityComments.
+  ///
+  /// In ko, this message translates to:
+  /// **'내가 쓴 댓글'**
+  String get myCommunityComments;
+
+  /// No description provided for @myCommunityBadgeAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get myCommunityBadgeAll;
+
+  /// No description provided for @myCommunityPostsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 쓴 글이 없어요'**
+  String get myCommunityPostsEmpty;
+
+  /// No description provided for @myCommunityCommentsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 쓴 댓글이 없어요'**
+  String get myCommunityCommentsEmpty;
+
+  /// No description provided for @communityScrapEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'스크랩한 글이 없어요'**
+  String get communityScrapEmpty;
+
+  /// No description provided for @myCommunityCommentMeta.
+  ///
+  /// In ko, this message translates to:
+  /// **'{timeAgo} · 추천 {likeCount}'**
+  String myCommunityCommentMeta(String timeAgo, int likeCount);
+
   /// No description provided for @loginFailed.
   ///
   /// In ko, this message translates to:
@@ -1589,13 +1637,13 @@ abstract class AppLocalizations {
   /// No description provided for @navSchedule.
   ///
   /// In ko, this message translates to:
-  /// **'일정'**
+  /// **'경기일정'**
   String get navSchedule;
 
   /// No description provided for @navMatchList.
   ///
   /// In ko, this message translates to:
-  /// **'리스트'**
+  /// **'경기리스트'**
   String get navMatchList;
 
   /// No description provided for @navCommunity.
@@ -1613,7 +1661,7 @@ abstract class AppLocalizations {
   /// No description provided for @navMyPage.
   ///
   /// In ko, this message translates to:
-  /// **'내정보'**
+  /// **'마이페이지'**
   String get navMyPage;
 
   /// No description provided for @defaultCancel.
@@ -2525,13 +2573,13 @@ abstract class AppLocalizations {
   /// No description provided for @communityTabMyTeam.
   ///
   /// In ko, this message translates to:
-  /// **'우리팀'**
+  /// **'응원팀'**
   String get communityTabMyTeam;
 
   /// No description provided for @communityTabOtherTeams.
   ///
   /// In ko, this message translates to:
-  /// **'다른팀'**
+  /// **'상대팀'**
   String get communityTabOtherTeams;
 
   /// No description provided for @communityRulesTitle.

@@ -255,6 +255,21 @@
   "reviewDelete": "Delete",
   "deleteFailed2": "Failed to delete. Please try again later.",
 
+  "myCommunityActivity": "My Activity",
+  "myCommunityPosts": "My Posts",
+  "myCommunityComments": "My Comments",
+  "myCommunityBadgeAll": "All",
+  "myCommunityPostsEmpty": "You haven't written any posts yet",
+  "myCommunityCommentsEmpty": "You haven't written any comments yet",
+  "communityScrapEmpty": "No saved posts yet",
+  "myCommunityCommentMeta": "{timeAgo} · {likeCount} likes",
+  "@myCommunityCommentMeta": {
+    "placeholders": {
+      "timeAgo": { "type": "String" },
+      "likeCount": { "type": "int" }
+    }
+  },
+
   "loginFailed": "Login failed. Please try again later.",
   "appleLogin": "Sign in with Apple",
   "kakaoLogin": "Sign in with Kakao",
