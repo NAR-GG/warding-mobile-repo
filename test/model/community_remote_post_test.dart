@@ -21,9 +21,31 @@ void main() {
 
       expect(post.id, 42);
       expect(post.boardTeamId, isNull);
+      expect(post.boardTeamCode, isNull);
       expect(post.author?.nickname, '이름#0001');
       expect(post.imageCount, 2);
       expect(post.createdAt, DateTime.parse('2026-08-26T21:00:00'));
+    });
+
+    test('팀 게시판 글은 게시판 코드를 담고, 작성자 응원팀과 섞이지 않는다', () {
+      final post = CommunityRemotePost.fromJson(const {
+        'id': 43,
+        'boardTeamId': 23,
+        'boardTeamCode': 'GEN',
+        'title': 'GEN 파이팅',
+        'bodyPreview': '본문',
+        // 작성자는 다른 팀 팬이다 — 게시판 코드와 같은 값이 아니다.
+        'author': {'memberId': 7, 'nickname': '이름#0001', 'teamCode': 'T1'},
+        'viewCount': 0,
+        'likeCount': 0,
+        'commentCount': 0,
+        'edited': false,
+        'createdAt': '2026-08-26T21:00:00',
+      });
+
+      expect(post.boardTeamId, 23);
+      expect(post.boardTeamCode, 'GEN');
+      expect(post.author?.teamCode, 'T1');
     });
 
     test('author가 없으면 탈퇴한 사용자로 null', () {

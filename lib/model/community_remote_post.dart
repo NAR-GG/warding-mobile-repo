@@ -81,6 +81,7 @@ class CommunityRemotePost {
   const CommunityRemotePost({
     required this.id,
     required this.boardTeamId,
+    this.boardTeamCode,
     required this.title,
     required this.bodyPreview,
     required this.author,
@@ -97,6 +98,15 @@ class CommunityRemotePost {
 
   /// null이면 전체 게시판 글.
   final int? boardTeamId;
+
+  /// 게시판 팀의 코드(예: `GEN`, `HLE`). 전체 게시판이면 null.
+  ///
+  /// 내 활동 목록(내 글·좋아요·스크랩)은 게시판이 섞여 나와 줄마다 배지가 필요한데,
+  /// [boardTeamId]만 있으면 팀 목록(`communityTeams`)을 받아야 이름을 안다. 그 조회가
+  /// 실패하면 배지가 통째로 사라지므로 서버가 코드를 같이 내려준다.
+  ///
+  /// 작성자 응원팀([author].teamCode)과는 다른 값이다 — 다른팀 게시판에도 글은 보인다.
+  final String? boardTeamCode;
 
   final String title;
   final String bodyPreview;
@@ -120,6 +130,7 @@ class CommunityRemotePost {
     return CommunityRemotePost(
       id: (json['id'] as num?)?.toInt() ?? 0,
       boardTeamId: (json['boardTeamId'] as num?)?.toInt(),
+      boardTeamCode: json['boardTeamCode'] as String?,
       title: json['title'] as String? ?? '',
       bodyPreview: json['bodyPreview'] as String? ?? '',
       author: author == null
@@ -152,6 +163,7 @@ class CommunityRemotePostDetail {
 
   int get id => summary.id;
   int? get boardTeamId => summary.boardTeamId;
+  String? get boardTeamCode => summary.boardTeamCode;
   String get title => summary.title;
   CommunityAuthor? get author => summary.author;
   int get viewCount => summary.viewCount;

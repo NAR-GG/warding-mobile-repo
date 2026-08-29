@@ -74,6 +74,8 @@ class CommunityMyComment {
     required this.body,
     required this.likeCount,
     required this.createdAt,
+    this.boardTeamId,
+    this.boardTeamCode,
   });
 
   final int id;
@@ -83,6 +85,15 @@ class CommunityMyComment {
   final int likeCount;
   final DateTime? createdAt;
 
+  /// **원글이 속한 게시판**. null이면 전체 게시판이다.
+  ///
+  /// 내가 댓글을 단 글은 다른팀 게시판일 수도 있어서, 이 값은 내 응원팀과 무관하다.
+  final int? boardTeamId;
+
+  /// 게시판 팀의 코드(예: `GEN`). 전체 게시판이면 null.
+  /// 팀 목록 조회 없이 배지를 그리려고 서버가 같이 내려준다.
+  final String? boardTeamCode;
+
   factory CommunityMyComment.fromJson(Map<String, dynamic> json) {
     return CommunityMyComment(
       id: (json['id'] as num?)?.toInt() ?? 0,
@@ -91,6 +102,8 @@ class CommunityMyComment {
       body: json['body'] as String? ?? '',
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
+      boardTeamId: (json['boardTeamId'] as num?)?.toInt(),
+      boardTeamCode: json['boardTeamCode'] as String?,
     );
   }
 }
