@@ -56,3 +56,10 @@ ios/Flutter/Secrets.xcconfig
 android/app/src/main/res/values/naver_secrets.xml
 
 sentry.properties
+
+# tapflow runtime data
+.tapflow/data/
+.tapflow/artifacts/
+
+# tapflow MCP config (machine-specific path)
+.mcp.json

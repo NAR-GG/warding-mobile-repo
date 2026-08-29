@@ -47,6 +47,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
   int? _scrolledForVersion;
   DateTime? _targetDate;
 
+  /// [_scrollToTarget] 이 jumpTo 를 반복하다 ensureVisible 로 마무리할 때까지,
+  /// 자동 스크롤이 진행 중인지.
+  ///
+  /// 어림 jumpTo 로 한 번 크게 튄 뒤 ensureVisible(alignment: 0.35) 로 다시
+  /// 되돌아오는 2단계 이동이라, 그 사이 [_updateSortBarVisibility] 가 매번
+  /// 반응하면 delta 가 방향을 바꿔가며 [_sortBarToggleDelta] 문턱을 두 번
+  /// 넘겨 정렬 행·하단 네비가 접혔다 펼쳐지는 게 그대로 보인다. 자동 스크롤이
+  /// 끝날 때까지는 판정을 미룬다.
+  bool _autoScrolling = false;
+
   /// 사용자가 스포방지를 풀어 스코어를 공개한 경기 ID.
   ///
   /// 카드가 아니라 화면이 들고 있어야 한다 — [ListView.builder] 는 뷰포트를
@@ -108,6 +118,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       setState(() => _sortBarCollapsed = false);
     }
     _lastScrollOffset = 0;
+    _autoScrolling = true;
 
     _targetDate = _findTargetDate();
     debugPrint('[MatchList][perf] 데이터 로드 끝, 스크롤 예약 ${DateTime.now()}');
@@ -223,7 +234,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
       debugPrint('[MatchList][perf] _scrollToTarget 시작 ${DateTime.now()}');
     }
     final target = _targetDate;
-    if (!mounted || target == null || !_scrollController.hasClients) return;
+    if (!mounted || target == null || !_scrollController.hasClients) {
+      _autoScrolling = false;
+      return;
+    }
 
     // 대상 헤더가 그려졌으면 정밀 정렬하고 끝낸다.
     // 화면 위에서 35% 지점: 중앙보다 약간 위. 위로 스크롤 여지가 있음을 노출.
@@ -233,6 +247,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
         '[MatchList][perf] _scrollToTarget 완료 attempt=$attempt ${DateTime.now()}',
       );
       Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.35);
+      _autoScrolling = false;
+      // 여기서 멈춘 위치를 새 기준점으로 삼는다 — 안 그러면 자동 스크롤이
+      // 남긴 큰 오프셋 차이가 다음 사용자 스크롤 한 번에 delta 로 잡혀
+      // 곧바로 접힘/펼침이 잘못 반응한다.
+      _lastScrollOffset = _scrollController.offset;
       return;
     }
 
@@ -240,6 +259,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     const maxAttempts = 40;
     if (attempt >= maxAttempts) {
       debugPrint('[MatchList][perf] _scrollToTarget 40번 시도 후 포기');
+      _autoScrolling = false;
+      _lastScrollOffset = _scrollController.offset;
       return;
     }
 
@@ -432,10 +453,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
   ///
   /// 초기 진입·정렬 변경 시의 자동 스크롤([_scrollToTarget])은 jumpTo 를 반복하며
   /// 오프셋이 크게 튀는데, 그 사이 접힘 상태가 흔들리면 목록 높이가 바뀌어
-  /// 어림 계산이 어긋난다. 그래서 자동 스크롤이 끝날 때까지는 관여하지 않는다.
+  /// 어림 계산이 어긋난다. 그래서 [_autoScrolling] 이 켜져 있는 동안은
+  /// 관여하지 않는다.
   void _updateSortBarVisibility() {
     final offset = _scrollController.offset;
-    if (_scrolledForVersion != _viewModel.scheduleVersion ||
+    if (_autoScrolling ||
+        _scrolledForVersion != _viewModel.scheduleVersion ||
         _viewModel.loadingMatches ||
         _viewModel.loadingMore) {
       _lastScrollOffset = offset;

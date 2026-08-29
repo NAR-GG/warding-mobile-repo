@@ -215,53 +215,54 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
-    return PopScope(
-      // 뒤로 갈 때 목록이 추천·댓글 수를 반영해야 하므로 결과를 실어 보낸다.
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _pop();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.narDark800,
-        // 키보드가 올라온 상태에서 아무 데나 누르면 내려간다. translucent 라
-        // 목록 항목·버튼의 탭은 그대로 각자에게 간다.
-        body: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SafeArea(
-            child: ListenableBuilder(
-              listenable: _vm,
-              builder: (context, _) => Column(
-                children: [
-                  NarDetailHeader(
-                    title: _boardName(l),
-                    scale: scale,
-                    onBack: _pop,
-                    trailing: _vm.post == null
-                        ? null
-                        : GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _postMore,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8 * scale,
-                              ),
-                              child: SvgPicture.asset(
-                                'assets/icons/dots.svg',
-                                width: 18 * scale,
-                                height: 18 * scale,
-                                colorFilter: const ColorFilter.mode(
-                                  AppColors.narText3,
-                                  BlendMode.srcIn,
-                                ),
+    // 뒤로 갈 때 목록이 추천·댓글 수를 반영해야 해서 pop 결과를 실어 보내야
+    // 하지만, 그렇다고 PopScope(canPop:false) 로 시스템 pop 자체를 막으면
+    // iOS 엣지 스와이프 제스처가 통째로 죽는다(제스처가 시작은 되지만 놓는
+    // 순간 canPop 이 거부해 항상 원위치로 튕김). 그래서 시스템 pop(스와이프·
+    // Android 뒤로가기)은 막지 않고 그냥 흘려보낸다 — 결과 없이(null) pop 되면
+    // 호출부([community_screen.dart]._openPost)가 그냥 목록을 갱신 안 하고
+    // 넘어가도록 이미 null 을 허용해 둬서 안전하다. 결과를 반드시 실어야 하는
+    // 경로(헤더의 뒤로가기 버튼)만 [_pop] 을 직접 호출한다.
+    return Scaffold(
+      backgroundColor: AppColors.narDark800,
+      // 키보드가 올라온 상태에서 아무 데나 누르면 내려간다. translucent 라
+      // 목록 항목·버튼의 탭은 그대로 각자에게 간다.
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: ListenableBuilder(
+            listenable: _vm,
+            builder: (context, _) => Column(
+              children: [
+                NarDetailHeader(
+                  title: _boardName(l),
+                  scale: scale,
+                  onBack: _pop,
+                  trailing: _vm.post == null
+                      ? null
+                      : GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _postMore,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8 * scale,
+                            ),
+                            child: SvgPicture.asset(
+                              'assets/icons/dots.svg',
+                              width: 18 * scale,
+                              height: 18 * scale,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.narText3,
+                                BlendMode.srcIn,
                               ),
                             ),
                           ),
-                  ),
-                  Expanded(child: _content(l, scale)),
-                  if (_vm.post != null) _inputBar(l, scale),
-                ],
-              ),
+                        ),
+                ),
+                Expanded(child: _content(l, scale)),
+                if (_vm.post != null) _inputBar(l, scale),
+              ],
             ),
           ),
         ),

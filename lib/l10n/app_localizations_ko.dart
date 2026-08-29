@@ -718,6 +718,32 @@ class AppLocalizationsKo extends AppLocalizations {
   String get deleteFailed2 => '삭제에 실패했어요. 잠시 후 다시 시도해주세요.';
 
   @override
+  String get myCommunityActivity => '내 활동';
+
+  @override
+  String get myCommunityPosts => '내가 쓴 글';
+
+  @override
+  String get myCommunityComments => '내가 쓴 댓글';
+
+  @override
+  String get myCommunityBadgeAll => '전체';
+
+  @override
+  String get myCommunityPostsEmpty => '아직 쓴 글이 없어요';
+
+  @override
+  String get myCommunityCommentsEmpty => '아직 쓴 댓글이 없어요';
+
+  @override
+  String get communityScrapEmpty => '스크랩한 글이 없어요';
+
+  @override
+  String myCommunityCommentMeta(String timeAgo, int likeCount) {
+    return '$timeAgo · 추천 $likeCount';
+  }
+
+  @override
   String get loginFailed => '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.';
 
   @override
@@ -821,10 +847,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get matchLoadFailed => '경기를 불러오지 못했어요';
 
   @override
-  String get navSchedule => '일정';
+  String get navSchedule => '경기일정';
 
   @override
-  String get navMatchList => '리스트';
+  String get navMatchList => '경기리스트';
 
   @override
   String get navCommunity => '커뮤니티';
@@ -833,7 +859,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navSubscription => '구독';
 
   @override
-  String get navMyPage => '내정보';
+  String get navMyPage => '마이페이지';
 
   @override
   String get defaultCancel => '취소';
@@ -1321,10 +1347,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityGuestWrite => '로그인하고 응원팀을 정하면 글을 쓸 수 있어요.';
 
   @override
-  String get communityTabMyTeam => '우리팀';
+  String get communityTabMyTeam => '응원팀';
 
   @override
-  String get communityTabOtherTeams => '다른팀';
+  String get communityTabOtherTeams => '상대팀';
 
   @override
   String get communityRulesTitle => '커뮤니티 이용규칙';

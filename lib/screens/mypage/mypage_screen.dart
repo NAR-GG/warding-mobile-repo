@@ -23,6 +23,7 @@ import '../calendar_setting/calendar_setting_screen.dart';
 import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
+import '../my_community_activity/my_community_activity_screen.dart';
 import '../my_review/my_review_screen.dart';
 import '../my_subscription_setting/my_subscription_setting_screen.dart';
 import '../notice/notice_screen.dart';
@@ -185,6 +186,58 @@ class _MypageScreenState extends State<MypageScreen> {
                                 );
                                 // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
                                 await _viewModel.load();
+                              },
+                            ),
+                            // 커뮤니티 내 활동 3종 — 같은 화면을 열고 초기
+                            // 탭만 다르게 준다(화면을 셋으로 나누지 않는다).
+                            // 커서 페이지네이션이라 총 건수가 없어 count 는
+                            // 넘기지 않는다.
+                            MypageCardItem(
+                              title: AppLocalizations.of(
+                                context,
+                              )!.myCommunityPosts,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const MyCommunityActivityScreen(
+                                          initialTab:
+                                              MyCommunityActivityTab.posts,
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                            MypageCardItem(
+                              title: AppLocalizations.of(
+                                context,
+                              )!.myCommunityComments,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const MyCommunityActivityScreen(
+                                          initialTab:
+                                              MyCommunityActivityTab.comments,
+                                        ),
+                                  ),
+                                );
+                              },
+                            ),
+                            MypageCardItem(
+                              title: AppLocalizations.of(
+                                context,
+                              )!.communityScrap,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const MyCommunityActivityScreen(
+                                          initialTab:
+                                              MyCommunityActivityTab.scraps,
+                                        ),
+                                  ),
+                                );
                               },
                             ),
                           ],

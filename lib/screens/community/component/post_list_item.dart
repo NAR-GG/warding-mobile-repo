@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../components/board_badge.dart';
 import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/rating_mapping.dart';
@@ -17,11 +18,17 @@ class PostListItem extends StatelessWidget {
     required this.post,
     required this.scale,
     required this.onTap,
+    this.showBoardBadge = false,
   });
 
   final CommunityRemotePost post;
   final double scale;
   final VoidCallback onTap;
+
+  /// true면 제목 위에 [BoardBadge] 를 붙인다. 게시판이 이미 정해진 일반
+  /// 목록(전체·우리팀·다른팀 탭)에서는 필요 없고, 여러 게시판 글이 섞여
+  /// 나오는 마이페이지 "내 활동" 목록에서만 켠다.
+  final bool showBoardBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +54,14 @@ class PostListItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (showBoardBadge) ...[
+                    BoardBadge(
+                      boardTeamId: post.boardTeamId,
+                      boardTeamCode: post.boardTeamCode,
+                      scale: scale,
+                    ),
+                    SizedBox(height: 4 * scale),
+                  ],
                   Text(
                     post.title,
                     maxLines: 2,

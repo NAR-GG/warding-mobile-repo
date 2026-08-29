@@ -739,6 +739,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteFailed2 => 'Failed to delete. Please try again later.';
 
   @override
+  String get myCommunityActivity => 'My Activity';
+
+  @override
+  String get myCommunityPosts => 'My Posts';
+
+  @override
+  String get myCommunityComments => 'My Comments';
+
+  @override
+  String get myCommunityBadgeAll => 'All';
+
+  @override
+  String get myCommunityPostsEmpty => 'You haven\'t written any posts yet';
+
+  @override
+  String get myCommunityCommentsEmpty =>
+      'You haven\'t written any comments yet';
+
+  @override
+  String get communityScrapEmpty => 'No saved posts yet';
+
+  @override
+  String myCommunityCommentMeta(String timeAgo, int likeCount) {
+    return '$timeAgo · $likeCount likes';
+  }
+
+  @override
   String get loginFailed => 'Login failed. Please try again later.';
 
   @override

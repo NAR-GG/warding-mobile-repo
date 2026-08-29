@@ -32,17 +32,19 @@ class AppBottomNav extends StatelessWidget {
   static const List<({String icon, AppNavTab tab})> _items = [
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
     (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
-    (icon: 'assets/icons/message-circle.svg', tab: AppNavTab.community),
+    (
+      icon: 'assets/icons/message-circle-heart.svg',
+      tab: AppNavTab.community,
+    ),
     (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
   ];
 
-  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 치수.
+  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
   ///
-  /// 4탭 시절: 활성 113 + 비활성 44×3 + gap 16×3 + 패딩 24 = 317 ≤ 335.
-  /// 같은 값으로 5탭이면 113 + 44×4 + 16×4 + 24 = 377 로 42px 넘친다.
-  /// 아래 값이면 113 + 40×4 + 8×4 + 24 = 329 로 6px 여유가 남는다.
-  static const double _gap = 8;
+  /// 활성 chip 폭은 라벨 길이에 따라 달라진다(고정폭 아님). 간격을
+  /// 고정 gap 대신 [MainAxisAlignment.spaceBetween] 으로 자동 분배해,
+  /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다.
   static const double _inactiveSize = 40;
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
@@ -68,44 +70,38 @@ class AppBottomNav extends StatelessWidget {
       AppNavTab.mypage: l.navMyPage,
     };
 
-    final children = <Widget>[];
-    for (var i = 0; i < _items.length; i++) {
-      final item = _items[i];
-      final active = item.tab == currentTab;
-
-      children.add(
-        active
-            // 활성 탭만 라벨을 갖고 minWidth 113 을 요구한다. 좁은 화면(320)에서
-            // 고정폭 chip 3개 + gap 과 합쳐 바 폭(335)을 2.6px 넘겨 RenderFlex
-            // overflow 가 났다. Flexible 로 감싸 남는 폭에 맞춰 줄어들게 한다
-            // (라벨은 아래 Text 의 ellipsis 가 처리).
-            ? Flexible(
-              child: _NavItemActive(
-                icon: item.icon,
-                label: labels[item.tab]!,
-                scale: scale,
-                onTap: () => onTabSelected(item.tab),
-              ),
-            )
-            : _NavItemInactive(
+    final children = [
+      for (final item in _items)
+        if (item.tab == currentTab)
+          Flexible(
+            child: _NavItemActive(
               icon: item.icon,
+              label: labels[item.tab]!,
               scale: scale,
               onTap: () => onTabSelected(item.tab),
             ),
-      );
+          )
+        else
+          _NavItemInactive(
+            icon: item.icon,
+            scale: scale,
+            onTap: () => onTabSelected(item.tab),
+          ),
+    ];
 
-      if (i != _items.length - 1) {
-        children.add(SizedBox(width: _gap * scale));
-      }
-    }
-
+    // 탭 전환은 [tabRoute] 로 화면 자체가 통째로 교체돼(각 화면이 자기
+    // AppBottomNav 를 따로 그림) 이 위젯의 State 는 탭이 바뀔 때마다 새로
+    // 생성된다 — 로컬 애니메이션으로는 이전 위치에서 이어 그릴 방법이 없다.
+    // 대신 활성 pill 배경만 [Hero] 로 감싸 화면 전환(Navigator) 동안
+    // Flutter 가 직접 이전 화면의 pill 위치 → 새 화면의 pill 위치로
+    // 날아가는 모션을 만들게 한다.
     final bar = SizedBox(
       width: 335 * scale,
       height: 72 * scale,
       child: Padding(
         padding: EdgeInsets.all(12 * scale),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: children,
         ),
       ),
