@@ -57,5 +57,41 @@ void main() {
     expect(page.comments.first.postId, 3);
     expect(page.comments.first.postTitle, '원글 제목');
     expect(page.nextCursor, 9);
+    // 게시판 키가 없는 응답(구버전 서버)은 전체 게시판과 같은 모양으로 떨어진다.
+    expect(page.comments.first.boardTeamId, isNull);
+    expect(page.comments.first.boardTeamCode, isNull);
+  });
+
+  test('CommunityMyComment는 원글이 속한 게시판을 담는다', () {
+    final page = CommunityMyCommentPage.fromJson(const {
+      'comments': [
+        {
+          'id': 9,
+          'postId': 3,
+          'postTitle': '팀 게시판 원글',
+          'boardTeamId': 23,
+          'boardTeamCode': 'GEN',
+          'body': '내가 쓴 댓글',
+          'likeCount': 1,
+          'createdAt': '2026-08-26T21:00:00',
+        },
+        {
+          'id': 8,
+          'postId': 2,
+          'postTitle': '전체 게시판 원글',
+          'boardTeamId': null,
+          'boardTeamCode': null,
+          'body': '또 하나',
+          'likeCount': 0,
+          'createdAt': '2026-08-26T20:00:00',
+        },
+      ],
+    });
+
+    // 목록에 게시판이 섞여 나오므로 줄마다 구분이 되어야 한다.
+    expect(page.comments[0].boardTeamId, 23);
+    expect(page.comments[0].boardTeamCode, 'GEN');
+    expect(page.comments[1].boardTeamId, isNull);
+    expect(page.comments[1].boardTeamCode, isNull);
   });
 }
