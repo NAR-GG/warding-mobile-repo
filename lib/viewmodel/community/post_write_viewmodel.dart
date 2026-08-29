@@ -58,8 +58,12 @@ class PostWriteViewModel extends ChangeNotifier {
     final remaining = maxPhotos - _photos.length;
     if (remaining <= 0) return;
     try {
+      // maxWidth 가 없으면 아이폰 원본(4032×3024, q85 여도 2~4MB)이 그대로 올라간다.
+      // 상세에서 폭 400 남짓으로 그리는 사진이라 1600 이면 확대해서 봐도 충분하고,
+      // 파일 크기는 한 자릿수 분의 일이 된다 — 업로드 시간·Cloudinary 저장 용량이 같이 준다.
       final picked = await _picker.pickMultiImage(
         imageQuality: 85,
+        maxWidth: 1600,
         limit: remaining,
       );
       if (picked.isEmpty) return;
@@ -84,10 +88,13 @@ class PostWriteViewModel extends ChangeNotifier {
     _error = null;
     _safeNotify();
     try {
-      final urls = <String>[];
-      for (final path in _photos) {
-        urls.add(await _images.upload(File(path)));
-      }
+      // 직렬로 올리면 5장이 업로드 5번을 줄줄이 기다린다(장당 서명 발급 1회까지 앞에 붙는다).
+      // Future.wait 는 입력 순서를 보존하므로 사진 순서가 그대로 유지된다.
+      // 한 장이라도 실패하면 전체가 throw 되어 아래 catch 로 떨어진다 — 사진이 빠진 채
+      // 글만 올라가는 것보다 낫다.
+      final urls = await Future.wait(
+        _photos.map((path) => _images.upload(File(path))),
+      );
       return await _repository.createPost(
         boardTeamId: boardTeamId,
         title: title.trim(),
