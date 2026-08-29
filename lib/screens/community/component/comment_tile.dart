@@ -74,7 +74,11 @@ class CommentTile extends StatelessWidget {
                         author: comment.author,
                         scale: scale,
                         fontSize: 12,
-                        color: AppColors.narText,
+                        // 내가 쓴 댓글은 닉네임을 멘션·답글과 같은 보라색으로 둬서
+                        // 목록을 훑을 때 내 글만 바로 눈에 띄게 한다.
+                        color: comment.mine
+                            ? AppColors.narViolet3
+                            : AppColors.narText,
                       ),
                     ),
                     GestureDetector(
