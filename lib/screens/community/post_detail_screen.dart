@@ -485,8 +485,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       color: AppColors.narText,
                     ),
                     Text(
-                      '${ratingTimeAgo(post.createdAt)} · '
-                      '${l.communityViewCount(post.viewCount)}'
+                      // 조회수는 안 보여준다 — 서버는 계속 세지만(D-4) 화면에선 뺐다.
+                      '${ratingTimeAgo(post.createdAt)}'
                       '${post.edited ? ' · ${l.communityEdited}' : ''}',
                       style: TextStyle(
                         fontFamily: 'Pretendard',
