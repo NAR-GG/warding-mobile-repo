@@ -6,7 +6,7 @@ import '../../../model/community_report.dart';
 import '../../../styles/app_colors.dart';
 
 /// `⋯` 메뉴에서 고른 동작.
-enum CommunityMoreAction { report, block, delete }
+enum CommunityMoreAction { report, block, edit, delete }
 
 /// `⋯` → 더보기 메뉴. 글과 댓글이 같은 시트를 쓴다.
 ///
@@ -28,6 +28,12 @@ Future<CommunityMoreAction?> showCommunityMoreSheet(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: mine
           ? [
+              _MenuRow(
+                label: l.communityMoreEdit,
+                scale: scale,
+                onTap: () =>
+                    Navigator.of(context).pop(CommunityMoreAction.edit),
+              ),
               _MenuRow(
                 label: l.communityMoreDelete,
                 scale: scale,

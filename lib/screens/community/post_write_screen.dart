@@ -5,10 +5,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_remote_post.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/community/post_write_viewmodel.dart';
 import 'community_rules.dart';
 import 'community_teams.dart';
+import 'component/community_image.dart';
 import 'component/community_rules_sheet.dart';
 
 /// 글쓰기 — 제목 · 본문 · 사진.
@@ -20,12 +22,16 @@ import 'component/community_rules_sheet.dart';
 /// 본문 아래에는 커뮤니티 이용규칙 요약이 연하게 깔린다. 글을 쓰기 직전이
 /// 규칙을 읽을 유일한 순간이라, 별도 화면으로 빼면 아무도 안 본다.
 ///
-/// 등록에 성공하면 새 글 id 를 결과로 pop 한다.
+/// 등록에 성공하면 새 글 id 를 결과로 pop 한다. 수정 모드([edit])면 같은 id 를 pop 한다.
 class PostWriteScreen extends StatefulWidget {
-  const PostWriteScreen({super.key, required this.boardTeamId});
+  const PostWriteScreen({super.key, required this.boardTeamId, this.edit});
 
   /// null 이면 전체 게시판.
   final int? boardTeamId;
+
+  /// 수정할 글. null 이면 새 글 작성이다. 제목·본문·기존 사진이 채워진 채 열리고,
+  /// 등록 대신 수정(PUT)으로 나간다.
+  final CommunityRemotePostDetail? edit;
 
   @override
   State<PostWriteScreen> createState() => _PostWriteScreenState();
@@ -34,6 +40,10 @@ class PostWriteScreen extends StatefulWidget {
 class _PostWriteScreenState extends State<PostWriteScreen> {
   late final PostWriteViewModel _vm = PostWriteViewModel(
     boardTeamId: widget.boardTeamId,
+    editPostId: widget.edit?.id,
+    initialImageUrls: widget.edit == null
+        ? const []
+        : [for (final img in widget.edit!.images) img.url],
   );
 
   final TextEditingController _title = TextEditingController();
@@ -42,6 +52,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   @override
   void initState() {
     super.initState();
+    final edit = widget.edit;
+    if (edit != null) {
+      _title.text = edit.title;
+      _body.text = edit.body;
+    }
     _title.addListener(_onChanged);
     _body.addListener(_onChanged);
     _vm.addListener(_showError);
@@ -168,7 +183,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                      if (_vm.photos.isNotEmpty) ...[
+                      if (_vm.existingImageUrls.isNotEmpty ||
+                          _vm.photos.isNotEmpty) ...[
                         SizedBox(height: 14 * scale),
                         _photoStrip(scale),
                       ],
@@ -187,57 +203,74 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   }
 
   Widget _photoStrip(double scale) {
+    final existing = _vm.existingImageUrls;
     final photos = _vm.photos;
 
     return SizedBox(
       height: 72 * scale,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: photos.length,
+        itemCount: existing.length + photos.length,
         separatorBuilder: (_, _) => SizedBox(width: 8 * scale),
-        itemBuilder: (context, i) => Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8 * scale),
-              child: Image.file(
-                File(photos[i]),
-                width: 72 * scale,
-                height: 72 * scale,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  width: 72 * scale,
-                  height: 72 * scale,
-                  color: AppColors.narDark500,
-                ),
-              ),
-            ),
-            Positioned(
-              top: -6 * scale,
-              right: -6 * scale,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _vm.removePhoto(i),
-                child: Container(
-                  width: 22 * scale,
-                  height: 22 * scale,
-                  decoration: const BoxDecoration(
-                    color: AppColors.narDark400,
-                    shape: BoxShape.circle,
+        // 수정 모드의 기존 사진(URL)이 앞, 새로 고른 사진(로컬 파일)이 뒤 —
+        // 서버로 보내는 imageUrls 순서와 같다.
+        itemBuilder: (context, i) {
+          final isExisting = i < existing.length;
+          return _photoThumb(
+            scale,
+            image: isExisting
+                ? CommunityImage(
+                    source: existing[i],
+                    width: 72 * scale,
+                    height: 72 * scale,
+                  )
+                : Image.file(
+                    File(photos[i - existing.length]),
+                    width: 72 * scale,
+                    height: 72 * scale,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 72 * scale,
+                      height: 72 * scale,
+                      color: AppColors.narDark500,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.close,
-                    size: 13 * scale,
-                    color: AppColors.narText,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+            onRemove: () => isExisting
+                ? _vm.removeExistingImage(i)
+                : _vm.removePhoto(i - existing.length),
+          );
+        },
       ),
     );
   }
+
+  Widget _photoThumb(
+    double scale, {
+    required Widget image,
+    required VoidCallback onRemove,
+  }) => Stack(
+    clipBehavior: Clip.none,
+    children: [
+      ClipRRect(borderRadius: BorderRadius.circular(8 * scale), child: image),
+      Positioned(
+        top: -6 * scale,
+        right: -6 * scale,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onRemove,
+          child: Container(
+            width: 22 * scale,
+            height: 22 * scale,
+            decoration: const BoxDecoration(
+              color: AppColors.narDark400,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.close, size: 13 * scale, color: AppColors.narText),
+          ),
+        ),
+      ),
+    ],
+  );
 
   /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
   /// 반드시 지나가도록 둔다.
@@ -296,8 +329,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   }
 
   Widget _toolbar(AppLocalizations l, double scale) {
-    final photos = _vm.photos;
-    final full = photos.length >= PostWriteViewModel.maxPhotos;
+    final count = _vm.existingImageUrls.length + _vm.photos.length;
+    final full = count >= PostWriteViewModel.maxPhotos;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -311,10 +344,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         children: [
           _ToolButton(
             asset: 'assets/icons/photo-edit.svg',
-            label: photos.isEmpty
+            label: count == 0
                 ? l.communityAttachPhoto
-                : l.communityPhotoCount(photos.length),
-            active: photos.isNotEmpty,
+                : l.communityPhotoCount(count),
+            active: count > 0,
             scale: scale,
             onTap: full ? null : _vm.pickPhotos,
           ),

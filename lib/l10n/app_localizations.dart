@@ -2648,6 +2648,18 @@ abstract class AppLocalizations {
   /// **'차단한 사용자의 글입니다.'**
   String get communityBlockedPost;
 
+  /// No description provided for @communityMoreEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정하기'**
+  String get communityMoreEdit;
+
+  /// No description provided for @communityEditingComment.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글 수정 중'**
+  String get communityEditingComment;
+
   /// No description provided for @communityMoreDelete.
   ///
   /// In ko, this message translates to:
