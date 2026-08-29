@@ -69,7 +69,9 @@ class PostListItem extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w700,
-                      fontSize: 14.5 * scale,
+                      // 에브리타임 목록 밀도에 맞춘 크기(제목 16/미리보기 14/메타 12.5).
+                      // 한 번 12.5~14.5 로 줄였다가 너무 작다는 피드백으로 되올렸다.
+                      fontSize: 16 * scale,
                       height: 1.4,
                       color: AppColors.narText,
                     ),
@@ -82,7 +84,7 @@ class PostListItem extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w400,
-                      fontSize: 12.5 * scale,
+                      fontSize: 14 * scale,
                       height: 1.5,
                       color: AppColors.narText3,
                     ),
@@ -114,7 +116,11 @@ class PostListItem extends StatelessWidget {
                       _meta(ratingTimeAgo(post.createdAt), scale),
                       SizedBox(width: 9 * scale),
                       Flexible(
-                        child: AuthorLine(author: post.author, scale: scale),
+                        child: AuthorLine(
+                          author: post.author,
+                          scale: scale,
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -141,7 +147,7 @@ Widget _meta(String text, double scale) => Text(
   style: TextStyle(
     fontFamily: 'Pretendard',
     fontWeight: FontWeight.w400,
-    fontSize: 11 * scale,
+    fontSize: 12.5 * scale,
     height: 1.45,
     color: AppColors.narText2,
   ),
@@ -157,8 +163,8 @@ Widget _iconMeta(
   children: [
     SvgPicture.asset(
       asset,
-      width: 13 * scale,
-      height: 13 * scale,
+      width: 14.5 * scale,
+      height: 14.5 * scale,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     ),
     SizedBox(width: 3 * scale),
@@ -167,7 +173,7 @@ Widget _iconMeta(
       style: TextStyle(
         fontFamily: 'Pretendard',
         fontWeight: FontWeight.w600,
-        fontSize: 11 * scale,
+        fontSize: 12.5 * scale,
         height: 1.45,
         color: color,
       ),
