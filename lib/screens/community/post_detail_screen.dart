@@ -495,10 +495,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
               for (var i = 0; i < post.images.length; i++) ...[
                 if (i > 0) SizedBox(height: 8 * scale),
+                // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
+                // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
+                // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
                 CommunityImage(
                   source: post.images[i].url,
                   width: double.infinity,
-                  height: 200 * scale,
+                  height: null,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.7,
                   radius: 10 * scale,
                 ),
               ],
