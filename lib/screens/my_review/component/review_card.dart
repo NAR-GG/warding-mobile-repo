@@ -68,36 +68,6 @@ class MyReview {
   String get playerTeam => playerName.trim();
 }
 
-/// 내 리뷰/평점 — 일자 구분 헤더 (padding 10/20, narBgSecondary 배경).
-class ReviewDateHeader extends StatelessWidget {
-  const ReviewDateHeader({super.key, required this.date, this.scale = 1});
-
-  final String date;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.narBgSecondary,
-      padding: EdgeInsets.symmetric(
-        horizontal: 20 * scale,
-        vertical: 10 * scale,
-      ),
-      child: Text(
-        date,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w500,
-          fontSize: 14 * scale,
-          height: 17 / 14,
-          color: AppColors.narText,
-        ),
-      ),
-    );
-  }
-}
-
 /// 내 리뷰 카드 (narDark600 배경, padding 10/20).
 ///
 /// 리그·선수 / 작성자·시각 / 별점 / (옵션) 본문 + 리뷰보기·리뷰삭제 버튼.

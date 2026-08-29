@@ -15,6 +15,7 @@ import 'community_teams.dart';
 import 'component/author_line.dart';
 import 'component/comment_tile.dart';
 import 'component/community_image.dart';
+import 'component/community_photo_viewer.dart';
 import 'component/report_sheet.dart';
 
 /// 상세에서 돌아올 때 목록이 알아야 하는 것 — 추천·댓글 수가 바뀐 글, 또는
@@ -214,53 +215,54 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
-    return PopScope(
-      // 뒤로 갈 때 목록이 추천·댓글 수를 반영해야 하므로 결과를 실어 보낸다.
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _pop();
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.narDark800,
-        // 키보드가 올라온 상태에서 아무 데나 누르면 내려간다. translucent 라
-        // 목록 항목·버튼의 탭은 그대로 각자에게 간다.
-        body: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SafeArea(
-            child: ListenableBuilder(
-              listenable: _vm,
-              builder: (context, _) => Column(
-                children: [
-                  NarDetailHeader(
-                    title: _boardName(l),
-                    scale: scale,
-                    onBack: _pop,
-                    trailing: _vm.post == null
-                        ? null
-                        : GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _postMore,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8 * scale,
-                              ),
-                              child: SvgPicture.asset(
-                                'assets/icons/dots.svg',
-                                width: 18 * scale,
-                                height: 18 * scale,
-                                colorFilter: const ColorFilter.mode(
-                                  AppColors.narText3,
-                                  BlendMode.srcIn,
-                                ),
+    // 뒤로 갈 때 목록이 추천·댓글 수를 반영해야 해서 pop 결과를 실어 보내야
+    // 하지만, 그렇다고 PopScope(canPop:false) 로 시스템 pop 자체를 막으면
+    // iOS 엣지 스와이프 제스처가 통째로 죽는다(제스처가 시작은 되지만 놓는
+    // 순간 canPop 이 거부해 항상 원위치로 튕김). 그래서 시스템 pop(스와이프·
+    // Android 뒤로가기)은 막지 않고 그냥 흘려보낸다 — 결과 없이(null) pop 되면
+    // 호출부([community_screen.dart]._openPost)가 그냥 목록을 갱신 안 하고
+    // 넘어가도록 이미 null 을 허용해 둬서 안전하다. 결과를 반드시 실어야 하는
+    // 경로(헤더의 뒤로가기 버튼)만 [_pop] 을 직접 호출한다.
+    return Scaffold(
+      backgroundColor: AppColors.narDark800,
+      // 키보드가 올라온 상태에서 아무 데나 누르면 내려간다. translucent 라
+      // 목록 항목·버튼의 탭은 그대로 각자에게 간다.
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: ListenableBuilder(
+            listenable: _vm,
+            builder: (context, _) => Column(
+              children: [
+                NarDetailHeader(
+                  title: _boardName(l),
+                  scale: scale,
+                  onBack: _pop,
+                  trailing: _vm.post == null
+                      ? null
+                      : GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _postMore,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8 * scale,
+                            ),
+                            child: SvgPicture.asset(
+                              'assets/icons/dots.svg',
+                              width: 18 * scale,
+                              height: 18 * scale,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.narText3,
+                                BlendMode.srcIn,
                               ),
                             ),
                           ),
-                  ),
-                  Expanded(child: _content(l, scale)),
-                  if (_vm.post != null) _inputBar(l, scale),
-                ],
-              ),
+                        ),
+                ),
+                Expanded(child: _content(l, scale)),
+                if (_vm.post != null) _inputBar(l, scale),
+              ],
             ),
           ),
         ),
@@ -495,11 +497,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
               for (var i = 0; i < post.images.length; i++) ...[
                 if (i > 0) SizedBox(height: 8 * scale),
-                CommunityImage(
-                  source: post.images[i].url,
-                  width: double.infinity,
-                  height: 200 * scale,
-                  radius: 10 * scale,
+                // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
+                // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
+                // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
+                // 상한에 걸려 잘린 사진은 탭해서 전체화면으로 본다.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => CommunityPhotoViewer.open(
+                    context,
+                    urls: [for (final img in post.images) img.url],
+                    initialIndex: i,
+                  ),
+                  child: CommunityImage(
+                    source: post.images[i].url,
+                    width: double.infinity,
+                    height: null,
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+                    radius: 10 * scale,
+                  ),
                 ),
               ],
             ],

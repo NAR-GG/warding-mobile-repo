@@ -412,6 +412,21 @@
   "reviewDelete": "리뷰삭제",
   "deleteFailed2": "삭제에 실패했어요. 잠시 후 다시 시도해주세요.",
 
+  "myCommunityActivity": "내 활동",
+  "myCommunityPosts": "내가 쓴 글",
+  "myCommunityComments": "내가 쓴 댓글",
+  "myCommunityBadgeAll": "전체",
+  "myCommunityPostsEmpty": "아직 쓴 글이 없어요",
+  "myCommunityCommentsEmpty": "아직 쓴 댓글이 없어요",
+  "communityScrapEmpty": "스크랩한 글이 없어요",
+  "myCommunityCommentMeta": "{timeAgo} · 추천 {likeCount}",
+  "@myCommunityCommentMeta": {
+    "placeholders": {
+      "timeAgo": { "type": "String" },
+      "likeCount": { "type": "int" }
+    }
+  },
+
   "loginFailed": "로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
   "appleLogin": "Apple 로그인",
   "kakaoLogin": "카카오 로그인",
@@ -449,11 +464,11 @@
   "matchSchedule": "경기 일정",
   "matchLoadFailed": "경기를 불러오지 못했어요",
 
-  "navSchedule": "일정",
-  "navMatchList": "리스트",
+  "navSchedule": "경기일정",
+  "navMatchList": "경기리스트",
   "navCommunity": "커뮤니티",
   "navSubscription": "구독",
-  "navMyPage": "내정보",
+  "navMyPage": "마이페이지",
 
   "defaultCancel": "취소",
   "defaultConfirm": "확인",
@@ -667,8 +682,8 @@
   },
   "communityGuestWrite": "로그인하고 응원팀을 정하면 글을 쓸 수 있어요.",
 
-  "communityTabMyTeam": "우리팀",
-  "communityTabOtherTeams": "다른팀",
+  "communityTabMyTeam": "응원팀",
+  "communityTabOtherTeams": "상대팀",
 
   "communityRulesTitle": "커뮤니티 이용규칙",
   "communityRulesSeeAll": "커뮤니티 이용규칙 전체 보기",

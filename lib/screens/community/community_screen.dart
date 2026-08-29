@@ -15,6 +15,7 @@ import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
 import 'community_teams.dart';
+import 'component/author_line.dart';
 import 'component/post_list_item.dart';
 import 'component/team_chip_rail.dart';
 import 'component/write_lock_bar.dart';
@@ -79,12 +80,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  /// 탭을 누르면 그 페이지로 이동한다.
+  ///
+  /// 인접한 탭이면 슬라이드로 넘어간다. 인접하지 않으면(예: '다른팀'→'전체')
+  /// [PageController.animateToPage] 가 사이 페이지를 그대로 지나치며 슬라이드해
+  /// 순간적으로 '응원팀' 탭이 스치듯 보인다 — 그래서 이때는 바로 점프한다.
   void _goToTab(_CommunityTab tab) {
-    _pageController.animateToPage(
-      tab.index,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-    );
+    if ((tab.index - _tab.index).abs() <= 1) {
+      _pageController.animateToPage(
+        tab.index,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _pageController.jumpToPage(tab.index);
+    }
   }
 
   /// 내 응원팀을 뺀 나머지 팀.
@@ -197,6 +207,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         l.communityTabAll,
                         l.communityTabMyTeam,
                         l.communityTabOtherTeams,
+                      ],
+                      // '응원팀' 탭에만 내 응원팀 로고를 붙인다. 팀이 없거나
+                      // 아직 못 받았으면 TeamLogoDot 자체 fallback(회색 원)이 뜬다.
+                      leadingIcons: [
+                        null,
+                        TeamLogoDot(
+                          imageUrl: communityTeam(_vm.myTeamId)?.imageUrl,
+                          size: 18 * scale,
+                        ),
+                        null,
                       ],
                       selectedIndex: _tab.index,
                       onChanged: (i) => _goToTab(_CommunityTab.values[i]),

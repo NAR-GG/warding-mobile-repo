@@ -56,6 +56,46 @@ int decodeWidthFor(
   return width > sourceWidth ? sourceWidth : width;
 }
 
+/// 커뮤니티 첨부 사진에 쓰는 표시 폭 버킷(논리 px 아님, **실제 픽셀**).
+///
+/// 임의의 폭을 그대로 URL 에 넣으면 폭 하나마다 Cloudinary 파생 에셋이 새로 만들어진다.
+/// 기기 해상도가 제각각이라 그대로 두면 사진 한 장이 수십 벌로 늘어나 변환 쿼터를 태운다.
+/// 몇 개 버킷으로 반올림해 캐시 적중률을 지킨다.
+const List<int> kCloudinaryWidthBuckets = [200, 400, 800, 1200];
+
+/// Cloudinary **업로드** URL 에 표시용 변환을 끼운다.
+///
+/// 커뮤니티 첨부는 서버가 변환 없는 `secure_url` 을 그대로 저장한다(원본 보존). 그래서
+/// 앱이 원본 해상도(아이폰 4032×3024, 수 MB)를 통째로 받아 200px 칸에 그리고 있었다.
+/// 표시 직전에 폭을 깎아 전송량과 디코딩 메모리를 함께 줄인다 — 저장된 원본은 그대로다.
+///
+/// ```
+/// .../image/upload/v1788008914/community/12/xxx.jpg
+/// .../image/upload/f_webp,q_auto,w_800/v1788008914/community/12/xxx.jpg
+/// ```
+///
+/// `c_limit` 은 원본보다 크게 늘리지 않는다는 뜻이다 — 작은 사진을 확대해 흐려지는 걸 막는다.
+///
+/// Cloudinary 업로드 URL 이 아니면 그대로 돌려준다(팀 로고처럼 서버가 이미 변환을 붙여
+/// 주는 `image/fetch/` URL 도 여기 해당해 두 번 변환되지 않는다).
+String? cloudinaryScaled(String? url, {required int targetPixelWidth}) {
+  if (url == null || url.isEmpty) return url;
+  const marker = '/image/upload/';
+  final at = url.indexOf(marker);
+  if (at < 0 || !url.startsWith('https://res.cloudinary.com/')) return url;
+
+  final rest = url.substring(at + marker.length);
+  // 이미 변환이 끼어 있으면(예: 재호출) 건드리지 않는다. 버전 세그먼트(v123...)로 시작해야
+  // 변환이 없는 원본 URL 이다.
+  if (!RegExp(r'^v\d+/').hasMatch(rest)) return url;
+
+  final width = kCloudinaryWidthBuckets.firstWhere(
+    (b) => b >= targetPixelWidth,
+    orElse: () => kCloudinaryWidthBuckets.last,
+  );
+  return '${url.substring(0, at + marker.length)}f_webp,q_auto,w_$width,c_limit/$rest';
+}
+
 /// Data Dragon 스플래시 아트의 해상도. 챔피언과 무관하게 고정이다.
 const int kChampionSplashWidth = 1215;
 const int kChampionSplashHeight = 717;

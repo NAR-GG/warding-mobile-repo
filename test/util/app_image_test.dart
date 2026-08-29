@@ -58,4 +58,47 @@ void main() {
       expect(championSplashUrl(''), isNull);
     });
   });
+
+  group('cloudinaryScaled', () {
+    const original =
+        'https://res.cloudinary.com/dvvurdffw/image/upload/v1788008914/community/12/abc.jpg';
+
+    test('업로드 URL 에 변환을 끼운다', () {
+      expect(
+        cloudinaryScaled(original, targetPixelWidth: 780),
+        'https://res.cloudinary.com/dvvurdffw/image/upload/'
+        'f_webp,q_auto,w_800,c_limit/v1788008914/community/12/abc.jpg',
+      );
+    });
+
+    test('폭은 버킷으로 반올림된다 — 파생 에셋이 기기마다 늘어나면 변환 쿼터를 태운다', () {
+      String widthOf(int px) =>
+          RegExp(r'w_(\d+)').firstMatch(cloudinaryScaled(original, targetPixelWidth: px)!)!.group(1)!;
+
+      expect(widthOf(120), '200');
+      expect(widthOf(390), '400');
+      expect(widthOf(401), '800');
+      expect(widthOf(9999), '1200'); // 버킷을 넘으면 최대치로 자른다
+    });
+
+    test('이미 변환이 붙은 URL 은 두 번 건드리지 않는다', () {
+      final once = cloudinaryScaled(original, targetPixelWidth: 400)!;
+      expect(cloudinaryScaled(once, targetPixelWidth: 800), once);
+    });
+
+    test('Cloudinary 업로드 URL 이 아니면 그대로 둔다', () {
+      // 서버가 이미 변환을 붙여주는 fetch URL (팀 로고 등)
+      const fetched =
+          'https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/x.png';
+      expect(cloudinaryScaled(fetched, targetPixelWidth: 400), fetched);
+
+      const other = 'https://example.com/a.jpg';
+      expect(cloudinaryScaled(other, targetPixelWidth: 400), other);
+    });
+
+    test('null·빈 문자열은 그대로', () {
+      expect(cloudinaryScaled(null, targetPixelWidth: 400), isNull);
+      expect(cloudinaryScaled('', targetPixelWidth: 400), '');
+    });
+  });
 }

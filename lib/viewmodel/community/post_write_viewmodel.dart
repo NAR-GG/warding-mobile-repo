@@ -31,10 +31,16 @@ class PostWriteViewModel extends ChangeNotifier {
 
   static const int maxPhotos = 5;
 
-  /// 선택한 사진의 **로컬 경로**. 등록할 때 한꺼번에 업로드해 URL 로 바꾼다 —
-  /// 고를 때마다 올리면 글을 안 쓰고 나간 사용자의 사진이 서버에 남는다.
+  /// 선택한 사진의 **로컬 경로**. 순서가 곧 첨부 순서다.
   final List<String> _photos = [];
   List<String> get photos => List.unmodifiable(_photos);
+
+  /// 경로별 **선업로드** Future. 사진을 고르는 순간 업로드를 시작해 두면, 유저가
+  /// 제목·본문을 쓰는 동안 업로드가 끝나 등록 버튼은 createPost 한 방만 남는다
+  /// (docs/community-photo-preupload-request.md — Cloudinary 왕복이 장당 1초대라
+  /// 등록 시점에 올리면 그대로 체감된다. 인스타·트위터가 쓰는 패턴).
+  /// 글을 안 쓰고 나가면 Cloudinary 에 고아 파일이 남는데, 지금 규모에선 감수한다.
+  final Map<String, Future<String>> _uploads = {};
 
   bool _submitting = false;
   bool get submitting => _submitting;
@@ -58,12 +64,19 @@ class PostWriteViewModel extends ChangeNotifier {
     final remaining = maxPhotos - _photos.length;
     if (remaining <= 0) return;
     try {
+      // maxWidth 가 없으면 아이폰 원본(4032×3024, q85 여도 2~4MB)이 그대로 올라간다.
+      // 상세에서 폭 400 남짓으로 그리는 사진이라 1600 이면 확대해서 봐도 충분하고,
+      // 파일 크기는 한 자릿수 분의 일이 된다 — 업로드 시간·Cloudinary 저장 용량이 같이 준다.
       final picked = await _picker.pickMultiImage(
         imageQuality: 85,
+        maxWidth: 1600,
         limit: remaining,
       );
       if (picked.isEmpty) return;
-      _photos.addAll(picked.take(remaining).map((x) => x.path));
+      for (final x in picked.take(remaining)) {
+        _photos.add(x.path);
+        _startUpload(x.path); // 고르는 즉시 선업로드
+      }
       _safeNotify();
     } on Exception catch (e) {
       // 취소는 빈 목록으로 오므로 여기 오는 건 진짜 실패뿐이다.
@@ -71,9 +84,24 @@ class PostWriteViewModel extends ChangeNotifier {
     }
   }
 
+  /// 업로드를 시작하고 맵에 건다. 실패하면 맵에서 스스로 빠져 다음 submit 때
+  /// 재업로드된다 — 실패 Future 가 남아 있으면 영영 같은 에러만 다시 받는다.
+  /// 여기 붙인 onError 리스너가 "unhandled async error" 경고도 막아 주고,
+  /// submit 쪽 await 리스너는 에러를 그대로 받는다(전체 실패 정책 유지).
+  Future<String> _startUpload(String path) {
+    final upload = _images.upload(File(path));
+    _uploads[path] = upload;
+    upload.then<void>((_) {}, onError: (Object _) {
+      if (identical(_uploads[path], upload)) _uploads.remove(path);
+    });
+    return upload;
+  }
+
   void removePhoto(int index) {
     if (index < 0 || index >= _photos.length) return;
-    _photos.removeAt(index);
+    final path = _photos.removeAt(index);
+    // 업로드 취소까지는 불필요 — 결과 URL 을 안 쓰면 그만이다.
+    _uploads.remove(path);
     _safeNotify();
   }
 
@@ -84,10 +112,14 @@ class PostWriteViewModel extends ChangeNotifier {
     _error = null;
     _safeNotify();
     try {
-      final urls = <String>[];
-      for (final path in _photos) {
-        urls.add(await _images.upload(File(path)));
-      }
+      // 선업로드가 이미 돌고 있으므로 보통 여기서는 기다릴 게 없다. 아직 안 끝난
+      // 장만 마저 기다린다(Future.wait 는 입력 순서를 보존해 사진 순서가 유지된다).
+      // 한 장이라도 실패하면 전체가 throw 되어 아래 catch 로 떨어진다 — 사진이 빠진 채
+      // 글만 올라가는 것보다 낫다. 실패한 장은 다음 submit 에서 재업로드된다.
+      final urls = await Future.wait(
+        // 선업로드가 실패해 맵에서 빠진 장은 여기서 재업로드된다.
+        _photos.map((path) => _uploads[path] ?? _startUpload(path)),
+      );
       return await _repository.createPost(
         boardTeamId: boardTeamId,
         title: title.trim(),

@@ -81,7 +81,7 @@ class AppColors {
   static const Color narButton2Text = Color(0xFFFCFDFE);
 
   // app_bottom_nav (공용 하단 네비게이션)
-  static const Color narNavBg = Color(0x3D25262B); // rgba(37,38,43,0.24)
+  static const Color narNavBg = Color(0x8025262B); // rgba(37,38,43,0.5)
   static const Color narNavSelectedBg = Color(0x80101113); // rgba(16,17,19,0.5)
   static const Color narGray400 = Color(0xFFCED4DA); // 활성 아이콘·텍스트
   static const Color narDark200 = Color(0xFF909296); // 비활성 아이콘
