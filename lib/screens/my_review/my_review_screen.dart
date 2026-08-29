@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
+import '../../components/cumulative_count_bar.dart';
+import '../../components/date_group_header.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_detail_header.dart';
@@ -151,13 +153,14 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _CumulativeReviewBar(
+                        CumulativeCountBar(
+                          label: l.cumulativeReviewRating,
                           count: _vm.totalElements,
                           scale: scale,
                         ),
                         for (final entry in groups.entries) ...[
                           SizedBox(height: 16 * scale),
-                          ReviewDateHeader(date: entry.key, scale: scale),
+                          DateGroupHeader(date: entry.key, scale: scale),
                           for (final item in entry.value) ...[
                             SizedBox(height: 2 * scale),
                             ReviewCard(
@@ -177,59 +180,6 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// 누적 리뷰/평점 바 (padding 10/20, 높이 45, narDark600 배경).
-///
-/// '누적 리뷰/평점' 라벨 + 'N건'(narBg 그라데이션 텍스트).
-class _CumulativeReviewBar extends StatelessWidget {
-  const _CumulativeReviewBar({required this.count, required this.scale});
-
-  final int count;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Container(
-      height: 45 * scale,
-      color: AppColors.narDark600,
-      padding: EdgeInsets.symmetric(
-        horizontal: 20 * scale,
-        vertical: 10 * scale,
-      ),
-      child: Row(
-        children: [
-          Text(
-            l.cumulativeReviewRating,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              fontSize: 14 * scale,
-              height: 25 / 14,
-              color: AppColors.narText,
-            ),
-          ),
-          SizedBox(width: 8 * scale),
-          // 'N건' — narBg 그라데이션 텍스트.
-          ShaderMask(
-            shaderCallback: (bounds) => AppColors.narBg.createShader(bounds),
-            child: Text(
-              l.countUnit(count),
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
-                fontSize: 14 * scale,
-                height: 25 / 14,
-                // ShaderMask 가 덮어쓰므로 흰색이어야 그라데이션이 보인다.
-                color: AppColors.narText,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
