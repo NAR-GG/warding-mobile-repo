@@ -13,11 +13,7 @@ import '../component/onboarding_title.dart';
 ///
 /// 리그 목록·선택 상태는 [OnboardingViewModel] 에서 가져온다.
 class LeagueStep extends StatelessWidget {
-  const LeagueStep({
-    super.key,
-    required this.viewModel,
-    this.scale = 1.0,
-  });
+  const LeagueStep({super.key, required this.viewModel, this.scale = 1.0});
 
   final OnboardingViewModel viewModel;
 
@@ -31,10 +27,7 @@ class LeagueStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: 48 * scale),
-        OnboardingTitle(
-          mainTitle: l.favoriteLeagueQuestion,
-          scale: scale,
-        ),
+        OnboardingTitle(mainTitle: l.favoriteLeagueQuestion, scale: scale),
         SizedBox(height: 32 * scale), // 타이틀 ↔ 그리드 고정 간격 (스크롤해도 유지)
         Expanded(child: _buildGrid(context)),
       ],

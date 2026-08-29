@@ -41,8 +41,10 @@ class SubscribedRatingBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent, // #101113
-      padding:
-          EdgeInsets.symmetric(vertical: 10 * scale, horizontal: 20 * scale),
+      padding: EdgeInsets.symmetric(
+        vertical: 10 * scale,
+        horizontal: 20 * scale,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [

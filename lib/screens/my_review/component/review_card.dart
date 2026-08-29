@@ -294,7 +294,12 @@ class _SubscribeBadge extends StatelessWidget {
     }
     if (asset != null) {
       return ClipOval(
-        child: Image.asset(asset!, width: size, height: size, fit: BoxFit.cover),
+        child: Image.asset(
+          asset!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
       );
     }
     return placeholder;

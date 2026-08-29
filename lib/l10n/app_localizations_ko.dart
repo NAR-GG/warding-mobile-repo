@@ -663,6 +663,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileEditTitle => '프로필 수정';
 
   @override
+  String get profileTeamChangeConfirmTitle => '응원팀을 바꿀까요?';
+
+  @override
+  String profileTeamChangeConfirmBody(String team) {
+    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.';
+  }
+
+  @override
+  String get profileTeamChangeConfirmOk => '바꾸기';
+
+  @override
+  String get profileTeamChangeLockedTitle => '응원팀은 30일에 한 번만 바꿀 수 있어요';
+
+  @override
+  String profileTeamChangeLockedBody(String date) {
+    return '$date부터 다시 바꿀 수 있어요.';
+  }
+
+  @override
   String get nameLabel => '이름';
 
   @override
@@ -1161,6 +1180,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityWrite => '글쓰기';
 
   @override
+  String communityWriteCooldown(int seconds) {
+    return '$seconds초 후 작성';
+  }
+
+  @override
   String get communityEmpty => '아직 글이 없어요. 첫 글을 남겨보세요.';
 
   @override
@@ -1211,8 +1235,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityScrap => '스크랩';
 
   @override
-  String communityViewCount(String count) {
-    return '조회 $count';
+  String communityViewCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '조회 $countString';
   }
 
   @override
@@ -1305,40 +1333,54 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityRulesSeeAll => '커뮤니티 이용규칙 전체 보기';
 
   @override
-  String get communityAttachPhoto => '사진';
+  String get communityLoadFailed => '글을 불러오지 못했어요.';
 
   @override
-  String get communityAttachPoll => '투표';
+  String get communityActionFailed => '요청을 처리하지 못했어요.';
+
+  @override
+  String get communityWriteFailed => '글을 등록하지 못했어요.';
+
+  @override
+  String get communityRetry => '다시 시도';
+
+  @override
+  String get communityDeletedAuthor => '탈퇴한 사용자';
+
+  @override
+  String get communityCommentDeleted => '삭제된 댓글입니다.';
+
+  @override
+  String get communityCommentBlocked => '차단한 사용자의 댓글입니다.';
+
+  @override
+  String get communityCommentHidden => '숨김 처리된 댓글입니다.';
+
+  @override
+  String get communityBlockedPost => '차단한 사용자의 글입니다.';
+
+  @override
+  String get communityMoreDelete => '삭제하기';
+
+  @override
+  String get communityMoreComments => '댓글 더 보기';
+
+  @override
+  String get communityEdited => '수정됨';
+
+  @override
+  String get communityWriteSubmitting => '등록 중…';
+
+  @override
+  String communityReplyingTo(String nickname) {
+    return '$nickname님에게 답글';
+  }
+
+  @override
+  String get communityAttachPhoto => '사진';
 
   @override
   String communityPhotoCount(int count) {
     return '$count/5';
-  }
-
-  @override
-  String get communityPollQuestionHint => '투표 주제를 입력하세요';
-
-  @override
-  String communityPollOptionHint(int index) {
-    return '항목 $index';
-  }
-
-  @override
-  String get communityPollAddOption => '항목 추가 (최대 5개)';
-
-  @override
-  String get communityPollHideResults => '투표해야 결과 보기';
-
-  @override
-  String get communityPollRemove => '투표 삭제';
-
-  @override
-  String communityPollPrompt(int count) {
-    return '$count명 참여 · 투표하면 결과가 보여요';
-  }
-
-  @override
-  String communityPollVoted(int count) {
-    return '$count명 참여';
   }
 }

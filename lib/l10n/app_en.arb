@@ -234,6 +234,13 @@
   "noSubscribedTeam": "No subscribed teams.",
 
   "profileEditTitle": "Edit Profile",
+  "profileTeamChangeConfirmTitle": "Change your team?",
+  "profileTeamChangeConfirmBody": "Switching to {team} locks your team for 30 days. Your community team board changes too.",
+  "@profileTeamChangeConfirmBody": { "placeholders": { "team": { "type": "String" } } },
+  "profileTeamChangeConfirmOk": "Change",
+  "profileTeamChangeLockedTitle": "You can change your team once every 30 days",
+  "profileTeamChangeLockedBody": "You can change it again from {date}.",
+  "@profileTeamChangeLockedBody": { "placeholders": { "date": { "type": "String" } } },
   "nameLabel": "Name",
   "nameHint": "Enter your name",
   "tagLabel": "Tag",
@@ -422,6 +429,8 @@
   "communityTabAll": "All",
   "communityTabTeam": "Teams",
   "communityWrite": "Write",
+  "communityWriteCooldown": "Wait {seconds}s",
+  "@communityWriteCooldown": { "placeholders": { "seconds": { "type": "int" } } },
   "communityEmpty": "No posts yet. Be the first to write one.",
   "communityLockedTitle": "Only {team} fans can post here.",
   "@communityLockedTitle": {
@@ -450,7 +459,7 @@
   "communityScrap": "Save",
   "communityViewCount": "Views {count}",
   "@communityViewCount": {
-    "placeholders": { "count": { "type": "String" } }
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
   "communityBoardAll": "All board",
   "communityBoardTeam": "{team} board",
@@ -491,26 +500,25 @@
 
   "communityRulesTitle": "Community Rules",
   "communityRulesSeeAll": "Read the full community rules",
+  "communityLoadFailed": "Couldn't load posts.",
+  "communityActionFailed": "Couldn't complete the request.",
+  "communityWriteFailed": "Couldn't post.",
+  "communityRetry": "Retry",
+  "communityDeletedAuthor": "Deleted user",
+  "communityCommentDeleted": "This comment was deleted.",
+  "communityCommentBlocked": "Comment from a blocked user.",
+  "communityCommentHidden": "This comment is hidden.",
+  "communityBlockedPost": "Post from a blocked user.",
+  "communityMoreDelete": "Delete",
+  "communityMoreComments": "Show more comments",
+  "communityEdited": "edited",
+  "communityWriteSubmitting": "Posting\u2026",
+  "communityReplyingTo": "Replying to {nickname}",
+  "@communityReplyingTo": { "placeholders": { "nickname": { "type": "String" } } },
 
   "communityAttachPhoto": "Photo",
-  "communityAttachPoll": "Poll",
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollQuestionHint": "What are you asking?",
-  "communityPollOptionHint": "Option {index}",
-  "@communityPollOptionHint": {
-    "placeholders": { "index": { "type": "int" } }
-  },
-  "communityPollAddOption": "Add option (up to 5)",
-  "communityPollHideResults": "Hide results until voted",
-  "communityPollRemove": "Remove poll",
-  "communityPollPrompt": "{count} voted · vote to see results",
-  "@communityPollPrompt": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollVoted": "{count} voted",
-  "@communityPollVoted": {
-    "placeholders": { "count": { "type": "int" } }
-  }}
+  }
+}

@@ -13,11 +13,7 @@ import '../component/onboarding_title.dart';
 ///
 /// 팀 목록·선택 상태는 [OnboardingViewModel] 에서 가져온다.
 class TeamStep extends StatelessWidget {
-  const TeamStep({
-    super.key,
-    required this.viewModel,
-    this.scale = 1.0,
-  });
+  const TeamStep({super.key, required this.viewModel, this.scale = 1.0});
 
   final OnboardingViewModel viewModel;
 
@@ -48,10 +44,7 @@ class TeamStep extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.teamsError != null) {
-      return LoadError(
-        message: l.teamLoadFailed,
-        onRetry: viewModel.loadTeams,
-      );
+      return LoadError(message: l.teamLoadFailed, onRetry: viewModel.loadTeams);
     }
 
     return GridView.count(
@@ -69,10 +62,8 @@ class TeamStep extends StatelessWidget {
               imageUrl: resolveImageUrl(team.imageUrl)!,
               fit: BoxFit.contain,
               fadeInDuration: const Duration(milliseconds: 150),
-              errorWidget: (_, _, _) => const Icon(
-                Icons.shield_outlined,
-                color: AppColors.narText2,
-              ),
+              errorWidget: (_, _, _) =>
+                  const Icon(Icons.shield_outlined, color: AppColors.narText2),
             ),
             mainTitle: team.name,
             onTap: () => viewModel.selectTeam(team.id),

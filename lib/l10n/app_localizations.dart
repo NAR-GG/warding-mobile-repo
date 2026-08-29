@@ -1280,6 +1280,36 @@ abstract class AppLocalizations {
   /// **'프로필 수정'**
   String get profileEditTitle;
 
+  /// No description provided for @profileTeamChangeConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원팀을 바꿀까요?'**
+  String get profileTeamChangeConfirmTitle;
+
+  /// No description provided for @profileTeamChangeConfirmBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.'**
+  String profileTeamChangeConfirmBody(String team);
+
+  /// No description provided for @profileTeamChangeConfirmOk.
+  ///
+  /// In ko, this message translates to:
+  /// **'바꾸기'**
+  String get profileTeamChangeConfirmOk;
+
+  /// No description provided for @profileTeamChangeLockedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원팀은 30일에 한 번만 바꿀 수 있어요'**
+  String get profileTeamChangeLockedTitle;
+
+  /// No description provided for @profileTeamChangeLockedBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'{date}부터 다시 바꿀 수 있어요.'**
+  String profileTeamChangeLockedBody(String date);
+
   /// No description provided for @nameLabel.
   ///
   /// In ko, this message translates to:
@@ -2252,6 +2282,12 @@ abstract class AppLocalizations {
   /// **'글쓰기'**
   String get communityWrite;
 
+  /// No description provided for @communityWriteCooldown.
+  ///
+  /// In ko, this message translates to:
+  /// **'{seconds}초 후 작성'**
+  String communityWriteCooldown(int seconds);
+
   /// No description provided for @communityEmpty.
   ///
   /// In ko, this message translates to:
@@ -2340,7 +2376,7 @@ abstract class AppLocalizations {
   ///
   /// In ko, this message translates to:
   /// **'조회 {count}'**
-  String communityViewCount(String count);
+  String communityViewCount(int count);
 
   /// No description provided for @communityBoardAll.
   ///
@@ -2510,65 +2546,101 @@ abstract class AppLocalizations {
   /// **'커뮤니티 이용규칙 전체 보기'**
   String get communityRulesSeeAll;
 
+  /// No description provided for @communityLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'글을 불러오지 못했어요.'**
+  String get communityLoadFailed;
+
+  /// No description provided for @communityActionFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요청을 처리하지 못했어요.'**
+  String get communityActionFailed;
+
+  /// No description provided for @communityWriteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'글을 등록하지 못했어요.'**
+  String get communityWriteFailed;
+
+  /// No description provided for @communityRetry.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 시도'**
+  String get communityRetry;
+
+  /// No description provided for @communityDeletedAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴한 사용자'**
+  String get communityDeletedAuthor;
+
+  /// No description provided for @communityCommentDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제된 댓글입니다.'**
+  String get communityCommentDeleted;
+
+  /// No description provided for @communityCommentBlocked.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자의 댓글입니다.'**
+  String get communityCommentBlocked;
+
+  /// No description provided for @communityCommentHidden.
+  ///
+  /// In ko, this message translates to:
+  /// **'숨김 처리된 댓글입니다.'**
+  String get communityCommentHidden;
+
+  /// No description provided for @communityBlockedPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자의 글입니다.'**
+  String get communityBlockedPost;
+
+  /// No description provided for @communityMoreDelete.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제하기'**
+  String get communityMoreDelete;
+
+  /// No description provided for @communityMoreComments.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글 더 보기'**
+  String get communityMoreComments;
+
+  /// No description provided for @communityEdited.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정됨'**
+  String get communityEdited;
+
+  /// No description provided for @communityWriteSubmitting.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록 중…'**
+  String get communityWriteSubmitting;
+
+  /// No description provided for @communityReplyingTo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님에게 답글'**
+  String communityReplyingTo(String nickname);
+
   /// No description provided for @communityAttachPhoto.
   ///
   /// In ko, this message translates to:
   /// **'사진'**
   String get communityAttachPhoto;
 
-  /// No description provided for @communityAttachPoll.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표'**
-  String get communityAttachPoll;
-
   /// No description provided for @communityPhotoCount.
   ///
   /// In ko, this message translates to:
   /// **'{count}/5'**
   String communityPhotoCount(int count);
-
-  /// No description provided for @communityPollQuestionHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표 주제를 입력하세요'**
-  String get communityPollQuestionHint;
-
-  /// No description provided for @communityPollOptionHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'항목 {index}'**
-  String communityPollOptionHint(int index);
-
-  /// No description provided for @communityPollAddOption.
-  ///
-  /// In ko, this message translates to:
-  /// **'항목 추가 (최대 5개)'**
-  String get communityPollAddOption;
-
-  /// No description provided for @communityPollHideResults.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표해야 결과 보기'**
-  String get communityPollHideResults;
-
-  /// No description provided for @communityPollRemove.
-  ///
-  /// In ko, this message translates to:
-  /// **'투표 삭제'**
-  String get communityPollRemove;
-
-  /// No description provided for @communityPollPrompt.
-  ///
-  /// In ko, this message translates to:
-  /// **'{count}명 참여 · 투표하면 결과가 보여요'**
-  String communityPollPrompt(int count);
-
-  /// No description provided for @communityPollVoted.
-  ///
-  /// In ko, this message translates to:
-  /// **'{count}명 참여'**
-  String communityPollVoted(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -87,7 +87,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                    20 * scale, 8 * scale, 20 * scale, 40 * scale),
+                  20 * scale,
+                  8 * scale,
+                  20 * scale,
+                  40 * scale,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -132,9 +136,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   // ponytail: 링크·기울임 등 나머지 인라인 문법은 미지원, 필요해지면 마크다운 패키지로 교체.
   static final _imagePattern = RegExp(r'^!\[([^\]]*)\]\((.+)\)$');
   static final _imageWidthPattern = RegExp(r'\|(\d+)$');
+
   /// 인라인 문법: `**굵게**`, `[텍스트](url)` 링크.
-  static final _inlinePattern =
-      RegExp(r'\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)]+)\)');
+  static final _inlinePattern = RegExp(
+    r'\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)]+)\)',
+  );
 
   /// 인라인 마크다운(`**굵게**`, 링크)을 span 으로 바꾼 Text 를 만든다.
   /// 링크는 탭하면 외부 브라우저로 연다.
@@ -149,30 +155,34 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         spans.add(TextSpan(text: text.substring(cursor, match.start)));
       }
       if (match.group(1) != null) {
-        spans.add(TextSpan(
-          text: match.group(1),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ));
+        spans.add(
+          TextSpan(
+            text: match.group(1),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        );
       } else {
         final url = match.group(3)!;
-        spans.add(WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: GestureDetector(
-            onTap: () => launchUrl(
-              Uri.parse(url),
-              mode: LaunchMode.externalApplication,
-            ),
-            child: Text(
-              match.group(2)!,
-              style: base.copyWith(
-                color: AppColors.narLinkText,
-                decoration: TextDecoration.underline,
-                decorationColor: AppColors.narLinkText,
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: GestureDetector(
+              onTap: () => launchUrl(
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: Text(
+                match.group(2)!,
+                style: base.copyWith(
+                  color: AppColors.narLinkText,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.narLinkText,
+                ),
               ),
             ),
           ),
-        ));
+        );
       }
       cursor = match.end;
     }
@@ -211,57 +221,70 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       final trimmed = line.trim() == r'\'
           ? ''
           : line.trim().replaceAllMapped(
-              RegExp(r'\\([\\`*_{}\[\]()#+\-.!~<>])'), (m) => m.group(1)!);
+              RegExp(r'\\([\\`*_{}\[\]()#+\-.!~<>])'),
+              (m) => m.group(1)!,
+            );
       final image = _imagePattern.firstMatch(trimmed);
       if (trimmed.isEmpty) {
         widgets.add(SizedBox(height: 10 * scale));
       } else if (image != null) {
         // alt 꼬리의 `|px` → 백오피스에서 지정한 폭 (375 기준 시안 폭에 scale 적용).
-        final widthPx =
-            _imageWidthPattern.firstMatch(image.group(1)!)?.group(1);
+        final widthPx = _imageWidthPattern
+            .firstMatch(image.group(1)!)
+            ?.group(1);
         final width = widthPx != null ? double.parse(widthPx) * scale : null;
-        widgets.add(Padding(
-          padding: EdgeInsets.symmetric(vertical: 6 * scale),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10 * scale),
-              child: CachedNetworkImage(
-                imageUrl: image.group(2)!,
-                width: width ?? double.infinity,
-                fit: BoxFit.fitWidth,
-                // 로드 실패(잘못된 URL 등) 시 빈 공간 대신 조용히 생략.
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 6 * scale),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10 * scale),
+                child: CachedNetworkImage(
+                  imageUrl: image.group(2)!,
+                  width: width ?? double.infinity,
+                  fit: BoxFit.fitWidth,
+                  // 로드 실패(잘못된 URL 등) 시 빈 공간 대신 조용히 생략.
+                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
-        ));
+        );
       } else if (trimmed.startsWith('### ')) {
-        widgets.add(Padding(
-          padding: EdgeInsets.only(top: 4 * scale, bottom: 2 * scale),
-          child: Text(
-            trimmed.substring(4),
-            style: heading.copyWith(fontSize: 14 * scale, height: 1.55),
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.only(top: 4 * scale, bottom: 2 * scale),
+            child: Text(
+              trimmed.substring(4),
+              style: heading.copyWith(fontSize: 14 * scale, height: 1.55),
+            ),
           ),
-        ));
+        );
       } else if (trimmed.startsWith('## ')) {
-        widgets.add(Padding(
-          padding: EdgeInsets.only(top: 4 * scale, bottom: 4 * scale),
-          child: Text(trimmed.substring(3), style: heading),
-        ));
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.only(top: 4 * scale, bottom: 4 * scale),
+            child: Text(trimmed.substring(3), style: heading),
+          ),
+        );
       } else if (trimmed.startsWith('# ')) {
-        widgets.add(Padding(
-          padding: EdgeInsets.only(top: 6 * scale, bottom: 4 * scale),
-          child: Text(trimmed.substring(2), style: title),
-        ));
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.only(top: 6 * scale, bottom: 4 * scale),
+            child: Text(trimmed.substring(2), style: title),
+          ),
+        );
       } else if (trimmed.startsWith('- ')) {
-        widgets.add(Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('•  ', style: body),
-            Expanded(child: _inlineText(trimmed.substring(2), body)),
-          ],
-        ));
+        widgets.add(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('•  ', style: body),
+              Expanded(child: _inlineText(trimmed.substring(2), body)),
+            ],
+          ),
+        );
       } else {
         widgets.add(_inlineText(trimmed, body));
       }

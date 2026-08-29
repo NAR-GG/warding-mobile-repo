@@ -71,7 +71,11 @@ class _LiveEventNotificationState extends State<LiveEventNotification> {
     final l = AppLocalizations.of(context)!;
     final scale = widget.scale;
     final title = l.liveEventNotificationTitle(widget.teamA, widget.teamB);
-    final body = l.liveEventNotificationBody(widget.season, widget.teamA, widget.teamB);
+    final body = l.liveEventNotificationBody(
+      widget.season,
+      widget.teamA,
+      widget.teamB,
+    );
 
     return Container(
       width: double.infinity,
@@ -154,9 +158,7 @@ class _LiveEventNotificationState extends State<LiveEventNotification> {
           SizedBox(height: 4 * scale),
           // 상세보기(좌측, 콘텐츠 정렬) / 접어두기(우측) 토글 링크.
           Align(
-            alignment: _expanded
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
+            alignment: _expanded ? Alignment.centerRight : Alignment.centerLeft,
             child: Padding(
               padding: EdgeInsets.only(left: _expanded ? 0 : 60 * scale),
               child: _LinkText(
@@ -415,8 +417,9 @@ class _ActorSide extends StatelessWidget {
     final gap = SizedBox(width: 6 * scale);
 
     return Row(
-      mainAxisAlignment:
-          isLeftSide ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isLeftSide
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: isLeftSide ? [text, gap, icon] : [icon, gap, text],
     );

@@ -113,9 +113,13 @@ class _MypageScreenState extends State<MypageScreen> {
                         onGlobeTap: () {
                           showLanguageSettingSheet(
                             context: context,
-                            currentLanguage: AppLanguage.toLabel(AppLanguage.instance.current),
+                            currentLanguage: AppLanguage.toLabel(
+                              AppLanguage.instance.current,
+                            ),
                             onChanged: (lang) {
-                              AppLanguage.instance.setLanguage(AppLanguage.fromLabel(lang));
+                              AppLanguage.instance.setLanguage(
+                                AppLanguage.fromLabel(lang),
+                              );
                             },
                           );
                         },
@@ -153,7 +157,9 @@ class _MypageScreenState extends State<MypageScreen> {
                                   width: 24 * scale,
                                   height: 24 * scale,
                                 ),
-                                text: AppLocalizations.of(context)!.teamAutoSetBanner,
+                                text: AppLocalizations.of(
+                                  context,
+                                )!.teamAutoSetBanner,
                               )
                             : const SizedBox.shrink(),
                       ),
@@ -167,7 +173,9 @@ class _MypageScreenState extends State<MypageScreen> {
                           label: AppLocalizations.of(context)!.myActivity,
                           items: [
                             MypageCardItem(
-                              title: AppLocalizations.of(context)!.myReviewRating,
+                              title: AppLocalizations.of(
+                                context,
+                              )!.myReviewRating,
                               count: _viewModel.reviewCount,
                               onTap: () async {
                                 await Navigator.of(context).push(
@@ -209,7 +217,8 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => const MatchListSettingScreen(),
+                                  builder: (_) =>
+                                      const MatchListSettingScreen(),
                                 ),
                               );
                             },
@@ -256,7 +265,9 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () => openGuideScreen(context),
                           ),
                           MypageCardItem(
-                            title: AppLocalizations.of(context)!.customerService,
+                            title: AppLocalizations.of(
+                              context,
+                            )!.customerService,
                             onTap: () => _launchUrl(
                               'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
                             ),
@@ -295,9 +306,13 @@ class _MypageScreenState extends State<MypageScreen> {
                       ListenableBuilder(
                         listenable: _viewModel,
                         builder: (context, _) => _AppInfoRow(
-                          versionStatus: AppLocalizations.of(context)!.latestVersion,
+                          versionStatus: AppLocalizations.of(
+                            context,
+                          )!.latestVersion,
                           versionLabel: _viewModel.appVersion.isNotEmpty
-                              ? AppLocalizations.of(context)!.currentVersion(_viewModel.appVersion)
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.currentVersion(_viewModel.appVersion)
                               : '',
                           scale: scale,
                         ),
@@ -453,7 +468,9 @@ class _MypageProfile extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              nickname.isEmpty ? l.nicknamePlaceholder : nickname,
+                              nickname.isEmpty
+                                  ? l.nicknamePlaceholder
+                                  : nickname,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: TextStyle(

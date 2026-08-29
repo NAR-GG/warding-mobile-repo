@@ -124,15 +124,13 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                   setLabel,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontWeight:
-                        setLabel == _currentSet
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                    fontWeight: setLabel == _currentSet
+                        ? FontWeight.w600
+                        : FontWeight.w400,
                     fontSize: 16 * scale,
-                    color:
-                        setLabel == _currentSet
-                            ? AppColors.narText
-                            : AppColors.narText2,
+                    color: setLabel == _currentSet
+                        ? AppColors.narText
+                        : AppColors.narText2,
                   ),
                 ),
               ),
@@ -160,9 +158,9 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     }
     if (!mounted) return;
     if (token == null || token.isEmpty) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
       return;
     }
     // 내 평점이 이미 있으면(수정) 기존 값을 채워 연다.
@@ -203,7 +201,9 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.ratingDeleteFailed)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.ratingDeleteFailed),
+        ),
       );
     }
   }
@@ -214,20 +214,24 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       for (final e in d?.distribution ?? const <RatingDistribution>[])
         e.rating: e,
     };
-    return [5, 4, 3, 2, 1]
-        .map((s) => (byScore[s]?.percentage ?? 0).round())
-        .toList();
+    return [
+      5,
+      4,
+      3,
+      2,
+      1,
+    ].map((s) => (byScore[s]?.percentage ?? 0).round()).toList();
   }
 
   /// 리뷰를 코멘트 타일 모델로 변환.
   PlayerComment _toComment(Review r) => PlayerComment(
-        username: r.nickname,
-        timeAgo: ratingTimeAgo(r.createdAt),
-        rating: r.rating,
-        comment: (r.comment != null && r.comment!.isNotEmpty) ? r.comment : null,
-        profileImageUrl: r.profileImageUrl,
-        teamImageUrl: r.teamImageUrl,
-      );
+    username: r.nickname,
+    timeAgo: ratingTimeAgo(r.createdAt),
+    rating: r.rating,
+    comment: (r.comment != null && r.comment!.isNotEmpty) ? r.comment : null,
+    profileImageUrl: r.profileImageUrl,
+    teamImageUrl: r.teamImageUrl,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -273,8 +277,8 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           position: widget.player.position,
                           championName: d?.player.championName ?? '',
                           kda: d?.player.kda ?? '-',
-                          playerImageUrl: (d?.player.playerImageUrl.isNotEmpty ??
-                                  false)
+                          playerImageUrl:
+                              (d?.player.playerImageUrl.isNotEmpty ?? false)
                               ? d!.player.playerImageUrl
                               : widget.player.playerImageUrl,
                           scale: scale,
@@ -282,7 +286,8 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                         SizedBox(height: 16 * scale),
                         RatingDistributionSection(
                           rating: d?.averageRating ?? widget.player.rating,
-                          raterCount: d?.ratingCount ?? widget.player.raterCount,
+                          raterCount:
+                              d?.ratingCount ?? widget.player.raterCount,
                           distribution: _distPercents(d),
                           scale: scale,
                         ),
@@ -293,8 +298,9 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                         // - 없음 + 비구독 → '평점 남기기' 버튼
                         if (my != null)
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(horizontal: 10 * scale),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10 * scale,
+                            ),
                             child: MyCommentCard(
                               username: l.me,
                               timeAgo: '',
@@ -319,8 +325,9 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           )
                         else
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(horizontal: 10 * scale),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10 * scale,
+                            ),
                             child: NarButton(
                               variant: NarButtonVariant.set1,
                               label: l.leaveRating,
@@ -332,8 +339,9 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           ),
                         // 평점·코멘트 리스트 — 양옆 19.5 패딩.
                         Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 19.5 * scale),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 19.5 * scale,
+                          ),
                           child: PlayerCommentSection(
                             comments: _vm.reviews.map(_toComment).toList(),
                             scale: scale,

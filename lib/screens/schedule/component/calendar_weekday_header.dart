@@ -23,8 +23,13 @@ class CalendarWeekdayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final weekdays = weekStart.orderedWeekdayLabels([
-      l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
-      l.weekdayFri, l.weekdaySat, l.weekdaySun,
+      l.weekdayMon,
+      l.weekdayTue,
+      l.weekdayWed,
+      l.weekdayThu,
+      l.weekdayFri,
+      l.weekdaySat,
+      l.weekdaySun,
     ]);
     return Column(
       children: [

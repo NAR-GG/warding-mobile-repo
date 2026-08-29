@@ -57,6 +57,20 @@ class ProfileEditViewModel extends ChangeNotifier {
   int? _favoriteTeamId;
   int? get favoriteTeamId => _favoriteTeamId;
 
+  /// 응원팀을 다시 바꿀 수 있는 시각. null 이면 지금 바꿀 수 있다.
+  ///
+  /// 응원팀은 30일에 한 번만 바꿀 수 있다(팀 갈아타며 게시판을 옮겨 다니는 걸
+  /// 막는 규칙). 쿨다운을 **바꾸기 전에** 알려줘야 한다 — 바꾼 뒤에 알려주면
+  /// 되돌릴 수가 없다.
+  DateTime? get teamChangeAvailableFrom =>
+      _profile?.favoriteTeamChangeAvailableFrom;
+
+  bool get teamChangeLocked => teamChangeAvailableFrom != null;
+
+  /// 저장하면 응원팀이 실제로 바뀌는가. 확인 팝업을 띄울 기준이다.
+  bool get teamChanged =>
+      _profile != null && _favoriteTeamId != _profile!.favoriteTeamId;
+
   /// 갤러리에서 고른 로컬 미리보기 경로. 저장 시 Cloudinary 로 업로드된다.
   String? _pendingImagePath;
   String? get pendingImagePath => _pendingImagePath;
@@ -139,10 +153,15 @@ class ProfileEditViewModel extends ChangeNotifier {
     _notify();
   }
 
-  void selectTeam(int teamId) {
-    if (_favoriteTeamId == teamId) return;
+  /// 팀 선택. 쿨다운 중이면 원래 팀 말고는 고를 수 없다 — 고르게 두고 저장에서
+  /// 막으면 사용자는 이미 바뀐 줄 안다. 막혔다는 걸 알리는 건 화면 몫이라
+  /// 성공 여부를 돌려준다.
+  bool selectTeam(int teamId) {
+    if (_favoriteTeamId == teamId) return true;
+    if (teamChangeLocked && teamId != _profile?.favoriteTeamId) return false;
     _favoriteTeamId = teamId;
     _notify();
+    return true;
   }
 
   /// 갤러리를 열어 새 프로필 사진을 고른다. 사용자가 취소하면 아무 일도

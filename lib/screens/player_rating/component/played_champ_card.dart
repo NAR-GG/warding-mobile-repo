@@ -130,25 +130,24 @@ class PlayedChampCard extends StatelessWidget {
                             height: 62 * scale,
                             child:
                                 (playerImageUrl != null &&
-                                        playerImageUrl!.isNotEmpty)
-                                    ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        8 * scale,
+                                    playerImageUrl!.isNotEmpty)
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      8 * scale,
+                                    ),
+                                    child: CachedNetworkImage(
+                                      imageUrl: resolveImageUrl(
+                                        playerImageUrl,
+                                      )!,
+                                      fit: BoxFit.cover,
+                                      fadeInDuration: const Duration(
+                                        milliseconds: 150,
                                       ),
-                                      child: CachedNetworkImage(
-                                        imageUrl: resolveImageUrl(
-                                          playerImageUrl,
-                                        )!,
-                                        fit: BoxFit.cover,
-                                        fadeInDuration: const Duration(
-                                          milliseconds: 150,
-                                        ),
-                                        errorWidget:
-                                            (_, _, _) =>
-                                                const SizedBox.shrink(),
-                                      ),
-                                    )
-                                    : null,
+                                      errorWidget: (_, _, _) =>
+                                          const SizedBox.shrink(),
+                                    ),
+                                  )
+                                : null,
                           ),
                           SizedBox(width: 10 * scale),
                           Column(

@@ -436,95 +436,95 @@ class _MypageCardRow extends StatelessWidget {
           SizedBox(
             height: 44 * scale,
             child: Padding(
-          // 아이콘이 있으면 44 칩의 10 패딩이 여백을 만들어 좌측 패딩은 없다.
-          padding: EdgeInsets.only(left: hasIcon ? 0 : 12 * scale),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (hasIcon) ...[
-                      // 44 칩 안에 24 아이콘 — 시안 아이콘 색이 제각각이라 흰색으로 통일.
+              // 아이콘이 있으면 44 칩의 10 패딩이 여백을 만들어 좌측 패딩은 없다.
+              padding: EdgeInsets.only(left: hasIcon ? 0 : 12 * scale),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (hasIcon) ...[
+                          // 44 칩 안에 24 아이콘 — 시안 아이콘 색이 제각각이라 흰색으로 통일.
+                          SizedBox(
+                            width: 44 * scale,
+                            height: 44 * scale,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                item.leadingIcon!,
+                                width: 24 * scale,
+                                height: 24 * scale,
+                                colorFilter: ColorFilter.mode(
+                                  item.enabled
+                                      ? AppColors.narText
+                                      : AppColors.narLine,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 1 * scale),
+                        ],
+                        Flexible(
+                          child: Text(
+                            item.title,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 17 * scale,
+                              height: 25 / 17,
+                              color: item.enabled
+                                  ? AppColors.narText
+                                  : AppColors.narLine,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (item.count != null) ...[
+                        // 'N건' — narBg 그라데이션 텍스트.
+                        ShaderMask(
+                          shaderCallback: (bounds) =>
+                              AppColors.narBg.createShader(bounds),
+                          child: Text(
+                            l.countUnit(item.count!),
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14 * scale,
+                              height: 25 / 14,
+                              // ShaderMask 가 덮어쓰므로 흰색이어야 그라데이션이 보인다.
+                              color: AppColors.narText,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10 * scale),
+                      ],
                       SizedBox(
                         width: 44 * scale,
                         height: 44 * scale,
                         child: Center(
                           child: SvgPicture.asset(
-                            item.leadingIcon!,
+                            'assets/icons/chevron-right.svg',
                             width: 24 * scale,
                             height: 24 * scale,
-                            colorFilter: ColorFilter.mode(
-                              item.enabled
-                                  ? AppColors.narText
-                                  : AppColors.narLine,
-                              BlendMode.srcIn,
-                            ),
                           ),
                         ),
                       ),
-                      SizedBox(width: 1 * scale),
                     ],
-                    Flexible(
-                      child: Text(
-                        item.title,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17 * scale,
-                          height: 25 / 17,
-                          color: item.enabled
-                              ? AppColors.narText
-                              : AppColors.narLine,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (item.count != null) ...[
-                    // 'N건' — narBg 그라데이션 텍스트.
-                    ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.narBg.createShader(bounds),
-                      child: Text(
-                        l.countUnit(item.count!),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14 * scale,
-                          height: 25 / 14,
-                          // ShaderMask 가 덮어쓰므로 흰색이어야 그라데이션이 보인다.
-                          color: AppColors.narText,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10 * scale),
-                  ],
-                  SizedBox(
-                    width: 44 * scale,
-                    height: 44 * scale,
-                    child: Center(
-                      child: SvgPicture.asset(
-                        'assets/icons/chevron-right.svg',
-                        width: 24 * scale,
-                        height: 24 * scale,
-                      ),
-                    ),
                   ),
                 ],
               ),
-            ],
-          ),
             ),
           ),
           if (description != null)

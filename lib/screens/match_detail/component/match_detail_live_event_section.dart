@@ -109,14 +109,11 @@ class _MatchDetailLiveEventSectionState
     final teamLogoUrl = side == 'blue'
         ? widget.blueTeamImageUrl
         : side == 'red'
-            ? widget.redTeamImageUrl
-            : null;
+        ? widget.redTeamImageUrl
+        : null;
     return _LiveEvent(
       time: e.gameTime,
-      source: _Actor.teamLogo(
-        name: e.teamName ?? '',
-        logoUrl: teamLogoUrl,
-      ),
+      source: _Actor.teamLogo(name: e.teamName ?? '', logoUrl: teamLogoUrl),
       target: objective,
     );
   }
@@ -234,8 +231,7 @@ class _ReloadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final iconColor =
-        loading ? AppColors.narText3 : AppColors.narTextTertiary;
+    final iconColor = loading ? AppColors.narText3 : AppColors.narTextTertiary;
     final textColor = loading ? AppColors.narText3 : AppColors.narTextTertiary;
     final String label;
     if (loading) {
@@ -316,11 +312,7 @@ class _LiveEventRow extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _LiveEventCard(
-            event: event,
-            isLatest: isLatest,
-            scale: scale,
-          ),
+          _LiveEventCard(event: event, isLatest: isLatest, scale: scale),
           // 카드 좌측 padding(16) 영역에 타임라인 오버레이.
           // overlay width 15 → 점 중심 x = 7.5, 점 오른쪽 가장자리 x = 11,
           // 텍스트 시작(x = 16)까지 간격 정확히 5.
@@ -431,10 +423,7 @@ class _LoadingSkeletonState extends State<_LoadingSkeleton>
             gradient: LinearGradient(
               begin: Alignment(-1 - shift, 0),
               end: Alignment(1 - shift, 0),
-              colors: const [
-                Color(0x801A1B1E),
-                Color(0x80727784),
-              ],
+              colors: const [Color(0x801A1B1E), Color(0x80727784)],
             ),
           ),
         );
@@ -625,8 +614,9 @@ class _ActorSide extends StatelessWidget {
     final gap = SizedBox(width: 6 * scale);
 
     return Row(
-      mainAxisAlignment:
-          isLeftSide ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isLeftSide
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: isLeftSide ? [text, gap, icon] : [icon, gap, text],
     );
@@ -684,8 +674,8 @@ class _ActorIcon extends StatelessWidget {
         ),
       );
     }
-    final hasImage = actor.championImageUrl != null &&
-        actor.championImageUrl!.isNotEmpty;
+    final hasImage =
+        actor.championImageUrl != null && actor.championImageUrl!.isNotEmpty;
     return Container(
       width: size,
       height: size,
@@ -728,40 +718,34 @@ class _LiveEvent {
 
 /// 라이브 이벤트의 한 쪽 주체. 챔피언(선수)·오브젝트·팀(로고) 중 하나.
 class _Actor {
-  const _Actor.champion({
-    required this.name,
-    this.championImageUrl,
-  })  : objectiveAsset = null,
-        teamLogoUrl = null,
-        isTeamLogo = false,
-        isObjectiveLabel = false;
+  const _Actor.champion({required this.name, this.championImageUrl})
+    : objectiveAsset = null,
+      teamLogoUrl = null,
+      isTeamLogo = false,
+      isObjectiveLabel = false;
 
   /// 오브젝트 이벤트의 출처 팀 — 38×38 박스에 팀 로고(NetworkImage)를 표시.
-  const _Actor.teamLogo({
-    required this.name,
-    String? logoUrl,
-  })  : championImageUrl = null,
-        objectiveAsset = null,
-        teamLogoUrl = logoUrl,
-        isTeamLogo = true,
-        isObjectiveLabel = false;
+  const _Actor.teamLogo({required this.name, String? logoUrl})
+    : championImageUrl = null,
+      objectiveAsset = null,
+      teamLogoUrl = logoUrl,
+      isTeamLogo = true,
+      isObjectiveLabel = false;
 
-  const _Actor.objective({
-    required this.name,
-    required String asset,
-  })  : championImageUrl = null,
-        objectiveAsset = asset,
-        teamLogoUrl = null,
-        isTeamLogo = false,
-        isObjectiveLabel = false;
+  const _Actor.objective({required this.name, required String asset})
+    : championImageUrl = null,
+      objectiveAsset = asset,
+      teamLogoUrl = null,
+      isTeamLogo = false,
+      isObjectiveLabel = false;
 
   /// 로컬 에셋이 없는 오브젝트 — 라벨만 오브젝트 스타일로 표시.
   const _Actor.objectiveLabel(this.name)
-      : championImageUrl = null,
-        objectiveAsset = null,
-        teamLogoUrl = null,
-        isTeamLogo = false,
-        isObjectiveLabel = true;
+    : championImageUrl = null,
+      objectiveAsset = null,
+      teamLogoUrl = null,
+      isTeamLogo = false,
+      isObjectiveLabel = true;
 
   final String name;
   final String? championImageUrl;

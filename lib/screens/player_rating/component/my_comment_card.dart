@@ -119,7 +119,10 @@ class MyCommentCard extends StatelessWidget {
                         child: Row(
                           children: [
                             // 프로필 이미지 32×32. 없으면 기본 person 자산.
-                            _ProfileImage(url: profileImageUrl, size: 32 * scale),
+                            _ProfileImage(
+                              url: profileImageUrl,
+                              size: 32 * scale,
+                            ),
                             SizedBox(width: 5 * scale),
                             Flexible(
                               child: Text(

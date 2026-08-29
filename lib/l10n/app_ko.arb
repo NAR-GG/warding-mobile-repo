@@ -391,6 +391,13 @@
   "noSubscribedTeam": "구독중인 팀이 없어요.",
 
   "profileEditTitle": "프로필 수정",
+  "profileTeamChangeConfirmTitle": "응원팀을 바꿀까요?",
+  "profileTeamChangeConfirmBody": "{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.",
+  "@profileTeamChangeConfirmBody": { "placeholders": { "team": { "type": "String" } } },
+  "profileTeamChangeConfirmOk": "바꾸기",
+  "profileTeamChangeLockedTitle": "응원팀은 30일에 한 번만 바꿀 수 있어요",
+  "profileTeamChangeLockedBody": "{date}부터 다시 바꿀 수 있어요.",
+  "@profileTeamChangeLockedBody": { "placeholders": { "date": { "type": "String" } } },
   "nameLabel": "이름",
   "nameHint": "이름을 입력하세요",
   "tagLabel": "태그",
@@ -594,6 +601,8 @@
   "communityTabAll": "전체",
   "communityTabTeam": "팀",
   "communityWrite": "글쓰기",
+  "communityWriteCooldown": "{seconds}초 후 작성",
+  "@communityWriteCooldown": { "placeholders": { "seconds": { "type": "int" } } },
   "communityEmpty": "아직 글이 없어요. 첫 글을 남겨보세요.",
   "communityLockedTitle": "{team} 팬만 글을 쓸 수 있어요.",
   "@communityLockedTitle": {
@@ -622,7 +631,7 @@
   "communityScrap": "스크랩",
   "communityViewCount": "조회 {count}",
   "@communityViewCount": {
-    "placeholders": { "count": { "type": "String" } }
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
   },
   "communityBoardAll": "전체 게시판",
   "communityBoardTeam": "{team} 게시판",
@@ -663,26 +672,25 @@
 
   "communityRulesTitle": "커뮤니티 이용규칙",
   "communityRulesSeeAll": "커뮤니티 이용규칙 전체 보기",
+  "communityLoadFailed": "글을 불러오지 못했어요.",
+  "communityActionFailed": "요청을 처리하지 못했어요.",
+  "communityWriteFailed": "글을 등록하지 못했어요.",
+  "communityRetry": "다시 시도",
+  "communityDeletedAuthor": "탈퇴한 사용자",
+  "communityCommentDeleted": "삭제된 댓글입니다.",
+  "communityCommentBlocked": "차단한 사용자의 댓글입니다.",
+  "communityCommentHidden": "숨김 처리된 댓글입니다.",
+  "communityBlockedPost": "차단한 사용자의 글입니다.",
+  "communityMoreDelete": "삭제하기",
+  "communityMoreComments": "댓글 더 보기",
+  "communityEdited": "수정됨",
+  "communityWriteSubmitting": "등록 중…",
+  "communityReplyingTo": "{nickname}님에게 답글",
+  "@communityReplyingTo": { "placeholders": { "nickname": { "type": "String" } } },
 
   "communityAttachPhoto": "사진",
-  "communityAttachPoll": "투표",
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollQuestionHint": "투표 주제를 입력하세요",
-  "communityPollOptionHint": "항목 {index}",
-  "@communityPollOptionHint": {
-    "placeholders": { "index": { "type": "int" } }
-  },
-  "communityPollAddOption": "항목 추가 (최대 5개)",
-  "communityPollHideResults": "투표해야 결과 보기",
-  "communityPollRemove": "투표 삭제",
-  "communityPollPrompt": "{count}명 참여 · 투표하면 결과가 보여요",
-  "@communityPollPrompt": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "communityPollVoted": "{count}명 참여",
-  "@communityPollVoted": {
-    "placeholders": { "count": { "type": "int" } }
-  }}
+  }
+}

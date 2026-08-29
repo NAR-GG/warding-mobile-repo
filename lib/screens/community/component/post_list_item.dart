@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../model/community_post.dart';
+import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/rating_mapping.dart';
 import 'author_line.dart';
 import 'community_image.dart';
 
 /// 글 목록의 한 줄 — 제목 · 본문 미리보기 2줄 · 메타 · (있으면) 사진 썸네일.
+///
+/// 팀 로고는 팀 게시판에서도 그린다. 전원이 같은 팀이라 정보량은 적지만,
+/// 게시판마다 작성자 줄 모양이 달라지는 쪽이 더 어색하다.
 class PostListItem extends StatelessWidget {
   const PostListItem({
     super.key,
@@ -15,13 +19,13 @@ class PostListItem extends StatelessWidget {
     required this.onTap,
   });
 
-  final CommunityPost post;
+  final CommunityRemotePost post;
   final double scale;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final thumb = post.images.isEmpty ? null : post.images.first;
+    final thumb = post.thumbnailUrl;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -57,7 +61,7 @@ class PostListItem extends StatelessWidget {
                   ),
                   SizedBox(height: 4 * scale),
                   Text(
-                    post.body,
+                    post.bodyPreview,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -92,21 +96,17 @@ class PostListItem extends StatelessWidget {
                         ),
                         SizedBox(width: 9 * scale),
                       ],
-                      _meta(post.timeAgo, scale),
+                      _meta(ratingTimeAgo(post.createdAt), scale),
                       SizedBox(width: 9 * scale),
                       Flexible(
-                        child: AuthorLine(
-                          name: post.authorName,
-                          teamId: post.authorTeamId,
-                          scale: scale,
-                        ),
+                        child: AuthorLine(author: post.author, scale: scale),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            if (thumb != null) ...[
+            if (thumb != null && thumb.isNotEmpty) ...[
               SizedBox(width: 12 * scale),
               CommunityImage(
                 source: thumb,

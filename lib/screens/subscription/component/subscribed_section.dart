@@ -147,7 +147,9 @@ class SubscribedItemRow extends StatelessWidget {
             ],
           ),
           NarButton(
-            label: item.subscribed ? AppLocalizations.of(context)!.subscribing : AppLocalizations.of(context)!.subscribe,
+            label: item.subscribed
+                ? AppLocalizations.of(context)!.subscribing
+                : AppLocalizations.of(context)!.subscribe,
             variant: item.subscribed
                 ? NarButtonVariant.subscribed
                 : NarButtonVariant.subscribe,

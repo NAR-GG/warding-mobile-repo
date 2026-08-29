@@ -23,7 +23,10 @@ class MatchDetailLockedEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 80 * scale, horizontal: 20 * scale),
+      padding: EdgeInsets.symmetric(
+        vertical: 80 * scale,
+        horizontal: 20 * scale,
+      ),
       child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,

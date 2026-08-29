@@ -153,8 +153,13 @@ class _WeekdayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final weekdays = weekStart.orderedWeekdayLabels([
-      l.weekdayMon, l.weekdayTue, l.weekdayWed, l.weekdayThu,
-      l.weekdayFri, l.weekdaySat, l.weekdaySun,
+      l.weekdayMon,
+      l.weekdayTue,
+      l.weekdayWed,
+      l.weekdayThu,
+      l.weekdayFri,
+      l.weekdaySat,
+      l.weekdaySun,
     ]);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 31.5 * scale),
@@ -293,7 +298,8 @@ class _DayCell extends StatelessWidget {
                 height: 1.5, // line-height 24px / font-size 16px
                 letterSpacing: 0,
                 color: hasMatch
-                    ? AppColors.narTextSecondary // 경기 O — #FFFFFF
+                    ? AppColors
+                          .narTextSecondary // 경기 O — #FFFFFF
                     : AppColors.narButtonDisabledText, // 경기 X — #5C5F66
               ),
             ),

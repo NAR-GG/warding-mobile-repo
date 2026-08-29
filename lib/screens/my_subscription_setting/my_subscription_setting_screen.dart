@@ -83,10 +83,7 @@ class _MySubscriptionSettingScreenState
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                NarSettingHeader(
-                  title: l.mySubscriptionSetting,
-                  scale: scale,
-                ),
+                NarSettingHeader(title: l.mySubscriptionSetting, scale: scale),
                 SizedBox(height: 17 * scale),
                 Expanded(
                   child: SingleChildScrollView(

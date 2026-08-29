@@ -82,8 +82,9 @@ class _SubscriptionSettingsScreenState
                   entry.value,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontWeight:
-                        entry.key == current ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: entry.key == current
+                        ? FontWeight.w600
+                        : FontWeight.w400,
                     fontSize: 16 * scale,
                     color: entry.key == current
                         ? AppColors.narText
@@ -120,17 +121,17 @@ class _SubscriptionSettingsScreenState
 
   /// 팀 → 섹션 행 데이터 변환.
   SubscribedItem _teamItem(TeamNotificationSubscription t) => SubscribedItem(
-        name: t.teamName,
-        logoUrl: t.teamImageUrl,
-        subscribed: t.subscribed,
-      );
+    name: t.teamName,
+    logoUrl: t.teamImageUrl,
+    subscribed: t.subscribed,
+  );
 
   /// 선수 → 섹션 행 데이터 변환.
   SubscribedItem _playerItem(PlayerSubscription p) => SubscribedItem(
-        name: p.playerName,
-        logoUrl: p.playerImageUrl,
-        subscribed: p.subscribed,
-      );
+    name: p.playerName,
+    logoUrl: p.playerImageUrl,
+    subscribed: p.subscribed,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +218,10 @@ class _SubscriptionSettingsScreenState
                   controller: _scrollController,
                   padding: EdgeInsets.zero,
                   children: [
-                    NarDetailHeader(title: l.subscriptionSettings, scale: scale),
+                    NarDetailHeader(
+                      title: l.subscriptionSettings,
+                      scale: scale,
+                    ),
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20 * scale,

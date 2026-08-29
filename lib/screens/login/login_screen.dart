@@ -39,8 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // 로그인 성공 직후 FCM 토큰을 백엔드에 등록한다 (실패해도 흐름은 계속).
       unawaited(FcmService.instance.registerToken());
       // 비회원 시절 로컬에 저장한 온보딩 선택값이 있으면 서버로 동기화한다.
-      final onboarded =
-          await OnboardingSyncService.instance.syncOnLogin(result);
+      final onboarded = await OnboardingSyncService.instance.syncOnLogin(
+        result,
+      );
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
@@ -142,7 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                 child: Text(
                   l.guestStart,
-                  style: const TextStyle(color: AppColors.narText2, fontSize: 16),
+                  style: const TextStyle(
+                    color: AppColors.narText2,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

@@ -48,24 +48,24 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
 
   /// 응답 항목을 기존 ReviewCard 입력(MyReview)으로 변환.
   MyReview _toReview(MyRatingItem item) => MyReview(
-        league: item.match?.leagueName ?? '',
-        teamName: item.match == null
-            ? ''
-            : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
-                ? item.match!.blueTeamCode
-                : item.match!.redTeamCode),
-        playerName: item.playerName,
-        position: positionFromRole(item.role),
-        side: sideFromTeamSide(item.teamSide),
-        username: AppLocalizations.of(context)!.me,
-        timeAgo: ratingTimeAgo(item.createdAt),
-        rating: item.rating.toDouble(),
-        comment: (item.comment != null && item.comment!.isNotEmpty)
-            ? item.comment
-            : null,
-        profileImageUrl: item.profileImageUrl,
-        teamImageUrl: item.teamImageUrl,
-      );
+    league: item.match?.leagueName ?? '',
+    teamName: item.match == null
+        ? ''
+        : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
+              ? item.match!.blueTeamCode
+              : item.match!.redTeamCode),
+    playerName: item.playerName,
+    position: positionFromRole(item.role),
+    side: sideFromTeamSide(item.teamSide),
+    username: AppLocalizations.of(context)!.me,
+    timeAgo: ratingTimeAgo(item.createdAt),
+    rating: item.rating.toDouble(),
+    comment: (item.comment != null && item.comment!.isNotEmpty)
+        ? item.comment
+        : null,
+    profileImageUrl: item.profileImageUrl,
+    teamImageUrl: item.teamImageUrl,
+  );
 
   /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다
   /// (상세에서 평가를 수정·삭제했을 수 있으므로).
@@ -88,8 +88,8 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
           teamName: item.match == null
               ? ''
               : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
-                  ? item.match!.blueTeamCode
-                  : item.match!.redTeamCode),
+                    ? item.match!.blueTeamCode
+                    : item.match!.redTeamCode),
           side: sideFromTeamSide(item.teamSide),
           sets: setLabel.isEmpty ? const [] : [setLabel],
           initialSet: setLabel,
