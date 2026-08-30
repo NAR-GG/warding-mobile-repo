@@ -1294,6 +1294,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityWriteSubmit => '등록하기';
 
   @override
+  String get communityAddLink => '링크';
+
+  @override
+  String get communityLinkDialogTitle => '링크 추가';
+
+  @override
+  String get communityLinkHint => 'URL을 붙여넣으세요';
+
+  @override
+  String get communityLinkConfirm => '추가';
+
+  @override
+  String get communityLinkInvalid => '올바른 링크가 아니에요.';
+
+  @override
+  String get communityHeadingToggle => '제목글자';
+
+  @override
   String get communityMoreReport => '신고하기';
 
   @override

@@ -157,12 +157,19 @@ class CommunityRemotePostDetail {
   const CommunityRemotePostDetail({
     required this.summary,
     required this.body,
+    this.bodyFormat = 'PLAIN',
     required this.images,
     required this.viewer,
   });
 
   final CommunityRemotePost summary;
   final String body;
+
+  /// PLAIN = 평문, BLOCKS = [body]가 블록 JSON(렌더러가 해석을 가른다).
+  final String bodyFormat;
+
+  bool get isBlocks => bodyFormat == 'BLOCKS';
+
   final List<CommunityPostImage> images;
   final CommunityPostViewer viewer;
 
@@ -181,6 +188,7 @@ class CommunityRemotePostDetail {
     return CommunityRemotePostDetail(
       summary: CommunityRemotePost.fromJson(json),
       body: json['body'] as String? ?? '',
+      bodyFormat: json['bodyFormat'] as String? ?? 'PLAIN',
       images: (json['images'] as List<dynamic>? ?? const [])
           .map((e) => CommunityPostImage.fromJson(e as Map<String, dynamic>))
           .toList(),

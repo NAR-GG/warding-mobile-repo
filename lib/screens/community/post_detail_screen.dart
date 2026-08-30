@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/profile_avatar.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_post_block.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
 import '../../model/community_report.dart';
@@ -16,6 +17,7 @@ import 'component/author_line.dart';
 import 'component/comment_tile.dart';
 import 'component/community_image.dart';
 import 'component/community_photo_viewer.dart';
+import 'component/post_block_renderer.dart';
 import 'component/report_sheet.dart';
 import 'post_write_screen.dart';
 
@@ -561,6 +563,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               ),
             ),
             SizedBox(height: 10 * scale),
+            if (post.isBlocks)
+              // 블록 본문 — 이미지가 블록 안에 있으므로 아래 images 스택은 안 그린다
+              // (community_post_image 는 신고·썸네일용으로만 쓰인다).
+              PostBlockRenderer(
+                blocks: CommunityPostBlock.parseList(post.body),
+                scale: scale,
+              )
+            else ...[
             Text(
               post.body,
               style: TextStyle(
@@ -597,6 +607,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                 ),
               ],
+            ],
             ],
           ],
         ],
