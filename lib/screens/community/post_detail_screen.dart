@@ -173,9 +173,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final enabled = await _vm.toggleNotification();
     if (enabled == null || !mounted) return;
     final l = AppLocalizations.of(context)!;
-    _toast(
-      enabled ? l.communityNotificationOn : l.communityNotificationOff,
-    );
+    _toast(enabled ? l.communityNotificationOn : l.communityNotificationOff);
   }
 
   /// 글의 `⋯`. 내 글이면 삭제, 남의 글이면 신고·차단.
@@ -392,54 +390,61 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     final roots = _vm.rootComments;
 
-    return ListView(
-      controller: _scrollController,
-      // 목록을 끌어내려도 키보드가 닫힌다.
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.only(bottom: 24 * scale),
-      children: [
-        _body(l, scale, post),
-        _actions(l, scale, post),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            20 * scale,
-            14 * scale,
-            20 * scale,
-            2 * scale,
-          ),
-          child: Text(
-            l.communityCommentCount(post.commentCount),
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w700,
-              fontSize: 13 * scale,
-              height: 1.45,
-              color: AppColors.narText,
+    return RefreshIndicator(
+      // 새 댓글·좋아요 수를 다시 받는다. 조회수 핑은 안 쏜다(부풀림 방지).
+      onRefresh: () => _vm.load(countView: false),
+      color: AppColors.narText,
+      backgroundColor: AppColors.narDark600,
+      child: ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        // 목록을 끌어내려도 키보드가 닫힌다.
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: EdgeInsets.only(bottom: 24 * scale),
+        children: [
+          _body(l, scale, post),
+          _actions(l, scale, post),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              20 * scale,
+              14 * scale,
+              20 * scale,
+              2 * scale,
+            ),
+            child: Text(
+              l.communityCommentCount(post.commentCount),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 13 * scale,
+                height: 1.45,
+                color: AppColors.narText,
+              ),
             ),
           ),
-        ),
-        for (final root in roots) ..._thread(root, scale),
-        if (_vm.hasMoreComments)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 12 * scale),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _vm.loadMoreComments,
-              child: Center(
-                child: Text(
-                  l.communityMoreComments,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12 * scale,
-                    height: 1.45,
-                    color: AppColors.narViolet3,
+          for (final root in roots) ..._thread(root, scale),
+          if (_vm.hasMoreComments)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12 * scale),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _vm.loadMoreComments,
+                child: Center(
+                  child: Text(
+                    l.communityMoreComments,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12 * scale,
+                      height: 1.45,
+                      color: AppColors.narViolet3,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -571,43 +576,43 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 scale: scale,
               )
             else ...[
-            Text(
-              post.body,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w400,
-                fontSize: 14 * scale,
-                height: 1.65,
-                color: AppColors.narText3,
-              ),
-            ),
-            if (post.images.isNotEmpty) ...[
-              SizedBox(height: 14 * scale),
-              // 사진은 세로로 쌓는다. 캐러셀은 몇 장인지 안 보여서 첨부 수가
-              // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
-              for (var i = 0; i < post.images.length; i++) ...[
-                if (i > 0) SizedBox(height: 8 * scale),
-                // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
-                // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
-                // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
-                // 상한에 걸려 잘린 사진은 탭해서 전체화면으로 본다.
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => CommunityPhotoViewer.open(
-                    context,
-                    urls: [for (final img in post.images) img.url],
-                    initialIndex: i,
-                  ),
-                  child: CommunityImage(
-                    source: post.images[i].url,
-                    width: double.infinity,
-                    height: null,
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-                    radius: 10 * scale,
-                  ),
+              Text(
+                post.body,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14 * scale,
+                  height: 1.65,
+                  color: AppColors.narText3,
                 ),
+              ),
+              if (post.images.isNotEmpty) ...[
+                SizedBox(height: 14 * scale),
+                // 사진은 세로로 쌓는다. 캐러셀은 몇 장인지 안 보여서 첨부 수가
+                // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
+                for (var i = 0; i < post.images.length; i++) ...[
+                  if (i > 0) SizedBox(height: 8 * scale),
+                  // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
+                  // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
+                  // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
+                  // 상한에 걸려 잘린 사진은 탭해서 전체화면으로 본다.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => CommunityPhotoViewer.open(
+                      context,
+                      urls: [for (final img in post.images) img.url],
+                      initialIndex: i,
+                    ),
+                    child: CommunityImage(
+                      source: post.images[i].url,
+                      width: double.infinity,
+                      height: null,
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+                      radius: 10 * scale,
+                    ),
+                  ),
+                ],
               ],
-            ],
             ],
           ],
         ],
