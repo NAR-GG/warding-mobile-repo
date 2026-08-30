@@ -353,6 +353,11 @@ class ApiConfig {
   static String get communityCreatePostUrl =>
       '$apiBaseUrl/mobile/community/posts';
 
+  /// 링크 프리뷰(GET, 인증 필수) — OG 스냅샷. 작성 중 링크 카드용.
+  static String communityLinkPreviewUrl(String url) =>
+      '$apiBaseUrl/mobile/community/link-preview'
+      '?url=${Uri.encodeQueryComponent(url)}';
+
   /// 게시글 상세(GET) / 수정(PUT) / 삭제(DELETE).
   static String communityPostUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId';

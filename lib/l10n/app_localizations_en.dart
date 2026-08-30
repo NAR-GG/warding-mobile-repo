@@ -1329,6 +1329,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWriteSubmit => 'Post';
 
   @override
+  String get communityAddLink => 'Link';
+
+  @override
+  String get communityLinkDialogTitle => 'Add a link';
+
+  @override
+  String get communityLinkHint => 'Paste a URL';
+
+  @override
+  String get communityLinkConfirm => 'Add';
+
+  @override
+  String get communityLinkInvalid => 'That doesn\'t look like a valid link.';
+
+  @override
+  String get communityHeadingToggle => 'Heading';
+
+  @override
   String get communityMoreReport => 'Report';
 
   @override

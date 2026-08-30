@@ -2468,6 +2468,42 @@ abstract class AppLocalizations {
   /// **'등록하기'**
   String get communityWriteSubmit;
 
+  /// No description provided for @communityAddLink.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크'**
+  String get communityAddLink;
+
+  /// No description provided for @communityLinkDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크 추가'**
+  String get communityLinkDialogTitle;
+
+  /// No description provided for @communityLinkHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'URL을 붙여넣으세요'**
+  String get communityLinkHint;
+
+  /// No description provided for @communityLinkConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가'**
+  String get communityLinkConfirm;
+
+  /// No description provided for @communityLinkInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 링크가 아니에요.'**
+  String get communityLinkInvalid;
+
+  /// No description provided for @communityHeadingToggle.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목글자'**
+  String get communityHeadingToggle;
+
   /// No description provided for @communityMoreReport.
   ///
   /// In ko, this message translates to:

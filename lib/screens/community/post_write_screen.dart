@@ -5,19 +5,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_post_block.dart';
 import '../../model/community_remote_post.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/community/post_write_viewmodel.dart';
 import 'community_rules.dart';
-import 'community_teams.dart';
 import 'component/community_image.dart';
 import 'component/community_rules_sheet.dart';
 
-/// 글쓰기 — 제목 · 본문 · 사진.
+/// 글쓰기 — 제목 + **블록 에디터**(텍스트 사이에 사진·링크·임베드를 끼워 넣는
+/// 샌드위치 구성). 본문은 bodyFormat=BLOCKS 로 나간다.
 ///
-/// 게시판 선택 UI 는 두지 않는다. 글쓰기는 전체 게시판이나 내 응원팀 게시판에서
-/// 들어오는데, 그 두 곳이 애초에 쓸 수 있는 전부라 고를 게 없다. 어디에 쓰는지는
-/// 헤더에 게시판 이름으로 보여준다.
+/// - 사진/링크는 포커스된 텍스트 블록의 커서 위치에서 텍스트를 쪼개 끼운다
+///   (포커스가 없으면 맨 끝). 미디어 블록은 ✕ 삭제, ▲▼ 이동.
+/// - URL 이 유튜브·치지직·SOOP·X 면 임베드 블록, 아니면 서버 link-preview 를
+///   불러 링크 카드 블록이 된다.
+/// - 서식 v1 은 텍스트 블록별 heading 토글 하나다.
 ///
 /// 본문 아래에는 커뮤니티 이용규칙 요약이 연하게 깔린다. 글을 쓰기 직전이
 /// 규칙을 읽을 유일한 순간이라, 별도 화면으로 빼면 아무도 안 본다.
@@ -26,47 +29,105 @@ import 'component/community_rules_sheet.dart';
 class PostWriteScreen extends StatefulWidget {
   const PostWriteScreen({super.key, required this.boardTeamId, this.edit});
 
-  /// null 이면 전체 게시판.
+  /// null 이면 전체 게시판(현재는 항상 null — 단일 게시판).
   final int? boardTeamId;
 
-  /// 수정할 글. null 이면 새 글 작성이다. 제목·본문·기존 사진이 채워진 채 열리고,
-  /// 등록 대신 수정(PUT)으로 나간다.
+  /// 수정할 글. null 이면 새 글 작성이다. PLAIN 글은 텍스트 블록 하나로 열리고
+  /// 수정 등록 시 BLOCKS 로 저장된다(서버 하위호환 유지, 본문 내용은 동일).
   final CommunityRemotePostDetail? edit;
 
   @override
   State<PostWriteScreen> createState() => _PostWriteScreenState();
 }
 
+/// 에디터 블록. 텍스트는 입력 상태(controller·focus)를 들고, 미디어는
+/// [DraftBlock] 그대로 든다.
+sealed class _EditorBlock {}
+
+class _TextBlock extends _EditorBlock {
+  _TextBlock({String text = '', this.heading = false})
+    : controller = TextEditingController(text: text);
+
+  final TextEditingController controller;
+  final FocusNode focus = FocusNode();
+  bool heading = false;
+
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+  }
+}
+
+class _MediaBlock extends _EditorBlock {
+  _MediaBlock(this.draft);
+
+  final DraftBlock draft;
+}
+
 class _PostWriteScreenState extends State<PostWriteScreen> {
   late final PostWriteViewModel _vm = PostWriteViewModel(
     boardTeamId: widget.boardTeamId,
     editPostId: widget.edit?.id,
-    initialImageUrls: widget.edit == null
-        ? const []
-        : [for (final img in widget.edit!.images) img.url],
   );
 
   final TextEditingController _title = TextEditingController();
-  final TextEditingController _body = TextEditingController();
+  final List<_EditorBlock> _blocks = [];
 
   @override
   void initState() {
     super.initState();
     final edit = widget.edit;
-    if (edit != null) {
+    if (edit == null) {
+      _blocks.add(_TextBlock());
+    } else {
       _title.text = edit.title;
-      _body.text = edit.body;
+      _initFromEdit(edit);
     }
     _title.addListener(_onChanged);
-    _body.addListener(_onChanged);
     _vm.addListener(_showError);
+  }
+
+  void _initFromEdit(CommunityRemotePostDetail edit) {
+    if (!edit.isBlocks) {
+      // PLAIN 글: 본문 전체를 텍스트 블록 하나로, 기존 첨부는 이미지 블록으로.
+      _blocks.add(_TextBlock(text: edit.body));
+      for (final img in edit.images) {
+        _blocks.add(_MediaBlock(DraftBlock.image(url: img.url)));
+      }
+      return;
+    }
+    for (final b in CommunityPostBlock.parseList(edit.body)) {
+      switch (b.type) {
+        case 'text':
+          _blocks.add(_TextBlock(text: b.text ?? '', heading: b.isHeading));
+        case 'image':
+          if (b.url != null) _blocks.add(_MediaBlock(DraftBlock.image(url: b.url)));
+        case 'link':
+          _blocks.add(_MediaBlock(DraftBlock.link(
+            url: b.url ?? '',
+            title: b.title,
+            description: b.description,
+            imageUrl: b.imageUrl,
+            siteName: b.siteName,
+          )));
+        case 'embed':
+          _blocks.add(_MediaBlock(
+            DraftBlock.embed(provider: b.provider ?? '', url: b.url ?? ''),
+          ));
+      }
+    }
+    if (_blocks.isEmpty || _blocks.last is! _TextBlock) {
+      _blocks.add(_TextBlock());
+    }
   }
 
   @override
   void dispose() {
     _vm.removeListener(_showError);
     _title.dispose();
-    _body.dispose();
+    for (final block in _blocks) {
+      if (block is _TextBlock) block.dispose();
+    }
     _vm.dispose();
     super.dispose();
   }
@@ -81,13 +142,193 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  bool get _hasContent => _blocks.any(
+    (b) =>
+        b is _MediaBlock ||
+        (b is _TextBlock && b.controller.text.trim().isNotEmpty),
+  );
+
   bool get _submittable =>
-      _title.text.trim().isNotEmpty &&
-      _body.text.trim().isNotEmpty &&
-      !_vm.submitting;
+      _title.text.trim().isNotEmpty && _hasContent && !_vm.submitting;
+
+  int get _imageCount => _blocks
+      .whereType<_MediaBlock>()
+      .where((b) => b.draft.type == 'image')
+      .length;
+
+  _TextBlock? get _focusedText {
+    for (final block in _blocks) {
+      if (block is _TextBlock && block.focus.hasFocus) return block;
+    }
+    return null;
+  }
+
+  /// 미디어 블록들을 포커스된 텍스트 블록의 커서에서 텍스트를 쪼개 끼운다.
+  /// 포커스가 없으면 맨 끝. 항상 이어서 쓸 텍스트 블록이 뒤따르게 한다.
+  void _insertMedia(List<_MediaBlock> media) {
+    if (media.isEmpty) return;
+    setState(() {
+      final focused = _focusedText;
+      if (focused == null) {
+        if (_blocks.isNotEmpty &&
+            _blocks.last is _TextBlock &&
+            (_blocks.last as _TextBlock).controller.text.trim().isEmpty) {
+          // 끝의 빈 텍스트 블록 앞에 끼워 커서 자리를 보존한다.
+          _blocks.insertAll(_blocks.length - 1, media);
+        } else {
+          _blocks.addAll(media);
+          _blocks.add(_TextBlock());
+        }
+        return;
+      }
+      final index = _blocks.indexOf(focused);
+      final text = focused.controller.text;
+      final cursor = focused.controller.selection.isValid
+          ? focused.controller.selection.start
+          : text.length;
+      final before = text.substring(0, cursor);
+      final after = text.substring(cursor);
+      focused.controller.text = before;
+      final tail = _TextBlock(text: after, heading: false);
+      _blocks.insertAll(index + 1, [...media, tail]);
+      tail.focus.requestFocus();
+    });
+  }
+
+  Future<void> _pickPhotos() async {
+    final remaining = PostWriteViewModel.maxPhotos - _imageCount;
+    final paths = await _vm.pickPhotosForBlocks(remaining);
+    if (paths.isEmpty || !mounted) return;
+    _insertMedia([
+      for (final path in paths) _MediaBlock(DraftBlock.image(localPath: path)),
+    ]);
+  }
+
+  Future<void> _addLink() async {
+    final l = AppLocalizations.of(context)!;
+    final input = TextEditingController();
+    final url = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.narDark600,
+        title: Text(
+          l.communityLinkDialogTitle,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppColors.narText,
+          ),
+        ),
+        content: TextField(
+          controller: input,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            color: AppColors.narText,
+          ),
+          cursorColor: AppColors.narViolet3,
+          decoration: InputDecoration(
+            hintText: l.communityLinkHint,
+            hintStyle: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.narDark300,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l.cancel,
+                style: const TextStyle(color: AppColors.narText2)),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(input.text.trim()),
+            child: Text(l.communityLinkConfirm,
+                style: const TextStyle(color: AppColors.narViolet3)),
+          ),
+        ],
+      ),
+    );
+    input.dispose();
+    if (url == null || url.isEmpty || !mounted) return;
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l.communityLinkInvalid)));
+      return;
+    }
+    final provider = CommunityPostBlock.embedProviderOf(url);
+    if (provider != null) {
+      _insertMedia([_MediaBlock(DraftBlock.embed(provider: provider, url: url))]);
+      return;
+    }
+    // 일반 링크 — 서버 OG 스냅샷을 붙인 카드. 실패해도 맨 링크 카드로 들어간다.
+    final preview = await _vm.fetchLinkPreview(url);
+    if (!mounted) return;
+    _insertMedia([
+      _MediaBlock(DraftBlock.link(
+        url: url,
+        title: preview.title,
+        description: preview.description,
+        imageUrl: preview.imageUrl,
+        siteName: preview.siteName,
+      )),
+    ]);
+  }
+
+  void _toggleHeading() {
+    final focused = _focusedText;
+    if (focused == null) return;
+    setState(() => focused.heading = !focused.heading);
+  }
+
+  void _removeBlock(_MediaBlock block) {
+    setState(() {
+      final index = _blocks.indexOf(block);
+      _blocks.remove(block);
+      // 미디어를 지워 텍스트 블록이 연달아 남으면 하나로 합친다 — 안 그러면
+      // 보이지 않는 경계가 남아 커서가 두 자리를 오간다.
+      if (index > 0 &&
+          index < _blocks.length &&
+          _blocks[index - 1] is _TextBlock &&
+          _blocks[index] is _TextBlock) {
+        final head = _blocks[index - 1] as _TextBlock;
+        final tail = _blocks[index] as _TextBlock;
+        final joined = [head.controller.text, tail.controller.text]
+            .where((t) => t.isNotEmpty)
+            .join('\n');
+        head.controller.text = joined;
+        _blocks.removeAt(index);
+        tail.dispose();
+      }
+    });
+  }
+
+  void _moveBlock(_MediaBlock block, int delta) {
+    setState(() {
+      final index = _blocks.indexOf(block);
+      final target = index + delta;
+      if (index < 0 || target < 0 || target >= _blocks.length) return;
+      _blocks.removeAt(index);
+      _blocks.insert(target, block);
+    });
+  }
 
   Future<void> _submit() async {
-    final id = await _vm.submit(title: _title.text, body: _body.text);
+    final drafts = <DraftBlock>[
+      for (final block in _blocks)
+        if (block is _TextBlock)
+          DraftBlock.text(block.controller.text, heading: block.heading)
+        else if (block is _MediaBlock)
+          block.draft,
+    ];
+    final id = await _vm.submitBlocks(title: _title.text, blocks: drafts);
     if (id == null || !mounted) return;
     Navigator.of(context).pop<int>(id);
   }
@@ -97,179 +338,281 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
-    // 팀 목록을 아직 못 받았으면 라벨이 비는데, 그걸 전체 게시판으로 떨어뜨리면
-    // 팀 게시판에 쓰는 중에 헤더가 '전체 게시판' 이라고 거짓말을 한다.
-    final label = communityTeamLabel(widget.boardTeamId);
-    final board = widget.boardTeamId == null
-        ? l.communityBoardAll
-        : (label.isEmpty ? l.communityTitle : l.communityBoardTeam(label));
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          child: ListenableBuilder(
-            listenable: _vm,
-            builder: (context, _) => Column(
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: _vm,
+          builder: (context, _) => Column(
+            children: [
+              NarDetailHeader(
+                title: l.communityBoardAll,
+                scale: scale,
+                trailing: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _submittable ? _submit : null,
+                  // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
+                  // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
+                  // 확보한다.
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6 * scale),
+                    child: Text(
+                      _vm.submitting
+                          ? l.communityWriteSubmitting
+                          : l.communityWriteSubmit,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14 * scale,
+                        height: 1.45,
+                        color: _submittable
+                            ? AppColors.narViolet3
+                            : AppColors.narDark300,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    20 * scale,
+                    10 * scale,
+                    20 * scale,
+                    20 * scale,
+                  ),
+                  children: [
+                    TextField(
+                      controller: _title,
+                      maxLength: 100,
+                      style: _inputStyle(scale, 16, weight: FontWeight.w700),
+                      cursorColor: AppColors.narViolet3,
+                      decoration: _underlined(
+                        l.communityWriteTitleHint,
+                        scale,
+                        16,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 14 * scale),
+                    for (final block in _blocks) _blockWidget(l, scale, block),
+                    SizedBox(height: 24 * scale),
+                    _rules(l, scale),
+                  ],
+                ),
+              ),
+              _toolbar(l, scale),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _blockWidget(AppLocalizations l, double scale, _EditorBlock block) {
+    if (block is _TextBlock) {
+      final first = _blocks.isNotEmpty && identical(_blocks.first, block);
+      return TextField(
+        controller: block.controller,
+        focusNode: block.focus,
+        minLines: first ? 4 : 1,
+        maxLines: null,
+        onChanged: (_) => _onChanged(),
+        onTap: _onChanged, // 포커스 이동 시 heading 토글 활성 상태 갱신
+        style: _inputStyle(
+          scale,
+          block.heading ? 16 : 14,
+          weight: block.heading ? FontWeight.w700 : FontWeight.w400,
+        ),
+        cursorColor: AppColors.narViolet3,
+        decoration: InputDecoration(
+          hintText: first ? l.communityWriteBodyHint : null,
+          hintStyle: _inputStyle(
+            scale,
+            14,
+          ).copyWith(color: AppColors.narDark300),
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 4 * scale),
+        ),
+      );
+    }
+    final media = block as _MediaBlock;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6 * scale),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          _mediaPreview(scale, media.draft),
+          Positioned(
+            top: 6 * scale,
+            right: 6 * scale,
+            child: Row(
               children: [
-                NarDetailHeader(
-                  title: board,
-                  scale: scale,
-                  trailing: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _submittable ? _submit : null,
-                    // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
-                    // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
-                    // 확보한다.
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6 * scale),
-                      child: Text(
-                        _vm.submitting
-                            ? l.communityWriteSubmitting
-                            : l.communityWriteSubmit,
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14 * scale,
-                          height: 1.45,
-                          color: _submittable
-                              ? AppColors.narViolet3
-                              : AppColors.narDark300,
-                        ),
-                      ),
-                    ),
-                  ),
+                _mediaAction(
+                  scale,
+                  icon: Icons.keyboard_arrow_up,
+                  onTap: () => _moveBlock(media, -1),
                 ),
-                Expanded(
-                  child: ListView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.fromLTRB(
-                      20 * scale,
-                      10 * scale,
-                      20 * scale,
-                      20 * scale,
-                    ),
-                    children: [
-                      TextField(
-                        controller: _title,
-                        maxLength: 100,
-                        style: _inputStyle(scale, 16, weight: FontWeight.w700),
-                        cursorColor: AppColors.narViolet3,
-                        decoration: _underlined(
-                          l.communityWriteTitleHint,
-                          scale,
-                          16,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 14 * scale),
-                      TextField(
-                        controller: _body,
-                        minLines: 6,
-                        maxLines: null,
-                        style: _inputStyle(scale, 14),
-                        cursorColor: AppColors.narViolet3,
-                        decoration: InputDecoration(
-                          hintText: l.communityWriteBodyHint,
-                          hintStyle: _inputStyle(
-                            scale,
-                            14,
-                          ).copyWith(color: AppColors.narDark300),
-                          isDense: true,
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      if (_vm.existingImageUrls.isNotEmpty ||
-                          _vm.photos.isNotEmpty) ...[
-                        SizedBox(height: 14 * scale),
-                        _photoStrip(scale),
-                      ],
-                      SizedBox(height: 24 * scale),
-                      _rules(l, scale),
-                    ],
-                  ),
+                SizedBox(width: 5 * scale),
+                _mediaAction(
+                  scale,
+                  icon: Icons.keyboard_arrow_down,
+                  onTap: () => _moveBlock(media, 1),
                 ),
-                _toolbar(l, scale),
+                SizedBox(width: 5 * scale),
+                _mediaAction(
+                  scale,
+                  icon: Icons.close,
+                  onTap: () => _removeBlock(media),
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _photoStrip(double scale) {
-    final existing = _vm.existingImageUrls;
-    final photos = _vm.photos;
-
-    return SizedBox(
-      height: 72 * scale,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: existing.length + photos.length,
-        separatorBuilder: (_, _) => SizedBox(width: 8 * scale),
-        // 수정 모드의 기존 사진(URL)이 앞, 새로 고른 사진(로컬 파일)이 뒤 —
-        // 서버로 보내는 imageUrls 순서와 같다.
-        itemBuilder: (context, i) {
-          final isExisting = i < existing.length;
-          return _photoThumb(
-            scale,
-            image: isExisting
-                ? CommunityImage(
-                    source: existing[i],
-                    width: 72 * scale,
-                    height: 72 * scale,
-                  )
-                : Image.file(
-                    File(photos[i - existing.length]),
-                    width: 72 * scale,
-                    height: 72 * scale,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: 72 * scale,
-                      height: 72 * scale,
-                      color: AppColors.narDark500,
-                    ),
-                  ),
-            onRemove: () => isExisting
-                ? _vm.removeExistingImage(i)
-                : _vm.removePhoto(i - existing.length),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _photoThumb(
+  Widget _mediaAction(
     double scale, {
-    required Widget image,
-    required VoidCallback onRemove,
-  }) => Stack(
-    clipBehavior: Clip.none,
-    children: [
-      ClipRRect(borderRadius: BorderRadius.circular(8 * scale), child: image),
-      Positioned(
-        top: -6 * scale,
-        right: -6 * scale,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onRemove,
-          child: Container(
-            width: 22 * scale,
-            height: 22 * scale,
-            decoration: const BoxDecoration(
-              color: AppColors.narDark400,
-              shape: BoxShape.circle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Container(
+      width: 26 * scale,
+      height: 26 * scale,
+      decoration: BoxDecoration(
+        color: AppColors.narDark800.withValues(alpha: 0.75),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 16 * scale, color: AppColors.narText),
+    ),
+  );
+
+  Widget _mediaPreview(double scale, DraftBlock draft) {
+    switch (draft.type) {
+      case 'image':
+        final radius = BorderRadius.circular(10 * scale);
+        if (draft.localPath != null) {
+          return ClipRRect(
+            borderRadius: radius,
+            child: Image.file(
+              File(draft.localPath!),
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                width: double.infinity,
+                height: 160 * scale,
+                color: AppColors.narDark500,
+              ),
             ),
-            child: Icon(Icons.close, size: 13 * scale, color: AppColors.narText),
+          );
+        }
+        return CommunityImage(
+          source: draft.url ?? '',
+          width: double.infinity,
+          height: null,
+          maxHeight: 320 * scale,
+          radius: 10 * scale,
+        );
+      case 'embed':
+        final videoId = draft.provider == 'youtube'
+            ? CommunityPostBlock.youtubeVideoId(draft.url ?? '')
+            : null;
+        return _card(
+          scale,
+          image: videoId == null
+              ? null
+              : CommunityImage(
+                  source: 'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
+                  width: double.infinity,
+                  height: 160 * scale,
+                ),
+          title: switch (draft.provider) {
+            'youtube' => 'YouTube',
+            'chzzk' => '치지직',
+            'soop' => 'SOOP',
+            'x' => 'X',
+            _ => draft.provider ?? '',
+          },
+          subtitle: draft.url ?? '',
+        );
+      default: // link
+        return _card(
+          scale,
+          image: draft.imageUrl == null
+              ? null
+              : CommunityImage(
+                  source: draft.imageUrl!,
+                  width: double.infinity,
+                  height: 140 * scale,
+                ),
+          title: (draft.title == null || draft.title!.isEmpty)
+              ? (draft.url ?? '')
+              : draft.title!,
+          subtitle: draft.siteName ??
+              (Uri.tryParse(draft.url ?? '')?.host ?? ''),
+        );
+    }
+  }
+
+  Widget _card(
+    double scale, {
+    Widget? image,
+    required String title,
+    required String subtitle,
+  }) => Container(
+    clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(
+      color: AppColors.narDark600,
+      borderRadius: BorderRadius.circular(10 * scale),
+      border: Border.all(color: AppColors.narLine2, width: 1),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (image != null) image,
+        Padding(
+          padding: EdgeInsets.all(12 * scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13 * scale,
+                  height: 1.45,
+                  color: AppColors.narText,
+                ),
+              ),
+              SizedBox(height: 3 * scale),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 11 * scale,
+                  height: 1.4,
+                  color: AppColors.narText2,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 
   /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
@@ -329,8 +672,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   }
 
   Widget _toolbar(AppLocalizations l, double scale) {
-    final count = _vm.existingImageUrls.length + _vm.photos.length;
+    final count = _imageCount;
     final full = count >= PostWriteViewModel.maxPhotos;
+    final headingOn = _focusedText?.heading ?? false;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -349,7 +693,23 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                 : l.communityPhotoCount(count),
             active: count > 0,
             scale: scale,
-            onTap: full ? null : _vm.pickPhotos,
+            onTap: full ? null : _pickPhotos,
+          ),
+          SizedBox(width: 8 * scale),
+          _ToolButton(
+            icon: Icons.link,
+            label: l.communityAddLink,
+            active: false,
+            scale: scale,
+            onTap: _addLink,
+          ),
+          SizedBox(width: 8 * scale),
+          _ToolButton(
+            icon: Icons.title,
+            label: l.communityHeadingToggle,
+            active: headingOn,
+            scale: scale,
+            onTap: _focusedText == null ? null : _toggleHeading,
           ),
         ],
       ),
@@ -394,14 +754,16 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
 
 class _ToolButton extends StatelessWidget {
   const _ToolButton({
-    required this.asset,
+    this.asset,
+    this.icon,
     required this.label,
     required this.active,
     required this.scale,
     required this.onTap,
   });
 
-  final String asset;
+  final String? asset;
+  final IconData? icon;
   final String label;
   final bool active;
   final double scale;
@@ -433,12 +795,15 @@ class _ToolButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SvgPicture.asset(
-                asset,
-                width: 15 * scale,
-                height: 15 * scale,
-                colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-              ),
+              if (asset != null)
+                SvgPicture.asset(
+                  asset!,
+                  width: 15 * scale,
+                  height: 15 * scale,
+                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                )
+              else
+                Icon(icon, size: 16 * scale, color: color),
               SizedBox(width: 6 * scale),
               Text(
                 label,
