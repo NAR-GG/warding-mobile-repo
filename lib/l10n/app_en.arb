@@ -529,6 +529,8 @@
   "notificationTabMatch": "Matches",
   "notificationTabCommunity": "Community",
   "notificationEmpty": "No notifications yet",
+  "communityNotificationOn": "Notifications on for this post",
+  "communityNotificationOff": "Notifications off for this post",
   "communityMoreEdit": "Edit",
   "communityEditingComment": "Editing comment",
   "communityMoreDelete": "Delete",

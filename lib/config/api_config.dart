@@ -361,6 +361,10 @@ class ApiConfig {
   static String communityPostScrapUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId/scrap';
 
+  /// 이 글 알림 켬/끔 토글(POST). 끄면 이 글의 댓글·답글 알림이 안 온다.
+  static String communityPostNotificationUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/notification';
+
   /// 댓글 목록(GET, 오래된 순). [size] 기본 50, 최대 100.
   static String communityCommentsUrl(
     int postId, {

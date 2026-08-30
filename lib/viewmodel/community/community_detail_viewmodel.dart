@@ -169,6 +169,21 @@ class CommunityDetailViewModel extends ChangeNotifier {
     }
   }
 
+  /// 이 글 알림 켬/끔. 반환 = 토글 후 수신 여부(토스트 문구용), 실패 시 null.
+  Future<bool?> toggleNotification() async {
+    final current = _post;
+    if (current == null) return null;
+    try {
+      final enabled = await _repository.togglePostNotification(postId);
+      _post = _replaceSummary(current, notificationEnabled: enabled);
+      _safeNotify();
+      return enabled;
+    } catch (e) {
+      _fail(e);
+      return null;
+    }
+  }
+
   Future<void> toggleCommentLike(int commentId) async {
     try {
       final result = await _repository.toggleCommentLike(commentId);
@@ -326,6 +341,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
     int? commentCount,
     bool? liked,
     bool? scrapped,
+    bool? notificationEnabled,
   }) {
     final s = current.summary;
     return CommunityRemotePostDetail(
@@ -350,6 +366,8 @@ class CommunityDetailViewModel extends ChangeNotifier {
         scrapped: scrapped ?? current.viewer.scrapped,
         mine: current.viewer.mine,
         blockedAuthor: current.viewer.blockedAuthor,
+        notificationEnabled:
+            notificationEnabled ?? current.viewer.notificationEnabled,
       ),
     );
   }

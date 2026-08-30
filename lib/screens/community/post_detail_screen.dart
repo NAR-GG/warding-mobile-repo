@@ -165,6 +165,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (result != null && mounted) await _vm.load();
   }
 
+  /// 헤더 벨 — 이 글 알림 켬/끔 토글. 결과를 토스트로 확인시켜 준다.
+  Future<void> _toggleNotification() async {
+    if (!_requireLogin()) return;
+    final enabled = await _vm.toggleNotification();
+    if (enabled == null || !mounted) return;
+    final l = AppLocalizations.of(context)!;
+    _toast(
+      enabled ? l.communityNotificationOn : l.communityNotificationOff,
+    );
+  }
+
   /// 글의 `⋯`. 내 글이면 삭제, 남의 글이면 신고·차단.
   Future<void> _postMore() async {
     final post = _vm.post;
@@ -285,23 +296,48 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   onBack: _pop,
                   trailing: _vm.post == null
                       ? null
-                      : GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: _postMore,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8 * scale,
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/icons/dots.svg',
-                              width: 18 * scale,
-                              height: 18 * scale,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.narText3,
-                                BlendMode.srcIn,
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 이 글 알림 켬/끔 (유튜브·레딧의 per-post mute).
+                            // 끄면 이 글의 댓글·답글 알림이 안 온다.
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _toggleNotification,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6 * scale,
+                                ),
+                                child: Icon(
+                                  _vm.post!.viewer.notificationEnabled
+                                      ? Icons.notifications_none
+                                      : Icons.notifications_off_outlined,
+                                  size: 20 * scale,
+                                  color: _vm.post!.viewer.notificationEnabled
+                                      ? AppColors.narText3
+                                      : AppColors.narDark300,
+                                ),
                               ),
                             ),
-                          ),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _postMore,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8 * scale,
+                                ),
+                                child: SvgPicture.asset(
+                                  'assets/icons/dots.svg',
+                                  width: 18 * scale,
+                                  height: 18 * scale,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppColors.narText3,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
                 Expanded(child: _content(l, scale)),
