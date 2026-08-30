@@ -1392,6 +1392,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notificationInboxTitle => '알림';
 
   @override
+  String get communityNotificationTitle => '커뮤니티 알림';
+
+  @override
   String get notificationTabAll => '전체';
 
   @override

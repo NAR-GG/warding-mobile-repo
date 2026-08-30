@@ -2660,6 +2660,12 @@ abstract class AppLocalizations {
   /// **'알림'**
   String get notificationInboxTitle;
 
+  /// No description provided for @communityNotificationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 알림'**
+  String get communityNotificationTitle;
+
   /// No description provided for @notificationTabAll.
   ///
   /// In ko, this message translates to:

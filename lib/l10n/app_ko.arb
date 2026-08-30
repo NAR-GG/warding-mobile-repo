@@ -698,6 +698,7 @@
   "communityBlockedPost": "차단한 사용자의 글입니다.",
   "notificationReadAll": "모두 읽음",
   "notificationInboxTitle": "알림",
+  "communityNotificationTitle": "커뮤니티 알림",
   "notificationTabAll": "전체",
   "notificationTabMatch": "경기",
   "notificationTabCommunity": "커뮤니티",
