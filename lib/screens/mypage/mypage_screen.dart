@@ -124,15 +124,6 @@ class _MypageScreenState extends State<MypageScreen> {
                             },
                           );
                         },
-                        onBellTap: () {
-                          // 알림함이 커뮤니티 전용이 되면서 경기 알림 진입점은
-                          // 다시 마이구독이다.
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const SubscriptionScreen(),
-                            ),
-                          );
-                        },
                       ),
                       SizedBox(height: 4 * scale),
                       ListenableBuilder(
@@ -399,13 +390,14 @@ class _MypageScreenState extends State<MypageScreen> {
   }
 }
 
-/// 마이페이지 헤더. 좌측 타이틀 + 우측 지구본·알림(bell) 아이콘 (양옆 20 패딩).
+/// 마이페이지 헤더. 좌측 타이틀 + 우측 지구본 아이콘 (양옆 20 패딩).
+/// 벨은 뺐다 — 경기 알림은 하단탭 마이구독이, 커뮤니티 알림은 커뮤니티 헤더
+/// 벨이 담당하므로 여기 벨은 중복 진입점이라 헷갈리기만 한다.
 class _MypageHeader extends StatelessWidget {
-  const _MypageHeader({required this.scale, this.onGlobeTap, this.onBellTap});
+  const _MypageHeader({required this.scale, this.onGlobeTap});
 
   final double scale;
   final VoidCallback? onGlobeTap;
-  final VoidCallback? onBellTap;
 
   @override
   Widget build(BuildContext context) {
@@ -427,37 +419,18 @@ class _MypageHeader extends StatelessWidget {
               color: AppColors.narText,
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onGlobeTap,
-                child: SvgPicture.asset(
-                  'assets/icons/globe.svg',
-                  width: 24 * scale,
-                  height: 24 * scale,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.narText,
-                    BlendMode.srcIn,
-                  ),
-                ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onGlobeTap,
+            child: SvgPicture.asset(
+              'assets/icons/globe.svg',
+              width: 24 * scale,
+              height: 24 * scale,
+              colorFilter: const ColorFilter.mode(
+                AppColors.narText,
+                BlendMode.srcIn,
               ),
-              SizedBox(width: 16 * scale),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onBellTap,
-                child: SvgPicture.asset(
-                  'assets/icons/bell.svg',
-                  width: 24 * scale,
-                  height: 24 * scale,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.narText,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
