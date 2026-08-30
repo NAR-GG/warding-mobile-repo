@@ -51,9 +51,10 @@ Widget buildNotificationFeedCard(
             height: 44 * scale,
             child: Center(
               child: SvgPicture.asset(
-                // 좋아요는 하트, 나머지 커뮤니티(댓글·답글 등)는 말풍선 하트.
+                // 좋아요는 빈 하트(꽉 찬 하트는 응원팀 배너와 겹친다),
+                // 나머지 커뮤니티(댓글·답글 등)는 말풍선 하트.
                 n.type == MemberNotificationType.communityLike
-                    ? 'assets/icons/heart.svg'
+                    ? 'assets/icons/empty-heart.svg'
                     : 'assets/icons/message-circle-heart.svg',
                 width: 26 * scale,
                 height: 26 * scale,
