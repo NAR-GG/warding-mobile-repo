@@ -49,11 +49,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (remaining < 300) _vm.loadMore();
   }
 
-  bool _matchesTab(MemberNotification n) => switch (_tab) {
-    _InboxTab.all => true,
-    _InboxTab.community => n.type.isCommunity,
-    _InboxTab.match => !n.type.isCommunity,
-  };
+  bool _matchesTab(MemberNotification n) => _matchesIn(_tab, n);
 
   Future<void> _onTap(MemberNotification n) async {
     _vm.markRead(n);
@@ -86,7 +82,29 @@ class _NotificationScreenState extends State<NotificationScreen> {
             final items = _vm.notifications.where(_matchesTab).toList();
             return Column(
               children: [
-                NarDetailHeader(title: l.notificationInboxTitle, scale: scale),
+                NarDetailHeader(
+                  title: l.notificationInboxTitle,
+                  scale: scale,
+                  trailing: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _vm.markAllRead,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6 * scale),
+                      child: Text(
+                        l.notificationReadAll,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13 * scale,
+                          height: 1.45,
+                          color: _vm.unreadCount > 0
+                              ? AppColors.narText3
+                              : AppColors.narDark300,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 _tabs(l, scale),
                 Expanded(
                   child: items.isEmpty
@@ -114,7 +132,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   child: Stack(
                                     children: [
                                       buildNotificationFeedCard(n, scale, l),
-                                      if (!n.read)
+                                      if (!n.read) ...[
                                         Positioned.fill(
                                           child: IgnorePointer(
                                             child: ColoredBox(
@@ -123,6 +141,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                             ),
                                           ),
                                         ),
+                                        Positioned(
+                                          left: 7 * scale,
+                                          top: 20 * scale,
+                                          child: Container(
+                                            width: 6 * scale,
+                                            height: 6 * scale,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.narViolet3,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -139,44 +170,95 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  /// 탭별 미읽음 수. 로드된 페이지 기준이라 근사값이다 — 정확한 총계는 홈 벨
+  /// 배지(서버 unreadCount)가 맡고, 여기는 "어느 탭에 새 게 있나"만 알려주면 된다.
+  int _unreadIn(_InboxTab tab) =>
+      _vm.notifications.where((n) => !n.read && _matchesIn(tab, n)).length;
+
+  bool _matchesIn(_InboxTab tab, MemberNotification n) => switch (tab) {
+    _InboxTab.all => true,
+    _InboxTab.community => n.type.isCommunity,
+    _InboxTab.match => !n.type.isCommunity,
+  };
+
+  /// 밑줄 탭 — 라벨 + 미읽음 수(빨강), 선택 탭은 그라데이션 밑줄.
   Widget _tabs(AppLocalizations l, double scale) {
-    Widget chip(_InboxTab tab, String label) {
+    Widget tab(_InboxTab tab, String label) {
       final selected = _tab == tab;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _tab = tab),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 14 * scale,
-            vertical: 7 * scale,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.narChipActive : AppColors.narDark600,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              fontSize: 12.5 * scale,
-              height: 1.45,
-              color: selected ? AppColors.narDark800 : AppColors.narText3,
-            ),
+      final unread = _unreadIn(tab);
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _tab = tab),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 9 * scale),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        fontSize: 14 * scale,
+                        height: 1.45,
+                        color: selected
+                            ? AppColors.narText
+                            : AppColors.narText2,
+                      ),
+                    ),
+                    if (unread > 0) ...[
+                      SizedBox(width: 3 * scale),
+                      Text(
+                        unread > 99 ? '99+' : '$unread',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11 * scale,
+                          height: 1.4,
+                          color: AppColors.narTextRed,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Container(
+                height: 2.5 * scale,
+                margin: EdgeInsets.symmetric(horizontal: 24 * scale),
+                decoration: selected
+                    ? const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFFE87558),
+                            Color(0xFFC865C9),
+                            Color(0xFF791BB8),
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20 * scale, 6 * scale, 20 * scale, 8 * scale),
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.narLine, width: 1)),
+      ),
       child: Row(
         children: [
-          chip(_InboxTab.all, l.notificationTabAll),
-          SizedBox(width: 8 * scale),
-          chip(_InboxTab.match, l.notificationTabMatch),
-          SizedBox(width: 8 * scale),
-          chip(_InboxTab.community, l.notificationTabCommunity),
+          tab(_InboxTab.all, l.notificationTabAll),
+          tab(_InboxTab.match, l.notificationTabMatch),
+          tab(_InboxTab.community, l.notificationTabCommunity),
         ],
       ),
     );

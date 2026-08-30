@@ -163,6 +163,24 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     }
   }
 
+  /// 전체 읽음(낙관적 반영 후 서버 호출, 실패 시 복구).
+  Future<void> markAllRead() async {
+    if (_unreadCount == 0) return;
+    final backup = _notifications;
+    final backupUnread = _unreadCount;
+    _notifications = _notifications.map((x) => x.copyWith(read: true)).toList();
+    _unreadCount = 0;
+    _notify();
+    try {
+      await _repo.markAllRead();
+    } catch (e) {
+      debugPrint('[Feed] 전체읽음 실패, 복구: $e');
+      _notifications = backup;
+      _unreadCount = backupUnread;
+      _notify();
+    }
+  }
+
   /// 전체 삭제(낙관적 비움 후 서버 호출, 실패 시 복구).
   Future<void> deleteAll() async {
     final backup = _notifications;

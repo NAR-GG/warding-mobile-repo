@@ -2648,6 +2648,12 @@ abstract class AppLocalizations {
   /// **'차단한 사용자의 글입니다.'**
   String get communityBlockedPost;
 
+  /// No description provided for @notificationReadAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'모두 읽음'**
+  String get notificationReadAll;
+
   /// No description provided for @notificationInboxTitle.
   ///
   /// In ko, this message translates to:
