@@ -39,19 +39,23 @@ class CommunityImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final placeholder = Container(
-      width: width,
-      // 비율 유지 모드에서는 로드 전 높이를 모른다. 자리를 아예 안 잡으면 사진이 뜨는
-      // 순간 아래 내용이 밀려 내려가므로(레이아웃 점프) 흔한 가로 사진 비율(4:3)로
-      // 임시 자리를 잡아둔다.
-      height: height ?? (width.isFinite ? width * 3 / 4 : null),
-      color: AppColors.narDark500,
-    );
-
     // 칸이 화면 폭을 다 쓰는 경우(width: infinity)가 있어 MediaQuery 로 실폭을 잡는다.
     final logicalWidth = width.isFinite ? width : MediaQuery.sizeOf(context).width;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final pixelWidth = (logicalWidth * dpr).ceil();
+
+    // 비율 유지 모드에서는 로드 전 높이를 모른다. 자리를 아예 안 잡으면 사진이 뜨는
+    // 순간 아래 내용이 밀려 내려가므로(레이아웃 점프) 흔한 가로 사진 비율(4:3)로
+    // 임시 자리를 잡아둔다. width 가 infinity 면 실폭 기준으로 계산한다 — 높이를
+    // 안 정하면 ConstrainedBox(maxHeight) 안에서 화면 70%짜리 빈 박스로 부푼다
+    // (v1.0.23 실사고: 상세의 이미지 자리가 거대한 빈 상자로 보였다).
+    final placeholderHeight = height ?? logicalWidth * 3 / 4;
+
+    final placeholder = Container(
+      width: width,
+      height: placeholderHeight,
+      color: AppColors.narDark500,
+    );
 
     final image = CachedNetworkImage(
       imageUrl: cloudinaryScaled(source, targetPixelWidth: pixelWidth) ?? source,
@@ -64,7 +68,19 @@ class CommunityImage extends StatelessWidget {
       memCacheWidth: pixelWidth,
       placeholder: height == null ? (_, _) => placeholder : null,
       fadeInDuration: const Duration(milliseconds: 150),
-      errorWidget: (_, _, _) => placeholder,
+      // 실패는 빈 상자가 아니라 실패로 보여야 한다 — 사용자가 로딩 중인지
+      // 깨진 건지 구분할 수 있게 아이콘을 얹는다.
+      errorWidget: (_, _, _) => Container(
+        width: width,
+        height: placeholderHeight,
+        color: AppColors.narDark500,
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.broken_image_outlined,
+          size: 32,
+          color: AppColors.narText2,
+        ),
+      ),
     );
 
     return ClipRRect(
