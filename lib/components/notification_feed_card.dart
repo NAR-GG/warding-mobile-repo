@@ -56,8 +56,17 @@ Widget buildNotificationFeedCard(
                 n.type == MemberNotificationType.communityLike
                     ? 'assets/icons/empty-heart.svg'
                     : 'assets/icons/message-circle-heart.svg',
-                width: 26 * scale,
-                height: 26 * scale,
+                // 빈 하트(22×20)는 캔버스를 가장자리까지 채우는 그림이라
+                // 말풍선 하트(24×24, 여백 포함)와 같은 폭이면 커 보인다 —
+                // 22 로 낮춰 시각 크기를 맞춘다.
+                width: (n.type == MemberNotificationType.communityLike
+                        ? 22
+                        : 26) *
+                    scale,
+                height: (n.type == MemberNotificationType.communityLike
+                        ? 22
+                        : 26) *
+                    scale,
                 colorFilter: const ColorFilter.mode(
                   AppColors.narText,
                   BlendMode.srcIn,
