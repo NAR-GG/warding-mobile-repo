@@ -1386,6 +1386,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityBlockedPost => '차단한 사용자의 글입니다.';
 
   @override
+  String get notificationReadAll => '모두 읽음';
+
+  @override
   String get notificationInboxTitle => '알림';
 
   @override

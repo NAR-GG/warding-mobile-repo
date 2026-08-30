@@ -524,6 +524,7 @@
   "communityCommentBlocked": "Comment from a blocked user.",
   "communityCommentHidden": "This comment is hidden.",
   "communityBlockedPost": "Post from a blocked user.",
+  "notificationReadAll": "Mark all read",
   "notificationInboxTitle": "Notifications",
   "notificationTabAll": "All",
   "notificationTabMatch": "Matches",

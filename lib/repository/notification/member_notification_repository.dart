@@ -44,6 +44,19 @@ class MemberNotificationRepository {
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
+  /// 전체 읽음 처리.
+  Future<void> markAllRead() async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.notificationsReadAllUrl),
+        headers: _headers(token),
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('전체 읽음 처리 실패 (${response.statusCode})');
+    }
+  }
+
   /// 단건 읽음 처리.
   Future<void> markRead(int notificationId) async {
     final response = await _auth.authorizedRequest(
