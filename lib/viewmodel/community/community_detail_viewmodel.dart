@@ -349,6 +349,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
       summary: CommunityRemotePost(
         id: s.id,
         boardTeamId: s.boardTeamId,
+        boardTeamCode: s.boardTeamCode,
         title: s.title,
         bodyPreview: s.bodyPreview,
         author: s.author,
@@ -361,6 +362,9 @@ class CommunityDetailViewModel extends ChangeNotifier {
         imageCount: s.imageCount,
       ),
       body: current.body,
+      // bodyFormat 을 빼먹으면 기본값 PLAIN 으로 떨어져, 좋아요·벨을 누르는
+      // 순간 블록 글 본문이 원문 JSON 으로 표시된다(v1.0.23 실사고).
+      bodyFormat: current.bodyFormat,
       images: current.images,
       viewer: CommunityPostViewer(
         liked: liked ?? current.viewer.liked,
