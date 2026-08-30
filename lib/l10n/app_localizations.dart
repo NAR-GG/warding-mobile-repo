@@ -2648,6 +2648,36 @@ abstract class AppLocalizations {
   /// **'차단한 사용자의 글입니다.'**
   String get communityBlockedPost;
 
+  /// No description provided for @notificationInboxTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림'**
+  String get notificationInboxTitle;
+
+  /// No description provided for @notificationTabAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get notificationTabAll;
+
+  /// No description provided for @notificationTabMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기'**
+  String get notificationTabMatch;
+
+  /// No description provided for @notificationTabCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티'**
+  String get notificationTabCommunity;
+
+  /// No description provided for @notificationEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림이 없어요'**
+  String get notificationEmpty;
+
   /// No description provided for @communityMoreEdit.
   ///
   /// In ko, this message translates to:

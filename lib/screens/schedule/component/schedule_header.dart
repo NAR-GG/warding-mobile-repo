@@ -25,6 +25,8 @@ class ScheduleHeader extends StatelessWidget {
     this.preferredTeam,
     this.teamSelected = false,
     this.onTeamTap,
+    this.onBellTap,
+    this.unreadCount = 0,
   });
 
   /// 'yyyy.MM' 형식 월 라벨. 예: '2026.04'.
@@ -67,6 +69,13 @@ class ScheduleHeader extends StatelessWidget {
 
   /// 팀 아이콘 탭 콜백. null 이면 비활성.
   final VoidCallback? onTeamTap;
+
+  /// 알림함 벨 탭 콜백. null 이면 벨을 그리지 않는다.
+  final VoidCallback? onBellTap;
+
+  /// 미읽음 알림 수. 0 이면 배지를 숨긴다. 배지는 알림함 진입점(여기)에만 단다 —
+  /// 두 군데 배지가 있으면 사용자가 어디를 봐야 할지 모른다(후속 문서 A절).
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +132,57 @@ class ScheduleHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12 * scale),
-          // 오른쪽: 필터 버튼 + (온보딩에서 고른) 팀 아이콘
+          // 오른쪽: 벨(알림함) + 필터 버튼 + (온보딩에서 고른) 팀 아이콘.
+          // 3개가 되면 320px 에서 빠듯하다 — 회귀 테스트가 3폭을 잠근다.
+          if (onBellTap != null) ...[
+            GestureDetector(
+              onTap: onBellTap,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _CircleSlot(
+                    scale: scale,
+                    bordered: false,
+                    child: SvgPicture.asset(
+                      'assets/icons/bell.svg',
+                      width: 22 * scale,
+                      height: 22 * scale,
+                      colorFilter: const ColorFilter.mode(
+                        AppColors.narText,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 2 * scale,
+                      right: 2 * scale,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 4.5 * scale,
+                          vertical: 1.5 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.liveAccent,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : '$unreadCount',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9.5 * scale,
+                            height: 1.2,
+                            color: AppColors.narText,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8 * scale),
+          ],
           GestureDetector(
             onTap: onFilterTap,
             child: _CircleSlot(

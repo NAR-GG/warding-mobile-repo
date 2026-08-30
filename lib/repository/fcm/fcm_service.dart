@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../config/app_globals.dart';
+import '../../screens/community/post_detail_screen.dart';
 import '../../screens/subscription/subscription_screen.dart';
 import '../../util/match_detail_router.dart';
 import '../../util/sentry_logger.dart';
@@ -293,6 +294,19 @@ class FcmService {
     if (type == FcmNotificationType.playerSoloRankStarted) {
       navigatorKey.currentState?.push(
         MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
+      );
+      return;
+    }
+
+    // 커뮤니티 댓글·답글 → 글 상세.
+    if (FcmNotificationType.isCommunity(type)) {
+      final postId = int.tryParse((data['postId'] ?? '').toString());
+      if (postId == null) {
+        debugPrint('[FCM] 커뮤니티 푸시에 postId 가 없어 딥링크 생략');
+        return;
+      }
+      navigatorKey.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => PostDetailScreen(postId: postId)),
       );
       return;
     }

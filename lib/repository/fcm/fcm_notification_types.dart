@@ -22,4 +22,14 @@ class FcmNotificationType {
 
   /// 라이브 경기 푸시인지.
   static bool isLiveMatch(Object? type) => liveMatchTypes.contains(type);
+
+  /// 커뮤니티: 내 글에 댓글. → 글 상세(data.postId).
+  static const String communityComment = 'COMMUNITY_COMMENT';
+
+  /// 커뮤니티: 내 댓글에 답글. → 글 상세(data.postId).
+  static const String communityReply = 'COMMUNITY_REPLY';
+
+  /// 커뮤니티 푸시인지(딥링크 대상).
+  static bool isCommunity(Object? type) =>
+      type == communityComment || type == communityReply;
 }

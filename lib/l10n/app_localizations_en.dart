@@ -1421,6 +1421,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityBlockedPost => 'Post from a blocked user.';
 
   @override
+  String get notificationInboxTitle => 'Notifications';
+
+  @override
+  String get notificationTabAll => 'All';
+
+  @override
+  String get notificationTabMatch => 'Matches';
+
+  @override
+  String get notificationTabCommunity => 'Community';
+
+  @override
+  String get notificationEmpty => 'No notifications yet';
+
+  @override
   String get communityMoreEdit => 'Edit';
 
   @override
