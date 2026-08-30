@@ -51,7 +51,10 @@ Widget buildNotificationFeedCard(
             height: 44 * scale,
             child: Center(
               child: SvgPicture.asset(
-                'assets/icons/message-circle-heart.svg',
+                // 좋아요는 하트, 나머지 커뮤니티(댓글·답글 등)는 말풍선 하트.
+                n.type == MemberNotificationType.communityLike
+                    ? 'assets/icons/heart.svg'
+                    : 'assets/icons/message-circle-heart.svg',
                 width: 26 * scale,
                 height: 26 * scale,
                 colorFilter: const ColorFilter.mode(
@@ -82,6 +85,7 @@ String notificationIconFor(MemberNotificationType type) {
       return 'assets/icons/bell.svg';
     case MemberNotificationType.communityComment:
     case MemberNotificationType.communityReply:
+    case MemberNotificationType.communityLike:
       return 'assets/icons/message-circle.svg';
     case MemberNotificationType.communityReportResult:
     case MemberNotificationType.communityRestriction:

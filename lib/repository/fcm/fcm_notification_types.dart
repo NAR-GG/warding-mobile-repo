@@ -29,7 +29,10 @@ class FcmNotificationType {
   /// 커뮤니티: 내 댓글에 답글. → 글 상세(data.postId).
   static const String communityReply = 'COMMUNITY_REPLY';
 
+  /// 커뮤니티: 내 글에 좋아요(최초 1회만 발송). → 글 상세(data.postId).
+  static const String communityLike = 'COMMUNITY_LIKE';
+
   /// 커뮤니티 푸시인지(딥링크 대상).
   static bool isCommunity(Object? type) =>
-      type == communityComment || type == communityReply;
+      type == communityComment || type == communityReply || type == communityLike;
 }

@@ -106,6 +106,7 @@ enum MemberNotificationType {
   playerSoloRank,
   communityComment,
   communityReply,
+  communityLike,
   communityReportResult,
   communityRestriction,
   unknown;
@@ -124,6 +125,8 @@ enum MemberNotificationType {
         return communityComment;
       case 'COMMUNITY_REPLY':
         return communityReply;
+      case 'COMMUNITY_LIKE':
+        return communityLike;
       case 'COMMUNITY_REPORT_RESULT':
         return communityReportResult;
       case 'COMMUNITY_RESTRICTION':
@@ -137,6 +140,7 @@ enum MemberNotificationType {
   bool get isCommunity => switch (this) {
         communityComment ||
         communityReply ||
+        communityLike ||
         communityReportResult ||
         communityRestriction => true,
         _ => false,
