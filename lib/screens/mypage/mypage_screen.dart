@@ -29,7 +29,6 @@ import '../my_subscription_setting/my_subscription_setting_screen.dart';
 import '../notice/notice_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
-import '../notification/notification_screen.dart';
 import '../subscription/subscription_screen.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.
@@ -126,10 +125,11 @@ class _MypageScreenState extends State<MypageScreen> {
                           );
                         },
                         onBellTap: () {
-                          // 진입점은 둘(홈 벨·여기), 도착지는 알림함 하나 — A절.
+                          // 알림함이 커뮤니티 전용이 되면서 경기 알림 진입점은
+                          // 다시 마이구독이다.
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => const NotificationScreen(),
+                              builder: (_) => const SubscriptionScreen(),
                             ),
                           );
                         },

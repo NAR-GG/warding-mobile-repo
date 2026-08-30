@@ -235,7 +235,7 @@
 
   "profileEditTitle": "Edit Profile",
   "profileTeamChangeConfirmTitle": "Change your team?",
-  "profileTeamChangeConfirmBody": "Switching to {team} locks your team for 30 days. Your community team board changes too.",
+  "profileTeamChangeConfirmBody": "Switching to {team} locks your team for 30 days.",
   "@profileTeamChangeConfirmBody": { "placeholders": { "team": { "type": "String" } } },
   "profileTeamChangeConfirmOk": "Change",
   "profileTeamChangeLockedTitle": "You can change your team once every 30 days",

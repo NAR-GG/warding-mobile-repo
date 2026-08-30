@@ -667,7 +667,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String profileTeamChangeConfirmBody(String team) {
-    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.';
+    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요.';
   }
 
   @override
