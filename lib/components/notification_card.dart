@@ -70,6 +70,10 @@ class NotificationCard extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  // 한 줄 고정 — 긴 닉네임·팀명에서 2줄로 접히면 카드가 무겁다.
+                  // 잘린 내용은 본문·상세가 보완한다.
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w600,
