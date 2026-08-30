@@ -1386,6 +1386,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityBlockedPost => '차단한 사용자의 글입니다.';
 
   @override
+  String get notificationInboxTitle => '알림';
+
+  @override
+  String get notificationTabAll => '전체';
+
+  @override
+  String get notificationTabMatch => '경기';
+
+  @override
+  String get notificationTabCommunity => '커뮤니티';
+
+  @override
+  String get notificationEmpty => '알림이 없어요';
+
+  @override
   String get communityMoreEdit => '수정하기';
 
   @override
