@@ -526,6 +526,7 @@
   "communityBlockedPost": "Post from a blocked user.",
   "notificationReadAll": "Mark all read",
   "notificationInboxTitle": "Notifications",
+  "communityNotificationTitle": "Community notifications",
   "notificationTabAll": "All",
   "notificationTabMatch": "Matches",
   "notificationTabCommunity": "Community",

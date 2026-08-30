@@ -217,19 +217,27 @@ class ApiConfig {
 
   // ── 마이구독 알림 피드 (인증 필요) ────────────────────────────────
 
-  /// 받은 알림 리스트 (type 필터·페이징). type 미지정 시 전체.
-  static String notificationsUrl({String? type, int page = 0, int size = 20}) {
+  /// 받은 알림 리스트 (type·group 필터·페이징). 미지정 시 전체.
+  /// group(예: 'COMMUNITY')이 있으면 unreadCount 도 그 묶음 기준으로 내려온다.
+  static String notificationsUrl({
+    String? type,
+    String? group,
+    int page = 0,
+    int size = 20,
+  }) {
     final params = <String, String>{'page': '$page', 'size': '$size'};
     if (type != null) params['type'] = type;
+    if (group != null) params['group'] = group;
     final query = params.entries
         .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
         .join('&');
     return '$apiBaseUrl/mobile/me/notifications?$query';
   }
 
-  /// 알림 전체 읽음 처리(POST).
-  static String get notificationsReadAllUrl =>
-      '$apiBaseUrl/mobile/me/notifications/read';
+  /// 알림 전체 읽음 처리(POST). group 이 있으면 그 묶음만.
+  static String notificationsReadAllUrl({String? group}) =>
+      '$apiBaseUrl/mobile/me/notifications/read'
+      '${group != null ? '?group=$group' : ''}';
 
   /// 알림 단건 읽음 처리(POST).
   static String notificationReadUrl(int id) =>

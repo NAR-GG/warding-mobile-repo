@@ -1427,6 +1427,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationInboxTitle => 'Notifications';
 
   @override
+  String get communityNotificationTitle => 'Community notifications';
+
+  @override
   String get notificationTabAll => 'All';
 
   @override

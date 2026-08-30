@@ -41,7 +41,8 @@ class CommunityScreen extends StatefulWidget {
 class _CommunityScreenState extends State<CommunityScreen> {
   final CommunityListViewModel _vm = CommunityListViewModel();
 
-  /// 헤더 벨 배지용 미읽음 수. 비로그인·실패는 0(배지 숨김)으로 조용히 넘어간다.
+  /// 헤더 벨 배지용 미읽음 수 — 커뮤니티 묶음 기준(경기 알림은 안 센다).
+  /// 비로그인·실패는 0(배지 숨김)으로 조용히 넘어간다.
   int _unreadCount = 0;
 
   @override
@@ -60,7 +61,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _refreshUnreadCount() async {
     try {
       final page = await MemberNotificationRepository.instance
-          .fetchNotifications(page: 0, size: 1);
+          .fetchNotifications(group: 'COMMUNITY', page: 0, size: 1);
       if (mounted) setState(() => _unreadCount = page.unreadCount);
     } catch (_) {
       if (mounted) setState(() => _unreadCount = 0);

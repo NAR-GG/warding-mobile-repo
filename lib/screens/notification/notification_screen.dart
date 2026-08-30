@@ -5,15 +5,14 @@ import '../../components/notification_feed_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/member_notification.dart';
 import '../../styles/app_colors.dart';
-import '../../util/match_detail_router.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
 import '../community/post_detail_screen.dart';
 
-/// 알림함 — [전체]·[경기]·[커뮤니티] 탭 (커뮤니티 후속 문서 A절).
+/// 커뮤니티 알림함. 진입점은 커뮤니티 헤더 벨 하나다.
 ///
-/// 진입점은 홈 헤더 벨과 마이페이지 벨 둘이지만 도착지는 여기 하나다.
-/// 피드 ViewModel 은 마이구독과 같은 것을 쓴다 — 알림 원천이 같아서다.
-/// 마이구독과 달리 날짜 점프·선수 필터가 없어 단순 ListView 로 충분하다.
+/// 커뮤니티 알림만 다룬다(서버 group=COMMUNITY 필터) — 경기 알림은 마이구독
+/// 피드가 담당한다. 그래서 예전의 [전체]·[경기]·[커뮤니티] 탭이 없다.
+/// 피드 ViewModel 은 마이구독과 같은 것을 group 만 걸어 쓴다.
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -21,17 +20,14 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-enum _InboxTab { all, match, community }
-
 class _NotificationScreenState extends State<NotificationScreen> {
-  final SubscriptionFeedViewModel _vm = SubscriptionFeedViewModel();
+  final SubscriptionFeedViewModel _vm =
+      SubscriptionFeedViewModel(group: 'COMMUNITY');
   final ScrollController _scroll = ScrollController();
-  _InboxTab _tab = _InboxTab.all;
 
   @override
   void initState() {
     super.initState();
-    _vm.load();
     _scroll.addListener(_onScroll);
   }
 
@@ -49,22 +45,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (remaining < 300) _vm.loadMore();
   }
 
-  bool _matchesTab(MemberNotification n) => _matchesIn(_tab, n);
-
   Future<void> _onTap(MemberNotification n) async {
     _vm.markRead(n);
-    if (n.type.isCommunity) {
-      final postId = n.postId;
-      if (postId == null) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => PostDetailScreen(postId: postId)),
-      );
-      return;
-    }
-    final matchId = n.matchId;
-    if (matchId == null) return;
-    // 경기 알림 — 푸시 딥링크와 같은 창구(라우터)로 상세를 연다.
-    MatchDetailRouter.open(matchId: matchId, tabIndex: 1);
+    final postId = n.postId;
+    if (postId == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => PostDetailScreen(postId: postId)),
+    );
   }
 
   @override
@@ -79,11 +66,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: ListenableBuilder(
           listenable: _vm,
           builder: (context, _) {
-            final items = _vm.notifications.where(_matchesTab).toList();
+            final items = _vm.notifications;
             return Column(
               children: [
                 NarDetailHeader(
-                  title: l.notificationInboxTitle,
+                  title: l.communityNotificationTitle,
                   scale: scale,
                   trailing: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -105,7 +92,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                   ),
                 ),
-                _tabs(l, scale),
                 Expanded(
                   child: items.isEmpty
                       ? _empty(l, scale)
@@ -166,100 +152,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
             );
           },
         ),
-      ),
-    );
-  }
-
-  /// 탭별 미읽음 수. 로드된 페이지 기준이라 근사값이다 — 정확한 총계는 홈 벨
-  /// 배지(서버 unreadCount)가 맡고, 여기는 "어느 탭에 새 게 있나"만 알려주면 된다.
-  int _unreadIn(_InboxTab tab) =>
-      _vm.notifications.where((n) => !n.read && _matchesIn(tab, n)).length;
-
-  bool _matchesIn(_InboxTab tab, MemberNotification n) => switch (tab) {
-    _InboxTab.all => true,
-    _InboxTab.community => n.type.isCommunity,
-    _InboxTab.match => !n.type.isCommunity,
-  };
-
-  /// 밑줄 탭 — 라벨 + 미읽음 수(빨강), 선택 탭은 그라데이션 밑줄.
-  Widget _tabs(AppLocalizations l, double scale) {
-    Widget tab(_InboxTab tab, String label) {
-      final selected = _tab == tab;
-      final unread = _unreadIn(tab);
-      return Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _tab = tab),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 9 * scale),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        fontSize: 14 * scale,
-                        height: 1.45,
-                        color: selected
-                            ? AppColors.narText
-                            : AppColors.narText2,
-                      ),
-                    ),
-                    if (unread > 0) ...[
-                      SizedBox(width: 3 * scale),
-                      Text(
-                        unread > 99 ? '99+' : '$unread',
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11 * scale,
-                          height: 1.4,
-                          color: AppColors.narTextRed,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Container(
-                height: 2.5 * scale,
-                margin: EdgeInsets.symmetric(horizontal: 24 * scale),
-                decoration: selected
-                    ? const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFFE87558),
-                            Color(0xFFC865C9),
-                            Color(0xFF791BB8),
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.narLine, width: 1)),
-      ),
-      child: Row(
-        children: [
-          tab(_InboxTab.all, l.notificationTabAll),
-          tab(_InboxTab.match, l.notificationTabMatch),
-          tab(_InboxTab.community, l.notificationTabCommunity),
-        ],
       ),
     );
   }

@@ -23,13 +23,20 @@ class MemberNotificationRepository {
         'Authorization': 'Bearer $token',
       };
 
-  /// 받은 알림 리스트를 조회한다(최신순).
+  /// 받은 알림 리스트를 조회한다(최신순). [group] 은 묶음 필터(예: 'COMMUNITY') —
+  /// 지정하면 unreadCount 도 그 묶음 기준이다.
   Future<MemberNotificationPage> fetchNotifications({
     String? type,
+    String? group,
     int page = 0,
     int size = 20,
   }) async {
-    final url = ApiConfig.notificationsUrl(type: type, page: page, size: size);
+    final url = ApiConfig.notificationsUrl(
+      type: type,
+      group: group,
+      page: page,
+      size: size,
+    );
     final sw = Stopwatch()..start();
     final response = await _auth.authorizedRequest(
       (token) => http.get(Uri.parse(url), headers: _headers(token)),
@@ -44,11 +51,11 @@ class MemberNotificationRepository {
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
-  /// 전체 읽음 처리.
-  Future<void> markAllRead() async {
+  /// 전체 읽음 처리. [group] 이 있으면 그 묶음만.
+  Future<void> markAllRead({String? group}) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
-        Uri.parse(ApiConfig.notificationsReadAllUrl),
+        Uri.parse(ApiConfig.notificationsReadAllUrl(group: group)),
         headers: _headers(token),
       ),
     );
