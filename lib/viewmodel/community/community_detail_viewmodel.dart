@@ -85,7 +85,8 @@ class CommunityDetailViewModel extends ChangeNotifier {
     boardTeamId: _post?.boardTeamId,
   );
 
-  Future<void> load() async {
+  /// [countView] 는 최초 진입에만 true — 당겨서 새로고침이 조회수를 부풀리면 안 된다.
+  Future<void> load({bool countView = true}) async {
     _loading = true;
     _error = null;
     _safeNotify();
@@ -102,7 +103,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
       _post = await _repository.fetchPostDetail(postId);
       await _loadComments();
       // 조회수는 집계 핑이라 결과를 기다리지 않는다.
-      unawaited(_repository.markPostViewed(postId));
+      if (countView) unawaited(_repository.markPostViewed(postId));
     } catch (e) {
       debugPrint('[CommunityDetailVM] load failed: $e');
       _error = appStrings?.communityLoadFailed ?? 'Failed to load post';
