@@ -28,7 +28,9 @@ class CommunityApiException implements Exception {
     var message = 'HTTP ${response.statusCode}';
     String? code;
     try {
-      final body = jsonDecode(response.body);
+      // response.body 는 Content-Type 에 charset 이 없으면 latin1 로 풀어서
+      // 한글 메시지가 ë¡œ… 로 깨진다 — 항상 UTF-8 로 직접 디코딩한다.
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
       if (body is Map<String, dynamic>) {
         code = body['code'] as String?;
         message = body['message'] as String? ?? message;
