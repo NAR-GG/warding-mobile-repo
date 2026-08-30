@@ -186,8 +186,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       final cursor = focused.controller.selection.isValid
           ? focused.controller.selection.start
           : text.length;
-      final before = text.substring(0, cursor);
-      final after = text.substring(cursor);
+      // 커서 주변의 빈 줄은 걷어낸다 — "글 쓰고 엔터 → 사진"이 이미지 위아래
+      // 공백 줄로 남으면 안 된다(블록 간격이 이미 여백을 준다).
+      final before = text.substring(0, cursor).trimRight();
+      final after = text.substring(cursor).trimLeft();
       focused.controller.text = before;
       final tail = _TextBlock(text: after, heading: false);
       _blocks.insertAll(index + 1, [...media, tail]);
@@ -412,7 +414,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       return TextField(
         controller: block.controller,
         focusNode: block.focus,
-        minLines: first ? 4 : 1,
+        // 4줄 예약은 블록이 하나뿐인 빈 화면용(placeholder 자리) — 미디어를
+        // 끼운 뒤에도 유지하면 짧은 문단 밑에 빈 3줄이 공백으로 남는다.
+        minLines: first && _blocks.length == 1 ? 4 : 1,
         maxLines: null,
         onChanged: (_) => _onChanged(),
         onTap: _onChanged, // 포커스 이동 시 heading 토글 활성 상태 갱신
