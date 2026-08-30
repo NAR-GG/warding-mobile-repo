@@ -1,0 +1,22 @@
+{
+  "name": "cherry-blossom-card-news",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx remotion studio",
+    "render": "npx remotion render src/index.ts CardNewsVideo ../output-remotion.mp4",
+    "render:clean": "npx remotion render src/index.ts CardNewsVideoClean ../output-remotion-clean.mp4",
+    "render:vertical": "npx remotion render src/index.ts CardNewsVerticalVideo ../output-remotion-9x16.mp4",
+    "render:vertical:clean": "npx remotion render src/index.ts CardNewsVerticalVideoClean ../output-remotion-9x16-clean.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.261",
+    "remotion": "4.0.261",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.7.0"
+  }
+}
