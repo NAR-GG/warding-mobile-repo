@@ -685,7 +685,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String profileTeamChangeConfirmBody(String team) {
-    return 'Switching to $team locks your team for 30 days. Your community team board changes too.';
+    return 'Switching to $team locks your team for 30 days.';
   }
 
   @override

@@ -1289,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTeamChangeConfirmBody.
   ///
   /// In ko, this message translates to:
-  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.'**
+  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요.'**
   String profileTeamChangeConfirmBody(String team);
 
   /// No description provided for @profileTeamChangeConfirmOk.

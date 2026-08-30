@@ -24,8 +24,6 @@ import 'component/month_picker_sheet.dart';
 import 'component/schedule_calendar.dart';
 import 'component/schedule_calendar_skeleton.dart';
 import 'component/schedule_header.dart';
-import '../notification/notification_screen.dart';
-import '../../repository/notification/member_notification_repository.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
 class ScheduleScreen extends StatefulWidget {
@@ -82,27 +80,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         CalendarScrollProgress(month: _viewModel.displayMonth, page: 0),
       );
 
-  /// 헤더 벨 배지용 미읽음 수. 비로그인·실패는 0(배지 숨김)으로 조용히 넘어간다.
-  int _unreadCount = 0;
-
-  Future<void> _refreshUnreadCount() async {
-    try {
-      final page = await MemberNotificationRepository.instance
-          .fetchNotifications(page: 0, size: 1);
-      if (mounted) setState(() => _unreadCount = page.unreadCount);
-    } catch (_) {
-      if (mounted) setState(() => _unreadCount = 0);
-    }
-  }
-
-  Future<void> _openNotificationInbox() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const NotificationScreen()),
-    );
-    // 알림함에서 읽고 돌아오면 배지를 다시 센다.
-    _refreshUnreadCount();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -113,7 +90,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     // 는 앱 UI 를 열지 않고 위젯만 갱신하므로, 맞춰 주지 않으면 위젯은 7월인데
     // 앱은 이번 달을 보여 서로 어긋난다.
     if (widget.initialMonth == null) _syncMonthFromWidget();
-    _refreshUnreadCount();
     // 화면이 준비되기 전에 도착해 [_filterRequestedBeforeReady] 로 남아 있는
     // 요청을 처리한다 — 앱이 뜨는 도중에 요청이 소비되면 그 시점엔 창구가
     // 아직 비어 있어 이 플래그로만 전달된다.
@@ -434,8 +410,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       preferredTeam: _viewModel.preferredTeam,
                       teamSelected: _viewModel.teamSelected,
                       onTeamTap: _viewModel.toggleTeamSelected,
-                      onBellTap: _openNotificationInbox,
-                      unreadCount: _unreadCount,
                     ),
                     // 공지 띠배너 — 활성 공지가 있고 ✕로 닫지 않았을 때만.
                     if (_viewModel.promotedNotice != null)
