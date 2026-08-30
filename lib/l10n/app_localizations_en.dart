@@ -1436,6 +1436,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationEmpty => 'No notifications yet';
 
   @override
+  String get communityNotificationOn => 'Notifications on for this post';
+
+  @override
+  String get communityNotificationOff => 'Notifications off for this post';
+
+  @override
   String get communityMoreEdit => 'Edit';
 
   @override

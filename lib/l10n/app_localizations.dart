@@ -2678,6 +2678,18 @@ abstract class AppLocalizations {
   /// **'알림이 없어요'**
   String get notificationEmpty;
 
+  /// No description provided for @communityNotificationOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글의 알림을 켰어요'**
+  String get communityNotificationOn;
+
+  /// No description provided for @communityNotificationOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글의 알림을 껐어요'**
+  String get communityNotificationOff;
+
   /// No description provided for @communityMoreEdit.
   ///
   /// In ko, this message translates to:

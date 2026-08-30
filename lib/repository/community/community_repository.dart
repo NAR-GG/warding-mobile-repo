@@ -190,6 +190,19 @@ class CommunityRepository {
     return data['scrapped'] as bool? ?? false;
   }
 
+  /// 이 글 알림 켬/끔 토글. 반환 = 토글 후 수신 여부.
+  Future<bool> togglePostNotification(int postId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityPostNotificationUrl(postId)),
+        headers: _headers(token),
+      ),
+    );
+    _checkOk(response, 'toggleCommunityPostNotification');
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['enabled'] as bool? ?? true;
+  }
+
   // ── 댓글 ────────────────────────────────────────────────────────
 
   /// 댓글 목록(오래된 순). 1단 스레드 조립은 호출부(뷰모델) 몫이다.

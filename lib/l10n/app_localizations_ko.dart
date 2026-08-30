@@ -1401,6 +1401,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notificationEmpty => '알림이 없어요';
 
   @override
+  String get communityNotificationOn => '이 글의 알림을 켰어요';
+
+  @override
+  String get communityNotificationOff => '이 글의 알림을 껐어요';
+
+  @override
   String get communityMoreEdit => '수정하기';
 
   @override

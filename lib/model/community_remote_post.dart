@@ -48,6 +48,7 @@ class CommunityPostViewer {
     required this.scrapped,
     required this.mine,
     required this.blockedAuthor,
+    this.notificationEnabled = true,
   });
 
   final bool liked;
@@ -58,6 +59,9 @@ class CommunityPostViewer {
   /// [CommunityRemotePostDetail.images]가 빈 값으로 온다 — "차단한 사용자의
   /// 글입니다" 자리를 그린다.
   final bool blockedAuthor;
+
+  /// 이 글에서 오는 댓글·답글 알림 수신 여부(벨 토글). 기본 켬.
+  final bool notificationEnabled;
 
   static const _empty = CommunityPostViewer(
     liked: false,
@@ -72,6 +76,7 @@ class CommunityPostViewer {
       scrapped: json['scrapped'] as bool? ?? false,
       mine: json['mine'] as bool? ?? false,
       blockedAuthor: json['blockedAuthor'] as bool? ?? false,
+      notificationEnabled: json['notificationEnabled'] as bool? ?? true,
     );
   }
 }
