@@ -282,12 +282,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     ]);
   }
 
-  void _toggleHeading() {
-    final focused = _focusedText;
-    if (focused == null) return;
-    setState(() => focused.heading = !focused.heading);
-  }
-
   void _removeBlock(_MediaBlock block) {
     setState(() {
       final index = _blocks.indexOf(block);
@@ -674,7 +668,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   Widget _toolbar(AppLocalizations l, double scale) {
     final count = _imageCount;
     final full = count >= PostWriteViewModel.maxPhotos;
-    final headingOn = _focusedText?.heading ?? false;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -702,14 +695,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             active: false,
             scale: scale,
             onTap: _addLink,
-          ),
-          SizedBox(width: 8 * scale),
-          _ToolButton(
-            icon: Icons.title,
-            label: l.communityHeadingToggle,
-            active: headingOn,
-            scale: scale,
-            onTap: _focusedText == null ? null : _toggleHeading,
           ),
         ],
       ),
