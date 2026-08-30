@@ -97,11 +97,37 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           itemCount: items.length,
                           itemBuilder: (context, i) {
                             final n = items[i];
+                            // 안 읽은 알림은 옅은 배경 + 좌측 점 (유튜브·인스타 방식).
+                            // 탭하면 markRead 로 상태가 바뀌어 즉시 평범해진다.
                             return RepaintBoundary(
                               child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () => _onTap(n),
-                                child: buildNotificationFeedCard(n, scale, l),
+                                child: Container(
+                                  color: n.read
+                                      ? null
+                                      : AppColors.narViolet3.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                  child: Stack(
+                                    children: [
+                                      buildNotificationFeedCard(n, scale, l),
+                                      if (!n.read)
+                                        Positioned(
+                                          left: 8 * scale,
+                                          top: 16 * scale,
+                                          child: Container(
+                                            width: 6 * scale,
+                                            height: 6 * scale,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.narViolet3,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             );
                           },
