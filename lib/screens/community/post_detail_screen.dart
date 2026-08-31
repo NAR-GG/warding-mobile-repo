@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/profile_avatar.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_post_block.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
 import '../../model/community_report.dart';
@@ -16,7 +17,9 @@ import 'component/author_line.dart';
 import 'component/comment_tile.dart';
 import 'component/community_image.dart';
 import 'component/community_photo_viewer.dart';
+import 'component/post_block_renderer.dart';
 import 'component/report_sheet.dart';
+import 'post_write_screen.dart';
 
 /// 상세에서 돌아올 때 목록이 알아야 하는 것 — 추천·댓글 수가 바뀐 글, 또는
 /// 삭제·차단으로 목록에서 빠져야 한다는 신호.
@@ -44,6 +47,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   /// 답글을 달 대상. null 이면 새 댓글이다.
   CommunityRemoteComment? _replyTo;
+
+  /// 수정 중인 내 댓글. 있으면 입력창이 수정 모드가 된다(답글 상태와 상호 배타).
+  CommunityRemoteComment? _editingComment;
 
   final TextEditingController _comment = TextEditingController();
   final FocusNode _commentFocus = FocusNode();
@@ -108,21 +114,66 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     setState(() {
       _expanded.add(comment.parentId ?? comment.id);
       _replyTo = comment;
+      _editingComment = null;
     });
     _focusComment();
   }
 
+  /// 내 댓글 수정 — 기존 본문을 입력창에 채워 수정 모드로 전환한다.
+  void _startEditComment(CommunityRemoteComment comment) {
+    setState(() {
+      _replyTo = null;
+      _editingComment = comment;
+      _comment.text = comment.body ?? '';
+    });
+    _focusComment();
+  }
+
+  void _cancelEditComment() {
+    setState(() {
+      _editingComment = null;
+      _comment.clear();
+    });
+    _commentFocus.unfocus();
+  }
+
   Future<void> _submitComment() async {
-    final ok = await _vm.submitComment(
-      _comment.text,
-      replyToCommentId: _replyTo?.id,
-    );
+    final editing = _editingComment;
+    final ok = editing != null
+        ? await _vm.updateComment(editing.id, _comment.text)
+        : await _vm.submitComment(
+            _comment.text,
+            replyToCommentId: _replyTo?.id,
+          );
     if (!ok || !mounted) return;
     setState(() {
       _comment.clear();
       _replyTo = null;
+      _editingComment = null;
     });
     _commentFocus.unfocus();
+  }
+
+  /// 내 글 수정 — 글쓰기 화면을 수정 모드로 연다. 돌아오면 상세를 다시 받는다.
+  Future<void> _editPost() async {
+    final post = _vm.post;
+    if (post == null) return;
+    final result = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) =>
+            PostWriteScreen(boardTeamId: post.boardTeamId, edit: post),
+      ),
+    );
+    if (result != null && mounted) await _vm.load();
+  }
+
+  /// 헤더 벨 — 이 글 알림 켬/끔 토글. 결과를 토스트로 확인시켜 준다.
+  Future<void> _toggleNotification() async {
+    if (!_requireLogin()) return;
+    final enabled = await _vm.toggleNotification();
+    if (enabled == null || !mounted) return;
+    final l = AppLocalizations.of(context)!;
+    _toast(enabled ? l.communityNotificationOn : l.communityNotificationOff);
   }
 
   /// 글의 `⋯`. 내 글이면 삭제, 남의 글이면 신고·차단.
@@ -136,6 +187,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (!mounted || action == null) return;
 
     switch (action) {
+      case CommunityMoreAction.edit:
+        await _editPost();
       case CommunityMoreAction.delete:
         if (await _vm.deletePost()) _finishRemoved();
       case CommunityMoreAction.block:
@@ -151,6 +204,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     if (!mounted || action == null) return;
 
     switch (action) {
+      case CommunityMoreAction.edit:
+        _startEditComment(comment);
       case CommunityMoreAction.delete:
         await _vm.deleteComment(comment.id);
       case CommunityMoreAction.block:
@@ -241,23 +296,48 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   onBack: _pop,
                   trailing: _vm.post == null
                       ? null
-                      : GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: _postMore,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8 * scale,
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/icons/dots.svg',
-                              width: 18 * scale,
-                              height: 18 * scale,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.narText3,
-                                BlendMode.srcIn,
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 이 글 알림 켬/끔 (유튜브·레딧의 per-post mute).
+                            // 끄면 이 글의 댓글·답글 알림이 안 온다.
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _toggleNotification,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6 * scale,
+                                ),
+                                child: Icon(
+                                  _vm.post!.viewer.notificationEnabled
+                                      ? Icons.notifications_none
+                                      : Icons.notifications_off_outlined,
+                                  size: 20 * scale,
+                                  color: _vm.post!.viewer.notificationEnabled
+                                      ? AppColors.narText3
+                                      : AppColors.narDark300,
+                                ),
                               ),
                             ),
-                          ),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _postMore,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8 * scale,
+                                ),
+                                child: SvgPicture.asset(
+                                  'assets/icons/dots.svg',
+                                  width: 18 * scale,
+                                  height: 18 * scale,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppColors.narText3,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
                 Expanded(child: _content(l, scale)),
@@ -310,54 +390,61 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     final roots = _vm.rootComments;
 
-    return ListView(
-      controller: _scrollController,
-      // 목록을 끌어내려도 키보드가 닫힌다.
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.only(bottom: 24 * scale),
-      children: [
-        _body(l, scale, post),
-        _actions(l, scale, post),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            20 * scale,
-            14 * scale,
-            20 * scale,
-            2 * scale,
-          ),
-          child: Text(
-            l.communityCommentCount(post.commentCount),
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w700,
-              fontSize: 13 * scale,
-              height: 1.45,
-              color: AppColors.narText,
+    return RefreshIndicator(
+      // 새 댓글·좋아요 수를 다시 받는다. 조회수 핑은 안 쏜다(부풀림 방지).
+      onRefresh: () => _vm.load(countView: false),
+      color: AppColors.narText,
+      backgroundColor: AppColors.narDark600,
+      child: ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        // 목록을 끌어내려도 키보드가 닫힌다.
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: EdgeInsets.only(bottom: 24 * scale),
+        children: [
+          _body(l, scale, post),
+          _actions(l, scale, post),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              20 * scale,
+              14 * scale,
+              20 * scale,
+              2 * scale,
+            ),
+            child: Text(
+              l.communityCommentCount(post.commentCount),
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 13 * scale,
+                height: 1.45,
+                color: AppColors.narText,
+              ),
             ),
           ),
-        ),
-        for (final root in roots) ..._thread(root, scale),
-        if (_vm.hasMoreComments)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 12 * scale),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _vm.loadMoreComments,
-              child: Center(
-                child: Text(
-                  l.communityMoreComments,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12 * scale,
-                    height: 1.45,
-                    color: AppColors.narViolet3,
+          for (final root in roots) ..._thread(root, scale),
+          if (_vm.hasMoreComments)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 12 * scale),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _vm.loadMoreComments,
+                child: Center(
+                  child: Text(
+                    l.communityMoreComments,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12 * scale,
+                      height: 1.45,
+                      color: AppColors.narViolet3,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -441,8 +528,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       color: AppColors.narText,
                     ),
                     Text(
-                      '${ratingTimeAgo(post.createdAt)} · '
-                      '${l.communityViewCount(post.viewCount)}'
+                      // 조회수는 안 보여준다 — 서버는 계속 세지만(D-4) 화면에선 뺐다.
+                      '${ratingTimeAgo(post.createdAt)}'
                       '${post.edited ? ' · ${l.communityEdited}' : ''}',
                       style: TextStyle(
                         fontFamily: 'Pretendard',
@@ -481,41 +568,50 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               ),
             ),
             SizedBox(height: 10 * scale),
-            Text(
-              post.body,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w400,
-                fontSize: 14 * scale,
-                height: 1.65,
-                color: AppColors.narText3,
-              ),
-            ),
-            if (post.images.isNotEmpty) ...[
-              SizedBox(height: 14 * scale),
-              // 사진은 세로로 쌓는다. 캐러셀은 몇 장인지 안 보여서 첨부 수가
-              // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
-              for (var i = 0; i < post.images.length; i++) ...[
-                if (i > 0) SizedBox(height: 8 * scale),
-                // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
-                // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
-                // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
-                // 상한에 걸려 잘린 사진은 탭해서 전체화면으로 본다.
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => CommunityPhotoViewer.open(
-                    context,
-                    urls: [for (final img in post.images) img.url],
-                    initialIndex: i,
-                  ),
-                  child: CommunityImage(
-                    source: post.images[i].url,
-                    width: double.infinity,
-                    height: null,
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-                    radius: 10 * scale,
-                  ),
+            if (post.isBlocks)
+              // 블록 본문 — 이미지가 블록 안에 있으므로 아래 images 스택은 안 그린다
+              // (community_post_image 는 신고·썸네일용으로만 쓰인다).
+              PostBlockRenderer(
+                blocks: CommunityPostBlock.parseList(post.body),
+                scale: scale,
+              )
+            else ...[
+              Text(
+                post.body,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14 * scale,
+                  height: 1.65,
+                  color: AppColors.narText3,
                 ),
+              ),
+              if (post.images.isNotEmpty) ...[
+                SizedBox(height: 14 * scale),
+                // 사진은 세로로 쌓는다. 캐러셀은 몇 장인지 안 보여서 첨부 수가
+                // 적은 커뮤니티 글에는 스크롤로 지나가는 편이 낫다.
+                for (var i = 0; i < post.images.length; i++) ...[
+                  if (i > 0) SizedBox(height: 8 * scale),
+                  // 높이를 고정하면(옛 200) 세로 사진이 위아래로 잘린다. 사진 자체가
+                  // 콘텐츠인 자리라 원본 비율을 지키고, 세로로 긴 사진만 화면 높이의
+                  // 70% 에서 끊는다 — 한 장이 화면을 통째로 먹으면 본문·댓글이 안 보인다.
+                  // 상한에 걸려 잘린 사진은 탭해서 전체화면으로 본다.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => CommunityPhotoViewer.open(
+                      context,
+                      urls: [for (final img in post.images) img.url],
+                      initialIndex: i,
+                    ),
+                    child: CommunityImage(
+                      source: post.images[i].url,
+                      width: double.infinity,
+                      height: null,
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+                      radius: 10 * scale,
+                    ),
+                  ),
+                ],
               ],
             ],
           ],
@@ -597,6 +693,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 댓글 수정 중이면 입력창 위에 표시한다 — 안 그러면 새 댓글을 쓰는지
+          // 고치는 중인지 화면에 안 남는다. X 로 수정 취소(입력 내용도 버린다).
+          if (_editingComment != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8 * scale),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.communityEditingComment,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.5 * scale,
+                        height: 1.45,
+                        color: AppColors.narViolet3,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _cancelEditComment,
+                    child: Icon(
+                      Icons.close,
+                      size: 15 * scale,
+                      color: AppColors.narText2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // 답글 대상이 있으면 입력창 위에 누구에게 다는지 띄운다. 안 그러면
           // 답글 버튼을 눌렀는지 아닌지가 화면에 안 남는다.
           if (replyTo != null)

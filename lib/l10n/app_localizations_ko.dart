@@ -667,7 +667,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String profileTeamChangeConfirmBody(String team) {
-    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.';
+    return '$team(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요.';
   }
 
   @override
@@ -1294,6 +1294,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityWriteSubmit => '등록하기';
 
   @override
+  String get communityAddLink => '링크';
+
+  @override
+  String get communityLinkDialogTitle => '링크 추가';
+
+  @override
+  String get communityLinkHint => 'URL을 붙여넣으세요';
+
+  @override
+  String get communityLinkConfirm => '추가';
+
+  @override
+  String get communityLinkInvalid => '올바른 링크가 아니에요.';
+
+  @override
+  String get communityHeadingToggle => '제목글자';
+
+  @override
   String get communityMoreReport => '신고하기';
 
   @override
@@ -1384,6 +1402,39 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communityBlockedPost => '차단한 사용자의 글입니다.';
+
+  @override
+  String get notificationReadAll => '모두 읽음';
+
+  @override
+  String get notificationInboxTitle => '알림';
+
+  @override
+  String get communityNotificationTitle => '커뮤니티 알림';
+
+  @override
+  String get notificationTabAll => '전체';
+
+  @override
+  String get notificationTabMatch => '경기';
+
+  @override
+  String get notificationTabCommunity => '커뮤니티';
+
+  @override
+  String get notificationEmpty => '알림이 없어요';
+
+  @override
+  String get communityNotificationOn => '이 글의 알림을 켰어요';
+
+  @override
+  String get communityNotificationOff => '이 글의 알림을 껐어요';
+
+  @override
+  String get communityMoreEdit => '수정하기';
+
+  @override
+  String get communityEditingComment => '댓글 수정 중';
 
   @override
   String get communityMoreDelete => '삭제하기';

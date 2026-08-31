@@ -1289,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileTeamChangeConfirmBody.
   ///
   /// In ko, this message translates to:
-  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요. 커뮤니티 팀 게시판도 새 응원팀 기준으로 바뀝니다.'**
+  /// **'{team}(으)로 바꾸면 30일 동안 다시 바꿀 수 없어요.'**
   String profileTeamChangeConfirmBody(String team);
 
   /// No description provided for @profileTeamChangeConfirmOk.
@@ -2468,6 +2468,42 @@ abstract class AppLocalizations {
   /// **'등록하기'**
   String get communityWriteSubmit;
 
+  /// No description provided for @communityAddLink.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크'**
+  String get communityAddLink;
+
+  /// No description provided for @communityLinkDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크 추가'**
+  String get communityLinkDialogTitle;
+
+  /// No description provided for @communityLinkHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'URL을 붙여넣으세요'**
+  String get communityLinkHint;
+
+  /// No description provided for @communityLinkConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가'**
+  String get communityLinkConfirm;
+
+  /// No description provided for @communityLinkInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 링크가 아니에요.'**
+  String get communityLinkInvalid;
+
+  /// No description provided for @communityHeadingToggle.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목글자'**
+  String get communityHeadingToggle;
+
   /// No description provided for @communityMoreReport.
   ///
   /// In ko, this message translates to:
@@ -2647,6 +2683,72 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'차단한 사용자의 글입니다.'**
   String get communityBlockedPost;
+
+  /// No description provided for @notificationReadAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'모두 읽음'**
+  String get notificationReadAll;
+
+  /// No description provided for @notificationInboxTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림'**
+  String get notificationInboxTitle;
+
+  /// No description provided for @communityNotificationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 알림'**
+  String get communityNotificationTitle;
+
+  /// No description provided for @notificationTabAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get notificationTabAll;
+
+  /// No description provided for @notificationTabMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기'**
+  String get notificationTabMatch;
+
+  /// No description provided for @notificationTabCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티'**
+  String get notificationTabCommunity;
+
+  /// No description provided for @notificationEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림이 없어요'**
+  String get notificationEmpty;
+
+  /// No description provided for @communityNotificationOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글의 알림을 켰어요'**
+  String get communityNotificationOn;
+
+  /// No description provided for @communityNotificationOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글의 알림을 껐어요'**
+  String get communityNotificationOff;
+
+  /// No description provided for @communityMoreEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정하기'**
+  String get communityMoreEdit;
+
+  /// No description provided for @communityEditingComment.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글 수정 중'**
+  String get communityEditingComment;
 
   /// No description provided for @communityMoreDelete.
   ///

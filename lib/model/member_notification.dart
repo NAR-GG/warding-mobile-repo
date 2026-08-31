@@ -64,6 +64,9 @@ class MemberNotification {
   /// 진행 중이거나 타임스탬프가 이상한 매치는 서버가 키를 빼므로 null 이다.
   int? get gameDurationSeconds => int.tryParse(_d('gameDurationSeconds') ?? '');
 
+  /// 커뮤니티 알림의 원글 id — 탭하면 글 상세로 간다.
+  int? get postId => int.tryParse(_d('postId') ?? '');
+
   MemberNotification copyWith({bool? read}) => MemberNotification(
         id: id,
         type: type,
@@ -101,6 +104,11 @@ enum MemberNotificationType {
   setEnd,
   liveEvent,
   playerSoloRank,
+  communityComment,
+  communityReply,
+  communityLike,
+  communityReportResult,
+  communityRestriction,
   unknown;
 
   static MemberNotificationType fromApi(String? s) {
@@ -113,10 +121,30 @@ enum MemberNotificationType {
         return liveEvent;
       case 'PLAYER_SOLO_RANK_STARTED':
         return playerSoloRank;
+      case 'COMMUNITY_COMMENT':
+        return communityComment;
+      case 'COMMUNITY_REPLY':
+        return communityReply;
+      case 'COMMUNITY_LIKE':
+        return communityLike;
+      case 'COMMUNITY_REPORT_RESULT':
+        return communityReportResult;
+      case 'COMMUNITY_RESTRICTION':
+        return communityRestriction;
       default:
         return unknown;
     }
   }
+
+  /// 알림함 [커뮤니티] 탭으로 분류되는 타입인지.
+  bool get isCommunity => switch (this) {
+        communityComment ||
+        communityReply ||
+        communityLike ||
+        communityReportResult ||
+        communityRestriction => true,
+        _ => false,
+      };
 }
 
 /// 알림 리스트 페이지 결과 + 미읽음 수.

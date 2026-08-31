@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../model/community_post_block.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
 import '../../util/sentry_logger.dart';
@@ -88,6 +89,7 @@ class CommunityRepository {
     int? boardTeamId,
     required String title,
     required String body,
+    String bodyFormat = 'PLAIN',
     List<String> imageUrls = const [],
   }) async {
     final response = await _auth.authorizedRequest(
@@ -98,6 +100,7 @@ class CommunityRepository {
           'boardTeamId': boardTeamId,
           'title': title,
           'body': body,
+          'bodyFormat': bodyFormat,
           'imageUrls': imageUrls,
         }),
       ),
@@ -114,6 +117,7 @@ class CommunityRepository {
     int? boardTeamId,
     required String title,
     required String body,
+    String bodyFormat = 'PLAIN',
     List<String>? imageUrls,
   }) async {
     final response = await _auth.authorizedRequest(
@@ -124,11 +128,26 @@ class CommunityRepository {
           'boardTeamId': boardTeamId,
           'title': title,
           'body': body,
+          'bodyFormat': bodyFormat,
           'imageUrls': imageUrls,
         }),
       ),
     );
     _checkOk(response, 'updateCommunityPost');
+  }
+
+  /// 링크 프리뷰(OG 스냅샷). 서버가 못 긁으면 title 이하 null 로 온다.
+  Future<CommunityLinkPreview> fetchLinkPreview(String url) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.get(
+        Uri.parse(ApiConfig.communityLinkPreviewUrl(url)),
+        headers: _headers(token),
+      ),
+    );
+    _checkOk(response, 'fetchCommunityLinkPreview');
+    return CommunityLinkPreview.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// 게시글을 삭제한다(작성자만, 소프트 삭제).
@@ -190,6 +209,19 @@ class CommunityRepository {
     return data['scrapped'] as bool? ?? false;
   }
 
+  /// 이 글 알림 켬/끔 토글. 반환 = 토글 후 수신 여부.
+  Future<bool> togglePostNotification(int postId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityPostNotificationUrl(postId)),
+        headers: _headers(token),
+      ),
+    );
+    _checkOk(response, 'toggleCommunityPostNotification');
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['enabled'] as bool? ?? true;
+  }
+
   // ── 댓글 ────────────────────────────────────────────────────────
 
   /// 댓글 목록(오래된 순). 1단 스레드 조립은 호출부(뷰모델) 몫이다.
@@ -229,6 +261,18 @@ class CommunityRepository {
     _checkOk(response, 'createCommunityComment');
     return ((jsonDecode(response.body) as Map<String, dynamic>)['id'] as num)
         .toInt();
+  }
+
+  /// 댓글 본문을 수정한다(작성자만). 멘션·답글 관계는 서버가 안 바꾼다.
+  Future<void> updateComment(int commentId, {required String body}) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.put(
+        Uri.parse(ApiConfig.communityCommentUrl(commentId)),
+        headers: _headers(token),
+        body: jsonEncode({'body': body}),
+      ),
+    );
+    _checkOk(response, 'updateCommunityComment');
   }
 
   /// 댓글을 삭제한다(작성자만, 소프트 삭제).

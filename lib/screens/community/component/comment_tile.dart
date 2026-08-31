@@ -126,7 +126,9 @@ class CommentTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      ratingTimeAgo(comment.createdAt),
+                      comment.edited
+                          ? '${ratingTimeAgo(comment.createdAt)} · ${l.communityEdited}'
+                          : ratingTimeAgo(comment.createdAt),
                       style: _metaStyle(scale),
                     ),
                     SizedBox(width: 12 * scale),
@@ -188,22 +190,37 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatar = (isReply ? 24.0 : 28.0) * scale;
+
+    // 일반 댓글 행과 같은 골격·타이포를 그대로 쓰고 색만 죽인다 — 박스·아이콘
+    // 같은 별도 장식은 주변 댓글들과 톤이 어긋난다(1.0.23 피드백 두 번).
     return Padding(
       padding: EdgeInsets.only(
         left: (isReply ? 40.0 : 20.0) * scale,
         right: 20 * scale,
-        top: 12 * scale,
-        bottom: 12 * scale,
+        top: 10 * scale,
+        bottom: 10 * scale,
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w400,
-          fontSize: 12.5 * scale,
-          height: 1.45,
-          color: AppColors.narText2,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 실제 행과 같은 기본 아바타(회색 사람 원) — 좌측 정렬 유지.
+          ProfileAvatar(url: null, size: avatar),
+          SizedBox(width: 9 * scale),
+          Expanded(
+            child: Text(
+              text,
+              // 본문과 같은 서체·크기, 색만 보조 텍스트로.
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 13 * scale,
+                height: 1.5,
+                color: AppColors.narText2,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

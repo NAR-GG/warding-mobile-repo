@@ -123,7 +123,8 @@ class ScheduleHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12 * scale),
-          // 오른쪽: 필터 버튼 + (온보딩에서 고른) 팀 아이콘
+          // 오른쪽: 필터 버튼 + (온보딩에서 고른) 팀 아이콘.
+          // 알림함 벨은 커뮤니티 헤더로 옮겼다 — 알림함이 커뮤니티 전용이 됐다.
           GestureDetector(
             onTap: onFilterTap,
             child: _CircleSlot(

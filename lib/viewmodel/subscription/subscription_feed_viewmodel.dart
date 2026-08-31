@@ -14,13 +14,19 @@ import '../../repository/notification/member_notification_repository.dart';
 ///
 /// 온보딩에서 알림 권한을 건너뛴 회원을 위해, 알림 권한 상태도 함께 들고 있다.
 class SubscriptionFeedViewModel extends ChangeNotifier {
-  SubscriptionFeedViewModel({MemberNotificationRepository? repository})
-      : _repo = repository ?? MemberNotificationRepository.instance {
+  SubscriptionFeedViewModel({
+    MemberNotificationRepository? repository,
+    this.group,
+  }) : _repo = repository ?? MemberNotificationRepository.instance {
     load();
     refreshNotificationPermission();
   }
 
   final MemberNotificationRepository _repo;
+
+  /// 묶음 필터(예: 'COMMUNITY'). 알림함은 커뮤니티 전용이라 이걸 걸고,
+  /// 마이구독은 null(전체)로 그대로 쓴다. unreadCount·모두읽음도 이 범위다.
+  final String? group;
   bool _disposed = false;
 
   /// 한 번에 받아오는 건수. 목록 끝에 닿으면 [loadMore] 로 다음 페이지를 잇는다.
@@ -83,7 +89,11 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _error = null;
     _notify();
     try {
-      final pageData = await _repo.fetchNotifications(page: 0, size: _pageSize);
+      final pageData = await _repo.fetchNotifications(
+        group: group,
+        page: 0,
+        size: _pageSize,
+      );
       _notifications = pageData.notifications;
       _unreadCount = pageData.unreadCount;
       _page = pageData.page;
@@ -108,6 +118,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _notify();
     try {
       final pageData = await _repo.fetchNotifications(
+        group: group,
         page: _page + 1,
         size: _pageSize,
       );
@@ -160,6 +171,24 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
       if (!removed.read) _unreadCount++;
       _notify();
       rethrow;
+    }
+  }
+
+  /// 전체 읽음(낙관적 반영 후 서버 호출, 실패 시 복구).
+  Future<void> markAllRead() async {
+    if (_unreadCount == 0) return;
+    final backup = _notifications;
+    final backupUnread = _unreadCount;
+    _notifications = _notifications.map((x) => x.copyWith(read: true)).toList();
+    _unreadCount = 0;
+    _notify();
+    try {
+      await _repo.markAllRead(group: group);
+    } catch (e) {
+      debugPrint('[Feed] 전체읽음 실패, 복구: $e');
+      _notifications = backup;
+      _unreadCount = backupUnread;
+      _notify();
     }
   }
 

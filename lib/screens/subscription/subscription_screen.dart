@@ -10,7 +10,7 @@ import '../../components/guest_lock_overlay.dart';
 import '../../components/nar_alert_dialog.dart';
 import '../../components/nar_banner.dart';
 import '../../components/nar_chip_multi_select.dart';
-import '../../components/notification_card.dart';
+import '../../components/notification_feed_card.dart';
 import '../../components/scroll_to_top_button.dart';
 import '../../model/member_notification.dart';
 import '../../model/schedule_match.dart';
@@ -30,8 +30,6 @@ import 'component/date_filter_chip.dart';
 import 'component/notification_card_skeleton.dart';
 import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
-import 'component/rank_end_notification.dart';
-import 'component/rank_start_notification.dart';
 import 'component/subscription_date_sheet.dart';
 import 'subscription_settings_screen.dart';
 
@@ -153,20 +151,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
-  /// 절대 시각 'yyyy-MM-dd HH:mm'.
-  String _formatAbsolute(DateTime t) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
-  }
 
-  /// 상대 시각 ('방금 전', 'N분 전', 'N시간 전', 'N일 전').
-  String _formatRelative(DateTime t, AppLocalizations l) {
-    final diff = DateTime.now().difference(t);
-    if (diff.inMinutes < 1) return l.justNow;
-    if (diff.inMinutes < 60) return l.minutesAgo(diff.inMinutes);
-    if (diff.inHours < 24) return l.hoursAgo(diff.inHours);
-    return l.daysAgo(diff.inDays);
-  }
 
   /// 이벤트 타입 필터 내부 키 상수.
   static const String _keyAll = 'ALL';
@@ -211,6 +196,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 선택된 칩/선수 필터에 알림 한 건이 걸리는지(클라이언트 필터링).
   /// 아무것도 안 골랐으면('전체') 모두 통과. 타입·선수는 OR 로 합친다.
   bool _matchesFilter(MemberNotification n) {
+    // 마이구독은 "구독한 선수·팀의 소식"만 — 커뮤니티 알림은 알림함으로 간다
+    // (커뮤니티 후속 문서 A절). 여기 나오면 성격이 섞인다.
+    if (n.type.isCommunity) return false;
     final typeFilters = _typeFilters;
     final hasType = typeFilters.isNotEmpty;
     final hasPlayer = _selectedPlayers.isNotEmpty;
@@ -224,20 +212,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     return false;
   }
 
-  /// 타입별 카드 아이콘.
-  String _iconFor(MemberNotificationType type) {
-    switch (type) {
-      case MemberNotificationType.setStart:
-        return 'assets/icons/play.svg';
-      case MemberNotificationType.setEnd:
-        return 'assets/icons/closing.svg';
-      case MemberNotificationType.liveEvent:
-        return 'assets/icons/pause.svg';
-      case MemberNotificationType.playerSoloRank:
-      case MemberNotificationType.unknown:
-        return 'assets/icons/headset.svg';
-    }
-  }
 
   /// 알림 탭 — 읽음 처리 후 딥링크 이동.
   /// 솔랭은 OP.GG 링크로 이동하므로 카드 탭은 읽음만, 팀 이벤트는 경기 상세로.
@@ -279,39 +253,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     double scale,
     AppLocalizations l,
   ) {
-    final Widget card;
-    if (n.type == MemberNotificationType.playerSoloRank && n.isSoloRankEnd) {
-      // 시작·종료가 같은 type 이라 data.eventType 으로만 갈린다.
-      card = RankEndNotification(
-        playerName: n.playerName,
-        champion: n.championName,
-        win: n.soloRankWin,
-        kda: n.kda,
-        durationSeconds: n.gameDurationSeconds,
-        dateTime: _formatAbsolute(n.createdAt),
-        relativeTime: _formatRelative(n.createdAt, l),
-        scale: scale,
-      );
-    } else if (n.type == MemberNotificationType.playerSoloRank) {
-      card = RankStartNotification(
-        playerName: n.playerName,
-        champion: n.championName,
-        queueType: n.queueType,
-        dateTime: _formatAbsolute(n.createdAt),
-        relativeTime: _formatRelative(n.createdAt, l),
-        scale: scale,
-      );
-    } else {
-      // 팀 이벤트(세트 시작·종료·라이브) — 서버 title/body 를 공용 카드로.
-      card = NotificationCard(
-        icon: _iconFor(n.type),
-        title: n.title,
-        body: n.body,
-        dateTime: _formatAbsolute(n.createdAt),
-        relativeTime: _formatRelative(n.createdAt, l),
-        scale: scale,
-      );
-    }
+    // 카드 선택은 알림함과 공용이다(notification_feed_card.dart).
+    final Widget card = buildNotificationFeedCard(n, scale, l);
     // ponytail: 스와이프는 의도적 동작이라 즉시 삭제(undo 없음). 전체 삭제만 확인 다이얼로그.
     return Dismissible(
       key: ValueKey<int>(n.id),

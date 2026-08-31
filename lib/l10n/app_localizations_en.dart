@@ -685,7 +685,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String profileTeamChangeConfirmBody(String team) {
-    return 'Switching to $team locks your team for 30 days. Your community team board changes too.';
+    return 'Switching to $team locks your team for 30 days.';
   }
 
   @override
@@ -1329,6 +1329,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWriteSubmit => 'Post';
 
   @override
+  String get communityAddLink => 'Link';
+
+  @override
+  String get communityLinkDialogTitle => 'Add a link';
+
+  @override
+  String get communityLinkHint => 'Paste a URL';
+
+  @override
+  String get communityLinkConfirm => 'Add';
+
+  @override
+  String get communityLinkInvalid => 'That doesn\'t look like a valid link.';
+
+  @override
+  String get communityHeadingToggle => 'Heading';
+
+  @override
   String get communityMoreReport => 'Report';
 
   @override
@@ -1419,6 +1437,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communityBlockedPost => 'Post from a blocked user.';
+
+  @override
+  String get notificationReadAll => 'Mark all read';
+
+  @override
+  String get notificationInboxTitle => 'Notifications';
+
+  @override
+  String get communityNotificationTitle => 'Community notifications';
+
+  @override
+  String get notificationTabAll => 'All';
+
+  @override
+  String get notificationTabMatch => 'Matches';
+
+  @override
+  String get notificationTabCommunity => 'Community';
+
+  @override
+  String get notificationEmpty => 'No notifications yet';
+
+  @override
+  String get communityNotificationOn => 'Notifications on for this post';
+
+  @override
+  String get communityNotificationOff => 'Notifications off for this post';
+
+  @override
+  String get communityMoreEdit => 'Edit';
+
+  @override
+  String get communityEditingComment => 'Editing comment';
 
   @override
   String get communityMoreDelete => 'Delete';

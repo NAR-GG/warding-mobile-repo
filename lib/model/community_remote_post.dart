@@ -48,6 +48,7 @@ class CommunityPostViewer {
     required this.scrapped,
     required this.mine,
     required this.blockedAuthor,
+    this.notificationEnabled = true,
   });
 
   final bool liked;
@@ -58,6 +59,9 @@ class CommunityPostViewer {
   /// [CommunityRemotePostDetail.images]가 빈 값으로 온다 — "차단한 사용자의
   /// 글입니다" 자리를 그린다.
   final bool blockedAuthor;
+
+  /// 이 글에서 오는 댓글·답글 알림 수신 여부(벨 토글). 기본 켬.
+  final bool notificationEnabled;
 
   static const _empty = CommunityPostViewer(
     liked: false,
@@ -72,6 +76,7 @@ class CommunityPostViewer {
       scrapped: json['scrapped'] as bool? ?? false,
       mine: json['mine'] as bool? ?? false,
       blockedAuthor: json['blockedAuthor'] as bool? ?? false,
+      notificationEnabled: json['notificationEnabled'] as bool? ?? true,
     );
   }
 }
@@ -152,12 +157,19 @@ class CommunityRemotePostDetail {
   const CommunityRemotePostDetail({
     required this.summary,
     required this.body,
+    this.bodyFormat = 'PLAIN',
     required this.images,
     required this.viewer,
   });
 
   final CommunityRemotePost summary;
   final String body;
+
+  /// PLAIN = 평문, BLOCKS = [body]가 블록 JSON(렌더러가 해석을 가른다).
+  final String bodyFormat;
+
+  bool get isBlocks => bodyFormat == 'BLOCKS';
+
   final List<CommunityPostImage> images;
   final CommunityPostViewer viewer;
 
@@ -176,6 +188,7 @@ class CommunityRemotePostDetail {
     return CommunityRemotePostDetail(
       summary: CommunityRemotePost.fromJson(json),
       body: json['body'] as String? ?? '',
+      bodyFormat: json['bodyFormat'] as String? ?? 'PLAIN',
       images: (json['images'] as List<dynamic>? ?? const [])
           .map((e) => CommunityPostImage.fromJson(e as Map<String, dynamic>))
           .toList(),

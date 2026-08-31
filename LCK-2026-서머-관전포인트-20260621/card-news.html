@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LCK 2026 서머 관전포인트</title>
+<style>
+  :root{ --accent:#00E5FF; --ink:#0A0A0A; --paper:#FAFAFA; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:#050507;
+    font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+    padding:40px 16px 80px;
+  }
+  .lead{ color:#8a8f98; font-size:14px; letter-spacing:.04em; text-align:center; max-width:560px; line-height:1.6; }
+  .lead b{ color:var(--accent); }
+
+  /* 한 장 = 1080x1350 비율. cqw 단위로 폰트가 카드 폭에 비례 → 모바일에서도 비율 유지 */
+  .card{
+    position:relative; width:min(1080px,94vw); aspect-ratio:1080/1350;
+    container-type:inline-size; overflow:hidden; border-radius:14px;
+    box-shadow:0 18px 60px rgba(0,0,0,.6); color:#fff;
+  }
+  .serif{ font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif; }
+
+  /* 폰트 스케일: 1cqw = 카드폭의 1% = 1080px일 때 10.8px */
+  .h2{ font-size:4.6cqw; line-height:1.18; font-weight:700; letter-spacing:-.01em; }
+  .desc{ font-size:3.4cqw; line-height:1.55; color:#d7dade; }
+  .kicker{ font-size:2.9cqw; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+  .info{ font-size:2.8cqw; color:#9aa0a8; }
+  .em{ color:var(--accent); }
+  .pagenum{ position:absolute; bottom:4.5cqw; left:0; right:0; text-align:center;
+            font-size:2.6cqw; letter-spacing:.3em; color:#7d838c; font-family:Georgia,serif; }
+  .pagenum b{ color:#fff; }
+
+  /* 플레이스홀더 (이미지 미생성) */
+  .ph{ position:absolute; inset:0; }
+  .ph::after{ content:"IMAGE"; position:absolute; right:4cqw; top:4cqw;
+              font-size:2.2cqw; letter-spacing:.3em; color:rgba(255,255,255,.18); }
+  .g-arena{ background:
+      radial-gradient(120% 80% at 50% 110%, rgba(0,229,255,.45), transparent 60%),
+      radial-gradient(80% 60% at 80% 0%, rgba(120,70,255,.35), transparent 55%),
+      linear-gradient(180deg,#0a0e1a,#05060a); }
+  .g-cyan{ background:linear-gradient(140deg,#06121a,#0a2230 55%,#00374a); }
+  .g-violet{ background:linear-gradient(140deg,#0a0814,#1a0f33 60%,#2a1466); }
+  .g-split{ background:linear-gradient(90deg,#0b1620 0 50%, #160b1e 50% 100%); }
+  .g-cup{ background:
+      radial-gradient(90% 70% at 50% 0%, rgba(0,229,255,.5), transparent 60%),
+      linear-gradient(180deg,#001a22,#000); }
+
+  .pad{ position:absolute; inset:0; padding:7cqw; display:flex; flex-direction:column; }
+  .veil{ position:absolute; inset:0; background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.82) 92%); }
+
+  /* 표지 */
+  .cover .h1{ font-size:8.2cqw; line-height:1.04; font-weight:800; letter-spacing:-.02em; }
+  .cover .sub{ font-size:3.6cqw; color:#d7dade; line-height:1.5; }
+
+  /* 상하 분할 */
+  .topimg{ position:absolute; top:0; left:0; right:0; height:52%; }
+  .botbox{ position:absolute; left:0; right:0; bottom:0; height:48%; background:var(--ink); padding:7cqw; display:flex; flex-direction:column; justify-content:center; }
+
+  /* 좌우 분할 */
+  .limg{ position:absolute; left:0; top:0; bottom:0; width:46%; }
+  .rbox{ position:absolute; right:0; top:0; bottom:0; width:54%; background:var(--ink); padding:6.5cqw; display:flex; flex-direction:column; justify-content:center; }
+
+  /* 라이트 카드 */
+  .light{ background:var(--paper); color:var(--ink); }
+  .light .desc{ color:#333; } .light .info{ color:#666; }
+  .light .pagenum{ color:#999; } .light .pagenum b{ color:#111; }
+
+  .bignum{ font-family:Georgia,serif; font-size:18cqw; font-weight:700; color:rgba(0,229,255,.16); line-height:.8; }
+  .spacer{ flex:1; }
+  .row{ display:flex; gap:3cqw; align-items:baseline; }
+  .tag{ display:inline-block; border:1px solid var(--accent); color:var(--accent);
+        font-size:2.5cqw; letter-spacing:.18em; padding:1cqw 2.4cqw; border-radius:999px; }
+</style>
+</head>
+
+<div class="lead">스킬 출력물 · <b>LCK 2026 서머 관전포인트</b> · 10장 · 이미지 API 키 미설정으로 <b>네온 플레이스홀더</b>로 대체했습니다. 브라우저 폭을 줄이면 모바일 비율 그대로 축소됩니다.</div>
+
+<!-- 01 표지 (풀블리드) -->
+<section class="card cover">
+  <div class="ph g-arena"></div>
+  <div class="veil"></div>
+  <div class="pad" style="justify-content:flex-end;">
+    <div class="kicker">LCK 2026 · SUMMER</div>
+    <div class="spacer"></div>
+    <div class="h1 serif">월즈로 가는<br><span class="em">마지막 레이스</span></div>
+    <div style="height:3cqw"></div>
+    <div class="sub">포맷도, 슈퍼스타도 바뀌었다.<br>이번 여름 꼭 챙겨야 할 관전포인트 8.</div>
+  </div>
+  <div class="pagenum"><b>01</b> / 10</div>
+</section>
+
+<!-- 02 상하분할 -->
+<section class="card">
+  <div class="topimg"><div class="ph g-cyan"></div></div>
+  <div class="botbox">
+    <div class="kicker">POINT 01 · 포맷</div>
+    <div style="height:3cqw"></div>
+    <div class="h2 serif">‘서머’가 사라졌다</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc">2분할 체제 폐지. <span class="em">4월~9월 단일 확장 시즌제</span>로 전환됐다. 우리가 보는 여름은 라운드 3·4와 플레이오프 구간이다.</div>
+  </div>
+  <div class="pagenum"><b>02</b> / 10</div>
+</section>
+
+<!-- 03 풀블리드 + 큰 숫자 -->
+<section class="card">
+  <div class="ph g-violet"></div>
+  <div class="pad" style="justify-content:center;">
+    <div class="bignum">02</div>
+    <div style="height:2cqw"></div>
+    <div class="kicker">POINT 02 · 밴픽</div>
+    <div style="height:2.5cqw"></div>
+    <div class="h2 serif">같은 카드는<br>두 번 못 쓴다</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc"><span class="em">피어리스 드래프트</span> 적용. 한 번 쓴 챔프는 봉인되니, 챔프 폭 넓은 팀이 장기전에서 웃는다.</div>
+  </div>
+  <div class="pagenum"><b>03</b> / 10</div>
+</section>
+
+<!-- 04 좌우분할 -->
+<section class="card">
+  <div class="limg"><div class="ph g-split"></div></div>
+  <div class="rbox">
+    <div class="kicker">POINT 03 · 이적</div>
+    <div style="height:3cqw"></div>
+    <div class="h2 serif">케리아 옆자리가<br>바뀌었다</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc">세기의 맞트레이드. <span class="em">구마유시</span>는 한화생명으로, T1엔 2024 MSI 우승 원딜 <span class="em">페이즈</span>가 왔다.</div>
+    <div class="pagenum" style="left:0;right:0;"><b>04</b> / 10</div>
+  </div>
+</section>
+
+<!-- 05 상하분할 -->
+<section class="card">
+  <div class="topimg"><div class="ph g-arena"></div></div>
+  <div class="botbox">
+    <div class="kicker">POINT 04 · 라이벌리</div>
+    <div style="height:3cqw"></div>
+    <div class="h2 serif">새 봇듀오 전쟁</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc">T1 <span class="em">페이즈·케리아</span> vs 한화 <span class="em">구마유시·딜라이트</span>. 시즌 내내 반복될 봇 라인 정면 충돌.</div>
+  </div>
+  <div class="pagenum"><b>05</b> / 10</div>
+</section>
+
+<!-- 06 풀블리드 -->
+<section class="card">
+  <div class="ph g-cyan"></div>
+  <div class="veil"></div>
+  <div class="pad" style="justify-content:flex-end;">
+    <div class="kicker">POINT 05 · 리벤지</div>
+    <div class="spacer"></div>
+    <div class="h2 serif">리턴매치는<br>성사될까</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc">Road to MSI에서 <span class="em">한화가 T1을 꺾고</span> 직행을 확정했다. 여름의 리벤지 매치가 최대 흥행 카드.</div>
+  </div>
+  <div class="pagenum"><b>06</b> / 10</div>
+</section>
+
+<!-- 07 좌우분할 -->
+<section class="card">
+  <div class="limg"><div class="ph g-violet"></div></div>
+  <div class="rbox">
+    <div class="kicker">POINT 06 · 안정</div>
+    <div style="height:3cqw"></div>
+    <div class="h2 serif">변화를 거부한<br>젠지</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc">10개 팀 중 <span class="em">유일한 무이적</span>. 변화 대신 호흡과 완성도로 긴 시즌을 정조준한다.</div>
+    <div class="pagenum" style="left:0;right:0;"><b>07</b> / 10</div>
+  </div>
+</section>
+
+<!-- 08 라이트 카드 -->
+<section class="card light">
+  <div class="pad" style="justify-content:center;">
+    <span class="tag" style="color:#0a8aa0;border-color:#0a8aa0;">POINT 07 · 리빌딩</span>
+    <div style="height:3.5cqw"></div>
+    <div class="h2 serif">새 이름, 새 봇라인</div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc"><b>DN SOOPers</b>(전 광동)·<b>키움 DRX</b>로 리브랜딩. 디플기아·KT의 영건 봇라인이 후반에 만개할지 주목.</div>
+  </div>
+  <div class="pagenum"><b>08</b> / 10</div>
+</section>
+
+<!-- 09 풀블리드 컵 -->
+<section class="card">
+  <div class="ph g-cup"></div>
+  <div class="pad" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="kicker">POINT 08 · 종착점</div>
+    <div style="height:3cqw"></div>
+    <div class="h2 serif" style="font-size:6cqw;">모든 길은<br><span class="em">월즈로</span></div>
+    <div style="height:2.5cqw"></div>
+    <div class="desc" style="max-width:78%;">7~9월 라운드 3·4와 플레이오프. 모든 경기의 끝엔 2026 월드 챔피언십 직행 티켓이 있다.</div>
+  </div>
+  <div class="pagenum"><b>09</b> / 10</div>
+</section>
+
+<!-- 10 마무리 CTA -->
+<section class="card">
+  <div class="ph" style="background:radial-gradient(80% 60% at 50% 40%,rgba(0,229,255,.28),transparent 60%),#06080c;"></div>
+  <div class="pad" style="justify-content:center;align-items:center;text-align:center;">
+    <div class="h2 serif" style="font-size:6.5cqw;">놓치지 마</div>
+    <div style="height:3cqw"></div>
+    <div class="desc" style="max-width:80%;">일정도, 라이브 경기도 한눈에.<br><span class="em">warding</span> 앱에서 라이브 알림 받기.</div>
+    <div style="height:5cqw"></div>
+    <span class="tag">WARDING · LCK LIVE</span>
+  </div>
+  <div class="pagenum"><b>10</b> / 10</div>
+</section>
+
+<div class="lead" style="margin-top:20px;">출처: Esports Charts · Sheepesports · Strafe · Liquipedia (리서치 보고서 참조)</div>
+</html>

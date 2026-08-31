@@ -217,19 +217,27 @@ class ApiConfig {
 
   // ── 마이구독 알림 피드 (인증 필요) ────────────────────────────────
 
-  /// 받은 알림 리스트 (type 필터·페이징). type 미지정 시 전체.
-  static String notificationsUrl({String? type, int page = 0, int size = 20}) {
+  /// 받은 알림 리스트 (type·group 필터·페이징). 미지정 시 전체.
+  /// group(예: 'COMMUNITY')이 있으면 unreadCount 도 그 묶음 기준으로 내려온다.
+  static String notificationsUrl({
+    String? type,
+    String? group,
+    int page = 0,
+    int size = 20,
+  }) {
     final params = <String, String>{'page': '$page', 'size': '$size'};
     if (type != null) params['type'] = type;
+    if (group != null) params['group'] = group;
     final query = params.entries
         .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
         .join('&');
     return '$apiBaseUrl/mobile/me/notifications?$query';
   }
 
-  /// 알림 전체 읽음 처리(POST).
-  static String get notificationsReadAllUrl =>
-      '$apiBaseUrl/mobile/me/notifications/read';
+  /// 알림 전체 읽음 처리(POST). group 이 있으면 그 묶음만.
+  static String notificationsReadAllUrl({String? group}) =>
+      '$apiBaseUrl/mobile/me/notifications/read'
+      '${group != null ? '?group=$group' : ''}';
 
   /// 알림 단건 읽음 처리(POST).
   static String notificationReadUrl(int id) =>
@@ -345,6 +353,11 @@ class ApiConfig {
   static String get communityCreatePostUrl =>
       '$apiBaseUrl/mobile/community/posts';
 
+  /// 링크 프리뷰(GET, 인증 필수) — OG 스냅샷. 작성 중 링크 카드용.
+  static String communityLinkPreviewUrl(String url) =>
+      '$apiBaseUrl/mobile/community/link-preview'
+      '?url=${Uri.encodeQueryComponent(url)}';
+
   /// 게시글 상세(GET) / 수정(PUT) / 삭제(DELETE).
   static String communityPostUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId';
@@ -360,6 +373,10 @@ class ApiConfig {
   /// 스크랩 토글(POST).
   static String communityPostScrapUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId/scrap';
+
+  /// 이 글 알림 켬/끔 토글(POST). 끄면 이 글의 댓글·답글 알림이 안 온다.
+  static String communityPostNotificationUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/notification';
 
   /// 댓글 목록(GET, 오래된 순). [size] 기본 50, 최대 100.
   static String communityCommentsUrl(

@@ -66,13 +66,24 @@ class CommunityDetailViewModel extends ChangeNotifier {
   }
 
   /// 최상위 댓글(작성 순).
-  List<CommunityRemoteComment> get rootComments =>
-      _comments.where((c) => c.parentId == null).toList();
+  ///
+  /// 삭제·차단·숨김 댓글의 자리("삭제된 댓글입니다")는 **답글이 남아 있을 때만**
+  /// 유지한다 — 자리를 지우면 그 답글들이 누구에게 단 건지 알 수 없어서다(D-5).
+  /// 답글이 없으면 자리도 의미가 없으니 통째로 숨긴다(레딧·에타와 같은 규칙).
+  List<CommunityRemoteComment> get rootComments => _comments
+      .where((c) =>
+          c.parentId == null &&
+          (c.status == CommunityCommentStatus.visible ||
+              repliesTo(c.id).isNotEmpty))
+      .toList();
 
   /// [rootId] 에 달린 답글. 답글의 답글도 여기로 평평하게 들어온다 —
   /// 서버가 parentId 를 항상 최상위 댓글로 올려붙인다.
-  List<CommunityRemoteComment> repliesTo(int rootId) =>
-      _comments.where((c) => c.parentId == rootId).toList();
+  /// 삭제된 답글은 숨긴다 — 문맥(누구에게)은 부모 자리가 들고 있다.
+  List<CommunityRemoteComment> repliesTo(int rootId) => _comments
+      .where((c) =>
+          c.parentId == rootId && c.status == CommunityCommentStatus.visible)
+      .toList();
 
   /// 이 글의 게시판에 댓글을 쓸 수 있는가.
   ///
@@ -85,7 +96,8 @@ class CommunityDetailViewModel extends ChangeNotifier {
     boardTeamId: _post?.boardTeamId,
   );
 
-  Future<void> load() async {
+  /// [countView] 는 최초 진입에만 true — 당겨서 새로고침이 조회수를 부풀리면 안 된다.
+  Future<void> load({bool countView = true}) async {
     _loading = true;
     _error = null;
     _safeNotify();
@@ -102,7 +114,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
       _post = await _repository.fetchPostDetail(postId);
       await _loadComments();
       // 조회수는 집계 핑이라 결과를 기다리지 않는다.
-      unawaited(_repository.markPostViewed(postId));
+      if (countView) unawaited(_repository.markPostViewed(postId));
     } catch (e) {
       debugPrint('[CommunityDetailVM] load failed: $e');
       _error = appStrings?.communityLoadFailed ?? 'Failed to load post';
@@ -169,6 +181,21 @@ class CommunityDetailViewModel extends ChangeNotifier {
     }
   }
 
+  /// 이 글 알림 켬/끔. 반환 = 토글 후 수신 여부(토스트 문구용), 실패 시 null.
+  Future<bool?> toggleNotification() async {
+    final current = _post;
+    if (current == null) return null;
+    try {
+      final enabled = await _repository.togglePostNotification(postId);
+      _post = _replaceSummary(current, notificationEnabled: enabled);
+      _safeNotify();
+      return enabled;
+    } catch (e) {
+      _fail(e);
+      return null;
+    }
+  }
+
   Future<void> toggleCommentLike(int commentId) async {
     try {
       final result = await _repository.toggleCommentLike(commentId);
@@ -185,6 +212,7 @@ class CommunityDetailViewModel extends ChangeNotifier {
         likeCount: result.likeCount,
         liked: result.liked,
         mine: old.mine,
+        edited: old.edited,
         createdAt: old.createdAt,
       );
       _safeNotify();
@@ -216,6 +244,26 @@ class CommunityDetailViewModel extends ChangeNotifier {
           commentCount: current.commentCount + 1,
         );
       }
+      return true;
+    } catch (e) {
+      _fail(e);
+      return false;
+    } finally {
+      _submitting = false;
+      _safeNotify();
+    }
+  }
+
+  /// 댓글 본문 수정. 수정 결과(edited 포함)는 서버가 정하므로 다시 받는다.
+  Future<bool> updateComment(int commentId, String body) async {
+    final text = body.trim();
+    if (text.isEmpty || _submitting) return false;
+    _submitting = true;
+    _error = null;
+    _safeNotify();
+    try {
+      await _repository.updateComment(commentId, body: text);
+      await _loadComments();
       return true;
     } catch (e) {
       _fail(e);
@@ -305,12 +353,14 @@ class CommunityDetailViewModel extends ChangeNotifier {
     int? commentCount,
     bool? liked,
     bool? scrapped,
+    bool? notificationEnabled,
   }) {
     final s = current.summary;
     return CommunityRemotePostDetail(
       summary: CommunityRemotePost(
         id: s.id,
         boardTeamId: s.boardTeamId,
+        boardTeamCode: s.boardTeamCode,
         title: s.title,
         bodyPreview: s.bodyPreview,
         author: s.author,
@@ -323,12 +373,17 @@ class CommunityDetailViewModel extends ChangeNotifier {
         imageCount: s.imageCount,
       ),
       body: current.body,
+      // bodyFormat 을 빼먹으면 기본값 PLAIN 으로 떨어져, 좋아요·벨을 누르는
+      // 순간 블록 글 본문이 원문 JSON 으로 표시된다(v1.0.23 실사고).
+      bodyFormat: current.bodyFormat,
       images: current.images,
       viewer: CommunityPostViewer(
         liked: liked ?? current.viewer.liked,
         scrapped: scrapped ?? current.viewer.scrapped,
         mine: current.viewer.mine,
         blockedAuthor: current.viewer.blockedAuthor,
+        notificationEnabled:
+            notificationEnabled ?? current.viewer.notificationEnabled,
       ),
     );
   }
