@@ -148,25 +148,11 @@ class _CommunityDraftSheetState extends State<_CommunityDraftSheet> {
                       ),
                       if (draft.editPostId != null) ...[
                         SizedBox(width: 6 * scale),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6 * scale,
-                            vertical: 2 * scale,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.narChipBadgeBg,
-                            borderRadius: BorderRadius.circular(4 * scale),
-                          ),
-                          child: Text(
-                            l.communityDraftEditingBadge,
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 10 * scale,
-                              color: AppColors.narViolet3,
-                            ),
-                          ),
-                        ),
+                        _badge(l.communityDraftEditingBadge, scale),
+                      ],
+                      if (draft.pollEnabled) ...[
+                        SizedBox(width: 6 * scale),
+                        _badge(l.communityPollLabel, scale),
                       ],
                     ],
                   ),
@@ -199,4 +185,21 @@ class _CommunityDraftSheetState extends State<_CommunityDraftSheet> {
       ),
     );
   }
+
+  Widget _badge(String label, double scale) => Container(
+    padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+    decoration: BoxDecoration(
+      color: AppColors.narChipBadgeBg,
+      borderRadius: BorderRadius.circular(4 * scale),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+        fontSize: 10 * scale,
+        color: AppColors.narViolet3,
+      ),
+    ),
+  );
 }
