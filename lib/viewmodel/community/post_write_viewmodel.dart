@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../l10n/app_strings.dart';
+import '../../model/community_draft.dart';
 import '../../model/community_post_block.dart';
 import '../../repository/community/community_api_exception.dart';
+import '../../repository/community/community_draft_repository.dart';
 import '../../repository/community/community_image_repository.dart';
 import '../../repository/community/community_repository.dart';
 
@@ -55,6 +58,19 @@ class DraftBlock {
       imageUrl = null,
       siteName = null;
 
+  const DraftBlock._raw({
+    required this.type,
+    this.text,
+    this.heading = false,
+    this.localPath,
+    this.url,
+    this.title,
+    this.description,
+    this.imageUrl,
+    this.siteName,
+    this.provider,
+  });
+
   final String type;
   final String? text;
   final bool heading;
@@ -65,6 +81,51 @@ class DraftBlock {
   final String? imageUrl;
   final String? siteName;
   final String? provider;
+
+  /// 임시저장용 직렬화. 서버 계약([CommunityPostBlock])과 달리 아직 업로드 전인
+  /// [localPath]도 그대로 보존한다 — 불러올 때 다시 선업로드를 걸어야 해서다.
+  factory DraftBlock.fromJson(Map<String, dynamic> json) => DraftBlock._raw(
+    type: json['type'] as String? ?? 'text',
+    text: json['text'] as String?,
+    heading: json['heading'] as bool? ?? false,
+    localPath: json['localPath'] as String?,
+    url: json['url'] as String?,
+    title: json['title'] as String?,
+    description: json['description'] as String?,
+    imageUrl: json['imageUrl'] as String?,
+    siteName: json['siteName'] as String?,
+    provider: json['provider'] as String?,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    if (text != null) 'text': text,
+    if (heading) 'heading': heading,
+    if (localPath != null) 'localPath': localPath,
+    if (url != null) 'url': url,
+    if (title != null) 'title': title,
+    if (description != null) 'description': description,
+    if (imageUrl != null) 'imageUrl': imageUrl,
+    if (siteName != null) 'siteName': siteName,
+    if (provider != null) 'provider': provider,
+  };
+
+  static String encodeList(List<DraftBlock> blocks) =>
+      jsonEncode([for (final b in blocks) b.toJson()]);
+
+  /// 파싱 실패(손상된 저장값)는 빈 목록 — 드래프트 하나가 깨져도 앱이 죽지 않는다.
+  static List<DraftBlock> decodeList(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! List) return const [];
+      return [
+        for (final e in decoded)
+          if (e is Map<String, dynamic>) DraftBlock.fromJson(e),
+      ];
+    } on FormatException {
+      return const [];
+    }
+  }
 }
 
 /// 글쓰기 상태·로직 — 사진 선택/업로드와 등록.
@@ -79,10 +140,12 @@ class PostWriteViewModel extends ChangeNotifier {
     CommunityRepository? repository,
     CommunityImageRepository? imageRepository,
     ImagePicker? picker,
+    CommunityDraftRepository? draftRepository,
   }) : _existingUrls = List.of(initialImageUrls),
        _repository = repository ?? CommunityRepository.instance,
        _images = imageRepository ?? CommunityImageRepository.instance,
-       _picker = picker ?? ImagePicker();
+       _picker = picker ?? ImagePicker(),
+       _draftRepo = draftRepository ?? CommunityDraftRepository.instance;
 
   /// null 이면 전체 게시판.
   final int? boardTeamId;
@@ -104,6 +167,11 @@ class PostWriteViewModel extends ChangeNotifier {
   final CommunityRepository _repository;
   final CommunityImageRepository _images;
   final ImagePicker _picker;
+  final CommunityDraftRepository _draftRepo;
+
+  List<CommunityDraft> _drafts = [];
+  List<CommunityDraft> get drafts => List.unmodifiable(_drafts);
+  int get draftCount => _drafts.length;
 
   static const int maxPhotos = 5;
 
@@ -342,6 +410,52 @@ class PostWriteViewModel extends ChangeNotifier {
     } finally {
       _submitting = false;
       _safeNotify();
+    }
+  }
+
+  /// 임시저장 목록을 다시 읽어온다. "저장n" 배지 표시용.
+  Future<void> refreshDrafts() async {
+    // loadAll()은 저장값이 없거나 손상됐을 때 const []을 줄 수 있다 — 그대로
+    // 대입하면 다음 saveDraft/deleteDraft의 removeWhere가 불변 리스트를 건드려 던진다.
+    _drafts = List<CommunityDraft>.of(await _draftRepo.loadAll());
+    _safeNotify();
+  }
+
+  /// 현재 작성 중인 내용을 임시저장한다. [draftId]가 있으면 그 드래프트를
+  /// 덮어쓰고(같은 글을 다시 임시저장), 없으면 새 드래프트로 쌓인다.
+  Future<CommunityDraft> saveDraft({
+    required String title,
+    required List<DraftBlock> blocks,
+    int? draftId,
+  }) async {
+    final saved = await _draftRepo.save(
+      CommunityDraft(
+        id: draftId,
+        boardTeamId: boardTeamId,
+        editPostId: editPostId,
+        title: title.trim(),
+        blocksJson: DraftBlock.encodeList(blocks),
+        existingImageUrls: _existingUrls,
+        savedAt: DateTime.now(),
+      ),
+    );
+    _drafts.removeWhere((d) => d.id == saved.id);
+    _drafts.insert(0, saved);
+    _safeNotify();
+    return saved;
+  }
+
+  Future<void> deleteDraft(int id) async {
+    await _draftRepo.delete(id);
+    _drafts.removeWhere((d) => d.id == id);
+    _safeNotify();
+  }
+
+  /// 드래프트에서 불러온 로컬 사진 경로들의 선업로드를 다시 건다. 기기에서
+  /// 지워졌을 수 있는 경로는 조용히 건너뛴다.
+  void resumePreuploads(Iterable<String> localPaths) {
+    for (final path in localPaths) {
+      if (File(path).existsSync()) _startUpload(path);
     }
   }
 }
