@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_bottom_nav.dart';
+import '../../config/app_globals.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/community_remote_post.dart';
 import '../../repository/notification/member_notification_repository.dart';
@@ -38,7 +39,8 @@ class CommunityScreen extends StatefulWidget {
   State<CommunityScreen> createState() => _CommunityScreenState();
 }
 
-class _CommunityScreenState extends State<CommunityScreen> {
+class _CommunityScreenState extends State<CommunityScreen>
+    with WidgetsBindingObserver {
   final CommunityListViewModel _vm = CommunityListViewModel();
 
   /// 헤더 벨 배지용 미읽음 수 — 커뮤니티 묶음 기준(경기 알림은 안 센다).
@@ -48,14 +50,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _vm.init();
     _refreshUnreadCount();
+    // 앱이 떠 있는 동안 푸시가 오면 배지를 다시 센다 — 서버는 발송 전에
+    // 알림함을 적재하므로 지금 읽으면 방금 온 알림이 반영돼 있다. 목록을
+    // 새로고침해야만 배지가 갱신되던 문제의 답(마이구독 피드와 같은 신호).
+    feedRefreshTick.addListener(_refreshUnreadCount);
   }
 
   @override
   void dispose() {
+    feedRefreshTick.removeListener(_refreshUnreadCount);
+    WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 백그라운드에 있는 동안 온 알림은 푸시 신호를 못 받는다 — 복귀 시 재조회.
+    if (state == AppLifecycleState.resumed) _refreshUnreadCount();
   }
 
   Future<void> _refreshUnreadCount() async {
