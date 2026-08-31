@@ -457,8 +457,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                       SizedBox(height: 12 * scale),
                       _pollComposer(l, scale),
                     ],
-                    SizedBox(height: 24 * scale),
-                    _rules(l, scale),
+                    // 이용규칙 안내는 빈 화면에서만 — 쓰기 시작하면 걷어서
+                    // 본문 아래에 낯선 문단이 떠 있는 것처럼 보이지 않게 한다.
+                    // 전문은 언제든 상세 시트(showCommunityRulesSheet)로 볼 수 있다.
+                    if (!_hasContent && !_pollEnabled) ...[
+                      SizedBox(height: 24 * scale),
+                      _rules(l, scale),
+                    ],
                   ],
                 ),
               ),
