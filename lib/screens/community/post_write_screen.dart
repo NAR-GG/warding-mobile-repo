@@ -79,13 +79,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final List<TextEditingController> _pollOptions = [];
   static const int _maxPollOptions = 4;
 
-  /// 투표 옵션: 복수 선택 / 결과 항상 공개 / 마감(시간, null = 없음).
+  /// 투표 옵션: 복수 선택 / 결과 항상 공개.
+  /// 마감은 서버가 지원하지만 v1 작성 UI 에선 뺐다(항상 무기한) — 컴포저가
+  /// 무거워진다는 피드백. 되살릴 땐 closesHours 만 다시 노출하면 된다.
   bool _pollAllowMultiple = false;
   bool _pollAlwaysShowResults = false;
-  int? _pollClosesHours;
-
-  /// 마감 선택지(시간). null = 마감 없음. 라벨은 l10n 으로 그린다.
-  static const List<int?> _pollDeadlines = [null, 1, 6, 24, 72, 168];
 
   @override
   void initState() {
@@ -352,7 +350,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             .join('\n');
         head.controller.text = joined;
         _blocks.removeAt(index);
-        tail.dispose();
+        // 이 프레임에는 tail 의 TextField 가 아직 트리에 붙어 있다 — 즉시
+        // dispose 하면 '_dependents.isEmpty' assertion 으로 터진다(실사고).
+        WidgetsBinding.instance.addPostFrameCallback((_) => tail.dispose());
       }
       _ensureTextEdges();
     });
@@ -390,7 +390,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               ],
               allowMultiple: _pollAllowMultiple,
               alwaysShowResults: _pollAlwaysShowResults,
-              closesHours: _pollClosesHours,
+              closesHours: null, // 마감 UI 는 v1 미노출 — 항상 무기한
             )
           : null,
     );
@@ -763,7 +763,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => setState(() {
-                      _pollOptions.removeAt(i).dispose();
+                      final removed = _pollOptions.removeAt(i);
+                      // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
+                      // 아직 붙어 있어 assertion 크래시(실사고).
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => removed.dispose());
                     }),
                     child: Padding(
                       padding: EdgeInsets.only(left: 8 * scale),
@@ -813,26 +817,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             value: _pollAlwaysShowResults,
             onChanged: (v) => setState(() => _pollAlwaysShowResults = v),
           ),
-          SizedBox(height: 8 * scale),
-          Text(
-            l.communityPollDeadline,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              fontSize: 12 * scale,
-              height: 1.4,
-              color: AppColors.narText2,
-            ),
-          ),
-          SizedBox(height: 6 * scale),
-          Wrap(
-            spacing: 6 * scale,
-            runSpacing: 6 * scale,
-            children: [
-              for (final hours in _pollDeadlines)
-                _deadlineChip(l, scale, hours),
-            ],
-          ),
         ],
       ),
     );
@@ -869,43 +853,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       ),
     ],
   );
-
-  Widget _deadlineChip(AppLocalizations l, double scale, int? hours) {
-    final selected = _pollClosesHours == hours;
-    final label = hours == null
-        ? l.communityPollDeadlineNone
-        : hours < 24
-            ? l.communityPollDeadlineHours(hours)
-            : l.communityPollDeadlineDays(hours ~/ 24);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _pollClosesHours = hours),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 11 * scale,
-          vertical: 6 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.narChipBadgeBg : AppColors.narDark500,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? AppColors.narChipActive : AppColors.narLine2,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 12 * scale,
-            height: 1.4,
-            color: selected ? AppColors.narText : AppColors.narText2,
-          ),
-        ),
-      ),
-    );
-  }
 
   InputDecoration _pollFieldDecoration(String hint, double scale) =>
       InputDecoration(
