@@ -12,6 +12,11 @@ class CommunityDraft {
     required this.blocksJson,
     this.existingImageUrls = const [],
     required this.savedAt,
+    this.pollEnabled = false,
+    this.pollQuestion = '',
+    this.pollOptions = const [],
+    this.pollAllowMultiple = false,
+    this.pollAlwaysShowResults = false,
   });
 
   /// 로컬 저장소 내 식별자. 아직 저장 전(새 드래프트)이면 null.
@@ -31,6 +36,13 @@ class CommunityDraft {
 
   final DateTime savedAt;
 
+  /// 투표 컴포저 상태(작성 시에만 붙는 v1 — 마감 시각은 UI 미노출이라 안 든다).
+  final bool pollEnabled;
+  final String pollQuestion;
+  final List<String> pollOptions;
+  final bool pollAllowMultiple;
+  final bool pollAlwaysShowResults;
+
   CommunityDraft copyWith({int? id}) => CommunityDraft(
     id: id ?? this.id,
     boardTeamId: boardTeamId,
@@ -39,6 +51,11 @@ class CommunityDraft {
     blocksJson: blocksJson,
     existingImageUrls: existingImageUrls,
     savedAt: savedAt,
+    pollEnabled: pollEnabled,
+    pollQuestion: pollQuestion,
+    pollOptions: pollOptions,
+    pollAllowMultiple: pollAllowMultiple,
+    pollAlwaysShowResults: pollAlwaysShowResults,
   );
 
   factory CommunityDraft.fromJson(Map<String, dynamic> json) => CommunityDraft(
@@ -53,6 +70,13 @@ class CommunityDraft {
     ],
     savedAt:
         DateTime.tryParse(json['savedAt'] as String? ?? '') ?? DateTime.now(),
+    pollEnabled: json['pollEnabled'] as bool? ?? false,
+    pollQuestion: json['pollQuestion'] as String? ?? '',
+    pollOptions: [
+      for (final o in (json['pollOptions'] as List? ?? const [])) o as String,
+    ],
+    pollAllowMultiple: json['pollAllowMultiple'] as bool? ?? false,
+    pollAlwaysShowResults: json['pollAlwaysShowResults'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -63,5 +87,10 @@ class CommunityDraft {
     'blocksJson': blocksJson,
     'existingImageUrls': existingImageUrls,
     'savedAt': savedAt.toIso8601String(),
+    'pollEnabled': pollEnabled,
+    'pollQuestion': pollQuestion,
+    'pollOptions': pollOptions,
+    'pollAllowMultiple': pollAllowMultiple,
+    'pollAlwaysShowResults': pollAlwaysShowResults,
   };
 }

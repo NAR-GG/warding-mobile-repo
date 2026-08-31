@@ -37,6 +37,42 @@ void main() {
     expect(restored.existingImageUrls, isEmpty);
   });
 
+  test('투표 필드도 toJson/fromJson 라운드트립으로 보존된다', () {
+    final draft = CommunityDraft(
+      boardTeamId: null,
+      title: '투표 글',
+      blocksJson: '[]',
+      savedAt: DateTime.utc(2026, 8, 31),
+      pollEnabled: true,
+      pollQuestion: '누가 이길까요?',
+      pollOptions: const ['A팀', 'B팀'],
+      pollAllowMultiple: true,
+      pollAlwaysShowResults: true,
+    );
+
+    final restored = CommunityDraft.fromJson(draft.toJson());
+
+    expect(restored.pollEnabled, isTrue);
+    expect(restored.pollQuestion, '누가 이길까요?');
+    expect(restored.pollOptions, ['A팀', 'B팀']);
+    expect(restored.pollAllowMultiple, isTrue);
+    expect(restored.pollAlwaysShowResults, isTrue);
+  });
+
+  test('투표 필드 없이도(옛 드래프트) fromJson 이 안전한 기본값으로 채운다', () {
+    final restored = CommunityDraft.fromJson({
+      'title': '제목만',
+      'blocksJson': '[]',
+      'savedAt': DateTime.utc(2026, 8, 31).toIso8601String(),
+    });
+
+    expect(restored.pollEnabled, isFalse);
+    expect(restored.pollQuestion, '');
+    expect(restored.pollOptions, isEmpty);
+    expect(restored.pollAllowMultiple, isFalse);
+    expect(restored.pollAlwaysShowResults, isFalse);
+  });
+
   test('copyWith(id:) 는 id 만 바꾸고 나머지는 그대로 둔다', () {
     final draft = CommunityDraft(
       boardTeamId: null,

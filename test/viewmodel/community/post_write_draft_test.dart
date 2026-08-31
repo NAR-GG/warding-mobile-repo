@@ -77,6 +77,32 @@ void main() {
     expect(sentDraft.editPostId, 12);
   });
 
+  test('saveDraft: 투표 설정을 그대로 CommunityDraft에 실어 보낸다', () async {
+    when(() => drafts.save(any())).thenAnswer(
+      (invocation) async =>
+          (invocation.positionalArguments[0] as CommunityDraft).copyWith(id: 1),
+    );
+
+    await viewModel.saveDraft(
+      title: '투표 글',
+      blocks: const [],
+      pollEnabled: true,
+      pollQuestion: '누가 이길까요?',
+      pollOptions: const ['A팀', 'B팀'],
+      pollAllowMultiple: true,
+      pollAlwaysShowResults: true,
+    );
+
+    final sentDraft =
+        verify(() => drafts.save(captureAny())).captured.single
+            as CommunityDraft;
+    expect(sentDraft.pollEnabled, isTrue);
+    expect(sentDraft.pollQuestion, '누가 이길까요?');
+    expect(sentDraft.pollOptions, ['A팀', 'B팀']);
+    expect(sentDraft.pollAllowMultiple, isTrue);
+    expect(sentDraft.pollAlwaysShowResults, isTrue);
+  });
+
   test('saveDraft: 같은 draftId 로 다시 저장하면 개수는 그대로고 최신 내용으로 갱신된다', () async {
     when(() => drafts.save(any())).thenAnswer(
       (invocation) async => invocation.positionalArguments[0] as CommunityDraft,
