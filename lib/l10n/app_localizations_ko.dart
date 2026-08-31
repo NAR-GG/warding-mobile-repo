@@ -1291,7 +1291,60 @@ class AppLocalizationsKo extends AppLocalizations {
       '경기 이야기, 응원, 질문 무엇이든 좋아요.\n비방·도배는 신고 대상입니다.';
 
   @override
-  String get communityWriteSubmit => '등록하기';
+  String get communityWriteSubmit => '등록';
+
+  @override
+  String get communityDraftSave => '임시';
+
+  @override
+  String communityDraftCount(int count) {
+    return '저장$count';
+  }
+
+  @override
+  String get communityDraftSaved => '임시저장했어요.';
+
+  @override
+  String get communityDraftSaveFailed => '임시저장하지 못했어요.';
+
+  @override
+  String get communityDraftEmpty => '저장할 내용이 없어요.';
+
+  @override
+  String get communityDraftListTitle => '임시저장한 글';
+
+  @override
+  String get communityDraftEmptyList => '임시저장한 글이 없어요.';
+
+  @override
+  String get communityDraftUntitled => '제목 없음';
+
+  @override
+  String get communityDraftEditingBadge => '수정 중';
+
+  @override
+  String get communityDraftDelete => '삭제';
+
+  @override
+  String get communityDraftLoadConfirmTitle => '작성 중인 내용이 있어요';
+
+  @override
+  String get communityDraftLoadConfirmMessage => '불러오면 지금 쓰던 내용은 사라져요. 계속할까요?';
+
+  @override
+  String get communityDraftLoadConfirm => '불러오기';
+
+  @override
+  String get communityDraftLeaveTitle => '임시저장하시겠어요?';
+
+  @override
+  String get communityDraftLeaveMessage => '지금 나가면 작성 중인 내용이 사라져요.';
+
+  @override
+  String get communityDraftLeaveDiscard => '나가기';
+
+  @override
+  String get communityDraftLeaveSave => '임시저장';
 
   @override
   String get communityAddLink => '링크';
