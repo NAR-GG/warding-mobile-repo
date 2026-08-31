@@ -362,7 +362,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ],
       ),
     );
-    input.dispose();
+    // input은 여기서 dispose하지 않는다 — 다이얼로그가 실제로 닫히는(전환
+    // 애니메이션이 끝나는) 시점보다 이 코드가 먼저 실행되기 때문에, 아직 화면에
+    // 남아 애니메이션 중인 TextField가 disposed된 controller를 다시 참조하며
+    // 크래시가 난다. State에 매달린 게 아니라 이 다이얼로그에서만 쓰는 로컬
+    // controller라 안 지워도 다이얼로그 요소가 unmount되면 참조가 사라진다.
     if (url == null || url.isEmpty || !mounted) return;
 
     final uri = Uri.tryParse(url);
