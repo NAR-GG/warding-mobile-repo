@@ -116,9 +116,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
           ));
       }
     }
-    if (_blocks.isEmpty || _blocks.last is! _TextBlock) {
-      _blocks.add(_TextBlock());
-    }
+    // 이미지로 시작하는 글(예: 사진만 올린 글)을 수정할 때도 위에 커서 자리가
+    // 있어야 한다 — 삽입·이동과 같은 불변식.
+    _ensureTextEdges();
   }
 
   @override
@@ -163,6 +163,18 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     return null;
   }
 
+  /// 블록 배열 불변식 — **맨 위와 맨 아래는 항상 텍스트 블록**이어야 한다.
+  /// 이미지가 첫 블록이 되면 그 위에 커서를 둘 자리가 없어 "사진 위에
+  /// 첫 줄 쓰기"가 불가능해진다(1.0.23 피드백). 삽입·이동·삭제 후마다 부른다.
+  void _ensureTextEdges() {
+    if (_blocks.isEmpty || _blocks.first is! _TextBlock) {
+      _blocks.insert(0, _TextBlock());
+    }
+    if (_blocks.last is! _TextBlock) {
+      _blocks.add(_TextBlock());
+    }
+  }
+
   /// 미디어 블록들을 포커스된 텍스트 블록의 커서에서 텍스트를 쪼개 끼운다.
   /// 포커스가 없으면 맨 끝. 항상 이어서 쓸 텍스트 블록이 뒤따르게 한다.
   void _insertMedia(List<_MediaBlock> media) {
@@ -179,6 +191,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
           _blocks.addAll(media);
           _blocks.add(_TextBlock());
         }
+        _ensureTextEdges();
         return;
       }
       final index = _blocks.indexOf(focused);
@@ -193,6 +206,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       focused.controller.text = before;
       final tail = _TextBlock(text: after, heading: false);
       _blocks.insertAll(index + 1, [...media, tail]);
+      _ensureTextEdges();
       tail.focus.requestFocus();
     });
   }
@@ -303,6 +317,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         _blocks.removeAt(index);
         tail.dispose();
       }
+      _ensureTextEdges();
     });
   }
 
@@ -313,6 +328,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       if (index < 0 || target < 0 || target >= _blocks.length) return;
       _blocks.removeAt(index);
       _blocks.insert(target, block);
+      // 미디어가 맨 위/아래로 가면 커서 둘 텍스트 자리를 만들어 준다.
+      _ensureTextEdges();
     });
   }
 
