@@ -22,10 +22,15 @@ class CommunityBoardViewer {
     required this.canWrite,
     this.reason,
     this.nextWritableAt,
+    this.tester = false,
   });
 
   final bool canWrite;
   final CommunityWriteLockReason? reason;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 env 로 지정). 작성 화면의
+  /// "테스트 글" 토글 노출 조건 — 일반 사용자에겐 항상 false 다.
+  final bool tester;
 
   /// 작성 간격에 걸려 있으면 다음 작성 가능 시각, 아니면 null.
   /// 간격은 게시판마다 따로 돈다.
@@ -38,6 +43,7 @@ class CommunityBoardViewer {
       nextWritableAt: DateTime.tryParse(
         json['nextWritableAt'] as String? ?? '',
       ),
+      tester: json['tester'] as bool? ?? false,
     );
   }
 }

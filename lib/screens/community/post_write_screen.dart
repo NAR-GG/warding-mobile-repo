@@ -27,10 +27,19 @@ import 'component/community_rules_sheet.dart';
 ///
 /// 등록에 성공하면 새 글 id 를 결과로 pop 한다. 수정 모드([edit])면 같은 id 를 pop 한다.
 class PostWriteScreen extends StatefulWidget {
-  const PostWriteScreen({super.key, required this.boardTeamId, this.edit});
+  const PostWriteScreen({
+    super.key,
+    required this.boardTeamId,
+    this.edit,
+    this.tester = false,
+  });
 
   /// null 이면 전체 게시판(현재는 항상 null — 단일 게시판).
   final int? boardTeamId;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 판정 boardViewer.tester).
+  /// true 일 때만 "테스트 글" 토글이 보인다 — 일반 사용자에겐 없는 UI.
+  final bool tester;
 
   /// 수정할 글. null 이면 새 글 작성이다. PLAIN 글은 텍스트 블록 하나로 열리고
   /// 수정 등록 시 BLOCKS 로 저장된다(서버 하위호환 유지, 본문 내용은 동일).
@@ -84,6 +93,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   /// 무거워진다는 피드백. 되살릴 땐 closesHours 만 다시 노출하면 된다.
   bool _pollAllowMultiple = false;
   bool _pollAlwaysShowResults = false;
+
+  /// 테스트 글로 올린다(테스터만). 서버가 status=TEST 로 저장해 테스터에게만 보인다.
+  bool _testPost = false;
 
   @override
   void initState() {
@@ -393,6 +405,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               closesHours: null, // 마감 UI 는 v1 미노출 — 항상 무기한
             )
           : null,
+      test: _testPost,
     );
     if (id == null || !mounted) return;
     Navigator.of(context).pop<int>(id);
@@ -969,6 +982,18 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               active: _pollEnabled,
               scale: scale,
               onTap: _togglePoll,
+            ),
+          ],
+          // 테스트 글 토글 — 테스터 계정에만 나오는 버튼. 켜고 올리면 목록·상세에서
+          // 테스터에게만 보인다(prod 확인용). 일반 사용자에겐 이 UI 자체가 없다.
+          if (widget.edit == null && widget.tester) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.science_outlined,
+              label: 'TEST',
+              active: _testPost,
+              scale: scale,
+              onTap: () => setState(() => _testPost = !_testPost),
             ),
           ],
         ],

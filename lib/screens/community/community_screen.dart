@@ -126,7 +126,8 @@ class _CommunityScreenState extends State<CommunityScreen>
     }
     final createdId = await Navigator.of(context).push<int>(
       MaterialPageRoute<int>(
-        builder: (_) => const PostWriteScreen(boardTeamId: null),
+        builder: (_) =>
+            PostWriteScreen(boardTeamId: null, tester: _vm.isTester(null)),
       ),
     );
     if (createdId == null || !mounted) return;
