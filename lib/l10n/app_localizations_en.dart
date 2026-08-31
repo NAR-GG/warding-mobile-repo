@@ -1332,6 +1332,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityAddLink => 'Link';
 
   @override
+  String get communityPollLabel => 'Poll';
+
+  @override
+  String get communityPollQuestionHint => 'Ask a question';
+
+  @override
+  String get communityPollOptionHint => 'Option';
+
+  @override
+  String get communityPollAddOption => 'Add option';
+
+  @override
+  String communityPollParticipants(int count) {
+    return '$count votes';
+  }
+
+  @override
+  String get communityPollVoteToSee => 'Vote to see the results';
+
+  @override
   String get communityLinkDialogTitle => 'Add a link';
 
   @override

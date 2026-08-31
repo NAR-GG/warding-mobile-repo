@@ -2474,6 +2474,42 @@ abstract class AppLocalizations {
   /// **'링크'**
   String get communityAddLink;
 
+  /// No description provided for @communityPollLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표'**
+  String get communityPollLabel;
+
+  /// No description provided for @communityPollQuestionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표 질문을 입력하세요'**
+  String get communityPollQuestionHint;
+
+  /// No description provided for @communityPollOptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지'**
+  String get communityPollOptionHint;
+
+  /// No description provided for @communityPollAddOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지 추가'**
+  String get communityPollAddOption;
+
+  /// No description provided for @communityPollParticipants.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명 참여'**
+  String communityPollParticipants(int count);
+
+  /// No description provided for @communityPollVoteToSee.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표하면 결과를 볼 수 있어요'**
+  String get communityPollVoteToSee;
+
   /// No description provided for @communityLinkDialogTitle.
   ///
   /// In ko, this message translates to:

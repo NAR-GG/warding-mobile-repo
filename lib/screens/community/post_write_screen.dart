@@ -73,6 +73,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final TextEditingController _title = TextEditingController();
   final List<_EditorBlock> _blocks = [];
 
+  /// 투표 컴포저(글당 1개, 작성 시에만 — 수정 모드에선 버튼 자체를 숨긴다).
+  bool _pollEnabled = false;
+  final TextEditingController _pollQuestion = TextEditingController();
+  final List<TextEditingController> _pollOptions = [];
+  static const int _maxPollOptions = 4;
+
   @override
   void initState() {
     super.initState();
@@ -125,6 +131,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   void dispose() {
     _vm.removeListener(_showError);
     _title.dispose();
+    _pollQuestion.dispose();
+    for (final option in _pollOptions) {
+      option.dispose();
+    }
     for (final block in _blocks) {
       if (block is _TextBlock) block.dispose();
     }
@@ -148,8 +158,27 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         (b is _TextBlock && b.controller.text.trim().isNotEmpty),
   );
 
+  /// 투표를 켰으면 질문과 선택지 2개 이상이 차야 등록이 열린다.
+  bool get _pollValid =>
+      !_pollEnabled ||
+      (_pollQuestion.text.trim().isNotEmpty &&
+          _pollOptions.where((o) => o.text.trim().isNotEmpty).length >= 2);
+
+  /// 투표만 있는 글도 허용한다 — 질문이 곧 내용이다.
   bool get _submittable =>
-      _title.text.trim().isNotEmpty && _hasContent && !_vm.submitting;
+      _title.text.trim().isNotEmpty &&
+      (_hasContent || _pollEnabled) &&
+      _pollValid &&
+      !_vm.submitting;
+
+  void _togglePoll() {
+    setState(() {
+      _pollEnabled = !_pollEnabled;
+      if (_pollEnabled && _pollOptions.isEmpty) {
+        _pollOptions.addAll([TextEditingController(), TextEditingController()]);
+      }
+    });
+  }
 
   int get _imageCount => _blocks
       .whereType<_MediaBlock>()
@@ -341,7 +370,19 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         else if (block is _MediaBlock)
           block.draft,
     ];
-    final id = await _vm.submitBlocks(title: _title.text, blocks: drafts);
+    final id = await _vm.submitBlocks(
+      title: _title.text,
+      blocks: drafts,
+      poll: _pollEnabled
+          ? (
+              question: _pollQuestion.text.trim(),
+              options: [
+                for (final option in _pollOptions)
+                  if (option.text.trim().isNotEmpty) option.text.trim(),
+              ],
+            )
+          : null,
+    );
     if (id == null || !mounted) return;
     Navigator.of(context).pop<int>(id);
   }
@@ -412,6 +453,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                     ),
                     SizedBox(height: 14 * scale),
                     for (final block in _blocks) _blockWidget(l, scale, block),
+                    if (_pollEnabled) ...[
+                      SizedBox(height: 12 * scale),
+                      _pollComposer(l, scale),
+                    ],
                     SizedBox(height: 24 * scale),
                     _rules(l, scale),
                   ],
@@ -630,6 +675,133 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     ),
   );
 
+  /// 투표 컴포저 — 질문 + 선택지 2~4개. 우측 상단 ✕로 통째로 제거.
+  Widget _pollComposer(AppLocalizations l, double scale) {
+    return Container(
+      padding: EdgeInsets.all(14 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narDark600,
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: AppColors.narLine2, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.poll_outlined,
+                  size: 15 * scale, color: AppColors.narViolet3),
+              SizedBox(width: 5 * scale),
+              Expanded(
+                child: Text(
+                  l.communityPollLabel,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13 * scale,
+                    height: 1.45,
+                    color: AppColors.narText,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _togglePoll,
+                child: Icon(Icons.close,
+                    size: 16 * scale, color: AppColors.narText2),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          TextField(
+            controller: _pollQuestion,
+            maxLength: 100,
+            onChanged: (_) => _onChanged(),
+            style: _inputStyle(scale, 13.5, weight: FontWeight.w600),
+            cursorColor: AppColors.narViolet3,
+            decoration: _pollFieldDecoration(l.communityPollQuestionHint, scale),
+          ),
+          SizedBox(height: 8 * scale),
+          for (var i = 0; i < _pollOptions.length; i++) ...[
+            if (i > 0) SizedBox(height: 6 * scale),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _pollOptions[i],
+                    maxLength: 50,
+                    onChanged: (_) => _onChanged(),
+                    style: _inputStyle(scale, 13),
+                    cursorColor: AppColors.narViolet3,
+                    decoration: _pollFieldDecoration(
+                        '${l.communityPollOptionHint} ${i + 1}', scale),
+                  ),
+                ),
+                if (_pollOptions.length > 2)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() {
+                      _pollOptions.removeAt(i).dispose();
+                    }),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8 * scale),
+                      child: Icon(Icons.remove_circle_outline,
+                          size: 17 * scale, color: AppColors.narText2),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (_pollOptions.length < _maxPollOptions) ...[
+            SizedBox(height: 8 * scale),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () =>
+                  setState(() => _pollOptions.add(TextEditingController())),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add,
+                      size: 15 * scale, color: AppColors.narViolet3),
+                  SizedBox(width: 4 * scale),
+                  Text(
+                    l.communityPollAddOption,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5 * scale,
+                      height: 1.4,
+                      color: AppColors.narViolet3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _pollFieldDecoration(String hint, double scale) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle:
+            _inputStyle(scale, 13).copyWith(color: AppColors.narDark300),
+        isDense: true,
+        counterText: '',
+        filled: true,
+        fillColor: AppColors.narDark500,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12 * scale,
+          vertical: 9 * scale,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9 * scale),
+          borderSide: BorderSide.none,
+        ),
+      );
+
   /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
   /// 반드시 지나가도록 둔다.
   Widget _rules(AppLocalizations l, double scale) {
@@ -717,6 +889,17 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             scale: scale,
             onTap: _addLink,
           ),
+          // 투표는 작성 시에만 붙는다(서버 계약) — 수정 모드에선 숨긴다.
+          if (widget.edit == null) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.poll_outlined,
+              label: l.communityPollLabel,
+              active: _pollEnabled,
+              scale: scale,
+              onTap: _togglePoll,
+            ),
+          ],
         ],
       ),
     );
