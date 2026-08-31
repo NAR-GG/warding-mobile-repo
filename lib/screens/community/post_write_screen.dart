@@ -27,10 +27,19 @@ import 'component/community_rules_sheet.dart';
 ///
 /// 등록에 성공하면 새 글 id 를 결과로 pop 한다. 수정 모드([edit])면 같은 id 를 pop 한다.
 class PostWriteScreen extends StatefulWidget {
-  const PostWriteScreen({super.key, required this.boardTeamId, this.edit});
+  const PostWriteScreen({
+    super.key,
+    required this.boardTeamId,
+    this.edit,
+    this.tester = false,
+  });
 
   /// null 이면 전체 게시판(현재는 항상 null — 단일 게시판).
   final int? boardTeamId;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 판정 boardViewer.tester).
+  /// true 일 때만 "테스트 글" 토글이 보인다 — 일반 사용자에겐 없는 UI.
+  final bool tester;
 
   /// 수정할 글. null 이면 새 글 작성이다. PLAIN 글은 텍스트 블록 하나로 열리고
   /// 수정 등록 시 BLOCKS 로 저장된다(서버 하위호환 유지, 본문 내용은 동일).
@@ -72,6 +81,21 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
 
   final TextEditingController _title = TextEditingController();
   final List<_EditorBlock> _blocks = [];
+
+  /// 투표 컴포저(글당 1개, 작성 시에만 — 수정 모드에선 버튼 자체를 숨긴다).
+  bool _pollEnabled = false;
+  final TextEditingController _pollQuestion = TextEditingController();
+  final List<TextEditingController> _pollOptions = [];
+  static const int _maxPollOptions = 4;
+
+  /// 투표 옵션: 복수 선택 / 결과 항상 공개.
+  /// 마감은 서버가 지원하지만 v1 작성 UI 에선 뺐다(항상 무기한) — 컴포저가
+  /// 무거워진다는 피드백. 되살릴 땐 closesHours 만 다시 노출하면 된다.
+  bool _pollAllowMultiple = false;
+  bool _pollAlwaysShowResults = false;
+
+  /// 테스트 글로 올린다(테스터만). 서버가 status=TEST 로 저장해 테스터에게만 보인다.
+  bool _testPost = false;
 
   @override
   void initState() {
@@ -125,6 +149,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   void dispose() {
     _vm.removeListener(_showError);
     _title.dispose();
+    _pollQuestion.dispose();
+    for (final option in _pollOptions) {
+      option.dispose();
+    }
     for (final block in _blocks) {
       if (block is _TextBlock) block.dispose();
     }
@@ -148,8 +176,27 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         (b is _TextBlock && b.controller.text.trim().isNotEmpty),
   );
 
+  /// 투표를 켰으면 질문과 선택지 2개 이상이 차야 등록이 열린다.
+  bool get _pollValid =>
+      !_pollEnabled ||
+      (_pollQuestion.text.trim().isNotEmpty &&
+          _pollOptions.where((o) => o.text.trim().isNotEmpty).length >= 2);
+
+  /// 투표만 있는 글도 허용한다 — 질문이 곧 내용이다.
   bool get _submittable =>
-      _title.text.trim().isNotEmpty && _hasContent && !_vm.submitting;
+      _title.text.trim().isNotEmpty &&
+      (_hasContent || _pollEnabled) &&
+      _pollValid &&
+      !_vm.submitting;
+
+  void _togglePoll() {
+    setState(() {
+      _pollEnabled = !_pollEnabled;
+      if (_pollEnabled && _pollOptions.isEmpty) {
+        _pollOptions.addAll([TextEditingController(), TextEditingController()]);
+      }
+    });
+  }
 
   int get _imageCount => _blocks
       .whereType<_MediaBlock>()
@@ -315,7 +362,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             .join('\n');
         head.controller.text = joined;
         _blocks.removeAt(index);
-        tail.dispose();
+        // 이 프레임에는 tail 의 TextField 가 아직 트리에 붙어 있다 — 즉시
+        // dispose 하면 '_dependents.isEmpty' assertion 으로 터진다(실사고).
+        WidgetsBinding.instance.addPostFrameCallback((_) => tail.dispose());
       }
       _ensureTextEdges();
     });
@@ -341,7 +390,23 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         else if (block is _MediaBlock)
           block.draft,
     ];
-    final id = await _vm.submitBlocks(title: _title.text, blocks: drafts);
+    final id = await _vm.submitBlocks(
+      title: _title.text,
+      blocks: drafts,
+      poll: _pollEnabled
+          ? (
+              question: _pollQuestion.text.trim(),
+              options: [
+                for (final option in _pollOptions)
+                  if (option.text.trim().isNotEmpty) option.text.trim(),
+              ],
+              allowMultiple: _pollAllowMultiple,
+              alwaysShowResults: _pollAlwaysShowResults,
+              closesHours: null, // 마감 UI 는 v1 미노출 — 항상 무기한
+            )
+          : null,
+      test: _testPost,
+    );
     if (id == null || !mounted) return;
     Navigator.of(context).pop<int>(id);
   }
@@ -412,8 +477,17 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                     ),
                     SizedBox(height: 14 * scale),
                     for (final block in _blocks) _blockWidget(l, scale, block),
-                    SizedBox(height: 24 * scale),
-                    _rules(l, scale),
+                    if (_pollEnabled) ...[
+                      SizedBox(height: 12 * scale),
+                      _pollComposer(l, scale),
+                    ],
+                    // 이용규칙 안내는 빈 화면에서만 — 쓰기 시작하면 걷어서
+                    // 본문 아래에 낯선 문단이 떠 있는 것처럼 보이지 않게 한다.
+                    // 전문은 언제든 상세 시트(showCommunityRulesSheet)로 볼 수 있다.
+                    if (!_hasContent && !_pollEnabled) ...[
+                      SizedBox(height: 24 * scale),
+                      _rules(l, scale),
+                    ],
                   ],
                 ),
               ),
@@ -444,7 +518,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ),
         cursorColor: AppColors.narViolet3,
         decoration: InputDecoration(
-          hintText: first ? l.communityWriteBodyHint : null,
+          // 안내 문구는 본문이 완전히 빈 상태에서만 — 사진·링크·투표 등 내용이
+          // 하나라도 생기면 걷는다. 안 그러면 빈 첫 블록에 안내가 남아
+          // 콘텐츠 사이에 떠 있는 문장처럼 보인다.
+          hintText:
+              first && !_hasContent && !_pollEnabled
+                  ? l.communityWriteBodyHint
+                  : null,
           hintStyle: _inputStyle(
             scale,
             14,
@@ -630,6 +710,182 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     ),
   );
 
+  /// 투표 컴포저 — 질문 + 선택지 2~4개. 우측 상단 ✕로 통째로 제거.
+  Widget _pollComposer(AppLocalizations l, double scale) {
+    return Container(
+      padding: EdgeInsets.all(14 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narDark600,
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: AppColors.narLine2, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.poll_outlined,
+                  size: 15 * scale, color: AppColors.narViolet3),
+              SizedBox(width: 5 * scale),
+              Expanded(
+                child: Text(
+                  l.communityPollLabel,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13 * scale,
+                    height: 1.45,
+                    color: AppColors.narText,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _togglePoll,
+                child: Icon(Icons.close,
+                    size: 16 * scale, color: AppColors.narText2),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          TextField(
+            controller: _pollQuestion,
+            maxLength: 100,
+            onChanged: (_) => _onChanged(),
+            style: _inputStyle(scale, 13.5, weight: FontWeight.w600),
+            cursorColor: AppColors.narViolet3,
+            decoration: _pollFieldDecoration(l.communityPollQuestionHint, scale),
+          ),
+          SizedBox(height: 8 * scale),
+          for (var i = 0; i < _pollOptions.length; i++) ...[
+            if (i > 0) SizedBox(height: 6 * scale),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _pollOptions[i],
+                    maxLength: 50,
+                    onChanged: (_) => _onChanged(),
+                    style: _inputStyle(scale, 13),
+                    cursorColor: AppColors.narViolet3,
+                    decoration: _pollFieldDecoration(
+                        '${l.communityPollOptionHint} ${i + 1}', scale),
+                  ),
+                ),
+                if (_pollOptions.length > 2)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() {
+                      final removed = _pollOptions.removeAt(i);
+                      // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
+                      // 아직 붙어 있어 assertion 크래시(실사고).
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => removed.dispose());
+                    }),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8 * scale),
+                      child: Icon(Icons.remove_circle_outline,
+                          size: 17 * scale, color: AppColors.narText2),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (_pollOptions.length < _maxPollOptions) ...[
+            SizedBox(height: 8 * scale),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () =>
+                  setState(() => _pollOptions.add(TextEditingController())),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add,
+                      size: 15 * scale, color: AppColors.narViolet3),
+                  SizedBox(width: 4 * scale),
+                  Text(
+                    l.communityPollAddOption,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5 * scale,
+                      height: 1.4,
+                      color: AppColors.narViolet3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          SizedBox(height: 10 * scale),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAllowMultiple,
+            value: _pollAllowMultiple,
+            onChanged: (v) => setState(() => _pollAllowMultiple = v),
+          ),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAlwaysShowResults,
+            value: _pollAlwaysShowResults,
+            onChanged: (v) => setState(() => _pollAlwaysShowResults = v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pollSwitchRow(
+    double scale, {
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 12.5 * scale,
+            height: 1.4,
+            color: AppColors.narText3,
+          ),
+        ),
+      ),
+      SizedBox(
+        height: 30 * scale,
+        child: FittedBox(
+          child: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.narViolet3,
+          ),
+        ),
+      ),
+    ],
+  );
+
+  InputDecoration _pollFieldDecoration(String hint, double scale) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle:
+            _inputStyle(scale, 13).copyWith(color: AppColors.narDark300),
+        isDense: true,
+        counterText: '',
+        filled: true,
+        fillColor: AppColors.narDark500,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12 * scale,
+          vertical: 9 * scale,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9 * scale),
+          borderSide: BorderSide.none,
+        ),
+      );
+
   /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
   /// 반드시 지나가도록 둔다.
   Widget _rules(AppLocalizations l, double scale) {
@@ -717,6 +973,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             scale: scale,
             onTap: _addLink,
           ),
+          // 투표는 작성 시에만 붙는다(서버 계약) — 수정 모드에선 숨긴다.
+          if (widget.edit == null) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.poll_outlined,
+              label: l.communityPollLabel,
+              active: _pollEnabled,
+              scale: scale,
+              onTap: _togglePoll,
+            ),
+          ],
+          // 테스트 글 토글 — 테스터 계정에만 나오는 버튼. 켜고 올리면 목록·상세에서
+          // 테스터에게만 보인다(prod 확인용). 일반 사용자에겐 이 UI 자체가 없다.
+          if (widget.edit == null && widget.tester) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.science_outlined,
+              label: 'TEST',
+              active: _testPost,
+              scale: scale,
+              onTap: () => setState(() => _testPost = !_testPost),
+            ),
+          ],
         ],
       ),
     );

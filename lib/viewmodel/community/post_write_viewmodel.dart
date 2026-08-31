@@ -218,6 +218,14 @@ class PostWriteViewModel extends ChangeNotifier {
   Future<int?> submitBlocks({
     required String title,
     required List<DraftBlock> blocks,
+    ({
+      String question,
+      List<String> options,
+      bool allowMultiple,
+      bool alwaysShowResults,
+      int? closesHours,
+    })? poll,
+    bool test = false,
   }) async {
     if (_submitting) return null;
     _submitting = true;
@@ -276,6 +284,8 @@ class PostWriteViewModel extends ChangeNotifier {
         title: title.trim(),
         body: body,
         bodyFormat: 'BLOCKS',
+        poll: poll, // 수정 모드에는 없다 — 투표는 작성 시에만 붙는다(서버 계약)
+        test: test,
       );
     } catch (e) {
       debugPrint('[PostWriteVM] submitBlocks failed: $e');

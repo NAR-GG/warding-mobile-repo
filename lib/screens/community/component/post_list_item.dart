@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/board_badge.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/rating_mapping.dart';
@@ -62,8 +63,23 @@ class PostListItem extends StatelessWidget {
                     ),
                     SizedBox(height: 4 * scale),
                   ],
-                  Text(
-                    post.title,
+                  // 투표가 붙은 글은 제목 앞에 [투표] 배지 — 목록을 훑을 때 바로
+                  // 걸린다. 썸네일 칸은 사진·영상용으로 남긴다(에타·클리앙 방식).
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        if (post.hasPoll)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              // 제목과 붙어 보이지 않게 배지 오른쪽에 여백.
+                              padding: EdgeInsets.only(right: 6 * scale),
+                              child: _PollBadge(scale: scale),
+                            ),
+                          ),
+                        TextSpan(text: post.title),
+                      ],
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -180,3 +196,38 @@ Widget _iconMeta(
     ),
   ],
 );
+
+/// 제목 앞 [투표] 배지. 목록에서 투표 글을 한눈에 구분하는 표시다.
+///
+/// 모양은 [BoardBadge] 와 같은 규격(어두운 칩 + 얇은 테두리, radius 4, 11/w600)을
+/// 따르고 글자만 보라로 둔다 — 배지끼리 톤이 어긋나면 목록이 시끄러워진다.
+class _PollBadge extends StatelessWidget {
+  const _PollBadge({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 6 * scale,
+        vertical: 2 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.narDark500,
+        border: Border.all(color: AppColors.narLine),
+        borderRadius: BorderRadius.circular(4 * scale),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.communityPollLabel,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          fontSize: 11 * scale,
+          height: 1.3,
+          color: AppColors.narViolet3,
+        ),
+      ),
+    );
+  }
+}

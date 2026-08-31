@@ -2474,6 +2474,96 @@ abstract class AppLocalizations {
   /// **'링크'**
   String get communityAddLink;
 
+  /// No description provided for @communityPollLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표'**
+  String get communityPollLabel;
+
+  /// No description provided for @communityPollQuestionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표 질문을 입력하세요'**
+  String get communityPollQuestionHint;
+
+  /// No description provided for @communityPollOptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지'**
+  String get communityPollOptionHint;
+
+  /// No description provided for @communityPollAddOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지 추가'**
+  String get communityPollAddOption;
+
+  /// No description provided for @communityPollParticipants.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명 참여'**
+  String communityPollParticipants(int count);
+
+  /// No description provided for @communityPollVoteToSee.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표하면 결과를 볼 수 있어요'**
+  String get communityPollVoteToSee;
+
+  /// No description provided for @communityPollAllowMultiple.
+  ///
+  /// In ko, this message translates to:
+  /// **'복수 선택 허용'**
+  String get communityPollAllowMultiple;
+
+  /// No description provided for @communityPollAlwaysShowResults.
+  ///
+  /// In ko, this message translates to:
+  /// **'결과 항상 공개'**
+  String get communityPollAlwaysShowResults;
+
+  /// No description provided for @communityPollDeadline.
+  ///
+  /// In ko, this message translates to:
+  /// **'마감'**
+  String get communityPollDeadline;
+
+  /// No description provided for @communityPollDeadlineNone.
+  ///
+  /// In ko, this message translates to:
+  /// **'없음'**
+  String get communityPollDeadlineNone;
+
+  /// No description provided for @communityPollDeadlineHours.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간'**
+  String communityPollDeadlineHours(int hours);
+
+  /// No description provided for @communityPollDeadlineDays.
+  ///
+  /// In ko, this message translates to:
+  /// **'{days}일'**
+  String communityPollDeadlineDays(int days);
+
+  /// No description provided for @communityPollClosed.
+  ///
+  /// In ko, this message translates to:
+  /// **'마감됨'**
+  String get communityPollClosed;
+
+  /// No description provided for @communityPollMultipleBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'복수 선택'**
+  String get communityPollMultipleBadge;
+
+  /// No description provided for @communityPollClosesIn.
+  ///
+  /// In ko, this message translates to:
+  /// **'{time} 후 마감'**
+  String communityPollClosesIn(String time);
+
   /// No description provided for @communityLinkDialogTitle.
   ///
   /// In ko, this message translates to:

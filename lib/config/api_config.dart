@@ -362,6 +362,10 @@ class ApiConfig {
   static String communityPostUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId';
 
+  /// 투표(POST) — 단일 선택, 변경 불가.
+  static String communityPollVoteUrl(int postId) =>
+      '$apiBaseUrl/mobile/community/posts/$postId/poll/vote';
+
   /// 조회수 +1(POST).
   static String communityPostViewUrl(int postId) =>
       '$apiBaseUrl/mobile/community/posts/$postId/view';

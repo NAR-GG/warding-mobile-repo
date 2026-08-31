@@ -17,6 +17,7 @@ import 'component/author_line.dart';
 import 'component/comment_tile.dart';
 import 'component/community_image.dart';
 import 'component/community_photo_viewer.dart';
+import 'component/poll_card.dart';
 import 'component/post_block_renderer.dart';
 import 'component/report_sheet.dart';
 import 'post_write_screen.dart';
@@ -613,6 +614,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                 ],
               ],
+            ],
+            if (post.poll != null) ...[
+              SizedBox(height: 14 * scale),
+              PollCard(
+                poll: post.poll!,
+                scale: scale,
+                onVote: (optionId) {
+                  if (!_requireLogin()) return;
+                  _vm.votePoll(optionId);
+                },
+              ),
             ],
           ],
         ],
