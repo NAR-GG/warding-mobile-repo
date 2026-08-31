@@ -1329,6 +1329,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWriteSubmit => 'Post';
 
   @override
+  String get communityDraftSave => 'Draft';
+
+  @override
+  String communityDraftCount(int count) {
+    return 'Saved $count';
+  }
+
+  @override
+  String get communityDraftSaved => 'Saved as draft.';
+
+  @override
+  String get communityDraftSaveFailed => 'Couldn\'t save the draft.';
+
+  @override
+  String get communityDraftEmpty => 'There\'s nothing to save.';
+
+  @override
+  String get communityDraftListTitle => 'Drafts';
+
+  @override
+  String get communityDraftEmptyList => 'No drafts yet.';
+
+  @override
+  String get communityDraftUntitled => 'Untitled';
+
+  @override
+  String get communityDraftEditingBadge => 'Editing';
+
+  @override
+  String get communityDraftDelete => 'Delete';
+
+  @override
+  String get communityDraftLoadConfirmTitle => 'You have unsaved content';
+
+  @override
+  String get communityDraftLoadConfirmMessage =>
+      'Loading this draft will replace what you\'re writing now. Continue?';
+
+  @override
+  String get communityDraftLoadConfirm => 'Load';
+
+  @override
+  String get communityDraftLeaveTitle => 'Save as draft?';
+
+  @override
+  String get communityDraftLeaveMessage =>
+      'Leaving now will discard what you\'re writing.';
+
+  @override
+  String get communityDraftLeaveDiscard => 'Leave';
+
+  @override
+  String get communityDraftLeaveSave => 'Save draft';
+
+  @override
   String get communityAddLink => 'Link';
 
   @override

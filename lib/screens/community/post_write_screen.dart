@@ -1,15 +1,20 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
+import '../../components/nar_popup_dialog.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_draft.dart';
 import '../../model/community_post_block.dart';
 import '../../model/community_remote_post.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/community/post_write_viewmodel.dart';
 import 'community_rules.dart';
+import 'component/community_draft_sheet.dart';
 import 'component/community_image.dart';
 import 'component/community_rules_sheet.dart';
 
@@ -48,6 +53,9 @@ class PostWriteScreen extends StatefulWidget {
   @override
   State<PostWriteScreen> createState() => _PostWriteScreenState();
 }
+
+/// 뒤로가기 확인 팝업에서 고른 것 — null(팝업 dismiss)이면 "취소"와 같다.
+enum _LeaveAction { discard, save }
 
 /// 에디터 블록. 텍스트는 입력 상태(controller·focus)를 들고, 미디어는
 /// [DraftBlock] 그대로 든다.
@@ -97,6 +105,19 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   /// 테스트 글로 올린다(테스터만). 서버가 status=TEST 로 저장해 테스터에게만 보인다.
   bool _testPost = false;
 
+  /// 이 편집 세션이 불러온 임시저장 글의 id. "임시" 재탭 시 새로 쌓지 않고
+  /// 이 드래프트를 덮어쓴다. null 이면 처음부터 쓰는 중이라 다음 저장이 새 항목.
+  int? _loadedDraftId;
+
+  /// 마지막으로 저장/불러온 시점의 (제목, 블록 JSON) — 뒤로가기 확인 팝업을
+  /// 띄울지 판단하는 기준선. 지금 내용이 이거랑 같으면 "달라진 게 없다"고 보고
+  /// 팝업 없이 바로 나간다. 시작 시점 값(새 글은 빈 상태, 수정 모드는 원본
+  /// 그대로)이라 아무것도 안 건드리고 나갈 때도 안 뜬다.
+  (String, String)? _savedSnapshot;
+
+  (String, String) _currentSnapshot() =>
+      (_title.text.trim(), DraftBlock.encodeList(_draftBlocks));
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +130,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     }
     _title.addListener(_onChanged);
     _vm.addListener(_showError);
+    unawaited(_vm.refreshDrafts());
+    _savedSnapshot = _currentSnapshot();
   }
 
   void _initFromEdit(CommunityRemotePostDetail edit) {
@@ -382,17 +405,18 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     });
   }
 
+  List<DraftBlock> get _draftBlocks => [
+    for (final block in _blocks)
+      if (block is _TextBlock)
+        DraftBlock.text(block.controller.text, heading: block.heading)
+      else if (block is _MediaBlock)
+        block.draft,
+  ];
+
   Future<void> _submit() async {
-    final drafts = <DraftBlock>[
-      for (final block in _blocks)
-        if (block is _TextBlock)
-          DraftBlock.text(block.controller.text, heading: block.heading)
-        else if (block is _MediaBlock)
-          block.draft,
-    ];
     final id = await _vm.submitBlocks(
       title: _title.text,
-      blocks: drafts,
+      blocks: _draftBlocks,
       poll: _pollEnabled
           ? (
               question: _pollQuestion.text.trim(),
@@ -408,7 +432,166 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       test: _testPost,
     );
     if (id == null || !mounted) return;
+    final draftId = _loadedDraftId;
+    if (draftId != null) unawaited(_vm.deleteDraft(draftId));
     Navigator.of(context).pop<int>(id);
+  }
+
+  /// 지금 쓰던 내용을 로컬에 저장한다. [_loadedDraftId]가 있으면 그 드래프트를
+  /// 덮어쓴다. 저장할 내용이 없으면(제목·본문 둘 다 빈 채) null.
+  Future<CommunityDraft?> _persistDraft() async {
+    if (_title.text.trim().isEmpty && !_hasContent) return null;
+    final saved = await _vm.saveDraft(
+      title: _title.text,
+      blocks: _draftBlocks,
+      draftId: _loadedDraftId,
+    );
+    if (mounted) {
+      setState(() {
+        _loadedDraftId = saved.id;
+        _savedSnapshot = _currentSnapshot();
+      });
+    }
+    return saved;
+  }
+
+  /// "임시" 탭 — 저장 결과를 스낵바로 알린다.
+  Future<void> _saveDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final saved = await _persistDraft();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved == null ? l.communityDraftEmpty : l.communityDraftSaved),
+      ),
+    );
+  }
+
+  /// 뒤로가기 아이콘 — 작성 중인 내용이 있으면 임시저장 확인 팝업을 먼저 띄운다.
+  /// 스와이프 백 제스처 등 시스템 pop은 건드리지 않는다(iOS 엣지 스와이프가
+  /// 깨지는 문제, [post_detail_screen.dart]의 PopScope 관련 주석 참고).
+  Future<void> _handleBackPressed() async {
+    if (_title.text.trim().isEmpty && !_hasContent) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    if (_currentSnapshot() == _savedSnapshot) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final action = await _confirmLeaveDialog();
+    if (action == null || !mounted) return; // 취소·바깥 탭 → 머무른다
+    if (action == _LeaveAction.save) {
+      await _persistDraft();
+      if (!mounted) return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
+  Future<_LeaveAction?> _confirmLeaveDialog() {
+    final l = AppLocalizations.of(context)!;
+    return showNarPopup<_LeaveAction>(
+      context: context,
+      title: l.communityDraftLeaveTitle,
+      message: l.communityDraftLeaveMessage,
+      actions: [
+        NarPopupAction(
+          label: l.cancel,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveDiscard,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.discard),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveSave,
+          variant: NarButtonVariant.type1,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.save),
+        ),
+      ],
+    );
+  }
+
+  /// "저장n" 탭 — 임시저장 목록을 열고 고른 드래프트를 에디터에 채운다. 지금
+  /// 쓰던 내용이 있으면 덮어쓰기 전에 확인한다.
+  Future<void> _openDraftList() async {
+    final selected = await showCommunityDraftSheet(
+      context,
+      drafts: _vm.drafts,
+      onDelete: _vm.deleteDraft,
+    );
+    if (selected == null || !mounted) return;
+    if (_title.text.trim().isNotEmpty || _hasContent) {
+      final confirmed = await _confirmLoadDraft();
+      if (!confirmed || !mounted) return;
+    }
+    _loadDraft(selected);
+  }
+
+  Future<bool> _confirmLoadDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.narDark600,
+        title: Text(
+          l.communityDraftLoadConfirmTitle,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppColors.narText,
+          ),
+        ),
+        content: Text(
+          l.communityDraftLoadConfirmMessage,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            color: AppColors.narText2,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l.cancel,
+                style: const TextStyle(color: AppColors.narText2)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l.communityDraftLoadConfirm,
+                style: const TextStyle(color: AppColors.narViolet3)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  void _loadDraft(CommunityDraft draft) {
+    setState(() {
+      for (final block in _blocks) {
+        if (block is _TextBlock) block.dispose();
+      }
+      _blocks
+        ..clear()
+        ..addAll([
+          for (final b in DraftBlock.decodeList(draft.blocksJson))
+            if (b.type == 'text')
+              _TextBlock(text: b.text ?? '', heading: b.heading)
+            else
+              _MediaBlock(b),
+        ]);
+      _title.text = draft.title;
+      _ensureTextEdges();
+      _loadedDraftId = draft.id;
+    });
+    _savedSnapshot = _currentSnapshot();
+    _vm.resumePreuploads([
+      for (final block in _blocks)
+        if (block is _MediaBlock && block.draft.localPath != null)
+          block.draft.localPath!,
+    ]);
   }
 
   @override
@@ -427,29 +610,47 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               NarDetailHeader(
                 title: l.communityBoardAll,
                 scale: scale,
-                trailing: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _submittable ? _submit : null,
-                  // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
-                  // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
-                  // 확보한다.
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6 * scale),
-                    child: Text(
-                      _vm.submitting
-                          ? l.communityWriteSubmitting
-                          : l.communityWriteSubmit,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14 * scale,
-                        height: 1.45,
-                        color: _submittable
-                            ? AppColors.narViolet3
-                            : AppColors.narDark300,
+                onBack: _handleBackPressed,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _headerButton(
+                      scale,
+                      label: l.communityDraftSave,
+                      onTap: _saveDraft,
+                    ),
+                    if (_vm.draftCount > 0)
+                      _headerButton(
+                        scale,
+                        label: l.communityDraftCount(_vm.draftCount),
+                        onTap: _openDraftList,
+                      ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _submittable ? _submit : null,
+                      // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
+                      // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
+                      // 확보한다. 버튼이 셋으로 늘어 타이틀과 겹치지 않게
+                      // 여백은 최소로 좁힌다.
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+                        child: Text(
+                          _vm.submitting
+                              ? l.communityWriteSubmitting
+                              : l.communityWriteSubmit,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14 * scale,
+                            height: 1.45,
+                            color: _submittable
+                                ? AppColors.narViolet3
+                                : AppColors.narDark300,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
               Expanded(
@@ -498,6 +699,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       ),
     );
   }
+
+  /// "임시"/"저장n" — 등록 버튼과 같은 텍스트 버튼 스타일, 항상 활성 상태.
+  Widget _headerButton(
+    double scale, {
+    required String label,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w700,
+          fontSize: 14 * scale,
+          height: 1.45,
+          color: AppColors.narText3,
+        ),
+      ),
+    ),
+  );
 
   Widget _blockWidget(AppLocalizations l, double scale, _EditorBlock block) {
     if (block is _TextBlock) {
