@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/board_badge.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/rating_mapping.dart';
@@ -62,8 +63,21 @@ class PostListItem extends StatelessWidget {
                     ),
                     SizedBox(height: 4 * scale),
                   ],
-                  Text(
-                    post.title,
+                  // 투표가 붙은 글은 제목 앞에 [투표] 배지 — 목록을 훑을 때 바로
+                  // 걸린다. 썸네일 칸은 사진·영상용으로 남긴다(에타·클리앙 방식).
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        if (post.hasPoll) ...[
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: _PollBadge(scale: scale),
+                          ),
+                          const TextSpan(text: ' '),
+                        ],
+                        TextSpan(text: post.title),
+                      ],
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -180,3 +194,35 @@ Widget _iconMeta(
     ),
   ],
 );
+
+/// 제목 앞 [투표] 배지. 목록에서 투표 글을 한눈에 구분하는 표시다.
+class _PollBadge extends StatelessWidget {
+  const _PollBadge({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 6 * scale,
+        vertical: 2 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.narChipBadgeBg,
+        borderRadius: BorderRadius.circular(5 * scale),
+        border: Border.all(color: AppColors.narChipActive, width: 1),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.communityPollLabel,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w700,
+          fontSize: 11 * scale,
+          height: 1.2,
+          color: AppColors.narViolet3,
+        ),
+      ),
+    );
+  }
+}
