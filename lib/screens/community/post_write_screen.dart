@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -57,6 +58,17 @@ class PostWriteScreen extends StatefulWidget {
 /// 뒤로가기 확인 팝업에서 고른 것 — null(팝업 dismiss)이면 "취소"와 같다.
 enum _LeaveAction { discard, save }
 
+/// 뒤로가기 확인 판단용 상태 스냅샷 — 투표 설정까지 포함해 구조적으로 비교한다.
+typedef _Snapshot = ({
+  String title,
+  String blocksJson,
+  bool pollEnabled,
+  String pollQuestion,
+  String pollOptionsJson,
+  bool pollAllowMultiple,
+  bool pollAlwaysShowResults,
+});
+
 /// 에디터 블록. 텍스트는 입력 상태(controller·focus)를 들고, 미디어는
 /// [DraftBlock] 그대로 든다.
 sealed class _EditorBlock {}
@@ -109,14 +121,24 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   /// 이 드래프트를 덮어쓴다. null 이면 처음부터 쓰는 중이라 다음 저장이 새 항목.
   int? _loadedDraftId;
 
-  /// 마지막으로 저장/불러온 시점의 (제목, 블록 JSON) — 뒤로가기 확인 팝업을
-  /// 띄울지 판단하는 기준선. 지금 내용이 이거랑 같으면 "달라진 게 없다"고 보고
-  /// 팝업 없이 바로 나간다. 시작 시점 값(새 글은 빈 상태, 수정 모드는 원본
-  /// 그대로)이라 아무것도 안 건드리고 나갈 때도 안 뜬다.
-  (String, String)? _savedSnapshot;
+  /// 마지막으로 저장/불러온 시점의 내용 — 뒤로가기 확인 팝업을 띄울지 판단하는
+  /// 기준선. 지금 내용이 이거랑 같으면 "달라진 게 없다"고 보고 팝업 없이 바로
+  /// 나간다. 시작 시점 값(새 글은 빈 상태, 수정 모드는 원본 그대로)이라
+  /// 아무것도 안 건드리고 나갈 때도 안 뜬다. 투표 설정도 포함해야 투표만
+  /// 바꾸고 뒤로가도 제대로 잡힌다.
+  _Snapshot? _savedSnapshot;
 
-  (String, String) _currentSnapshot() =>
-      (_title.text.trim(), DraftBlock.encodeList(_draftBlocks));
+  _Snapshot _currentSnapshot() => (
+    title: _title.text.trim(),
+    blocksJson: DraftBlock.encodeList(_draftBlocks),
+    pollEnabled: _pollEnabled,
+    pollQuestion: _pollQuestion.text.trim(),
+    pollOptionsJson: jsonEncode([
+      for (final o in _pollOptions) o.text.trim(),
+    ]),
+    pollAllowMultiple: _pollAllowMultiple,
+    pollAlwaysShowResults: _pollAlwaysShowResults,
+  );
 
   @override
   void initState() {
@@ -340,7 +362,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ],
       ),
     );
-    input.dispose();
+    // input은 여기서 dispose하지 않는다 — 다이얼로그가 실제로 닫히는(전환
+    // 애니메이션이 끝나는) 시점보다 이 코드가 먼저 실행되기 때문에, 아직 화면에
+    // 남아 애니메이션 중인 TextField가 disposed된 controller를 다시 참조하며
+    // 크래시가 난다. State에 매달린 게 아니라 이 다이얼로그에서만 쓰는 로컬
+    // controller라 안 지워도 다이얼로그 요소가 unmount되면 참조가 사라진다.
     if (url == null || url.isEmpty || !mounted) return;
 
     final uri = Uri.tryParse(url);
@@ -438,13 +464,23 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   }
 
   /// 지금 쓰던 내용을 로컬에 저장한다. [_loadedDraftId]가 있으면 그 드래프트를
-  /// 덮어쓴다. 저장할 내용이 없으면(제목·본문 둘 다 빈 채) null.
+  /// 덮어쓴다. 저장할 내용이 없으면(제목·본문·투표 다 빈 채) null.
   Future<CommunityDraft?> _persistDraft() async {
-    if (_title.text.trim().isEmpty && !_hasContent) return null;
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
+      return null;
+    }
     final saved = await _vm.saveDraft(
       title: _title.text,
       blocks: _draftBlocks,
       draftId: _loadedDraftId,
+      pollEnabled: _pollEnabled,
+      pollQuestion: _pollQuestion.text,
+      pollOptions: [
+        for (final o in _pollOptions)
+          if (o.text.trim().isNotEmpty) o.text.trim(),
+      ],
+      pollAllowMultiple: _pollAllowMultiple,
+      pollAlwaysShowResults: _pollAlwaysShowResults,
     );
     if (mounted) {
       setState(() {
@@ -471,7 +507,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   /// 스와이프 백 제스처 등 시스템 pop은 건드리지 않는다(iOS 엣지 스와이프가
   /// 깨지는 문제, [post_detail_screen.dart]의 PopScope 관련 주석 참고).
   Future<void> _handleBackPressed() async {
-    if (_title.text.trim().isEmpty && !_hasContent) {
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
       Navigator.of(context).maybePop();
       return;
     }
@@ -521,7 +557,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       onDelete: _vm.deleteDraft,
     );
     if (selected == null || !mounted) return;
-    if (_title.text.trim().isNotEmpty || _hasContent) {
+    if (_title.text.trim().isNotEmpty || _hasContent || _pollEnabled) {
       final confirmed = await _confirmLoadDraft();
       if (!confirmed || !mounted) return;
     }
@@ -585,6 +621,26 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       _title.text = draft.title;
       _ensureTextEdges();
       _loadedDraftId = draft.id;
+
+      _pollEnabled = draft.pollEnabled;
+      _pollQuestion.text = draft.pollQuestion;
+      for (final option in _pollOptions) {
+        option.dispose();
+      }
+      _pollOptions
+        ..clear()
+        ..addAll([
+          for (final option in draft.pollOptions) TextEditingController(text: option),
+        ]);
+      // 투표 켠 채로 저장했는데 선택지가 2개 미만으로 손상됐다면(옛 데이터 등)
+      // _togglePoll 이 항상 유지하는 최소 2개 불변식을 여기서도 지킨다.
+      if (_pollEnabled && _pollOptions.length < 2) {
+        _pollOptions.addAll([
+          for (var i = _pollOptions.length; i < 2; i++) TextEditingController(),
+        ]);
+      }
+      _pollAllowMultiple = draft.pollAllowMultiple;
+      _pollAlwaysShowResults = draft.pollAlwaysShowResults;
     });
     _savedSnapshot = _currentSnapshot();
     _vm.resumePreuploads([

@@ -427,6 +427,11 @@ class PostWriteViewModel extends ChangeNotifier {
     required String title,
     required List<DraftBlock> blocks,
     int? draftId,
+    bool pollEnabled = false,
+    String pollQuestion = '',
+    List<String> pollOptions = const [],
+    bool pollAllowMultiple = false,
+    bool pollAlwaysShowResults = false,
   }) async {
     final saved = await _draftRepo.save(
       CommunityDraft(
@@ -437,6 +442,11 @@ class PostWriteViewModel extends ChangeNotifier {
         blocksJson: DraftBlock.encodeList(blocks),
         existingImageUrls: _existingUrls,
         savedAt: DateTime.now(),
+        pollEnabled: pollEnabled,
+        pollQuestion: pollQuestion.trim(),
+        pollOptions: pollOptions,
+        pollAllowMultiple: pollAllowMultiple,
+        pollAlwaysShowResults: pollAlwaysShowResults,
       ),
     );
     _drafts.removeWhere((d) => d.id == saved.id);
