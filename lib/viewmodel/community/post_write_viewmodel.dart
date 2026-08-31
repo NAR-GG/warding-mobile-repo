@@ -218,7 +218,13 @@ class PostWriteViewModel extends ChangeNotifier {
   Future<int?> submitBlocks({
     required String title,
     required List<DraftBlock> blocks,
-    ({String question, List<String> options})? poll,
+    ({
+      String question,
+      List<String> options,
+      bool allowMultiple,
+      bool alwaysShowResults,
+      int? closesHours,
+    })? poll,
   }) async {
     if (_submitting) return null;
     _submitting = true;

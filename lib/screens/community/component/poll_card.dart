@@ -29,7 +29,6 @@ class PollCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final canVote = !poll.voted && onVote != null;
 
     return Container(
       padding: EdgeInsets.all(14 * scale),
@@ -61,14 +60,12 @@ class PollCard extends StatelessWidget {
           ),
           SizedBox(height: 10 * scale),
           for (final option in poll.options) ...[
-            _option(option, canVote, scale),
+            _option(option, scale),
             SizedBox(height: 8 * scale),
           ],
           SizedBox(height: 2 * scale),
           Text(
-            poll.resultsVisible
-                ? l.communityPollParticipants(poll.totalVotes)
-                : '${l.communityPollParticipants(poll.totalVotes)} · ${l.communityPollVoteToSee}',
+            _footer(l),
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w400,
@@ -82,8 +79,37 @@ class PollCard extends StatelessWidget {
     );
   }
 
-  Widget _option(CommunityPollOption option, bool canVote, double scale) {
-    final mine = poll.myOptionId == option.id;
+  /// "N명 참여 · 복수 선택 · X시간 후 마감 / 마감됨 · 투표하면 결과…" 조합.
+  String _footer(AppLocalizations l) {
+    final parts = <String>[l.communityPollParticipants(poll.totalVotes)];
+    if (poll.allowMultiple) parts.add(l.communityPollMultipleBadge);
+    if (poll.closed) {
+      parts.add(l.communityPollClosed);
+    } else if (poll.closesAt != null) {
+      parts.add(l.communityPollClosesIn(_remaining(poll.closesAt!, l)));
+    }
+    if (!poll.resultsVisible) parts.add(l.communityPollVoteToSee);
+    return parts.join(' · ');
+  }
+
+  String _remaining(DateTime closesAt, AppLocalizations l) {
+    final diff = closesAt.difference(DateTime.now());
+    if (diff.inHours >= 24) return l.communityPollDeadlineDays(diff.inDays);
+    if (diff.inHours >= 1) return l.communityPollDeadlineHours(diff.inHours);
+    return l.communityPollDeadlineHours(1); // 1시간 미만은 "1시간"으로 뭉갠다
+  }
+
+  /// 이 선택지를 지금 탭해서 투표할 수 있는가 — 마감 전 + (복수 선택이면
+  /// 아직 안 고른 선택지, 단일 선택이면 아예 미투표 상태).
+  bool _canVote(CommunityPollOption option) {
+    if (onVote == null || poll.closed) return false;
+    if (poll.allowMultiple) return !poll.myOptionIds.contains(option.id);
+    return !poll.voted;
+  }
+
+  Widget _option(CommunityPollOption option, double scale) {
+    final mine = poll.myOptionIds.contains(option.id);
+    final canVote = _canVote(option);
     final total = poll.totalVotes;
     final count = option.voteCount;
     // 분포 공개 상태에서만 바를 그린다(비공개면 count 가 null 이라 0 처리).
