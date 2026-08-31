@@ -164,6 +164,10 @@ class CommunityListViewModel extends ChangeNotifier {
     posts[index] = CommunityRemotePost(
       id: old.id,
       boardTeamId: old.boardTeamId,
+      // 재조립에서 옵셔널 필드를 빼먹으면 조용히 null 로 리셋된다 —
+      // bodyFormat 실사고(#258)와 같은 함정. 배지 켜진 목록에서 글을
+      // 열었다 나오면 그 줄의 팀 배지만 사라지는 형태로 발현한다.
+      boardTeamCode: old.boardTeamCode,
       title: updated.title.isEmpty ? old.title : updated.title,
       bodyPreview: old.bodyPreview,
       author: updated.author ?? old.author,
