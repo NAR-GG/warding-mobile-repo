@@ -59,9 +59,7 @@ class NarTabBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 27.5 * scale),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.narLine2, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.narLine2, width: 1)),
       ),
       child: Row(
         children: [
@@ -69,83 +67,97 @@ class NarTabBar extends StatelessWidget {
             Expanded(
               child: SizedBox(
                 height: 45 * scale,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onChanged(i),
-                  // stroke 는 라벨 텍스트 폭에만 맞춘다(아이콘 제외) — 아이콘까지
-                  // 포함해서 재면 아이콘 있는 탭만 stroke 가 더 넓어져, 색이 같은
-                  // narBg 그라데이션이라도 아이콘 없는 탭(경기상세 탭 등)보다
-                  // 굵고 진하게 보인다.
-                  //
-                  // 텍스트(+stroke) 블록을 정중앙에 두려고 아이콘 폭만큼 반대편에
-                  // 투명 자리를 맞춰 두는 방식은 아이콘의 실측 폭이 100% 안 맞으면
-                  // 살짝 밀린다. 대신 양옆에 동일 flex(1)인 Expanded 를 하나씩 둬서
-                  // — 폭을 재지 않아도 항상 정확히 반반 나뉘도록 — 가운데 텍스트
-                  // 블록을 수학적으로 정확히 중앙에 놓는다. 아이콘은 왼쪽 Expanded
-                  // 안에서 오른쪽 정렬해 텍스트 바로 옆에 붙인다.
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: leadingIcons?[i] == null
-                            ? const SizedBox.shrink()
-                            : Align(
-                                alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: EdgeInsets.only(right: 4 * scale),
-                                  child: leadingIcons![i],
-                                ),
-                              ),
-                      ),
-                      IntrinsicWidth(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: Center(
-                                // 좌우로 여백을 줘서 stroke 가 텍스트보다 살짝 더
-                                // 넓게(아래) 깔리게 한다. stroke 는 이 Padding 을
-                                // 포함한 열 전체 폭에 맞춰 stretch 되기 때문에,
-                                // 텍스트 자체의 폭이 아니라 이 여백이 stroke 폭을
-                                // 정한다.
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 6 * scale,
+                // 탭 한 칸의 실제 폭을 재서 아래 ConstrainedBox 에 넘긴다 —
+                // "라이브 이벤트"처럼 긴 라벨은 IntrinsicWidth 가 이 폭을 넘는
+                // 크기로 렌더돼 Row 가 overflow 했다(실기기 폭 375~430에서만
+                // 재현, 테스트 기본 캔버스(800)는 안 걸림). 폭을 씌우면
+                // Text 의 기존 ellipsis 가 정상적으로 안전망 역할을 한다.
+                child: LayoutBuilder(
+                  builder: (context, tabConstraints) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onChanged(i),
+                    // stroke 는 라벨 텍스트 폭에만 맞춘다(아이콘 제외) — 아이콘까지
+                    // 포함해서 재면 아이콘 있는 탭만 stroke 가 더 넓어져, 색이 같은
+                    // narBg 그라데이션이라도 아이콘 없는 탭(경기상세 탭 등)보다
+                    // 굵고 진하게 보인다.
+                    //
+                    // 텍스트(+stroke) 블록을 정중앙에 두려고 아이콘 폭만큼 반대편에
+                    // 투명 자리를 맞춰 두는 방식은 아이콘의 실측 폭이 100% 안 맞으면
+                    // 살짝 밀린다. 대신 양옆에 동일 flex(1)인 Expanded 를 하나씩 둬서
+                    // — 폭을 재지 않아도 항상 정확히 반반 나뉘도록 — 가운데 텍스트
+                    // 블록을 수학적으로 정확히 중앙에 놓는다. 아이콘은 왼쪽 Expanded
+                    // 안에서 오른쪽 정렬해 텍스트 바로 옆에 붙인다.
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: leadingIcons?[i] == null
+                              ? const SizedBox.shrink()
+                              : Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 4 * scale),
+                                    child: leadingIcons![i],
                                   ),
-                                  child: Text(
-                                    tabs[i],
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: 'Pretendard',
-                                      fontWeight: i == selectedIndex
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                      fontSize: 16 * scale,
-                                      height: 25 / 16,
-                                      color: i == selectedIndex
-                                          ? AppColors.narTextTertiary
-                                          : AppColors.narText3,
+                                ),
+                        ),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: tabConstraints.maxWidth,
+                          ),
+                          child: IntrinsicWidth(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    // 좌우로 여백을 줘서 stroke 가 텍스트보다 살짝 더
+                                    // 넓게(아래) 깔리게 한다. stroke 는 이 Padding 을
+                                    // 포함한 열 전체 폭에 맞춰 stretch 되기 때문에,
+                                    // 텍스트 자체의 폭이 아니라 이 여백이 stroke 폭을
+                                    // 정한다.
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 6 * scale,
+                                      ),
+                                      child: Text(
+                                        tabs[i],
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: 'Pretendard',
+                                          fontWeight: i == selectedIndex
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          fontSize: 16 * scale,
+                                          height: 25 / 16,
+                                          color: i == selectedIndex
+                                              ? AppColors.narTextTertiary
+                                              : AppColors.narText3,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                                // 활성 stroke. 비선택 탭은 같은 자리에 투명 컨테이너로
+                                // 두어 선택/비선택 간 텍스트 위치가 흔들리지 않도록 한다.
+                                Container(
+                                  height: 2 * scale,
+                                  decoration: i == selectedIndex
+                                      ? const BoxDecoration(
+                                          gradient: AppColors.narBg,
+                                        )
+                                      : null,
+                                ),
+                              ],
                             ),
-                            // 활성 stroke. 비선택 탭은 같은 자리에 투명 컨테이너로
-                            // 두어 선택/비선택 간 텍스트 위치가 흔들리지 않도록 한다.
-                            Container(
-                              height: 2 * scale,
-                              decoration: i == selectedIndex
-                                  ? const BoxDecoration(gradient: AppColors.narBg)
-                                  : null,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const Expanded(child: SizedBox.shrink()),
-                    ],
+                        const Expanded(child: SizedBox.shrink()),
+                      ],
+                    ),
                   ),
                 ),
               ),

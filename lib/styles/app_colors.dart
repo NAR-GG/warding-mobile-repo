@@ -217,4 +217,7 @@ class AppColors {
   // 커뮤니티 — 답글 펼치기·멘션처럼 누를 수 있는 텍스트.
   // 다크 배경 위에서 narChipActive(#7048E8) 는 너무 어두워 글자로 못 쓴다.
   static const Color narViolet3 = Color(0xFFB197FC); // mantine violet/3
+
+  // 경기 상세 — 선수 스탯 팀 헤더의 "승" 텍스트.
+  static const Color narGreenWin = Color(0xFF34C759);
 }

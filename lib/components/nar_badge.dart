@@ -43,10 +43,13 @@ enum BadgeSide { blue, red }
 /// BLUE: 인디고 톤(indigo/3 보더 + indigo/8 텍스트).
 /// RED: 빨강 톤(red/3 보더 + red/8 텍스트).
 class NarBadgeSide extends StatelessWidget {
-  const NarBadgeSide({super.key, required this.side, this.scale = 1});
+  const NarBadgeSide({super.key, required this.side, this.scale = 1, this.label});
 
   final BadgeSide side;
   final double scale;
+
+  /// 기본 라벨("BLUE"/"RED") 대신 보여줄 텍스트. 예: 경기 상세 선수 스탯의 "LIVE".
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +66,7 @@ class NarBadgeSide extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        isBlue ? 'BLUE' : 'RED',
+        label ?? (isBlue ? 'BLUE' : 'RED'),
         style: TextStyle(
           fontFamily: 'SF Pro',
           fontWeight: FontWeight.w500,
