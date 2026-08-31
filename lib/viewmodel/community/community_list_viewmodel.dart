@@ -178,6 +178,7 @@ class CommunityListViewModel extends ChangeNotifier {
       createdAt: old.createdAt,
       thumbnailUrl: old.thumbnailUrl,
       imageCount: old.imageCount,
+      hasPoll: old.hasPoll,
     );
     _safeNotify();
   }

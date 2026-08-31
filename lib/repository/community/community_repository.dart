@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../model/community_poll.dart';
 import '../../model/community_post_block.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
@@ -91,6 +92,7 @@ class CommunityRepository {
     required String body,
     String bodyFormat = 'PLAIN',
     List<String> imageUrls = const [],
+    ({String question, List<String> options})? poll,
   }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
@@ -102,6 +104,8 @@ class CommunityRepository {
           'body': body,
           'bodyFormat': bodyFormat,
           'imageUrls': imageUrls,
+          if (poll != null)
+            'poll': {'question': poll.question, 'options': poll.options},
         }),
       ),
     );
@@ -134,6 +138,22 @@ class CommunityRepository {
       ),
     );
     _checkOk(response, 'updateCommunityPost');
+  }
+
+  /// 투표(단일 선택, 변경 불가). 성공 시 투표 후 상태를 반환한다.
+  /// 이미 투표했으면 서버가 409(COMMUNITY_ALREADY_VOTED)를 준다.
+  Future<CommunityPoll> votePoll(int postId, int optionId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityPollVoteUrl(postId)),
+        headers: _headers(token),
+        body: jsonEncode({'optionId': optionId}),
+      ),
+    );
+    _checkOk(response, 'voteCommunityPoll');
+    return CommunityPoll.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
   }
 
   /// 링크 프리뷰(OG 스냅샷). 서버가 못 긁으면 title 이하 null 로 온다.

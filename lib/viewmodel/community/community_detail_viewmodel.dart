@@ -181,6 +181,28 @@ class CommunityDetailViewModel extends ChangeNotifier {
     }
   }
 
+  /// 투표(단일 선택, 변경 불가). 성공하면 서버가 준 투표 후 상태로 교체한다 —
+  /// 분포 공개 여부까지 서버 판정을 그대로 따른다. 실패(재투표 409 포함)는
+  /// [_fail] 로 서버 메시지를 토스트에 띄운다.
+  Future<void> votePoll(int optionId) async {
+    final current = _post;
+    if (current == null || current.poll == null) return;
+    try {
+      final poll = await _repository.votePoll(postId, optionId);
+      _post = CommunityRemotePostDetail(
+        summary: current.summary,
+        body: current.body,
+        bodyFormat: current.bodyFormat,
+        images: current.images,
+        viewer: current.viewer,
+        poll: poll,
+      );
+      _safeNotify();
+    } catch (e) {
+      _fail(e);
+    }
+  }
+
   /// 이 글 알림 켬/끔. 반환 = 토글 후 수신 여부(토스트 문구용), 실패 시 null.
   Future<bool?> toggleNotification() async {
     final current = _post;
@@ -371,11 +393,13 @@ class CommunityDetailViewModel extends ChangeNotifier {
         createdAt: s.createdAt,
         thumbnailUrl: s.thumbnailUrl,
         imageCount: s.imageCount,
+        hasPoll: s.hasPoll,
       ),
       body: current.body,
       // bodyFormat 을 빼먹으면 기본값 PLAIN 으로 떨어져, 좋아요·벨을 누르는
       // 순간 블록 글 본문이 원문 JSON 으로 표시된다(v1.0.23 실사고).
       bodyFormat: current.bodyFormat,
+      poll: current.poll,
       images: current.images,
       viewer: CommunityPostViewer(
         liked: liked ?? current.viewer.liked,
