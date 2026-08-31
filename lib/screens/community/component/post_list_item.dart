@@ -68,13 +68,15 @@ class PostListItem extends StatelessWidget {
                   Text.rich(
                     TextSpan(
                       children: [
-                        if (post.hasPoll) ...[
+                        if (post.hasPoll)
                           WidgetSpan(
                             alignment: PlaceholderAlignment.middle,
-                            child: _PollBadge(scale: scale),
+                            child: Padding(
+                              // 제목과 붙어 보이지 않게 배지 오른쪽에 여백.
+                              padding: EdgeInsets.only(right: 6 * scale),
+                              child: _PollBadge(scale: scale),
+                            ),
                           ),
-                          const TextSpan(text: ' '),
-                        ],
                         TextSpan(text: post.title),
                       ],
                     ),
@@ -196,6 +198,9 @@ Widget _iconMeta(
 );
 
 /// 제목 앞 [투표] 배지. 목록에서 투표 글을 한눈에 구분하는 표시다.
+///
+/// 모양은 [BoardBadge] 와 같은 규격(어두운 칩 + 얇은 테두리, radius 4, 11/w600)을
+/// 따르고 글자만 보라로 둔다 — 배지끼리 톤이 어긋나면 목록이 시끄러워진다.
 class _PollBadge extends StatelessWidget {
   const _PollBadge({required this.scale});
 
@@ -209,17 +214,17 @@ class _PollBadge extends StatelessWidget {
         vertical: 2 * scale,
       ),
       decoration: BoxDecoration(
-        color: AppColors.narChipBadgeBg,
-        borderRadius: BorderRadius.circular(5 * scale),
-        border: Border.all(color: AppColors.narChipActive, width: 1),
+        color: AppColors.narDark500,
+        border: Border.all(color: AppColors.narLine),
+        borderRadius: BorderRadius.circular(4 * scale),
       ),
       child: Text(
         AppLocalizations.of(context)!.communityPollLabel,
         style: TextStyle(
           fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           fontSize: 11 * scale,
-          height: 1.2,
+          height: 1.3,
           color: AppColors.narViolet3,
         ),
       ),
