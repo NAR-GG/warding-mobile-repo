@@ -190,22 +190,60 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatar = (isReply ? 24.0 : 28.0) * scale;
+
+    // 맨 텍스트로 두면 본문 사이에 떠 있는 문장처럼 보인다(1.0.23 피드백).
+    // 실제 댓글 행과 같은 골격(아바타 자리 + 들여쓰기)을 유지하고, 문구를
+    // 회색 말풍선 박스에 담아 "댓글이 있던 빈 자리"로 읽히게 한다 —
+    // 유튜브·에타가 삭제 댓글을 그리는 방식.
     return Padding(
       padding: EdgeInsets.only(
         left: (isReply ? 40.0 : 20.0) * scale,
         right: 20 * scale,
-        top: 12 * scale,
-        bottom: 12 * scale,
+        top: 10 * scale,
+        bottom: 10 * scale,
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w400,
-          fontSize: 12.5 * scale,
-          height: 1.45,
-          color: AppColors.narText2,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 아바타 자리 — 흐린 고스트 원. 실제 행들과 좌측 정렬이 맞아야
+          // 목록 리듬이 안 깨진다.
+          Container(
+            width: avatar,
+            height: avatar,
+            decoration: const BoxDecoration(
+              color: AppColors.narDark600,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_off_outlined,
+              size: avatar * 0.55,
+              color: AppColors.narDark300,
+            ),
+          ),
+          SizedBox(width: 9 * scale),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12 * scale,
+              vertical: 8 * scale,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.narDark600,
+              borderRadius: BorderRadius.circular(10 * scale),
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 12 * scale,
+                height: 1.4,
+                fontStyle: FontStyle.italic,
+                color: AppColors.narDark300,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
