@@ -66,13 +66,24 @@ class CommunityDetailViewModel extends ChangeNotifier {
   }
 
   /// 최상위 댓글(작성 순).
-  List<CommunityRemoteComment> get rootComments =>
-      _comments.where((c) => c.parentId == null).toList();
+  ///
+  /// 삭제·차단·숨김 댓글의 자리("삭제된 댓글입니다")는 **답글이 남아 있을 때만**
+  /// 유지한다 — 자리를 지우면 그 답글들이 누구에게 단 건지 알 수 없어서다(D-5).
+  /// 답글이 없으면 자리도 의미가 없으니 통째로 숨긴다(레딧·에타와 같은 규칙).
+  List<CommunityRemoteComment> get rootComments => _comments
+      .where((c) =>
+          c.parentId == null &&
+          (c.status == CommunityCommentStatus.visible ||
+              repliesTo(c.id).isNotEmpty))
+      .toList();
 
   /// [rootId] 에 달린 답글. 답글의 답글도 여기로 평평하게 들어온다 —
   /// 서버가 parentId 를 항상 최상위 댓글로 올려붙인다.
-  List<CommunityRemoteComment> repliesTo(int rootId) =>
-      _comments.where((c) => c.parentId == rootId).toList();
+  /// 삭제된 답글은 숨긴다 — 문맥(누구에게)은 부모 자리가 들고 있다.
+  List<CommunityRemoteComment> repliesTo(int rootId) => _comments
+      .where((c) =>
+          c.parentId == rootId && c.status == CommunityCommentStatus.visible)
+      .toList();
 
   /// 이 글의 게시판에 댓글을 쓸 수 있는가.
   ///
