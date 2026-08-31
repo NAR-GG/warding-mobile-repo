@@ -489,7 +489,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ),
         cursorColor: AppColors.narViolet3,
         decoration: InputDecoration(
-          hintText: first ? l.communityWriteBodyHint : null,
+          // 안내 문구는 본문이 완전히 빈 상태에서만 — 사진·링크·투표 등 내용이
+          // 하나라도 생기면 걷는다. 안 그러면 빈 첫 블록에 안내가 남아
+          // 콘텐츠 사이에 떠 있는 문장처럼 보인다.
+          hintText:
+              first && !_hasContent && !_pollEnabled
+                  ? l.communityWriteBodyHint
+                  : null,
           hintStyle: _inputStyle(
             scale,
             14,
