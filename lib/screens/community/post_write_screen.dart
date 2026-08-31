@@ -79,6 +79,14 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final List<TextEditingController> _pollOptions = [];
   static const int _maxPollOptions = 4;
 
+  /// 투표 옵션: 복수 선택 / 결과 항상 공개 / 마감(시간, null = 없음).
+  bool _pollAllowMultiple = false;
+  bool _pollAlwaysShowResults = false;
+  int? _pollClosesHours;
+
+  /// 마감 선택지(시간). null = 마감 없음. 라벨은 l10n 으로 그린다.
+  static const List<int?> _pollDeadlines = [null, 1, 6, 24, 72, 168];
+
   @override
   void initState() {
     super.initState();
@@ -380,6 +388,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                 for (final option in _pollOptions)
                   if (option.text.trim().isNotEmpty) option.text.trim(),
               ],
+              allowMultiple: _pollAllowMultiple,
+              alwaysShowResults: _pollAlwaysShowResults,
+              closesHours: _pollClosesHours,
             )
           : null,
     );
@@ -789,7 +800,109 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               ),
             ),
           ],
+          SizedBox(height: 10 * scale),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAllowMultiple,
+            value: _pollAllowMultiple,
+            onChanged: (v) => setState(() => _pollAllowMultiple = v),
+          ),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAlwaysShowResults,
+            value: _pollAlwaysShowResults,
+            onChanged: (v) => setState(() => _pollAlwaysShowResults = v),
+          ),
+          SizedBox(height: 8 * scale),
+          Text(
+            l.communityPollDeadline,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+              fontSize: 12 * scale,
+              height: 1.4,
+              color: AppColors.narText2,
+            ),
+          ),
+          SizedBox(height: 6 * scale),
+          Wrap(
+            spacing: 6 * scale,
+            runSpacing: 6 * scale,
+            children: [
+              for (final hours in _pollDeadlines)
+                _deadlineChip(l, scale, hours),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _pollSwitchRow(
+    double scale, {
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 12.5 * scale,
+            height: 1.4,
+            color: AppColors.narText3,
+          ),
+        ),
+      ),
+      SizedBox(
+        height: 30 * scale,
+        child: FittedBox(
+          child: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.narViolet3,
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _deadlineChip(AppLocalizations l, double scale, int? hours) {
+    final selected = _pollClosesHours == hours;
+    final label = hours == null
+        ? l.communityPollDeadlineNone
+        : hours < 24
+            ? l.communityPollDeadlineHours(hours)
+            : l.communityPollDeadlineDays(hours ~/ 24);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _pollClosesHours = hours),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: 11 * scale,
+          vertical: 6 * scale,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.narChipBadgeBg : AppColors.narDark500,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? AppColors.narChipActive : AppColors.narLine2,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 12 * scale,
+            height: 1.4,
+            color: selected ? AppColors.narText : AppColors.narText2,
+          ),
+        ),
       ),
     );
   }

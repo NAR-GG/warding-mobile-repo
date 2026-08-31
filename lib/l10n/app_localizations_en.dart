@@ -1352,6 +1352,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityPollVoteToSee => 'Vote to see the results';
 
   @override
+  String get communityPollAllowMultiple => 'Allow multiple choices';
+
+  @override
+  String get communityPollAlwaysShowResults => 'Always show results';
+
+  @override
+  String get communityPollDeadline => 'Deadline';
+
+  @override
+  String get communityPollDeadlineNone => 'None';
+
+  @override
+  String communityPollDeadlineHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String communityPollDeadlineDays(int days) {
+    return '${days}d';
+  }
+
+  @override
+  String get communityPollClosed => 'Closed';
+
+  @override
+  String get communityPollMultipleBadge => 'Multiple choice';
+
+  @override
+  String communityPollClosesIn(String time) {
+    return 'Closes in $time';
+  }
+
+  @override
   String get communityLinkDialogTitle => 'Add a link';
 
   @override

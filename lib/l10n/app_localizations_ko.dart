@@ -1317,6 +1317,39 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityPollVoteToSee => '투표하면 결과를 볼 수 있어요';
 
   @override
+  String get communityPollAllowMultiple => '복수 선택 허용';
+
+  @override
+  String get communityPollAlwaysShowResults => '결과 항상 공개';
+
+  @override
+  String get communityPollDeadline => '마감';
+
+  @override
+  String get communityPollDeadlineNone => '없음';
+
+  @override
+  String communityPollDeadlineHours(int hours) {
+    return '$hours시간';
+  }
+
+  @override
+  String communityPollDeadlineDays(int days) {
+    return '$days일';
+  }
+
+  @override
+  String get communityPollClosed => '마감됨';
+
+  @override
+  String get communityPollMultipleBadge => '복수 선택';
+
+  @override
+  String communityPollClosesIn(String time) {
+    return '$time 후 마감';
+  }
+
+  @override
   String get communityLinkDialogTitle => '링크 추가';
 
   @override

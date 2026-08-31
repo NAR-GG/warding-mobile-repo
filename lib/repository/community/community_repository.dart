@@ -92,7 +92,13 @@ class CommunityRepository {
     required String body,
     String bodyFormat = 'PLAIN',
     List<String> imageUrls = const [],
-    ({String question, List<String> options})? poll,
+    ({
+      String question,
+      List<String> options,
+      bool allowMultiple,
+      bool alwaysShowResults,
+      int? closesHours,
+    })? poll,
   }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
@@ -105,7 +111,13 @@ class CommunityRepository {
           'bodyFormat': bodyFormat,
           'imageUrls': imageUrls,
           if (poll != null)
-            'poll': {'question': poll.question, 'options': poll.options},
+            'poll': {
+              'question': poll.question,
+              'options': poll.options,
+              'allowMultiple': poll.allowMultiple,
+              'alwaysShowResults': poll.alwaysShowResults,
+              'closesHours': poll.closesHours,
+            },
         }),
       ),
     );
