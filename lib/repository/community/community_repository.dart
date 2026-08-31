@@ -99,6 +99,7 @@ class CommunityRepository {
       bool alwaysShowResults,
       int? closesHours,
     })? poll,
+    bool test = false,
   }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
@@ -118,6 +119,8 @@ class CommunityRepository {
               'alwaysShowResults': poll.alwaysShowResults,
               'closesHours': poll.closesHours,
             },
+          // 테스터가 아니면 서버가 무시한다 — 숨은 글은 테스터만 만들 수 있다.
+          if (test) 'test': true,
         }),
       ),
     );
