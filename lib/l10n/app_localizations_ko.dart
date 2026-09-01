@@ -200,7 +200,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leaveRatingForPlayer => '님에게 평점를 남겨보세요!';
 
   @override
-  String get championPick => '챔피언 픽';
+  String get championPick => '경기 데이터';
 
   @override
   String get liveEvent => '라이브 이벤트';

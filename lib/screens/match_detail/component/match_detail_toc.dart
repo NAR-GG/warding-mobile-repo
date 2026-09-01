@@ -89,7 +89,7 @@ class _MatchDetailTocState extends State<MatchDetailToc>
       _recomputeActiveSection();
       if (!_visible) setState(() => _visible = true);
       _hideTimer?.cancel();
-      _hideTimer = Timer(const Duration(milliseconds: 600), () {
+      _hideTimer = Timer(const Duration(milliseconds: 900), () {
         if (mounted) setState(() => _visible = false);
       });
     });
@@ -177,38 +177,39 @@ class _MatchDetailTocState extends State<MatchDetailToc>
               opacity: widget.active && _visible ? 1 : 0,
               duration: const Duration(milliseconds: 200),
               child: LayoutBuilder(
-                builder: (context, constraints) => GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (d) {
-                    final i = _indexAtLocalY(d.localPosition.dy);
-                    if (i != null) _jumpTo(i);
-                  },
-                  onVerticalDragUpdate: (d) {
-                    final i = _indexAtLocalY(d.localPosition.dy);
-                    if (i != null && i != _activeIndex) _jumpTo(i);
-                  },
-                  child: Column(
-                    key: _markersKey,
-                    mainAxisSize: MainAxisSize.min,
-                    // 칩이 붙는 활성 행은 폭이 넓고 비활성 행은 점만 있어 좁다.
-                    // 기본(center) 정렬이면 좁은 행의 점이 넓은 행 쪽으로 밀려
-                    // 액티브 점과 다른 자리에 뜬다 — 오른쪽으로 정렬해 점들이
-                    // 항상 같은 세로선에 붙게 한다.
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      for (var i = 0; i < widget.labels.length; i++) ...[
-                        if (i > 0) SizedBox(height: 8 * scale),
-                        _TocRow(
-                          label: widget.labels[i],
-                          isActive: i == _activeIndex,
-                          pulse: _pulse,
-                          scale: scale,
-                          maxChipWidth: constraints.maxWidth,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                builder:
+                    (context, constraints) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (d) {
+                        final i = _indexAtLocalY(d.localPosition.dy);
+                        if (i != null) _jumpTo(i);
+                      },
+                      onVerticalDragUpdate: (d) {
+                        final i = _indexAtLocalY(d.localPosition.dy);
+                        if (i != null && i != _activeIndex) _jumpTo(i);
+                      },
+                      child: Column(
+                        key: _markersKey,
+                        mainAxisSize: MainAxisSize.min,
+                        // 칩이 붙는 활성 행은 폭이 넓고 비활성 행은 점만 있어 좁다.
+                        // 기본(center) 정렬이면 좁은 행의 점이 넓은 행 쪽으로 밀려
+                        // 액티브 점과 다른 자리에 뜬다 — 오른쪽으로 정렬해 점들이
+                        // 항상 같은 세로선에 붙게 한다.
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (var i = 0; i < widget.labels.length; i++) ...[
+                            if (i > 0) SizedBox(height: 8 * scale),
+                            _TocRow(
+                              label: widget.labels[i],
+                              isActive: i == _activeIndex,
+                              pulse: _pulse,
+                              scale: scale,
+                              maxChipWidth: constraints.maxWidth,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
               ),
             ),
           ),
@@ -238,49 +239,62 @@ class _TocRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 마커가 원(11) → 캡슐(11×25)로 커질 때 이 행 자체의 높이가 따라
-    // 커지면, Column 안 다른 행들이 그 순간 위아래로 밀려서 "덜컹"거린다
-    // (실측 확인됨 — 활성 행이 바뀔 때마다 다른 행이 순간 이동했었다).
-    // 행 높이를 마커의 최대 크기(25)로 고정해 두고, 마커 자체 모양만
-    // AnimatedContainer 로 그 안에서 부드럽게 바뀌게 한다 — 바깥 레이아웃은
+    // 마커가 원(11) → 캡슐(11×25)로 커질 때 이 마커 슬롯 자체의 높이가
+    // 따라 커지면, Column 안 다른 행들이 그 순간 위아래로 밀려서 "덜컹"
+    // 거린다(실측 확인됨 — 활성 행이 바뀔 때마다 다른 행이 순간 이동했었다).
+    // 마커 슬롯 높이만 마커의 최대 크기(25)로 고정해 두고, 마커 자체 모양은
+    // AnimatedContainer 로 그 안에서 부드럽게 바뀌게 한다 — 마커 쪽 레이아웃은
     // 절대 흔들리지 않는다.
-    final marker = ScaleTransition(
-      scale: isActive ? pulse : const AlwaysStoppedAnimation(1),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        width: 11 * scale,
-        height: isActive ? 25 * scale : 11 * scale,
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFCFDFE) : const Color(0x99FCFDFE),
-          // shape:circle 대신 borderRadius 로 통일해야 AnimatedContainer 가
-          // 두 상태 사이를 매끄럽게 보간한다(circle↔rect 는 안 섞인다).
-          // 11×11 일 때 반지름 5.5 면 정원이 된다.
-          borderRadius: BorderRadius.circular(
-            isActive ? 6 * scale : 5.5 * scale,
+    //
+    // 이 슬롯 높이(25)를 행 전체(Row 를 감싼 SizedBox)에도 똑같이 씌우면,
+    // 칩 쪽 필요 높이(패딩 5+5 + 텍스트 line-height 14*1.55 ≈ 31.7)가 더 커서
+    // 칩 텍스트 아래가 잘린다. 그래서 행 전체를 고정 높이로 감싸지 않고
+    // 마커 슬롯만 SizedBox 로 고정한다 — 칩은 자기 필요 높이만큼 자연스럽게
+    // 커지고, Row 의 crossAxisAlignment.center 가 마커와 칩을 세로 중앙
+    // 정렬해 준다.
+    final marker = SizedBox(
+      height: 25 * scale,
+      child: Center(
+        child: ScaleTransition(
+          scale: isActive ? pulse : const AlwaysStoppedAnimation(1),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            width: 11 * scale,
+            height: isActive ? 25 * scale : 11 * scale,
+            decoration: BoxDecoration(
+              color:
+                  isActive ? const Color(0xFFFCFDFE) : const Color(0x99FCFDFE),
+              // shape:circle 대신 borderRadius 로 통일해야 AnimatedContainer 가
+              // 두 상태 사이를 매끄럽게 보간한다(circle↔rect 는 안 섞인다).
+              // 11×11 일 때 반지름 5.5 면 정원이 된다.
+              borderRadius: BorderRadius.circular(
+                isActive ? 6 * scale : 5.5 * scale,
+              ),
+            ),
           ),
         ),
       ),
     );
 
-    return SizedBox(
-      height: 25 * scale,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 150),
-            // 기본 layoutBuilder 는 크로스페이드 동안 이전 칩과 새 칩을
-            // Stack 으로 겹쳐 그려서, 라벨 길이가 다르면(예: "Objectives"
-            // → "Champion Pick") 그 짧은 순간 실제보다 더 넓게 차지한다.
-            // 이 폭이 화면 왼쪽 밖으로 나가면 텍스트가 잘려 보인다.
-            // 이전 칩을 무시하고 새 칩 크기만 쓰게 해서 없앤다.
-            layoutBuilder: (currentChild, previousChildren) =>
-                currentChild ?? const SizedBox.shrink(),
-            child: isActive
-                ? Padding(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 150),
+          // 기본 layoutBuilder 는 크로스페이드 동안 이전 칩과 새 칩을
+          // Stack 으로 겹쳐 그려서, 라벨 길이가 다르면(예: "Objectives"
+          // → "Champion Pick") 그 짧은 순간 실제보다 더 넓게 차지한다.
+          // 이 폭이 화면 왼쪽 밖으로 나가면 텍스트가 잘려 보인다.
+          // 이전 칩을 무시하고 새 칩 크기만 쓰게 해서 없앤다.
+          layoutBuilder:
+              (currentChild, previousChildren) =>
+                  currentChild ?? const SizedBox.shrink(),
+          child:
+              isActive
+                  ? Padding(
                     key: ValueKey(label),
                     padding: EdgeInsets.only(right: 4 * scale),
                     child: _TocChip(
@@ -292,11 +306,10 @@ class _TocRow extends StatelessWidget {
                           .clamp(0, double.infinity),
                     ),
                   )
-                : const SizedBox.shrink(),
-          ),
-          marker,
-        ],
-      ),
+                  : const SizedBox.shrink(),
+        ),
+        marker,
+      ],
     );
   }
 }

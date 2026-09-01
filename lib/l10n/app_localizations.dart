@@ -455,7 +455,7 @@ abstract class AppLocalizations {
   /// No description provided for @championPick.
   ///
   /// In ko, this message translates to:
-  /// **'챔피언 픽'**
+  /// **'경기 데이터'**
   String get championPick;
 
   /// No description provided for @liveEvent.

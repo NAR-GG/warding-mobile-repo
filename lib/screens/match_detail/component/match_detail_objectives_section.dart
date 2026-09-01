@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../styles/app_colors.dart';
 
@@ -6,8 +7,8 @@ import '../../../styles/app_colors.dart';
 ///
 /// **실데이터 없음.** 드래곤·바론·타워·억제기 획득 수는 지금 어떤 API
 /// 응답에도 없어서, 시안의 목업 숫자를 위치 그대로 하드코딩해 UI를 먼저
-/// 완성한다. 오브젝트 아이콘은 받은 샘플 이미지([_ObjectiveIcons])를
-/// 그대로 쓴다. 전령·공허유충·타워 플레이트 행은 요청에 따라 뺐다.
+/// 완성한다. 오브젝트 아이콘은 [_ObjectiveIcons]의 svg를 그대로 쓴다.
+/// 전령·공허유충·타워 플레이트 행은 요청에 따라 뺐다.
 /// 백엔드가 값을 내려주기 시작하면 이 숫자를 실제 데이터 바인딩으로
 /// 바꿔야 한다.
 class MatchDetailObjectivesSection extends StatelessWidget {
@@ -82,18 +83,20 @@ class MatchDetailObjectivesSection extends StatelessWidget {
   }
 }
 
-/// 받은 오브젝트 샘플 아이콘 경로 모음.
+/// 주요 오브젝트·구조물 아이콘 경로 모음.
 class _ObjectiveIcons {
-  static const String baron = 'assets/images/baron.png';
-  static const String dragon = 'assets/images/dragon.png';
-  static const String elderDragon = 'assets/images/elder-dragon.png';
+  static const String baron = 'assets/icons/nar-icon-baron.svg';
+  static const String dragon = 'assets/icons/nar-icon-dragon.svg';
+  static const String elderDragon = 'assets/icons/nar-icon-elder-dragon.svg';
+  static const String turret = 'assets/icons/nar-icon-turret.svg';
+  static const String inhibitor = 'assets/icons/nar-icon-inhibitor.svg';
+
+  // 드래곤 속성별 미니 아이콘은 아직 svg 세트가 없어 기존 샘플 png를 쓴다.
   static const String infernalDragon = 'assets/images/infernal-dragon.png';
   static const String mountainDragon = 'assets/images/mountain-dragon.png';
   static const String oceanDragon = 'assets/images/ocean-dragon.png';
   static const String cloudDragon = 'assets/images/cloud-dragon.png';
   static const String hextechDragon = 'assets/images/hextech-dragon.png';
-  static const String turret = 'assets/images/turret.png';
-  static const String inhibitor = 'assets/images/inhibitor.png';
 }
 
 /// "──── 라벨 ────" 형태의 구분선 라벨.
@@ -157,37 +160,54 @@ class _ObjectiveRow extends StatelessWidget {
       height: 1.55,
       color: const Color(0xFFFFFEFE),
     );
-    final iconWidget = Image.asset(icon, width: 24 * scale, height: 24 * scale);
+    final iconWidget = SvgPicture.asset(
+      icon,
+      width: 24 * scale,
+      height: 24 * scale,
+    );
 
+    // 좌우 블록(아이콘+숫자)을 같은 고정 폭으로 맞춰야 라벨이 실제 화면
+    // 정중앙에 온다. 두 블록을 자기 콘텐츠 크기(mainAxisSize.min)로만
+    // 두면, 좌우 숫자 자릿수가 다를 때(예: 왼쪽 '10' vs 오른쪽 '5') 블록
+    // 폭이 서로 달라져 그 폭 차이만큼 가운데 라벨이 한쪽으로 밀린다.
+    const sideWidth = 58.0;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            iconWidget,
-            SizedBox(width: 14 * scale),
-            Text(left, style: countStyle),
-          ],
-        ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'SF Pro',
-            fontWeight: FontWeight.w700,
-            fontSize: 14 * scale,
-            height: 1.55,
-            color: const Color(0xFFFCFDFE),
+        SizedBox(
+          width: sideWidth * scale,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              SizedBox(width: 14 * scale),
+              Text(left, style: countStyle),
+            ],
           ),
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(right, style: countStyle),
-            SizedBox(width: 14 * scale),
-            iconWidget,
-          ],
+        Expanded(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'SF Pro',
+              fontWeight: FontWeight.w700,
+              fontSize: 14 * scale,
+              height: 1.55,
+              color: const Color(0xFFFCFDFE),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: sideWidth * scale,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(right, style: countStyle),
+              SizedBox(width: 14 * scale),
+              iconWidget,
+            ],
+          ),
         ),
       ],
     );

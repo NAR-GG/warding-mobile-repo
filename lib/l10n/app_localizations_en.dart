@@ -205,7 +205,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveRatingForPlayer => ' — rate now!';
 
   @override
-  String get championPick => 'Champion Pick';
+  String get championPick => 'Match Data';
 
   @override
   String get liveEvent => 'Live Event';

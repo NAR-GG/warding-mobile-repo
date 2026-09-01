@@ -56,8 +56,11 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
   }
 }
 
-/// K/D/A 처럼 "a / b / c" 형태이면서 가운데 값만 강조색인 텍스트.
-/// 팀 총 스코어("25/20/26")와 선수 KDA("7/2/4") 둘 다 이 스타일을 쓴다.
+/// K/D/A 처럼 "a / b / c" 형태의 텍스트. 팀 총 스코어("25/20/26")와 선수
+/// KDA("7/2/4") 둘 다 이 스타일을 쓴다. [deathColor] 를 주면 가운데 값(데스)
+/// 만 그 색으로 강조하고, 안 주면 전체가 [color] 로 통일된다 — 팀 총
+/// 스코어는 가운데(데스)만 강조색(narTextScore), 선수별 KDA는 데스도
+/// 나머지와 같은 흰색(narText)으로 표시한다.
 class _SlashTriple extends StatelessWidget {
   const _SlashTriple({
     required this.a,
@@ -66,6 +69,7 @@ class _SlashTriple extends StatelessWidget {
     required this.fontSize,
     required this.fontWeight,
     required this.scale,
+    this.deathColor,
   });
 
   final String a;
@@ -74,6 +78,7 @@ class _SlashTriple extends StatelessWidget {
   final double fontSize;
   final FontWeight fontWeight;
   final double scale;
+  final Color? deathColor;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +97,7 @@ class _SlashTriple extends StatelessWidget {
           const TextSpan(text: ' / '),
           TextSpan(
             text: b,
-            style: const TextStyle(color: AppColors.narTextScore),
+            style: deathColor == null ? null : TextStyle(color: deathColor),
           ),
           const TextSpan(text: ' / '),
           TextSpan(text: c),
@@ -133,7 +138,9 @@ class _TeamStatsBlock extends StatelessWidget {
             ),
             child: Row(
               children: [
-                NarBadgeSide(side: side, scale: scale, label: 'LIVE'),
+                // 뱃지 라벨은 기본값(BLUE/RED)을 그대로 쓰고, 그 옆에 팀
+                // 코드·승패를 별도 텍스트로 붙인다.
+                NarBadgeSide(side: side, scale: scale),
                 SizedBox(width: 8 * scale),
                 Text(
                   teamCode,
@@ -162,9 +169,11 @@ class _TeamStatsBlock extends StatelessWidget {
                 // 줄어들게 한다. FittedBox 는 부모가 폭을 정해줘야 실제로
                 // 줄어든다 — Row 의 비-flex 자식으로 그냥 두면 폭 제약이
                 // 없어(unbounded) 그냥 원래 크기로 그려져 overflow 가 그대로
-                // 났다. 시안의 원래 자리 폭(96)을 SizedBox 로 씌워 준다.
+                // 났다. 시안의 원래 자리 폭(112, "총" 프레임 기준)을 SizedBox
+                // 로 씌워 준다 — 이보다 좁으면(예: 96) FittedBox 가 폰트
+                // 크기를 스펙보다 작게 축소해 버린다.
                 SizedBox(
-                  width: 96 * scale,
+                  width: 112 * scale,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
@@ -176,10 +185,22 @@ class _TeamStatsBlock extends StatelessWidget {
                           b: '20',
                           c: '26',
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           scale: scale,
+                          deathColor: AppColors.narTextScore,
                         ),
-                        SizedBox(width: 8 * scale),
+                        SizedBox(width: 2 * scale),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 8 * scale,
+                            height: 1.2,
+                            color: AppColors.narText,
+                          ),
+                        ),
+                        SizedBox(width: 2 * scale),
                         Text(
                           '78.6k',
                           style: TextStyle(
@@ -187,7 +208,7 @@ class _TeamStatsBlock extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                             fontSize: 14 * scale,
                             height: 1.2,
-                            color: AppColors.narText2,
+                            color: AppColors.narText,
                           ),
                         ),
                       ],
@@ -264,7 +285,18 @@ class _PlayerStatsRow extends StatelessWidget {
                           color: AppColors.narText2,
                         ),
                       ),
-                      SizedBox(width: 8 * scale),
+                      SizedBox(width: 2 * scale),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 8 * scale,
+                          height: 14 / 12,
+                          color: AppColors.narText2,
+                        ),
+                      ),
+                      SizedBox(width: 2 * scale),
                       Text(
                         '14.4k',
                         style: TextStyle(
@@ -394,16 +426,13 @@ class _SpellRuneBlock extends StatelessWidget {
         borderRadius: BorderRadius.circular(4 * scale),
       ),
       clipBehavior: Clip.antiAlias,
-      child: asset.endsWith('.svg')
-          ? SvgPicture.asset(asset, fit: BoxFit.cover)
-          : Image.asset(asset, fit: BoxFit.cover),
+      child:
+          asset.endsWith('.svg')
+              ? SvgPicture.asset(asset, fit: BoxFit.cover)
+              : Image.asset(asset, fit: BoxFit.cover),
     );
     Widget column(String top, String bottom) => Column(
-      children: [
-        slot(top),
-        SizedBox(height: 2 * scale),
-        slot(bottom),
-      ],
+      children: [slot(top), SizedBox(height: 2 * scale), slot(bottom)],
     );
 
     return SizedBox(
@@ -426,8 +455,9 @@ class _SpellRuneBlock extends StatelessWidget {
   }
 }
 
-/// 아이템 6칸(2행×3열) + 트린켓 1칸. 실제 구매 아이템 데이터가 없어 대부분
-/// 회색 박스이고, 마지막 칸에만 받은 트린켓 샘플 아이콘([oracleLens])을 쓴다.
+/// 아이템 8칸(4열×2행, 20×20, gap 2). 실제 구매 아이템 데이터가 없어
+/// 대부분 회색 박스이고, 1행 마지막 칸(신발류 추정)·2행 마지막 칸(트린켓)만
+/// 받은 샘플 아이콘을 쓴다.
 class _ItemGrid extends StatelessWidget {
   const _ItemGrid({required this.scale});
 
@@ -435,7 +465,7 @@ class _ItemGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget slot({bool trinket = false}) => Container(
+    Widget slot({String? asset}) => Container(
       width: 20 * scale,
       height: 20 * scale,
       decoration: BoxDecoration(
@@ -443,27 +473,32 @@ class _ItemGrid extends StatelessWidget {
         borderRadius: BorderRadius.circular(4 * scale),
       ),
       clipBehavior: Clip.antiAlias,
-      child: trinket
-          ? Image.asset(
-              MatchDetailPlayerStatsSection.oracleLens,
-              fit: BoxFit.cover,
-            )
-          : null,
+      child: asset == null ? null : Image.asset(asset, fit: BoxFit.cover),
+    );
+    Widget row(List<Widget> slots) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < slots.length; i++) ...[
+          if (i > 0) SizedBox(width: 2 * scale),
+          slots[i],
+        ],
+      ],
     );
 
     return SizedBox(
       width: 86 * scale,
-      child: Wrap(
-        spacing: 2 * scale,
-        runSpacing: 2 * scale,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          slot(),
-          slot(),
-          slot(),
-          slot(),
-          slot(),
-          slot(),
-          slot(trinket: true),
+          row([slot(), slot(), slot(), slot()]),
+          SizedBox(height: 2 * scale),
+          row([
+            slot(),
+            slot(),
+            slot(),
+            slot(asset: MatchDetailPlayerStatsSection.oracleLens),
+          ]),
         ],
       ),
     );
