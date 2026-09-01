@@ -30,6 +30,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loading => '불러오는 중...';
 
   @override
+  String get refreshDone => '반영 완료!';
+
+  @override
   String get select => '선택';
 
   @override
@@ -856,7 +859,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCommunity => '커뮤니티';
 
   @override
-  String get navSubscription => '구독';
+  String get navSubscription => '마이 구독';
 
   @override
   String get navMyPage => '마이페이지';
@@ -1262,8 +1265,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '조회 $countString';

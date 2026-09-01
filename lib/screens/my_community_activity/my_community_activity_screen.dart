@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
+import '../../components/app_refresh_indicator.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../model/community_my_activity.dart';
@@ -136,10 +137,8 @@ class _MyCommunityActivityScreenState extends State<MyCommunityActivityScreen> {
         onRetry: () => _vm.loadPosts(refresh: true),
       );
     }
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => _vm.loadPosts(refresh: true),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: state.items.isEmpty
           ? _emptyList(l.myCommunityPostsEmpty, scale)
           : _ActivityList<CommunityRemotePost>(
@@ -174,10 +173,8 @@ class _MyCommunityActivityScreenState extends State<MyCommunityActivityScreen> {
         onRetry: () => _vm.loadComments(refresh: true),
       );
     }
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => _vm.loadComments(refresh: true),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: state.items.isEmpty
           ? _emptyList(l.myCommunityCommentsEmpty, scale)
           : _ActivityList<CommunityMyComment>(
@@ -211,10 +208,8 @@ class _MyCommunityActivityScreenState extends State<MyCommunityActivityScreen> {
         onRetry: () => _vm.loadScraps(refresh: true),
       );
     }
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => _vm.loadScraps(refresh: true),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: state.items.isEmpty
           ? _emptyList(l.communityScrapEmpty, scale)
           : _ActivityList<CommunityScrapItem>(

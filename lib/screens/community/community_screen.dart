@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_bottom_nav.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../config/app_globals.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/community_remote_post.dart';
@@ -16,6 +17,7 @@ import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
 import 'component/post_list_item.dart';
+import 'component/post_list_item_skeleton.dart';
 import 'component/write_lock_bar.dart';
 import 'post_detail_screen.dart';
 import 'post_write_screen.dart';
@@ -47,6 +49,9 @@ class _CommunityScreenState extends State<CommunityScreen>
   /// 비로그인·실패는 0(배지 숨김)으로 조용히 넘어간다.
   int _unreadCount = 0;
 
+  /// 목록을 내리는 동안 [AppBottomNav] 를 살짝 축소한다([BottomNavShrinkController]).
+  final BottomNavShrinkController _navShrink = BottomNavShrinkController();
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +69,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     feedRefreshTick.removeListener(_refreshUnreadCount);
     WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();
+    _navShrink.dispose();
     super.dispose();
   }
 
@@ -84,9 +90,9 @@ class _CommunityScreenState extends State<CommunityScreen>
   }
 
   Future<void> _openNotificationInbox() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const NotificationScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const NotificationScreen()));
     // 알림함에서 읽고 돌아오면 배지를 다시 센다.
     _refreshUnreadCount();
   }
@@ -161,16 +167,19 @@ class _CommunityScreenState extends State<CommunityScreen>
           listenable: _vm,
           builder: (context, _) => Stack(
             children: [
-              Column(
-                children: [
-                  _Header(
-                    title: l.communityTitle,
-                    scale: scale,
-                    unreadCount: _unreadCount,
-                    onBellTap: _openNotificationInbox,
-                  ),
-                  Expanded(child: _board(scale)),
-                ],
+              NotificationListener<ScrollNotification>(
+                onNotification: _navShrink.handleNotification,
+                child: Column(
+                  children: [
+                    _Header(
+                      title: l.communityTitle,
+                      scale: scale,
+                      unreadCount: _unreadCount,
+                      onBellTap: _openNotificationInbox,
+                    ),
+                    Expanded(child: _board(scale)),
+                  ],
+                ),
               ),
               if (_vm.canWrite(null))
                 Positioned(
@@ -206,9 +215,13 @@ class _CommunityScreenState extends State<CommunityScreen>
                 left: 0,
                 right: 0,
                 bottom: 26,
-                child: AppBottomNav(
-                  currentTab: AppNavTab.community,
-                  onTabSelected: _onTabSelected,
+                child: ListenableBuilder(
+                  listenable: _navShrink,
+                  builder: (context, _) => AppBottomNav(
+                    currentTab: AppNavTab.community,
+                    onTabSelected: _onTabSelected,
+                    compact: _navShrink.compact,
+                  ),
                 ),
               ),
             ],
@@ -229,7 +242,13 @@ class _CommunityScreenState extends State<CommunityScreen>
       });
     }
 
-    if (state.loading && state.posts.isEmpty) return const _Loading();
+    if (state.loading && state.posts.isEmpty) {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 6,
+        itemBuilder: (context, i) => PostListItemSkeleton(scale: scale),
+      );
+    }
     if (state.error != null && state.posts.isEmpty) {
       return _Retry(
         message: state.error!,
@@ -239,10 +258,8 @@ class _CommunityScreenState extends State<CommunityScreen>
       );
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => _vm.load(null, refresh: true),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: state.posts.isEmpty
           // 빈 목록에서도 당길 수 있어야 하므로 스크롤 가능한 리스트로 감싼다.
           ? ListView(
@@ -433,22 +450,6 @@ class _Header extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Loading extends StatelessWidget {
-  const _Loading();
-
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: SizedBox(
-      width: 24,
-      height: 24,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: AppColors.narText2,
-      ),
-    ),
-  );
 }
 
 class _Empty extends StatelessWidget {

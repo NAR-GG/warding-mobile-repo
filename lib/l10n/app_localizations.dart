@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'불러오는 중...'**
   String get loading;
 
+  /// No description provided for @refreshDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'반영 완료!'**
+  String get refreshDone;
+
   /// No description provided for @select.
   ///
   /// In ko, this message translates to:
@@ -1655,7 +1661,7 @@ abstract class AppLocalizations {
   /// No description provided for @navSubscription.
   ///
   /// In ko, this message translates to:
-  /// **'구독'**
+  /// **'마이 구독'**
   String get navSubscription;
 
   /// No description provided for @navMyPage.
