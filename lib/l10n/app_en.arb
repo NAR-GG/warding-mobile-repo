@@ -10,6 +10,7 @@
   "season": "Season",
   "league": "League",
   "loading": "Loading...",
+  "refreshDone": "Refreshed!",
   "select": "Select",
   "noMatches": "No matches found",
   "setInProgress": "SET {setNumber} In Progress",
@@ -310,7 +311,7 @@
   "navSchedule": "Schedule",
   "navMatchList": "Matches",
   "navCommunity": "Community",
-  "navSubscription": "Subs",
+  "navSubscription": "My Subs",
   "navMyPage": "Me",
 
   "defaultCancel": "Cancel",

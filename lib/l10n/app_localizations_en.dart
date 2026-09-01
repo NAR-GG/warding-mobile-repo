@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
+  String get refreshDone => 'Refreshed!';
+
+  @override
   String get select => 'Select';
 
   @override
@@ -881,7 +884,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCommunity => 'Community';
 
   @override
-  String get navSubscription => 'Subs';
+  String get navSubscription => 'My Subs';
 
   @override
   String get navMyPage => 'Me';
@@ -1297,8 +1300,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Views $countString';
