@@ -349,6 +349,17 @@ class ApiConfig {
     return '$apiBaseUrl/mobile/community/posts?$query';
   }
 
+  /// 글 검색(GET). q 는 2~50자 — 그 밖이면 서버가 400 을 준다.
+  static String communitySearchUrl({
+    required String q,
+    int? cursor,
+    int size = 20,
+  }) {
+    final query = StringBuffer('q=${Uri.encodeQueryComponent(q)}&size=$size');
+    if (cursor != null) query.write('&cursor=$cursor');
+    return '$apiBaseUrl/mobile/community/posts/search?$query';
+  }
+
   /// 게시글 작성(POST).
   static String get communityCreatePostUrl =>
       '$apiBaseUrl/mobile/community/posts';

@@ -1356,6 +1356,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityPollLabel => '투표';
 
   @override
+  String get communitySearchHint => '제목·내용 검색';
+
+  @override
+  String get communitySearchGuide => '두 글자 이상 입력하면 검색해요';
+
+  @override
+  String get communitySearchEmpty => '검색 결과가 없어요';
+
+  @override
   String get communityPollQuestionHint => '투표 질문을 입력하세요';
 
   @override
