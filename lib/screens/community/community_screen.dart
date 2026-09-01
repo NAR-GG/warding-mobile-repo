@@ -322,26 +322,22 @@ class _BoardListState extends State<_BoardList> {
     final posts = widget.state.posts;
     final scale = widget.scale;
 
+    // 추가 로딩 중엔 최초 로딩과 같은 스켈레톤을 몇 장 더 붙인다 — 스크롤이
+    // 계속 이어지는 느낌을 준다(스피너 하나만 있으면 목록이 뚝 끊긴 것처럼
+    // 보인다).
+    const loadMoreSkeletonCount = 3;
+    final loadingMoreCount = widget.state.loadingMore
+        ? loadMoreSkeletonCount
+        : 0;
+
     return ListView.builder(
       controller: _controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(bottom: 170 * scale),
-      itemCount: posts.length + (widget.state.loadingMore ? 1 : 0),
+      itemCount: posts.length + loadingMoreCount,
       itemBuilder: (context, i) {
         if (i >= posts.length) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 16 * scale),
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.narText2,
-                ),
-              ),
-            ),
-          );
+          return PostListItemSkeleton(scale: scale);
         }
         return PostListItem(
           post: posts[i],
