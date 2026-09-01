@@ -73,6 +73,21 @@ class CommunityRepository {
     );
   }
 
+  /// 글 검색(제목·미리보기·평문 본문). 응답은 목록과 같은 모양이다.
+  Future<CommunityRemotePostPage> searchPosts(
+    String q, {
+    int? cursor,
+    int size = 20,
+  }) async {
+    final response = await _optionalAuthGet(
+      ApiConfig.communitySearchUrl(q: q, cursor: cursor, size: size),
+    );
+    _checkOk(response, 'searchCommunityPosts');
+    return CommunityRemotePostPage.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
+  }
+
   /// 게시글 상세.
   Future<CommunityRemotePostDetail> fetchPostDetail(int postId) async {
     final response = await _optionalAuthGet(

@@ -2582,6 +2582,24 @@ abstract class AppLocalizations {
   /// **'투표'**
   String get communityPollLabel;
 
+  /// No description provided for @communitySearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목·내용 검색'**
+  String get communitySearchHint;
+
+  /// No description provided for @communitySearchGuide.
+  ///
+  /// In ko, this message translates to:
+  /// **'두 글자 이상 입력하면 검색해요'**
+  String get communitySearchGuide;
+
+  /// No description provided for @communitySearchEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 결과가 없어요'**
+  String get communitySearchEmpty;
+
   /// No description provided for @communityPollQuestionHint.
   ///
   /// In ko, this message translates to:

@@ -15,6 +15,7 @@ import '../mypage/mypage_screen.dart';
 import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
+import 'community_search_screen.dart';
 import 'component/post_list_item.dart';
 import 'component/write_lock_bar.dart';
 import 'post_detail_screen.dart';
@@ -81,6 +82,15 @@ class _CommunityScreenState extends State<CommunityScreen>
     } catch (_) {
       if (mounted) setState(() => _unreadCount = 0);
     }
+  }
+
+  Future<void> _openSearch() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const CommunitySearchScreen()),
+    );
+    if (!mounted) return;
+    // 검색 결과에서 글을 지웠을 수 있어 목록을 다시 받는다.
+    await _vm.load(null, refresh: true);
   }
 
   Future<void> _openNotificationInbox() async {
@@ -168,6 +178,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                     scale: scale,
                     unreadCount: _unreadCount,
                     onBellTap: _openNotificationInbox,
+                    onSearchTap: _openSearch,
                   ),
                   Expanded(child: _board(scale)),
                 ],
@@ -344,6 +355,7 @@ class _Header extends StatelessWidget {
     required this.scale,
     required this.unreadCount,
     required this.onBellTap,
+    required this.onSearchTap,
   });
 
   final String title;
@@ -353,6 +365,9 @@ class _Header extends StatelessWidget {
   final int unreadCount;
 
   final VoidCallback onBellTap;
+
+  /// 검색 화면 진입.
+  final VoidCallback onSearchTap;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +392,26 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
+          // 검색은 벨 왼쪽 — 같은 원형 슬롯으로 톤을 맞춘다.
+          GestureDetector(
+            onTap: onSearchTap,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 40 * scale,
+              height: 40 * scale,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.narBgTertiary,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.search,
+                size: 21 * scale,
+                color: AppColors.narText,
+              ),
+            ),
+          ),
+          SizedBox(width: 8 * scale),
           GestureDetector(
             onTap: onBellTap,
             behavior: HitTestBehavior.opaque,

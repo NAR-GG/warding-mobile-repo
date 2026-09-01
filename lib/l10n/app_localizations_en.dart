@@ -1390,6 +1390,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityPollLabel => 'Poll';
 
   @override
+  String get communitySearchHint => 'Search titles and posts';
+
+  @override
+  String get communitySearchGuide => 'Type at least 2 characters to search';
+
+  @override
+  String get communitySearchEmpty => 'No results';
+
+  @override
   String get communityPollQuestionHint => 'Ask a question';
 
   @override
