@@ -20,6 +20,7 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
     required this.blueWon,
     required this.bluePicks,
     required this.redPicks,
+    this.onPlayerTap,
     this.scale = 1,
   });
 
@@ -31,6 +32,10 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
 
   final List<ChampionPick> bluePicks;
   final List<ChampionPick> redPicks;
+
+  /// 선수 행을 탭했을 때 호출된다(블루팀 여부, 팀 내 인덱스). null 이면 탭 비활성화.
+  /// [MatchDetailScreen]이 여기서 "Player Builds" 바텀시트를 띄운다.
+  final void Function(bool isBlueSide, int index)? onPlayerTap;
 
   final double scale;
 
@@ -51,6 +56,9 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
                 ? AppColors.narGreenWin
                 : AppColors.narText2,
             picks: bluePicks,
+            onPlayerTap: onPlayerTap == null
+                ? null
+                : (index) => onPlayerTap!(true, index),
             scale: scale,
           ),
           SizedBox(height: 4 * scale),
@@ -62,6 +70,9 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
                 ? AppColors.narGreenWin
                 : AppColors.narText2,
             picks: redPicks,
+            onPlayerTap: onPlayerTap == null
+                ? null
+                : (index) => onPlayerTap!(false, index),
             scale: scale,
           ),
         ],
@@ -72,9 +83,8 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
 
 /// K/D/A 처럼 "a / b / c" 형태의 텍스트. 팀 총 스코어("25/20/26")와 선수
 /// KDA("7/2/4") 둘 다 이 스타일을 쓴다. [deathColor] 를 주면 가운데 값(데스)
-/// 만 그 색으로 강조하고, 안 주면 전체가 [color] 로 통일된다 — 팀 총
-/// 스코어는 가운데(데스)만 강조색(narTextScore), 선수별 KDA는 데스도
-/// 나머지와 같은 흰색(narText)으로 표시한다.
+/// 만 그 색으로 강조하고, 안 주면 전체가 기본색(narText)으로 통일된다 —
+/// 팀 총 스코어·선수별 KDA 둘 다 데스만 강조색(narTextScore)으로 표시한다.
 class _SlashTriple extends StatelessWidget {
   const _SlashTriple({
     required this.a,
@@ -128,6 +138,7 @@ class _TeamStatsBlock extends StatelessWidget {
     required this.resultLabel,
     required this.resultColor,
     required this.picks,
+    required this.onPlayerTap,
     required this.scale,
   });
 
@@ -138,6 +149,7 @@ class _TeamStatsBlock extends StatelessWidget {
   final String? resultLabel;
   final Color resultColor;
   final List<ChampionPick> picks;
+  final void Function(int index)? onPlayerTap;
   final double scale;
 
   @override
@@ -244,7 +256,11 @@ class _TeamStatsBlock extends StatelessWidget {
           ),
           for (var i = 0; i < picks.length; i++) ...[
             if (i > 0) SizedBox(height: 12 * scale),
-            _PlayerStatsRow(pick: picks[i], scale: scale),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onPlayerTap == null ? null : () => onPlayerTap!(i),
+              child: _PlayerStatsRow(pick: picks[i], scale: scale),
+            ),
           ],
         ],
       ),
@@ -267,7 +283,11 @@ class _PlayerStatsRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _ChampionBlock(imageUrl: pick.imageUrl, level: pick.level, scale: scale),
+          _ChampionBlock(
+            imageUrl: pick.imageUrl,
+            level: pick.level,
+            scale: scale,
+          ),
           SizedBox(width: 2 * scale),
           _SpellRuneBlock(
             keystoneIconUrl: pick.keystoneIconUrl,
@@ -364,6 +384,7 @@ class _PlayerStatsRow extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     scale: scale,
+                    deathColor: AppColors.narTextScore,
                   ),
                   SizedBox(height: 4 * scale),
                   Text(
@@ -392,7 +413,12 @@ class _PlayerStatsRow extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8 * scale),
-          _ItemGrid(itemImageUrls: pick.itemImageUrls, scale: scale),
+          _ItemGrid(
+            coreItemImageUrls: pick.coreItemImageUrls,
+            questItemImageUrl: pick.questItemImageUrl,
+            trinketItemImageUrl: pick.trinketItemImageUrl,
+            scale: scale,
+          ),
         ],
       ),
     );
@@ -497,8 +523,13 @@ class _SpellRuneBlock extends StatelessWidget {
       );
     }
 
-    Widget column(Widget top, Widget bottom) =>
-        Column(children: [top, SizedBox(height: 2 * scale), bottom]);
+    Widget column(Widget top, Widget bottom) => Column(
+      children: [
+        top,
+        SizedBox(height: 2 * scale),
+        bottom,
+      ],
+    );
 
     return SizedBox(
       width: 42 * scale,
@@ -508,19 +539,30 @@ class _SpellRuneBlock extends StatelessWidget {
           // 소환사 주문 — API 응답에 없어 빈 슬롯으로 남긴다.
           column(slot(), slot()),
           SizedBox(width: 2 * scale),
-          column(slot(imageUrl: keystoneIconUrl), slot(imageUrl: subStyleIconUrl)),
+          column(
+            slot(imageUrl: keystoneIconUrl),
+            slot(imageUrl: subStyleIconUrl),
+          ),
         ],
       ),
     );
   }
 }
 
-/// 아이템 8칸(4열×2행, 20×20, gap 2). [itemImageUrls] 순서대로 채우고
-/// 부족한 칸은 빈 박스로 둔다.
+/// 아이템 8칸(4열×2행, 20×20, gap 2). 왼쪽 3열(6칸)은 코어 아이템, 맨 끝
+/// 오른쪽 열은 위=장신구·아래=퀘스트 아이템(2026 바텀 퀘스트 완료 시 신발).
+/// 값이 없는 칸은 빈 박스로 둔다.
 class _ItemGrid extends StatelessWidget {
-  const _ItemGrid({required this.itemImageUrls, required this.scale});
+  const _ItemGrid({
+    required this.coreItemImageUrls,
+    required this.questItemImageUrl,
+    required this.trinketItemImageUrl,
+    required this.scale,
+  });
 
-  final List<String> itemImageUrls;
+  final List<String> coreItemImageUrls;
+  final String? questItemImageUrl;
+  final String? trinketItemImageUrl;
   final double scale;
 
   @override
@@ -541,8 +583,8 @@ class _ItemGrid extends StatelessWidget {
       );
     }
 
-    Widget slotAt(int index) =>
-        slot(imageUrl: index < itemImageUrls.length ? itemImageUrls[index] : null);
+    String? coreAt(int index) =>
+        index < coreItemImageUrls.length ? coreItemImageUrls[index] : null;
 
     Widget row(List<Widget> slots) => Row(
       mainAxisSize: MainAxisSize.min,
@@ -560,9 +602,19 @@ class _ItemGrid extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          row([slotAt(0), slotAt(1), slotAt(2), slotAt(3)]),
+          row([
+            slot(imageUrl: coreAt(0)),
+            slot(imageUrl: coreAt(1)),
+            slot(imageUrl: coreAt(2)),
+            slot(imageUrl: trinketItemImageUrl),
+          ]),
           SizedBox(height: 2 * scale),
-          row([slotAt(4), slotAt(5), slotAt(6), slotAt(7)]),
+          row([
+            slot(imageUrl: coreAt(3)),
+            slot(imageUrl: coreAt(4)),
+            slot(imageUrl: coreAt(5)),
+            slot(imageUrl: questItemImageUrl),
+          ]),
         ],
       ),
     );

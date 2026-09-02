@@ -17,6 +17,7 @@ class MatchGame {
     this.status = MatchGameStatus.scheduled,
     this.vodUrl,
     this.winnerTeamCode,
+    this.recordGameId,
   });
 
   final String gameId;
@@ -33,6 +34,11 @@ class MatchGame {
   /// 세트를 이긴 팀의 teamCode. 세트가 끝나기 전엔 null.
   final String? winnerTeamCode;
 
+  /// 기록(record) API(`GET /api/games/{recordGameId}/record`, 종료 후 CSV
+  /// 적재분 — 와드 설치·파괴 등)에서 쓰는 내부 gameId. [gameId](라이브·챔피언
+  /// 픽 API용)와는 다른 값이다. CSV 미적재 시 null.
+  final int? recordGameId;
+
   bool get isLive => status == MatchGameStatus.live;
   bool get isEnded => status == MatchGameStatus.ended;
 
@@ -40,7 +46,8 @@ class MatchGame {
     // gameId 는 문자열 또는 정수로 내려올 수 있어 둘 다 받는다.
     final rawId = json['gameId'];
     final gameId = rawId == null ? '' : rawId.toString();
-    final order = json['gameOrder'] as int? ??
+    final order =
+        json['gameOrder'] as int? ??
         json['setNumber'] as int? ??
         json['order'] as int? ??
         0;
@@ -54,6 +61,7 @@ class MatchGame {
       status: status,
       vodUrl: json['vodUrl'] as String?,
       winnerTeamCode: json['winnerTeamCode'] as String?,
+      recordGameId: json['recordGameId'] as int?,
     );
   }
 }

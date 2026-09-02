@@ -220,4 +220,14 @@ class AppColors {
 
   // 경기 상세 — 선수 스탯 팀 헤더의 "승" 텍스트.
   static const Color narGreenWin = Color(0xFF34C759);
+
+  // Player Builds 바텀시트 (경기 상세 — 선수 빌드 상세)
+  /// rgba(20,21,23,0.4) — KDA·CS·GOLD 등 통계 바 배경.
+  static const Color narBuildStatsBg = Color(0x66141517);
+
+  /// rgba(255,255,255,0.15) — 아이템·룬·능력치 칩 보더.
+  static const Color narWhiteBorder15 = Color(0x26FFFFFF);
+
+  /// rgba(255,255,255,0.62) — 룬 트리 헤더(결의/영감 등) 왼쪽 보더.
+  static const Color narWhiteBorder62 = Color(0x9EFFFFFF);
 }

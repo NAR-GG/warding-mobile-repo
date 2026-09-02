@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../l10n/app_strings.dart';
 
 import '../../model/game_rating.dart';
+import '../../model/game_record.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
@@ -91,6 +92,14 @@ class MatchDetailViewModel extends ChangeNotifier {
     return null;
   }
 
+  /// 현재 선택된 세트의 기록(record) API용 내부 gameId. CSV 미적재면 null.
+  int? get currentRecordGameId {
+    for (final g in _games) {
+      if (g.gameOrder == _currentSet) return g.recordGameId;
+    }
+    return null;
+  }
+
   // ── 챔피언 픽 ──────────────────────────────
   MatchChampionPick? _championPick;
   MatchChampionPick? get championPick => _championPick;
@@ -98,6 +107,26 @@ class MatchDetailViewModel extends ChangeNotifier {
   bool get loadingChampion => _loadingChampion;
   String? _championError;
   String? get championError => _championError;
+
+  // ── 게임 기록(종료 후 CSV 적재분 — 와드 설치·파괴 등) ──────────
+  GameRecord? _gameRecord;
+
+  /// [pick.blueTeam.summary]/[pick.redTeam.summary] 에 [_gameRecord] 의 실제
+  /// 와드 설치·파괴를 덮어써 반환한다. 챔피언 픽 응답 자체엔 와드 필드가
+  /// 없어(항상 0) 이 오버레이가 없으면 Team Summary 가 와드를 못 보여준다.
+  /// 기록이 아직 없으면(CSV 미적재 등) 원본을 그대로 반환한다(0/0).
+  TeamStatsSummary? _summaryWithWards(TeamStatsSummary? base, String side) {
+    if (base == null) return null;
+    final record = _gameRecord;
+    if (record == null) return base;
+    final (placed, killed) = record.wardsForSide(side);
+    return base.copyWith(wardsPlaced: placed, wardsKilled: killed);
+  }
+
+  TeamStatsSummary? get blueTeamSummary =>
+      _summaryWithWards(_championPick?.blueTeam.summary, 'Blue');
+  TeamStatsSummary? get redTeamSummary =>
+      _summaryWithWards(_championPick?.redTeam.summary, 'Red');
 
   // ── 라이브 이벤트 ──────────────────────────
   MatchLiveEvents? _liveEventsData;
@@ -328,6 +357,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     _currentSet = setNumber;
     // 이전 세트 데이터 비우고 요청 여부도 초기화 — 다른 탭은 다시 전환할 때 로드.
     _championPick = null;
+    _gameRecord = null;
     _liveEventsData = null;
     _ratings = null;
     _championRequested = false;
@@ -351,6 +381,7 @@ class MatchDetailViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _stopChampionPolling();
     _championPick = null;
+    _gameRecord = null;
     _liveEventsData = null;
     _ratings = null;
     _championRequested = false;
@@ -476,6 +507,25 @@ class MatchDetailViewModel extends ChangeNotifier {
     } finally {
       _loadingChampion = false;
       _safeNotify();
+    }
+    // 챔피언 픽과 무관하게(=성공 여부와 상관없이) 시도한다 — Team Summary는
+    // championPick 이 없으면 어차피 렌더되지 않으므로 실패해도 무해하다.
+    // CSV 는 라이브 중 바뀌지 않으므로 5초 폴링 대상이 아니다(1회만).
+    unawaited(_loadGameRecord());
+  }
+
+  /// 현재 세트의 종료 후 CSV 기록(와드 설치·파괴)을 받아온다.
+  /// [currentRecordGameId] 가 없으면(CSV 미적재) 호출 자체를 생략한다.
+  Future<void> _loadGameRecord() async {
+    final recordGameId = currentRecordGameId;
+    if (recordGameId == null) return;
+    try {
+      final record = await _repository.fetchGameRecord(recordGameId);
+      if (record == null || _disposed) return;
+      _gameRecord = record;
+      _safeNotify();
+    } catch (e) {
+      debugPrint('[MatchDetailVM] game record failed: $e');
     }
   }
 

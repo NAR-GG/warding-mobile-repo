@@ -25,6 +25,7 @@ import 'component/match_detail_champion_pick_section.dart';
 import 'component/match_detail_live_event_section.dart';
 import 'component/match_detail_locked_empty.dart';
 import 'component/match_detail_objectives_section.dart';
+import 'component/match_detail_player_build_section.dart';
 import 'component/match_detail_player_rating_section.dart';
 import 'component/match_detail_player_rating_skeleton.dart';
 import 'component/match_detail_player_stats_section.dart';
@@ -95,17 +96,40 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   /// pinned NarTabBar 의 실제 렌더 위치(하단 경계)를 재는 데 쓴다.
   final GlobalKey _tabBarKey = GlobalKey();
 
-  /// 챔피언픽 탭 4개 섹션 헤더 위치. TOC 스크럴스파이·탭 이동 둘 다에 쓴다.
+  /// 챔피언픽 탭 5개 섹션 헤더 위치. TOC 스크럴스파이·탭 이동 둘 다에 쓴다.
   static const _tocLabels = [
     'Champion Pick',
     'Player Stats',
     'Team Summary',
     'Objectives',
+    'Player Builds',
   ];
   final List<GlobalKey> _sectionKeys = List.generate(
     _tocLabels.length,
     (_) => GlobalKey(),
   );
+
+  /// "Player Builds" 섹션에 표시 중인 선수(블루팀 여부, 팀 내 인덱스).
+  /// Champion Pick 의 챔피언 카드나 Player Stats 의 선수 행을 탭하면 바뀐다.
+  bool _selectedBuildBlueSide = true;
+  int _selectedBuildIndex = 0;
+
+  /// [_selectedBuildBlueSide]/[_selectedBuildIndex] 를 바꾸고 "Player Builds"
+  /// 섹션(맨 아래 5번째 섹션)으로 스크롤을 당긴다.
+  void _selectBuildPlayer(bool isBlueSide, int index) {
+    setState(() {
+      _selectedBuildBlueSide = isBlueSide;
+      _selectedBuildIndex = index;
+    });
+    final ctx = _sectionKeys.last.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
 
   /// 스냅 판정 하한. 헤더가 탭바 밑 기준선에서 이 값(px) 이내면 이미 걸린
   /// 걸로 보고 스냅하지 않는다 — 매 스크롤 종료마다 미세하게 흔들리는 걸
@@ -904,6 +928,14 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           scale: scale,
         ),
         _objectivesContent(scale),
+        SizedBox(height: 8 * scale),
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Builds".
+        MatchDetailSectionHeader(
+          key: _sectionKeys[4],
+          label: 'Player Builds',
+          scale: scale,
+        ),
+        _playerBuildContent(scale),
       ],
     );
   }
@@ -953,6 +985,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           blueWon: blueWon,
           bluePicks: pick?.blueTeam.picks ?? const [],
           redPicks: pick?.redTeam.picks ?? const [],
+          onPlayerTap: pick == null ? null : _selectBuildPlayer,
           scale: scale,
         );
       },
@@ -969,6 +1002,31 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         return MatchDetailObjectivesSection(
           blueTeam: objectives?.blueTeam ?? const TeamObjectives(),
           redTeam: objectives?.redTeam ?? const TeamObjectives(),
+          scale: scale,
+        );
+      },
+    );
+  }
+
+  /// Player Builds 섹션. 챔피언 픽 데이터가 아직 없으면(로딩 전 등) 빈 섹션.
+  Widget _playerBuildContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.playerStatsAfterMatch,
+      builder: () {
+        final pick = _viewModel.championPick;
+        final m = _effectiveMatch;
+        if (pick == null) {
+          return const SizedBox.shrink();
+        }
+        return MatchDetailPlayerBuildSection(
+          bluePicks: pick.blueTeam.picks,
+          redPicks: pick.redTeam.picks,
+          blueTeamCode: m?.teamA.teamCode ?? '',
+          redTeamCode: m?.teamB.teamCode ?? '',
+          selectedBlueSide: _selectedBuildBlueSide,
+          selectedIndex: _selectedBuildIndex,
+          onSelect: _selectBuildPlayer,
           scale: scale,
         );
       },
@@ -1040,6 +1098,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       redPicks: red.pickImageUrls(),
       bluePlayerNames: blue.pickPlayerNames(),
       redPlayerNames: red.pickPlayerNames(),
+      onPickTap: _selectBuildPlayer,
       scale: scale,
     );
   }
@@ -1054,7 +1113,6 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       message: AppLocalizations.of(context)!.teamSummaryAfterMatch,
       builder: () {
         final m = _effectiveMatch;
-        final pick = _viewModel.championPick;
         if (m == null) {
           return MatchDetailTeamSummarySection(scale: scale);
         }
@@ -1064,8 +1122,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
           blueTeamLogoUrl: m.teamA.teamImageUrl,
           redTeamLogoUrl: m.teamB.teamImageUrl,
-          blueSummary: pick?.blueTeam.summary,
-          redSummary: pick?.redTeam.summary,
+          // 와드 설치·파괴는 챔피언 픽 응답엔 없어(항상 0) 뷰모델이 종료 후
+          // CSV 기록(GameRecord)으로 덮어쓴 값을 대신 쓴다.
+          blueSummary: _viewModel.blueTeamSummary,
+          redSummary: _viewModel.redTeamSummary,
           scale: scale,
         );
       },

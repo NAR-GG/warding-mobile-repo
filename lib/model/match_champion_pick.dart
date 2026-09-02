@@ -9,6 +9,7 @@ class MatchChampionPick {
     required this.blueTeam,
     required this.redTeam,
     required this.objectives,
+    this.frameTimestampUtc,
   });
 
   final String gameId;
@@ -16,9 +17,13 @@ class MatchChampionPick {
   final ChampionTeam redTeam;
   final MatchObjectives objectives;
 
+  /// 이 응답이 기준한 프레임 시각(UTC, 타임존 접미 없음). #526 부터 내려온다.
+  final String? frameTimestampUtc;
+
   factory MatchChampionPick.fromJson(Map<String, dynamic> json) {
     return MatchChampionPick(
       gameId: json['gameId'] as String? ?? '',
+      frameTimestampUtc: json['frameTimestampUtc'] as String?,
       blueTeam: ChampionTeam.fromJson(
         json['blueTeam'] as Map<String, dynamic>? ?? const {},
       ),
@@ -115,9 +120,8 @@ class ChampionTeam {
   }
 
   /// 챔피언 이미지 URL 5개 (픽 순서대로, 폴백 적용). 부족하면 null 로 패딩.
-  List<String?> pickImageUrls() => _padTo5(
-        picks.map((p) => p.imageUrl).toList(),
-      );
+  List<String?> pickImageUrls() =>
+      _padTo5(picks.map((p) => p.imageUrl).toList());
 
   /// 픽 선수명 5개 (픽 순서대로). 부족하면 빈 문자열로 패딩.
   List<String> pickPlayerNames() {
@@ -129,9 +133,7 @@ class ChampionTeam {
   }
 
   /// 밴 챔피언 이미지 URL 5개 (폴백 적용). 부족하면 null 로 패딩.
-  List<String?> banImageUrls() => _padTo5(
-        bans.map((b) => b.imageUrl).toList(),
-      );
+  List<String?> banImageUrls() => _padTo5(bans.map((b) => b.imageUrl).toList());
 
   static List<String?> _padTo5(List<String?> list) {
     final out = List<String?>.from(list);
@@ -158,8 +160,13 @@ class ChampionPick {
     this.killParticipation = 0,
     this.championDamageShare = 0,
     this.itemImageUrls = const [],
+    this.coreItemImageUrls = const [],
+    this.questItemImageUrl,
+    this.trinketItemImageUrl,
+    this.consumableItemImageUrls = const [],
     this.keystoneIconUrl,
     this.subStyleIconUrl,
+    this.runes,
   });
 
   final String position;
@@ -180,15 +187,31 @@ class ChampionPick {
   /// 0.0~1.0 비율.
   final double championDamageShare;
 
-  /// 구매한 아이템 이미지 URL 목록. 순서대로, 개수는 가변(빈 슬롯은 미포함).
+  /// 구매 순서 그대로의 원본 평면 배열(장신구 섞임). 호환용으로만 남아있다 —
+  /// 화면 렌더링에는 [coreItemImageUrls]/[questItemImageUrl]/
+  /// [trinketItemImageUrl]을 쓸 것.
   final List<String> itemImageUrls;
+
+  /// 코어 아이템(장신구·소모품 제외). 길이 0~6.
+  final List<String> coreItemImageUrls;
+
+  /// 2026 바텀 퀘스트 완료 시의 신발. 없으면 null.
+  final String? questItemImageUrl;
+
+  /// 장신구. 안 샀으면 null.
+  final String? trinketItemImageUrl;
+
+  /// 제어와드·물약·영약 등 소모품. 서포터 퀘스트 칸(제어와드)도 여기로 온다.
+  final List<String> consumableItemImageUrls;
 
   final String? keystoneIconUrl;
   final String? subStyleIconUrl;
 
+  /// 룬 전체(주 트리 4개·부 트리 2개·파편). 라이브 첫 프레임 전이면 null.
+  final PlayerRunes? runes;
+
   /// 표시용 이미지 URL (백엔드 값 없으면 Data Dragon 폴백).
-  String? get imageUrl =>
-      ChampionImage.resolve(championImageUrl, championName);
+  String? get imageUrl => ChampionImage.resolve(championImageUrl, championName);
 
   factory ChampionPick.fromJson(Map<String, dynamic> json) {
     return ChampionPick(
@@ -208,8 +231,21 @@ class ChampionPick {
       itemImageUrls: (json['itemImageUrls'] as List<dynamic>? ?? const [])
           .map((e) => e as String)
           .toList(),
+      coreItemImageUrls:
+          (json['coreItemImageUrls'] as List<dynamic>? ?? const [])
+              .map((e) => e as String)
+              .toList(),
+      questItemImageUrl: json['questItemImageUrl'] as String?,
+      trinketItemImageUrl: json['trinketItemImageUrl'] as String?,
+      consumableItemImageUrls:
+          (json['consumableItemImageUrls'] as List<dynamic>? ?? const [])
+              .map((e) => e as String)
+              .toList(),
       keystoneIconUrl: json['keystoneIconUrl'] as String?,
       subStyleIconUrl: json['subStyleIconUrl'] as String?,
+      runes: json['runes'] == null
+          ? null
+          : PlayerRunes.fromJson(json['runes'] as Map<String, dynamic>),
     );
   }
 }
@@ -232,13 +268,11 @@ class TeamStatsSummary {
   final int creepScore;
   final int totalGoldEarned;
 
-  /// 와드 설치 수. CH 확인상 시야점수(vision score) 자체는 없지만 이 값은
-  /// 가능하다고 함 — 백엔드 응답에 아직 없어 필드명이 미확정이다. 스펙이
-  /// 확정되면 `wardsPlaced`/`wardsKilled` 이름과 json 키를 실제 값으로
-  /// 맞춰야 한다(지금은 항상 0).
+  /// 와드 설치 수. 이 챔피언 픽 응답 자체에는 없는 필드라 항상 0 —
+  /// `GameRecord.wardsForSide`(종료 후 CSV 적재분)로 [copyWith] 덮어써서 쓴다.
   final int wardsPlaced;
 
-  /// 와드 파괴 수. [wardsPlaced] 와 같은 이유로 미확정.
+  /// 와드 파괴 수. [wardsPlaced] 와 같은 이유로 이 응답에서는 항상 0.
   final int wardsKilled;
 
   factory TeamStatsSummary.fromJson(Map<String, dynamic> json) {
@@ -252,25 +286,121 @@ class TeamStatsSummary {
       wardsKilled: json['wardsKilled'] as int? ?? 0,
     );
   }
+
+  TeamStatsSummary copyWith({int? wardsPlaced, int? wardsKilled}) {
+    return TeamStatsSummary(
+      kills: kills,
+      deaths: deaths,
+      assists: assists,
+      creepScore: creepScore,
+      totalGoldEarned: totalGoldEarned,
+      wardsPlaced: wardsPlaced ?? this.wardsPlaced,
+      wardsKilled: wardsKilled ?? this.wardsKilled,
+    );
+  }
 }
 
 /// 밴된 챔피언 한 건.
 class ChampionBan {
-  const ChampionBan({
-    required this.championName,
-    this.championImageUrl,
-  });
+  const ChampionBan({required this.championName, this.championImageUrl});
 
   final String championName;
   final String? championImageUrl;
 
-  String? get imageUrl =>
-      ChampionImage.resolve(championImageUrl, championName);
+  String? get imageUrl => ChampionImage.resolve(championImageUrl, championName);
 
   factory ChampionBan.fromJson(Map<String, dynamic> json) {
     return ChampionBan(
       championName: json['championName'] as String? ?? '',
       championImageUrl: json['championImageUrl'] as String?,
+    );
+  }
+}
+
+/// 선수 한 명의 룬 전체(주 트리·부 트리·파편).
+class PlayerRunes {
+  const PlayerRunes({
+    required this.primary,
+    required this.sub,
+    this.shards = const [],
+  });
+
+  /// 주 트리. `runes[0]`이 키스톤.
+  final RuneStyle primary;
+
+  /// 부 트리.
+  final RuneStyle sub;
+
+  /// 파편 2~3개(가변). 같은 파편을 두 칸에 찍으면 피드가 하나로 합쳐 보낸다.
+  final List<RuneShard> shards;
+
+  factory PlayerRunes.fromJson(Map<String, dynamic> json) {
+    return PlayerRunes(
+      primary: RuneStyle.fromJson(
+        json['primary'] as Map<String, dynamic>? ?? const {},
+      ),
+      sub: RuneStyle.fromJson(json['sub'] as Map<String, dynamic>? ?? const {}),
+      shards: (json['shards'] as List<dynamic>? ?? const [])
+          .map((e) => RuneShard.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// 룬 트리 하나(주 또는 부).
+class RuneStyle {
+  const RuneStyle({
+    required this.styleName,
+    this.styleIconUrl,
+    this.runes = const [],
+  });
+
+  final String styleName;
+  final String? styleIconUrl;
+  final List<RuneEntry> runes;
+
+  factory RuneStyle.fromJson(Map<String, dynamic> json) {
+    return RuneStyle(
+      styleName: json['styleName'] as String? ?? '',
+      styleIconUrl: json['styleIconUrl'] as String?,
+      runes: (json['runes'] as List<dynamic>? ?? const [])
+          .map((e) => RuneEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// 룬 한 개. [description]은 게임 클라이언트 룬 선택창의 짧은 설명(평문).
+class RuneEntry {
+  const RuneEntry({required this.name, this.iconUrl, this.description});
+
+  final String name;
+  final String? iconUrl;
+  final String? description;
+
+  factory RuneEntry.fromJson(Map<String, dynamic> json) {
+    return RuneEntry(
+      name: json['name'] as String? ?? '',
+      iconUrl: json['iconUrl'] as String?,
+      description: json['description'] as String?,
+    );
+  }
+}
+
+/// 능력치 파편 한 칸. 칩 텍스트는 `name + " " + label`(예: '적응형 능력치 +9').
+/// [label]이 null이면(옛 파편) name만 쓴다.
+class RuneShard {
+  const RuneShard({required this.name, this.iconUrl, this.label});
+
+  final String name;
+  final String? iconUrl;
+  final String? label;
+
+  factory RuneShard.fromJson(Map<String, dynamic> json) {
+    return RuneShard(
+      name: json['name'] as String? ?? '',
+      iconUrl: json['iconUrl'] as String?,
+      label: json['label'] as String?,
     );
   }
 }

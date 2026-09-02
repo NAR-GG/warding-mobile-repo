@@ -4045,7 +4045,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.523293634",
+                      "timestamp": "2026-09-03T01:28:44.130655363",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -4094,7 +4094,7 @@
                 "examples": {
                   "INVALID_MATCH_ID": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.529786196",
+                      "timestamp": "2026-09-03T01:28:44.137939576",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCH_ID",
@@ -4111,7 +4111,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.529793697",
+                      "timestamp": "2026-09-03T01:28:44.137947993",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -4183,7 +4183,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.537879885",
+                      "timestamp": "2026-09-03T01:28:44.155436597",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -5821,7 +5821,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.886208681",
+                      "timestamp": "2026-09-03T01:28:44.523938624",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -5838,7 +5838,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.886195513",
+                      "timestamp": "2026-09-03T01:28:44.523931041",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -5888,7 +5888,7 @@
                 "examples": {
                   "INVALID_COMBINATION_ID": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.893494035",
+                      "timestamp": "2026-09-03T01:28:44.530308446",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_COMBINATION_ID",
@@ -5905,7 +5905,7 @@
                 "examples": {
                   "COMBINATION_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.893505995",
+                      "timestamp": "2026-09-03T01:28:44.530315863",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "COMBINATION_NOT_FOUND",
@@ -6058,7 +6058,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.904663466",
+                      "timestamp": "2026-09-03T01:28:44.540958636",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -6067,7 +6067,7 @@
                   },
                   "INVALID_MATCHUP_REQUEST": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.9046708",
+                      "timestamp": "2026-09-03T01:28:44.54096547",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCHUP_REQUEST",
@@ -6084,7 +6084,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-02T14:18:33.904672342",
+                      "timestamp": "2026-09-03T01:28:44.54096697",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -12659,6 +12659,10 @@
           "gameId": {
             "type": "string"
           },
+          "frameTimestampUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
           "blueTeam": {
             "$ref": "#/components/schemas/TeamChampions"
           },
@@ -12734,10 +12738,93 @@
               "type": "string"
             }
           },
+          "coreItemImageUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "questItemImageUrl": {
+            "type": "string"
+          },
+          "trinketItemImageUrl": {
+            "type": "string"
+          },
+          "consumableItemImageUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "keystoneIconUrl": {
             "type": "string"
           },
           "subStyleIconUrl": {
+            "type": "string"
+          },
+          "runes": {
+            "$ref": "#/components/schemas/RuneBuild"
+          }
+        }
+      },
+      "Rune": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "RuneBuild": {
+        "type": "object",
+        "properties": {
+          "primary": {
+            "$ref": "#/components/schemas/RuneTree"
+          },
+          "sub": {
+            "$ref": "#/components/schemas/RuneTree"
+          },
+          "shards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Shard"
+            }
+          }
+        }
+      },
+      "RuneTree": {
+        "type": "object",
+        "properties": {
+          "styleName": {
+            "type": "string"
+          },
+          "styleIconUrl": {
+            "type": "string"
+          },
+          "runes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Rune"
+            }
+          }
+        }
+      },
+      "Shard": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "iconUrl": {
+            "type": "string"
+          },
+          "label": {
             "type": "string"
           }
         }

@@ -159,7 +159,7 @@ class _ObjectiveRow extends StatelessWidget {
               fontWeight: FontWeight.w700,
               fontSize: 14 * scale,
               height: 1.55,
-              color: const Color(0xFFFCFDFE),
+              color: AppColors.narText2,
             ),
           ),
         ),

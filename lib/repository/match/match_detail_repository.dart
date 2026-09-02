@@ -5,6 +5,7 @@ import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
 import '../../util/sentry_logger.dart';
+import '../../model/game_record.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
@@ -48,8 +49,10 @@ class MatchDetailRepository {
     final url = ApiConfig.matchGamesUrl(matchId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
-    debugPrint('[MatchDetail] games ← ${response.statusCode} '
-        '(${response.body.length} bytes)');
+    debugPrint(
+      '[MatchDetail] games ← ${response.statusCode} '
+      '(${response.body.length} bytes)',
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('세트 목록 조회 실패 ($matchId, ${response.statusCode})');
@@ -67,8 +70,10 @@ class MatchDetailRepository {
           final matchJson = Map<String, dynamic>.from(decoded);
           matchJson.putIfAbsent('matchId', () => matchId);
           matchInfo = ScheduleMatch.fromJson(matchJson);
-          debugPrint('[MatchDetail] matchInfo from games: '
-              '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}');
+          debugPrint(
+            '[MatchDetail] matchInfo from games: '
+            '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}',
+          );
         } catch (e) {
           SentryLogger.error(
             module: 'Logic',
@@ -79,17 +84,20 @@ class MatchDetailRepository {
           debugPrint('[MatchDetail] matchInfo parse from games failed: $e');
         }
       } else {
-        debugPrint('[MatchDetail] games top-level keys: ${decoded.keys.toList()}');
+        debugPrint(
+          '[MatchDetail] games top-level keys: ${decoded.keys.toList()}',
+        );
       }
     } else if (decoded is List) {
       rawGames = decoded;
     } else {
       rawGames = const [];
     }
-    final games = rawGames
-        .map((e) => MatchGame.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.gameOrder.compareTo(b.gameOrder));
+    final games =
+        rawGames
+            .map((e) => MatchGame.fromJson(e as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.gameOrder.compareTo(b.gameOrder));
     debugPrint('[MatchDetail] games: ${games.length}');
     return (games, matchInfo);
   }
@@ -107,6 +115,33 @@ class MatchDetailRepository {
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return MatchChampionPick.fromJson(data);
+  }
+
+  /// 세트(recordGameId)의 종료 후 CSV 적재분 기록을 조회한다(인증 불필요,
+  /// 와드 설치·파괴 등). [MatchGame.recordGameId] 가 null 이면(CSV 미적재)
+  /// 호출부가 아예 부르지 않아야 한다. 실패·미적재(404 등) 시 null.
+  Future<GameRecord?> fetchGameRecord(int recordGameId) async {
+    final url = ApiConfig.gameRecordUrl(recordGameId);
+    debugPrint('[MatchDetail] GET $url');
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('[MatchDetail] record ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        return GameRecord.fromJson(data);
+      }
+      return null;
+    } catch (e) {
+      SentryLogger.error(
+        module: 'Logic',
+        eventName: 'fetchGameRecord_parse',
+        reason: e.runtimeType.toString(),
+        throwable: e,
+      );
+      debugPrint('[MatchDetail] fetchGameRecord failed: $e');
+      return null;
+    }
   }
 
   /// 세트(gameId)의 라이브 이벤트를 조회한다 (인증 불필요, 최신순).
