@@ -8,8 +8,9 @@ import '../../../util/dragon_type.dart';
 /// 경기 상세 — 챔피언픽 탭 맨 아래의 "Objectives" 섹션.
 ///
 /// `GET /api/mobile/live/games/{gameId}/champions` 응답의 `objectives`
-/// (드래곤·장로·바론·타워·억제기)를 그대로 렌더링한다.
-/// 전령·공허유충·타워 플레이트는 API에 없어 행 자체를 뺐다.
+/// (드래곤·장로·바론·타워·억제기)를 하나의 라운드 박스 안에 그대로
+/// 렌더링한다(Figma 최신 시안 기준 — "주요 오브젝트"/"구조물" 구분선은
+/// 뺐다). 전령·공허유충·타워 플레이트는 API에 없어 행 자체를 뺐다.
 class MatchDetailObjectivesSection extends StatelessWidget {
   const MatchDetailObjectivesSection({
     super.key,
@@ -27,18 +28,16 @@ class MatchDetailObjectivesSection extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
-      padding: EdgeInsets.fromLTRB(16 * scale, 0, 16 * scale, 80 * scale),
+      // 좌우 10 + 안쪽 박스 좌우 0 = Team Summary(_VisionGoldRow)의 와드
+      // 아이콘과 같은 x좌표(화면 가장자리에서 10px)에 오도록 맞췄다.
+      padding: EdgeInsets.fromLTRB(10 * scale, 0, 10 * scale, 80 * scale),
       alignment: Alignment.topCenter,
       child: Container(
-        width: 328 * scale,
-        padding: EdgeInsets.symmetric(
-          vertical: 12 * scale,
-          horizontal: 16 * scale,
-        ),
+        width: 333 * scale,
+        padding: EdgeInsets.symmetric(vertical: 12 * scale),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _DividedLabel(label: '주요 오브젝트', scale: scale),
-            SizedBox(height: 25 * scale),
             _ObjectiveRow(
               icon: _ObjectiveIcons.dragon,
               label: '드래곤',
@@ -68,8 +67,6 @@ class MatchDetailObjectivesSection extends StatelessWidget {
               right: '${redTeam.barons}',
               scale: scale,
             ),
-            SizedBox(height: 25 * scale),
-            _DividedLabel(label: '구조물', scale: scale),
             SizedBox(height: 25 * scale),
             _ObjectiveRow(
               icon: _ObjectiveIcons.turret,
@@ -101,41 +98,6 @@ class _ObjectiveIcons {
   static const String elderDragon = 'assets/icons/nar-icon-elder-dragon.svg';
   static const String turret = 'assets/icons/nar-icon-turret.svg';
   static const String inhibitor = 'assets/icons/nar-icon-inhibitor.svg';
-}
-
-/// "──── 라벨 ────" 형태의 구분선 라벨.
-class _DividedLabel extends StatelessWidget {
-  const _DividedLabel({required this.label, required this.scale});
-
-  final String label;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(color: AppColors.narText2, height: 1, thickness: 1),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10 * scale),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'SF Pro',
-              fontWeight: FontWeight.w400,
-              fontSize: 14 * scale,
-              height: 1.55,
-              color: AppColors.narText2,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(color: AppColors.narText2, height: 1, thickness: 1),
-        ),
-      ],
-    );
-  }
 }
 
 /// 아이콘·라벨·좌우 카운트를 나란히 놓는 오브젝트 한 줄.
@@ -233,8 +195,11 @@ class _DragonTypesRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(String subType) =>
-        Image.asset(dragonAssetFor(subType), width: 20 * scale, height: 20 * scale);
+    Widget chip(String subType) => Image.asset(
+      dragonAssetFor(subType),
+      width: 20 * scale,
+      height: 20 * scale,
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
