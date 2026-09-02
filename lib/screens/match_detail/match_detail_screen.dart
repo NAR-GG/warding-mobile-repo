@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -110,18 +112,21 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   /// 막는다.
   static const _snapThreshold = 2.0;
 
-  /// 스냅 판정 상한. 가장 가까운 헤더도 기준선에서 이 값(px) 보다 멀면
+  /// 스냅 판정 상한(px). 가장 가까운 헤더도 기준선에서 이 값보다 멀면
   /// "근처"로 보지 않고 스냅하지 않는다 — 섹션 콘텐츠 한가운데서 스크롤을
   /// 멈췄는데도 저 멀리 있는 헤더로 끌려가면 오히려 부자연스럽다. 화면
-  /// 높이의 60% 정도로 넉넉히 잡아, 섹션 안 웬만한 위치에서 멈춰도 "근처"로
-  /// 잡히게 한다(헤더 높이 기준으로 좁게 잡았더니 스냅이 거의 안 걸렸다).
-  static const _snapRangeScreenFactor = 0.6;
+  /// 비율(0.6→0.3→0.15) 대신 작은 고정 px 로 바꿨었지만(40→10), "정렬
+  /// 후 훅 당겨짐" 대신 "지나칠 때마다 톡톡 걸리는" 촉각적 피드백을
+  /// 원해 애니메이션을 짧게(120ms) 하고 범위를 다시 넓혔다 — 자주,
+  /// 빠르게 걸려야 그 느낌이 난다. 진짜 자석형 물리(ScrollPhysics 교체)는
+  /// 다음 단계.
+  static const _snapRangePx = 70.0;
 
   /// 챔피언픽 탭에서 스크롤이 멎을 때 호출된다. 4개 섹션 헤더 중 pinned
   /// 탭바 바로 아래 기준선에 가장 가까운 것을 찾아, 그 헤더가 "근처"
-  /// (기준선에서 화면 높이의 [_snapRangeScreenFactor] 이내)일 때만 기준선에
-  /// 정확히 걸리도록 스크롤을 마저 당긴다 — sticky 로 계속 붙어있는 대신,
-  /// 헤더 근처에서 스크롤을 멈출 때만 "턱" 걸리는 스냅 느낌을 준다.
+  /// (기준선에서 [_snapRangePx] 이내)일 때만 기준선에 정확히 걸리도록
+  /// 스크롤을 마저 당긴다 — sticky 로 계속 붙어있는 대신, 헤더 근처에서
+  /// 스크롤을 멈출 때만 "턱" 걸리는 스냅 느낌을 준다.
   void _snapToNearestSection() {
     if (_tabIndex != 0 || !_scrollController.hasClients) return;
     final barBox = _tabBarKey.currentContext?.findRenderObject() as RenderBox?;
@@ -129,8 +134,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final thresholdY =
         barBox.localToGlobal(Offset.zero).dy + barBox.size.height;
 
-    final snapRange =
-        MediaQuery.of(context).size.height * _snapRangeScreenFactor;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    final snapRange = _snapRangePx * scale;
 
     double? closestDelta;
     for (final key in _sectionKeys) {
@@ -151,7 +157,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     );
     _scrollController.animateTo(
       target,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
     );
   }
@@ -166,6 +172,25 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     // ListenableBuilder 밖) 뷰모델 변경 시 화면을 다시 그린다.
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.load();
+    // 챔피언픽 탭 섹션 헤더 스냅. NotificationListener<ScrollEndNotification>
+    // 로 구현했더니 실기기(iOS)·macOS 데스크탑 둘 다 알림 자체가 전혀
+    // 오지 않았다(실측 확인 — RefreshIndicator/CustomScrollView 트리 배치와
+    // 무관하게 재현됨). MatchDetailToc 가 같은 컨트롤러를 addListener 로
+    // 문제없이 구독하고 있어, 스냅도 그 방식으로 바꾼다.
+    _scrollController.addListener(_onScrollChanged);
+  }
+
+  Timer? _scrollIdleTimer;
+
+  /// 스크롤 위치가 바뀔 때마다 호출된다. [_scrollSnapIdleDelay] 동안 추가
+  /// 변화가 없으면(스크롤이 멎은 것으로 본다) 스냅을 시도한다. 매 변화마다
+  /// 타이머를 새로 잡아, 실제로 멎었을 때만 한 번 실행되게 한다(debounce).
+  static const _scrollSnapIdleDelay = Duration(milliseconds: 120);
+  void _onScrollChanged() {
+    _scrollIdleTimer?.cancel();
+    _scrollIdleTimer = Timer(_scrollSnapIdleDelay, () {
+      if (mounted) _snapToNearestSection();
+    });
   }
 
   void _onViewModelChanged() {
@@ -176,6 +201,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   void dispose() {
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
+    _scrollController.removeListener(_onScrollChanged);
+    _scrollIdleTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -433,12 +460,13 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final scale = width.clamp(320.0, 430.0) / 375;
     // games 가 있으면 그걸로, 없으면 현재 세트만 노출.
     final games = _viewModel.games;
-    final orders =
-        games.isEmpty
-            ? [_viewModel.currentSet]
-            : games.map((g) => g.gameOrder).toList();
-    final liveOrders =
-        games.where((g) => g.isLive).map((g) => g.gameOrder).toSet();
+    final orders = games.isEmpty
+        ? [_viewModel.currentSet]
+        : games.map((g) => g.gameOrder).toList();
+    final liveOrders = games
+        .where((g) => g.isLive)
+        .map((g) => g.gameOrder)
+        .toSet();
     final selected = await showAppBottomSheet<int>(
       context: context,
       child: Column(
@@ -459,15 +487,13 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
                       _setLabelOf(order),
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontWeight:
-                            order == _viewModel.currentSet
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                        fontWeight: order == _viewModel.currentSet
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         fontSize: 16 * scale,
-                        color:
-                            order == _viewModel.currentSet
-                                ? AppColors.narText
-                                : AppColors.narText2,
+                        color: order == _viewModel.currentSet
+                            ? AppColors.narText
+                            : AppColors.narText2,
                       ),
                     ),
                     if (liveOrders.contains(order)) ...[
@@ -531,26 +557,24 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     if (gameId == null || gameId.isEmpty || player.participantId == 0) return;
     // playerName 에 teamName 대신 팀코드가 이미 붙어 오는 응답의 중복 표기
     // 판별에 쓴다(예: playerName='KRX Frog', teamName='Kiwoom Drx').
-    final teamCode =
-        side == BadgeSide.blue
-            ? (_effectiveMatch?.teamA.teamCode ?? '')
-            : (_effectiveMatch?.teamB.teamCode ?? '');
+    final teamCode = side == BadgeSide.blue
+        ? (_effectiveMatch?.teamA.teamCode ?? '')
+        : (_effectiveMatch?.teamB.teamCode ?? '');
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (_) => PlayerRatingScreen(
-              player: player,
-              teamName: teamName,
-              teamCode: teamCode,
-              side: side,
-              sets: _sets,
-              initialSet: _currentSet,
-              gameId: gameId,
-              participantId: player.participantId,
-              playerId: player.playerId,
-              games: _viewModel.games,
-              currentSetNumber: _viewModel.currentSet,
-            ),
+        builder: (_) => PlayerRatingScreen(
+          player: player,
+          teamName: teamName,
+          teamCode: teamCode,
+          side: side,
+          sets: _sets,
+          initialSet: _currentSet,
+          gameId: gameId,
+          participantId: player.participantId,
+          playerId: player.playerId,
+          games: _viewModel.games,
+          currentSetNumber: _viewModel.currentSet,
+        ),
       ),
     );
     // 상세에서 평가를 작성/수정/삭제했을 수 있으므로 평점 탭을 갱신한다.
@@ -568,96 +592,86 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // 챔피언픽 탭 섹션 헤더 스냅: 스크롤이 멎을 때마다 감지해
-            // 가장 가까운 섹션 헤더 위치로 마저 당긴다([_snapToNearestSection]).
-            // RefreshIndicator(AppRefreshIndicator) 안쪽에 두면 그 위젯이
-            // ScrollNotification 을 먼저 가로채 위로 전파하지 않아
-            // ScrollEndNotification 이 전혀 오지 않는다(실측 확인됨) — 반드시
-            // 바깥에 둬야 한다.
-            NotificationListener<ScrollEndNotification>(
-              onNotification: (notification) {
-                _snapToNearestSection();
-                return false;
-              },
-              child: AppRefreshIndicator(
-                onRefresh: _viewModel.refresh,
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
-                  // 당길 수 있어야 한다.
-                  physics: AppRefreshIndicator.physics,
-                  slivers: [
-                    // 헤더·스코어·중계 버튼: 스크롤 시 함께 위로 밀려 올라간다.
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          NarDetailHeader(
-                            title: l.matchDetail,
-                            // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
-                            // 상태라 ListenableBuilder 로 라벨을 갱신한다.
-                            trailing: ListenableBuilder(
-                              listenable: _viewModel,
-                              builder:
-                                  (context, _) => NarDropdown(
-                                    variant: NarDropdownVariant.round,
-                                    value: _currentSet,
-                                    onTap: _showSetSheet,
-                                    scale: scale,
-                                  ),
+            // 챔피언픽 탭 섹션 헤더 스냅([_snapToNearestSection])은
+            // _scrollController.addListener(_onScrollChanged) 로 구현돼
+            // 있다(initState 참고). NotificationListener<ScrollEndNotification>
+            // 로는 실기기·macOS 데스크탑 모두 알림 자체가 오지 않아 포기했다.
+            AppRefreshIndicator(
+              onRefresh: _viewModel.refresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
+                // 당길 수 있어야 한다.
+                physics: AppRefreshIndicator.physics,
+                slivers: [
+                  // 헤더·스코어·중계 버튼: 스크롤 시 함께 위로 밀려 올라간다.
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        NarDetailHeader(
+                          title: l.matchDetail,
+                          // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
+                          // 상태라 ListenableBuilder 로 라벨을 갱신한다.
+                          trailing: ListenableBuilder(
+                            listenable: _viewModel,
+                            builder: (context, _) => NarDropdown(
+                              variant: NarDropdownVariant.round,
+                              value: _currentSet,
+                              onTap: _showSetSheet,
+                              scale: scale,
                             ),
-                            scale: scale,
                           ),
-                          _buildScoreSection(scale),
-                          SizedBox(height: 16 * scale),
-                          _buildActionButton(scale),
-                          SizedBox(height: 16 * scale),
-                        ],
+                          scale: scale,
+                        ),
+                        _buildScoreSection(scale),
+                        SizedBox(height: 16 * scale),
+                        _buildActionButton(scale),
+                        SizedBox(height: 16 * scale),
+                      ],
+                    ),
+                  ),
+                  // 탭바: 헤더·스코어가 밀려 올라간 뒤에도 상단에 고정된다.
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyDelegate(
+                      height: 45 * scale,
+                      child: ColoredBox(
+                        color: AppColors.narBgContent,
+                        child: NarTabBar(
+                          key: _tabBarKey,
+                          tabs: _buildTabs(l),
+                          selectedIndex: _tabIndex,
+                          onChanged: (i) => setState(() {
+                            _tabIndex = i;
+                            // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
+                            _viewModel.setActiveTab(i);
+                          }),
+                          scale: scale,
+                        ),
                       ),
                     ),
-                    // 탭바: 헤더·스코어가 밀려 올라간 뒤에도 상단에 고정된다.
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _StickyDelegate(
-                        height: 45 * scale,
-                        child: ColoredBox(
-                          color: AppColors.narBgContent,
-                          child: NarTabBar(
-                            key: _tabBarKey,
-                            tabs: _buildTabs(l),
-                            selectedIndex: _tabIndex,
-                            onChanged:
-                                (i) => setState(() {
-                                  _tabIndex = i;
-                                  // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
-                                  _viewModel.setActiveTab(i);
-                                }),
-                            scale: scale,
-                          ),
-                        ),
+                  ),
+                  if (_tabIndex == 0)
+                    SliverToBoxAdapter(
+                      child: ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _buildChampionPickTab(scale),
                       ),
                     ),
-                    if (_tabIndex == 0)
-                      SliverToBoxAdapter(
-                        child: ListenableBuilder(
-                          listenable: _viewModel,
-                          builder: (context, _) => _buildChampionPickTab(scale),
-                        ),
+                  if (_tabIndex == 1)
+                    SliverToBoxAdapter(
+                      child: ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _buildLiveEventTab(scale),
                       ),
-                    if (_tabIndex == 1)
-                      SliverToBoxAdapter(
-                        child: ListenableBuilder(
-                          listenable: _viewModel,
-                          builder: (context, _) => _buildLiveEventTab(scale),
-                        ),
-                      ),
-                    // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
-                    // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
-                    // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
-                    // sticky collapse 가 동작하도록 한다.
-                    if (_tabIndex == 2) _buildRatingTab(scale),
-                  ],
-                ),
+                    ),
+                  // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
+                  // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
+                  // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
+                  // sticky collapse 가 동작하도록 한다.
+                  if (_tabIndex == 2) _buildRatingTab(scale),
+                ],
               ),
             ),
             // 목차(TOC): 챔피언픽 탭에서 스크롤할 때만 오른쪽에 살짝 떴다 사라진다.
@@ -711,16 +725,14 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final r = _viewModel.ratings;
     final blue = _teamSummary(r, 'BLUE');
     final red = _teamSummary(r, 'RED');
-    final bluePlayers =
-        (r?.players ?? const [])
-            .where((p) => p.teamSide.toUpperCase() == 'BLUE')
-            .map(_toPlayerRating)
-            .toList();
-    final redPlayers =
-        (r?.players ?? const [])
-            .where((p) => p.teamSide.toUpperCase() == 'RED')
-            .map(_toPlayerRating)
-            .toList();
+    final bluePlayers = (r?.players ?? const [])
+        .where((p) => p.teamSide.toUpperCase() == 'BLUE')
+        .map(_toPlayerRating)
+        .toList();
+    final redPlayers = (r?.players ?? const [])
+        .where((p) => p.teamSide.toUpperCase() == 'RED')
+        .map(_toPlayerRating)
+        .toList();
     // 이 세트의 어떤 선수에게든 내 평점(myRating>0)이 있으면 상단 배너를 숨긴다.
     final hasMyRating = (r?.players ?? const <RatingPlayer>[]).any(
       (p) => p.myRating > 0,
@@ -728,14 +740,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     return MatchDetailPlayerRatingSection(
       setLabel: _currentSet,
       showBanner: !hasMyRating,
-      blueTeamName:
-          blue.teamName.isNotEmpty
-              ? blue.teamName
-              : (_effectiveMatch?.teamA.teamName ?? 'BLUE'),
-      redTeamName:
-          red.teamName.isNotEmpty
-              ? red.teamName
-              : (_effectiveMatch?.teamB.teamName ?? 'RED'),
+      blueTeamName: blue.teamName.isNotEmpty
+          ? blue.teamName
+          : (_effectiveMatch?.teamA.teamName ?? 'BLUE'),
+      redTeamName: red.teamName.isNotEmpty
+          ? red.teamName
+          : (_effectiveMatch?.teamB.teamName ?? 'RED'),
       blueRating: blue.averageRating,
       redRating: red.averageRating,
       blueRaterCount: blue.ratingCount,
@@ -782,8 +792,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: NarButton(
         // 활성(중계 보기)은 set1, 비활성(준비중·경기 종료)은 set1Disabled.
-        variant:
-            enabled ? NarButtonVariant.set1 : NarButtonVariant.set1Disabled,
+        variant: enabled
+            ? NarButtonVariant.set1
+            : NarButtonVariant.set1Disabled,
         label: label,
         onPressed: onPressed,
         scale: scale,
@@ -797,10 +808,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     final isLive = m != null && _isLiveStatus(m.matchStatus);
     // 좌측 라벨: '리그 + 스테이지'. 예: 'LCK 토너먼트 스테이지'.
     final stage = m != null ? _stageOf(m.matchTitle) : '';
-    final leagueLabel =
-        m == null
-            ? ''
-            : (stage.isEmpty ? m.leagueInfo : '${m.leagueInfo} $stage');
+    final leagueLabel = m == null
+        ? ''
+        : (stage.isEmpty ? m.leagueInfo : '${m.leagueInfo} $stage');
     return MatchDetailScoreSection(
       leagueName: leagueLabel,
       // 좌측: '리그 스테이지' 옆에 점 + 경기 날짜('YY.MM.DD').
