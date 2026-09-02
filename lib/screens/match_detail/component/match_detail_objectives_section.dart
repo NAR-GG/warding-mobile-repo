@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/match_champion_pick.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/dragon_type.dart';
 
 /// 경기 상세 — 챔피언픽 탭 맨 아래의 "Objectives" 섹션.
 ///
-/// **실데이터 없음.** 드래곤·바론·타워·억제기 획득 수는 지금 어떤 API
-/// 응답에도 없어서, 시안의 목업 숫자를 위치 그대로 하드코딩해 UI를 먼저
-/// 완성한다. 오브젝트 아이콘은 [_ObjectiveIcons]의 svg를 그대로 쓴다.
-/// 전령·공허유충·타워 플레이트 행은 요청에 따라 뺐다.
-/// 백엔드가 값을 내려주기 시작하면 이 숫자를 실제 데이터 바인딩으로
-/// 바꿔야 한다.
+/// `GET /api/mobile/live/games/{gameId}/champions` 응답의 `objectives`
+/// (드래곤·장로·바론·타워·억제기)를 그대로 렌더링한다.
+/// 전령·공허유충·타워 플레이트는 API에 없어 행 자체를 뺐다.
 class MatchDetailObjectivesSection extends StatelessWidget {
-  const MatchDetailObjectivesSection({super.key, this.scale = 1});
+  const MatchDetailObjectivesSection({
+    super.key,
+    required this.blueTeam,
+    required this.redTeam,
+    this.scale = 1,
+  });
 
+  final TeamObjectives blueTeam;
+  final TeamObjectives redTeam;
   final double scale;
 
   @override
@@ -36,26 +42,30 @@ class MatchDetailObjectivesSection extends StatelessWidget {
             _ObjectiveRow(
               icon: _ObjectiveIcons.dragon,
               label: '드래곤',
-              left: '4',
-              right: '1',
+              left: '${blueTeam.dragons}',
+              right: '${redTeam.dragons}',
               scale: scale,
             ),
             SizedBox(height: 15 * scale),
-            _DragonTypesRow(scale: scale),
+            _DragonTypesRow(
+              blueDragonTypes: blueTeam.dragonTypes,
+              redDragonTypes: redTeam.dragonTypes,
+              scale: scale,
+            ),
             SizedBox(height: 25 * scale),
             _ObjectiveRow(
               icon: _ObjectiveIcons.elderDragon,
               label: '장로',
-              left: '0',
-              right: '1',
+              left: '${blueTeam.elders}',
+              right: '${redTeam.elders}',
               scale: scale,
             ),
             SizedBox(height: 25 * scale),
             _ObjectiveRow(
               icon: _ObjectiveIcons.baron,
               label: '바론',
-              left: '1',
-              right: '1',
+              left: '${blueTeam.barons}',
+              right: '${redTeam.barons}',
               scale: scale,
             ),
             SizedBox(height: 25 * scale),
@@ -64,16 +74,16 @@ class MatchDetailObjectivesSection extends StatelessWidget {
             _ObjectiveRow(
               icon: _ObjectiveIcons.turret,
               label: '타워',
-              left: '10',
-              right: '5',
+              left: '${blueTeam.towers}',
+              right: '${redTeam.towers}',
               scale: scale,
             ),
             SizedBox(height: 25 * scale),
             _ObjectiveRow(
               icon: _ObjectiveIcons.inhibitor,
               label: '억제기',
-              left: '2',
-              right: '0',
+              left: '${blueTeam.inhibitors}',
+              right: '${redTeam.inhibitors}',
               scale: scale,
             ),
           ],
@@ -84,19 +94,13 @@ class MatchDetailObjectivesSection extends StatelessWidget {
 }
 
 /// 주요 오브젝트·구조물 아이콘 경로 모음.
+/// 드래곤 속성별 미니 아이콘은 [dragonAssetFor] 가 담당한다.
 class _ObjectiveIcons {
   static const String baron = 'assets/icons/nar-icon-baron.svg';
   static const String dragon = 'assets/icons/nar-icon-dragon.svg';
   static const String elderDragon = 'assets/icons/nar-icon-elder-dragon.svg';
   static const String turret = 'assets/icons/nar-icon-turret.svg';
   static const String inhibitor = 'assets/icons/nar-icon-inhibitor.svg';
-
-  // 드래곤 속성별 미니 아이콘은 아직 svg 세트가 없어 기존 샘플 png를 쓴다.
-  static const String infernalDragon = 'assets/images/infernal-dragon.png';
-  static const String mountainDragon = 'assets/images/mountain-dragon.png';
-  static const String oceanDragon = 'assets/images/ocean-dragon.png';
-  static const String cloudDragon = 'assets/images/cloud-dragon.png';
-  static const String hextechDragon = 'assets/images/hextech-dragon.png';
 }
 
 /// "──── 라벨 ────" 형태의 구분선 라벨.
@@ -214,39 +218,43 @@ class _ObjectiveRow extends StatelessWidget {
   }
 }
 
-/// 드래곤 종류 미니 아이콘 — 왼쪽 4개(좌측 팀이 먹은 드래곤 종류: 인페르날·
-/// 마운틴·오션·헥스텍), 오른쪽 1개(우측 팀: 클라우드). 실제로 어느 팀이
-/// 어떤 속성을 먹었는지는 데이터가 없어 받은 샘플 아이콘을 그대로 나열한
-/// 목업이다.
+/// 드래곤 종류 미니 아이콘 — 왼쪽(블루팀이 먹은 속성들), 오른쪽(레드팀).
+/// [dragonAssetFor] 로 한국어 속성 라벨을 로컬 에셋에 매핑한다.
 class _DragonTypesRow extends StatelessWidget {
-  const _DragonTypesRow({required this.scale});
+  const _DragonTypesRow({
+    required this.blueDragonTypes,
+    required this.redDragonTypes,
+    required this.scale,
+  });
 
+  final List<String> blueDragonTypes;
+  final List<String> redDragonTypes;
   final double scale;
-
-  static const List<String> _left = [
-    _ObjectiveIcons.infernalDragon,
-    _ObjectiveIcons.mountainDragon,
-    _ObjectiveIcons.oceanDragon,
-    _ObjectiveIcons.hextechDragon,
-  ];
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(String asset) =>
-        Image.asset(asset, width: 20 * scale, height: 20 * scale);
+    Widget chip(String subType) =>
+        Image.asset(dragonAssetFor(subType), width: 20 * scale, height: 20 * scale);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            for (var i = 0; i < _left.length; i++) ...[
+            for (var i = 0; i < blueDragonTypes.length; i++) ...[
               if (i > 0) SizedBox(width: 8 * scale),
-              chip(_left[i]),
+              chip(blueDragonTypes[i]),
             ],
           ],
         ),
-        chip(_ObjectiveIcons.cloudDragon),
+        Row(
+          children: [
+            for (var i = 0; i < redDragonTypes.length; i++) ...[
+              if (i > 0) SizedBox(width: 8 * scale),
+              chip(redDragonTypes[i]),
+            ],
+          ],
+        ),
       ],
     );
   }

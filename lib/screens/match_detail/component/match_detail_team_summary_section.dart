@@ -2,21 +2,26 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../model/match_champion_pick.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/gold_format.dart';
 import '../../../util/league_icon.dart';
 
 /// 경기 상세 — 챔피언픽 탭 맨 아래의 "Team Summary" 섹션.
 ///
-/// **킬 합계·데미지·시야점수·골드 실데이터 없음.** 이 값들은 지금 어떤
-/// API 응답에도 없어서, 시안의 목업 텍스트("17", "25", "67,200" 등)를
-/// 위치 그대로 하드코딩해 UI를 먼저 완성한다. 팀 로고·팀명·리그는
+/// 킬 합계·골드는 `GET /api/mobile/live/games/{gameId}/champions` 응답의
+/// `summary`(TeamStatsSummary)로 실데이터 연결한다. 원래 시안의 막대바는
+/// "Total Damage"(양팀 합산 데미지)였으나 그 값은 라이브 중 산출이 어렵다고
+/// 확인돼(CH) 대신 골드 비교로 채운다([_GoldBarBox]).
+///
+/// **와드 설치·파괴 실데이터 없음(필드명 미확정).** 시야점수(vision score)
+/// 자체는 API에 없지만 와드 설치·파괴 수는 CH 확인상 가능하다고 해 자리는
+/// 만들어 뒀다 — 스펙이 확정되기 전까진 항상 0 이다. 팀 로고·팀명·리그는
 /// 호출부(match_detail_screen.dart)가 ScheduleMatch.teamA/teamB/leagueInfo
-/// 에서 받아 넘기고, 값이 없으면(로딩 전 등) 목데이터로 대체한다.
-/// 시야·골드 아이콘은 받은 [ward.svg]/[gold.svg] 를 그대로 쓴다. 두 킬
-/// 숫자 사이의 "경기 로고" 자리는 리그 아이콘([leagueIconWidget])으로
-/// 채운다. 백엔드가 킬·데미지·시야·골드 값을 내려주기 시작하면 이 숫자들을
-/// 실제 데이터 바인딩으로 바꿔야 한다.
+/// 에서 받아 넘기고, 값이 없으면(로딩 전 등) 목데이터로 대체한다. 와드
+/// 아이콘은 받은 [ward.svg]를 그대로 쓴다. 두 킬 숫자 사이의 "경기 로고"
+/// 자리는 리그 아이콘([leagueIconWidget])으로 채운다.
 class MatchDetailTeamSummarySection extends StatelessWidget {
   const MatchDetailTeamSummarySection({
     super.key,
@@ -25,6 +30,8 @@ class MatchDetailTeamSummarySection extends StatelessWidget {
     this.redTeamCode = 'T1',
     this.blueTeamLogoUrl,
     this.redTeamLogoUrl,
+    this.blueSummary,
+    this.redSummary,
     this.scale = 1,
   });
 
@@ -39,10 +46,16 @@ class MatchDetailTeamSummarySection extends StatelessWidget {
   final String? blueTeamLogoUrl;
   final String? redTeamLogoUrl;
 
+  /// 팀 합산 킬·골드. null 이면(데이터 로드 전) 0 으로 렌더링한다.
+  final TeamStatsSummary? blueSummary;
+  final TeamStatsSummary? redSummary;
+
   final double scale;
 
   @override
   Widget build(BuildContext context) {
+    final blue = blueSummary ?? const TeamStatsSummary();
+    final red = redSummary ?? const TeamStatsSummary();
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
@@ -60,12 +73,27 @@ class MatchDetailTeamSummarySection extends StatelessWidget {
             redTeamCode: redTeamCode,
             blueTeamLogoUrl: blueTeamLogoUrl,
             redTeamLogoUrl: redTeamLogoUrl,
+            blueKills: blue.kills,
+            redKills: red.kills,
             scale: scale,
           ),
           SizedBox(height: 17 * scale),
-          SizedBox(width: double.infinity, child: _DamageBarBox(scale: scale)),
+          SizedBox(
+            width: double.infinity,
+            child: _GoldBarBox(
+              blueGold: blue.totalGoldEarned,
+              redGold: red.totalGoldEarned,
+              scale: scale,
+            ),
+          ),
           SizedBox(height: 17 * scale),
-          _VisionGoldRow(scale: scale),
+          _VisionGoldRow(
+            blueWardsPlaced: blue.wardsPlaced,
+            blueWardsKilled: blue.wardsKilled,
+            redWardsPlaced: red.wardsPlaced,
+            redWardsKilled: red.wardsKilled,
+            scale: scale,
+          ),
         ],
       ),
     );
@@ -79,6 +107,8 @@ class _TeamLogosKillsRow extends StatelessWidget {
     required this.redTeamCode,
     required this.blueTeamLogoUrl,
     required this.redTeamLogoUrl,
+    required this.blueKills,
+    required this.redKills,
     required this.scale,
   });
 
@@ -87,12 +117,16 @@ class _TeamLogosKillsRow extends StatelessWidget {
   final String redTeamCode;
   final String? blueTeamLogoUrl;
   final String? redTeamLogoUrl;
+  final int blueKills;
+  final int redKills;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 331 * scale,
+      // _VisionGoldRow(333)와 같은 폭으로 맞춰 두 행의 중심축(리그 아이콘 ↔
+      // 골드 차이 배지)이 일치하게 한다.
+      width: 333 * scale,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -102,8 +136,8 @@ class _TeamLogosKillsRow extends StatelessWidget {
             scale: scale,
           ),
           _KillsBlock(
-            kill1: '17',
-            kill2: '25',
+            kill1: '$blueKills',
+            kill2: '$redKills',
             leagueCode: leagueCode,
             scale: scale,
           ),
@@ -215,13 +249,21 @@ class _KillsBlock extends StatelessWidget {
     // 시안의 "경기 로고" 자리 — 리그 아이콘이 있으면 그걸, 없는 리그면
     // 기존처럼 얇은 흰 막대로 대신한다.
     final leagueIcon = leagueIconWidget(leagueCode);
+    // 킬 숫자 자릿수가 좌우로 다르면(예: '7' vs '25']) mainAxisSize.min 인
+    // Row 가 그 차이만큼 리그 아이콘을 한쪽으로 밀어낸다. 양쪽을 같은 고정
+    // 폭(2자리 기준)에 가운데 정렬해 리그 아이콘이 항상 정확한 중앙에 오게 한다.
+    const killNumberWidth = 40.0;
+    Widget killNumber(String value) => SizedBox(
+      width: killNumberWidth * scale,
+      child: Text(value, textAlign: TextAlign.center, style: killStyle),
+    );
     return SizedBox(
       height: 36 * scale,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(kill1, style: killStyle),
+          killNumber(kill1),
           SizedBox(width: 16 * scale),
           SizedBox(
             width: 35 * scale,
@@ -254,7 +296,7 @@ class _KillsBlock extends StatelessWidget {
             ),
           ),
           SizedBox(width: 16 * scale),
-          Text(kill2, style: killStyle),
+          killNumber(kill2),
         ],
       ),
     );
@@ -285,9 +327,17 @@ Widget _diffBadge(String text, Color background, double scale) {
   );
 }
 
-class _DamageBarBox extends StatelessWidget {
-  const _DamageBarBox({required this.scale});
+/// 양팀 골드 비교 막대바. 원래 시안은 "Total Damage"(양팀 합산 데미지)였으나
+/// 그 값은 라이브 중 산출이 어렵다고 확인돼(CH) 대신 골드로 채운다.
+class _GoldBarBox extends StatelessWidget {
+  const _GoldBarBox({
+    required this.blueGold,
+    required this.redGold,
+    required this.scale,
+  });
 
+  final int blueGold;
+  final int redGold;
   final double scale;
 
   @override
@@ -306,6 +356,19 @@ class _DamageBarBox extends StatelessWidget {
       height: 1.55,
       color: const Color(0xFFFCFDFE),
     );
+
+    final total = blueGold + redGold;
+    // 둘 다 0이면(데이터 로드 전) 반반으로 둔다.
+    final blueRatio = total > 0 ? blueGold / total : 0.5;
+    final redRatio = total > 0 ? redGold / total : 0.5;
+    final blueFlex = (blueRatio * 1000).round().clamp(1, 999);
+    final redFlex = (1000 - blueFlex).clamp(1, 999);
+    final goldDiff = blueGold - redGold;
+    final diffLabel =
+        '${goldDiff >= 0 ? '+' : '-'}${formatGold(goldDiff.abs())}';
+    final diffColor = goldDiff >= 0
+        ? const Color(0x99228BE6)
+        : const Color(0x80FA5252);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -328,20 +391,20 @@ class _DamageBarBox extends StatelessWidget {
                 children: [
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('67,200', style: labelStyle),
+                    child: Text(formatGold(blueGold), style: labelStyle),
                   ),
                   Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'Total Damage',
+                        'Total Gold',
                         style: labelStyle.copyWith(color: AppColors.narText2),
                       ),
                     ),
                   ),
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('68,200', style: labelStyle),
+                    child: Text(formatGold(redGold), style: labelStyle),
                   ),
                 ],
               ),
@@ -353,11 +416,11 @@ class _DamageBarBox extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 153,
+                        flex: blueFlex,
                         child: Container(color: const Color(0xCC228BE6)),
                       ),
                       Expanded(
-                        flex: 171,
+                        flex: redFlex,
                         child: Container(color: const Color(0xCCFA5252)),
                       ),
                     ],
@@ -368,8 +431,14 @@ class _DamageBarBox extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('60.2%', style: percentStyle),
-                  Text('39.8%', style: percentStyle),
+                  Text(
+                    '${(blueRatio * 100).toStringAsFixed(1)}%',
+                    style: percentStyle,
+                  ),
+                  Text(
+                    '${(redRatio * 100).toStringAsFixed(1)}%',
+                    style: percentStyle,
+                  ),
                 ],
               ),
             ],
@@ -380,7 +449,7 @@ class _DamageBarBox extends StatelessWidget {
           left: 0,
           right: 0,
           child: Center(
-            child: _diffBadge('+1K', const Color(0x80FA5252), scale),
+            child: _diffBadge(diffLabel, diffColor, scale),
           ),
         ),
       ],
@@ -388,9 +457,22 @@ class _DamageBarBox extends StatelessWidget {
   }
 }
 
+/// 와드 설치·파괴 수. 시야점수(vision score) 자체는 API에 없지만 이 두
+/// 값은 CH 확인상 가능하다고 함 — 필드명 미확정이라 지금은 항상 0(목업).
+/// 골드는 위 [_GoldBarBox] 막대바에 이미 표시되므로 여기서는 뺐다.
 class _VisionGoldRow extends StatelessWidget {
-  const _VisionGoldRow({required this.scale});
+  const _VisionGoldRow({
+    required this.blueWardsPlaced,
+    required this.blueWardsKilled,
+    required this.redWardsPlaced,
+    required this.redWardsKilled,
+    required this.scale,
+  });
 
+  final int blueWardsPlaced;
+  final int blueWardsKilled;
+  final int redWardsPlaced;
+  final int redWardsKilled;
   final double scale;
 
   @override
@@ -402,77 +484,74 @@ class _VisionGoldRow extends StatelessWidget {
       height: 1.5,
       color: const Color(0xFFFCFDFE),
     );
-    final ward = SvgPicture.asset(
+    final labelStyle = TextStyle(
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w400,
+      fontSize: 12 * scale,
+      height: 1.5,
+      color: AppColors.narText2,
+    );
+    Widget ward() => SvgPicture.asset(
       'assets/icons/ward.svg',
       width: 20 * scale,
-      height: 16 * scale,
-    );
-    final gold = SvgPicture.asset(
-      'assets/icons/gold.svg',
-      width: 16 * scale,
       height: 16 * scale,
     );
 
     return SizedBox(
       width: 333 * scale,
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      ward,
-                      SizedBox(width: 7 * scale),
-                      Text('411', style: statStyle),
-                    ],
-                  ),
-                  SizedBox(height: 9 * scale),
-                  Row(
-                    children: [
-                      gold,
-                      SizedBox(width: 7 * scale),
-                      Text('83.6K', style: statStyle),
-                    ],
-                  ),
+                  ward(),
+                  SizedBox(width: 7 * scale),
+                  Text('$blueWardsPlaced', style: statStyle),
+                  SizedBox(width: 4 * scale),
+                  Text('설치', style: labelStyle),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              SizedBox(height: 9 * scale),
+              Row(
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('347', style: statStyle),
-                      SizedBox(width: 7 * scale),
-                      ward,
-                    ],
-                  ),
-                  SizedBox(height: 9 * scale),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('79.4K', style: statStyle),
-                      SizedBox(width: 7 * scale),
-                      gold,
-                    ],
-                  ),
+                  ward(),
+                  SizedBox(width: 7 * scale),
+                  Text('$blueWardsKilled', style: statStyle),
+                  SizedBox(width: 4 * scale),
+                  Text('파괴', style: labelStyle),
                 ],
               ),
             ],
           ),
-          Positioned(
-            top: 35.2 * scale,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _diffBadge('+11.2K', const Color(0x99228BE6), scale),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('설치', style: labelStyle),
+                  SizedBox(width: 4 * scale),
+                  Text('$redWardsPlaced', style: statStyle),
+                  SizedBox(width: 7 * scale),
+                  ward(),
+                ],
+              ),
+              SizedBox(height: 9 * scale),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('파괴', style: labelStyle),
+                  SizedBox(width: 4 * scale),
+                  Text('$redWardsKilled', style: statStyle),
+                  SizedBox(width: 7 * scale),
+                  ward(),
+                ],
+              ),
+            ],
           ),
         ],
       ),

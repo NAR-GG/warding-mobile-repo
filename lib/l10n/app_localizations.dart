@@ -554,6 +554,24 @@ abstract class AppLocalizations {
   /// **'챔피언 픽은 경기 시작 후 확인할 수 있어요!'**
   String get championPickAfterMatchAlt;
 
+  /// No description provided for @playerStatsAfterMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 기록은 경기 시작 후 볼 수 있어요!'**
+  String get playerStatsAfterMatch;
+
+  /// No description provided for @objectivesAfterMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'오브젝트 기록은 경기 시작 후 볼 수 있어요!'**
+  String get objectivesAfterMatch;
+
+  /// No description provided for @teamSummaryAfterMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'팀 기록은 경기 시작 후 볼 수 있어요!'**
+  String get teamSummaryAfterMatch;
+
   /// No description provided for @eventDuringMatch.
   ///
   /// In ko, this message translates to:

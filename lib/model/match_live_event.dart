@@ -1,5 +1,6 @@
 import '../l10n/app_strings.dart';
 import '../util/champion_image.dart';
+import '../util/dragon_type.dart';
 
 /// 라이브 이벤트 종류.
 enum LiveEventType { kill, dragon, baron, tower, inhibitor, nexus, unknown }
@@ -143,7 +144,7 @@ class MatchLiveEvent {
   String? objectiveAsset() {
     switch (type) {
       case LiveEventType.dragon:
-        return _dragonAsset(subType);
+        return dragonAssetFor(subType);
       case LiveEventType.baron:
         return 'assets/images/baron.png';
       case LiveEventType.tower:
@@ -156,36 +157,6 @@ class MatchLiveEvent {
       case LiveEventType.unknown:
         return null;
     }
-  }
-
-  /// 드래곤 속성(한국어) → 로컬 드래곤 에셋.
-  static String? _dragonAsset(String? subType) {
-    final s = subType?.trim() ?? '';
-    if (s.contains('바람') || s.toLowerCase().contains('cloud')) {
-      return 'assets/images/cloud-dragon.png';
-    }
-    if (s.contains('바다') || s.toLowerCase().contains('ocean')) {
-      return 'assets/images/ocean-dragon.png';
-    }
-    if (s.contains('대지') || s.contains('산') ||
-        s.toLowerCase().contains('mountain')) {
-      return 'assets/images/mountain-dragon.png';
-    }
-    if (s.contains('화염') || s.contains('불') ||
-        s.toLowerCase().contains('infernal')) {
-      return 'assets/images/infernal-dragon.png';
-    }
-    if (s.contains('마법공학') || s.toLowerCase().contains('hextech')) {
-      return 'assets/images/hextech-dragon.png';
-    }
-    if (s.contains('화학공학') || s.toLowerCase().contains('chemtech')) {
-      return 'assets/images/chemtech-dragon.png';
-    }
-    if (s.contains('장로') || s.toLowerCase().contains('elder')) {
-      return 'assets/images/elder-dragon.png';
-    }
-    // 속성 미상이면 기본 드래곤 아이콘.
-    return 'assets/images/cloud-dragon.png';
   }
 }
 

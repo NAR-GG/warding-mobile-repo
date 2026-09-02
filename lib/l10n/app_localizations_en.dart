@@ -262,6 +262,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Champion picks can be viewed after the match starts!';
 
   @override
+  String get playerStatsAfterMatch =>
+      'Player stats are available after the match starts!';
+
+  @override
+  String get objectivesAfterMatch =>
+      'Objectives are available after the match starts!';
+
+  @override
+  String get teamSummaryAfterMatch =>
+      'Team summary is available after the match starts!';
+
+  @override
   String get eventDuringMatch => 'Events are available during the match!';
 
   @override

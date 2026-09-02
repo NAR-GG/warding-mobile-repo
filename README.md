@@ -25,6 +25,20 @@ MVVM 구조를 따른다. 상세 규칙(폴더 배치, 색상 토큰, UI 스케�
 | `lib/components/` | 전역 공용 위젯 |
 | `lib/styles/` | 디자인 토큰 (AppColors) |
 
+## API 스펙 갱신
+
+백엔드 Swagger 스펙 요약은 `docs/api-reference.md`, 원본 OpenAPI JSON은
+`docs/openapi_spec.json`에 있다. 최신 스펙으로 갱신하려면:
+
+```bash
+NAR_SWAGGER_USER=아이디 NAR_SWAGGER_PASS=비밀번호 python3 scripts/fetch_api_spec.py
+```
+
+`docs/openapi_spec.json`이 갱신된다. `docs/api-reference.md` 요약본도 같이 갱신하려면
+그 파일 내용을 새 스펙 기준으로 다시 생성해야 한다 (엔드포인트 태그별 목록).
+
+Swagger 계정 정보는 팀 채널/노션 등에서 확인한다.
+
 ## 협업 규칙
 
 1. main에 직접 push할 수 없다. 모든 변경은 PR로 머지한다. (ruleset으로 강제됨)

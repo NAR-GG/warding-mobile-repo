@@ -253,6 +253,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get championPickAfterMatchAlt => '챔피언 픽은 경기 시작 후 확인할 수 있어요!';
 
   @override
+  String get playerStatsAfterMatch => '선수 기록은 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get objectivesAfterMatch => '오브젝트 기록은 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get teamSummaryAfterMatch => '팀 기록은 경기 시작 후 볼 수 있어요!';
+
+  @override
   String get eventDuringMatch => '이벤트는 경기 중에 확인할 수 있어요!';
 
   @override

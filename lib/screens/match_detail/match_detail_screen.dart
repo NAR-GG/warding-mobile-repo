@@ -3,6 +3,7 @@ import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
+import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/schedule_match.dart';
 import '../../util/match_status.dart';
@@ -876,7 +877,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           label: 'Player Stats',
           scale: scale,
         ),
-        MatchDetailPlayerStatsSection(scale: scale),
+        _playerStatsContent(scale),
         SizedBox(height: 8 * scale),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Team Summary".
         MatchDetailSectionHeader(
@@ -892,8 +893,75 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           label: 'Objectives',
           scale: scale,
         ),
-        MatchDetailObjectivesSection(scale: scale),
+        _objectivesContent(scale),
       ],
+    );
+  }
+
+  /// 경기 전(SCHEDULED)이면 잠금 안내를, 아니면 [builder] 로 실제 콘텐츠를
+  /// 렌더링한다. [_championPickContent] 와 같은 규칙 — games 를 아직 못
+  /// 받아온 동안(loadingGames)은 currentSetStatus 가 기본값(SCHEDULED)이라
+  /// 실제로는 시작된 경기여도 잠금 안내가 잠깐 잘못 스칠 수 있어, 이 구간엔
+  /// 잠그지 않고 [builder] 를 그대로 보여준다(스켈레톤 역할은 각 섹션이
+  /// 빈 데이터로 자체 처리).
+  Widget _lockedAfterMatch({
+    required double scale,
+    required String message,
+    required Widget Function() builder,
+  }) {
+    if (!_viewModel.loadingGames &&
+        _viewModel.currentSetStatus == MatchGameStatus.scheduled) {
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(message: message, scale: scale),
+      );
+    }
+    return builder();
+  }
+
+  /// Player Stats 섹션. 챔피언 픽 데이터(같은 API 응답)가 아직 없으면
+  /// 빈 스코어보드(0 값)로 렌더링해 레이아웃만 유지한다.
+  Widget _playerStatsContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.playerStatsAfterMatch,
+      builder: () {
+        final pick = _viewModel.championPick;
+        final m = _effectiveMatch;
+        final winnerCode = _viewModel.currentSetWinnerTeamCode;
+        bool? blueWon;
+        if (winnerCode != null && winnerCode.isNotEmpty && m != null) {
+          if (winnerCode == m.teamA.teamCode) {
+            blueWon = true;
+          } else if (winnerCode == m.teamB.teamCode) {
+            blueWon = false;
+          }
+        }
+        return MatchDetailPlayerStatsSection(
+          blueTeamCode: m?.teamA.teamCode ?? '',
+          redTeamCode: m?.teamB.teamCode ?? '',
+          blueWon: blueWon,
+          bluePicks: pick?.blueTeam.picks ?? const [],
+          redPicks: pick?.redTeam.picks ?? const [],
+          scale: scale,
+        );
+      },
+    );
+  }
+
+  /// Objectives 섹션. 챔피언 픽 데이터가 아직 없으면 0으로 렌더링한다.
+  Widget _objectivesContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.objectivesAfterMatch,
+      builder: () {
+        final objectives = _viewModel.championPick?.objectives;
+        return MatchDetailObjectivesSection(
+          blueTeam: objectives?.blueTeam ?? const TeamObjectives(),
+          redTeam: objectives?.redTeam ?? const TeamObjectives(),
+          scale: scale,
+        );
+      },
     );
   }
 
@@ -966,19 +1034,31 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  /// Team Summary 섹션에 넘길 팀 로고·팀 코드(약자)·리그. 경기 정보를 아직
-  /// 못 받아온 동안(또는 필드가 비어 있으면)은 위젯 기본값(목데이터
-  /// "DNS"/"T1"/LCK)이 그대로 쓰이도록 생략한다.
+  /// Team Summary 섹션에 넘길 팀 로고·팀 코드(약자)·리그·킬·골드. 경기
+  /// 정보를 아직 못 받아온 동안(또는 필드가 비어 있으면)은 위젯 기본값
+  /// (목데이터 "DNS"/"T1"/LCK)이 그대로 쓰이도록 생략한다. 경기 전
+  /// (SCHEDULED)이면 잠금 안내를 보여준다.
   Widget _teamSummaryContent(double scale) {
-    final m = _effectiveMatch;
-    if (m == null) return MatchDetailTeamSummarySection(scale: scale);
-    return MatchDetailTeamSummarySection(
-      leagueCode: m.leagueInfo.isNotEmpty ? m.leagueInfo : 'LCK',
-      blueTeamCode: m.teamA.teamCode.isNotEmpty ? m.teamA.teamCode : 'DNS',
-      redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
-      blueTeamLogoUrl: m.teamA.teamImageUrl,
-      redTeamLogoUrl: m.teamB.teamImageUrl,
+    return _lockedAfterMatch(
       scale: scale,
+      message: AppLocalizations.of(context)!.teamSummaryAfterMatch,
+      builder: () {
+        final m = _effectiveMatch;
+        final pick = _viewModel.championPick;
+        if (m == null) {
+          return MatchDetailTeamSummarySection(scale: scale);
+        }
+        return MatchDetailTeamSummarySection(
+          leagueCode: m.leagueInfo.isNotEmpty ? m.leagueInfo : 'LCK',
+          blueTeamCode: m.teamA.teamCode.isNotEmpty ? m.teamA.teamCode : 'DNS',
+          redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
+          blueTeamLogoUrl: m.teamA.teamImageUrl,
+          redTeamLogoUrl: m.teamB.teamImageUrl,
+          blueSummary: pick?.blueTeam.summary,
+          redSummary: pick?.redTeam.summary,
+          scale: scale,
+        );
+      },
     );
   }
 }
