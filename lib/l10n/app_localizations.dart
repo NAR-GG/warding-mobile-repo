@@ -602,12 +602,6 @@ abstract class AppLocalizations {
   /// **'경기 진행 중'**
   String get matchInProgress;
 
-  /// No description provided for @liveUpdating.
-  ///
-  /// In ko, this message translates to:
-  /// **'실시간 갱신 중'**
-  String get liveUpdating;
-
   /// No description provided for @allPlayerRatingForSet.
   ///
   /// In ko, this message translates to:

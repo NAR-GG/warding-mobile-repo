@@ -95,7 +95,6 @@
   "loadingLiveEvents": "Loading live events...",
   "matchScheduled": "Scheduled",
   "matchInProgress": "In Progress",
-  "liveUpdating": "Live updating",
 
   "allPlayerRatingForSet": "{setTitle} All Player Ratings",
   "setEndedLeaveRating": "{setText} has ended! Rate each player now",

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
@@ -918,8 +917,6 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_viewModel.isChampionPollingActive)
-          _LiveUpdatingBadge(scale: scale),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Champion Pick".
         // key 는 TOC 스크럴스파이·탭 이동·스냅이 이 섹션 위치를 재는 데 쓴다.
         MatchDetailSectionHeader(
@@ -1132,52 +1129,6 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           scale: scale,
         );
       },
-    );
-  }
-}
-
-/// 경기 데이터 탭 최상단의 "실시간 갱신 중" 표기. 세트가 LIVE 이고 이 탭이
-/// 활성 상태일 때만(=[MatchDetailViewModel.isChampionPollingActive]) 보인다.
-/// 라이브 이벤트 탭의 리로드 버튼과 달리 탭 불가한 순수 상태 표시다 —
-/// 여기는 이미 5초 폴링이 조용히 돌고 있어 수동 리로드가 필요 없다.
-class _LiveUpdatingBadge extends StatelessWidget {
-  const _LiveUpdatingBadge({required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.narBgContent,
-      padding: EdgeInsets.symmetric(
-        vertical: 8 * scale,
-        horizontal: 10 * scale,
-      ),
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            'assets/icons/reload.svg',
-            width: 14 * scale,
-            height: 14 * scale,
-            colorFilter: const ColorFilter.mode(
-              AppColors.narTextTertiary,
-              BlendMode.srcIn,
-            ),
-          ),
-          SizedBox(width: 4 * scale),
-          Text(
-            AppLocalizations.of(context)!.liveUpdating,
-            style: TextStyle(
-              fontFamily: 'SF Pro',
-              fontWeight: FontWeight.w500,
-              fontSize: 12 * scale,
-              height: 14 / 12,
-              color: AppColors.narTextTertiary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -134,7 +134,6 @@
   "loadingLiveEvents": "라이브 이벤트를 가져오는 중이에요...",
   "matchScheduled": "경기 예정",
   "matchInProgress": "경기 진행 중",
-  "liveUpdating": "실시간 갱신 중",
 
   "allPlayerRatingForSet": "{setTitle} 전체 선수 평점",
   "@allPlayerRatingForSet": {

@@ -290,9 +290,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get matchInProgress => 'In Progress';
 
   @override
-  String get liveUpdating => 'Live updating';
-
-  @override
   String allPlayerRatingForSet(String setTitle) {
     return '$setTitle All Player Ratings';
   }

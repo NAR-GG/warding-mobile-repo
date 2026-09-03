@@ -277,9 +277,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get matchInProgress => '경기 진행 중';
 
   @override
-  String get liveUpdating => '실시간 갱신 중';
-
-  @override
   String allPlayerRatingForSet(String setTitle) {
     return '$setTitle 전체 선수 평점';
   }
