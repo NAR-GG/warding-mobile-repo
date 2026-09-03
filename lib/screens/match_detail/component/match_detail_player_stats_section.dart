@@ -45,37 +45,40 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
     final redResult = blueWon == null ? null : (blueWon! ? '패' : '승');
     return ColoredBox(
       color: Colors.black,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _TeamStatsBlock(
-            side: BadgeSide.blue,
-            teamCode: blueTeamCode,
-            resultLabel: blueResult,
-            resultColor: blueWon == true
-                ? AppColors.narGreenWin
-                : AppColors.narText2,
-            picks: bluePicks,
-            onPlayerTap: onPlayerTap == null
-                ? null
-                : (index) => onPlayerTap!(true, index),
-            scale: scale,
-          ),
-          SizedBox(height: 4 * scale),
-          _TeamStatsBlock(
-            side: BadgeSide.red,
-            teamCode: redTeamCode,
-            resultLabel: redResult,
-            resultColor: blueWon == false
-                ? AppColors.narGreenWin
-                : AppColors.narText2,
-            picks: redPicks,
-            onPlayerTap: onPlayerTap == null
-                ? null
-                : (index) => onPlayerTap!(false, index),
-            scale: scale,
-          ),
-        ],
+      child: Padding(
+        padding: EdgeInsets.only(top: 16 * scale),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TeamStatsBlock(
+              side: BadgeSide.blue,
+              teamCode: blueTeamCode,
+              resultLabel: blueResult,
+              resultColor:
+                  blueWon == true ? AppColors.narGreenWin : AppColors.narText2,
+              picks: bluePicks,
+              onPlayerTap:
+                  onPlayerTap == null
+                      ? null
+                      : (index) => onPlayerTap!(true, index),
+              scale: scale,
+            ),
+            SizedBox(height: 4 * scale),
+            _TeamStatsBlock(
+              side: BadgeSide.red,
+              teamCode: redTeamCode,
+              resultLabel: redResult,
+              resultColor:
+                  blueWon == false ? AppColors.narGreenWin : AppColors.narText2,
+              picks: redPicks,
+              onPlayerTap:
+                  onPlayerTap == null
+                      ? null
+                      : (index) => onPlayerTap!(false, index),
+              scale: scale,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -94,6 +97,8 @@ class _SlashTriple extends StatelessWidget {
     required this.fontWeight,
     required this.scale,
     this.deathColor,
+    this.slotWidth,
+    this.slashWidth,
   });
 
   final String a;
@@ -104,6 +109,12 @@ class _SlashTriple extends StatelessWidget {
   final double scale;
   final Color? deathColor;
 
+  /// 지정하면 숫자 3칸(a/b/c)을 이 폭으로 고정해 두 자릿수여도 줄바꿈이
+  /// 안 생기게 한다(Player Stats 시안). 미지정 시 기존처럼 텍스트 폭에
+  /// 맞춰 자연스럽게 흐른다(팀 총합 KDA 등).
+  final double? slotWidth;
+  final double? slashWidth;
+
   @override
   Widget build(BuildContext context) {
     final base = TextStyle(
@@ -113,20 +124,48 @@ class _SlashTriple extends StatelessWidget {
       height: 1.2,
       color: AppColors.narText,
     );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: [
-          TextSpan(text: a),
-          const TextSpan(text: ' / '),
-          TextSpan(
-            text: b,
-            style: deathColor == null ? null : TextStyle(color: deathColor),
-          ),
-          const TextSpan(text: ' / '),
-          TextSpan(text: c),
-        ],
+    final slotWidth = this.slotWidth;
+    final slashWidth = this.slashWidth;
+    if (slotWidth == null || slashWidth == null) {
+      return Text.rich(
+        TextSpan(
+          style: base,
+          children: [
+            TextSpan(text: a),
+            const TextSpan(text: ' / '),
+            TextSpan(
+              text: b,
+              style: deathColor == null ? null : TextStyle(color: deathColor),
+            ),
+            const TextSpan(text: ' / '),
+            TextSpan(text: c),
+          ],
+        ),
+      );
+    }
+
+    Widget slot(String text, {Color? color}) => SizedBox(
+      width: slotWidth * scale,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: color == null ? base : base.copyWith(color: color),
       ),
+    );
+    Widget slash() => SizedBox(
+      width: slashWidth * scale,
+      child: Text('/', textAlign: TextAlign.center, style: base),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        slot(a),
+        slash(),
+        slot(b, color: deathColor),
+        slash(),
+        slot(c),
+      ],
     );
   }
 }
@@ -255,7 +294,7 @@ class _TeamStatsBlock extends StatelessWidget {
             ),
           ),
           for (var i = 0; i < picks.length; i++) ...[
-            if (i > 0) SizedBox(height: 12 * scale),
+            if (i > 0) SizedBox(height: 21 * scale),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onPlayerTap == null ? null : () => onPlayerTap!(i),
@@ -279,7 +318,7 @@ class _PlayerStatsRow extends StatelessWidget {
     final killParticipationPct = (pick.killParticipation * 100).round();
     final damageSharePct = (pick.championDamageShare * 100).round();
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -294,8 +333,11 @@ class _PlayerStatsRow extends StatelessWidget {
             subStyleIconUrl: pick.subStyleIconUrl,
             scale: scale,
           ),
-          SizedBox(width: 8 * scale),
-          Expanded(
+          SizedBox(width: 4 * scale),
+          // 이름이 길어도, 스코어가 두 자릿수여도 줄이 안 바뀌게 각 칸 폭을
+          // 시안 그대로 고정한다(이름 91, KDA 블록 66, 아이템 94).
+          SizedBox(
+            width: 91 * scale,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -305,7 +347,7 @@ class _PlayerStatsRow extends StatelessWidget {
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w600,
                     fontSize: 14 * scale,
-                    height: 1.2,
+                    height: 17 / 14,
                     color: AppColors.narText,
                   ),
                 ),
@@ -336,18 +378,18 @@ class _PlayerStatsRow extends StatelessWidget {
                           color: AppColors.narText2,
                         ),
                       ),
-                      SizedBox(width: 2 * scale),
+                      SizedBox(width: 4 * scale),
                       Text(
                         '•',
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w500,
-                          fontSize: 8 * scale,
+                          fontSize: 12 * scale,
                           height: 14 / 12,
                           color: AppColors.narText2,
                         ),
                       ),
-                      SizedBox(width: 2 * scale),
+                      SizedBox(width: 4 * scale),
                       Text(
                         formatGold(pick.totalGoldEarned),
                         style: TextStyle(
@@ -364,55 +406,50 @@ class _PlayerStatsRow extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: 8 * scale),
-          // "킬관여 62%" 라벨이 KDA 숫자보다 넓어서 좁은 화면(320~375)에서
-          // 이 칼럼이 outer Row 를 overflow 시켰다. FittedBox 는 부모가 폭을
-          // 정해줘야 실제로 줄어든다 — Row 의 비-flex 자식으로 그냥 두면 폭
-          // 제약이 없어(unbounded) 원래 크기 그대로 그려져 overflow 가 안
-          // 없어졌다. 시안의 원래 자리 폭(60)을 SizedBox 로 씌워 준다.
+          const Spacer(),
           SizedBox(
-            width: 60 * scale,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _SlashTriple(
-                    a: '${pick.kills}',
-                    b: '${pick.deaths}',
-                    c: '${pick.assists}',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    scale: scale,
-                    deathColor: AppColors.narTextScore,
+            width: 66 * scale,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SlashTriple(
+                  a: '${pick.kills}',
+                  b: '${pick.deaths}',
+                  c: '${pick.assists}',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  scale: scale,
+                  deathColor: AppColors.narTextScore,
+                  slotWidth: 18,
+                  slashWidth: 6,
+                ),
+                SizedBox(height: 2 * scale),
+                Text(
+                  '킬관여 $killParticipationPct%',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 11 * scale,
+                    height: 13 / 11,
+                    color: AppColors.narText,
                   ),
-                  SizedBox(height: 4 * scale),
-                  Text(
-                    '킬관여 $killParticipationPct%',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12 * scale,
-                      height: 1.2,
-                      color: AppColors.narText,
-                    ),
+                ),
+                Text(
+                  '딜비중 $damageSharePct%',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 11 * scale,
+                    height: 13 / 11,
+                    color: AppColors.narText2,
                   ),
-                  SizedBox(height: 2 * scale),
-                  Text(
-                    '딜분배 $damageSharePct%',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12 * scale,
-                      height: 1.2,
-                      color: AppColors.narText2,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          SizedBox(width: 8 * scale),
+          SizedBox(width: 14 * scale),
           _ItemGrid(
             coreItemImageUrls: pick.coreItemImageUrls,
             questItemImageUrl: pick.questItemImageUrl,
@@ -454,14 +491,15 @@ class _ChampionBlock extends StatelessWidget {
               color: AppColors.narDark600,
               borderRadius: BorderRadius.circular(6 * scale),
             ),
-            child: hasImage
-                ? CachedNetworkImage(
-                    imageUrl: imageUrl!,
-                    fit: BoxFit.cover,
-                    fadeInDuration: const Duration(milliseconds: 150),
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  )
-                : null,
+            child:
+                hasImage
+                    ? CachedNetworkImage(
+                      imageUrl: imageUrl!,
+                      fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 150),
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    )
+                    : null,
           ),
           Positioned(
             right: 0,
@@ -479,8 +517,8 @@ class _ChampionBlock extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w600,
-                  fontSize: 10 * scale,
-                  height: 1,
+                  fontSize: 12 * scale,
+                  height: 14 / 12,
                   color: const Color(0xFFFCFDFE),
                 ),
               ),
@@ -492,8 +530,10 @@ class _ChampionBlock extends StatelessWidget {
   }
 }
 
-/// 스펠 2개(위, 데이터 없어 빈 박스) + 룬 2개(아래, 키스톤·보조 스타일 실데이터).
-/// 각 20×20, 배경 narBgSecondary 톤.
+/// 룬 2개(키스톤·보조 스타일), 각 20×20 세로 배치(gap 2px), 배경
+/// narBgSecondary 톤. 전체 20×42.
+///
+/// 소환사 주문은 API 응답에 없어 표시하지 않는다(시안에서도 스펠 슬롯 제거).
 class _SpellRuneBlock extends StatelessWidget {
   const _SpellRuneBlock({
     required this.keystoneIconUrl,
@@ -517,32 +557,21 @@ class _SpellRuneBlock extends StatelessWidget {
           borderRadius: BorderRadius.circular(4 * scale),
         ),
         clipBehavior: Clip.antiAlias,
-        child: hasImage
-            ? CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
-            : null,
+        child:
+            hasImage
+                ? CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
+                : null,
       );
     }
 
-    Widget column(Widget top, Widget bottom) => Column(
-      children: [
-        top,
-        SizedBox(height: 2 * scale),
-        bottom,
-      ],
-    );
-
     return SizedBox(
-      width: 42 * scale,
+      width: 20 * scale,
       height: 42 * scale,
-      child: Row(
+      child: Column(
         children: [
-          // 소환사 주문 — API 응답에 없어 빈 슬롯으로 남긴다.
-          column(slot(), slot()),
-          SizedBox(width: 2 * scale),
-          column(
-            slot(imageUrl: keystoneIconUrl),
-            slot(imageUrl: subStyleIconUrl),
-          ),
+          slot(imageUrl: keystoneIconUrl),
+          SizedBox(height: 2 * scale),
+          slot(imageUrl: subStyleIconUrl),
         ],
       ),
     );
@@ -570,16 +599,17 @@ class _ItemGrid extends StatelessWidget {
     Widget slot({String? imageUrl}) {
       final hasImage = imageUrl != null && imageUrl.isNotEmpty;
       return Container(
-        width: 20 * scale,
-        height: 20 * scale,
+        width: 22 * scale,
+        height: 22 * scale,
         decoration: BoxDecoration(
           color: AppColors.narBgSecondary,
           borderRadius: BorderRadius.circular(4 * scale),
         ),
         clipBehavior: Clip.antiAlias,
-        child: hasImage
-            ? CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
-            : null,
+        child:
+            hasImage
+                ? CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover)
+                : null,
       );
     }
 
@@ -597,7 +627,7 @@ class _ItemGrid extends StatelessWidget {
     );
 
     return SizedBox(
-      width: 86 * scale,
+      width: 94 * scale,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

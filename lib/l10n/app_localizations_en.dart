@@ -254,6 +254,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Live events are available after the match starts!';
 
   @override
+  String get matchDataAfterMatch =>
+      'Match data is available after the match starts!';
+
+  @override
   String get championPickAfterMatch =>
       'Champion picks are available after the match starts!';
 
@@ -284,6 +288,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get matchInProgress => 'In Progress';
+
+  @override
+  String get liveUpdating => 'Live updating';
 
   @override
   String allPlayerRatingForSet(String setTitle) {

@@ -542,6 +542,12 @@ abstract class AppLocalizations {
   /// **'라이브 이벤트는 경기 시작 후 볼 수 있어요!'**
   String get liveEventAfterMatch;
 
+  /// No description provided for @matchDataAfterMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 데이터는 경기 시작 후 볼 수 있어요!'**
+  String get matchDataAfterMatch;
+
   /// No description provided for @championPickAfterMatch.
   ///
   /// In ko, this message translates to:
@@ -595,6 +601,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'경기 진행 중'**
   String get matchInProgress;
+
+  /// No description provided for @liveUpdating.
+  ///
+  /// In ko, this message translates to:
+  /// **'실시간 갱신 중'**
+  String get liveUpdating;
 
   /// No description provided for @allPlayerRatingForSet.
   ///

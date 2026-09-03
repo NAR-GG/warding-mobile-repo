@@ -20,7 +20,7 @@ import '../../../util/lane_asset.dart';
 /// Player Stats 섹션에서 선수 행을 탭하면 호출부가 선택을 바꾸고 이 섹션으로
 /// 스크롤을 당긴다. 이 섹션 안의 포지션 아이콘을 직접 탭해도 [onSelect]로 같은
 /// 경로를 탄다.
-class MatchDetailPlayerBuildSection extends StatelessWidget {
+class MatchDetailPlayerBuildSection extends StatefulWidget {
   const MatchDetailPlayerBuildSection({
     super.key,
     required this.bluePicks,
@@ -43,33 +43,252 @@ class MatchDetailPlayerBuildSection extends StatelessWidget {
   final double scale;
 
   @override
+  State<MatchDetailPlayerBuildSection> createState() =>
+      _MatchDetailPlayerBuildSectionState();
+}
+
+class _MatchDetailPlayerBuildSectionState
+    extends State<MatchDetailPlayerBuildSection> {
+  late final PageController _pageController;
+
+  /// 페이지마다 카드 높이가 달라서(룬 유무 등) 현재 페이지 카드를 실측해
+  /// [PageView]의 높이로 반영한다. 초기값은 첫 프레임 렌더 전 임시값.
+  double _height = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _pageOf(widget));
+  }
+
+  @override
+  void didUpdateWidget(covariant MatchDetailPlayerBuildSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final page = _pageOf(widget);
+    if (page != _pageOf(oldWidget) && _pageController.hasClients) {
+      final current = _pageController.page?.round();
+      if (current != page) {
+        // animateToPage 는 목표 페이지까지 중간 페이지를 거쳐 슬라이드한다
+        // — 포지션 아이콘을 탭했을 때(예: 탑→원딜) 엉뚱한 라인이 잠깐
+        // 스쳐 지나가 보인다. 아이콘 탭은 즉시 전환이 맞고, 스와이프
+        // 자체의 애니메이션은 PageView 가 알아서 처리하니 영향 없다.
+        _pageController.jumpToPage(page);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// 블루 탑~원딜(0~4) 다음 레드 탑~원딜(5~9), 총 10페이지 중 현재 인덱스.
+  static int _pageOf(MatchDetailPlayerBuildSection w) =>
+      (w.selectedBlueSide ? 0 : 5) + w.selectedIndex;
+
+  void _onPageChanged(int page) {
+    final isBlueSide = page < 5;
+    final index = isBlueSide ? page : page - 5;
+    if (isBlueSide != widget.selectedBlueSide ||
+        index != widget.selectedIndex) {
+      widget.onSelect(isBlueSide, index);
+    }
+  }
+
+  void _onHeightMeasured(double height) {
+    if ((height - _height).abs() > 0.5) {
+      setState(() => _height = height);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final picks = selectedBlueSide ? bluePicks : redPicks;
-    final pick = selectedIndex < picks.length ? picks[selectedIndex] : null;
-    final teamCode = selectedBlueSide ? blueTeamCode : redTeamCode;
+    final scale = widget.scale;
+    final pages = <_BuildPage>[
+      for (var i = 0; i < widget.bluePicks.length && i < 5; i++)
+        _BuildPage(pick: widget.bluePicks[i], teamCode: widget.blueTeamCode),
+      for (var i = 0; i < widget.redPicks.length && i < 5; i++)
+        _BuildPage(pick: widget.redPicks[i], teamCode: widget.redTeamCode),
+    ];
+    final currentPage = _pageOf(
+      widget,
+    ).clamp(0, pages.isEmpty ? 0 : pages.length - 1);
 
     return Container(
       width: double.infinity,
       color: AppColors.narBgContent,
-      padding: EdgeInsets.fromLTRB(10 * scale, 16 * scale, 10 * scale, 36 * scale),
+      padding: EdgeInsets.fromLTRB(
+        10 * scale,
+        16 * scale,
+        10 * scale,
+        36 * scale,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _SideSelectorRow(
-            bluePicks: bluePicks,
-            redPicks: redPicks,
-            blueTeamCode: blueTeamCode,
-            redTeamCode: redTeamCode,
-            selectedBlue: selectedBlueSide,
-            selectedIndex: selectedIndex,
+            bluePicks: widget.bluePicks,
+            redPicks: widget.redPicks,
+            blueTeamCode: widget.blueTeamCode,
+            redTeamCode: widget.redTeamCode,
+            selectedBlue: widget.selectedBlueSide,
+            selectedIndex: widget.selectedIndex,
             scale: scale,
-            onSelect: onSelect,
+            onSelect: widget.onSelect,
           ),
           SizedBox(height: 16 * scale),
-          if (pick != null)
-            _PlayerBuildCard(pick: pick, teamCode: teamCode, scale: scale),
+          if (pages.isNotEmpty)
+            // 카드 틀(배경·둥근 모서리)과 하단 인디케이터는 여기 고정 —
+            // 안쪽 콘텐츠만 PageView 로 스와이프된다. 틀까지 같이
+            // 슬라이드되면 인디케이터도 카드를 따라 움직여 보여 어색하다.
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 24 * scale),
+              decoration: BoxDecoration(
+                color: AppColors.narDark600,
+                borderRadius: BorderRadius.circular(10 * scale),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    height: _height,
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      children: [
+                        for (var i = 0; i < pages.length; i++)
+                          _MeasuredBuildCard(
+                            pick: pages[i].pick,
+                            teamCode: pages[i].teamCode,
+                            scale: scale,
+                            active: i == currentPage,
+                            onHeightMeasured: _onHeightMeasured,
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (pages.length > 1) ...[
+                    SizedBox(height: 16 * scale),
+                    _BuildPageDots(
+                      count: pages.length,
+                      current: currentPage,
+                      scale: scale,
+                    ),
+                  ],
+                ],
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+/// [_PlayerBuildCard]를 감싸 렌더 후 실제 높이를 상위에 보고한다. 현재
+/// 페이지([active])만 보고한다 — [PageView]는 이웃 페이지도 미리 빌드하므로,
+/// 그 높이가 섞여 들어가면 카드 전환마다 높이가 잘못 튀는 것을 막기 위함.
+class _MeasuredBuildCard extends StatefulWidget {
+  const _MeasuredBuildCard({
+    required this.pick,
+    required this.teamCode,
+    required this.scale,
+    required this.active,
+    required this.onHeightMeasured,
+  });
+
+  final ChampionPick pick;
+  final String teamCode;
+  final double scale;
+  final bool active;
+  final void Function(double height) onHeightMeasured;
+
+  @override
+  State<_MeasuredBuildCard> createState() => _MeasuredBuildCardState();
+}
+
+class _MeasuredBuildCardState extends State<_MeasuredBuildCard> {
+  final _key = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _report());
+  }
+
+  @override
+  void didUpdateWidget(covariant _MeasuredBuildCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _report());
+  }
+
+  void _report() {
+    if (!mounted || !widget.active) return;
+    final height = _key.currentContext?.size?.height;
+    if (height != null) widget.onHeightMeasured(height);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: _PlayerBuildCard(
+        key: _key,
+        pick: widget.pick,
+        scale: widget.scale,
+      ),
+    );
+  }
+}
+
+class _BuildPage {
+  const _BuildPage({required this.pick, required this.teamCode});
+
+  final ChampionPick pick;
+  final String teamCode;
+}
+
+/// 점 페이지네이션 — 현재 페이지는 17px 흰 막대, 나머지는 3px 흰 반투명 점.
+class _BuildPageDots extends StatelessWidget {
+  const _BuildPageDots({
+    required this.count,
+    required this.current,
+    required this.scale,
+  });
+
+  final int count;
+  final int current;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          if (i > 0) SizedBox(width: 7 * scale),
+          if (i == current)
+            Container(
+              width: 17 * scale,
+              height: 3 * scale,
+              decoration: BoxDecoration(
+                color: AppColors.narText,
+                borderRadius: BorderRadius.circular(1.5 * scale),
+              ),
+            )
+          else
+            Container(
+              width: 3 * scale,
+              height: 3 * scale,
+              decoration: const BoxDecoration(
+                color: AppColors.narWhiteBorder15,
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
+      ],
     );
   }
 }
@@ -129,6 +348,29 @@ class _SideSelectorRow extends StatelessWidget {
   }
 }
 
+/// 라인 svg(`top`/`mid`/`bot`)의 2색 구조 — 프레임(`#343A40`)은 항상
+/// [AppColors.narLine]. 주 라인(사선, 원본 `white`)은 선택 시 흰색, 비선택 시
+/// [AppColors.narDark200]. 프레임이 없는 svg(`jug`/`sup`, 전체 `white` 단색)는
+/// 주 라인 규칙만 적용돼 선택 여부로 전체 색이 바뀐다.
+class _LaneIconColorMapper extends ColorMapper {
+  const _LaneIconColorMapper({required this.selected});
+
+  final bool selected;
+
+  static const _frameColor = Color(0xFF343A40);
+
+  @override
+  Color substitute(
+    String? id,
+    String elementName,
+    String attributeName,
+    Color color,
+  ) {
+    if (color == _frameColor) return AppColors.narLine;
+    return selected ? AppColors.narText : AppColors.narDark200;
+  }
+}
+
 class _TeamPositionColumn extends StatelessWidget {
   const _TeamPositionColumn({
     required this.side,
@@ -163,9 +405,10 @@ class _TeamPositionColumn extends StatelessWidget {
     final badge = NarBadgeSide(side: side, scale: scale);
     final header = Row(
       mainAxisSize: MainAxisSize.min,
-      children: alignEnd
-          ? [codeText, SizedBox(width: 8 * scale), badge]
-          : [badge, SizedBox(width: 8 * scale), codeText],
+      children:
+          alignEnd
+              ? [codeText, SizedBox(width: 8 * scale), badge]
+              : [badge, SizedBox(width: 8 * scale), codeText],
     );
 
     final icons = <Widget>[
@@ -175,26 +418,25 @@ class _TeamPositionColumn extends StatelessWidget {
             final asset = laneAssetPath(picks[i].position);
             final selected = selectedIndex == i;
             return GestureDetector(
-              key: ValueKey('player_build_lane_${alignEnd ? 'red' : 'blue'}_$i'),
+              key: ValueKey(
+                'player_build_lane_${alignEnd ? 'red' : 'blue'}_$i',
+              ),
               onTap: () => onSelect(i),
               child: SizedBox(
                 width: 30 * scale,
                 height: 30 * scale,
                 child: Center(
-                  child: Opacity(
-                    opacity: selected ? 1 : 0.4,
-                    child: asset == null
-                        ? SizedBox(width: 20 * scale, height: 20 * scale)
-                        : SvgPicture.asset(
+                  child:
+                      asset == null
+                          ? SizedBox(width: 20 * scale, height: 20 * scale)
+                          : SvgPicture.asset(
                             asset,
                             width: 20 * scale,
                             height: 20 * scale,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.narText,
-                              BlendMode.srcIn,
+                            colorMapper: _LaneIconColorMapper(
+                              selected: selected,
                             ),
                           ),
-                  ),
                 ),
               ),
             );
@@ -203,17 +445,13 @@ class _TeamPositionColumn extends StatelessWidget {
     ];
 
     return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         header,
         SizedBox(height: 6 * scale),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: alignEnd ? icons.reversed.toList() : icons,
-        ),
+        Row(mainAxisSize: MainAxisSize.min, children: icons),
       ],
     );
   }
@@ -227,17 +465,18 @@ TextStyle _sectionLabelStyle(double scale) => TextStyle(
   color: AppColors.narText2,
 );
 
-/// 선택된 한 선수의 빌드 카드 — 챔피언·레벨·포지션·이름, KDA/CS/GOLD/킬관여/딜비중,
-/// 아이템 8칸, 룬(주/부 트리 전체), 능력치 파편.
+/// 선택된 한 선수의 빌드 카드 콘텐츠 — 챔피언·레벨·포지션·이름,
+/// KDA/CS/GOLD/킬관여/딜비중, 아이템 8칸, 룬(주/부 트리 전체), 능력치 파편.
+///
+/// 카드 틀(배경·테두리·둥근 모서리)과 하단 페이지 인디케이터는 이 위젯이
+/// 아니라 호출부([_MatchDetailPlayerBuildSectionState])가 그린다 — 이
+/// 콘텐츠만 [PageView] 안에서 스와이프로 넘어가고, 틀·인디케이터는 고정된
+/// 채로 있어야 하기 때문이다(스와이프할 때 인디케이터까지 카드처럼
+/// 밀려나가면 어색해 보인다).
 class _PlayerBuildCard extends StatelessWidget {
-  const _PlayerBuildCard({
-    required this.pick,
-    required this.teamCode,
-    required this.scale,
-  });
+  const _PlayerBuildCard({super.key, required this.pick, required this.scale});
 
   final ChampionPick pick;
-  final String teamCode;
   final double scale;
 
   @override
@@ -248,13 +487,8 @@ class _PlayerBuildCard extends StatelessWidget {
     final damageSharePct = (pick.championDamageShare * 100).round();
     final runes = pick.runes;
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 24 * scale, horizontal: 8 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narDark600,
-        borderRadius: BorderRadius.circular(10 * scale),
-      ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -266,13 +500,14 @@ class _PlayerBuildCard extends StatelessWidget {
                   width: 46 * scale,
                   height: 46 * scale,
                   color: AppColors.narBgSecondary,
-                  child: hasImage
-                      ? CachedNetworkImage(
-                          imageUrl: pick.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, _, _) => const SizedBox.shrink(),
-                        )
-                      : null,
+                  child:
+                      hasImage
+                          ? CachedNetworkImage(
+                            imageUrl: pick.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, _, _) => const SizedBox.shrink(),
+                          )
+                          : null,
                 ),
               ),
               SizedBox(width: 8 * scale),
@@ -309,15 +544,14 @@ class _PlayerBuildCard extends StatelessWidget {
                           laneIcon,
                           width: 20 * scale,
                           height: 20 * scale,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.narText,
-                            BlendMode.srcIn,
+                          colorMapper: const _LaneIconColorMapper(
+                            selected: true,
                           ),
                         ),
                         SizedBox(width: 8 * scale),
                       ],
                       Text(
-                        '$teamCode ${pick.playerName}',
+                        pick.playerName,
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontWeight: FontWeight.w600,
@@ -524,13 +758,14 @@ class _ItemRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(4 * scale),
         ),
         clipBehavior: Clip.antiAlias,
-        child: hasImage
-            ? CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
-              )
-            : null,
+        child:
+            hasImage
+                ? CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                )
+                : null,
       );
     }
 
@@ -562,11 +797,19 @@ class _RunesRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: _RuneTreeColumn(style: runes.primary, isPrimary: true, scale: scale),
+          child: _RuneTreeColumn(
+            style: runes.primary,
+            isPrimary: true,
+            scale: scale,
+          ),
         ),
         SizedBox(width: 16 * scale),
         Expanded(
-          child: _RuneTreeColumn(style: runes.sub, isPrimary: false, scale: scale),
+          child: _RuneTreeColumn(
+            style: runes.sub,
+            isPrimary: false,
+            scale: scale,
+          ),
         ),
       ],
     );
@@ -586,13 +829,17 @@ class _RuneTreeColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasIcon = style.styleIconUrl != null && style.styleIconUrl!.isNotEmpty;
+    final hasIcon =
+        style.styleIconUrl != null && style.styleIconUrl!.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 4 * scale),
+          padding: EdgeInsets.symmetric(
+            horizontal: 8 * scale,
+            vertical: 4 * scale,
+          ),
           decoration: BoxDecoration(
             border: Border(
               left: BorderSide(
@@ -609,13 +856,14 @@ class _RuneTreeColumn extends StatelessWidget {
                   width: 22 * scale,
                   height: 22 * scale,
                   color: AppColors.narBgSecondary,
-                  child: hasIcon
-                      ? CachedNetworkImage(
-                          imageUrl: style.styleIconUrl!,
-                          fit: BoxFit.cover,
-                          errorWidget: (_, _, _) => const SizedBox.shrink(),
-                        )
-                      : null,
+                  child:
+                      hasIcon
+                          ? CachedNetworkImage(
+                            imageUrl: style.styleIconUrl!,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, _, _) => const SizedBox.shrink(),
+                          )
+                          : null,
                 ),
               ),
               SizedBox(width: 8 * scale),
@@ -655,7 +903,7 @@ class _RuneTreeColumn extends StatelessWidget {
 }
 
 /// 룬 한 칸 — 키스톤([large])은 33px 원형(배경 있음), 나머지는 24px(테두리만).
-class _RuneEntryRow extends StatelessWidget {
+class _RuneEntryRow extends StatefulWidget {
   const _RuneEntryRow({
     required this.entry,
     required this.large,
@@ -667,44 +915,213 @@ class _RuneEntryRow extends StatelessWidget {
   final double scale;
 
   @override
+  State<_RuneEntryRow> createState() => _RuneEntryRowState();
+}
+
+class _RuneEntryRowState extends State<_RuneEntryRow> {
+  final _layerLink = LayerLink();
+  OverlayEntry? _tooltipEntry;
+
+  @override
+  void dispose() {
+    _tooltipEntry?.remove();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails _) {
+    // onTap 대신 onTapDown 을 쓴다 — 이 위젯이 스와이프 가능한 PageView
+    // 안에 있어서, onTap(탭업 기준)은 제스처 아레나가 "탭이냐 스와이프냐"
+    // 판정할 때까지 기다리느라 반응이 한 박자 늦게 느껴진다. 손가락이
+    // 닿는 즉시(터치다운) 여는 게 호버에 가장 가까운 반응이다.
+    if (_tooltipEntry != null) {
+      _hideTooltip();
+      return;
+    }
+    final description = widget.entry.description;
+    if (description == null || description.isEmpty) return;
+
+    final overlay = Overlay.of(context);
+    _tooltipEntry = OverlayEntry(
+      builder:
+          (context) => _RuneGuideOverlay(
+            layerLink: _layerLink,
+            name: widget.entry.name,
+            description: description,
+            scale: widget.scale,
+            onDismiss: _hideTooltip,
+          ),
+    );
+    overlay.insert(_tooltipEntry!);
+  }
+
+  void _hideTooltip() {
+    _tooltipEntry?.remove();
+    _tooltipEntry = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
+    final large = widget.large;
+    final scale = widget.scale;
     final size = (large ? 33.0 : 24.0) * scale;
     final hasIcon = entry.iconUrl != null && entry.iconUrl!.isNotEmpty;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: large ? AppColors.narBgSecondary : null,
-            border: Border.all(color: AppColors.narWhiteBorder15, width: 1),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: hasIcon
-              ? CachedNetworkImage(
-                  imageUrl: entry.iconUrl!,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, _, _) => const SizedBox.shrink(),
-                )
-              : null,
-        ),
-        SizedBox(width: 8 * scale),
-        Flexible(
-          child: Text(
-            entry.name,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w400,
-              fontSize: 12 * scale,
-              height: 17 / 12,
-              color: AppColors.narText,
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: _handleTapDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: large ? AppColors.narBgSecondary : null,
+                border: Border.all(color: AppColors.narWhiteBorder15, width: 1),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child:
+                  hasIcon
+                      ? CachedNetworkImage(
+                        imageUrl: entry.iconUrl!,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
+                      )
+                      : null,
             ),
+            SizedBox(width: 8 * scale),
+            Flexible(
+              child: Text(
+                entry.name,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12 * scale,
+                  height: 17 / 12,
+                  color: AppColors.narText,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 룬 탭 시 뜨는 가이드(이름+설명) 카드. 탭한 룬 아이콘 바로 아래
+/// [layerLink]를 기준으로 붙는다. 배경 전체를 덮는 투명 배리어를 같이 깔아
+/// 바깥을 탭하면 닫히게 한다.
+class _RuneGuideOverlay extends StatelessWidget {
+  const _RuneGuideOverlay({
+    required this.layerLink,
+    required this.name,
+    required this.description,
+    required this.scale,
+    required this.onDismiss,
+  });
+
+  final LayerLink layerLink;
+  final String name;
+  final String description;
+  final double scale;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onDismiss,
+            child: const ColoredBox(color: Colors.transparent),
+          ),
+        ),
+        CompositedTransformFollower(
+          link: layerLink,
+          showWhenUnlinked: false,
+          targetAnchor: Alignment.bottomLeft,
+          followerAnchor: Alignment.topLeft,
+          offset: Offset(0, 4 * scale),
+          child: _RuneGuideCard(
+            name: name,
+            description: description,
+            scale: scale,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _RuneGuideCard extends StatelessWidget {
+  const _RuneGuideCard({
+    required this.name,
+    required this.description,
+    required this.scale,
+  });
+
+  final String name;
+  final String description;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    // Overlay 트리에는 Material 조상이 없어, 이 카드가 없으면 Text 가
+    // 기본(디버그) 텍스트 스타일 — 노란 밑줄 포함 — 로 렌더된다.
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 166 * scale),
+        padding: EdgeInsets.all(8 * scale),
+        decoration: BoxDecoration(
+          color: AppColors.narBgContent,
+          border: Border.all(color: AppColors.narWhiteBorder15, width: 1),
+          borderRadius: BorderRadius.circular(8 * scale),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.narDarkOpacity62,
+              offset: Offset(2 * scale, 2 * scale),
+              blurRadius: 8 * scale,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) => AppColors.narBg.createShader(bounds),
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12 * scale,
+                  height: 1.45,
+                  color: AppColors.narText,
+                ),
+              ),
+            ),
+            SizedBox(height: 4 * scale),
+            Text(
+              description,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 10 * scale,
+                height: 1.45,
+                color: AppColors.narText,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -721,7 +1138,9 @@ class _ShardsRow extends StatelessWidget {
     return Wrap(
       spacing: 4 * scale,
       runSpacing: 4 * scale,
-      children: [for (final shard in shards) _ShardPill(shard: shard, scale: scale)],
+      children: [
+        for (final shard in shards) _ShardPill(shard: shard, scale: scale),
+      ],
     );
   }
 }
@@ -735,7 +1154,8 @@ class _ShardPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasIcon = shard.iconUrl != null && shard.iconUrl!.isNotEmpty;
-    final text = shard.label != null ? '${shard.name} ${shard.label}' : shard.name;
+    final text =
+        shard.label != null ? '${shard.name} ${shard.label}' : shard.name;
     return Container(
       padding: EdgeInsets.fromLTRB(2 * scale, 2 * scale, 8 * scale, 2 * scale),
       decoration: BoxDecoration(
@@ -749,14 +1169,17 @@ class _ShardPill extends StatelessWidget {
             width: 19 * scale,
             height: 19 * scale,
             clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(2 * scale)),
-            child: hasIcon
-                ? CachedNetworkImage(
-                    imageUrl: shard.iconUrl!,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  )
-                : null,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2 * scale),
+            ),
+            child:
+                hasIcon
+                    ? CachedNetworkImage(
+                      imageUrl: shard.iconUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    )
+                    : null,
           ),
           SizedBox(width: 2 * scale),
           Text(

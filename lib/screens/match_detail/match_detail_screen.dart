@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
@@ -108,6 +109,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     _tocLabels.length,
     (_) => GlobalKey(),
   );
+
+  /// 경기 데이터 탭이 잠금 화면(경기 전) 상태인지. [_buildChampionPickTab] 과
+  /// [MatchDetailToc] 둘 다 이 값으로 분기한다 — 잠금 화면일 땐 섹션 헤더
+  /// 자체가 없어 목차도 무의미하므로 함께 숨긴다. games 를 아직 못 받아온
+  /// 동안(loadingGames)은 currentSetStatus 가 기본값(SCHEDULED)이라 실제로는
+  /// 시작된 경기여도 이 조건에 걸릴 수 있어, 그 구간은 잠그지 않는다.
+  bool get isChampionTabLocked =>
+      !_viewModel.loadingGames &&
+      _viewModel.currentSetStatus == MatchGameStatus.scheduled;
 
   /// "Player Builds" 섹션에 표시 중인 선수(블루팀 여부, 팀 내 인덱스).
   /// Champion Pick 의 챔피언 카드나 Player Stats 의 선수 행을 탭하면 바뀐다.
@@ -700,7 +710,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
             ),
             // 목차(TOC): 챔피언픽 탭에서 스크롤할 때만 오른쪽에 살짝 떴다 사라진다.
             MatchDetailToc(
-              active: _tabIndex == 0,
+              active: _tabIndex == 0 && !isChampionTabLocked,
               scrollController: _scrollController,
               pinnedBarKey: _tabBarKey,
               sectionKeys: _sectionKeys,
@@ -892,10 +902,24 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   /// 함께 스크롤되며, 대신 스크롤이 멎으면 [_snapToNearestSection] 이
   /// 가장 가까운 섹션 헤더 위치로 스크롤을 마저 당겨 "턱" 걸리는 스냅
   /// 느낌을 준다.
+  ///
+  /// 경기 전(SCHEDULED)이면 [_buildLiveEventTab] 과 같은 규칙으로 5개
+  /// 섹션 각각의 잠금 안내 대신, 탭 전체를 단일 잠금 화면으로 보여준다.
   Widget _buildChampionPickTab(double scale) {
+    if (isChampionTabLocked) {
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(
+          message: AppLocalizations.of(context)!.matchDataAfterMatch,
+          scale: scale,
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_viewModel.isChampionPollingActive)
+          _LiveUpdatingBadge(scale: scale),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Champion Pick".
         // key 는 TOC 스크럴스파이·탭 이동·스냅이 이 섹션 위치를 재는 데 쓴다.
         MatchDetailSectionHeader(
@@ -940,26 +964,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  /// 경기 전(SCHEDULED)이면 잠금 안내를, 아니면 [builder] 로 실제 콘텐츠를
-  /// 렌더링한다. [_championPickContent] 와 같은 규칙 — games 를 아직 못
-  /// 받아온 동안(loadingGames)은 currentSetStatus 가 기본값(SCHEDULED)이라
-  /// 실제로는 시작된 경기여도 잠금 안내가 잠깐 잘못 스칠 수 있어, 이 구간엔
-  /// 잠그지 않고 [builder] 를 그대로 보여준다(스켈레톤 역할은 각 섹션이
-  /// 빈 데이터로 자체 처리).
+  /// [builder] 로 실제 콘텐츠를 렌더링한다. 경기 전(SCHEDULED) 잠금은 이제
+  /// [_buildChampionPickTab] 이 탭 전체 단위로 먼저 처리하므로(단일 잠금
+  /// 화면), 이 지점에 도달했다는 것 자체가 이미 잠금 상태가 아니라는 뜻이다.
+  /// [message]/[scale] 은 호출부 시그니처 유지용으로만 남아 있다.
   Widget _lockedAfterMatch({
     required double scale,
     required String message,
     required Widget Function() builder,
-  }) {
-    if (!_viewModel.loadingGames &&
-        _viewModel.currentSetStatus == MatchGameStatus.scheduled) {
-      return ColoredBox(
-        color: AppColors.narBgContent,
-        child: MatchDetailLockedEmpty(message: message, scale: scale),
-      );
-    }
-    return builder();
-  }
+  }) => builder();
 
   /// Player Stats 섹션. 챔피언 픽 데이터(같은 API 응답)가 아직 없으면
   /// 빈 스코어보드(0 값)로 렌더링해 레이아웃만 유지한다.
@@ -1050,16 +1063,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         scale: scale,
       );
     }
-    // 경기 전(SCHEDULED)이면 잠금(lock-off) 안내를 보여준다.
-    if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
-      return ColoredBox(
-        color: AppColors.narBgContent,
-        child: MatchDetailLockedEmpty(
-          message: AppLocalizations.of(context)!.championPickAfterMatch,
-          scale: scale,
-        ),
-      );
-    }
+    // 경기 전(SCHEDULED) 잠금은 [_buildChampionPickTab] 이 탭 전체 단위로
+    // 먼저 처리하므로, 여기 도달했다는 것 자체가 이미 잠금 상태가 아니다.
     // 최초 로드 중이거나(아직 데이터·에러 모두 없음) 처리 중이면 플레이스홀더
     // 픽으로 스켈레톤 렌더. (championError 가 있으면 실패이므로 건너뛴다.)
     if (_viewModel.championPick == null && _viewModel.championError == null) {
@@ -1122,13 +1127,57 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
           redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
           blueTeamLogoUrl: m.teamA.teamImageUrl,
           redTeamLogoUrl: m.teamB.teamImageUrl,
-          // 와드 설치·파괴는 챔피언 픽 응답엔 없어(항상 0) 뷰모델이 종료 후
-          // CSV 기록(GameRecord)으로 덮어쓴 값을 대신 쓴다.
           blueSummary: _viewModel.blueTeamSummary,
           redSummary: _viewModel.redTeamSummary,
           scale: scale,
         );
       },
+    );
+  }
+}
+
+/// 경기 데이터 탭 최상단의 "실시간 갱신 중" 표기. 세트가 LIVE 이고 이 탭이
+/// 활성 상태일 때만(=[MatchDetailViewModel.isChampionPollingActive]) 보인다.
+/// 라이브 이벤트 탭의 리로드 버튼과 달리 탭 불가한 순수 상태 표시다 —
+/// 여기는 이미 5초 폴링이 조용히 돌고 있어 수동 리로드가 필요 없다.
+class _LiveUpdatingBadge extends StatelessWidget {
+  const _LiveUpdatingBadge({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.narBgContent,
+      padding: EdgeInsets.symmetric(
+        vertical: 8 * scale,
+        horizontal: 10 * scale,
+      ),
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            'assets/icons/reload.svg',
+            width: 14 * scale,
+            height: 14 * scale,
+            colorFilter: const ColorFilter.mode(
+              AppColors.narTextTertiary,
+              BlendMode.srcIn,
+            ),
+          ),
+          SizedBox(width: 4 * scale),
+          Text(
+            AppLocalizations.of(context)!.liveUpdating,
+            style: TextStyle(
+              fontFamily: 'SF Pro',
+              fontWeight: FontWeight.w500,
+              fontSize: 12 * scale,
+              height: 14 / 12,
+              color: AppColors.narTextTertiary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

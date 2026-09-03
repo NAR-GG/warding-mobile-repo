@@ -268,8 +268,7 @@ class TeamStatsSummary {
   final int creepScore;
   final int totalGoldEarned;
 
-  /// 와드 설치 수. 이 챔피언 픽 응답 자체에는 없는 필드라 항상 0 —
-  /// `GameRecord.wardsForSide`(종료 후 CSV 적재분)로 [copyWith] 덮어써서 쓴다.
+  /// 와드 설치 수. 이 챔피언 픽 응답 자체에는 없는 필드라 항상 0.
   final int wardsPlaced;
 
   /// 와드 파괴 수. [wardsPlaced] 와 같은 이유로 이 응답에서는 항상 0.
@@ -284,18 +283,6 @@ class TeamStatsSummary {
       totalGoldEarned: json['totalGoldEarned'] as int? ?? 0,
       wardsPlaced: json['wardsPlaced'] as int? ?? 0,
       wardsKilled: json['wardsKilled'] as int? ?? 0,
-    );
-  }
-
-  TeamStatsSummary copyWith({int? wardsPlaced, int? wardsKilled}) {
-    return TeamStatsSummary(
-      kills: kills,
-      deaths: deaths,
-      assists: assists,
-      creepScore: creepScore,
-      totalGoldEarned: totalGoldEarned,
-      wardsPlaced: wardsPlaced ?? this.wardsPlaced,
-      wardsKilled: wardsKilled ?? this.wardsKilled,
     );
   }
 }

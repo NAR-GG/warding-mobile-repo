@@ -275,10 +275,6 @@ class ApiConfig {
   static String myRatingsUrl({int page = 0, int size = 20}) =>
       '$apiBaseUrl/mobile/me/ratings?page=$page&size=$size';
 
-  /// 게임 상세(밴픽·선수 스탯·골드 차 등) 조회. gameId 는 정수.
-  static String gameRecordUrl(int gameId) =>
-      '$apiBaseUrl/games/$gameId/record';
-
   // ── 경기 상세: 세트(게임)·챔피언 픽·라이브 이벤트 (인증 불필요) ──────────
 
   /// 단일 경기 정보 조회 (인증 불필요).

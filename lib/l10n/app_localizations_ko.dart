@@ -247,6 +247,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get liveEventAfterMatch => '라이브 이벤트는 경기 시작 후 볼 수 있어요!';
 
   @override
+  String get matchDataAfterMatch => '경기 데이터는 경기 시작 후 볼 수 있어요!';
+
+  @override
   String get championPickAfterMatch => '챔피언 픽은 경기 시작 후 볼 수 있어요!';
 
   @override
@@ -272,6 +275,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get matchInProgress => '경기 진행 중';
+
+  @override
+  String get liveUpdating => '실시간 갱신 중';
 
   @override
   String allPlayerRatingForSet(String setTitle) {

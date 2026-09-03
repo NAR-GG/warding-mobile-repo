@@ -30,7 +30,7 @@ class MatchDetailObjectivesSection extends StatelessWidget {
       color: AppColors.narBgContent,
       // 좌우 10 + 안쪽 박스 좌우 0 = Team Summary(_VisionGoldRow)의 와드
       // 아이콘과 같은 x좌표(화면 가장자리에서 10px)에 오도록 맞췄다.
-      padding: EdgeInsets.fromLTRB(10 * scale, 0, 10 * scale, 80 * scale),
+      padding: EdgeInsets.fromLTRB(10 * scale, 16 * scale, 10 * scale, 80 * scale),
       alignment: Alignment.topCenter,
       child: Container(
         width: 333 * scale,

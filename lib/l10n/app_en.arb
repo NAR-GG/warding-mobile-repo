@@ -84,6 +84,7 @@
   "matchEnded": "Ended",
   "preparing": "Preparing",
   "liveEventAfterMatch": "Live events are available after the match starts!",
+  "matchDataAfterMatch": "Match data is available after the match starts!",
   "championPickAfterMatch": "Champion picks are available after the match starts!",
   "championPickAfterMatchAlt": "Champion picks can be viewed after the match starts!",
   "playerStatsAfterMatch": "Player stats are available after the match starts!",
@@ -94,6 +95,7 @@
   "loadingLiveEvents": "Loading live events...",
   "matchScheduled": "Scheduled",
   "matchInProgress": "In Progress",
+  "liveUpdating": "Live updating",
 
   "allPlayerRatingForSet": "{setTitle} All Player Ratings",
   "setEndedLeaveRating": "{setText} has ended! Rate each player now",

@@ -5,7 +5,6 @@ import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
 import '../../util/sentry_logger.dart';
-import '../../model/game_record.dart';
 import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/match_live_event.dart';
@@ -115,33 +114,6 @@ class MatchDetailRepository {
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return MatchChampionPick.fromJson(data);
-  }
-
-  /// 세트(recordGameId)의 종료 후 CSV 적재분 기록을 조회한다(인증 불필요,
-  /// 와드 설치·파괴 등). [MatchGame.recordGameId] 가 null 이면(CSV 미적재)
-  /// 호출부가 아예 부르지 않아야 한다. 실패·미적재(404 등) 시 null.
-  Future<GameRecord?> fetchGameRecord(int recordGameId) async {
-    final url = ApiConfig.gameRecordUrl(recordGameId);
-    debugPrint('[MatchDetail] GET $url');
-    try {
-      final response = await http.get(Uri.parse(url));
-      debugPrint('[MatchDetail] record ← ${response.statusCode}');
-      if (response.statusCode < 200 || response.statusCode >= 300) return null;
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        return GameRecord.fromJson(data);
-      }
-      return null;
-    } catch (e) {
-      SentryLogger.error(
-        module: 'Logic',
-        eventName: 'fetchGameRecord_parse',
-        reason: e.runtimeType.toString(),
-        throwable: e,
-      );
-      debugPrint('[MatchDetail] fetchGameRecord failed: $e');
-      return null;
-    }
   }
 
   /// 세트(gameId)의 라이브 이벤트를 조회한다 (인증 불필요, 최신순).

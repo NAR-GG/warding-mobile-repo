@@ -16,11 +16,9 @@ import '../../../util/league_icon.dart';
 /// 시안). "Total Damage"(양팀 합산 데미지)는 라이브 중 산출이 어렵다고
 /// 확인돼(CH) 시안에서 골드로 대체됐다.
 ///
-/// **와드 설치·파괴는 챔피언 픽 응답에 없다.** 대신 종료 후 CSV 적재분
-/// 기록 API(`GET /api/games/{recordGameId}/record`, [GameRecord])에서
-/// `MatchDetailViewModel.blueTeamSummary`/`redTeamSummary` 가 실제 값을
-/// 덮어써서 넘겨준다. 그 기록이 아직 없으면(recordGameId 미적재 등) 원본
-/// 그대로(0/0, 바는 50:50)로 렌더된다. 시야점수(vision score) 자체는
+/// **와드 설치·파괴는 챔피언 픽 응답에 항상 0으로 온다**(피드가 저장하지
+/// 않음) — 종료 후 CSV 기록(`/games/{id}/record`) 오버레이는 쓰지 않기로
+/// 해, 항상 0/0(바는 50:50)으로 렌더된다. 시야점수(vision score) 자체는
 /// 와드 개수만으로 만들 수 없어 API에 없다. 팀 로고·팀명·리그는
 /// 호출부(match_detail_screen.dart)가
 /// ScheduleMatch.teamA/teamB/leagueInfo 에서 받아 넘기고, 값이 없으면
@@ -298,10 +296,10 @@ class _KillsBlock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   killNumber(kill1),
-                  SizedBox(width: 16 * scale),
+                  SizedBox(width: 8 * scale),
                   SizedBox(
-                    width: 44 * scale,
-                    height: 44 * scale,
+                    width: 35 * scale,
+                    height: 35 * scale,
                     child: Center(
                       child: leagueIcon != null
                           // 리그 svg 원본은 fill 이 검정(#101113)으로
@@ -309,8 +307,8 @@ class _KillsBlock extends StatelessWidget {
                           // MatchLeagueHeader 와 같은 방식으로
                           // 흰색(narText)으로 틴트한다.
                           ? SizedBox(
-                              width: 44 * scale,
-                              height: 44 * scale,
+                              width: 35 * scale,
+                              height: 35 * scale,
                               child: ColorFiltered(
                                 colorFilter: const ColorFilter.mode(
                                   AppColors.narText,
@@ -320,8 +318,8 @@ class _KillsBlock extends StatelessWidget {
                               ),
                             )
                           : Container(
-                              width: 44 * scale,
-                              height: 3 * scale,
+                              width: 35 * scale,
+                              height: 15.71 * scale,
                               decoration: BoxDecoration(
                                 color: AppColors.narText,
                                 borderRadius: BorderRadius.circular(
@@ -331,7 +329,7 @@ class _KillsBlock extends StatelessWidget {
                             ),
                     ),
                   ),
-                  SizedBox(width: 16 * scale),
+                  SizedBox(width: 8 * scale),
                   killNumber(kill2),
                 ],
               ),
