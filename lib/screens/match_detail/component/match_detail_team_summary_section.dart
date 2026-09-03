@@ -16,10 +16,11 @@ import '../../../util/league_icon.dart';
 /// 시안). "Total Damage"(양팀 합산 데미지)는 라이브 중 산출이 어렵다고
 /// 확인돼(CH) 시안에서 골드로 대체됐다.
 ///
-/// **와드 설치·파괴는 챔피언 픽 응답에 항상 0으로 온다**(피드가 저장하지
-/// 않음) — 종료 후 CSV 기록(`/games/{id}/record`) 오버레이는 쓰지 않기로
-/// 해, 항상 0/0(바는 50:50)으로 렌더된다. 시야점수(vision score) 자체는
-/// 와드 개수만으로 만들 수 없어 API에 없다. 팀 로고·팀명·리그는
+/// **와드 설치·파괴는 팀 합산 `summary` 자체엔 없다**(항상 0) — 대신 각
+/// 선수([ChampionPick.wardsPlaced]/`wardsDestroyed`)에 직접 내려오는 값을
+/// [ChampionTeam.summaryWithWards] 가 5명분 더해 채운다
+/// (`MatchDetailViewModel.blueTeamSummary`/`redTeamSummary`). 시야점수
+/// (vision score) 자체는 와드 개수만으로 만들 수 없어 API에 없다. 팀 로고·팀명·리그는
 /// 호출부(match_detail_screen.dart)가
 /// ScheduleMatch.teamA/teamB/leagueInfo 에서 받아 넘기고, 값이 없으면
 /// (로딩 전 등) 목데이터로 대체한다. 두 킬 숫자 사이의 "경기 로고" 자리는

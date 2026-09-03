@@ -44,7 +44,7 @@ class MatchDetailPlayerStatsSection extends StatelessWidget {
     final blueResult = blueWon == null ? null : (blueWon! ? '승' : '패');
     final redResult = blueWon == null ? null : (blueWon! ? '패' : '승');
     return ColoredBox(
-      color: Colors.black,
+      color: AppColors.narBgContent,
       child: Padding(
         padding: EdgeInsets.only(top: 16 * scale),
         child: Column(

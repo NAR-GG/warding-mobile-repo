@@ -99,11 +99,13 @@ class MatchDetailViewModel extends ChangeNotifier {
   String? _championError;
   String? get championError => _championError;
 
-  // 와드 설치·파괴는 /champions 응답에 항상 0으로 온다(피드가 저장하지
-  // 않음) — 종료 후 CSV 기록(/record) 오버레이는 쓰지 않기로 해 원본
-  // summary(와드 0/0, Team Summary 바는 50:50)를 그대로 노출한다.
-  TeamStatsSummary? get blueTeamSummary => _championPick?.blueTeam.summary;
-  TeamStatsSummary? get redTeamSummary => _championPick?.redTeam.summary;
+  // 와드 설치·파괴는 팀 합산 summary 자체엔 없지만(항상 0), 각
+  // ChampionPick(선수별)에는 champions API가 직접 내려준다 —
+  // ChampionTeam.summaryWithWards 가 5명분을 더해 채운다.
+  TeamStatsSummary? get blueTeamSummary =>
+      _championPick?.blueTeam.summaryWithWards;
+  TeamStatsSummary? get redTeamSummary =>
+      _championPick?.redTeam.summaryWithWards;
 
   // ── 라이브 이벤트 ──────────────────────────
   MatchLiveEvents? _liveEventsData;

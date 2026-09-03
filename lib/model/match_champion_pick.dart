@@ -135,6 +135,19 @@ class ChampionTeam {
   /// 밴 챔피언 이미지 URL 5개 (폴백 적용). 부족하면 null 로 패딩.
   List<String?> banImageUrls() => _padTo5(bans.map((b) => b.imageUrl).toList());
 
+  /// [summary] 에 5명 [picks] 의 와드 설치·파괴 합산을 채워 반환한다.
+  /// `summary`(TeamSummary) 스키마 자체엔 와드 필드가 없어(항상 0) 팀
+  /// 단위로는 못 주지만, 각 [ChampionPick] 에는 선수별 와드 값이 내려온다.
+  TeamStatsSummary get summaryWithWards {
+    var placed = 0;
+    var killed = 0;
+    for (final p in picks) {
+      placed += p.wardsPlaced;
+      killed += p.wardsDestroyed;
+    }
+    return summary.copyWith(wardsPlaced: placed, wardsKilled: killed);
+  }
+
   static List<String?> _padTo5(List<String?> list) {
     final out = List<String?>.from(list);
     while (out.length < 5) {
@@ -159,6 +172,8 @@ class ChampionPick {
     this.totalGoldEarned = 0,
     this.killParticipation = 0,
     this.championDamageShare = 0,
+    this.wardsPlaced = 0,
+    this.wardsDestroyed = 0,
     this.itemImageUrls = const [],
     this.coreItemImageUrls = const [],
     this.questItemImageUrl,
@@ -180,6 +195,11 @@ class ChampionPick {
   final int assists;
   final int creepScore;
   final int totalGoldEarned;
+
+  /// 이 선수의 와드 설치·파괴 수. #? 부터 champions API(Pick)에 직접
+  /// 내려온다 — 팀 합산은 [ChampionTeam.summaryWithWards] 가 5명분을 더한다.
+  final int wardsPlaced;
+  final int wardsDestroyed;
 
   /// 0.0~1.0 비율. 화면 표시는 `(killParticipation * 100).round()`.
   final double killParticipation;
@@ -228,6 +248,8 @@ class ChampionPick {
       killParticipation: (json['killParticipation'] as num?)?.toDouble() ?? 0,
       championDamageShare:
           (json['championDamageShare'] as num?)?.toDouble() ?? 0,
+      wardsPlaced: json['wardsPlaced'] as int? ?? 0,
+      wardsDestroyed: json['wardsDestroyed'] as int? ?? 0,
       itemImageUrls: (json['itemImageUrls'] as List<dynamic>? ?? const [])
           .map((e) => e as String)
           .toList(),
@@ -268,10 +290,12 @@ class TeamStatsSummary {
   final int creepScore;
   final int totalGoldEarned;
 
-  /// 와드 설치 수. 이 챔피언 픽 응답 자체에는 없는 필드라 항상 0.
+  /// 팀 합산 와드 설치 수. `summary`(TeamSummary) 스키마 자체엔 이 필드가
+  /// 없어 서버 JSON에선 항상 0 — [ChampionTeam.summaryWithWards] 가 5명의
+  /// [ChampionPick.wardsPlaced] 를 더해 채운 값을 대신 쓴다.
   final int wardsPlaced;
 
-  /// 와드 파괴 수. [wardsPlaced] 와 같은 이유로 이 응답에서는 항상 0.
+  /// 팀 합산 와드 파괴 수. [wardsPlaced] 와 같은 이유로 서버 JSON에선 항상 0.
   final int wardsKilled;
 
   factory TeamStatsSummary.fromJson(Map<String, dynamic> json) {
@@ -283,6 +307,18 @@ class TeamStatsSummary {
       totalGoldEarned: json['totalGoldEarned'] as int? ?? 0,
       wardsPlaced: json['wardsPlaced'] as int? ?? 0,
       wardsKilled: json['wardsKilled'] as int? ?? 0,
+    );
+  }
+
+  TeamStatsSummary copyWith({int? wardsPlaced, int? wardsKilled}) {
+    return TeamStatsSummary(
+      kills: kills,
+      deaths: deaths,
+      assists: assists,
+      creepScore: creepScore,
+      totalGoldEarned: totalGoldEarned,
+      wardsPlaced: wardsPlaced ?? this.wardsPlaced,
+      wardsKilled: wardsKilled ?? this.wardsKilled,
     );
   }
 }

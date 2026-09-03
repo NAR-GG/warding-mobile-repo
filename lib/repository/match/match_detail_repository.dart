@@ -113,7 +113,26 @@ class MatchDetailRepository {
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return MatchChampionPick.fromJson(data);
+    final pick = MatchChampionPick.fromJson(data);
+    // 와드 설치·파괴, 퀘스트/장신구 아이템 실데이터 연동 확인용 — 값이
+    // 정상적으로 채워지는 게 확인되면 이 로그는 지워도 된다.
+    for (final team in [
+      ('blue', pick.blueTeam),
+      ('red', pick.redTeam),
+    ]) {
+      for (final p in team.$2.picks) {
+        debugPrint(
+          '[MatchDetail] wards gameId=$gameId ${team.$1} ${p.playerName}: '
+          'placed=${p.wardsPlaced} destroyed=${p.wardsDestroyed}',
+        );
+        debugPrint(
+          '[MatchDetail] items gameId=$gameId ${team.$1} ${p.playerName} '
+          '(${p.position}): quest=${p.questItemImageUrl} '
+          'trinket=${p.trinketItemImageUrl} core=${p.coreItemImageUrls.length}',
+        );
+      }
+    }
+    return pick;
   }
 
   /// 세트(gameId)의 라이브 이벤트를 조회한다 (인증 불필요, 최신순).

@@ -4045,7 +4045,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.130655363",
+                      "timestamp": "2026-09-03T12:57:55.097678012",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -4094,7 +4094,7 @@
                 "examples": {
                   "INVALID_MATCH_ID": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.137939576",
+                      "timestamp": "2026-09-03T12:57:55.107312211",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCH_ID",
@@ -4111,7 +4111,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.137947993",
+                      "timestamp": "2026-09-03T12:57:55.107322128",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -4183,7 +4183,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.155436597",
+                      "timestamp": "2026-09-03T12:57:55.124796092",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -5821,7 +5821,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.523938624",
+                      "timestamp": "2026-09-03T12:57:55.533217312",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -5838,7 +5838,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.523931041",
+                      "timestamp": "2026-09-03T12:57:55.533205311",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -5888,7 +5888,7 @@
                 "examples": {
                   "INVALID_COMBINATION_ID": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.530308446",
+                      "timestamp": "2026-09-03T12:57:55.540060459",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_COMBINATION_ID",
@@ -5905,7 +5905,7 @@
                 "examples": {
                   "COMBINATION_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.530315863",
+                      "timestamp": "2026-09-03T12:57:55.540083502",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "COMBINATION_NOT_FOUND",
@@ -6058,7 +6058,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.540958636",
+                      "timestamp": "2026-09-03T12:57:55.551243544",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -6067,7 +6067,7 @@
                   },
                   "INVALID_MATCHUP_REQUEST": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.54096547",
+                      "timestamp": "2026-09-03T12:57:55.551252086",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCHUP_REQUEST",
@@ -6084,7 +6084,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-03T01:28:44.54096697",
+                      "timestamp": "2026-09-03T12:57:55.551253961",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -12732,6 +12732,14 @@
             "type": "number",
             "format": "double"
           },
+          "wardsPlaced": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wardsDestroyed": {
+            "type": "integer",
+            "format": "int32"
+          },
           "itemImageUrls": {
             "type": "array",
             "items": {
@@ -13232,6 +13240,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "wardsPlaced": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wardsDestroyed": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
