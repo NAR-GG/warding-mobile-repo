@@ -11,6 +11,9 @@ permissions:
 jobs:
   draft:
     runs-on: ubuntu-latest
+    concurrency:
+      group: intent-${{ github.event.client_payload.slug }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +31,10 @@ jobs:
           fi
           if [ -f "intent/$SLUG/intent.md" ]; then
             echo "이미 존재하는 intent: intent/$SLUG/intent.md" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "intent/$SLUG" >/dev/null 2>&1; then
+            echo "이미 존재하는 intent 브랜치: intent/$SLUG" >&2
             exit 1
           fi
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
