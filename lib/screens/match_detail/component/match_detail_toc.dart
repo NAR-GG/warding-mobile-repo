@@ -131,14 +131,13 @@ class _MatchDetailTocState extends State<MatchDetailToc>
   }
 
   /// [localY] (점 칼럼 기준 로컬 좌표) 에 해당하는 섹션으로 바로 스크롤한다.
+  /// 애니메이션 없이 즉시 점프 — 점을 훑을 때 스크롤이 따라오는 게 아니라
+  /// 점 단위로 딱딱 끊어져야 빠릿하다(300ms 애니메이션은 드래그 중 계속
+  /// 취소·재시작되며 미끄러지는 느낌을 줬다).
   void _jumpTo(int index) {
     final ctx = widget.sectionKeys[index].currentContext;
     if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    Scrollable.ensureVisible(ctx);
   }
 
   int? _indexAtLocalY(double localY) {
