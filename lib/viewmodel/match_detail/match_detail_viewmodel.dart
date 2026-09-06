@@ -374,9 +374,9 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 지연 로딩 규칙 그대로다).
   Future<void> refresh() async {
     _stopChampionPolling();
-    _championPick = null;
-    _liveEventsData = null;
-    _ratings = null;
+    // 기존 데이터는 비우지 않는다 — null 로 만들면 탭이 스켈레톤으로 무너져
+    // 화면이 깜빡이고, 콘텐츠 높이가 붕괴해 스크롤 위치까지 튄다. 옛 데이터를
+    // 그대로 보여주다가 새 응답이 오면 갈아끼운다(stale-while-revalidate).
     _championRequested = false;
     _eventsRequested = false;
     _ratingsRequested = false;
