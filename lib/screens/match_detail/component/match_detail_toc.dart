@@ -9,8 +9,9 @@ import '../../../styles/app_colors.dart';
 /// [sectionKeys]/[labels]로 받은 4개 섹션(Champion Pick/Player Stats/
 /// Team Summary/Objectives) 헤더가 pinned 탭바([pinnedBarKey]) 아래를
 /// 지날 때마다 활성 점이 바뀐다(스크럴스파이). 활성 점 옆에는 그 섹션
-/// 이름을 보여주는 칩이 뜬다. 점을 탭하거나 점 칼럼을 위아래로 드래그하면
-/// 해당 섹션으로 바로 스크롤된다. 스크롤이 멎으면 서서히 사라진다.
+/// 이름을 보여주는 칩이 뜬다. 점 칼럼을 위아래로 드래그하면 해당 섹션으로
+/// 스크롤된다. 탭으로는 이동하지 않는다 — 스크롤 중 칩·점을 스치듯 누르기만
+/// 해도 화면이 튀어 불편하다는 피드백. 스크롤이 멎으면 서서히 사라진다.
 class MatchDetailToc extends StatefulWidget {
   const MatchDetailToc({
     super.key,
@@ -180,10 +181,6 @@ class _MatchDetailTocState extends State<MatchDetailToc>
                 builder:
                     (context, constraints) => GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTapUp: (d) {
-                        final i = _indexAtLocalY(d.localPosition.dy);
-                        if (i != null) _jumpTo(i);
-                      },
                       onVerticalDragUpdate: (d) {
                         final i = _indexAtLocalY(d.localPosition.dy);
                         if (i != null && i != _activeIndex) _jumpTo(i);
@@ -263,8 +260,9 @@ class _TocRow extends StatelessWidget {
             width: 11 * scale,
             height: isActive ? 25 * scale : 11 * scale,
             decoration: BoxDecoration(
+              // 스크롤 중 콘텐츠를 가리지 않게 반투명으로 둔다.
               color:
-                  isActive ? const Color(0xFFFCFDFE) : const Color(0x99FCFDFE),
+                  isActive ? const Color(0xCCFCFDFE) : const Color(0x66FCFDFE),
               // shape:circle 대신 borderRadius 로 통일해야 AnimatedContainer 가
               // 두 상태 사이를 매끄럽게 보간한다(circle↔rect 는 안 섞인다).
               // 11×11 일 때 반지름 5.5 면 정원이 된다.
@@ -341,7 +339,7 @@ class _TocChip extends StatelessWidget {
           vertical: 5 * scale,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xCCFCFDFE),
+          color: const Color(0x99FCFDFE),
           borderRadius: BorderRadius.circular(10 * scale),
         ),
         child: Text(

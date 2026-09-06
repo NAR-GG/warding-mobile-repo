@@ -10,6 +10,8 @@
   "season": "시즌",
   "league": "리그",
   "loading": "불러오는 중...",
+  "refresh": "새로고침",
+  "latestEventsApplied": "최신 이벤트 반영 완료!",
   "refreshDone": "반영 완료!",
   "select": "선택",
   "noMatches": "경기가 없어요",
