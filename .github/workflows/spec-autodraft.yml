@@ -1,0 +1,80 @@
+name: Spec 자동 초안
+
+on:
+  repository_dispatch:
+    types: [spec-request]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: spec-${{ github.event.client_payload.slug }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 입력 검증
+        id: input
+        env:
+          SLUG: ${{ github.event.client_payload.slug }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "잘못된 slug: $SLUG" >&2
+            exit 1
+          fi
+          if [ -f "intent/$SLUG/spec.md" ]; then
+            echo "이미 존재하는 spec: intent/$SLUG/spec.md" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "spec/$SLUG" >/dev/null 2>&1; then
+            echo "이미 존재하는 spec 브랜치: spec/$SLUG" >&2
+            exit 1
+          fi
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: spec.md 초안 생성 (Anthropic API)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DESCRIPTION: ${{ github.event.client_payload.description }}
+          SLUG: ${{ steps.input.outputs.slug }}
+        run: |
+          set -euo pipefail
+          PROMPT=$(jq -n --arg src "$DESCRIPTION" '
+            "다음 내용을 material로 삼아 spec.md를 작성해라. 정확히 이 6개 섹션만 이 순서로, 마크다운 헤더(##)로 써라: Summary, Requirements, Design / Approach, Decisions, Out of scope, Open questions. 한국어로, 구체적으로 써라. 앞뒤 설명 없이 마크다운 본문만 출력해라.\n\nmaterial:\n" + $src
+          ')
+          jq -n --argjson prompt "$PROMPT" '{model:"claude-sonnet-5", max_tokens:2500, messages:[{role:"user", content:$prompt}]}' > /tmp/req.json
+          curl -sf https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d @/tmp/req.json > /tmp/res.json
+          mkdir -p "intent/$SLUG"
+          jq -r '.content[0].text' /tmp/res.json > "intent/$SLUG/spec.md"
+
+      - name: 브랜치 생성 & 커밋
+        env:
+          SLUG: ${{ steps.input.outputs.slug }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "spec/$SLUG"
+          git add "intent/$SLUG/spec.md"
+          git commit -m "spec: $SLUG 초안 자동 생성"
+          git push origin "spec/$SLUG"
+
+      - name: PR 오픈
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLUG: ${{ steps.input.outputs.slug }}
+        run: |
+          set -euo pipefail
+          BODY=$(printf '## Spec: %s\n\n- 문서: `intent/%s/spec.md`\n- Intent: `intent/%s/intent.md` (있다면)\n\n자동 생성된 초안입니다 — 머지 전에 내용을 검토·수정하세요.\n' "$SLUG" "$SLUG" "$SLUG")
+          gh pr create --title "spec: $SLUG" --base main --head "spec/$SLUG" --body "$BODY"
