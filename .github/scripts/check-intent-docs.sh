@@ -16,7 +16,7 @@ check_file() {
       required=("## Problem" "## Proposed outcome" "## Affected users and systems" "## Constraints" "## Open questions")
       ;;
     spec.md)
-      required=("## Summary" "## Requirements" "## Design" "## Decisions" "## Out of scope" "## Open questions")
+      required=("## Summary" "## Requirements" "## Design / Approach" "## Decisions" "## Out of scope" "## Open questions")
       ;;
     *)
       echo "건너뜀 (검사 대상 아님): $file"
