@@ -13,3 +13,7 @@ test('strips leading/trailing separators', () => {
 test('collapses repeated separators', () => {
   assert.equal(slugify('a___b   c'), 'a-b-c');
 });
+
+test('returns empty string for non-ASCII (e.g. Korean) input — known limitation, guarded at call site', () => {
+  assert.equal(slugify('경기 상세'), '');
+});

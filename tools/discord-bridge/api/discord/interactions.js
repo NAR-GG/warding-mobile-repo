@@ -1,6 +1,11 @@
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 import { slugify } from '../../lib/slugify.js';
 
+// NOTE: this `config` export is a Next.js-only convention and has no effect on
+// Vercel's plain Node.js functions. Raw-body parsing (required for Discord
+// signature verification) is actually disabled via the NODEJS_HELPERS=0
+// environment variable on the Vercel project. Kept here as a harmless no-op /
+// documentation marker.
 export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req) {
@@ -102,12 +107,22 @@ export default async function handler(req, res) {
     const slug = slugify(fields.slug);
     const requestedBy = interaction.member?.user?.username ?? interaction.user?.username ?? 'unknown';
 
+    if (!slug) {
+      res.status(200).json({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: '❌ slug는 영문/숫자만 사용할 수 있어요 — 예: match-detail-toc-drag' },
+      });
+      return;
+    }
+
     res.status(200).json({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: { content: `✅ 접수됨 — \`${slug}\` intent 초안을 생성 중입니다.` },
     });
 
-    await dispatchIntentRequest({ slug, description: fields.description, requestedBy });
+    await dispatchIntentRequest({ slug, description: fields.description, requestedBy }).catch((err) => {
+      console.error('[discord-bridge] dispatch failed', err);
+    });
     return;
   }
 
