@@ -73,6 +73,21 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   ];
   late int _tabIndex = widget.initialTabIndex;
 
+  /// 직전 탭 전환의 방향. true 면 새 탭이 오른쪽에서 들어온다(다음 탭으로 이동).
+  /// 스와이프·탭바 탭·딥링크 모두 전환 직전에 갱신한다.
+  bool _slideFromRight = true;
+
+  /// 탭 전환 공통 경로. 방향을 기억해 슬라이드 애니메이션에 쓰고,
+  /// 지연 로딩([MatchDetailViewModel.setActiveTab])을 태운다.
+  void _changeTab(int next) {
+    if (next == _tabIndex || next < 0 || next > 2) return;
+    setState(() {
+      _slideFromRight = next > _tabIndex;
+      _tabIndex = next;
+      _viewModel.setActiveTab(next);
+    });
+  }
+
   /// 이 화면이 보여주고 있는 경기. 라우터가 같은 경기인지 판단할 때 쓴다.
   String get matchId => widget.matchId;
 
@@ -81,7 +96,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   void applyDeepLink({required int tabIndex, int? setNumber}) {
     if (!mounted) return;
     // 탭 인덱스는 화면 로컬 상태(_tabIndex)와 뷰모델(_activeTab) 양쪽에 있다.
-    setState(() => _tabIndex = tabIndex);
+    setState(() {
+      _slideFromRight = tabIndex > _tabIndex;
+      _tabIndex = tabIndex;
+    });
     _viewModel.applyDeepLink(tabIndex: tabIndex, setNumber: setNumber);
   }
 
@@ -637,82 +655,119 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
             // _scrollController.addListener(_onScrollChanged) 로 구현돼
             // 있다(initState 참고). NotificationListener<ScrollEndNotification>
             // 로는 실기기·macOS 데스크탑 모두 알림 자체가 오지 않아 포기했다.
-            AppRefreshIndicator(
-              onRefresh: _viewModel.refresh,
-              child: CustomScrollView(
-                controller: _scrollController,
-                // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
-                // 당길 수 있어야 한다.
-                physics: AppRefreshIndicator.physics,
-                slivers: [
-                  // 헤더·스코어·중계 버튼: 스크롤 시 함께 위로 밀려 올라간다.
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        NarDetailHeader(
-                          title: l.matchDetail,
-                          // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
-                          // 상태라 ListenableBuilder 로 라벨을 갱신한다.
-                          trailing: ListenableBuilder(
-                            listenable: _viewModel,
-                            builder: (context, _) => NarDropdown(
-                              variant: NarDropdownVariant.round,
-                              value: _currentSet,
-                              onTap: _showSetSheet,
-                              scale: scale,
+            // 좌우 스와이프로 탭 전환. PageView 로 바꾸면 pinned 탭바·TOC·
+            // 스크럴스파이 구조를 다 들어내야 해서, 제스처만 얹는다.
+            // 내부에 가로 스크롤 위젯이 있으면 그쪽이 제스처 아레나에서
+            // 이기므로(자식 우선) 충돌하지 않는다.
+            GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final v = details.primaryVelocity ?? 0;
+                if (v.abs() < 200) return; // 스침 오탐 방지
+                _changeTab(_tabIndex + (v < 0 ? 1 : -1));
+              },
+              child: AppRefreshIndicator(
+                onRefresh: _viewModel.refresh,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
+                  // 당길 수 있어야 한다.
+                  physics: AppRefreshIndicator.physics,
+                  slivers: [
+                    // 헤더·스코어·중계 버튼: 스크롤 시 함께 위로 밀려 올라간다.
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          NarDetailHeader(
+                            title: l.matchDetail,
+                            // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
+                            // 상태라 ListenableBuilder 로 라벨을 갱신한다.
+                            trailing: ListenableBuilder(
+                              listenable: _viewModel,
+                              builder: (context, _) => NarDropdown(
+                                variant: NarDropdownVariant.round,
+                                value: _currentSet,
+                                onTap: _showSetSheet,
+                                scale: scale,
+                              ),
                             ),
+                            scale: scale,
                           ),
-                          scale: scale,
-                        ),
-                        _buildScoreSection(scale),
-                        SizedBox(height: 16 * scale),
-                        _buildActionButton(scale),
-                        SizedBox(height: 16 * scale),
-                      ],
+                          _buildScoreSection(scale),
+                          SizedBox(height: 16 * scale),
+                          _buildActionButton(scale),
+                          SizedBox(height: 16 * scale),
+                        ],
+                      ),
                     ),
-                  ),
-                  // 탭바: 헤더·스코어가 밀려 올라간 뒤에도 상단에 고정된다.
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _StickyDelegate(
-                      height: 45 * scale,
-                      child: ColoredBox(
-                        color: AppColors.narBgContent,
-                        child: NarTabBar(
-                          key: _tabBarKey,
-                          tabs: _buildTabs(l),
-                          selectedIndex: _tabIndex,
-                          onChanged: (i) => setState(() {
-                            _tabIndex = i;
-                            // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
-                            _viewModel.setActiveTab(i);
-                          }),
-                          scale: scale,
+                    // 탭바: 헤더·스코어가 밀려 올라간 뒤에도 상단에 고정된다.
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _StickyDelegate(
+                        height: 45 * scale,
+                        child: ColoredBox(
+                          color: AppColors.narBgContent,
+                          child: NarTabBar(
+                            key: _tabBarKey,
+                            tabs: _buildTabs(l),
+                            selectedIndex: _tabIndex,
+                            // 지연 로딩: 처음 전환하는 탭이면 _changeTab 안에서 로드된다.
+                            onChanged: _changeTab,
+                            scale: scale,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (_tabIndex == 0)
+                    // 탭 콘텐츠: 스와이프/탭 전환 시 방향 슬라이드+페이드.
+                    // 세 탭을 하나의 AnimatedSwitcher 에 태우려고 선수 평점 탭도
+                    // 박스로 감싼다(내부 shrinkWrap CustomScrollView) — 평점 배너
+                    // sticky 는 포기. ponytail: 손가락을 따라오는 진짜 스와이프는
+                    // NestedScrollView+TabBarView 전환이 필요해 별도 작업.
                     SliverToBoxAdapter(
                       child: ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => _buildChampionPickTab(scale),
+                        builder: (context, _) => AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          transitionBuilder: (child, animation) {
+                            // 들어오는 탭은 스와이프 방향에서, 나가는 탭은 반대쪽으로.
+                            final isIncoming =
+                                child.key == ValueKey<int>(_tabIndex);
+                            final dx = (isIncoming == _slideFromRight)
+                                ? 1.0
+                                : -1.0;
+                            return ClipRect(
+                              child: SlideTransition(
+                                position:
+                                    Tween(
+                                      begin: Offset(dx, 0),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOut,
+                                      ),
+                                    ),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: KeyedSubtree(
+                            key: ValueKey<int>(_tabIndex),
+                            child: switch (_tabIndex) {
+                              0 => _buildChampionPickTab(scale),
+                              1 => _buildLiveEventTab(scale),
+                              _ => CustomScrollView(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                slivers: [_buildRatingTab(scale)],
+                              ),
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                  if (_tabIndex == 1)
-                    SliverToBoxAdapter(
-                      child: ListenableBuilder(
-                        listenable: _viewModel,
-                        builder: (context, _) => _buildLiveEventTab(scale),
-                      ),
-                    ),
-                  // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
-                  // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
-                  // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
-                  // sticky collapse 가 동작하도록 한다.
-                  if (_tabIndex == 2) _buildRatingTab(scale),
-                ],
+                  ],
+                ),
               ),
             ),
             // 목차(TOC): 챔피언픽 탭에서 스크롤할 때만 오른쪽에 살짝 떴다 사라진다.
@@ -729,7 +784,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
             // 직접 갱신할 손잡이가 이것뿐이다. 당겨서 새로고침과 같은 refresh 를
             // 부르되 스낵바 대신 캡슐 라벨로 완료를 알린다.
             MatchDetailRefreshPill(onRefresh: _viewModel.refresh, scale: scale),
-            ScrollToTopButton(scrollController: _scrollController, scale: scale),
+            ScrollToTopButton(
+              scrollController: _scrollController,
+              scale: scale,
+            ),
           ],
         ),
       ),

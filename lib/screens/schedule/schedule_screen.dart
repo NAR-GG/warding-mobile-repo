@@ -289,6 +289,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 캘린더에서 경기가 있는 날짜를 탭 → 그 날의 경기 리스트 화면을 새로 띄운다.
   /// 캘린더에 적용 중인 리그·팀 필터를 그대로 넘겨 같은 경기 집합을 보여준다.
   void _openDay(DateTime date) {
+    // 이웃 달 날짜(예: 8월 그리드 마지막 주의 9월 1~5일)를 탭하면 달력도
+    // 그 달로 넘긴다. displayMonth setter 가 정규화하고 같은 달이면 no-op,
+    // 한 달 차이면 캘린더가 스와이프와 같은 애니메이션으로 따라온다.
+    _viewModel.displayMonth = date;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => MatchDayScreen(
