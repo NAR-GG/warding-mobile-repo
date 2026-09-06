@@ -119,8 +119,10 @@ Intent/Spec 머지 = 승인. 승인자는 작성자 본인(셀프 머지)이어�
 ## CI/CD
 
 ### `ci-flutter-test.yml`
-- `main` 대상 PR에서 `flutter pub get && flutter analyze && flutter test`.
-- `intent/**` 문서만 바뀐 PR은 `paths-ignore`로 스킵.
+- `main` 대상 PR에서 `flutter pub get && flutter analyze && flutter test`. `intent/**` 문서만
+  바뀐 PR도 예외 없이 실행한다 — `paths-ignore`로 건너뛰면 Task 4의 "필수 상태 체크" 요건과
+  충돌해, Intent/Spec 자동 초안 PR(문서만 변경)이 체크를 영원히 못 받아 머지가 막힌다
+  (프리플라이트에서 발견, 아래 Decisions 참고).
 - 실패 시 기존 Discord 웹훅으로 "🔴 CI 실패" 알림 전송.
 
 ### `ci-doc-lint.yml`
@@ -164,6 +166,8 @@ PR push → ci-flutter-test.yml 실행
 - Discord 봇 호스팅은 Vercel 서버리스로 확정 (상시 프로세스 방식 기각 — 운영 부담).
 - 시뮬레이터 `run` 스킬은 이번 구현 범위에 포함.
 - CI 실패 알림은 Discord로 보낸다.
+- `ci-flutter-test.yml`에 `intent/**` 전용 `paths-ignore`를 두지 않는다 (Task 4의 필수 상태
+  체크와 결합하면 문서 전용 PR이 영원히 머지 불가 상태에 빠지므로, 프리플라이트에서 기각).
 
 ## Out of scope
 
