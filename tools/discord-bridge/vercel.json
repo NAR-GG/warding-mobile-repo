@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/discord/interactions.js": {
+      "maxDuration": 10
+    }
+  }
+}
