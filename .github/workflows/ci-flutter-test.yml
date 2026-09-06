@@ -1,0 +1,37 @@
+name: Flutter CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: 'stable'
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Discord 실패 알림
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg t "🔴 CI 실패 — $REPO #$PR_NUM" \
+            --arg d "[$PR_TITLE]($PR_URL)" \
+            --argjson c 15158332 \
+            '{embeds:[{title:$t,description:$d,color:$c}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
