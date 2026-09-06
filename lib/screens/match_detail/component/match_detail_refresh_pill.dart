@@ -86,7 +86,9 @@ class _MatchDetailRefreshPillState extends State<MatchDetailRefreshPill> {
               vertical: 12 * scale,
             ),
             decoration: BoxDecoration(
-              color: AppColors.narDark600,
+              // 불투명 대신 다크 반투명 — 뒤 콘텐츠가 살짝 비쳐야 위에 "떠 있는"
+              // 느낌이 난다(시안 스크린샷 기준 ~85%).
+              color: AppColors.narDark600.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(14 * scale),
               boxShadow: [
                 BoxShadow(
