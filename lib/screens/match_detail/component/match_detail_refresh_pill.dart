@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -78,16 +79,11 @@ class _MatchDetailRefreshPillState extends State<MatchDetailRefreshPill> {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _handleTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.symmetric(
-              horizontal: 16 * scale,
-              vertical: 12 * scale,
-            ),
+          // 프로스티드 글래스: 뒤 콘텐츠를 블러로 뭉갠 위에 다크 반투명을 얹는다.
+          // 그림자는 ClipRRect 밖에 둬야 한다 — 안쪽에 두면 클립에 같이 잘린다.
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.narDark600,
-              borderRadius: BorderRadius.circular(14 * scale),
+              borderRadius: BorderRadius.circular(10 * scale),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.narDarkOpacity62,
@@ -96,47 +92,70 @@ class _MatchDetailRefreshPillState extends State<MatchDetailRefreshPill> {
                 ),
               ],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 150),
-                  child: Text(
-                    label,
-                    key: ValueKey(label),
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14 * scale,
-                      height: 1.2,
-                      color: AppColors.narText,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10 * scale),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12 * scale,
+                    vertical: 7 * scale,
+                  ),
+                  // 피그마 스펙(4921:7781)은 #141517 70%지만, 피그마의 background blur 를
+                  // 얹으면 실기기에선 뒤가 거의 안 비쳐서 55%로 낮춘다(글래스 감).
+                  decoration: BoxDecoration(
+                    color: const Color(0x73141517),
+                    borderRadius: BorderRadius.circular(10 * scale),
+                    border: Border.all(
+                      color: const Color(0x26FFFFFF),
+                      width: 0.5,
                     ),
                   ),
-                ),
-                SizedBox(width: 10 * scale),
-                SizedBox(
-                  width: 18 * scale,
-                  height: 18 * scale,
-                  child:
-                      _refreshing
-                          ? Padding(
-                            padding: EdgeInsets.all(2 * scale),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2 * scale,
-                              color: AppColors.narText,
-                            ),
-                          )
-                          : SvgPicture.asset(
-                            'assets/icons/reload.svg',
-                            width: 18 * scale,
-                            height: 18 * scale,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.narText,
-                              BlendMode.srcIn,
-                            ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 150),
+                        child: Text(
+                          label,
+                          key: ValueKey(label),
+                          style: TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14 * scale,
+                            height: 1.55,
+                            color: const Color(0xFFF1F3F5),
                           ),
+                        ),
+                      ),
+                      SizedBox(width: 10 * scale),
+                      SizedBox(
+                        width: 24 * scale,
+                        height: 24 * scale,
+                        child: _refreshing
+                            ? Padding(
+                                padding: EdgeInsets.all(2 * scale),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2 * scale,
+                                  color: AppColors.narText,
+                                ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/icons/reload.svg',
+                                width: 24 * scale,
+                                height: 24 * scale,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.narText,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

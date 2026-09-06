@@ -182,6 +182,7 @@ class ChampionPick {
     this.keystoneIconUrl,
     this.subStyleIconUrl,
     this.runes,
+    this.items,
   });
 
   final String position;
@@ -230,6 +231,10 @@ class ChampionPick {
   /// 룬 전체(주 트리 4개·부 트리 2개·파편). 라이브 첫 프레임 전이면 null.
   final PlayerRunes? runes;
 
+  /// 아이템 전체(이름·설명 포함). 섹션 구성은 위 *ItemImageUrls 와 같고,
+  /// 툴팁에 쓸 이름·설명이 붙은 상세판이다. 백엔드 배포 전 응답이면 null.
+  final PlayerItems? items;
+
   /// 표시용 이미지 URL (백엔드 값 없으면 Data Dragon 폴백).
   String? get imageUrl => ChampionImage.resolve(championImageUrl, championName);
 
@@ -268,6 +273,57 @@ class ChampionPick {
       runes: json['runes'] == null
           ? null
           : PlayerRunes.fromJson(json['runes'] as Map<String, dynamic>),
+      items: json['items'] == null
+          ? null
+          : PlayerItems.fromJson(json['items'] as Map<String, dynamic>),
+    );
+  }
+}
+
+/// 아이템 섹션 상세판 — 각 칸에 이름·설명이 붙는다. 룬([PlayerRunes])과 같은 패턴.
+class PlayerItems {
+  const PlayerItems({
+    this.core = const [],
+    this.questItem,
+    this.trinket,
+    this.consumables = const [],
+  });
+
+  final List<ItemEntry> core;
+  final ItemEntry? questItem;
+  final ItemEntry? trinket;
+  final List<ItemEntry> consumables;
+
+  factory PlayerItems.fromJson(Map<String, dynamic> json) {
+    List<ItemEntry> list(String key) => (json[key] as List<dynamic>? ?? const [])
+        .map((e) => ItemEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return PlayerItems(
+      core: list('core'),
+      questItem: json['questItem'] == null
+          ? null
+          : ItemEntry.fromJson(json['questItem'] as Map<String, dynamic>),
+      trinket: json['trinket'] == null
+          ? null
+          : ItemEntry.fromJson(json['trinket'] as Map<String, dynamic>),
+      consumables: list('consumables'),
+    );
+  }
+}
+
+/// 아이템 한 칸. [description]은 ddragon description 평문(마크업 제거).
+class ItemEntry {
+  const ItemEntry({required this.name, this.iconUrl, this.description});
+
+  final String name;
+  final String? iconUrl;
+  final String? description;
+
+  factory ItemEntry.fromJson(Map<String, dynamic> json) {
+    return ItemEntry(
+      name: json['name'] as String? ?? '',
+      iconUrl: json['iconUrl'] as String?,
+      description: json['description'] as String?,
     );
   }
 }

@@ -131,14 +131,13 @@ class _MatchDetailTocState extends State<MatchDetailToc>
   }
 
   /// [localY] (점 칼럼 기준 로컬 좌표) 에 해당하는 섹션으로 바로 스크롤한다.
+  /// 애니메이션 없이 즉시 점프 — 점을 훑을 때 스크롤이 따라오는 게 아니라
+  /// 점 단위로 딱딱 끊어져야 빠릿하다(300ms 애니메이션은 드래그 중 계속
+  /// 취소·재시작되며 미끄러지는 느낌을 줬다).
   void _jumpTo(int index) {
     final ctx = widget.sectionKeys[index].currentContext;
     if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    Scrollable.ensureVisible(ctx);
   }
 
   int? _indexAtLocalY(double localY) {
@@ -179,33 +178,57 @@ class _MatchDetailTocState extends State<MatchDetailToc>
               duration: const Duration(milliseconds: 200),
               child: LayoutBuilder(
                 builder:
-                    (context, constraints) => GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragUpdate: (d) {
-                        final i = _indexAtLocalY(d.localPosition.dy);
-                        if (i != null && i != _activeIndex) _jumpTo(i);
-                      },
-                      child: Column(
-                        key: _markersKey,
-                        mainAxisSize: MainAxisSize.min,
-                        // 칩이 붙는 활성 행은 폭이 넓고 비활성 행은 점만 있어 좁다.
-                        // 기본(center) 정렬이면 좁은 행의 점이 넓은 행 쪽으로 밀려
-                        // 액티브 점과 다른 자리에 뜬다 — 오른쪽으로 정렬해 점들이
-                        // 항상 같은 세로선에 붙게 한다.
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          for (var i = 0; i < widget.labels.length; i++) ...[
-                            if (i > 0) SizedBox(height: 8 * scale),
-                            _TocRow(
-                              label: widget.labels[i],
-                              isActive: i == _activeIndex,
-                              pulse: _pulse,
-                              scale: scale,
-                              maxChipWidth: constraints.maxWidth,
-                            ),
-                          ],
-                        ],
-                      ),
+                    (context, constraints) => Stack(
+                      children: [
+                        // 칩까지 포함한 시각 트리는 히트에서 뺀다. 예전엔
+                        // GestureDetector(opaque)가 이 Column 전체를 감쌌는데,
+                        // 그 폭이 활성 칩("Champion Pick" 등)까지라 오른손
+                        // 엄지 스크롤 궤적이 통째로 먹혔다 — TOC 는 스크롤
+                        // 중에만 보이므로 정확히 스크롤하는 순간에만 뺏겼다.
+                        IgnorePointer(
+                          child: Column(
+                            key: _markersKey,
+                            mainAxisSize: MainAxisSize.min,
+                            // 칩이 붙는 활성 행은 폭이 넓고 비활성 행은 점만 있어 좁다.
+                            // 기본(center) 정렬이면 좁은 행의 점이 넓은 행 쪽으로 밀려
+                            // 액티브 점과 다른 자리에 뜬다 — 오른쪽으로 정렬해 점들이
+                            // 항상 같은 세로선에 붙게 한다.
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              for (
+                                var i = 0;
+                                i < widget.labels.length;
+                                i++
+                              ) ...[
+                                if (i > 0) SizedBox(height: 8 * scale),
+                                _TocRow(
+                                  label: widget.labels[i],
+                                  isActive: i == _activeIndex,
+                                  pulse: _pulse,
+                                  scale: scale,
+                                  maxChipWidth: constraints.maxWidth,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        // 드래그 히트는 점 칼럼(11px)+약간의 여유만. 스트립이
+                        // 마커 Column 과 같은 높이·같은 top 이라 localY →
+                        // 섹션 인덱스 매핑(_indexAtLocalY)이 그대로 맞는다.
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: 24 * scale,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onVerticalDragUpdate: (d) {
+                              final i = _indexAtLocalY(d.localPosition.dy);
+                              if (i != null && i != _activeIndex) _jumpTo(i);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
               ),
             ),
