@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
+  String get refreshDone => 'Refreshed!';
+
+  @override
   String get select => 'Select';
 
   @override
@@ -897,7 +900,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCommunity => 'Community';
 
   @override
-  String get navSubscription => 'Subs';
+  String get navSubscription => 'My Subs';
 
   @override
   String get navMyPage => 'Me';
@@ -1313,8 +1316,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Views $countString';
@@ -1345,7 +1348,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityWriteSubmit => 'Post';
 
   @override
+  String get communityDraftSave => 'Draft';
+
+  @override
+  String communityDraftCount(int count) {
+    return 'Saved $count';
+  }
+
+  @override
+  String get communityDraftSaved => 'Saved as draft.';
+
+  @override
+  String get communityDraftSaveFailed => 'Couldn\'t save the draft.';
+
+  @override
+  String get communityDraftEmpty => 'There\'s nothing to save.';
+
+  @override
+  String get communityDraftListTitle => 'Drafts';
+
+  @override
+  String get communityDraftEmptyList => 'No drafts yet.';
+
+  @override
+  String get communityDraftUntitled => 'Untitled';
+
+  @override
+  String get communityDraftEditingBadge => 'Editing';
+
+  @override
+  String get communityDraftDelete => 'Delete';
+
+  @override
+  String get communityDraftLoadConfirmTitle => 'You have unsaved content';
+
+  @override
+  String get communityDraftLoadConfirmMessage =>
+      'Loading this draft will replace what you\'re writing now. Continue?';
+
+  @override
+  String get communityDraftLoadConfirm => 'Load';
+
+  @override
+  String get communityDraftLeaveTitle => 'Save as draft?';
+
+  @override
+  String get communityDraftLeaveMessage =>
+      'Leaving now will discard what you\'re writing.';
+
+  @override
+  String get communityDraftLeaveDiscard => 'Leave';
+
+  @override
+  String get communityDraftLeaveSave => 'Save draft';
+
+  @override
   String get communityAddLink => 'Link';
+
+  @override
+  String get communityPollLabel => 'Poll';
+
+  @override
+  String get communitySearchHint => 'Search titles and posts';
+
+  @override
+  String get communitySearchGuide => 'Type at least 2 characters to search';
+
+  @override
+  String get communitySearchEmpty => 'No results';
+
+  @override
+  String get communityPollQuestionHint => 'Ask a question';
+
+  @override
+  String get communityPollOptionHint => 'Option';
+
+  @override
+  String get communityPollAddOption => 'Add option';
+
+  @override
+  String communityPollParticipants(int count) {
+    return '$count votes';
+  }
+
+  @override
+  String get communityPollVoteToSee => 'Vote to see the results';
+
+  @override
+  String get communityPollAllowMultiple => 'Allow multiple choices';
+
+  @override
+  String get communityPollAlwaysShowResults => 'Always show results';
+
+  @override
+  String get communityPollDeadline => 'Deadline';
+
+  @override
+  String get communityPollDeadlineNone => 'None';
+
+  @override
+  String communityPollDeadlineHours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String communityPollDeadlineDays(int days) {
+    return '${days}d';
+  }
+
+  @override
+  String get communityPollClosed => 'Closed';
+
+  @override
+  String get communityPollMultipleBadge => 'Multiple choice';
+
+  @override
+  String communityPollClosesIn(String time) {
+    return 'Closes in $time';
+  }
 
   @override
   String get communityLinkDialogTitle => 'Add a link';

@@ -195,8 +195,14 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  /// widget.match 가 있으면 그것을, 없으면 뷰모델이 API 로 로드한 정보를 사용한다.
-  ScheduleMatch? get _effectiveMatch => widget.match ?? _viewModel.matchInfo;
+  /// 뷰모델이 들고 있는 최신 경기 정보를 우선한다. widget.match 는 진입
+  /// 시점의 스냅샷(경기 목록에서 탭한 순간 값)일 뿐이라, 그걸 계속 쓰면
+  /// 당겨서 새로고침을 해도([MatchDetailViewModel.refresh]) 화면이 갱신되지
+  /// 않는다 — 예정/라이브/종료 판정이 진입 당시 상태에 그대로 고정돼
+  /// "라이브인데 상세에서는 종료로 보임" 같은 문제가 생겼다.
+  /// [MatchDetailViewModel] 은 initialMatch 로 widget.match 를 그대로
+  /// 물려받아 시작하므로, 로드 전에도 값이 비지 않는다.
+  ScheduleMatch? get _effectiveMatch => _viewModel.matchInfo ?? widget.match;
 
   @override
   void initState() {

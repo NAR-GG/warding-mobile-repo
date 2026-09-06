@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'불러오는 중...'**
   String get loading;
 
+  /// No description provided for @refreshDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'반영 완료!'**
+  String get refreshDone;
+
   /// No description provided for @select.
   ///
   /// In ko, this message translates to:
@@ -1679,7 +1685,7 @@ abstract class AppLocalizations {
   /// No description provided for @navSubscription.
   ///
   /// In ko, this message translates to:
-  /// **'구독'**
+  /// **'마이 구독'**
   String get navSubscription;
 
   /// No description provided for @navMyPage.
@@ -2489,14 +2495,224 @@ abstract class AppLocalizations {
   /// No description provided for @communityWriteSubmit.
   ///
   /// In ko, this message translates to:
-  /// **'등록하기'**
+  /// **'등록'**
   String get communityWriteSubmit;
+
+  /// No description provided for @communityDraftSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시'**
+  String get communityDraftSave;
+
+  /// No description provided for @communityDraftCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장{count}'**
+  String communityDraftCount(int count);
+
+  /// No description provided for @communityDraftSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장했어요.'**
+  String get communityDraftSaved;
+
+  /// No description provided for @communityDraftSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장하지 못했어요.'**
+  String get communityDraftSaveFailed;
+
+  /// No description provided for @communityDraftEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장할 내용이 없어요.'**
+  String get communityDraftEmpty;
+
+  /// No description provided for @communityDraftListTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장한 글'**
+  String get communityDraftListTitle;
+
+  /// No description provided for @communityDraftEmptyList.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장한 글이 없어요.'**
+  String get communityDraftEmptyList;
+
+  /// No description provided for @communityDraftUntitled.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목 없음'**
+  String get communityDraftUntitled;
+
+  /// No description provided for @communityDraftEditingBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정 중'**
+  String get communityDraftEditingBadge;
+
+  /// No description provided for @communityDraftDelete.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제'**
+  String get communityDraftDelete;
+
+  /// No description provided for @communityDraftLoadConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성 중인 내용이 있어요'**
+  String get communityDraftLoadConfirmTitle;
+
+  /// No description provided for @communityDraftLoadConfirmMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'불러오면 지금 쓰던 내용은 사라져요. 계속할까요?'**
+  String get communityDraftLoadConfirmMessage;
+
+  /// No description provided for @communityDraftLoadConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'불러오기'**
+  String get communityDraftLoadConfirm;
+
+  /// No description provided for @communityDraftLeaveTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장하시겠어요?'**
+  String get communityDraftLeaveTitle;
+
+  /// No description provided for @communityDraftLeaveMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 나가면 작성 중인 내용이 사라져요.'**
+  String get communityDraftLeaveMessage;
+
+  /// No description provided for @communityDraftLeaveDiscard.
+  ///
+  /// In ko, this message translates to:
+  /// **'나가기'**
+  String get communityDraftLeaveDiscard;
+
+  /// No description provided for @communityDraftLeaveSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'임시저장'**
+  String get communityDraftLeaveSave;
 
   /// No description provided for @communityAddLink.
   ///
   /// In ko, this message translates to:
   /// **'링크'**
   String get communityAddLink;
+
+  /// No description provided for @communityPollLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표'**
+  String get communityPollLabel;
+
+  /// No description provided for @communitySearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목·내용 검색'**
+  String get communitySearchHint;
+
+  /// No description provided for @communitySearchGuide.
+  ///
+  /// In ko, this message translates to:
+  /// **'두 글자 이상 입력하면 검색해요'**
+  String get communitySearchGuide;
+
+  /// No description provided for @communitySearchEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색 결과가 없어요'**
+  String get communitySearchEmpty;
+
+  /// No description provided for @communityPollQuestionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표 질문을 입력하세요'**
+  String get communityPollQuestionHint;
+
+  /// No description provided for @communityPollOptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지'**
+  String get communityPollOptionHint;
+
+  /// No description provided for @communityPollAddOption.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택지 추가'**
+  String get communityPollAddOption;
+
+  /// No description provided for @communityPollParticipants.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명 참여'**
+  String communityPollParticipants(int count);
+
+  /// No description provided for @communityPollVoteToSee.
+  ///
+  /// In ko, this message translates to:
+  /// **'투표하면 결과를 볼 수 있어요'**
+  String get communityPollVoteToSee;
+
+  /// No description provided for @communityPollAllowMultiple.
+  ///
+  /// In ko, this message translates to:
+  /// **'복수 선택 허용'**
+  String get communityPollAllowMultiple;
+
+  /// No description provided for @communityPollAlwaysShowResults.
+  ///
+  /// In ko, this message translates to:
+  /// **'결과 항상 공개'**
+  String get communityPollAlwaysShowResults;
+
+  /// No description provided for @communityPollDeadline.
+  ///
+  /// In ko, this message translates to:
+  /// **'마감'**
+  String get communityPollDeadline;
+
+  /// No description provided for @communityPollDeadlineNone.
+  ///
+  /// In ko, this message translates to:
+  /// **'없음'**
+  String get communityPollDeadlineNone;
+
+  /// No description provided for @communityPollDeadlineHours.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간'**
+  String communityPollDeadlineHours(int hours);
+
+  /// No description provided for @communityPollDeadlineDays.
+  ///
+  /// In ko, this message translates to:
+  /// **'{days}일'**
+  String communityPollDeadlineDays(int days);
+
+  /// No description provided for @communityPollClosed.
+  ///
+  /// In ko, this message translates to:
+  /// **'마감됨'**
+  String get communityPollClosed;
+
+  /// No description provided for @communityPollMultipleBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'복수 선택'**
+  String get communityPollMultipleBadge;
+
+  /// No description provided for @communityPollClosesIn.
+  ///
+  /// In ko, this message translates to:
+  /// **'{time} 후 마감'**
+  String communityPollClosesIn(String time);
 
   /// No description provided for @communityLinkDialogTitle.
   ///

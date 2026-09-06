@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../util/api_client.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../model/community_poll.dart';
 import '../../model/community_post_block.dart';
 import '../../model/community_remote_comment.dart';
 import '../../model/community_remote_post.dart';
@@ -72,6 +73,21 @@ class CommunityRepository {
     );
   }
 
+  /// 글 검색(제목·미리보기·평문 본문). 응답은 목록과 같은 모양이다.
+  Future<CommunityRemotePostPage> searchPosts(
+    String q, {
+    int? cursor,
+    int size = 20,
+  }) async {
+    final response = await _optionalAuthGet(
+      ApiConfig.communitySearchUrl(q: q, cursor: cursor, size: size),
+    );
+    _checkOk(response, 'searchCommunityPosts');
+    return CommunityRemotePostPage.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
+  }
+
   /// 게시글 상세.
   Future<CommunityRemotePostDetail> fetchPostDetail(int postId) async {
     final response = await _optionalAuthGet(
@@ -91,6 +107,14 @@ class CommunityRepository {
     required String body,
     String bodyFormat = 'PLAIN',
     List<String> imageUrls = const [],
+    ({
+      String question,
+      List<String> options,
+      bool allowMultiple,
+      bool alwaysShowResults,
+      int? closesHours,
+    })? poll,
+    bool test = false,
   }) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
@@ -102,6 +126,16 @@ class CommunityRepository {
           'body': body,
           'bodyFormat': bodyFormat,
           'imageUrls': imageUrls,
+          if (poll != null)
+            'poll': {
+              'question': poll.question,
+              'options': poll.options,
+              'allowMultiple': poll.allowMultiple,
+              'alwaysShowResults': poll.alwaysShowResults,
+              'closesHours': poll.closesHours,
+            },
+          // 테스터가 아니면 서버가 무시한다 — 숨은 글은 테스터만 만들 수 있다.
+          if (test) 'test': true,
         }),
       ),
     );
@@ -134,6 +168,22 @@ class CommunityRepository {
       ),
     );
     _checkOk(response, 'updateCommunityPost');
+  }
+
+  /// 투표(단일 선택, 변경 불가). 성공 시 투표 후 상태를 반환한다.
+  /// 이미 투표했으면 서버가 409(COMMUNITY_ALREADY_VOTED)를 준다.
+  Future<CommunityPoll> votePoll(int postId, int optionId) async {
+    final response = await _auth.authorizedRequest(
+      (token) => http.post(
+        Uri.parse(ApiConfig.communityPollVoteUrl(postId)),
+        headers: _headers(token),
+        body: jsonEncode({'optionId': optionId}),
+      ),
+    );
+    _checkOk(response, 'voteCommunityPoll');
+    return CommunityPoll.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
   }
 
   /// 링크 프리뷰(OG 스냅샷). 서버가 못 긁으면 title 이하 null 로 온다.

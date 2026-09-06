@@ -1,4 +1,5 @@
 import 'community_author.dart';
+import 'community_poll.dart';
 import 'community_post_image.dart';
 
 /// 팀 게시판 쓰기 잠금 사유.
@@ -21,10 +22,15 @@ class CommunityBoardViewer {
     required this.canWrite,
     this.reason,
     this.nextWritableAt,
+    this.tester = false,
   });
 
   final bool canWrite;
   final CommunityWriteLockReason? reason;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 env 로 지정). 작성 화면의
+  /// "테스트 글" 토글 노출 조건 — 일반 사용자에겐 항상 false 다.
+  final bool tester;
 
   /// 작성 간격에 걸려 있으면 다음 작성 가능 시각, 아니면 null.
   /// 간격은 게시판마다 따로 돈다.
@@ -37,6 +43,7 @@ class CommunityBoardViewer {
       nextWritableAt: DateTime.tryParse(
         json['nextWritableAt'] as String? ?? '',
       ),
+      tester: json['tester'] as bool? ?? false,
     );
   }
 }
@@ -97,6 +104,7 @@ class CommunityRemotePost {
     required this.createdAt,
     this.thumbnailUrl,
     this.imageCount = 0,
+    this.hasPoll = false,
   });
 
   final int id;
@@ -130,6 +138,9 @@ class CommunityRemotePost {
   final String? thumbnailUrl;
   final int imageCount;
 
+  /// 이 글에 투표가 붙어 있는가 — 목록 배지용.
+  final bool hasPoll;
+
   factory CommunityRemotePost.fromJson(Map<String, dynamic> json) {
     final author = json['author'];
     return CommunityRemotePost(
@@ -148,6 +159,7 @@ class CommunityRemotePost {
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       thumbnailUrl: json['thumbnailUrl'] as String?,
       imageCount: (json['imageCount'] as num?)?.toInt() ?? 0,
+      hasPoll: json['hasPoll'] as bool? ?? false,
     );
   }
 }
@@ -160,6 +172,7 @@ class CommunityRemotePostDetail {
     this.bodyFormat = 'PLAIN',
     required this.images,
     required this.viewer,
+    this.poll,
   });
 
   final CommunityRemotePost summary;
@@ -172,6 +185,9 @@ class CommunityRemotePostDetail {
 
   final List<CommunityPostImage> images;
   final CommunityPostViewer viewer;
+
+  /// 글에 붙은 투표. 없으면 null.
+  final CommunityPoll? poll;
 
   int get id => summary.id;
   int? get boardTeamId => summary.boardTeamId;
@@ -197,6 +213,9 @@ class CommunityRemotePostDetail {
           : CommunityPostViewer.fromJson(
               json['viewer'] as Map<String, dynamic>,
             ),
+      poll: json['poll'] == null
+          ? null
+          : CommunityPoll.fromJson(json['poll'] as Map<String, dynamic>),
     );
   }
 }

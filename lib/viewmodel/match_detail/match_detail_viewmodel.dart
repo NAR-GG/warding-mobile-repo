@@ -241,13 +241,16 @@ class MatchDetailViewModel extends ChangeNotifier {
     // 예전엔 games 를 받아본 뒤에야 '팀 정보가 없네' 하고 match 를 불러
     // 두 번의 왕복이 그대로 더해졌다.
     //
-    // 경기 정보를 이미 들고 진입했으면(경기 목록에서 카드 탭) 요청 자체를
-    // 띄우지 않는다 — 마이구독·딥링크처럼 matchId 만 있을 때만 필요하다.
-    // games 응답 최상위에 팀 정보가 실려 오기도 하는데, 그때는 이 요청 결과를
-    // 버린다. 헛요청 한 번이 순차 왕복보다 싸고, 실려 오는지는 미리 알 수 없다.
+    // 경기 정보를 이미 들고 진입했으면(경기 목록에서 카드 탭) [_loadMatchInfo]
+    // 대신 [_refreshMatchInfo] 를 부른다 — 목록에서 넘어온 값은 카드가 마지막
+    // 갱신된 시점의 스냅샷일 뿐이라, 그 사이 상태가 바뀌었으면(예정→라이브,
+    // 라이브→종료) 진입 즉시 낡은 값을 그대로 보여주게 된다("진행 중인 경기가
+    // 상세에서는 종료로 보임" 버그). games 응답 최상위에 팀 정보가 실려 오기도
+    // 하는데, 그때는 이 요청 결과를 버린다. 헛요청 한 번이 순차 왕복보다 싸고,
+    // 실려 오는지는 미리 알 수 없다.
     final matchInfoDone = _matchInfo == null
         ? _loadMatchInfo()
-        : Future<void>.value();
+        : _refreshMatchInfo();
 
     await _loadGames();
     // 탭 데이터(gameId 필요)는 세트 목록만 있으면 시작할 수 있다.
@@ -319,14 +322,23 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 다시 들어왔을 때 탭·세트를 갈아끼운다. 화면을 새로 만들지 않으므로
   /// 로딩 깜빡임이나 스크롤 위치 손실이 없다.
   ///
-  /// [setNumber] 가 아직 없는 세트(로드 전이거나 범위 밖)면 무시하고 탭만 바꾼다.
-  void applyDeepLink({required int tabIndex, int? setNumber}) {
+  /// 화면이 열려 있던 동안 경기 상태가 바뀌었을 수 있어([refresh] 와 같은
+  /// 이유 — 예정→라이브→종료), 매치 정보·세트 목록도 함께 새로 받는다.
+  /// 딥링크로 재진입한다는 건 "지금 상황이 궁금해서 다시 왔다"는 뜻이라,
+  /// 여기서 최신화하지 않으면 위젯·알림을 눌러 들어와도 화면이 계속 예전
+  /// 상태(예: 종료로 잘못 보임)에 머문다.
+  ///
+  /// [setNumber] 는 최신 세트 목록을 받아온 뒤에 존재 여부를 판단한다 —
+  /// 아직 없는 세트(로드 전이거나 범위 밖)면 무시하고 탭만 바꾼다.
+  Future<void> applyDeepLink({required int tabIndex, int? setNumber}) async {
+    await Future.wait([_refreshMatchInfo(), _refreshGames()]);
+
     if (setNumber != null &&
         setNumber != _currentSet &&
         _games.any((g) => g.gameOrder == setNumber)) {
       // [selectSet] 은 활성 탭 기준으로 다시 로드하므로 탭을 먼저 바꿔 둔다.
       _activeTab = tabIndex;
-      selectSet(setNumber);
+      await selectSet(setNumber);
     } else {
       setActiveTab(tabIndex);
     }

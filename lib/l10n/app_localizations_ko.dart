@@ -30,6 +30,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loading => '불러오는 중...';
 
   @override
+  String get refreshDone => '반영 완료!';
+
+  @override
   String get select => '선택';
 
   @override
@@ -868,7 +871,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCommunity => '커뮤니티';
 
   @override
-  String get navSubscription => '구독';
+  String get navSubscription => '마이 구독';
 
   @override
   String get navMyPage => '마이페이지';
@@ -1274,8 +1277,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat = intl
+        .NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '조회 $countString';
@@ -1303,10 +1306,125 @@ class AppLocalizationsKo extends AppLocalizations {
       '경기 이야기, 응원, 질문 무엇이든 좋아요.\n비방·도배는 신고 대상입니다.';
 
   @override
-  String get communityWriteSubmit => '등록하기';
+  String get communityWriteSubmit => '등록';
+
+  @override
+  String get communityDraftSave => '임시';
+
+  @override
+  String communityDraftCount(int count) {
+    return '저장$count';
+  }
+
+  @override
+  String get communityDraftSaved => '임시저장했어요.';
+
+  @override
+  String get communityDraftSaveFailed => '임시저장하지 못했어요.';
+
+  @override
+  String get communityDraftEmpty => '저장할 내용이 없어요.';
+
+  @override
+  String get communityDraftListTitle => '임시저장한 글';
+
+  @override
+  String get communityDraftEmptyList => '임시저장한 글이 없어요.';
+
+  @override
+  String get communityDraftUntitled => '제목 없음';
+
+  @override
+  String get communityDraftEditingBadge => '수정 중';
+
+  @override
+  String get communityDraftDelete => '삭제';
+
+  @override
+  String get communityDraftLoadConfirmTitle => '작성 중인 내용이 있어요';
+
+  @override
+  String get communityDraftLoadConfirmMessage => '불러오면 지금 쓰던 내용은 사라져요. 계속할까요?';
+
+  @override
+  String get communityDraftLoadConfirm => '불러오기';
+
+  @override
+  String get communityDraftLeaveTitle => '임시저장하시겠어요?';
+
+  @override
+  String get communityDraftLeaveMessage => '지금 나가면 작성 중인 내용이 사라져요.';
+
+  @override
+  String get communityDraftLeaveDiscard => '나가기';
+
+  @override
+  String get communityDraftLeaveSave => '임시저장';
 
   @override
   String get communityAddLink => '링크';
+
+  @override
+  String get communityPollLabel => '투표';
+
+  @override
+  String get communitySearchHint => '제목·내용 검색';
+
+  @override
+  String get communitySearchGuide => '두 글자 이상 입력하면 검색해요';
+
+  @override
+  String get communitySearchEmpty => '검색 결과가 없어요';
+
+  @override
+  String get communityPollQuestionHint => '투표 질문을 입력하세요';
+
+  @override
+  String get communityPollOptionHint => '선택지';
+
+  @override
+  String get communityPollAddOption => '선택지 추가';
+
+  @override
+  String communityPollParticipants(int count) {
+    return '$count명 참여';
+  }
+
+  @override
+  String get communityPollVoteToSee => '투표하면 결과를 볼 수 있어요';
+
+  @override
+  String get communityPollAllowMultiple => '복수 선택 허용';
+
+  @override
+  String get communityPollAlwaysShowResults => '결과 항상 공개';
+
+  @override
+  String get communityPollDeadline => '마감';
+
+  @override
+  String get communityPollDeadlineNone => '없음';
+
+  @override
+  String communityPollDeadlineHours(int hours) {
+    return '$hours시간';
+  }
+
+  @override
+  String communityPollDeadlineDays(int days) {
+    return '$days일';
+  }
+
+  @override
+  String get communityPollClosed => '마감됨';
+
+  @override
+  String get communityPollMultipleBadge => '복수 선택';
+
+  @override
+  String communityPollClosesIn(String time) {
+    return '$time 후 마감';
+  }
 
   @override
   String get communityLinkDialogTitle => '링크 추가';

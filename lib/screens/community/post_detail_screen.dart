@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../components/app_refresh_indicator.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/profile_avatar.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,7 +18,9 @@ import 'component/author_line.dart';
 import 'component/comment_tile.dart';
 import 'component/community_image.dart';
 import 'component/community_photo_viewer.dart';
+import 'component/poll_card.dart';
 import 'component/post_block_renderer.dart';
+import 'component/post_detail_skeleton.dart';
 import 'component/report_sheet.dart';
 import 'post_write_screen.dart';
 
@@ -363,16 +366,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Widget _content(AppLocalizations l, double scale) {
     if (_vm.loading && _vm.post == null) {
-      return const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.narText2,
-          ),
-        ),
-      );
+      // Column 이라 고정 높이 — Expanded 가 준 공간보다 콘텐츠가 짧은 화면에서도
+      // 오버플로우 없이 스크롤 가능하게 감싼다.
+      return SingleChildScrollView(child: PostDetailSkeleton(scale: scale));
     }
     final post = _vm.post;
     if (post == null) {
@@ -390,11 +386,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     final roots = _vm.rootComments;
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       // 새 댓글·좋아요 수를 다시 받는다. 조회수 핑은 안 쏜다(부풀림 방지).
       onRefresh: () => _vm.load(countView: false),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: ListView(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -613,6 +607,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ),
                 ],
               ],
+            ],
+            if (post.poll != null) ...[
+              SizedBox(height: 14 * scale),
+              PollCard(
+                poll: post.poll!,
+                scale: scale,
+                onVote: (optionId) {
+                  if (!_requireLogin()) return;
+                  _vm.votePoll(optionId);
+                },
+              ),
             ],
           ],
         ],

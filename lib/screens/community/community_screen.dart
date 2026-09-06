@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_bottom_nav.dart';
+import '../../components/app_refresh_indicator.dart';
 import '../../config/app_globals.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/community_remote_post.dart';
@@ -15,7 +16,9 @@ import '../mypage/mypage_screen.dart';
 import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
+import 'community_search_screen.dart';
 import 'component/post_list_item.dart';
+import 'component/post_list_item_skeleton.dart';
 import 'component/write_lock_bar.dart';
 import 'post_detail_screen.dart';
 import 'post_write_screen.dart';
@@ -47,6 +50,9 @@ class _CommunityScreenState extends State<CommunityScreen>
   /// 비로그인·실패는 0(배지 숨김)으로 조용히 넘어간다.
   int _unreadCount = 0;
 
+  /// 목록을 내리는 동안 [AppBottomNav] 를 살짝 축소한다([BottomNavShrinkController]).
+  final BottomNavShrinkController _navShrink = BottomNavShrinkController();
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +70,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     feedRefreshTick.removeListener(_refreshUnreadCount);
     WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();
+    _navShrink.dispose();
     super.dispose();
   }
 
@@ -83,10 +90,19 @@ class _CommunityScreenState extends State<CommunityScreen>
     }
   }
 
-  Future<void> _openNotificationInbox() async {
+  Future<void> _openSearch() async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const NotificationScreen()),
+      MaterialPageRoute<void>(builder: (_) => const CommunitySearchScreen()),
     );
+    if (!mounted) return;
+    // 검색 결과에서 글을 지웠을 수 있어 목록을 다시 받는다.
+    await _vm.load(null, refresh: true);
+  }
+
+  Future<void> _openNotificationInbox() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const NotificationScreen()));
     // 알림함에서 읽고 돌아오면 배지를 다시 센다.
     _refreshUnreadCount();
   }
@@ -126,7 +142,8 @@ class _CommunityScreenState extends State<CommunityScreen>
     }
     final createdId = await Navigator.of(context).push<int>(
       MaterialPageRoute<int>(
-        builder: (_) => const PostWriteScreen(boardTeamId: null),
+        builder: (_) =>
+            PostWriteScreen(boardTeamId: null, tester: _vm.isTester(null)),
       ),
     );
     if (createdId == null || !mounted) return;
@@ -160,16 +177,20 @@ class _CommunityScreenState extends State<CommunityScreen>
           listenable: _vm,
           builder: (context, _) => Stack(
             children: [
-              Column(
-                children: [
-                  _Header(
-                    title: l.communityTitle,
-                    scale: scale,
-                    unreadCount: _unreadCount,
-                    onBellTap: _openNotificationInbox,
-                  ),
-                  Expanded(child: _board(scale)),
-                ],
+              NotificationListener<ScrollNotification>(
+                onNotification: _navShrink.handleNotification,
+                child: Column(
+                  children: [
+                    _Header(
+                      title: l.communityTitle,
+                      scale: scale,
+                      unreadCount: _unreadCount,
+                      onBellTap: _openNotificationInbox,
+                      onSearchTap: _openSearch,
+                    ),
+                    Expanded(child: _board(scale)),
+                  ],
+                ),
               ),
               if (_vm.canWrite(null))
                 Positioned(
@@ -205,9 +226,13 @@ class _CommunityScreenState extends State<CommunityScreen>
                 left: 0,
                 right: 0,
                 bottom: 26,
-                child: AppBottomNav(
-                  currentTab: AppNavTab.community,
-                  onTabSelected: _onTabSelected,
+                child: ListenableBuilder(
+                  listenable: _navShrink,
+                  builder: (context, _) => AppBottomNav(
+                    currentTab: AppNavTab.community,
+                    onTabSelected: _onTabSelected,
+                    compact: _navShrink.compact,
+                  ),
                 ),
               ),
             ],
@@ -228,7 +253,13 @@ class _CommunityScreenState extends State<CommunityScreen>
       });
     }
 
-    if (state.loading && state.posts.isEmpty) return const _Loading();
+    if (state.loading && state.posts.isEmpty) {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 6,
+        itemBuilder: (context, i) => PostListItemSkeleton(scale: scale),
+      );
+    }
     if (state.error != null && state.posts.isEmpty) {
       return _Retry(
         message: state.error!,
@@ -238,10 +269,8 @@ class _CommunityScreenState extends State<CommunityScreen>
       );
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => _vm.load(null, refresh: true),
-      color: AppColors.narText,
-      backgroundColor: AppColors.narDark600,
       child: state.posts.isEmpty
           // 빈 목록에서도 당길 수 있어야 하므로 스크롤 가능한 리스트로 감싼다.
           ? ListView(
@@ -304,26 +333,22 @@ class _BoardListState extends State<_BoardList> {
     final posts = widget.state.posts;
     final scale = widget.scale;
 
+    // 추가 로딩 중엔 최초 로딩과 같은 스켈레톤을 몇 장 더 붙인다 — 스크롤이
+    // 계속 이어지는 느낌을 준다(스피너 하나만 있으면 목록이 뚝 끊긴 것처럼
+    // 보인다).
+    const loadMoreSkeletonCount = 3;
+    final loadingMoreCount = widget.state.loadingMore
+        ? loadMoreSkeletonCount
+        : 0;
+
     return ListView.builder(
       controller: _controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(bottom: 170 * scale),
-      itemCount: posts.length + (widget.state.loadingMore ? 1 : 0),
+      itemCount: posts.length + loadingMoreCount,
       itemBuilder: (context, i) {
         if (i >= posts.length) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 16 * scale),
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.narText2,
-                ),
-              ),
-            ),
-          );
+          return PostListItemSkeleton(scale: scale);
         }
         return PostListItem(
           post: posts[i],
@@ -343,6 +368,7 @@ class _Header extends StatelessWidget {
     required this.scale,
     required this.unreadCount,
     required this.onBellTap,
+    required this.onSearchTap,
   });
 
   final String title;
@@ -352,6 +378,9 @@ class _Header extends StatelessWidget {
   final int unreadCount;
 
   final VoidCallback onBellTap;
+
+  /// 검색 화면 진입.
+  final VoidCallback onSearchTap;
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +405,26 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
+          // 검색은 벨 왼쪽 — 같은 원형 슬롯으로 톤을 맞춘다.
+          GestureDetector(
+            onTap: onSearchTap,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 40 * scale,
+              height: 40 * scale,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.narBgTertiary,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.search,
+                size: 21 * scale,
+                color: AppColors.narText,
+              ),
+            ),
+          ),
+          SizedBox(width: 8 * scale),
           GestureDetector(
             onTap: onBellTap,
             behavior: HitTestBehavior.opaque,
@@ -432,22 +481,6 @@ class _Header extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Loading extends StatelessWidget {
-  const _Loading();
-
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: SizedBox(
-      width: 24,
-      height: 24,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: AppColors.narText2,
-      ),
-    ),
-  );
 }
 
 class _Empty extends StatelessWidget {

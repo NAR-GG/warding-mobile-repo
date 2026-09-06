@@ -1,15 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
+import '../../components/nar_popup_dialog.dart';
 import '../../l10n/app_localizations.dart';
+import '../../model/community_draft.dart';
 import '../../model/community_post_block.dart';
 import '../../model/community_remote_post.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/community/post_write_viewmodel.dart';
 import 'community_rules.dart';
+import 'component/community_draft_sheet.dart';
 import 'component/community_image.dart';
 import 'component/community_rules_sheet.dart';
 
@@ -27,10 +33,19 @@ import 'component/community_rules_sheet.dart';
 ///
 /// 등록에 성공하면 새 글 id 를 결과로 pop 한다. 수정 모드([edit])면 같은 id 를 pop 한다.
 class PostWriteScreen extends StatefulWidget {
-  const PostWriteScreen({super.key, required this.boardTeamId, this.edit});
+  const PostWriteScreen({
+    super.key,
+    required this.boardTeamId,
+    this.edit,
+    this.tester = false,
+  });
 
   /// null 이면 전체 게시판(현재는 항상 null — 단일 게시판).
   final int? boardTeamId;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 판정 boardViewer.tester).
+  /// true 일 때만 "테스트 글" 토글이 보인다 — 일반 사용자에겐 없는 UI.
+  final bool tester;
 
   /// 수정할 글. null 이면 새 글 작성이다. PLAIN 글은 텍스트 블록 하나로 열리고
   /// 수정 등록 시 BLOCKS 로 저장된다(서버 하위호환 유지, 본문 내용은 동일).
@@ -39,6 +54,20 @@ class PostWriteScreen extends StatefulWidget {
   @override
   State<PostWriteScreen> createState() => _PostWriteScreenState();
 }
+
+/// 뒤로가기 확인 팝업에서 고른 것 — null(팝업 dismiss)이면 "취소"와 같다.
+enum _LeaveAction { discard, save }
+
+/// 뒤로가기 확인 판단용 상태 스냅샷 — 투표 설정까지 포함해 구조적으로 비교한다.
+typedef _Snapshot = ({
+  String title,
+  String blocksJson,
+  bool pollEnabled,
+  String pollQuestion,
+  String pollOptionsJson,
+  bool pollAllowMultiple,
+  bool pollAlwaysShowResults,
+});
 
 /// 에디터 블록. 텍스트는 입력 상태(controller·focus)를 들고, 미디어는
 /// [DraftBlock] 그대로 든다.
@@ -73,6 +102,44 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final TextEditingController _title = TextEditingController();
   final List<_EditorBlock> _blocks = [];
 
+  /// 투표 컴포저(글당 1개, 작성 시에만 — 수정 모드에선 버튼 자체를 숨긴다).
+  bool _pollEnabled = false;
+  final TextEditingController _pollQuestion = TextEditingController();
+  final List<TextEditingController> _pollOptions = [];
+  static const int _maxPollOptions = 4;
+
+  /// 투표 옵션: 복수 선택 / 결과 항상 공개.
+  /// 마감은 서버가 지원하지만 v1 작성 UI 에선 뺐다(항상 무기한) — 컴포저가
+  /// 무거워진다는 피드백. 되살릴 땐 closesHours 만 다시 노출하면 된다.
+  bool _pollAllowMultiple = false;
+  bool _pollAlwaysShowResults = false;
+
+  /// 테스트 글로 올린다(테스터만). 서버가 status=TEST 로 저장해 테스터에게만 보인다.
+  bool _testPost = false;
+
+  /// 이 편집 세션이 불러온 임시저장 글의 id. "임시" 재탭 시 새로 쌓지 않고
+  /// 이 드래프트를 덮어쓴다. null 이면 처음부터 쓰는 중이라 다음 저장이 새 항목.
+  int? _loadedDraftId;
+
+  /// 마지막으로 저장/불러온 시점의 내용 — 뒤로가기 확인 팝업을 띄울지 판단하는
+  /// 기준선. 지금 내용이 이거랑 같으면 "달라진 게 없다"고 보고 팝업 없이 바로
+  /// 나간다. 시작 시점 값(새 글은 빈 상태, 수정 모드는 원본 그대로)이라
+  /// 아무것도 안 건드리고 나갈 때도 안 뜬다. 투표 설정도 포함해야 투표만
+  /// 바꾸고 뒤로가도 제대로 잡힌다.
+  _Snapshot? _savedSnapshot;
+
+  _Snapshot _currentSnapshot() => (
+    title: _title.text.trim(),
+    blocksJson: DraftBlock.encodeList(_draftBlocks),
+    pollEnabled: _pollEnabled,
+    pollQuestion: _pollQuestion.text.trim(),
+    pollOptionsJson: jsonEncode([
+      for (final o in _pollOptions) o.text.trim(),
+    ]),
+    pollAllowMultiple: _pollAllowMultiple,
+    pollAlwaysShowResults: _pollAlwaysShowResults,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +152,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     }
     _title.addListener(_onChanged);
     _vm.addListener(_showError);
+    unawaited(_vm.refreshDrafts());
+    _savedSnapshot = _currentSnapshot();
   }
 
   void _initFromEdit(CommunityRemotePostDetail edit) {
@@ -125,6 +194,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   void dispose() {
     _vm.removeListener(_showError);
     _title.dispose();
+    _pollQuestion.dispose();
+    for (final option in _pollOptions) {
+      option.dispose();
+    }
     for (final block in _blocks) {
       if (block is _TextBlock) block.dispose();
     }
@@ -148,8 +221,27 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         (b is _TextBlock && b.controller.text.trim().isNotEmpty),
   );
 
+  /// 투표를 켰으면 질문과 선택지 2개 이상이 차야 등록이 열린다.
+  bool get _pollValid =>
+      !_pollEnabled ||
+      (_pollQuestion.text.trim().isNotEmpty &&
+          _pollOptions.where((o) => o.text.trim().isNotEmpty).length >= 2);
+
+  /// 투표만 있는 글도 허용한다 — 질문이 곧 내용이다.
   bool get _submittable =>
-      _title.text.trim().isNotEmpty && _hasContent && !_vm.submitting;
+      _title.text.trim().isNotEmpty &&
+      (_hasContent || _pollEnabled) &&
+      _pollValid &&
+      !_vm.submitting;
+
+  void _togglePoll() {
+    setState(() {
+      _pollEnabled = !_pollEnabled;
+      if (_pollEnabled && _pollOptions.isEmpty) {
+        _pollOptions.addAll([TextEditingController(), TextEditingController()]);
+      }
+    });
+  }
 
   int get _imageCount => _blocks
       .whereType<_MediaBlock>()
@@ -270,7 +362,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ],
       ),
     );
-    input.dispose();
+    // input은 여기서 dispose하지 않는다 — 다이얼로그가 실제로 닫히는(전환
+    // 애니메이션이 끝나는) 시점보다 이 코드가 먼저 실행되기 때문에, 아직 화면에
+    // 남아 애니메이션 중인 TextField가 disposed된 controller를 다시 참조하며
+    // 크래시가 난다. State에 매달린 게 아니라 이 다이얼로그에서만 쓰는 로컬
+    // controller라 안 지워도 다이얼로그 요소가 unmount되면 참조가 사라진다.
     if (url == null || url.isEmpty || !mounted) return;
 
     final uri = Uri.tryParse(url);
@@ -315,7 +411,9 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             .join('\n');
         head.controller.text = joined;
         _blocks.removeAt(index);
-        tail.dispose();
+        // 이 프레임에는 tail 의 TextField 가 아직 트리에 붙어 있다 — 즉시
+        // dispose 하면 '_dependents.isEmpty' assertion 으로 터진다(실사고).
+        WidgetsBinding.instance.addPostFrameCallback((_) => tail.dispose());
       }
       _ensureTextEdges();
     });
@@ -333,17 +431,223 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     });
   }
 
+  List<DraftBlock> get _draftBlocks => [
+    for (final block in _blocks)
+      if (block is _TextBlock)
+        DraftBlock.text(block.controller.text, heading: block.heading)
+      else if (block is _MediaBlock)
+        block.draft,
+  ];
+
   Future<void> _submit() async {
-    final drafts = <DraftBlock>[
-      for (final block in _blocks)
-        if (block is _TextBlock)
-          DraftBlock.text(block.controller.text, heading: block.heading)
-        else if (block is _MediaBlock)
-          block.draft,
-    ];
-    final id = await _vm.submitBlocks(title: _title.text, blocks: drafts);
+    final id = await _vm.submitBlocks(
+      title: _title.text,
+      blocks: _draftBlocks,
+      poll: _pollEnabled
+          ? (
+              question: _pollQuestion.text.trim(),
+              options: [
+                for (final option in _pollOptions)
+                  if (option.text.trim().isNotEmpty) option.text.trim(),
+              ],
+              allowMultiple: _pollAllowMultiple,
+              alwaysShowResults: _pollAlwaysShowResults,
+              closesHours: null, // 마감 UI 는 v1 미노출 — 항상 무기한
+            )
+          : null,
+      test: _testPost,
+    );
     if (id == null || !mounted) return;
+    final draftId = _loadedDraftId;
+    if (draftId != null) unawaited(_vm.deleteDraft(draftId));
     Navigator.of(context).pop<int>(id);
+  }
+
+  /// 지금 쓰던 내용을 로컬에 저장한다. [_loadedDraftId]가 있으면 그 드래프트를
+  /// 덮어쓴다. 저장할 내용이 없으면(제목·본문·투표 다 빈 채) null.
+  Future<CommunityDraft?> _persistDraft() async {
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
+      return null;
+    }
+    final saved = await _vm.saveDraft(
+      title: _title.text,
+      blocks: _draftBlocks,
+      draftId: _loadedDraftId,
+      pollEnabled: _pollEnabled,
+      pollQuestion: _pollQuestion.text,
+      pollOptions: [
+        for (final o in _pollOptions)
+          if (o.text.trim().isNotEmpty) o.text.trim(),
+      ],
+      pollAllowMultiple: _pollAllowMultiple,
+      pollAlwaysShowResults: _pollAlwaysShowResults,
+    );
+    if (mounted) {
+      setState(() {
+        _loadedDraftId = saved.id;
+        _savedSnapshot = _currentSnapshot();
+      });
+    }
+    return saved;
+  }
+
+  /// "임시" 탭 — 저장 결과를 스낵바로 알린다.
+  Future<void> _saveDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final saved = await _persistDraft();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved == null ? l.communityDraftEmpty : l.communityDraftSaved),
+      ),
+    );
+  }
+
+  /// 뒤로가기 아이콘 — 작성 중인 내용이 있으면 임시저장 확인 팝업을 먼저 띄운다.
+  /// 스와이프 백 제스처 등 시스템 pop은 건드리지 않는다(iOS 엣지 스와이프가
+  /// 깨지는 문제, [post_detail_screen.dart]의 PopScope 관련 주석 참고).
+  Future<void> _handleBackPressed() async {
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    if (_currentSnapshot() == _savedSnapshot) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final action = await _confirmLeaveDialog();
+    if (action == null || !mounted) return; // 취소·바깥 탭 → 머무른다
+    if (action == _LeaveAction.save) {
+      await _persistDraft();
+      if (!mounted) return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
+  Future<_LeaveAction?> _confirmLeaveDialog() {
+    final l = AppLocalizations.of(context)!;
+    return showNarPopup<_LeaveAction>(
+      context: context,
+      title: l.communityDraftLeaveTitle,
+      message: l.communityDraftLeaveMessage,
+      actions: [
+        NarPopupAction(
+          label: l.cancel,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveDiscard,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.discard),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveSave,
+          variant: NarButtonVariant.type1,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.save),
+        ),
+      ],
+    );
+  }
+
+  /// "저장n" 탭 — 임시저장 목록을 열고 고른 드래프트를 에디터에 채운다. 지금
+  /// 쓰던 내용이 있으면 덮어쓰기 전에 확인한다.
+  Future<void> _openDraftList() async {
+    final selected = await showCommunityDraftSheet(
+      context,
+      drafts: _vm.drafts,
+      onDelete: _vm.deleteDraft,
+    );
+    if (selected == null || !mounted) return;
+    if (_title.text.trim().isNotEmpty || _hasContent || _pollEnabled) {
+      final confirmed = await _confirmLoadDraft();
+      if (!confirmed || !mounted) return;
+    }
+    _loadDraft(selected);
+  }
+
+  Future<bool> _confirmLoadDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.narDark600,
+        title: Text(
+          l.communityDraftLoadConfirmTitle,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppColors.narText,
+          ),
+        ),
+        content: Text(
+          l.communityDraftLoadConfirmMessage,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            color: AppColors.narText2,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l.cancel,
+                style: const TextStyle(color: AppColors.narText2)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l.communityDraftLoadConfirm,
+                style: const TextStyle(color: AppColors.narViolet3)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  void _loadDraft(CommunityDraft draft) {
+    setState(() {
+      for (final block in _blocks) {
+        if (block is _TextBlock) block.dispose();
+      }
+      _blocks
+        ..clear()
+        ..addAll([
+          for (final b in DraftBlock.decodeList(draft.blocksJson))
+            if (b.type == 'text')
+              _TextBlock(text: b.text ?? '', heading: b.heading)
+            else
+              _MediaBlock(b),
+        ]);
+      _title.text = draft.title;
+      _ensureTextEdges();
+      _loadedDraftId = draft.id;
+
+      _pollEnabled = draft.pollEnabled;
+      _pollQuestion.text = draft.pollQuestion;
+      for (final option in _pollOptions) {
+        option.dispose();
+      }
+      _pollOptions
+        ..clear()
+        ..addAll([
+          for (final option in draft.pollOptions) TextEditingController(text: option),
+        ]);
+      // 투표 켠 채로 저장했는데 선택지가 2개 미만으로 손상됐다면(옛 데이터 등)
+      // _togglePoll 이 항상 유지하는 최소 2개 불변식을 여기서도 지킨다.
+      if (_pollEnabled && _pollOptions.length < 2) {
+        _pollOptions.addAll([
+          for (var i = _pollOptions.length; i < 2; i++) TextEditingController(),
+        ]);
+      }
+      _pollAllowMultiple = draft.pollAllowMultiple;
+      _pollAlwaysShowResults = draft.pollAlwaysShowResults;
+    });
+    _savedSnapshot = _currentSnapshot();
+    _vm.resumePreuploads([
+      for (final block in _blocks)
+        if (block is _MediaBlock && block.draft.localPath != null)
+          block.draft.localPath!,
+    ]);
   }
 
   @override
@@ -362,29 +666,47 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               NarDetailHeader(
                 title: l.communityBoardAll,
                 scale: scale,
-                trailing: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _submittable ? _submit : null,
-                  // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
-                  // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
-                  // 확보한다.
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6 * scale),
-                    child: Text(
-                      _vm.submitting
-                          ? l.communityWriteSubmitting
-                          : l.communityWriteSubmit,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14 * scale,
-                        height: 1.45,
-                        color: _submittable
-                            ? AppColors.narViolet3
-                            : AppColors.narDark300,
+                onBack: _handleBackPressed,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _headerButton(
+                      scale,
+                      label: l.communityDraftSave,
+                      onTap: _saveDraft,
+                    ),
+                    if (_vm.draftCount > 0)
+                      _headerButton(
+                        scale,
+                        label: l.communityDraftCount(_vm.draftCount),
+                        onTap: _openDraftList,
+                      ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _submittable ? _submit : null,
+                      // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
+                      // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
+                      // 확보한다. 버튼이 셋으로 늘어 타이틀과 겹치지 않게
+                      // 여백은 최소로 좁힌다.
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+                        child: Text(
+                          _vm.submitting
+                              ? l.communityWriteSubmitting
+                              : l.communityWriteSubmit,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14 * scale,
+                            height: 1.45,
+                            color: _submittable
+                                ? AppColors.narViolet3
+                                : AppColors.narDark300,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
               Expanded(
@@ -412,8 +734,17 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                     ),
                     SizedBox(height: 14 * scale),
                     for (final block in _blocks) _blockWidget(l, scale, block),
-                    SizedBox(height: 24 * scale),
-                    _rules(l, scale),
+                    if (_pollEnabled) ...[
+                      SizedBox(height: 12 * scale),
+                      _pollComposer(l, scale),
+                    ],
+                    // 이용규칙 안내는 빈 화면에서만 — 쓰기 시작하면 걷어서
+                    // 본문 아래에 낯선 문단이 떠 있는 것처럼 보이지 않게 한다.
+                    // 전문은 언제든 상세 시트(showCommunityRulesSheet)로 볼 수 있다.
+                    if (!_hasContent && !_pollEnabled) ...[
+                      SizedBox(height: 24 * scale),
+                      _rules(l, scale),
+                    ],
                   ],
                 ),
               ),
@@ -424,6 +755,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       ),
     );
   }
+
+  /// "임시"/"저장n" — 등록 버튼과 같은 텍스트 버튼 스타일, 항상 활성 상태.
+  Widget _headerButton(
+    double scale, {
+    required String label,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w700,
+          fontSize: 14 * scale,
+          height: 1.45,
+          color: AppColors.narText3,
+        ),
+      ),
+    ),
+  );
 
   Widget _blockWidget(AppLocalizations l, double scale, _EditorBlock block) {
     if (block is _TextBlock) {
@@ -444,7 +798,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ),
         cursorColor: AppColors.narViolet3,
         decoration: InputDecoration(
-          hintText: first ? l.communityWriteBodyHint : null,
+          // 안내 문구는 본문이 완전히 빈 상태에서만 — 사진·링크·투표 등 내용이
+          // 하나라도 생기면 걷는다. 안 그러면 빈 첫 블록에 안내가 남아
+          // 콘텐츠 사이에 떠 있는 문장처럼 보인다.
+          hintText:
+              first && !_hasContent && !_pollEnabled
+                  ? l.communityWriteBodyHint
+                  : null,
           hintStyle: _inputStyle(
             scale,
             14,
@@ -630,6 +990,182 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     ),
   );
 
+  /// 투표 컴포저 — 질문 + 선택지 2~4개. 우측 상단 ✕로 통째로 제거.
+  Widget _pollComposer(AppLocalizations l, double scale) {
+    return Container(
+      padding: EdgeInsets.all(14 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narDark600,
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: AppColors.narLine2, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.poll_outlined,
+                  size: 15 * scale, color: AppColors.narViolet3),
+              SizedBox(width: 5 * scale),
+              Expanded(
+                child: Text(
+                  l.communityPollLabel,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13 * scale,
+                    height: 1.45,
+                    color: AppColors.narText,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _togglePoll,
+                child: Icon(Icons.close,
+                    size: 16 * scale, color: AppColors.narText2),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          TextField(
+            controller: _pollQuestion,
+            maxLength: 100,
+            onChanged: (_) => _onChanged(),
+            style: _inputStyle(scale, 13.5, weight: FontWeight.w600),
+            cursorColor: AppColors.narViolet3,
+            decoration: _pollFieldDecoration(l.communityPollQuestionHint, scale),
+          ),
+          SizedBox(height: 8 * scale),
+          for (var i = 0; i < _pollOptions.length; i++) ...[
+            if (i > 0) SizedBox(height: 6 * scale),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _pollOptions[i],
+                    maxLength: 50,
+                    onChanged: (_) => _onChanged(),
+                    style: _inputStyle(scale, 13),
+                    cursorColor: AppColors.narViolet3,
+                    decoration: _pollFieldDecoration(
+                        '${l.communityPollOptionHint} ${i + 1}', scale),
+                  ),
+                ),
+                if (_pollOptions.length > 2)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() {
+                      final removed = _pollOptions.removeAt(i);
+                      // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
+                      // 아직 붙어 있어 assertion 크래시(실사고).
+                      WidgetsBinding.instance
+                          .addPostFrameCallback((_) => removed.dispose());
+                    }),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8 * scale),
+                      child: Icon(Icons.remove_circle_outline,
+                          size: 17 * scale, color: AppColors.narText2),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          if (_pollOptions.length < _maxPollOptions) ...[
+            SizedBox(height: 8 * scale),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () =>
+                  setState(() => _pollOptions.add(TextEditingController())),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add,
+                      size: 15 * scale, color: AppColors.narViolet3),
+                  SizedBox(width: 4 * scale),
+                  Text(
+                    l.communityPollAddOption,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5 * scale,
+                      height: 1.4,
+                      color: AppColors.narViolet3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          SizedBox(height: 10 * scale),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAllowMultiple,
+            value: _pollAllowMultiple,
+            onChanged: (v) => setState(() => _pollAllowMultiple = v),
+          ),
+          _pollSwitchRow(
+            scale,
+            label: l.communityPollAlwaysShowResults,
+            value: _pollAlwaysShowResults,
+            onChanged: (v) => setState(() => _pollAlwaysShowResults = v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pollSwitchRow(
+    double scale, {
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 12.5 * scale,
+            height: 1.4,
+            color: AppColors.narText3,
+          ),
+        ),
+      ),
+      SizedBox(
+        height: 30 * scale,
+        child: FittedBox(
+          child: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.narViolet3,
+          ),
+        ),
+      ),
+    ],
+  );
+
+  InputDecoration _pollFieldDecoration(String hint, double scale) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle:
+            _inputStyle(scale, 13).copyWith(color: AppColors.narDark300),
+        isDense: true,
+        counterText: '',
+        filled: true,
+        fillColor: AppColors.narDark500,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12 * scale,
+          vertical: 9 * scale,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9 * scale),
+          borderSide: BorderSide.none,
+        ),
+      );
+
   /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
   /// 반드시 지나가도록 둔다.
   Widget _rules(AppLocalizations l, double scale) {
@@ -717,6 +1253,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
             scale: scale,
             onTap: _addLink,
           ),
+          // 투표는 작성 시에만 붙는다(서버 계약) — 수정 모드에선 숨긴다.
+          if (widget.edit == null) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.poll_outlined,
+              label: l.communityPollLabel,
+              active: _pollEnabled,
+              scale: scale,
+              onTap: _togglePoll,
+            ),
+          ],
+          // 테스트 글 토글 — 테스터 계정에만 나오는 버튼. 켜고 올리면 목록·상세에서
+          // 테스터에게만 보인다(prod 확인용). 일반 사용자에겐 이 UI 자체가 없다.
+          if (widget.edit == null && widget.tester) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.science_outlined,
+              label: 'TEST',
+              active: _testPost,
+              scale: scale,
+              onTap: () => setState(() => _testPost = !_testPost),
+            ),
+          ],
         ],
       ),
     );

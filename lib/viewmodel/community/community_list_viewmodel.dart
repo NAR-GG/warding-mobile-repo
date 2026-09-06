@@ -178,6 +178,7 @@ class CommunityListViewModel extends ChangeNotifier {
       createdAt: old.createdAt,
       thumbnailUrl: old.thumbnailUrl,
       imageCount: old.imageCount,
+      hasPoll: old.hasPoll,
     );
     _safeNotify();
   }
@@ -223,4 +224,7 @@ class CommunityListViewModel extends ChangeNotifier {
       boardTeamId: boardTeamId,
     );
   }
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 판정). 작성 화면 토글 노출용.
+  bool isTester(int? boardTeamId) => board(boardTeamId).viewer?.tester ?? false;
 }
