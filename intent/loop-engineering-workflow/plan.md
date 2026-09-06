@@ -602,7 +602,7 @@ git commit -m "chore: iOS 시뮬레이터 실행·확인용 run-warding 스킬 �
 - Create: `tools/discord-bridge/api/discord/interactions.js`
 
 **Interfaces:**
-- Consumes env: `DISCORD_PUBLIC_KEY`, `GITHUB_DISPATCH_TOKEN`, `GITHUB_REPO`
+- Consumes env: `DISCORD_PUBLIC_KEY`, `DISPATCH_TOKEN`, `GITHUB_REPO`
   (`NAR-GG/warding-mobile-repo`).
 - Produces: `POST /api/discord/interactions` — Discord Interactions 규격에 맞는 응답.
   `slugify(input: string): string`.
@@ -714,7 +714,7 @@ async function dispatchIntentRequest({ slug, description, requestedBy }) {
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.GITHUB_DISPATCH_TOKEN}`,
+        Authorization: `Bearer ${process.env.DISPATCH_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
       },
@@ -943,13 +943,13 @@ General Information 탭에서 `APPLICATION ID`, `PUBLIC KEY` 복사. Bot 탭 →
 cd tools/discord-bridge
 vercel link   # Root Directory를 tools/discord-bridge로
 vercel env add DISCORD_PUBLIC_KEY production
-vercel env add GITHUB_DISPATCH_TOKEN production
+vercel env add DISPATCH_TOKEN production
 vercel env add GITHUB_REPO production   # 값: NAR-GG/warding-mobile-repo
 vercel env add NODEJS_HELPERS production   # 값: 0
 vercel deploy --prod
 ```
 
-`GITHUB_DISPATCH_TOKEN`은 GitHub fine-grained PAT — 이 저장소(`warding-mobile-repo`)에
+`DISPATCH_TOKEN`은 GitHub fine-grained PAT — 이 저장소(`warding-mobile-repo`)에
 `Contents: Read and write`, `Pull requests: Read and write` 권한만 부여해 발급한다.
 
 `NODEJS_HELPERS=0`은 필수다 — Vercel의 일반 Node.js 함수는 기본적으로 요청 바디를 미리
@@ -976,12 +976,14 @@ Expected: `✅ /intent 커맨드 등록 완료`.
 
 ```bash
 gh secret set ANTHROPIC_API_KEY --repo NAR-GG/warding-mobile-repo
-gh secret set GITHUB_DISPATCH_TOKEN --repo NAR-GG/warding-mobile-repo
+gh secret set DISPATCH_TOKEN --repo NAR-GG/warding-mobile-repo
 ```
 
 (`DISCORD_PR_WEBHOOK_URL`은 이미 등록되어 있으므로 재등록 불필요.)
 
-`GITHUB_DISPATCH_TOKEN`은 Step 2에서 Vercel에 등록한 것과 같은 PAT 값을 그대로 쓴다.
+`DISPATCH_TOKEN`은 Step 2에서 Vercel에 등록한 것과 같은 PAT 값을 그대로 쓴다. (이름에
+`GITHUB_` 접두사를 쓰면 안 된다 — GitHub이 예약한 접두사라 `gh secret set`이 거부한다.
+Vercel 환경변수도 같은 이름으로 통일해 이 함정을 반복하지 않는다.)
 `intent-merge-continue.yml`과 `ci-flutter-test.yml`의 `escalate` job이 다른 워크플로우를
 트리거하는 `repository_dispatch` 호출에 기본 `GITHUB_TOKEN` 대신 이 PAT을 쓴다 — 기본
 토큰으로 만든 이벤트가 다른 워크플로우를 못 띄울 수 있다는 GitHub의 재귀 방지 정책을
@@ -997,6 +999,12 @@ Discord Developer Portal → OAuth2 → URL Generator → Scopes에서 `applicat
 
 Discord 채널에서 `/intent` 입력 → 모달이 뜨는지 확인. (실제 PR 생성까지의 확인은 Phase 6
 완료 후 진행한다.)
+
+- [ ] **Step 8: `/intent` 커맨드 사용 권한 제한**
+
+Discord 서버 설정 → Integrations → Warding Bot → `/intent` 커맨드의 Roles/Channels를 팀
+멤버 역할(또는 특정 채널)로 제한한다. 제한하지 않으면 서버의 누구나 `/intent`로 GitHub에
+PR을 열고 Anthropic API 비용을 발생시킬 수 있다.
 
 ---
 
@@ -1107,12 +1115,16 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/intent-autodraft
 - [ ] **Step 3: `gh workflow run`으로 수동 트리거해 로컬에서 payload 시뮬레이션**
 
 ```bash
-gh api repos/NAR-GG/warding-mobile-repo/dispatches \
-  -f event_type=intent-request \
-  -f "client_payload.slug=loop-workflow-smoke-test" \
-  -f "client_payload.description=이건 자동 생성 파이프라인 점검용 더미 요청입니다." \
-  -f "client_payload.requestedBy=manual-test"
+jq -n '{event_type: "intent-request",
+        client_payload: {slug: "loop-workflow-smoke-test",
+                         description: "이건 자동 생성 파이프라인 점검용 더미 요청입니다.",
+                         requestedBy: "manual-test"}}' \
+  | gh api repos/NAR-GG/warding-mobile-repo/dispatches --input -
 ```
+
+> `gh api`의 `-f`는 점(`.`)을 중첩 키로 해석하지 않는다 — `client_payload.slug`는 그냥
+> 최상위 평면 키로 전송되어 `client_payload`가 빈 객체로 도착한다. 중첩 페이로드는 위처럼
+> `jq -n`으로 JSON 본문을 만들어 `--input -`으로 넘겨야 한다.
 
 Actions 탭에서 `Intent 자동 초안`이 실행되고 `intent/loop-workflow-smoke-test` PR이 열리는지
 확인한다. 확인 후 그 브랜치/PR은 삭제한다.

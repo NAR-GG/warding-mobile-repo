@@ -20,7 +20,7 @@ async function dispatchIntentRequest({ slug, description, requestedBy }) {
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.GITHUB_DISPATCH_TOKEN}`,
+        Authorization: `Bearer ${process.env.DISPATCH_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
       },

@@ -100,7 +100,7 @@ Intent/Spec 머지 = 승인. 승인자는 작성자 본인(셀프 머지)이어�
   이 레포의 서브디렉토리로 Vercel에 연결. Flutter 툴체인과 완전히 분리되어 `flutter analyze`
   등에 영향 없음.
 - **필요한 시크릿**
-  - Vercel: `DISCORD_PUBLIC_KEY`, `GITHUB_DISPATCH_TOKEN` (repository_dispatch 권한의
+  - Vercel: `DISCORD_PUBLIC_KEY`, `DISPATCH_TOKEN` (repository_dispatch 권한의
     fine-grained PAT)
   - GitHub Actions: `ANTHROPIC_API_KEY` (신규), `DISCORD_PR_WEBHOOK_URL` (기존 재사용)
 

@@ -16,7 +16,7 @@ jobs:
 
       - name: spec-request 디스패치
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           REPO: ${{ github.repository }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
@@ -31,9 +31,7 @@ jobs:
             exit 0
           fi
           DESCRIPTION=$(cat "intent/$SLUG/intent.md")
-          gh api "repos/$REPO/dispatches" \
-            -f event_type="spec-request" \
-            -f "client_payload.slug=$SLUG" \
-            -f "client_payload.description=$DESCRIPTION" \
-            -f "client_payload.requestedBy=intent-merge" \
-            -f "client_payload.source=intent-merge"
+          jq -n --arg slug "$SLUG" --arg desc "$DESCRIPTION" \
+            '{event_type: "spec-request",
+              client_payload: {slug: $slug, description: $desc, requestedBy: "intent-merge", source: "intent-merge"}}' \
+            | gh api "repos/$REPO/dispatches" --input -
