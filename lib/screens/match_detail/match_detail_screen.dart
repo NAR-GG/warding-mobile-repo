@@ -65,7 +65,8 @@ class MatchDetailScreen extends StatefulWidget {
 
 /// 딥링크 라우터가 이미 떠 있는 상세를 재사용할 수 있게 public 이다.
 /// ([MatchDetailRouter] 가 GlobalKey 로 이 State 를 잡아 탭·세트를 갈아끼운다.)
-class MatchDetailScreenState extends State<MatchDetailScreen> {
+class MatchDetailScreenState extends State<MatchDetailScreen>
+    with WidgetsBindingObserver {
   List<String> _buildTabs(AppLocalizations l) => [
     l.championPick,
     l.liveEvent,
@@ -209,6 +210,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 세트 라벨·목록은 뷰모델 상태에서 파생되므로(스코어/선수평점 탭은
     // ListenableBuilder 밖) 뷰모델 변경 시 화면을 다시 그린다.
     _viewModel.addListener(_onViewModelChanged);
@@ -234,12 +236,39 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     });
   }
 
+  /// 5초 폴링(챔피언픽 탭 조용한 갱신)이 원인이면 화면 전체를 다시 그리지
+  /// 않는다 — 그 콘텐츠는 이미 [_buildChampionPickTab]을 감싼 자체
+  /// `ListenableBuilder`가 반응한다. 그 외(세트 전환·새로고침 등)는 헤더·
+  /// 스코어·탭바까지 갱신돼야 하므로 그대로 전체를 다시 그린다.
   void _onViewModelChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_viewModel.lastNotifyWasPoll) return;
+    setState(() {});
+  }
+
+  /// 앱이 백그라운드로 가면 5초 폴링을 멈추고, 돌아오면 다시 켠다.
+  ///
+  /// 관찰자를 안 달았을 땐 이 화면을 띄운 채 앱을 백그라운드로 보내도
+  /// 타이머가 계속 돌아 안 보이는 동안에도 5초마다 네트워크 요청 + 전체
+  /// 화면(이미지 많은 5개 섹션) 리빌드가 반복됐다 — 배터리 낭비인 데다,
+  /// 포그라운드로 돌아온 순간 밀린 갱신이 겹치며 렉으로 느껴졌다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _viewModel.pausePollingForBackground();
+      case AppLifecycleState.resumed:
+        _viewModel.resumePollingFromBackground();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        break;
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     _scrollController.removeListener(_onScrollChanged);
@@ -693,25 +722,32 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
                       ),
                     ),
                   ),
-                  if (_tabIndex == 0)
+                  if (_tabIndex == 0) ...[
                     SliverToBoxAdapter(
                       child: ListenableBuilder(
                         listenable: _viewModel,
                         builder: (context, _) => _buildChampionPickTab(scale),
                       ),
                     ),
-                  if (_tabIndex == 1)
+                    _bottomFloatingClearance(scale),
+                  ],
+                  if (_tabIndex == 1) ...[
                     SliverToBoxAdapter(
                       child: ListenableBuilder(
                         listenable: _viewModel,
                         builder: (context, _) => _buildLiveEventTab(scale),
                       ),
                     ),
+                    _bottomFloatingClearance(scale),
+                  ],
                   // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
                   // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
                   // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
                   // sticky collapse 가 동작하도록 한다.
-                  if (_tabIndex == 2) _buildRatingTab(scale),
+                  if (_tabIndex == 2) ...[
+                    _buildRatingTab(scale),
+                    _bottomFloatingClearance(scale),
+                  ],
                 ],
               ),
             ),
@@ -738,6 +774,21 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
 
   /// 선수 평점 탭. 슬리버(MatchDetailPlayerRatingSection)를 그대로 반환해
   /// 외부 CustomScrollView 의 slivers 에 직접 배치한다. (pinned 헤더 sticky 유지)
+  /// 각 탭 콘텐츠 맨 아래 여백. 하단에 떠 있는 "새로고침" 캡슐([MatchDetailRefreshPill])이
+  /// 화면 바닥에서 23, 높이가 대략 42라 맨 아래까지 스크롤하면 그 밑(예:
+  /// Player Builds 스와이프 스텝 표시, 라이브 이벤트·선수 평점 탭의 마지막 줄)이
+  /// 캡슐에 가려졌다. 처음엔 90을 줬더니 너무 많이 남아(각 섹션 자체 하단
+  /// 패딩과 겹침) 48로 줄였다. 각 탭 콘텐츠는 [AppColors.narBgContent]를
+  /// 배경으로 쓰는데 이 여백은 색이 없어 그 아래 Scaffold 배경(narDark800)이
+  /// 비쳐 경계가 도드라졌다 — 같은 색으로 채운다.
+  SliverToBoxAdapter _bottomFloatingClearance(double scale) =>
+      SliverToBoxAdapter(
+        child: ColoredBox(
+          color: AppColors.narBgContent,
+          child: SizedBox(height: 48 * scale),
+        ),
+      );
+
   Widget _buildRatingTab(double scale) {
     // 세트 목록(games)을 아직 못 받아온 동안은 currentSetStatus 가 기본값
     // (SCHEDULED)이라, 실제로는 이미 종료된 경기여도 '경기 종료 후' 잠금 안내가
