@@ -268,7 +268,7 @@ class _TocRow extends StatelessWidget {
     // 절대 흔들리지 않는다.
     //
     // 이 슬롯 높이(25)를 행 전체(Row 를 감싼 SizedBox)에도 똑같이 씌우면,
-    // 칩 쪽 필요 높이(패딩 5+5 + 텍스트 line-height 14*1.55 ≈ 31.7)가 더 커서
+    // 칩 쪽 필요 높이(패딩 5+5 + 텍스트 line-height 14*1.2 ≈ 26.8)가 더 커서
     // 칩 텍스트 아래가 잘린다. 그래서 행 전체를 고정 높이로 감싸지 않고
     // 마커 슬롯만 SizedBox 로 고정한다 — 칩은 자기 필요 높이만큼 자연스럽게
     // 커지고, Row 의 crossAxisAlignment.center 가 마커와 칩을 세로 중앙
@@ -355,6 +355,9 @@ class _TocChip extends StatelessWidget {
     // Container 에 alignment 를 주면 부모가 준 폭 제약을 꽉 채우려 든다
     // (Team Summary 의 diff 배지에서 겪은 것과 같은 문제). alignment 없이
     // padding+child 로만 크기를 잡아 텍스트+패딩만큼만 차지하게 한다.
+    //
+    // 스타일은 하단 "새로고침" 캡슐(MatchDetailRefreshPill)과 동일 —
+    // narDark600 배경 + 흰 텍스트(Pretendard w600) + 같은 그림자.
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
@@ -363,8 +366,15 @@ class _TocChip extends StatelessWidget {
           vertical: 5 * scale,
         ),
         decoration: BoxDecoration(
-          color: const Color(0x99FCFDFE),
-          borderRadius: BorderRadius.circular(10 * scale),
+          color: AppColors.narDark600,
+          borderRadius: BorderRadius.circular(14 * scale),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.narDarkOpacity62,
+              blurRadius: 12 * scale,
+              offset: Offset(0, 4 * scale),
+            ),
+          ],
         ),
         child: Text(
           label,
@@ -372,11 +382,11 @@ class _TocChip extends StatelessWidget {
           softWrap: false,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontFamily: 'SF Pro',
-            fontWeight: FontWeight.w500,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w600,
             fontSize: 14 * scale,
-            height: 1.55,
-            color: AppColors.narBgContent,
+            height: 1.2,
+            color: AppColors.narText,
           ),
         ),
       ),
