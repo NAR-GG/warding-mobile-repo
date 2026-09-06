@@ -214,6 +214,20 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 표기를 띄울지 판단하는 데 쓴다.
   bool get isChampionPollingActive => _championPollTimer != null;
 
+  /// 방금 [notifyListeners]가 5초 폴링(조용한 갱신)에 의한 것이었는지.
+  ///
+  /// 화면([MatchDetailScreenState._onViewModelChanged])이 이 값으로 화면
+  /// 전체를 다시 그릴지 정한다 — 폴링은 챔피언픽 탭 콘텐츠만 바꾸고 그건
+  /// 이미 자체 `ListenableBuilder`로 반응하므로, 그 바깥(헤더·스코어·탭바·
+  /// TOC·다른 두 탭)까지 5초마다 통째로 다시 그릴 필요가 없다 — 라이브
+  /// 시청 중 화면 전체(이미지 많은 5개 섹션 포함)가 5초마다 리빌드되며
+  /// 렉으로 느껴지던 원인이었다. 폴링은 챔피언픽 탭이 활성일 때만 도는데
+  /// (그 시간 동안 선수 평점 탭은 보이지도 않는다) 그 탭은 sticky 헤더
+  /// 특성상 이 전체 리빌드에 기대고 있어([_buildRatingTab] 참고),
+  /// 폴링 알림만 걸러내는 건 안전하다.
+  bool _lastNotifyWasPoll = false;
+  bool get lastNotifyWasPoll => _lastNotifyWasPoll;
+
   @override
   void dispose() {
     _disposed = true;
@@ -221,7 +235,8 @@ class MatchDetailViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  void _safeNotify() {
+  void _safeNotify({bool isPoll = false}) {
+    _lastNotifyWasPoll = isPoll;
     if (!_disposed) notifyListeners();
   }
 
@@ -525,6 +540,17 @@ class MatchDetailViewModel extends ChangeNotifier {
     if (notify && wasActive) _safeNotify();
   }
 
+  /// 앱이 백그라운드로 가면 화면이 호출한다. 5초 폴링을 멈춰, 안 보이는
+  /// 동안에도 계속 요청을 보내고 전체 화면을 다시 그리던 걸 막는다(배터리·
+  /// 데이터 낭비이자, 포그라운드로 돌아왔을 때 그동안 쌓인 갱신이 한꺼번에
+  /// 몰려 렉처럼 느껴지는 원인).
+  void pausePollingForBackground() => _stopChampionPolling(notify: false);
+
+  /// 앱이 포그라운드로 돌아오면 화면이 호출한다. 여전히 조건(챔피언픽 탭·
+  /// LIVE 세트)을 만족할 때만 다시 시작한다 — 그 사이 세트가 끝났거나 탭이
+  /// 바뀌었을 수 있어 무조건 재시작하지 않는다.
+  void resumePollingFromBackground() => _restartChampionPollingIfNeeded();
+
   /// 폴링 틱에서 호출 — 로딩 인디케이터를 켜지 않고 조용히 갱신한다.
   /// 세트가 더 이상 LIVE 가 아니게 되면(경기 종료) 스스로 폴링을 멈춘다.
   Future<void> _pollChampionPick() async {
@@ -538,7 +564,7 @@ class MatchDetailViewModel extends ChangeNotifier {
       final updated = await _repository.fetchChampionPick(gameId);
       if (_disposed) return;
       _championPick = updated;
-      _safeNotify();
+      _safeNotify(isPoll: true);
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick poll failed: $e');
     }
