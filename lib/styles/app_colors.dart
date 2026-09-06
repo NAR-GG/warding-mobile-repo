@@ -217,4 +217,17 @@ class AppColors {
   // 커뮤니티 — 답글 펼치기·멘션처럼 누를 수 있는 텍스트.
   // 다크 배경 위에서 narChipActive(#7048E8) 는 너무 어두워 글자로 못 쓴다.
   static const Color narViolet3 = Color(0xFFB197FC); // mantine violet/3
+
+  // 경기 상세 — 선수 스탯 팀 헤더의 "승" 텍스트.
+  static const Color narGreenWin = Color(0xFF34C759);
+
+  // Player Builds 바텀시트 (경기 상세 — 선수 빌드 상세)
+  /// rgba(20,21,23,0.4) — KDA·CS·GOLD 등 통계 바 배경.
+  static const Color narBuildStatsBg = Color(0x66141517);
+
+  /// rgba(255,255,255,0.15) — 아이템·룬·능력치 칩 보더.
+  static const Color narWhiteBorder15 = Color(0x26FFFFFF);
+
+  /// rgba(255,255,255,0.62) — 룬 트리 헤더(결의/영감 등) 왼쪽 보더.
+  static const Color narWhiteBorder62 = Color(0x9EFFFFFF);
 }

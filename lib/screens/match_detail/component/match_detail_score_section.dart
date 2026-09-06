@@ -109,31 +109,39 @@ class MatchDetailScoreSection extends StatelessWidget {
             ],
           ),
           SizedBox(height: 16 * scale),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _TeamColumn(
-                side: BadgeSide.blue,
-                name: blueTeamName,
-                logoUrl: blueTeamLogoUrl,
-                scale: scale,
-              ),
-              SizedBox(width: 32 * scale),
-              _ScoreColumn(
-                homeScore: blueTeamScore,
-                awayScore: redTeamScore,
-                setLabel: setLabel,
-                scale: scale,
-              ),
-              SizedBox(width: 32 * scale),
-              _TeamColumn(
-                side: BadgeSide.red,
-                name: redTeamName,
-                logoUrl: redTeamLogoUrl,
-                scale: scale,
-              ),
-            ],
+          // 좁은 화면(320px 대)에서는 팀 컬럼 2개(고정 80*scale) + 간격 +
+          // 스코어(미등록 'SF Pro' 폰트 폴백이 시안보다 넓게 렌더됨) 합이
+          // 화면 폭을 넘어 RenderFlex 오버플로우가 난다. FittedBox 로 감싸면
+          // 이 Row 는 이미 상위 Column(→ Padding → 화면 폭)이 bounded 라
+          // 별도 SizedBox 없이도 넘칠 때만 통째로 축소된다.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _TeamColumn(
+                  side: BadgeSide.blue,
+                  name: blueTeamName,
+                  logoUrl: blueTeamLogoUrl,
+                  scale: scale,
+                ),
+                SizedBox(width: 32 * scale),
+                _ScoreColumn(
+                  homeScore: blueTeamScore,
+                  awayScore: redTeamScore,
+                  setLabel: setLabel,
+                  scale: scale,
+                ),
+                SizedBox(width: 32 * scale),
+                _TeamColumn(
+                  side: BadgeSide.red,
+                  name: redTeamName,
+                  logoUrl: redTeamLogoUrl,
+                  scale: scale,
+                ),
+              ],
+            ),
           ),
         ],
       ),

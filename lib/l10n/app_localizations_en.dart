@@ -208,7 +208,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveRatingForPlayer => ' — rate now!';
 
   @override
-  String get championPick => 'Champion Pick';
+  String get championPick => 'Match Data';
 
   @override
   String get liveEvent => 'Live Event';
@@ -257,12 +257,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Live events are available after the match starts!';
 
   @override
+  String get matchDataAfterMatch =>
+      'Match data is available after the match starts!';
+
+  @override
   String get championPickAfterMatch =>
       'Champion picks are available after the match starts!';
 
   @override
   String get championPickAfterMatchAlt =>
       'Champion picks can be viewed after the match starts!';
+
+  @override
+  String get playerStatsAfterMatch =>
+      'Player stats are available after the match starts!';
+
+  @override
+  String get objectivesAfterMatch =>
+      'Objectives are available after the match starts!';
+
+  @override
+  String get teamSummaryAfterMatch =>
+      'Team summary is available after the match starts!';
 
   @override
   String get eventDuringMatch => 'Events are available during the match!';

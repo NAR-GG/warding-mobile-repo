@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../l10n/app_strings.dart';
@@ -97,6 +99,14 @@ class MatchDetailViewModel extends ChangeNotifier {
   String? _championError;
   String? get championError => _championError;
 
+  // 와드 설치·파괴는 팀 합산 summary 자체엔 없지만(항상 0), 각
+  // ChampionPick(선수별)에는 champions API가 직접 내려준다 —
+  // ChampionTeam.summaryWithWards 가 5명분을 더해 채운다.
+  TeamStatsSummary? get blueTeamSummary =>
+      _championPick?.blueTeam.summaryWithWards;
+  TeamStatsSummary? get redTeamSummary =>
+      _championPick?.redTeam.summaryWithWards;
+
   // ── 라이브 이벤트 ──────────────────────────
   MatchLiveEvents? _liveEventsData;
 
@@ -195,9 +205,19 @@ class MatchDetailViewModel extends ChangeNotifier {
 
   bool _disposed = false;
 
+  /// 챔피언 픽 탭이 활성 상태이고 세트가 LIVE 인 동안 5초마다
+  /// 스코어보드(KDA·CS·골드·아이템·룬)를 다시 받아온다.
+  static const _championPollInterval = Duration(seconds: 5);
+  Timer? _championPollTimer;
+
+  /// 지금 5초 폴링이 돌고 있는지. 경기 데이터 탭에 "실시간 갱신 중"
+  /// 표기를 띄울지 판단하는 데 쓴다.
+  bool get isChampionPollingActive => _championPollTimer != null;
+
   @override
   void dispose() {
     _disposed = true;
+    _championPollTimer?.cancel();
     super.dispose();
   }
 
@@ -328,6 +348,7 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 세트 변경. 활성 탭의 데이터만 즉시 다시 로드한다(나머지는 지연 로딩 재적용).
   Future<void> selectSet(int setNumber) async {
     if (setNumber == _currentSet) return;
+    _stopChampionPolling();
     _currentSet = setNumber;
     // 이전 세트 데이터 비우고 요청 여부도 초기화 — 다른 탭은 다시 전환할 때 로드.
     _championPick = null;
@@ -352,6 +373,7 @@ class MatchDetailViewModel extends ChangeNotifier {
   /// 요청 플래그를 지워 활성 탭만 새로 받는다(나머지 탭은 전환할 때 받는다 —
   /// 지연 로딩 규칙 그대로다).
   Future<void> refresh() async {
+    _stopChampionPolling();
     _championPick = null;
     _liveEventsData = null;
     _ratings = null;
@@ -408,6 +430,11 @@ class MatchDetailViewModel extends ChangeNotifier {
   void setActiveTab(int index) {
     if (_activeTab == index) return;
     _activeTab = index;
+    if (index == 0) {
+      _restartChampionPollingIfNeeded();
+    } else {
+      _stopChampionPolling();
+    }
     _ensureTabLoaded(index);
   }
 
@@ -464,6 +491,7 @@ class MatchDetailViewModel extends ChangeNotifier {
         throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
       _championPick = await _repository.fetchChampionPick(gameId);
+      _restartChampionPollingIfNeeded();
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick failed: $e');
       _championError =
@@ -472,6 +500,47 @@ class MatchDetailViewModel extends ChangeNotifier {
     } finally {
       _loadingChampion = false;
       _safeNotify();
+    }
+  }
+
+  /// 챔피언 픽 탭이 활성 상태이고 현재 세트가 LIVE 일 때만 폴링을 (재)시작한다.
+  /// 조건을 안 만족하면 기존 타이머를 정리하고 끝낸다. [isChampionPollingActive]
+  /// 가 바뀔 수 있어(예: 탭 전환) UI 가 "실시간 갱신 중" 표기를 즉시
+  /// 반영하도록 알린다.
+  void _restartChampionPollingIfNeeded() {
+    final wasActive = isChampionPollingActive;
+    _stopChampionPolling(notify: false);
+    if (_activeTab == 0 && isCurrentSetLive) {
+      _championPollTimer = Timer.periodic(_championPollInterval, (_) {
+        _pollChampionPick();
+      });
+    }
+    if (wasActive != isChampionPollingActive) _safeNotify();
+  }
+
+  void _stopChampionPolling({bool notify = true}) {
+    final wasActive = isChampionPollingActive;
+    _championPollTimer?.cancel();
+    _championPollTimer = null;
+    if (notify && wasActive) _safeNotify();
+  }
+
+  /// 폴링 틱에서 호출 — 로딩 인디케이터를 켜지 않고 조용히 갱신한다.
+  /// 세트가 더 이상 LIVE 가 아니게 되면(경기 종료) 스스로 폴링을 멈춘다.
+  Future<void> _pollChampionPick() async {
+    if (_disposed || _activeTab != 0 || !isCurrentSetLive) {
+      _stopChampionPolling();
+      return;
+    }
+    final gameId = currentGameId;
+    if (gameId == null || gameId.isEmpty) return;
+    try {
+      final updated = await _repository.fetchChampionPick(gameId);
+      if (_disposed) return;
+      _championPick = updated;
+      _safeNotify();
+    } catch (e) {
+      debugPrint('[MatchDetailVM] champion pick poll failed: $e');
     }
   }
 

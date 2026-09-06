@@ -70,7 +70,7 @@
   "subscribedPlayer": "Your subscribed player",
   "leaveRatingForPlayer": " — rate now!",
 
-  "championPick": "Champion Pick",
+  "championPick": "Match Data",
   "liveEvent": "Live Event",
   "tabPlayerRating": "Player Rating",
   "setLabel": "Set {order}",
@@ -85,8 +85,12 @@
   "matchEnded": "Ended",
   "preparing": "Preparing",
   "liveEventAfterMatch": "Live events are available after the match starts!",
+  "matchDataAfterMatch": "Match data is available after the match starts!",
   "championPickAfterMatch": "Champion picks are available after the match starts!",
   "championPickAfterMatchAlt": "Champion picks can be viewed after the match starts!",
+  "playerStatsAfterMatch": "Player stats are available after the match starts!",
+  "objectivesAfterMatch": "Objectives are available after the match starts!",
+  "teamSummaryAfterMatch": "Team summary is available after the match starts!",
 
   "eventDuringMatch": "Events are available during the match!",
   "loadingLiveEvents": "Loading live events...",

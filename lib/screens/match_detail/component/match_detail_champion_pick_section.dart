@@ -24,6 +24,7 @@ class MatchDetailChampionPickSection extends StatelessWidget {
     required this.redPicks,
     required this.bluePlayerNames,
     required this.redPlayerNames,
+    this.onPickTap,
     this.scale = 1,
   });
 
@@ -41,6 +42,11 @@ class MatchDetailChampionPickSection extends StatelessWidget {
   /// 픽된 챔피언 위에 표시할 선수 5명의 이름.
   final List<String> bluePlayerNames;
   final List<String> redPlayerNames;
+
+  /// 픽 카드를 탭했을 때 호출된다(블루팀 여부, 팀 내 인덱스). null 이면 탭 비활성화.
+  /// [MatchDetailScreen]이 여기서 "Player Builds" 섹션의 선택을 바꾸고 그
+  /// 섹션으로 스크롤한다.
+  final void Function(bool isBlueSide, int index)? onPickTap;
 
   final double scale;
 
@@ -72,6 +78,9 @@ class MatchDetailChampionPickSection extends StatelessWidget {
                 bans: blueBans,
                 picks: bluePicks,
                 playerNames: bluePlayerNames,
+                onPickTap: onPickTap == null
+                    ? null
+                    : (index) => onPickTap!(true, index),
                 scale: scale,
               ),
               SizedBox(height: 16 * scale),
@@ -81,6 +90,9 @@ class MatchDetailChampionPickSection extends StatelessWidget {
                 bans: redBans,
                 picks: redPicks,
                 playerNames: redPlayerNames,
+                onPickTap: onPickTap == null
+                    ? null
+                    : (index) => onPickTap!(false, index),
                 scale: scale,
               ),
             ],
@@ -105,6 +117,7 @@ class _TeamPickFrame extends StatelessWidget {
     required this.bans,
     required this.picks,
     required this.playerNames,
+    required this.onPickTap,
     required this.scale,
   });
 
@@ -113,6 +126,7 @@ class _TeamPickFrame extends StatelessWidget {
   final List<String?> bans;
   final List<String?> picks;
   final List<String> playerNames;
+  final void Function(int index)? onPickTap;
   final double scale;
 
   @override
@@ -124,6 +138,7 @@ class _TeamPickFrame extends StatelessWidget {
       picks: picks,
       playerNames: playerNames,
       side: side,
+      onPickTap: onPickTap,
       scale: scale,
     );
     final teamMetaRow = _TeamMetaRow(
@@ -194,12 +209,14 @@ class _PicksRow extends StatelessWidget {
     required this.picks,
     required this.playerNames,
     required this.side,
+    required this.onPickTap,
     required this.scale,
   });
 
   final List<String?> picks;
   final List<String> playerNames;
   final BadgeSide side;
+  final void Function(int index)? onPickTap;
   final double scale;
 
   @override
@@ -213,10 +230,13 @@ class _PicksRow extends StatelessWidget {
             : MainAxisAlignment.end,
         children: [
           for (var i = 0; i < picks.length; i++)
-            _ChampionPick(
-              imageUrl: picks[i],
-              playerName: i < playerNames.length ? playerNames[i] : '',
-              scale: scale,
+            GestureDetector(
+              onTap: onPickTap == null ? null : () => onPickTap!(i),
+              child: _ChampionPick(
+                imageUrl: picks[i],
+                playerName: i < playerNames.length ? playerNames[i] : '',
+                scale: scale,
+              ),
             ),
         ],
       ),

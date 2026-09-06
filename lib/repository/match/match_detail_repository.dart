@@ -48,8 +48,10 @@ class MatchDetailRepository {
     final url = ApiConfig.matchGamesUrl(matchId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
-    debugPrint('[MatchDetail] games ← ${response.statusCode} '
-        '(${response.body.length} bytes)');
+    debugPrint(
+      '[MatchDetail] games ← ${response.statusCode} '
+      '(${response.body.length} bytes)',
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('세트 목록 조회 실패 ($matchId, ${response.statusCode})');
@@ -67,8 +69,10 @@ class MatchDetailRepository {
           final matchJson = Map<String, dynamic>.from(decoded);
           matchJson.putIfAbsent('matchId', () => matchId);
           matchInfo = ScheduleMatch.fromJson(matchJson);
-          debugPrint('[MatchDetail] matchInfo from games: '
-              '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}');
+          debugPrint(
+            '[MatchDetail] matchInfo from games: '
+            '${matchInfo.teamA.teamName} vs ${matchInfo.teamB.teamName}',
+          );
         } catch (e) {
           SentryLogger.error(
             module: 'Logic',
@@ -79,17 +83,20 @@ class MatchDetailRepository {
           debugPrint('[MatchDetail] matchInfo parse from games failed: $e');
         }
       } else {
-        debugPrint('[MatchDetail] games top-level keys: ${decoded.keys.toList()}');
+        debugPrint(
+          '[MatchDetail] games top-level keys: ${decoded.keys.toList()}',
+        );
       }
     } else if (decoded is List) {
       rawGames = decoded;
     } else {
       rawGames = const [];
     }
-    final games = rawGames
-        .map((e) => MatchGame.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.gameOrder.compareTo(b.gameOrder));
+    final games =
+        rawGames
+            .map((e) => MatchGame.fromJson(e as Map<String, dynamic>))
+            .toList()
+          ..sort((a, b) => a.gameOrder.compareTo(b.gameOrder));
     debugPrint('[MatchDetail] games: ${games.length}');
     return (games, matchInfo);
   }
@@ -106,7 +113,26 @@ class MatchDetailRepository {
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return MatchChampionPick.fromJson(data);
+    final pick = MatchChampionPick.fromJson(data);
+    // 와드 설치·파괴, 퀘스트/장신구 아이템 실데이터 연동 확인용 — 값이
+    // 정상적으로 채워지는 게 확인되면 이 로그는 지워도 된다.
+    for (final team in [
+      ('blue', pick.blueTeam),
+      ('red', pick.redTeam),
+    ]) {
+      for (final p in team.$2.picks) {
+        debugPrint(
+          '[MatchDetail] wards gameId=$gameId ${team.$1} ${p.playerName}: '
+          'placed=${p.wardsPlaced} destroyed=${p.wardsDestroyed}',
+        );
+        debugPrint(
+          '[MatchDetail] items gameId=$gameId ${team.$1} ${p.playerName} '
+          '(${p.position}): quest=${p.questItemImageUrl} '
+          'trinket=${p.trinketItemImageUrl} core=${p.coreItemImageUrls.length}',
+        );
+      }
+    }
+    return pick;
   }
 
   /// 세트(gameId)의 라이브 이벤트를 조회한다 (인증 불필요, 최신순).

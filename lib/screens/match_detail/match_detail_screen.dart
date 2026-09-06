@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/game_rating.dart';
+import '../../model/match_champion_pick.dart';
 import '../../model/match_game.dart';
 import '../../model/schedule_match.dart';
 import '../../util/match_status.dart';
@@ -21,10 +24,16 @@ import '../player_rating/player_rating_screen.dart';
 import 'component/match_detail_champion_pick_section.dart';
 import 'component/match_detail_live_event_section.dart';
 import 'component/match_detail_locked_empty.dart';
+import 'component/match_detail_objectives_section.dart';
+import 'component/match_detail_player_build_section.dart';
 import 'component/match_detail_player_rating_section.dart';
 import 'component/match_detail_player_rating_skeleton.dart';
+import 'component/match_detail_player_stats_section.dart';
 import 'component/match_detail_score_section.dart';
+import 'component/match_detail_section_header.dart';
 import 'component/match_detail_team_rating_section.dart';
+import 'component/match_detail_team_summary_section.dart';
+import 'component/match_detail_toc.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {
@@ -81,6 +90,111 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     initialSet: widget.initialSet,
   );
 
+  /// TOC(목차) 스크럴스파이·탭바 sticky 판정에 쓰는 스크롤 컨트롤러.
+  final ScrollController _scrollController = ScrollController();
+
+  /// pinned NarTabBar 의 실제 렌더 위치(하단 경계)를 재는 데 쓴다.
+  final GlobalKey _tabBarKey = GlobalKey();
+
+  /// 챔피언픽 탭 5개 섹션 헤더 위치. TOC 스크럴스파이·탭 이동 둘 다에 쓴다.
+  static const _tocLabels = [
+    'Champion Pick',
+    'Player Stats',
+    'Team Summary',
+    'Objectives',
+    'Player Builds',
+  ];
+  final List<GlobalKey> _sectionKeys = List.generate(
+    _tocLabels.length,
+    (_) => GlobalKey(),
+  );
+
+  /// 경기 데이터 탭이 잠금 화면(경기 전) 상태인지. [_buildChampionPickTab] 과
+  /// [MatchDetailToc] 둘 다 이 값으로 분기한다 — 잠금 화면일 땐 섹션 헤더
+  /// 자체가 없어 목차도 무의미하므로 함께 숨긴다. games 를 아직 못 받아온
+  /// 동안(loadingGames)은 currentSetStatus 가 기본값(SCHEDULED)이라 실제로는
+  /// 시작된 경기여도 이 조건에 걸릴 수 있어, 그 구간은 잠그지 않는다.
+  bool get isChampionTabLocked =>
+      !_viewModel.loadingGames &&
+      _viewModel.currentSetStatus == MatchGameStatus.scheduled;
+
+  /// "Player Builds" 섹션에 표시 중인 선수(블루팀 여부, 팀 내 인덱스).
+  /// Champion Pick 의 챔피언 카드나 Player Stats 의 선수 행을 탭하면 바뀐다.
+  bool _selectedBuildBlueSide = true;
+  int _selectedBuildIndex = 0;
+
+  /// [_selectedBuildBlueSide]/[_selectedBuildIndex] 를 바꾸고 "Player Builds"
+  /// 섹션(맨 아래 5번째 섹션)으로 스크롤을 당긴다.
+  void _selectBuildPlayer(bool isBlueSide, int index) {
+    setState(() {
+      _selectedBuildBlueSide = isBlueSide;
+      _selectedBuildIndex = index;
+    });
+    final ctx = _sectionKeys.last.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  /// 스냅 판정 하한. 헤더가 탭바 밑 기준선에서 이 값(px) 이내면 이미 걸린
+  /// 걸로 보고 스냅하지 않는다 — 매 스크롤 종료마다 미세하게 흔들리는 걸
+  /// 막는다.
+  static const _snapThreshold = 2.0;
+
+  /// 스냅 판정 상한(px). 가장 가까운 헤더도 기준선에서 이 값보다 멀면
+  /// "근처"로 보지 않고 스냅하지 않는다 — 섹션 콘텐츠 한가운데서 스크롤을
+  /// 멈췄는데도 저 멀리 있는 헤더로 끌려가면 오히려 부자연스럽다. 화면
+  /// 비율(0.6→0.3→0.15) 대신 작은 고정 px 로 바꿨었지만(40→10), "정렬
+  /// 후 훅 당겨짐" 대신 "지나칠 때마다 톡톡 걸리는" 촉각적 피드백을
+  /// 원해 애니메이션을 짧게(120ms) 하고 범위를 다시 넓혔다 — 자주,
+  /// 빠르게 걸려야 그 느낌이 난다. 진짜 자석형 물리(ScrollPhysics 교체)는
+  /// 다음 단계.
+  static const _snapRangePx = 70.0;
+
+  /// 챔피언픽 탭에서 스크롤이 멎을 때 호출된다. 4개 섹션 헤더 중 pinned
+  /// 탭바 바로 아래 기준선에 가장 가까운 것을 찾아, 그 헤더가 "근처"
+  /// (기준선에서 [_snapRangePx] 이내)일 때만 기준선에 정확히 걸리도록
+  /// 스크롤을 마저 당긴다 — sticky 로 계속 붙어있는 대신, 헤더 근처에서
+  /// 스크롤을 멈출 때만 "턱" 걸리는 스냅 느낌을 준다.
+  void _snapToNearestSection() {
+    if (_tabIndex != 0 || !_scrollController.hasClients) return;
+    final barBox = _tabBarKey.currentContext?.findRenderObject() as RenderBox?;
+    if (barBox == null || !barBox.attached) return;
+    final thresholdY =
+        barBox.localToGlobal(Offset.zero).dy + barBox.size.height;
+
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+    final snapRange = _snapRangePx * scale;
+
+    double? closestDelta;
+    for (final key in _sectionKeys) {
+      final box = key.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) continue;
+      final delta = box.localToGlobal(Offset.zero).dy - thresholdY;
+      if (closestDelta == null || delta.abs() < closestDelta.abs()) {
+        closestDelta = delta;
+      }
+    }
+    if (closestDelta == null || closestDelta.abs() < _snapThreshold) return;
+    if (closestDelta.abs() > snapRange) return;
+
+    final position = _scrollController.position;
+    final target = (position.pixels + closestDelta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+    );
+  }
+
   /// 뷰모델이 들고 있는 최신 경기 정보를 우선한다. widget.match 는 진입
   /// 시점의 스냅샷(경기 목록에서 탭한 순간 값)일 뿐이라, 그걸 계속 쓰면
   /// 당겨서 새로고침을 해도([MatchDetailViewModel.refresh]) 화면이 갱신되지
@@ -97,6 +211,25 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     // ListenableBuilder 밖) 뷰모델 변경 시 화면을 다시 그린다.
     _viewModel.addListener(_onViewModelChanged);
     _viewModel.load();
+    // 챔피언픽 탭 섹션 헤더 스냅. NotificationListener<ScrollEndNotification>
+    // 로 구현했더니 실기기(iOS)·macOS 데스크탑 둘 다 알림 자체가 전혀
+    // 오지 않았다(실측 확인 — RefreshIndicator/CustomScrollView 트리 배치와
+    // 무관하게 재현됨). MatchDetailToc 가 같은 컨트롤러를 addListener 로
+    // 문제없이 구독하고 있어, 스냅도 그 방식으로 바꾼다.
+    _scrollController.addListener(_onScrollChanged);
+  }
+
+  Timer? _scrollIdleTimer;
+
+  /// 스크롤 위치가 바뀔 때마다 호출된다. [_scrollSnapIdleDelay] 동안 추가
+  /// 변화가 없으면(스크롤이 멎은 것으로 본다) 스냅을 시도한다. 매 변화마다
+  /// 타이머를 새로 잡아, 실제로 멎었을 때만 한 번 실행되게 한다(debounce).
+  static const _scrollSnapIdleDelay = Duration(milliseconds: 120);
+  void _onScrollChanged() {
+    _scrollIdleTimer?.cancel();
+    _scrollIdleTimer = Timer(_scrollSnapIdleDelay, () {
+      if (mounted) _snapToNearestSection();
+    });
   }
 
   void _onViewModelChanged() {
@@ -107,6 +240,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
   void dispose() {
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
+    _scrollController.removeListener(_onScrollChanged);
+    _scrollIdleTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -493,71 +629,100 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
-        child: AppRefreshIndicator(
-          onRefresh: _viewModel.refresh,
-          child: CustomScrollView(
-            // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
-            // 당길 수 있어야 한다.
-            physics: AppRefreshIndicator.physics,
-            slivers: [
-              // 헤더·스코어·중계 버튼·탭바: 스크롤 시 함께 위로 밀려 올라간다.
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    NarDetailHeader(
-                      title: l.matchDetail,
-                      // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
-                      // 상태라 ListenableBuilder 로 라벨을 갱신한다.
-                      trailing: ListenableBuilder(
-                        listenable: _viewModel,
-                        builder: (context, _) => NarDropdown(
-                          variant: NarDropdownVariant.round,
-                          value: _currentSet,
-                          onTap: _showSetSheet,
+        child: Stack(
+          children: [
+            // 챔피언픽 탭 섹션 헤더 스냅([_snapToNearestSection])은
+            // _scrollController.addListener(_onScrollChanged) 로 구현돼
+            // 있다(initState 참고). NotificationListener<ScrollEndNotification>
+            // 로는 실기기·macOS 데스크탑 모두 알림 자체가 오지 않아 포기했다.
+            AppRefreshIndicator(
+              onRefresh: _viewModel.refresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                // 내용이 짧아 스크롤이 생기지 않는 탭(잠금 안내·빈 상태)에서도
+                // 당길 수 있어야 한다.
+                physics: AppRefreshIndicator.physics,
+                slivers: [
+                  // 헤더·스코어·중계 버튼: 스크롤 시 함께 위로 밀려 올라간다.
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        NarDetailHeader(
+                          title: l.matchDetail,
+                          // 세트 드롭다운: 기본 선택(LIVE→최신 ENDED→1)·변경이 뷰모델
+                          // 상태라 ListenableBuilder 로 라벨을 갱신한다.
+                          trailing: ListenableBuilder(
+                            listenable: _viewModel,
+                            builder: (context, _) => NarDropdown(
+                              variant: NarDropdownVariant.round,
+                              value: _currentSet,
+                              onTap: _showSetSheet,
+                              scale: scale,
+                            ),
+                          ),
+                          scale: scale,
+                        ),
+                        _buildScoreSection(scale),
+                        SizedBox(height: 16 * scale),
+                        _buildActionButton(scale),
+                        SizedBox(height: 16 * scale),
+                      ],
+                    ),
+                  ),
+                  // 탭바: 헤더·스코어가 밀려 올라간 뒤에도 상단에 고정된다.
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyDelegate(
+                      height: 45 * scale,
+                      child: ColoredBox(
+                        color: AppColors.narBgContent,
+                        child: NarTabBar(
+                          key: _tabBarKey,
+                          tabs: _buildTabs(l),
+                          selectedIndex: _tabIndex,
+                          onChanged: (i) => setState(() {
+                            _tabIndex = i;
+                            // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
+                            _viewModel.setActiveTab(i);
+                          }),
                           scale: scale,
                         ),
                       ),
-                      scale: scale,
                     ),
-                    _buildScoreSection(scale),
-                    SizedBox(height: 16 * scale),
-                    _buildActionButton(scale),
-                    SizedBox(height: 16 * scale),
-                    NarTabBar(
-                      tabs: _buildTabs(l),
-                      selectedIndex: _tabIndex,
-                      onChanged: (i) => setState(() {
-                        _tabIndex = i;
-                        // 지연 로딩: 처음 전환하는 탭이면 여기서 데이터를 로드한다.
-                        _viewModel.setActiveTab(i);
-                      }),
-                      scale: scale,
+                  ),
+                  if (_tabIndex == 0)
+                    SliverToBoxAdapter(
+                      child: ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _buildChampionPickTab(scale),
+                      ),
                     ),
-                  ],
-                ),
+                  if (_tabIndex == 1)
+                    SliverToBoxAdapter(
+                      child: ListenableBuilder(
+                        listenable: _viewModel,
+                        builder: (context, _) => _buildLiveEventTab(scale),
+                      ),
+                    ),
+                  // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
+                  // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
+                  // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
+                  // sticky collapse 가 동작하도록 한다.
+                  if (_tabIndex == 2) _buildRatingTab(scale),
+                ],
               ),
-              if (_tabIndex == 0)
-                SliverToBoxAdapter(
-                  child: ListenableBuilder(
-                    listenable: _viewModel,
-                    builder: (context, _) => _buildChampionPickTab(scale),
-                  ),
-                ),
-              if (_tabIndex == 1)
-                SliverToBoxAdapter(
-                  child: ListenableBuilder(
-                    listenable: _viewModel,
-                    builder: (context, _) => _buildLiveEventTab(scale),
-                  ),
-                ),
-              // 선수 평점 탭: 뷰모델의 ratings 로 팀·선수 평점을 렌더한다.
-              // 화면이 VM notify 마다 통째로 rebuild 되므로(_onViewModelChanged),
-              // pinned 헤더를 가진 슬리버 묶음을 외부 CustomScrollView 에 직접 배치해
-              // sticky collapse 가 동작하도록 한다.
-              if (_tabIndex == 2) _buildRatingTab(scale),
-            ],
-          ),
+            ),
+            // 목차(TOC): 챔피언픽 탭에서 스크롤할 때만 오른쪽에 살짝 떴다 사라진다.
+            MatchDetailToc(
+              active: _tabIndex == 0 && !isChampionTabLocked,
+              scrollController: _scrollController,
+              pinnedBarKey: _tabBarKey,
+              sectionKeys: _sectionKeys,
+              labels: _tocLabels,
+              scale: scale,
+            ),
+          ],
         ),
       ),
     );
@@ -737,8 +902,154 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  /// 챔피언 픽 탭 본문. ViewModel 데이터로 렌더링하되 로딩·에러 상태를 처리한다.
+  /// 챔피언 픽 탭 본문. ViewModel 데이터로 렌더링하되 로딩·에러 상태를
+  /// 처리한다. 섹션 헤더는 화면에 고정(sticky)되지 않고 다른 콘텐츠와
+  /// 함께 스크롤되며, 대신 스크롤이 멎으면 [_snapToNearestSection] 이
+  /// 가장 가까운 섹션 헤더 위치로 스크롤을 마저 당겨 "턱" 걸리는 스냅
+  /// 느낌을 준다.
+  ///
+  /// 경기 전(SCHEDULED)이면 [_buildLiveEventTab] 과 같은 규칙으로 5개
+  /// 섹션 각각의 잠금 안내 대신, 탭 전체를 단일 잠금 화면으로 보여준다.
   Widget _buildChampionPickTab(double scale) {
+    if (isChampionTabLocked) {
+      return ColoredBox(
+        color: AppColors.narBgContent,
+        child: MatchDetailLockedEmpty(
+          message: AppLocalizations.of(context)!.matchDataAfterMatch,
+          scale: scale,
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Champion Pick".
+        // key 는 TOC 스크럴스파이·탭 이동·스냅이 이 섹션 위치를 재는 데 쓴다.
+        MatchDetailSectionHeader(
+          key: _sectionKeys[0],
+          label: 'Champion Pick',
+          scale: scale,
+        ),
+        _championPickContent(scale),
+        SizedBox(height: 8 * scale),
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Stats".
+        MatchDetailSectionHeader(
+          key: _sectionKeys[1],
+          label: 'Player Stats',
+          scale: scale,
+        ),
+        _playerStatsContent(scale),
+        SizedBox(height: 8 * scale),
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Team Summary".
+        MatchDetailSectionHeader(
+          key: _sectionKeys[2],
+          label: 'Team Summary',
+          scale: scale,
+        ),
+        _teamSummaryContent(scale),
+        SizedBox(height: 8 * scale),
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Objectives".
+        MatchDetailSectionHeader(
+          key: _sectionKeys[3],
+          label: 'Objectives',
+          scale: scale,
+        ),
+        _objectivesContent(scale),
+        SizedBox(height: 8 * scale),
+        // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Builds".
+        MatchDetailSectionHeader(
+          key: _sectionKeys[4],
+          label: 'Player Builds',
+          scale: scale,
+        ),
+        _playerBuildContent(scale),
+      ],
+    );
+  }
+
+  /// [builder] 로 실제 콘텐츠를 렌더링한다. 경기 전(SCHEDULED) 잠금은 이제
+  /// [_buildChampionPickTab] 이 탭 전체 단위로 먼저 처리하므로(단일 잠금
+  /// 화면), 이 지점에 도달했다는 것 자체가 이미 잠금 상태가 아니라는 뜻이다.
+  /// [message]/[scale] 은 호출부 시그니처 유지용으로만 남아 있다.
+  Widget _lockedAfterMatch({
+    required double scale,
+    required String message,
+    required Widget Function() builder,
+  }) => builder();
+
+  /// Player Stats 섹션. 챔피언 픽 데이터(같은 API 응답)가 아직 없으면
+  /// 빈 스코어보드(0 값)로 렌더링해 레이아웃만 유지한다.
+  Widget _playerStatsContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.playerStatsAfterMatch,
+      builder: () {
+        final pick = _viewModel.championPick;
+        final m = _effectiveMatch;
+        final winnerCode = _viewModel.currentSetWinnerTeamCode;
+        bool? blueWon;
+        if (winnerCode != null && winnerCode.isNotEmpty && m != null) {
+          if (winnerCode == m.teamA.teamCode) {
+            blueWon = true;
+          } else if (winnerCode == m.teamB.teamCode) {
+            blueWon = false;
+          }
+        }
+        return MatchDetailPlayerStatsSection(
+          blueTeamCode: m?.teamA.teamCode ?? '',
+          redTeamCode: m?.teamB.teamCode ?? '',
+          blueWon: blueWon,
+          bluePicks: pick?.blueTeam.picks ?? const [],
+          redPicks: pick?.redTeam.picks ?? const [],
+          onPlayerTap: pick == null ? null : _selectBuildPlayer,
+          scale: scale,
+        );
+      },
+    );
+  }
+
+  /// Objectives 섹션. 챔피언 픽 데이터가 아직 없으면 0으로 렌더링한다.
+  Widget _objectivesContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.objectivesAfterMatch,
+      builder: () {
+        final objectives = _viewModel.championPick?.objectives;
+        return MatchDetailObjectivesSection(
+          blueTeam: objectives?.blueTeam ?? const TeamObjectives(),
+          redTeam: objectives?.redTeam ?? const TeamObjectives(),
+          scale: scale,
+        );
+      },
+    );
+  }
+
+  /// Player Builds 섹션. 챔피언 픽 데이터가 아직 없으면(로딩 전 등) 빈 섹션.
+  Widget _playerBuildContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.playerStatsAfterMatch,
+      builder: () {
+        final pick = _viewModel.championPick;
+        final m = _effectiveMatch;
+        if (pick == null) {
+          return const SizedBox.shrink();
+        }
+        return MatchDetailPlayerBuildSection(
+          bluePicks: pick.blueTeam.picks,
+          redPicks: pick.redTeam.picks,
+          blueTeamCode: m?.teamA.teamCode ?? '',
+          redTeamCode: m?.teamB.teamCode ?? '',
+          selectedBlueSide: _selectedBuildBlueSide,
+          selectedIndex: _selectedBuildIndex,
+          onSelect: _selectBuildPlayer,
+          scale: scale,
+        );
+      },
+    );
+  }
+
+  Widget _championPickContent(double scale) {
     // games 를 아직 못 받아온 동안은 currentSetStatus 가 기본값(SCHEDULED)이라
     // 실제로는 이미 시작된 경기여도 '경기 시작 후' 잠금 안내가 잠깐 잘못 스칠 수
     // 있다. 이 구간은 스켈레톤으로 대신한다.
@@ -755,16 +1066,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
         scale: scale,
       );
     }
-    // 경기 전(SCHEDULED)이면 잠금(lock-off) 안내를 보여준다.
-    if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
-      return ColoredBox(
-        color: AppColors.narBgContent,
-        child: MatchDetailLockedEmpty(
-          message: AppLocalizations.of(context)!.championPickAfterMatch,
-          scale: scale,
-        ),
-      );
-    }
+    // 경기 전(SCHEDULED) 잠금은 [_buildChampionPickTab] 이 탭 전체 단위로
+    // 먼저 처리하므로, 여기 도달했다는 것 자체가 이미 잠금 상태가 아니다.
     // 최초 로드 중이거나(아직 데이터·에러 모두 없음) 처리 중이면 플레이스홀더
     // 픽으로 스켈레톤 렌더. (championError 가 있으면 실패이므로 건너뛴다.)
     if (_viewModel.championPick == null && _viewModel.championError == null) {
@@ -803,7 +1106,62 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
       redPicks: red.pickImageUrls(),
       bluePlayerNames: blue.pickPlayerNames(),
       redPlayerNames: red.pickPlayerNames(),
+      onPickTap: _selectBuildPlayer,
       scale: scale,
     );
   }
+
+  /// Team Summary 섹션에 넘길 팀 로고·팀 코드(약자)·리그·킬·골드. 경기
+  /// 정보를 아직 못 받아온 동안(또는 필드가 비어 있으면)은 위젯 기본값
+  /// (목데이터 "DNS"/"T1"/LCK)이 그대로 쓰이도록 생략한다. 경기 전
+  /// (SCHEDULED)이면 잠금 안내를 보여준다.
+  Widget _teamSummaryContent(double scale) {
+    return _lockedAfterMatch(
+      scale: scale,
+      message: AppLocalizations.of(context)!.teamSummaryAfterMatch,
+      builder: () {
+        final m = _effectiveMatch;
+        if (m == null) {
+          return MatchDetailTeamSummarySection(scale: scale);
+        }
+        return MatchDetailTeamSummarySection(
+          leagueCode: m.leagueInfo.isNotEmpty ? m.leagueInfo : 'LCK',
+          blueTeamCode: m.teamA.teamCode.isNotEmpty ? m.teamA.teamCode : 'DNS',
+          redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
+          blueTeamLogoUrl: m.teamA.teamImageUrl,
+          redTeamLogoUrl: m.teamB.teamImageUrl,
+          blueSummary: _viewModel.blueTeamSummary,
+          redSummary: _viewModel.redTeamSummary,
+          scale: scale,
+        );
+      },
+    );
+  }
+}
+
+/// 탭바 pinned 헤더 델리게이트. minExtent = maxExtent = 탭바 높이라
+/// 스크롤해도 상단에 고정된다. ([MatchDetailPlayerRatingSection] 의
+/// 배너 pinned 델리게이트와 같은 패턴.)
+class _StickyDelegate extends SliverPersistentHeaderDelegate {
+  _StickyDelegate({required this.height, required this.child});
+
+  final double height;
+  final Widget child;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => child;
+
+  @override
+  bool shouldRebuild(covariant _StickyDelegate oldDelegate) =>
+      height != oldDelegate.height || child != oldDelegate.child;
 }

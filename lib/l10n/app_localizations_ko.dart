@@ -203,7 +203,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leaveRatingForPlayer => '님에게 평점를 남겨보세요!';
 
   @override
-  String get championPick => '챔피언 픽';
+  String get championPick => '경기 데이터';
 
   @override
   String get liveEvent => '라이브 이벤트';
@@ -250,10 +250,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get liveEventAfterMatch => '라이브 이벤트는 경기 시작 후 볼 수 있어요!';
 
   @override
+  String get matchDataAfterMatch => '경기 데이터는 경기 시작 후 볼 수 있어요!';
+
+  @override
   String get championPickAfterMatch => '챔피언 픽은 경기 시작 후 볼 수 있어요!';
 
   @override
   String get championPickAfterMatchAlt => '챔피언 픽은 경기 시작 후 확인할 수 있어요!';
+
+  @override
+  String get playerStatsAfterMatch => '선수 기록은 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get objectivesAfterMatch => '오브젝트 기록은 경기 시작 후 볼 수 있어요!';
+
+  @override
+  String get teamSummaryAfterMatch => '팀 기록은 경기 시작 후 볼 수 있어요!';
 
   @override
   String get eventDuringMatch => '이벤트는 경기 중에 확인할 수 있어요!';
