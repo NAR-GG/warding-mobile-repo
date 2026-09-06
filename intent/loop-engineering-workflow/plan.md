@@ -976,9 +976,16 @@ Expected: `✅ /intent 커맨드 등록 완료`.
 
 ```bash
 gh secret set ANTHROPIC_API_KEY --repo NAR-GG/warding-mobile-repo
+gh secret set GITHUB_DISPATCH_TOKEN --repo NAR-GG/warding-mobile-repo
 ```
 
 (`DISCORD_PR_WEBHOOK_URL`은 이미 등록되어 있으므로 재등록 불필요.)
+
+`GITHUB_DISPATCH_TOKEN`은 Step 2에서 Vercel에 등록한 것과 같은 PAT 값을 그대로 쓴다.
+`intent-merge-continue.yml`과 `ci-flutter-test.yml`의 `escalate` job이 다른 워크플로우를
+트리거하는 `repository_dispatch` 호출에 기본 `GITHUB_TOKEN` 대신 이 PAT을 쓴다 — 기본
+토큰으로 만든 이벤트가 다른 워크플로우를 못 띄울 수 있다는 GitHub의 재귀 방지 정책을
+확실히 피하기 위함 (Task 13 리뷰에서 발견).
 
 - [ ] **Step 6: 봇을 서버에 초대**
 
