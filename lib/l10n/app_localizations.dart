@@ -140,6 +140,18 @@ abstract class AppLocalizations {
   /// **'불러오는 중...'**
   String get loading;
 
+  /// No description provided for @refresh.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로고침'**
+  String get refresh;
+
+  /// No description provided for @latestEventsApplied.
+  ///
+  /// In ko, this message translates to:
+  /// **'최신 이벤트 반영 완료!'**
+  String get latestEventsApplied;
+
   /// No description provided for @refreshDone.
   ///
   /// In ko, this message translates to:

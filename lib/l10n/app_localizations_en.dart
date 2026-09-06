@@ -30,6 +30,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get latestEventsApplied => 'Latest events applied!';
+
+  @override
   String get refreshDone => 'Refreshed!';
 
   @override
@@ -1316,8 +1322,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat = intl
-        .NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return 'Views $countString';

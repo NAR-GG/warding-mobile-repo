@@ -30,6 +30,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loading => '불러오는 중...';
 
   @override
+  String get refresh => '새로고침';
+
+  @override
+  String get latestEventsApplied => '최신 이벤트 반영 완료!';
+
+  @override
   String get refreshDone => '반영 완료!';
 
   @override
@@ -1277,8 +1283,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String communityViewCount(int count) {
-    final intl.NumberFormat countNumberFormat = intl
-        .NumberFormat.decimalPattern(localeName);
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
     return '조회 $countString';

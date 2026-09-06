@@ -10,6 +10,8 @@
   "season": "Season",
   "league": "League",
   "loading": "Loading...",
+  "refresh": "Refresh",
+  "latestEventsApplied": "Latest events applied!",
   "refreshDone": "Refreshed!",
   "select": "Select",
   "noMatches": "No matches found",

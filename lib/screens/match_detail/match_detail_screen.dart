@@ -13,6 +13,7 @@ import '../../util/match_title_l10n.dart';
 import '../../util/rating_mapping.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/app_refresh_indicator.dart';
+import '../../components/scroll_to_top_button.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_button.dart';
 import '../../components/nar_detail_header.dart';
@@ -34,6 +35,7 @@ import 'component/match_detail_section_header.dart';
 import 'component/match_detail_team_rating_section.dart';
 import 'component/match_detail_team_summary_section.dart';
 import 'component/match_detail_toc.dart';
+import 'component/match_detail_refresh_pill.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {
@@ -722,6 +724,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen> {
               labels: _tocLabels,
               scale: scale,
             ),
+            // 하단 고정: 가운데 "새로고침" 캡슐 + 오른쪽 "맨 위로".
+            // 종료 경기는 폴링이 없으니(뷰모델이 LIVE 세트에서만 돈다) 사용자가
+            // 직접 갱신할 손잡이가 이것뿐이다. 당겨서 새로고침과 같은 refresh 를
+            // 부르되 스낵바 대신 캡슐 라벨로 완료를 알린다.
+            MatchDetailRefreshPill(onRefresh: _viewModel.refresh, scale: scale),
+            ScrollToTopButton(scrollController: _scrollController, scale: scale),
           ],
         ),
       ),
