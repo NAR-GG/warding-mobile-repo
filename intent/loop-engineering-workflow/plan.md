@@ -235,8 +235,6 @@ name: Flutter CI
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - 'intent/**'
 
 jobs:
   test:
@@ -395,7 +393,7 @@ check_file() {
       required=("## Problem" "## Proposed outcome" "## Affected users and systems" "## Constraints" "## Open questions")
       ;;
     spec.md)
-      required=("## Summary" "## Requirements" "## Design" "## Decisions" "## Out of scope" "## Open questions")
+      required=("## Summary" "## Requirements" "## Design / Approach" "## Decisions" "## Out of scope" "## Open questions")
       ;;
     *)
       echo "건너뜀 (검사 대상 아님): $file"
@@ -1389,7 +1387,8 @@ Discord에서 실제로 `/intent`를 실행해 모달을 채우고, `intent/<slu
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          SLUG=$(basename "$HEAD_REF")
+          RAW_SLUG=$(basename "$HEAD_REF")
+          SLUG=$(echo "$RAW_SLUG" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed -E 's/-+/-/g; s/^-|-$//g')
           case "$TIER" in
             plan)
               git config user.name "github-actions[bot]"
