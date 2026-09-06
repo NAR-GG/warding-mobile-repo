@@ -945,11 +945,17 @@ vercel link   # Root Directory를 tools/discord-bridge로
 vercel env add DISCORD_PUBLIC_KEY production
 vercel env add GITHUB_DISPATCH_TOKEN production
 vercel env add GITHUB_REPO production   # 값: NAR-GG/warding-mobile-repo
+vercel env add NODEJS_HELPERS production   # 값: 0
 vercel deploy --prod
 ```
 
 `GITHUB_DISPATCH_TOKEN`은 GitHub fine-grained PAT — 이 저장소(`warding-mobile-repo`)에
 `Contents: Read and write`, `Pull requests: Read and write` 권한만 부여해 발급한다.
+
+`NODEJS_HELPERS=0`은 필수다 — Vercel의 일반 Node.js 함수는 기본적으로 요청 바디를 미리
+파싱해버리는데, `interactions.js`는 Discord 서명 검증을 위해 원본(raw) 바디가 그대로
+필요하다. 이 환경변수 없이는 서명 검증이 항상 실패해 모든 요청이 401로 막힌다 (Task 7
+리뷰에서 발견 — `config.api.bodyParser`는 Next.js 전용 관례라 이 프로젝트엔 적용되지 않음).
 
 - [ ] **Step 3: Discord에 Interactions Endpoint 등록**
 
