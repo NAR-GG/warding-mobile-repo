@@ -34,13 +34,91 @@
 - Intent/Spec은 각각 `intent/<slug>` / `spec/<slug>` 브랜치의 PR로 제출되고, 머지가 곧
   승인이다. 셀프 머지 가능 — PR로 남기는 이유는 승인 절차보다 "의도가 확정된 시점"을
   이력에 남기기 위함이다.
-- Discord `/intent` 슬래시 커맨드로 Intent 초안을 자동 생성할 수 있다 — 모달에 slug와
-  설명을 입력하면 Anthropic API가 초안을 써서 PR을 연다. 머지되면 Spec 초안도 자동으로
-  이어서 생성된다.
 - 필수 섹션 헤더는 CI(`ci-doc-lint.yml`)가 검증한다.
-- 전체 설계와 자동화 파이프라인은 이 워크플로우 자체를 셀프 다잉푸딩한 사례인
+- 전체 설계는 이 워크플로우 자체를 셀프 다잉푸딩한 사례인
   [intent/loop-engineering-workflow/spec.md](./intent/loop-engineering-workflow/spec.md)에
   가장 자세히 나와 있다.
+
+### 자동화 파이프라인 — Discord `/intent` → Intent PR → Spec PR
+
+Intent/Spec 초안은 손으로 쓰지 않고 Discord에서 트리거해 자동 생성할 수 있다. 전체 흐름:
+
+```
+[Discord] /intent 슬래시 커맨드 (모달: slug + 설명 입력)
+   │
+   ▼
+[Vercel Function] tools/discord-bridge/api/discord/interactions.js
+   - Ed25519 서명 검증 (discord-interactions 라이브러리)
+   - 모달 제출을 받으면 즉시 "접수됨" 응답 후
+     GitHub repository_dispatch 호출
+       POST /repos/<owner>/<repo>/dispatches
+       { event_type: "intent-request",
+         client_payload: { slug, description, requestedBy, source: "discord" } }
+   │
+   ▼
+[GitHub Actions] .github/workflows/intent-autodraft.yml
+   - intent/<slug> 브랜치 생성 (동명 브랜치가 이미 열려 있으면 중복 방지)
+   - Anthropic API(ANTHROPIC_API_KEY)로 intent.md 5섹션(Problem / Proposed outcome /
+     Affected users and systems / Constraints / Open questions) 초안 작성
+   - 커밋 후 PR 오픈 (.github/PULL_REQUEST_TEMPLATE/intent.md 템플릿 사용)
+   │
+   ▼
+개발자가 초안을 검토·수정 → 셀프 머지 (= "의도 확정"의 승인)
+   │
+   ▼
+[GitHub Actions] .github/workflows/intent-merge-continue.yml
+   - intent/* 브랜치의 PR이 머지되는 순간을 감지해 spec-request를 dispatch
+   │
+   ▼
+[GitHub Actions] .github/workflows/spec-autodraft.yml
+   - spec/<slug> 브랜치 생성
+   - 머지된 intent.md를 입력으로 Anthropic API가 spec.md 초안(Summary / Requirements /
+     Design·Approach / Decisions / Out of scope / Open questions) 확장 작성
+   - 커밋 후 PR 오픈 (.github/PULL_REQUEST_TEMPLATE/spec.md 템플릿 사용)
+   │
+   ▼
+개발자가 spec을 검토·수정 → 셀프 머지
+   │
+   ▼
+기능 브랜치에서 plan.md 작성(로컬, writing-plans 스킬 활용) → 구현 → 기능 PR (기본 템플릿)
+```
+
+초안이 마음에 안 들면 그냥 해당 `intent/<slug>` 또는 `spec/<slug>` 브랜치를 체크아웃해
+직접 고쳐서 다시 푸시하면 된다 — 평범한 git 브랜치라 별도 수정 절차가 없다. 이 파이프라인은
+**문제가 불명확할 때만** 필요하다 — 문제·설계가 이미 명확하면 Intent/Spec을 생략하고
+바로 `plan.md`나 코드 수정으로 시작해도 된다 (위 진입점 표 참고).
+
+### CI 반복 실패 → 자동 에스컬레이션
+
+`ci-flutter-test.yml`은 모든 PR(문서만 바뀐 Intent/Spec PR 포함)에서 `flutter analyze &&
+flutter test`를 돌린다. 실패가 반복되면 다음 순서로 자동 대응한다:
+
+1. **1차 실패**: Discord로 "🔴 CI 실패" 알림만 전송한다.
+2. **같은 브랜치에서 2회 연속 실패**: 직전 커밋의 CI 결과를 GitHub API로 조회해 결정론적으로
+   (LLM 판단 아님) 감지하고, `escalate` job이 Anthropic API를 한 번 호출해 실패 로그·diff·
+   커밋 이력을 분석한 뒤 문제 성격에 따라 3등급 중 하나로 대응한다:
+   - **Plan 등급** (단순 버그로 판단): 같은 브랜치에 `plan.md`를 추가 커밋한다
+     (시도한 것 · 실패 원인 · 수정 방향).
+   - **Spec 등급** (설계 결정이 잘못됐다고 판단): `spec/<slug>-fix` 브랜치로 새 PR을 연다
+     (`spec-autodraft.yml` 재사용).
+   - **Intent 등급** (문제 전제 자체가 잘못됐다고 판단): `intent/<slug>-fix` 브랜치로 새
+     PR을 연다 (`intent-autodraft.yml` 재사용, 실패 로그가 Problem 섹션의 재료가 된다).
+3. Discord로 "⚠️ 2회 연속 실패 — Plan/Spec/Intent 자동 생성됨" 알림을 보낸다.
+
+이 자동화는 **코드를 직접 고치지 않는다** — 딱 "다음에 뭘 해야 하는지 적힌 문서"까지만
+만들고 멈춘다. 실제 수정은 사람(+에이전트)이 그 문서를 보고 기존 개발 흐름대로 진행한다.
+
+### 필요한 인프라
+
+- **Vercel**: `tools/discord-bridge/`를 이 레포의 서브디렉토리로 배포 (Flutter 툴체인과
+  완전히 분리돼 `flutter analyze` 등에 영향 없음). 환경변수 `DISCORD_PUBLIC_KEY`,
+  `DISPATCH_TOKEN`, `GITHUB_REPO` 필요.
+- **GitHub Actions 시크릿**: `ANTHROPIC_API_KEY`(초안 생성용), `DISPATCH_TOKEN`
+  (`repository_dispatch` 호출 + PR 생성 권한을 가진 fine-grained PAT). 기본
+  `GITHUB_TOKEN`으로 연 PR/푸시는 새 CI 실행을 못 띄우기 때문에(GitHub의 재귀 방지 동작)
+  자동 초안 PR과 워크플로우 간 트리거에는 반드시 이 PAT을 쓴다.
+- **Discord 슬래시 커맨드 등록**: `scripts/register-discord-commands.mjs`를 1회 실행
+  (커맨드 스키마가 바뀌면 재실행).
 
 ## Wiki 갱신 (wiki/)
 
