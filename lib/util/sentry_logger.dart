@@ -82,7 +82,7 @@ class SentryLogger {
         tags: {
           'module': module,
           'eventName': eventName,
-          if (reason != null) 'reason': reason,
+          'reason': ?reason,
         },
         contexts: _toContexts(extra) ?? Contexts(),
       ),
@@ -107,7 +107,7 @@ class SentryLogger {
         tags: {
           'module': module,
           'eventName': eventName,
-          if (reason != null) 'reason': reason,
+          'reason': ?reason,
         },
         contexts: _toContexts(extra) ?? Contexts(),
         throwable: throwable,

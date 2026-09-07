@@ -98,7 +98,7 @@ void main() {
             jsonEncode({
               'posts': posts,
               'nextCursor': nextCursor,
-              if (boardViewer != null) 'boardViewer': boardViewer,
+              'boardViewer': ?boardViewer,
             }),
             200,
             headers: {'content-type': 'application/json; charset=utf-8'},

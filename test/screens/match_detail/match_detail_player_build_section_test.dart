@@ -58,7 +58,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('GEN Blue0'), findsOneWidget);
+    expect(find.text('GEN'), findsOneWidget);
+    expect(find.text('Blue0'), findsOneWidget);
     expect(find.text('적응형 능력치 +9'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('player_build_lane_red_0')));

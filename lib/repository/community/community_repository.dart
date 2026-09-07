@@ -304,7 +304,7 @@ class CommunityRepository {
         headers: _headers(token),
         body: jsonEncode({
           'body': body,
-          if (replyToCommentId != null) 'replyToCommentId': replyToCommentId,
+          'replyToCommentId': ?replyToCommentId,
         }),
       ),
     );
