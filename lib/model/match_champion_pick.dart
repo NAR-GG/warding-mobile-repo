@@ -94,12 +94,21 @@ class TeamObjectives {
 class ChampionTeam {
   const ChampionTeam({
     required this.teamName,
+    this.teamCode,
+    this.teamImageUrl,
     required this.picks,
     required this.bans,
     required this.summary,
   });
 
   final String teamName;
+
+  /// 이 진영의 실제 팀 코드(예: 'BLG'). 서버가 피드의 세트별 진영으로 준다 —
+  /// 스케줄 A/B 순서와 다를 수 있다. 구 서버는 null.
+  final String? teamCode;
+
+  /// 이 진영의 팀 로고. 구 서버는 null.
+  final String? teamImageUrl;
   final List<ChampionPick> picks;
   final List<ChampionBan> bans;
   final TeamStatsSummary summary;
@@ -107,6 +116,8 @@ class ChampionTeam {
   factory ChampionTeam.fromJson(Map<String, dynamic> json) {
     return ChampionTeam(
       teamName: json['teamName'] as String? ?? '',
+      teamCode: json['teamCode'] as String?,
+      teamImageUrl: json['teamImageUrl'] as String?,
       picks: (json['picks'] as List<dynamic>? ?? const [])
           .map((e) => ChampionPick.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -164,6 +175,7 @@ class ChampionPick {
     required this.championName,
     required this.playerName,
     this.championImageUrl,
+    this.championIconUrl,
     this.level = 0,
     this.kills = 0,
     this.deaths = 0,
@@ -189,6 +201,9 @@ class ChampionPick {
   final String championName;
   final String playerName;
   final String? championImageUrl;
+
+  /// 정사각 챔피언 아이콘(ddragon). 작은 썸네일용. 구 서버는 null.
+  final String? championIconUrl;
 
   final int level;
   final int kills;
@@ -235,8 +250,13 @@ class ChampionPick {
   /// 툴팁에 쓸 이름·설명이 붙은 상세판이다. 백엔드 배포 전 응답이면 null.
   final PlayerItems? items;
 
-  /// 표시용 이미지 URL (백엔드 값 없으면 Data Dragon 폴백).
+  /// 세로 픽 카드용 이미지 URL — 스플래시 크롭 (백엔드 값 없으면 Data Dragon 폴백).
   String? get imageUrl => ChampionImage.resolve(championImageUrl, championName);
+
+  /// 작은 정사각 썸네일용(스코어보드 행·빌드 시트 헤더). 스플래시 세로 크롭을
+  /// 정사각으로 다시 자르면 애니처럼 캐릭터가 한쪽에 있는 아트는 얼굴이 안 남아
+  /// 식별이 안 됐다. 서버 아이콘이 없으면 Data Dragon 정사각 아이콘으로 폴백.
+  String? get iconUrl => ChampionImage.resolve(championIconUrl, championName);
 
   factory ChampionPick.fromJson(Map<String, dynamic> json) {
     return ChampionPick(
@@ -244,6 +264,7 @@ class ChampionPick {
       championName: json['championName'] as String? ?? '',
       playerName: json['playerName'] as String? ?? '',
       championImageUrl: json['championImageUrl'] as String?,
+      championIconUrl: json['championIconUrl'] as String?,
       level: json['level'] as int? ?? 0,
       kills: json['kills'] as int? ?? 0,
       deaths: json['deaths'] as int? ?? 0,

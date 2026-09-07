@@ -481,7 +481,9 @@ class _PlayerBuildCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = pick.imageUrl != null && pick.imageUrl!.isNotEmpty;
+    // 헤더 썸네일은 정사각 — 스플래시 크롭이 아니라 정사각 아이콘을 쓴다.
+    final iconUrl = pick.iconUrl;
+    final hasImage = iconUrl != null && iconUrl.isNotEmpty;
     final laneIcon = laneAssetPath(pick.position);
     final killParticipationPct = (pick.killParticipation * 100).round();
     final damageSharePct = (pick.championDamageShare * 100).round();
@@ -503,7 +505,7 @@ class _PlayerBuildCard extends StatelessWidget {
                   child:
                       hasImage
                           ? CachedNetworkImage(
-                            imageUrl: pick.imageUrl!,
+                            imageUrl: iconUrl,
                             fit: BoxFit.cover,
                             errorWidget: (_, _, _) => const SizedBox.shrink(),
                           )

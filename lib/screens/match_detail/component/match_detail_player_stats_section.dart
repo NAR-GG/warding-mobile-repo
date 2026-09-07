@@ -323,7 +323,8 @@ class _PlayerStatsRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _ChampionBlock(
-            imageUrl: pick.imageUrl,
+            // 34px 정사각 — 스플래시 크롭이 아니라 정사각 아이콘.
+            imageUrl: pick.iconUrl,
             level: pick.level,
             scale: scale,
           ),

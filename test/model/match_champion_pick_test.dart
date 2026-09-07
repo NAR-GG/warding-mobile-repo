@@ -166,4 +166,50 @@ void main() {
       expect(pick.runes!.shards.first.label, isNull);
     });
   });
+
+  group('ChampionTeam.fromJson — 진영 팀 코드', () {
+    test('teamCode·teamImageUrl 을 파싱한다', () {
+      final team = ChampionTeam.fromJson({
+        'teamName': "Anyone's Legend",
+        'teamCode': 'AL',
+        'teamImageUrl': 'logo/al',
+        'picks': [],
+        'bans': [],
+      });
+      expect(team.teamCode, 'AL');
+      expect(team.teamImageUrl, 'logo/al');
+    });
+
+    test('구 서버 응답(필드 없음)이면 null — 앱은 스케줄 순서로 폴백한다', () {
+      final team = ChampionTeam.fromJson({'teamName': 'T1', 'picks': [], 'bans': []});
+      expect(team.teamCode, isNull);
+      expect(team.teamImageUrl, isNull);
+    });
+  });
+
+  group('ChampionPick — 썸네일 아이콘', () {
+    test('iconUrl 은 서버 정사각 아이콘을 쓰고, 세로 카드용 imageUrl 과 별개다', () {
+      final pick = ChampionPick.fromJson({
+        'position': 'mid',
+        'championName': 'Annie',
+        'playerName': 'DK ShowMaker',
+        'championImageUrl': 'splash/annie-centered',
+        'championIconUrl': 'sq/Annie.png',
+      });
+      expect(pick.imageUrl, 'splash/annie-centered');
+      expect(pick.iconUrl, 'sq/Annie.png');
+    });
+
+    test('아이콘이 없으면 Data Dragon 정사각 아이콘으로 폴백한다 (스플래시로 안 감)', () {
+      final pick = ChampionPick.fromJson({
+        'position': 'mid',
+        'championName': 'Annie',
+        'playerName': 'DK ShowMaker',
+        'championImageUrl': 'splash/annie-centered',
+      });
+      expect(pick.iconUrl, isNotNull);
+      expect(pick.iconUrl, isNot('splash/annie-centered'));
+      expect(pick.iconUrl, contains('Annie'));
+    });
+  });
 }
