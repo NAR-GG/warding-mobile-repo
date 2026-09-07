@@ -356,6 +356,27 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
 
   /// 스코어 아래 라벨. 선택된 세트가 LIVE면 'SET N 진행중', 종료된 세트고
   /// 승자가 확인되면 'SET N {팀코드} 승'. 그 외(예정 등)엔 표시 안 함.
+  /// 현재 세트의 실제 진영에 맞춘 (블루 팀, 레드 팀).
+  ///
+  /// 스케줄의 teamA/teamB 는 매치 단위 순서라 세트마다 바뀌는 진영을 모른다 —
+  /// BLG vs AL 1세트처럼 A 팀이 레드면 헤더 BLUE 배지에 BLG 가 뜨고 선수 행엔
+  /// AL 선수가 나와 어긋났다. `/champions` 는 피드 기준 진영별 teamCode 를 주므로
+  /// 그걸로 A/B 를 배치한다. 응답이 없거나 코드가 안 맞으면(구 서버·표기 차이)
+  /// 팀명으로 한 번 더 맞춰 보고, 그래도 아니면 스케줄 순서 그대로.
+  ({MatchTeam? blue, MatchTeam? red}) _sideTeams() {
+    final m = _effectiveMatch;
+    if (m == null) return (blue: null, red: null);
+    final pick = _viewModel.championPick;
+    if (pick == null) return (blue: m.teamA, red: m.teamB);
+    bool same(String? a, String? b) =>
+        a != null && b != null && a.isNotEmpty && a.toLowerCase() == b.toLowerCase();
+    final blue = pick.blueTeam;
+    final swapped =
+        same(blue.teamCode, m.teamB.teamCode) ||
+        (blue.teamCode == null && same(blue.teamName, m.teamB.teamName));
+    return swapped ? (blue: m.teamB, red: m.teamA) : (blue: m.teamA, red: m.teamB);
+  }
+
   String? _currentSetResultLabel(ScheduleMatch m) {
     if (_viewModel.isCurrentSetLive) return _setLabel(m.matchStatus);
     if (_viewModel.currentSetStatus != MatchGameStatus.ended) return null;
@@ -962,6 +983,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
     final leagueLabel = m == null
         ? ''
         : (stage.isEmpty ? m.leagueInfo : '${m.leagueInfo} $stage');
+    final side = _sideTeams();
     return MatchDetailScoreSection(
       leagueName: leagueLabel,
       // 좌측: '리그 스테이지' 옆에 점 + 경기 날짜('YY.MM.DD').
@@ -969,12 +991,13 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
       isLive: isLive,
       // 라이브가 아니면 우측에 경기 시각(scheduledTime, 'HH:mm')을 표시한다.
       time: m?.scheduledTime ?? '',
-      blueTeamName: m?.teamA.teamName ?? '',
-      redTeamName: m?.teamB.teamName ?? '',
-      blueTeamScore: m?.teamA.score ?? 0,
-      redTeamScore: m?.teamB.score ?? 0,
-      blueTeamLogoUrl: m?.teamA.teamImageUrl,
-      redTeamLogoUrl: m?.teamB.teamImageUrl,
+      // 배지·로고·점수는 이 세트의 실제 진영으로 배치한다([_sideTeams]).
+      blueTeamName: side.blue?.teamName ?? '',
+      redTeamName: side.red?.teamName ?? '',
+      blueTeamScore: side.blue?.score ?? 0,
+      redTeamScore: side.red?.score ?? 0,
+      blueTeamLogoUrl: side.blue?.teamImageUrl,
+      redTeamLogoUrl: side.red?.teamImageUrl,
       // 세트 라벨: 선택된 세트가 LIVE면 '진행중', 종료됐고 승자가 있으면 '승리'.
       setLabel: m != null ? _currentSetResultLabel(m) : null,
       scale: scale,
@@ -1097,19 +1120,19 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
       message: AppLocalizations.of(context)!.playerStatsAfterMatch,
       builder: () {
         final pick = _viewModel.championPick;
-        final m = _effectiveMatch;
+        final side = _sideTeams();
         final winnerCode = _viewModel.currentSetWinnerTeamCode;
         bool? blueWon;
-        if (winnerCode != null && winnerCode.isNotEmpty && m != null) {
-          if (winnerCode == m.teamA.teamCode) {
+        if (winnerCode != null && winnerCode.isNotEmpty) {
+          if (winnerCode == side.blue?.teamCode) {
             blueWon = true;
-          } else if (winnerCode == m.teamB.teamCode) {
+          } else if (winnerCode == side.red?.teamCode) {
             blueWon = false;
           }
         }
         return MatchDetailPlayerStatsSection(
-          blueTeamCode: m?.teamA.teamCode ?? '',
-          redTeamCode: m?.teamB.teamCode ?? '',
+          blueTeamCode: side.blue?.teamCode ?? pick?.blueTeam.teamCode ?? '',
+          redTeamCode: side.red?.teamCode ?? pick?.redTeam.teamCode ?? '',
           blueWon: blueWon,
           bluePicks: pick?.blueTeam.picks ?? const [],
           redPicks: pick?.redTeam.picks ?? const [],
@@ -1143,15 +1166,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
       message: AppLocalizations.of(context)!.playerStatsAfterMatch,
       builder: () {
         final pick = _viewModel.championPick;
-        final m = _effectiveMatch;
+        final side = _sideTeams();
         if (pick == null) {
           return const SizedBox.shrink();
         }
         return MatchDetailPlayerBuildSection(
           bluePicks: pick.blueTeam.picks,
           redPicks: pick.redTeam.picks,
-          blueTeamCode: m?.teamA.teamCode ?? '',
-          redTeamCode: m?.teamB.teamCode ?? '',
+          blueTeamCode: side.blue?.teamCode ?? pick.blueTeam.teamCode ?? '',
+          redTeamCode: side.red?.teamCode ?? pick.redTeam.teamCode ?? '',
           selectedBlueSide: _selectedBuildBlueSide,
           selectedIndex: _selectedBuildIndex,
           onSelect: _selectBuildPlayer,
