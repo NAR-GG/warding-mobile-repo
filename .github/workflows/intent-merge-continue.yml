@@ -1,0 +1,37 @@
+name: Intent 머지 → Spec 요청
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  continue:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'intent/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: spec-request 디스패치
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          SLUG="${HEAD_REF#intent/}"
+          if [ ! -f "intent/$SLUG/intent.md" ]; then
+            echo "intent/$SLUG/intent.md 없음 — 스킵"
+            exit 0
+          fi
+          if [ -f "intent/$SLUG/spec.md" ]; then
+            echo "이미 spec.md 있음 — 스킵"
+            exit 0
+          fi
+          DESCRIPTION=$(cat "intent/$SLUG/intent.md")
+          jq -n --arg slug "$SLUG" --arg desc "$DESCRIPTION" \
+            '{event_type: "spec-request",
+              client_payload: {slug: $slug, description: $desc, requestedBy: "intent-merge", source: "intent-merge"}}' \
+            | gh api "repos/$REPO/dispatches" --input -

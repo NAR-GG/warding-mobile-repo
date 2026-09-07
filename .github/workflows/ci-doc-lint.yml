@@ -1,0 +1,27 @@
+name: Intent 문서 검사
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'intent/**/intent.md'
+      - 'intent/**/spec.md'
+
+jobs:
+  doc-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 변경된 문서 검사
+        run: |
+          set -euo pipefail
+          FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'intent/**/intent.md' 'intent/**/spec.md')
+          if [ -z "$FILES" ]; then
+            echo "검사할 파일 없음"
+            exit 0
+          fi
+          chmod +x .github/scripts/check-intent-docs.sh
+          ./.github/scripts/check-intent-docs.sh $FILES
