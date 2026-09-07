@@ -14,6 +14,25 @@ async function readRawBody(req) {
   return Buffer.concat(chunks);
 }
 
+// Vercel의 Node.js Function 런타임은 ESM(`"type": "module"`) 핸들러에는
+// Express 스타일 `res.status()/.json()` 헬퍼를 붙여주지 않는다(CommonJS
+// 핸들러에만 적용됨) — 순수 `http.ServerResponse` API로 대체한다.
+function sendStatus(res, status) {
+  res.statusCode = status;
+  res.end();
+}
+
+function sendText(res, status, text) {
+  res.statusCode = status;
+  res.end(text);
+}
+
+function sendJson(res, status, body) {
+  res.statusCode = status;
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify(body));
+}
+
 async function dispatchIntentRequest({ slug, description, requestedBy }) {
   const res = await fetch(
     `https://api.github.com/repos/${process.env.GITHUB_REPO}/dispatches`,
@@ -37,7 +56,7 @@ async function dispatchIntentRequest({ slug, description, requestedBy }) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.status(405).end();
+    sendStatus(res, 405);
     return;
   }
 
@@ -47,19 +66,19 @@ export default async function handler(req, res) {
 
   const isValid = await verifyKey(rawBody, signature, timestamp, process.env.DISCORD_PUBLIC_KEY);
   if (!isValid) {
-    res.status(401).end('invalid request signature');
+    sendText(res, 401, 'invalid request signature');
     return;
   }
 
   const interaction = JSON.parse(rawBody.toString('utf8'));
 
   if (interaction.type === InteractionType.PING) {
-    res.status(200).json({ type: InteractionResponseType.PONG });
+    sendJson(res, 200, { type: InteractionResponseType.PONG });
     return;
   }
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND && interaction.data.name === 'intent') {
-    res.status(200).json({
+    sendJson(res, 200, {
       type: InteractionResponseType.MODAL,
       data: {
         custom_id: 'intent_modal',
@@ -108,14 +127,14 @@ export default async function handler(req, res) {
     const requestedBy = interaction.member?.user?.username ?? interaction.user?.username ?? 'unknown';
 
     if (!slug) {
-      res.status(200).json({
+      sendJson(res, 200, {
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: { content: '❌ slug는 영문/숫자만 사용할 수 있어요 — 예: match-detail-toc-drag' },
       });
       return;
     }
 
-    res.status(200).json({
+    sendJson(res, 200, {
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
       data: { content: `✅ 접수됨 — \`${slug}\` intent 초안을 생성 중입니다.` },
     });
@@ -126,5 +145,5 @@ export default async function handler(req, res) {
     return;
   }
 
-  res.status(400).end('unhandled interaction type');
+  sendText(res, 400, 'unhandled interaction type');
 }
