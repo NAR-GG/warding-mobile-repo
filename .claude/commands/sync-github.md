@@ -1,15 +1,15 @@
 ---
-description: GitHub warding 보드를 읽어 warding-okf 번들의 github-project.md를 갱신하고 viz.html을 재생성
+description: GitHub warding 보드를 읽어 wiki 번들의 github-project.md를 갱신
 allowed-tools: Bash(python3:*)
 ---
 
-`warding-okf/sync_github.py`를 실행해서 NAR-GG `warding` 프로젝트 보드의 **현재 상태**로
-`warding-okf/references/github-project.md`를 다시 쓰고 `viz.html`을 재생성한다.
+`wiki/sync_github.py`를 실행해서 NAR-GG `warding` 프로젝트 보드의 **현재 상태**로
+`wiki/references/github-project.md`를 다시 쓴다.
 
 실행:
 
 ```bash
-python3 warding-okf/sync_github.py
+python3 wiki/sync_github.py
 ```
 
 실행 후, 진행 중 / 할 일 / 완료 개수와 직전 대비 **달라진 항목(상태가 바뀐 이슈)** 이 있으면 간단히 요약해줘.

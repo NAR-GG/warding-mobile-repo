@@ -9,7 +9,7 @@ timestamp: 2026-06-21T02:43:37Z
 
 # 개요
 
-`gh`로 NAR-GG `warding` 보드에서 자동 생성됨 (최종 동기화: **2026-06-21**). GitHub이 진실(source of truth)이며 이 문서는 단방향 미러다. `python3 warding-okf/sync_github.py`로 갱신한다.
+`gh`로 NAR-GG `warding` 보드에서 자동 생성됨 (최종 동기화: **2026-06-21**). GitHub이 진실(source of truth)이며 이 문서는 단방향 미러다. `python3 wiki/sync_github.py`로 갱신한다.
 
 # 🟡 진행 중 (In Progress) (1)
 

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""Sync warding-okf/references/github-project.md from the live GitHub project board.
+"""Sync wiki/references/github-project.md from the live GitHub project board.
 
 Reads the NAR-GG `warding` project board (and open issues) via the `gh` CLI,
-rewrites references/github-project.md grouped by status, then regenerates viz.html.
+rewrites references/github-project.md grouped by status.
 One-directional: GitHub is the source of truth; this only mirrors it into the bundle.
 
-Usage:  python3 warding-okf/sync_github.py
+Usage:  python3 wiki/sync_github.py
 """
 import json, os, subprocess, sys
 from datetime import datetime, timezone
 
 BUNDLE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(BUNDLE, "references", "github-project.md")
-GEN = os.path.join(BUNDLE, "gen_viz.py")
 
 OWNER = "NAR-GG"
 PROJECT_NUMBER = "1"
@@ -82,7 +81,7 @@ def main():
     lines.append("")
     lines.append(f"`gh`로 NAR-GG `warding` 보드에서 자동 생성됨 (최종 동기화: **{date}**). "
                  "GitHub이 진실(source of truth)이며 이 문서는 단방향 미러다. "
-                 "`python3 warding-okf/sync_github.py`로 갱신한다.")
+                 "`python3 wiki/sync_github.py`로 갱신한다.")
     lines.append("")
 
     def section(heading, key, emoji=""):
@@ -112,12 +111,6 @@ def main():
         f.write("\n".join(lines))
     counts = {k: len(v) for k, v in buckets.items() if v}
     print(f"wrote {OUT}  ({counts})")
-
-    # regenerate viz.html so the graph reflects the refreshed snapshot
-    if os.path.isfile(GEN):
-        subprocess.run([sys.executable, GEN, BUNDLE,
-                        os.path.join(BUNDLE, "viz.html"), "Warding OKF"],
-                       check=False)
 
 if __name__ == "__main__":
     main()
