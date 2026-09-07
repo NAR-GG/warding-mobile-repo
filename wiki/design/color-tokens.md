@@ -32,4 +32,4 @@ static const LinearGradient narBg = LinearGradient(...);
 
 # Citations
 
-[1] [CLAUDE.md — 색상 / 디자인 토큰](/references/claude-md.md)
+[1] [CLAUDE.md — 색상 / 디자인 토큰](../../CLAUDE.md)

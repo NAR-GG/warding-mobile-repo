@@ -32,4 +32,4 @@ timestamp: 2026-06-21T00:00:00Z
 
 # Citations
 
-[1] [CLAUDE.md — 파일 생성 규칙](/references/claude-md.md)
+[1] [CLAUDE.md — 파일 생성 규칙](../../CLAUDE.md)

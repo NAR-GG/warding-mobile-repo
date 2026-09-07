@@ -29,4 +29,4 @@ final scale = width.clamp(320.0, 430.0) / 375;
 
 # Citations
 
-[1] [CLAUDE.md — UI 작성 규칙](/references/claude-md.md)
+[1] [CLAUDE.md — UI 작성 규칙](../../CLAUDE.md)

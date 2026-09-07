@@ -30,4 +30,4 @@ lib/
 
 # Citations
 
-[1] [CLAUDE.md — 폴더 구조](/references/claude-md.md)
+[1] [CLAUDE.md — 폴더 구조](../../CLAUDE.md)

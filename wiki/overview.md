@@ -34,9 +34,9 @@ timestamp: 2026-06-21T00:00:00Z
 
 # 진행 상황
 
-최신 진행 상황과 남은 작업은 [CLAUDE.md](/references/claude-md.md)의 "진행 상황" 섹션과 [GitHub 프로젝트 보드](/references/github-project.md)를 단일 출처로 본다.
+최신 진행 상황과 남은 작업은 [CLAUDE.md](../CLAUDE.md)의 "진행 상황" 섹션과 [GitHub 프로젝트 보드](/references/github-project.md)를 단일 출처로 본다.
 
 # Citations
 
 [1] [warding-mobile-repo (GitHub)](https://github.com/NAR-GG/warding-mobile-repo)
-[2] [CLAUDE.md](/references/claude-md.md)
+[2] [CLAUDE.md](../CLAUDE.md)

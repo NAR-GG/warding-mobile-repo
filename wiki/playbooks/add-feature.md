@@ -28,4 +28,4 @@ warding에 새 화면/기능을 추가할 때 일관성을 유지하는 절차.
 
 # Citations
 
-[1] [CLAUDE.md — 아키텍처 / 파일 생성 규칙 / UI 작성 규칙](/references/claude-md.md)
+[1] [CLAUDE.md — 아키텍처 / 파일 생성 규칙 / UI 작성 규칙](../../CLAUDE.md)

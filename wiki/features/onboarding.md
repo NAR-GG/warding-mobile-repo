@@ -32,4 +32,4 @@ timestamp: 2026-06-22T00:00:00Z
 
 # Citations
 
-[1] [CLAUDE.md — 진행 상황 / 남은 TODO](/references/claude-md.md)
+[1] [CLAUDE.md — 진행 상황 / 남은 TODO](../../CLAUDE.md)

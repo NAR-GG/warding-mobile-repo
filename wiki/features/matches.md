@@ -33,4 +33,4 @@ timestamp: 2026-06-21T00:00:00Z
 # Citations
 
 [1] [GitHub 프로젝트 보드 / 이슈](/references/github-project.md)
-[2] [CLAUDE.md](/references/claude-md.md)
+[2] [CLAUDE.md](../../CLAUDE.md)

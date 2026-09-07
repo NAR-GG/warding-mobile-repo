@@ -38,4 +38,4 @@ timestamp: 2026-06-21T00:00:00Z
 
 # Citations
 
-[1] [CLAUDE.md — 아키텍처: MVVM](/references/claude-md.md)
+[1] [CLAUDE.md — 아키텍처: MVVM](../../CLAUDE.md)

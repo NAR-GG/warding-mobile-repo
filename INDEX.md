@@ -45,7 +45,7 @@ Spec을 승인(머지)할 때, 그 설계가 아키텍처·기능 구조를 바�
 - [design/](./wiki/design/) — 색상 토큰, UI 스케일 규칙
 - [features/](./wiki/features/) — 기능별 지식(로그인·온보딩·경기·라이브 알림 등)
 - [playbooks/](./wiki/playbooks/) — 반복 작업 절차
-- [references/](./wiki/references/) — GitHub 프로젝트 보드, CLAUDE.md 사본
+- [references/](./wiki/references/) — GitHub 프로젝트 보드 동기화 문서
 - [log.md](./wiki/log.md) — 번들 변경 이력
 
 ## 자동화
