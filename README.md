@@ -1,6 +1,12 @@
+
 # warding
 
+
 [![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-lightgrey.svg)](./LICENSE) [![Flutter](https://img.shields.io/badge/flutter-3.44.0-02569B?logo=flutter&logoColor=white)](./.fvmrc) [![Shorebird](https://img.shields.io/badge/shorebird-code%20push-6C47FF)](https://shorebird.dev) ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey)
+
+
+
+<img width="180" height="383" alt="화면 기록 2026-09-07 오후 2 15 04 (1) (1) (2) 2" src="https://github.com/user-attachments/assets/baeb8fe1-4341-49d8-b605-930b57d51989" />
 
 warding는 LCK 등 e스포츠 팬을 위한 Flutter 기반 모바일 앱입니다. 경기 정보, 커뮤니티, 알림 등
 팬 경험을 하나의 앱에 담기 위해 MVVM 아키텍처와 Shorebird 코드 푸시를 기반으로 개발되고
