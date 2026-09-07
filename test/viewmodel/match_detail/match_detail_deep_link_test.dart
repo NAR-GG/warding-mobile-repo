@@ -19,6 +19,7 @@ void main() {
   setUp(() {
     match = MockMatchDetailRepository();
     rating = MockRatingRepository();
+    when(() => match.fetchMatch(any())).thenThrow(Exception('skip'));
     when(() => match.fetchChampionPick(any())).thenThrow(Exception('skip'));
     when(() => match.fetchLiveEvents(any())).thenThrow(Exception('skip'));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
@@ -46,7 +47,7 @@ void main() {
     await vm.load();
     expect(vm.currentSet, 2); // 기본: 마지막 종료 세트
 
-    vm.applyDeepLink(tabIndex: 2, setNumber: 1);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 1);
 
     expect(vm.currentSet, 1);
   });
@@ -55,7 +56,7 @@ void main() {
     final vm = vmFor(twoSets);
     await vm.load();
 
-    vm.applyDeepLink(tabIndex: 1);
+    await vm.applyDeepLink(tabIndex: 1);
 
     expect(vm.currentSet, 2);
   });
@@ -65,7 +66,7 @@ void main() {
     final vm = vmFor(twoSets);
     await vm.load();
 
-    vm.applyDeepLink(tabIndex: 2, setNumber: 9);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 9);
 
     expect(vm.currentSet, 2);
   });
@@ -74,9 +75,9 @@ void main() {
     final vm = vmFor(twoSets);
     await vm.load();
 
-    vm.applyDeepLink(tabIndex: 2, setNumber: 1);
-    vm.applyDeepLink(tabIndex: 2, setNumber: 1);
-    vm.applyDeepLink(tabIndex: 2, setNumber: 1);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 1);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 1);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 1);
 
     expect(vm.currentSet, 1);
   });
@@ -87,7 +88,7 @@ void main() {
     var notified = 0;
     vm.addListener(() => notified++);
 
-    vm.applyDeepLink(tabIndex: 2, setNumber: 1);
+    await vm.applyDeepLink(tabIndex: 2, setNumber: 1);
 
     expect(notified, greaterThan(0));
   });
