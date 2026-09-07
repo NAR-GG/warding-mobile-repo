@@ -8,6 +8,27 @@ Anthropic의 AI-네이티브 SDLC(intent.md → spec.md → plan.md)를 이 레�
 Slack 대신 Discord, PO 승인 대신 개발자 셀프 머지, 배포는 계속 수동(Shorebird)을 유지하되
 Intent/Spec 초안 생성과 테스트 검증은 CI로 자동화한다.
 
+## Requirements
+
+- Intent → Spec → Plan 3단계 문서 체계를 도입하되, 문제 성격에 따라 진입점을 다르게 허용한다
+  (모든 작업에 Intent부터 강제하지 않는다).
+- Intent/Spec 문서는 셀프 머지 가능한 일반 PR로 관리해, "의도가 확정된 시점"이 git 이력에
+  남게 한다.
+- Discord `/intent` 슬래시 커맨드로 Intent 초안을 자동 생성해, 슬랙 기반 워크플로우 없이도
+  팀이 쓰는 채널(Discord)에서 바로 착수할 수 있게 한다.
+- Intent 머지 시 Spec 초안이, Spec 승인 후에는 개발자가 로컬에서 Plan을 작성해 구현으로
+  이어지는 파이프라인을 자동화한다.
+- 신규/자동생성 문서 모두 필수 섹션 헤더를 갖추도록 CI에서 강제한다(`ci-doc-lint.yml`).
+- CI가 같은 PR에서 2회 연속 실패하면, 사람 개입 전에 실패를 Plan/Spec/Intent 중 적절한 등급으로
+  분류하고 그 등급의 문서 초안까지 자동으로 만들어 다음 스텝을 준비해 둔다(코드 자동 수정은
+  범위 밖).
+
+## Design / Approach
+
+Anthropic의 AI-네이티브 SDLC(intent.md → spec.md → plan.md)를 이 레포 규모에 맞게 축소해
+들여온다. 문서 계층(저장 구조·브랜치 규칙·템플릿)과 자동화 계층(Discord→GitHub Actions
+파이프라인·CI 반복 실패 에스컬레이션)으로 나눠 아래에 기술한다.
+
 ## 저장 구조
 
 ```
