@@ -43,7 +43,7 @@
 
 Intent/Spec 초안은 손으로 쓰지 않고 Discord에서 트리거해 자동 생성할 수 있다. 전체 흐름:
 
-```
+```text
 [Discord] /intent 슬래시 커맨드 (모달: slug + 설명 입력)
    │
    ▼
@@ -60,7 +60,7 @@ Intent/Spec 초안은 손으로 쓰지 않고 Discord에서 트리거해 자동 
    - intent/<slug> 브랜치 생성 (동명 브랜치가 이미 열려 있으면 중복 방지)
    - Anthropic API(ANTHROPIC_API_KEY)로 intent.md 5섹션(Problem / Proposed outcome /
      Affected users and systems / Constraints / Open questions) 초안 작성
-   - 커밋 후 PR 오픈 (.github/PULL_REQUEST_TEMPLATE/intent.md 템플릿 사용)
+   - 커밋 후 생성한 요약 본문으로 PR 오픈
    │
    ▼
 개발자가 초안을 검토·수정 → 셀프 머지 (= "의도 확정"의 승인)
@@ -74,7 +74,7 @@ Intent/Spec 초안은 손으로 쓰지 않고 Discord에서 트리거해 자동 
    - spec/<slug> 브랜치 생성
    - 머지된 intent.md를 입력으로 Anthropic API가 spec.md 초안(Summary / Requirements /
      Design·Approach / Decisions / Out of scope / Open questions) 확장 작성
-   - 커밋 후 PR 오픈 (.github/PULL_REQUEST_TEMPLATE/spec.md 템플릿 사용)
+   - 커밋 후 생성한 요약 본문으로 PR 오픈
    │
    ▼
 개발자가 spec을 검토·수정 → 셀프 머지
@@ -114,7 +114,9 @@ flutter test`를 돌린다. 실패가 반복되면 다음 순서로 자동 대�
   완전히 분리돼 `flutter analyze` 등에 영향 없음). 환경변수 `DISCORD_PUBLIC_KEY`,
   `DISPATCH_TOKEN`, `GITHUB_REPO` 필요.
 - **GitHub Actions 시크릿**: `ANTHROPIC_API_KEY`(초안 생성용), `DISPATCH_TOKEN`
-  (`repository_dispatch` 호출 + PR 생성 권한을 가진 fine-grained PAT). 기본
+  (`repository_dispatch` 호출 + PR 생성용 fine-grained PAT). PAT의 Repository access는
+  대상 레포로만 제한하고, Repository permissions에 Contents: Read and write와 Pull
+  requests: Read and write를 부여한다. 기본
   `GITHUB_TOKEN`으로 연 PR/푸시는 새 CI 실행을 못 띄우기 때문에(GitHub의 재귀 방지 동작)
   자동 초안 PR과 워크플로우 간 트리거에는 반드시 이 PAT을 쓴다.
 - **Discord 슬래시 커맨드 등록**: `scripts/register-discord-commands.mjs`를 1회 실행
