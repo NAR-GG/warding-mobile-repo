@@ -2,6 +2,11 @@
 
 LCK 등 e스포츠 팬을 위한 Flutter 앱.
 
+이 레포에 흩어진 문서 시스템 전체 지도는 [INDEX.md](./INDEX.md) 참고.
+새 기능을 시작할 때 의도·설계를 먼저 남기려면 [intent/](./intent/) 워크플로우를 쓴다
+(진입 기준은 `intent/loop-engineering-workflow/spec.md`의 "저장 구조" 표 참고 — 모든 작업에
+강제되지 않는다).
+
 ## 아키텍처: MVVM
 
 상태와 로직은 ViewModel에, UI는 View에 둔다.
@@ -117,6 +122,26 @@ shorebird patch android --release-version <pubspec의 version>
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시 위험.
 - 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
 - 과금은 **패치 설치 수** 기준이라(Free 5,000/월) 패치를 남발하면 한도가 찬다. 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
+
+## 지식 번들 (wiki)
+
+`wiki/`는 이 프로젝트의 지식을 OKF(Open Knowledge Format) 형식으로 정리한 번들이다.
+마크다운 + YAML 프론트매터 개념 문서들의 그래프로, 아키텍처·디자인 규칙·기능 현황을 담는다.
+`intent/`가 "결정 당시의 왜"를 남긴다면, `wiki/`는 "지금 코드가 실제로 어떻게 동작하는지"의
+최신 스냅샷이다.
+
+**동기화 규칙 — 작업 중 다음이 바뀌면 번들도 함께 갱신한다:**
+
+- **기능을 완료/변경**하면 → `wiki/features/{기능}.md`의 상태·내용을 갱신한다.
+- **아키텍처·파일 규칙·디자인 토큰**이 바뀌면 → `wiki/architecture/` 또는 `wiki/design/`의 해당 개념을 갱신한다.
+- **새 기능 영역**이 생기면 → `wiki/features/`에 개념 문서를 추가하고 `features/index.md`와 루트 `index.md`에 링크를 건다.
+- 의미 있는 변경 후에는 `wiki/log.md` 맨 위에 `YYYY-MM-DD` 항목을 추가한다.
+- 개념 문서는 프론트매터에 `type`(필수)을 두고, 다른 개념은 `[제목](/path/to/concept.md)` 형식의 번들-상대 링크로 연결한다.
+
+진행 상황·이슈 번호의 단일 출처는 `wiki/references/github-project.md`와 이 `CLAUDE.md`다.
+
+이 동기화는 자동 스크립트가 아니라 **작업 중 매번 스스로 판단해 적용하는 규칙**이다 — 커밋이나
+저장 시점에 강제로 검증되지 않으므로, 위 조건에 해당하는 변경을 할 때마다 놓치지 않는다.
 
 ## 진행 상황
 

@@ -1,0 +1,6 @@
+language: ko-KR
+
+reviews:
+  path_filters:
+    - "!intent/**/*.md"
+    - "!intent/**/*.html"
