@@ -952,7 +952,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (image != null) image,
+        ?image,
         Padding(
           padding: EdgeInsets.all(12 * scale),
           child: Column(

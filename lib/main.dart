@@ -120,6 +120,7 @@ Future<void> main() async {
           options.sendDefaultPii = true;
           // 비용 절감을 위해 트레이스·프로파일 샘플링 비율을 낮춘다.
           options.tracesSampleRate = 0.1;
+          // ignore: experimental_member_use
           options.profilesSampleRate = 0.1;
           // 민감 정보 마스킹
           options.beforeSend = (event, hint) {
