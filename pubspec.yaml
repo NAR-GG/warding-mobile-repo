@@ -65,6 +65,8 @@ dev_dependencies:
   sentry_dart_plugin: ^3.4.0
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   mocktail: ^1.0.4
   # 테스트에서 read 만 실패시키는 저장소를 흉내 내려면 플랫폼 인터페이스를
   # 직접 서브클래싱해야 한다(flutter_secure_storage 가 전이 의존으로만 들여옴).
