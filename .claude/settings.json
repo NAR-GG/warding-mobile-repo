@@ -1,0 +1,14 @@
+{
+  "outputStyle": "fluent-korean",
+  "enabledPlugins": {
+    "fluent-korean@fluent-korean": true
+  },
+  "extraKnownMarketplaces": {
+    "fluent-korean": {
+      "source": {
+        "source": "github",
+        "repo": "snflkd/fluent-korean"
+      }
+    }
+  }
+}
