@@ -1,11 +1,19 @@
 # Warding 모바일 앱 - 개발 가이드
 
-LCK 등 e스포츠 팬을 위한 Flutter 앱.
+LCK 등 e스포츠 팬을 위한 Flutter 앱이다.
 
-이 레포에 흩어진 문서 시스템 전체 지도는 [INDEX.md](./INDEX.md) 참고.
+이 레포에 흩어진 문서 시스템 전체 지도는 [INDEX.md](./INDEX.md)를 참고한다.
 새 기능을 시작할 때 의도·설계를 먼저 남기려면 [intent/](./intent/) 워크플로우를 쓴다
-(진입 기준은 `intent/loop-engineering-workflow/spec.md`의 "저장 구조" 표 참고 — 모든 작업에
-강제되지 않는다).
+(진입 기준은 `intent/loop-engineering-workflow/spec.md`의 "저장 구조" 표 참고. 모든 작업에
+강제되지는 않는다).
+
+## 한국어 문서 작성 지침
+
+이 저장소를 여는 Claude Code 세션에는 `.claude/settings.json`의 `outputStyle`로
+[fluent-korean](https://github.com/snflkd/fluent-korean)이 강제 적용된다. GitHub Actions가
+Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`, `spec-autodraft.yml`,
+`ci-flutter-test.yml`, `e2e-release-check.yml`은 이 설정이 닿지 않으므로, 각 프롬프트에
+지침 요약을 별도로 심어 뒀다. 프롬프트를 수정할 때 fluent-korean 원문과 어긋나지 않게 한다.
 
 ## 아키텍처: MVVM
 
@@ -82,6 +90,16 @@ lib/
 일반 빌드에는 Shorebird 업데이터가 안 들어가서, 그 빌드를 설치한 유저는 코드 푸시 패치를 영원히 못 받는다
 (1.0.3 iOS가 이 실수로 나가서 다음 스토어 릴리즈 전까지 패치 불가였음).
 
+**`shorebird release` 실행 전에 `e2e-release-check.yml`을 수동으로 돌려 통과를 확인한다**
+(`gh workflow run e2e-release-check.yml` 또는 Actions 탭에서 직접 실행). PR마다 도는
+`ci-flutter-test.yml`은 유닛/위젯 테스트(`flutter test`)만 돌리고, `integration_test/`의
+e2e는 iOS 시뮬레이터가 필요해 macOS 러너로 별도 워크플로우에 분리해 뒀다. 매 PR이 아니라
+릴리즈 직전에만 도는 이유는 macOS 러너가 느리고 비싸기 때문이다.
+
+e2e가 실패하면(릴리즈 직전 1회성 실행이라 "연속 실패" 개념 없이 곧바로) `ci-flutter-test.yml`과
+같은 방식으로 실패 로그를 Anthropic API로 분석해 plan/spec/intent 중 적절한 등급의 문서
+초안과 PR을 자동 생성한다. 코드 자동 수정은 하지 않고 다음 스텝 문서까지만 준비해 둔다.
+
 ```bash
 # 스토어 릴리즈 (버전은 pubspec.yaml의 version 사용)
 git tag -a release/1.0.13+20 -m "shorebird release ios+android"   # 빌드 직전에 (아래 태그 규칙)
@@ -104,13 +122,13 @@ shorebird patch android --release-version <pubspec의 version>
 업로드 시각으로 역추적해야 하는데, 커밋 시각 ≠ 빌드 시각이고 uncommitted 상태로 빌드했으면
 아예 못 찾는다.
 
-- 태그명은 `release/<pubspec의 version 그대로>` — 예: `release/1.0.13+20`.
+- 태그명은 `release/<pubspec의 version 그대로>`다. 예: `release/1.0.13+20`.
   조회는 언제나 "shorebird 가 말하는 버전 → 커밋" 방향이라 이름에 버전이 들어가야 한다.
 - **`-a` 필수.** lightweight 태그는 자기 날짜가 없어 커밋 날짜로 대체되는데, 알고 싶은 건
   빌드 시각이다. annotated 는 태그를 찍은 시각을 따로 저장해 shorebird 의 `created_at` 과
   대조할 수 있다.
-- 빌드 번호를 올려 다시 뽑으면 태그도 새로 찍는다. 옛 태그는 지우지 않는다 — 어느 빌드가
-  실제로 스토어에 나갔는지 구분된다 (예: `+19` 는 폐기, `+20` 이 제출분).
+- 빌드 번호를 올려 다시 뽑으면 태그도 새로 찍는다. 옛 태그는 지우지 않는다. 어느 빌드가
+  실제로 스토어에 나갔는지 구분하기 위해서다 (예: `+19` 는 폐기, `+20` 이 제출분).
 - 날짜순으로 보려면:
   `git tag --sort=-creatordate --format='%(creatordate:short)  %(refname:short)  %(contents:subject)'`
 
@@ -118,8 +136,8 @@ shorebird patch android --release-version <pubspec의 version>
 다시 쓰게 되면 같은 방식으로 패치 직전에 찍는다.
 
 패치 규칙 (현재 미사용, 재개할 때 참고):
-- 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출 필요.
-- 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시 위험.
+- 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출이 필요하다.
+- 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시가 발생할 위험이 있다.
 - 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
 - 과금은 **패치 설치 수** 기준이라(Free 5,000/월) 패치를 남발하면 한도가 찬다. 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
 
@@ -130,7 +148,7 @@ shorebird patch android --release-version <pubspec의 version>
 `intent/`가 "결정 당시의 왜"를 남긴다면, `wiki/`는 "지금 코드가 실제로 어떻게 동작하는지"의
 최신 스냅샷이다.
 
-**동기화 규칙 — 작업 중 다음이 바뀌면 번들도 함께 갱신한다:**
+**동기화 규칙: 작업 중 다음이 바뀌면 번들도 함께 갱신한다.**
 
 - **기능을 완료/변경**하면 → `wiki/features/{기능}.md`의 상태·내용을 갱신한다.
 - **아키텍처·파일 규칙·디자인 토큰**이 바뀌면 → `wiki/architecture/` 또는 `wiki/design/`의 해당 개념을 갱신한다.
@@ -140,21 +158,35 @@ shorebird patch android --release-version <pubspec의 version>
 
 진행 상황·이슈 번호의 단일 출처는 `wiki/references/github-project.md`와 이 `CLAUDE.md`다.
 
-이 동기화는 자동 스크립트가 아니라 **작업 중 매번 스스로 판단해 적용하는 규칙**이다 — 커밋이나
+이 동기화는 자동 스크립트가 아니라 **작업 중 매번 스스로 판단해 적용하는 규칙**이다. 커밋이나
 저장 시점에 강제로 검증되지 않으므로, 위 조건에 해당하는 변경을 할 때마다 놓치지 않는다.
+
+## 요건 변경 시 intent/spec 동기화
+
+Discord `/intent`를 거치지 않고 대화(채팅)로 바로 기능 변경을 요청받았을 때도 적용되는 규칙이다.
+
+- 코드를 고치기 전에 `intent/<slug>/intent.md` 또는 `spec.md`가 그 기능 영역에 이미 있는지
+  먼저 찾는다 (`intent/` 폴더를 기능 키워드로 검색).
+- 있는데 이번 요청이 그 문서의 Requirements/Proposed outcome과 어긋나거나 이를 바꾸는
+  변경이면, **코드를 고치기 전에** 해당 문서의 갱신 diff를 먼저 제시하고 사용자 확인을 받은
+  뒤 코드를 고친다. 오탈자·자명한 원라이너 수준의 변경은 예외.
+- 대응하는 intent/spec 문서가 아예 없는 기능이면 새로 만들 필요는 없다. 이 규칙은 기존
+  문서와 코드가 어긋나는 것을 막기 위한 것이지, 모든 변경에 문서를 강제하는 게 아니다.
+- 문서 갱신은 셀프 머지 가능한 일반 PR로도, 같은 기능 PR에 포함해도 된다. 이 규칙은
+  "갱신을 빠뜨리지 않는 것"이 핵심이지 별도 PR을 강제하지 않는다.
 
 ## 진행 상황
 
 ### 완료
 - 카카오 로그인 (네이티브 앱 키, 패키지명 `com.warding.app`, 릴리즈 키스토어 서명 설정)
 - 화면 폴더 구조 정리 (`screens/login·home·onboarding`)
-- 온보딩 4단계 (선호 리그·팀·선수·알림 권한) — MVVM 구조로 구현
+- 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
 
 ### 다음 작업
 - 경기 페이지
 
 ### 남은 TODO
-- `Pretendard` / `Open Sans` 폰트가 pubspec에 미등록 (현재 fallback 폰트로 렌더링)
-- 비회원(JWT 없음)은 온보딩 완료 API를 호출하지 않음 — 선호 팀만 로컬 캐싱, 리그·선수 로컬 저장 미구현
-- 알림 권한 '허용' 시 실제 권한 요청은 연결됨 — iOS 배포 시 `permission_handler` Podfile 매크로 설정 필요
+- `Pretendard` / `Open Sans` 폰트가 pubspec에 미등록되어 있어, 현재 fallback 폰트로 렌더링된다
+- 비회원(JWT 없음)은 온보딩 완료 API를 호출하지 않는다. 선호 팀만 로컬에 캐싱하고, 리그·선수 로컬 저장은 아직 구현하지 않았다
+- 알림 권한 '허용' 시 실제 권한 요청은 연결되어 있다. iOS 배포 시 `permission_handler` Podfile 매크로 설정이 필요하다

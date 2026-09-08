@@ -14,10 +14,10 @@ warding는 LCK 등 e스포츠 팬을 위한 Flutter 기반 모바일 앱입니�
 
 이 앱은 다음으로 만들어졌습니다:
 - 📱 Flutter 기반 크로스플랫폼 (iOS / Android)
-- 🏗️ MVVM 아키텍처 — ViewModel(`ChangeNotifier`) / View(`ListenableBuilder`) 분리
+- 🏗️ MVVM 아키텍처: ViewModel(`ChangeNotifier`)과 View(`ListenableBuilder`)를 분리
 - 🔐 카카오·네이버·구글·Apple 소셜 로그인
 - 🔔 Firebase 푸시 알림 + 홈 화면 위젯(`home_widget`)
-- 🚀 Shorebird 코드 푸시 — 스토어 심사 없이 Dart 코드 핫픽스
+- 🚀 Shorebird 코드 푸시: 스토어 심사 없이 Dart 코드 핫픽스
 - 🐞 Sentry 크래시·에러 모니터링
 
 ## 기술 스택
@@ -37,7 +37,7 @@ warding는 LCK 등 e스포츠 팬을 위한 Flutter 기반 모바일 앱입니�
 
 ### 사전 요구사항
 
-- Flutter 3.44.0 (`fvm use` 권장 — `.fvmrc`에 고정)
+- Flutter 3.44.0 (`fvm use` 권장, `.fvmrc`에 고정되어 있음)
 
 ### 설치 및 실행
 
@@ -59,13 +59,14 @@ flutter analyze       # 정적 분석
 
 ## 아키텍처
 
-**MVVM** 구조를 따른다. 상태와 로직은 ViewModel에, UI는 View에 둔다.
+**MVVM** 구조를 따릅니다. 상태와 로직은 ViewModel에 두고, UI는 View에 둡니다.
 
 - **Model** (`model/`, `repository/`) - 데이터 모델 클래스와 데이터 소스(API)
-- **ViewModel** (`viewmodel/`) - `ChangeNotifier`를 상속. 화면 상태·비즈니스 로직을 담당하고
-  `notifyListeners()`로 통지. `BuildContext`에 의존하지 않고, 화면 전환은 콜백으로 View에 위임
-- **View** (`screens/`) - UI만 담당. `ListenableBuilder`로 ViewModel을 구독하고, 사용자 이벤트는
-  ViewModel 메서드 호출로 위임
+- **ViewModel** (`viewmodel/`) - `ChangeNotifier`를 상속합니다. 화면 상태와 비즈니스 로직을
+  담당하며 `notifyListeners()`로 변경을 통지합니다. `BuildContext`에 의존하지 않고, 화면 전환은
+  콜백으로 View에 위임합니다.
+- **View** (`screens/`) - UI만 담당합니다. `ListenableBuilder`로 ViewModel을 구독하고, 사용자
+  이벤트는 ViewModel 메서드 호출로 위임합니다.
 
 ### 프로젝트 구조
 
@@ -83,7 +84,7 @@ lib/
 ```
 
 새 기능을 추가할 때 파일 위치·네이밍 규칙, 색상 토큰(`AppColors`) 사용 규칙, UI 비율
-스케일(`scale`) 패턴은 `CLAUDE.md`를 참고한다.
+스케일(`scale`) 패턴은 `CLAUDE.md`를 참고하세요.
 
 ## 상태 관리 전략
 
@@ -94,8 +95,8 @@ lib/
 ## 클라이언트 기본 설정
 
 - `lib/config/api_config.dart` - API base URL 등 환경 설정
-- `lib/config/secure_storage.dart` - 토큰 저장/조회 (Keychain 잠금 중 읽기 실패 등 함정으로 인해
-  민감하지 않은 값은 `shared_preferences`로 분리해 둠)
+- `lib/config/secure_storage.dart` - 토큰 저장/조회 (Keychain 잠금 중 읽기 실패 등 함정이 있어
+  민감하지 않은 값은 `shared_preferences`로 분리해 둡니다)
 - `lib/config/app_globals.dart` / `app_language.dart` - 전역 상태·언어 설정
 
 ## Contributing
@@ -112,4 +113,4 @@ lib/
 
 ## License
 
-Copyright (c) 2026 NAR. All rights reserved — see [LICENSE](./LICENSE) for details.
+Copyright (c) 2026 NAR. All rights reserved. See [LICENSE](./LICENSE) for details.
