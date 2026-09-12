@@ -1250,6 +1250,11 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
   /// 정보를 아직 못 받아온 동안(또는 필드가 비어 있으면)은 위젯 기본값
   /// (목데이터 "DNS"/"T1"/LCK)이 그대로 쓰이도록 생략한다. 경기 전
   /// (SCHEDULED)이면 잠금 안내를 보여준다.
+  ///
+  /// 로고·코드는 반드시 [_sideTeams] 로 이 세트의 실제 진영에 맞춰 배치한다
+  /// ([blueTeamSummary]/[redTeamSummary] 도 champions API 기준 진영별 값이라,
+  /// m.teamA/teamB 매치 단위 순서를 그대로 쓰면 세트마다 바뀌는 진영에서
+  /// 로고·코드와 실제 스탯 팀이 어긋난다).
   Widget _teamSummaryContent(double scale) {
     return _lockedAfterMatch(
       scale: scale,
@@ -1259,12 +1264,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
         if (m == null) {
           return MatchDetailTeamSummarySection(scale: scale);
         }
+        final side = _sideTeams();
+        final blueCode = side.blue?.teamCode ?? '';
+        final redCode = side.red?.teamCode ?? '';
         return MatchDetailTeamSummarySection(
           leagueCode: m.leagueInfo.isNotEmpty ? m.leagueInfo : 'LCK',
-          blueTeamCode: m.teamA.teamCode.isNotEmpty ? m.teamA.teamCode : 'DNS',
-          redTeamCode: m.teamB.teamCode.isNotEmpty ? m.teamB.teamCode : 'T1',
-          blueTeamLogoUrl: m.teamA.teamImageUrl,
-          redTeamLogoUrl: m.teamB.teamImageUrl,
+          blueTeamCode: blueCode.isNotEmpty ? blueCode : 'DNS',
+          redTeamCode: redCode.isNotEmpty ? redCode : 'T1',
+          blueTeamLogoUrl: side.blue?.teamImageUrl,
+          redTeamLogoUrl: side.red?.teamImageUrl,
           blueSummary: _viewModel.blueTeamSummary,
           redSummary: _viewModel.redTeamSummary,
           scale: scale,
