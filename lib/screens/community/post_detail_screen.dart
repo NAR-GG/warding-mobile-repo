@@ -65,6 +65,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void initState() {
     super.initState();
     _comment.addListener(() => setState(() {}));
+    _commentFocus.addListener(_onCommentFocusChanged);
     _vm.load();
     _vm.addListener(_showError);
   }
@@ -73,6 +74,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void dispose() {
     _vm.removeListener(_showError);
     _comment.dispose();
+    _commentFocus.removeListener(_onCommentFocusChanged);
     _commentFocus.dispose();
     _scrollController.dispose();
     _vm.dispose();
@@ -95,15 +97,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     ));
   }
 
-  /// 액션 행의 '댓글'을 누르면 입력창으로 커서를 옮겨 키보드를 올린다.
-  /// 목록 맨 아래까지 같이 내려줘야 방금 쓸 자리가 보인다.
-  Future<void> _focusComment() async {
-    if (!_vm.canWrite) return;
-    _commentFocus.requestFocus();
+  /// 입력창이 포커스를 얻으면(직접 탭 포함) 키보드가 다 올라온 뒤 목록을
+  /// 맨 아래로 붙여, 방금 쓸 자리가 키보드에 가리지 않고 보이게 한다.
+  ///
+  /// 댓글 입력창(`TextField`)을 사용자가 직접 탭하는 경로는 Flutter 가 자체
+  /// 처리해 [_focusComment] 를 거치지 않는다 — 예전엔 스크롤 보정이
+  /// [_focusComment] 안에만 있어서, '댓글' 액션 행이나 답글·수정 버튼을 거치지
+  /// 않고 입력창을 바로 탭하면 이 보정이 아예 안 걸려 키보드가 목록 아래쪽을
+  /// 가렸다. 포커스 리스너로 옮겨 어떤 경로로 포커스를 얻든 항상 적용한다.
+  void _onCommentFocusChanged() {
+    if (!_commentFocus.hasFocus) return;
+    _scrollToBottomAfterKeyboard();
+  }
 
-    // 키보드가 올라오면서 본문 영역이 줄어드는데, 그 전에 스크롤하면 줄어들기
-    // 전 기준의 maxScrollExtent 로 가서 결국 중간에 멈춘다. 애니메이션이
-    // 끝난 뒤에 맨 아래로 붙인다.
+  /// 키보드가 올라오면서 본문 영역이 줄어드는데, 그 전에 스크롤하면 줄어들기
+  /// 전 기준의 maxScrollExtent 로 가서 결국 중간에 멈춘다. 애니메이션이
+  /// 끝난 뒤에 맨 아래로 붙인다.
+  Future<void> _scrollToBottomAfterKeyboard() async {
     await Future<void>.delayed(const Duration(milliseconds: 320));
     if (!mounted || !_scrollController.hasClients) return;
     await _scrollController.animateTo(
@@ -111,6 +121,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
     );
+  }
+
+  /// 액션 행의 '댓글'을 누르면 입력창으로 커서를 옮겨 키보드를 올린다.
+  /// 스크롤 보정은 포커스를 얻는 순간 [_onCommentFocusChanged] 가 처리한다.
+  void _focusComment() {
+    if (!_vm.canWrite) return;
+    _commentFocus.requestFocus();
   }
 
   void _startReply(CommunityRemoteComment comment) {
