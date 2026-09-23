@@ -99,6 +99,23 @@ void main() {
       expect(find.text('글-latest'), findsOneWidget);
     });
 
+    testWidgets('"커뮤니티 전체"는 콜백으로 넘긴다(탭 전환은 홈 화면 몫)', (tester) async {
+      setUpHomeApi();
+      var opened = 0;
+      await pumpHomeSection(
+        tester,
+        section: (vm) => HomeCommunitySection(
+          viewModel: vm,
+          scale: 1,
+          onSeeAllCommunity: () => opened++,
+        ),
+      );
+
+      await tester.tap(find.text('커뮤니티 전체'));
+      await tester.pump();
+      expect(opened, 1);
+    });
+
     testWidgets('탭 순서는 선택과 무관하게 최신순 · 인기순 · 평점 한줄평', (tester) async {
       setUpHomeApi();
       await pumpHomeSection(

@@ -6,7 +6,6 @@ import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../model/home_models.dart';
-import '../../community/community_screen.dart';
 import 'home_pill_tabs.dart';
 import 'home_section_header.dart';
 
@@ -20,10 +19,15 @@ class HomeCommunitySection extends StatelessWidget {
     super.key,
     required this.viewModel,
     required this.scale,
+    this.onSeeAllCommunity,
   });
 
   final HomeViewModel viewModel;
   final double scale;
+
+  /// "커뮤니티 전체" — 커뮤니티 탭으로 전환한다. 탭 루트끼리 쌓이지 않게
+  /// 화면 전환은 홈 화면이 `pushReplacement` 로 한다.
+  final VoidCallback? onSeeAllCommunity;
 
   String _labelFor(AppLocalizations l, HomeCommunitySort sort) =>
       switch (sort) {
@@ -45,9 +49,7 @@ class HomeCommunitySection extends StatelessWidget {
             title: l.homeCommunityTitle,
             scale: scale,
             trailingLabel: l.homeSeeAllCommunity,
-            onTapTrailing: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const CommunityScreen())),
+            onTapTrailing: onSeeAllCommunity,
           ),
         ),
         SizedBox(height: 10 * scale),

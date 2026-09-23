@@ -104,9 +104,29 @@ class HomeViewModel extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// 앱 복귀 새로고침의 최소 간격 — 잠깐 다녀온 복귀마다 전 섹션을 다시
+  /// 부르지 않게 한다.
+  static const Duration resumeRefreshInterval = Duration(seconds: 30);
+
+  DateTime? _lastRefreshAt;
+
+  /// 앱이 포그라운드로 돌아왔을 때 부른다. 마지막 [refreshAll] 이
+  /// [minInterval] 안이면 건너뛴다.
+  Future<void> refreshOnResume({
+    Duration minInterval = resumeRefreshInterval,
+  }) async {
+    final last = _lastRefreshAt;
+    if (last != null && DateTime.now().difference(last) < minInterval) return;
+    await refreshAll();
+  }
+
   /// 모든 섹션을 다시 불러온다. 섹션끼리는 서로 기다리지 않는다 — 한 섹션이
   /// 실패해도 나머지는 그대로 채워진다.
+  ///
+  /// 복귀 새로고침과 겹칠 수 있어, 섹션 로더마다 세대 번호를 두어 늦게 도착한
+  /// 옛 응답이 새 응답을 덮지 않게 한다.
   Future<void> refreshAll() async {
+    _lastRefreshAt = DateTime.now();
     await Future.wait([
       _loadPromotedNotice(),
       refreshUnreadNotifications(),
@@ -190,11 +210,15 @@ class HomeViewModel extends ChangeNotifier {
   /// 이때 구독 수는 0명으로 본다.
   List<PlayerSubscription>? _subscribedPlayers;
 
+  int _subscriptionsGen = 0;
+
   Future<void> _loadSubscriptions() async {
+    final gen = ++_subscriptionsGen;
     try {
       // 비회원(JWT 없음)이면 authorizedRequest 가 던진다 → 아래 catch.
       final players = await _subscriptions.fetchSubscribedPlayers();
-      if (_disposed) return;
+      // 그 사이 더 새 요청이 떴으면 옛 응답은 버린다(아래 로더들도 같다).
+      if (_disposed || gen != _subscriptionsGen) return;
       _subscribedPlayers = players;
       _recomputeSolo();
       _notify();
@@ -258,10 +282,13 @@ class HomeViewModel extends ChangeNotifier {
     _notify();
   }
 
+  int _soloGen = 0;
+
   Future<void> _loadSolo() async {
+    final gen = ++_soloGen;
     try {
       final snap = await _soloRank.fetch();
-      if (_disposed) return;
+      if (_disposed || gen != _soloGen) return;
       _soloSnapshot = snap;
       _recomputeSolo();
       _notify();
@@ -312,13 +339,16 @@ class HomeViewModel extends ChangeNotifier {
   ];
 
   /// 오늘 모든 리그의 경기를 불러온다. 실패하면 마지막 값을 유지한다.
+  int _todayGen = 0;
+
   Future<void> loadTodayMatches() async {
+    final gen = ++_todayGen;
     try {
       final matches = await _schedule.fetchMatchesByDate(
         DateTime.now(),
         leagues: const ['ALL'],
       );
-      if (_disposed) return;
+      if (_disposed || gen != _todayGen) return;
       _todayMatches = matches;
       _notify();
     } catch (e) {
@@ -425,10 +455,13 @@ class HomeViewModel extends ChangeNotifier {
   /// 평점 한줄평(한줄평이 달린 것만 — [ReviewSource] 계약).
   List<HomeReviewItem> get reviews => _reviews;
 
+  int _reviewsGen = 0;
+
   Future<void> _loadReviews() async {
+    final gen = ++_reviewsGen;
     try {
       final reviews = await _reviewSource.fetchRecent();
-      if (_disposed) return;
+      if (_disposed || gen != _reviewsGen) return;
       _reviews = reviews;
       // 평점 탭을 보고 있었는데 한줄평이 비었으면 탭이 사라지므로 최신순으로
       // 돌리고 그 기준으로 글을 다시 받는다.
@@ -467,10 +500,13 @@ class HomeViewModel extends ChangeNotifier {
   List<HomeNewsArticle> _news = const [];
   List<HomeNewsArticle> get news => _news;
 
+  int _newsGen = 0;
+
   Future<void> _loadNews() async {
+    final gen = ++_newsGen;
     try {
       final articles = await _newsSource.fetchTop();
-      if (_disposed) return;
+      if (_disposed || gen != _newsGen) return;
       _news = articles;
       _notify();
     } catch (e) {
@@ -489,10 +525,13 @@ class HomeViewModel extends ChangeNotifier {
 
   List<StoryVideo> _shorts = const [];
 
+  int _shortsGen = 0;
+
   Future<void> _loadShorts() async {
+    final gen = ++_shortsGen;
     try {
       final videos = await _shortsRepo.fetchShorts(sort: 'latest');
-      if (_disposed) return;
+      if (_disposed || gen != _shortsGen) return;
       _shorts = videos;
       _notify();
     } catch (e) {

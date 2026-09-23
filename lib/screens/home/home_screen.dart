@@ -31,13 +31,31 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final HomeViewModel _viewModel = HomeViewModel();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  /// 앱이 포그라운드로 돌아오면 홈을 다시 불러온다(최근에 불렀으면 건너뜀).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _viewModel.refreshOnResume();
+  }
+
+  /// "커뮤니티 전체" — 커뮤니티 탭으로 전환한다. push 하면 탭 루트가 쌓인다.
+  void _openCommunity() {
+    Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
   }
 
   /// 오늘 경기 "일정 전체" — 일정 탭으로 전환한다(spec 사용자 흐름 4).
@@ -149,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           HomeCommunitySection(
                             viewModel: _viewModel,
                             scale: scale,
+                            onSeeAllCommunity: _openCommunity,
                           ),
                           SizedBox(height: 28 * scale),
                           HomeContentSection(

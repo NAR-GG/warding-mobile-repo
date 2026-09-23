@@ -4,11 +4,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mocktail/mocktail.dart';
+import 'dart:async';
+
 import 'package:warding/model/home_models.dart';
+import 'package:warding/model/schedule_match.dart';
 import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/repository/home/home_sources.dart';
 import 'package:warding/repository/notice/notice_repository.dart';
 import 'package:warding/repository/preference/notice_preference_repository.dart';
+import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/repository/subscription/subscription_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
@@ -18,6 +23,20 @@ class _FakeSolo implements SoloRankSource {
   final SoloRankSnapshot snap;
   @override
   Future<SoloRankSnapshot> fetch() async => snap;
+}
+
+class _MockSchedule extends Mock implements ScheduleRepository {}
+
+/// 부를 때마다 [pending] 의 다음 Completer 를 기다리는 솔랭 소스 —
+/// 응답 순서를 테스트가 정한다.
+class _GatedSolo implements SoloRankSource {
+  final List<Completer<SoloRankSnapshot>> pending = [];
+  @override
+  Future<SoloRankSnapshot> fetch() {
+    final c = Completer<SoloRankSnapshot>();
+    pending.add(c);
+    return c.future;
+  }
 }
 
 class _SwitchableReviews implements ReviewSource {
@@ -698,6 +717,103 @@ void main() {
       await pumpEventQueue();
       expect(vm.promotedNotice, isNull);
       expect(vm.bannerVisible, isFalse);
+    });
+  });
+
+  group('겹치는 로드 — 나중 요청이 이긴다', () {
+    setUpAll(() => registerFallbackValue(DateTime(2000)));
+
+    test('오늘 경기: 늦게 도착한 옛 응답이 새 응답을 덮지 않는다', () async {
+      final schedule = _MockSchedule();
+      final gates = <Completer<List<ScheduleMatch>>>[];
+      when(
+        () => schedule.fetchMatchesByDate(
+          any(),
+          leagues: any(named: 'leagues'),
+        ),
+      ).thenAnswer((_) {
+        final c = Completer<List<ScheduleMatch>>();
+        gates.add(c);
+        return c.future;
+      });
+      final vm = HomeViewModel(
+        schedule: schedule,
+        soloRank: _FakeSolo(_emptySolo),
+        reviews: const MockReviewSource(),
+        news: const MockNewsSource(),
+      );
+      addTearDown(vm.dispose);
+      await pumpEventQueue();
+      expect(gates.length, 1); // 생성자의 refreshAll
+
+      final second = vm.loadTodayMatches();
+      await pumpEventQueue();
+      expect(gates.length, 2);
+
+      // 새 요청이 먼저 끝나고, 옛 요청이 뒤늦게 끝난다.
+      gates[1].complete([ScheduleMatch.fromJson(_match('new', 'inProgress'))]);
+      await second;
+      gates[0].complete([ScheduleMatch.fromJson(_match('old', 'inProgress'))]);
+      await pumpEventQueue();
+
+      expect(vm.todayMatchesSorted.map((m) => m.matchId), ['new']);
+    });
+
+    test('솔랭: 늦게 도착한 옛 응답이 새 응답을 덮지 않는다', () async {
+      final solo = _GatedSolo();
+      server.subscriptions = [_sub('Old', 'T1', 'T1'), _sub('New', 'T1', 'T1')];
+      setUpServer(loggedIn: true);
+      final vm = HomeViewModel(
+        soloRank: solo,
+        reviews: const MockReviewSource(),
+        news: const MockNewsSource(),
+      );
+      addTearDown(vm.dispose);
+      await pumpEventQueue();
+      expect(solo.pending.length, 1);
+
+      final second = vm.refreshAll();
+      await pumpEventQueue();
+      expect(solo.pending.length, 2);
+
+      solo.pending[1].complete(
+        SoloRankSnapshot(
+          live: [live('New', 10)],
+          finished: const [],
+          subscribedTotal: 0,
+        ),
+      );
+      await second;
+      solo.pending[0].complete(
+        SoloRankSnapshot(
+          live: [live('Old', 10)],
+          finished: const [],
+          subscribedTotal: 0,
+        ),
+      );
+      await pumpEventQueue();
+
+      expect(vm.soloLive.map((p) => p.name), ['New']);
+    });
+  });
+
+  group('앱 복귀 새로고침', () {
+    test('마지막 새로고침이 최근이면 건너뛴다', () async {
+      final vm = build();
+      await pumpEventQueue();
+      final before = server.requestsTo('schedule').length;
+
+      await vm.refreshOnResume();
+      expect(server.requestsTo('schedule').length, before);
+    });
+
+    test('간격이 지났으면 다시 불러온다', () async {
+      final vm = build();
+      await pumpEventQueue();
+      final before = server.requestsTo('schedule').length;
+
+      await vm.refreshOnResume(minInterval: Duration.zero);
+      expect(server.requestsTo('schedule').length, before + 1);
     });
   });
 
