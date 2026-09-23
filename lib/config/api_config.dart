@@ -483,4 +483,13 @@ class ApiConfig {
   /// 리그 순위표 조회. 현재 서버는 LCK만 준다.
   static String standingsUrl({required String league}) =>
       '$apiBaseUrl/standings?league=${Uri.encodeQueryComponent(league)}';
+
+  // ── 유튜브 쇼츠 (인증 불필요) ───────────────────────────────────────
+
+  /// 쇼츠 목록. 백엔드 `YoutubeController`의 `GET /api/story/videos`
+  /// (nar-back-repo에서 확인; `/api/videos`는 없다).
+  /// [sort] 는 'latest'(기본) | 'views' | 'likes' — 그 외 값('popular' 등)은
+  /// 서버가 에러 없이 latest로 처리한다. 응답은 Spring `Page` (`content` 래퍼).
+  static String shortsUrl({String sort = 'latest', int size = 20}) =>
+      '$apiBaseUrl/story/videos?category=shorts&sort=$sort&size=$size';
 }
