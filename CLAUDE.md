@@ -182,7 +182,7 @@ Discord `/intent`를 거치지 않고 대화(채팅)로 바로 기능 변경을 
 - 화면 폴더 구조 정리 (`screens/login·home·onboarding`)
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
-- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 목업(백엔드 대기, `lib/repository/home/home_sources.dart`). 로그인 사용자에게 목업 솔랭 카드가 보이므로 릴리즈 전 교체 필요
+- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/repository/home/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
 ### 다음 작업
 - 솔랭·평점·뉴스 백엔드 연동(홈 소스 구현체 교체)

@@ -177,13 +177,15 @@ Future<HomeViewModel> pumpHomeSection(
   WidgetTester tester, {
   required Widget Function(HomeViewModel vm) section,
   SoloRankSnapshot solo = emptySolo,
+  ReviewSource reviews = const MockReviewSource(),
+  NewsSource news = const MockNewsSource(),
 }) async {
   late HomeViewModel vm;
   await tester.runAsync(() async {
     vm = HomeViewModel(
       soloRank: FakeSoloSource(solo),
-      reviews: const MockReviewSource(),
-      news: const MockNewsSource(),
+      reviews: reviews,
+      news: news,
     );
     // 생성자가 띄운 로드와 별개로 한 번 더 기다려 결과가 확실히 반영되게 한다.
     await vm.refreshAll();

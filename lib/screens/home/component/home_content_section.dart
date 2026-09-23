@@ -13,7 +13,7 @@ import 'home_section_header.dart';
 /// 콘텐츠 — 밖에서 온 것(뉴스·쇼츠). 평점 한줄평은 유저가 쓴 것이라 커뮤니티
 /// 섹션 탭에 있다(spec 결정: 섹션을 둘로 나눈다).
 ///
-/// 기본 탭은 뉴스다(spec 결정). 쇼츠 "내 선수" 같은 필터가 0건이면 점선 박스를
+/// 기본 탭은 뉴스다(spec 결정). 뉴스가 없으면 뉴스 탭을 숨기고 쇼츠만 둔다. 쇼츠 "내 선수" 같은 필터가 0건이면 점선 박스를
 /// 보여준다(spec "상태" 표). 로딩·에러는 그리지 않는다.
 ///
 /// 쇼츠를 누르면 유튜브를 앱 밖에서 연다. 홈 안에서 재생할지·전체화면 피드로
@@ -48,15 +48,16 @@ class HomeContentSection extends StatelessWidget {
         ),
         SizedBox(height: 10 * scale),
         HomePillTabs<HomeContentTab>(
+          // 뉴스가 없으면(릴리즈 빈 소스) 뉴스 탭을 그리지 않는다.
           tabs: [
-            HomePillTab(
-              value: HomeContentTab.news,
-              label: l.homeContentTabNews,
-            ),
-            HomePillTab(
-              value: HomeContentTab.shorts,
-              label: l.homeContentTabShorts,
-            ),
+            for (final t in viewModel.availableContentTabs)
+              HomePillTab(
+                value: t,
+                label: switch (t) {
+                  HomeContentTab.news => l.homeContentTabNews,
+                  HomeContentTab.shorts => l.homeContentTabShorts,
+                },
+              ),
           ],
           selected: tab,
           onSelected: viewModel.setContentTab,

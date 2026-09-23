@@ -25,6 +25,20 @@ void main() {
       expect(find.textContaining('평점'), findsNothing);
     });
 
+    testWidgets('뉴스가 비면(릴리즈 빈 소스) 뉴스 탭 없이 쇼츠가 보인다', (tester) async {
+      final server = setUpHomeApi();
+      server.shorts = [shortsJson('LCK 하이라이트', channel: 'LCK')];
+      await pumpHomeSection(
+        tester,
+        news: const EmptyNewsSource(),
+        section: (vm) => HomeContentSection(viewModel: vm, scale: 1),
+      );
+
+      expect(find.text('뉴스'), findsNothing);
+      expect(find.text('쇼츠'), findsOneWidget);
+      expect(find.text('LCK 하이라이트'), findsOneWidget);
+    });
+
     testWidgets('쇼츠 "내 선수" 필터가 0건이면 점선 박스', (tester) async {
       final server = setUpHomeApi(loggedIn: true);
       server.subscriptions = [subscriptionJson('Faker', 'T1')];
@@ -69,6 +83,20 @@ void main() {
       await tester.tap(find.text('평점 한줄평'));
       await tester.pump();
       expect(find.text(MockReviewSource.reviews.first.comment), findsOneWidget);
+    });
+
+    testWidgets('한줄평이 비면(릴리즈 빈 소스) 평점 한줄평 탭이 없다', (tester) async {
+      setUpHomeApi();
+      await pumpHomeSection(
+        tester,
+        reviews: const EmptyReviewSource(),
+        section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
+      );
+
+      expect(find.text('최신순'), findsOneWidget);
+      expect(find.text('인기순'), findsOneWidget);
+      expect(find.text('평점 한줄평'), findsNothing);
+      expect(find.text('글-latest'), findsOneWidget);
     });
 
     testWidgets('탭 순서는 선택과 무관하게 최신순 · 인기순 · 평점 한줄평', (tester) async {

@@ -3,6 +3,7 @@
 ## 2026-09-24
 * **홈 화면 완료(spec v29)**: 홈이 앱 진입 화면이 됨(스플래시·로그인·온보딩 완료 → `HomeScreen`). 솔랭·오늘 경기·순위표·커뮤니티·콘텐츠 5섹션과 내 선수 화면 추가. 솔랭·평점·뉴스는 목업(`SoloRankSource`·`ReviewSource`·`NewsSource`), 백엔드 대기.
 * **Creation**: [홈](/features/home.md) 개념 문서 추가.
+* **홈 최종 리뷰 수정**: 솔랭·평점·뉴스 목업을 `HOME_MOCKS` 게이트(기본값 `kDebugMode`) 뒤로 옮김 — 릴리즈 빌드는 빈 소스, 빈 뉴스·한줄평이면 해당 탭을 숨김. 순위 칩·쇼츠 sort 문구 정정.
 
 ## 2026-06-22
 * **#11 완료**: 비회원 온보딩 로컬 저장 + 로그인 동기화. `OnboardingSelection` 모델·`OnboardingPreferenceRepository`·`OnboardingSyncService` 추가, `OnboardingViewModel`·`login_screen` 연동.

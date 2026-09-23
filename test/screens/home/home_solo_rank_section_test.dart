@@ -85,6 +85,34 @@ void main() {
     expect(opened, 1);
   });
 
+  testWidgets('빈 솔랭 소스(릴리즈 기본) + 구독 있음 — 조용한 행, 누르면 내 선수', (
+    tester,
+  ) async {
+    final server = setUpHomeApi(loggedIn: true);
+    server.subscriptions = [
+      subscriptionJson('Faker', 'T1'),
+      subscriptionJson('Chovy', 'GEN'),
+    ];
+    var opened = 0;
+    late SoloRankSnapshot empty;
+    await tester.runAsync(
+      () async => empty = await const EmptySoloRankSource().fetch(),
+    );
+    final vm = await pumpHomeSection(
+      tester,
+      solo: empty,
+      section: (vm) => section(vm, onOpenMyPlayers: () => opened++),
+    );
+
+    expect(vm.soloState, SoloCardState.noneActive);
+    final quiet = find.byKey(HomeSoloRankSection.quietKey);
+    expect(quiet, findsOneWidget);
+    expect(find.textContaining('구독 2명'), findsOneWidget);
+    expect(find.byType(PageView), findsNothing);
+    await tester.tap(quiet);
+    expect(opened, 1);
+  });
+
   testWidgets('진행 중 — 큰 카드의 숫자는 경과 시간뿐, 아래 끝난 줄은 "N분 전 종료"', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
     server.subscriptions = [

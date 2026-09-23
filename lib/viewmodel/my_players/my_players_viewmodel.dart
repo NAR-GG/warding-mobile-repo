@@ -43,7 +43,8 @@ class MyPlayersViewModel extends ChangeNotifier {
     SubscriptionRepository? subscriptions,
     SoloRankSource? soloRank,
   }) : _subscriptions = subscriptions ?? SubscriptionRepository.instance,
-       _soloRank = soloRank ?? const MockSoloRankSource() {
+       // 목업은 HOME_MOCKS 게이트 뒤 — 릴리즈 빌드 기본값은 빈 소스다.
+       _soloRank = soloRank ?? defaultSoloRankSource() {
     unawaited(refresh());
   }
 

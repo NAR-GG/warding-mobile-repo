@@ -53,7 +53,8 @@ class HomeCommunitySection extends StatelessWidget {
         SizedBox(height: 10 * scale),
         HomePillTabs<HomeCommunitySort>(
           tabs: [
-            for (final sort in HomeCommunitySort.values)
+            // 한줄평이 없으면(릴리즈 빈 소스) 평점 탭을 그리지 않는다.
+            for (final sort in viewModel.availableCommunitySorts)
               HomePillTab(value: sort, label: _labelFor(l, sort)),
           ],
           selected: viewModel.communitySort,

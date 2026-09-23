@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../model/home_models.dart';
 
 /// 솔로 랭크 상태 한 번의 조회 결과.
@@ -30,7 +32,60 @@ abstract class NewsSource {
   Future<List<HomeNewsArticle>> fetchTop();
 }
 
-/// 목업 솔랭 소스. 솔랭 DTO가 생기기 전까지 [HomeViewModel] 의 기본 소스다.
+/// 홈 목업 스위치. 켜져 있으면 솔랭·평점·뉴스의 기본 소스가 목업이고, 꺼져
+/// 있으면 빈 소스다.
+///
+/// 기본값은 [kDebugMode] — 디버그·시뮬레이터에서는 목업을 보고, 릴리즈
+/// (`shorebird release`) 빌드에서는 빈 소스가 나가 가짜 솔랭·실제 언론사 이름을 단
+/// 가짜 뉴스·가짜 한줄평이 실사용자에게 보이지 않는다. 릴리즈 빌드에서 목업을
+/// 보려면 `--dart-define=HOME_MOCKS=true`, 디버그에서 끄려면 `=false`.
+const bool kHomeMocks = bool.fromEnvironment(
+  'HOME_MOCKS',
+  defaultValue: kDebugMode,
+);
+
+/// [HomeViewModel]·[MyPlayersViewModel] 의 기본 솔랭 소스. 테스트는 [mocks] 로
+/// 게이트 결과를 확인한다.
+SoloRankSource defaultSoloRankSource({bool mocks = kHomeMocks}) =>
+    mocks ? const MockSoloRankSource() : const EmptySoloRankSource();
+
+/// [HomeViewModel] 의 기본 한줄평 소스.
+ReviewSource defaultReviewSource({bool mocks = kHomeMocks}) =>
+    mocks ? const MockReviewSource() : const EmptyReviewSource();
+
+/// [HomeViewModel] 의 기본 뉴스 소스.
+NewsSource defaultNewsSource({bool mocks = kHomeMocks}) =>
+    mocks ? const MockNewsSource() : const EmptyNewsSource();
+
+/// 빈 솔랭 소스 — 솔랭 백엔드가 없을 때 릴리즈 빌드의 기본값. 구독이 있으면
+/// 홈 솔랭 카드는 "지금 솔랭 중인 선수 없음" 조용한 행이 되고, 내 선수 화면은
+/// 모두 소식 없음으로 둔다.
+class EmptySoloRankSource implements SoloRankSource {
+  const EmptySoloRankSource();
+
+  @override
+  Future<SoloRankSnapshot> fetch() async =>
+      const SoloRankSnapshot(live: [], finished: [], subscribedTotal: 0);
+}
+
+/// 빈 한줄평 소스 — 홈 커뮤니티의 평점 한줄평 탭이 숨겨진다.
+class EmptyReviewSource implements ReviewSource {
+  const EmptyReviewSource();
+
+  @override
+  Future<List<HomeReviewItem>> fetchRecent() async => const [];
+}
+
+/// 빈 뉴스 소스 — 홈 콘텐츠의 뉴스 탭이 숨겨지고 쇼츠가 기본 탭이 된다.
+class EmptyNewsSource implements NewsSource {
+  const EmptyNewsSource();
+
+  @override
+  Future<List<HomeNewsArticle>> fetchTop() async => const [];
+}
+
+/// 목업 솔랭 소스. 솔랭 DTO가 생기기 전까지 [kHomeMocks] 가 켜진 빌드의 기본
+/// 소스다.
 class MockSoloRankSource implements SoloRankSource {
   const MockSoloRankSource();
 

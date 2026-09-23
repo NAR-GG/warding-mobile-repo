@@ -69,9 +69,10 @@ class HomeViewModel extends ChangeNotifier {
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        _memberNotifications =
            memberNotifications ?? MemberNotificationRepository.instance,
-       _soloRank = soloRank ?? const MockSoloRankSource(),
-       _reviewSource = reviews ?? const MockReviewSource(),
-       _newsSource = news ?? const MockNewsSource() {
+       // 목업은 HOME_MOCKS 게이트 뒤 — 릴리즈 빌드 기본값은 빈 소스다.
+       _soloRank = soloRank ?? defaultSoloRankSource(),
+       _reviewSource = reviews ?? defaultReviewSource(),
+       _newsSource = news ?? defaultNewsSource() {
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     _promotedNotices = _notices.cachedPromoted ?? const [];
@@ -386,10 +387,16 @@ class HomeViewModel extends ChangeNotifier {
   /// 평점 탭([HomeCommunitySort.review])은 [reviews] 를 보여줄 뿐 조회하지 않는다.
   void setCommunitySort(HomeCommunitySort sort) {
     if (sort == _communitySort) return;
+    if (!availableCommunitySorts.contains(sort)) return;
     _communitySort = sort;
     _notify();
     if (sort != HomeCommunitySort.review) unawaited(_loadCommunityPosts());
   }
+
+  /// 보여줄 정렬 탭. 한줄평이 없으면(릴리즈 빈 소스 등) 평점 탭을 뺀다.
+  List<HomeCommunitySort> get availableCommunitySorts => _reviews.isEmpty
+      ? const [HomeCommunitySort.latest, HomeCommunitySort.hot]
+      : HomeCommunitySort.values;
 
   List<CommunityRemotePost> _communityPosts = const [];
 
@@ -423,6 +430,12 @@ class HomeViewModel extends ChangeNotifier {
       final reviews = await _reviewSource.fetchRecent();
       if (_disposed) return;
       _reviews = reviews;
+      // 평점 탭을 보고 있었는데 한줄평이 비었으면 탭이 사라지므로 최신순으로
+      // 돌리고 그 기준으로 글을 다시 받는다.
+      if (reviews.isEmpty && _communitySort == HomeCommunitySort.review) {
+        _communitySort = HomeCommunitySort.latest;
+        unawaited(_loadCommunityPosts());
+      }
       _notify();
     } catch (e) {
       debugPrint('[Home] 평점 한줄평 조회 실패: $e');
@@ -431,11 +444,22 @@ class HomeViewModel extends ChangeNotifier {
 
   // ---- 섹션 5: 콘텐츠 (뉴스 / 쇼츠) ----
   // 기본 탭은 뉴스 — 쇼츠는 호불호가 갈리고 뉴스를 보는 사람이 더 많다(spec 결정).
+  // 단 뉴스가 없으면(릴리즈 빈 소스 등) 뉴스 탭을 숨기고 쇼츠가 실제 탭이 된다.
   HomeContentTab _contentTab = HomeContentTab.news;
-  HomeContentTab get contentTab => _contentTab;
+
+  /// 실제로 보이는 탭 — 고른 탭이 없어졌으면 남은 탭으로 맞춘다.
+  HomeContentTab get contentTab => availableContentTabs.contains(_contentTab)
+      ? _contentTab
+      : availableContentTabs.first;
+
+  /// 보여줄 콘텐츠 탭. 뉴스가 비면 쇼츠만.
+  List<HomeContentTab> get availableContentTabs => _news.isEmpty
+      ? const [HomeContentTab.shorts]
+      : HomeContentTab.values;
 
   void setContentTab(HomeContentTab tab) {
-    if (tab == _contentTab) return;
+    if (tab == contentTab) return;
+    if (!availableContentTabs.contains(tab)) return;
     _contentTab = tab;
     _notify();
   }

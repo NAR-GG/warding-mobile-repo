@@ -20,6 +20,13 @@ class _FakeSolo implements SoloRankSource {
   Future<SoloRankSnapshot> fetch() async => snap;
 }
 
+class _SwitchableReviews implements ReviewSource {
+  _SwitchableReviews(this.items);
+  List<HomeReviewItem> items;
+  @override
+  Future<List<HomeReviewItem>> fetchRecent() async => items;
+}
+
 HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
   name: name,
   teamCode: 'T1',
@@ -192,7 +199,12 @@ void main() {
 
   /// [subscribed] 를 주면 로그인 상태로 그 수만큼의 구독 선수를 돌려준다 —
   /// 구독 수는 실제 구독 목록 길이로만 센다(비회원·조회 실패는 0명).
-  HomeViewModel build({SoloRankSnapshot snap = _emptySolo, int? subscribed}) {
+  HomeViewModel build({
+    SoloRankSnapshot snap = _emptySolo,
+    int? subscribed,
+    ReviewSource reviews = const MockReviewSource(),
+    NewsSource news = const MockNewsSource(),
+  }) {
     if (subscribed != null) {
       server.subscriptions = [
         for (var i = 0; i < subscribed; i++) _sub('Sub$i', 'T1', 'T1'),
@@ -201,8 +213,8 @@ void main() {
     }
     final vm = HomeViewModel(
       soloRank: _FakeSolo(snap),
-      reviews: const MockReviewSource(),
-      news: const MockNewsSource(),
+      reviews: reviews,
+      news: news,
     );
     addTearDown(vm.dispose);
     return vm;
@@ -500,8 +512,9 @@ void main() {
   group('콘텐츠', () {
     test('콘텐츠 기본 탭은 뉴스이고 NewsSource 의 기사를 보여준다', () async {
       final vm = build();
-      expect(vm.contentTab, HomeContentTab.news);
       await pumpEventQueue();
+      // 뉴스가 도착하면 기본 탭은 뉴스(도착 전엔 뉴스 탭이 없어 쇼츠로 보인다).
+      expect(vm.contentTab, HomeContentTab.news);
       expect(vm.news, MockNewsSource.articles);
 
       vm.setContentTab(HomeContentTab.shorts);
@@ -572,6 +585,61 @@ void main() {
       expect(vm.shortsFiltered.single.matchedPlayer, isNull);
       vm.setShortsFilter(HomeShortsFilter.player);
       expect(vm.shortsFiltered, isEmpty);
+    });
+  });
+
+  group('빈 소스(릴리즈 기본값)', () {
+    test('뉴스가 비면 뉴스 탭을 빼고 쇼츠가 실제 탭이 된다', () async {
+      final vm = build(news: const EmptyNewsSource());
+      await pumpEventQueue();
+      expect(vm.availableContentTabs, [HomeContentTab.shorts]);
+      expect(vm.contentTab, HomeContentTab.shorts);
+    });
+
+    test('뉴스가 있으면 뉴스 · 쇼츠 두 탭이고 기본은 뉴스', () async {
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.availableContentTabs, [
+        HomeContentTab.news,
+        HomeContentTab.shorts,
+      ]);
+      expect(vm.contentTab, HomeContentTab.news);
+    });
+
+    test('한줄평이 비면 평점 탭을 빼고, 골라 둔 평점 탭은 최신순으로 돌린다', () async {
+      final reviews = _SwitchableReviews(MockReviewSource.reviews);
+      final vm = build(reviews: reviews);
+      await pumpEventQueue();
+      expect(vm.availableCommunitySorts, HomeCommunitySort.values);
+
+      vm.setCommunitySort(HomeCommunitySort.review);
+      expect(vm.communitySort, HomeCommunitySort.review);
+
+      reviews.items = const [];
+      await vm.refreshAll();
+      await pumpEventQueue();
+      expect(vm.availableCommunitySorts, [
+        HomeCommunitySort.latest,
+        HomeCommunitySort.hot,
+      ]);
+      expect(vm.communitySort, HomeCommunitySort.latest);
+      expect(vm.communityPosts.single.title, '글-latest');
+
+      // 빈 상태에서는 평점 탭을 고를 수 없다.
+      vm.setCommunitySort(HomeCommunitySort.review);
+      expect(vm.communitySort, HomeCommunitySort.latest);
+    });
+
+    test('빈 솔랭 소스 + 구독 있음이면 조용한 상태(noneActive)', () async {
+      final vm = build(
+        snap: await const EmptySoloRankSource().fetch(),
+        subscribed: 3,
+      );
+      await pumpEventQueue();
+      expect(vm.soloState, SoloCardState.noneActive);
+      expect(vm.soloLive, isEmpty);
+      expect(vm.soloFinished, isEmpty);
+      expect(vm.soloHiddenCount, 3);
     });
   });
 
