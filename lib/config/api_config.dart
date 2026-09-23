@@ -333,15 +333,17 @@ class ApiConfig {
   // ── 커뮤니티 (읽기는 비로그인 허용, 쓰기는 인증 필요) ────────────────
 
   /// 게시글 목록. [boardTeamId] 생략 = 전체 게시판, 값 = 그 팀 게시판.
-  /// [size] 기본 20, 최대 50.
+  /// [size] 기본 20, 최대 50. [sort]는 'hot' 또는 'latest', null이면 쿼리에 붙이지 않는다.
   static String communityPostsUrl({
     int? boardTeamId,
     int? cursor,
     int size = 20,
+    String? sort,
   }) {
     final query = StringBuffer('size=$size');
     if (boardTeamId != null) query.write('&boardTeamId=$boardTeamId');
     if (cursor != null) query.write('&cursor=$cursor');
+    if (sort != null) query.write('&sort=$sort');
     return '$apiBaseUrl/mobile/community/posts?$query';
   }
 
