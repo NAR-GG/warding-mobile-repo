@@ -286,6 +286,22 @@ void main() {
       expect(vm.soloHiddenCount, 20 - 1 - 8);
     });
 
+    test('지금 진행 중인 선수는 끝난 경기 줄에서 빠지고 숨김 수도 두 번 세지 않는다', () async {
+      final vm = build(
+        snap: SoloRankSnapshot(
+          // A 는 오늘 1판을 끝내고 지금 2판째를 하는 중이다.
+          live: [live('A', 60)],
+          finished: [done('A', 3), done('B', 10)],
+          subscribedTotal: 10,
+        ),
+      );
+      await pumpEventQueue();
+
+      expect(vm.soloLive.map((p) => p.name), ['A']);
+      expect(vm.soloFinished.map((p) => p.name), ['B']);
+      expect(vm.soloHiddenCount, 10 - 1 - 1);
+    });
+
     test('숨김 수는 음수가 되지 않는다', () async {
       final vm = build(
         snap: SoloRankSnapshot(

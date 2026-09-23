@@ -249,9 +249,13 @@ class HomeViewModel extends ChangeNotifier {
     });
     _soloLive = live;
 
-    // 선수당 가장 최근(minutesAgo 최소) 1건만 남긴다.
+    // 지금 진행 중인 선수는 아래 줄에서 뺀다 — 위 큰 카드에 이미 있어서, 남기면
+    // 같은 선수가 두 번 나오고 숨김 수도 두 번 빠진다(spec 결정).
+    // 그다음 선수당 가장 최근(minutesAgo 최소) 1건만 남긴다.
+    final liveNames = {for (final p in snap.live) p.name};
     final latest = <String, HomeFinishedSoloPlayer>{};
     for (final p in snap.finished) {
+      if (liveNames.contains(p.name)) continue;
       final prev = latest[p.name];
       if (prev == null || p.minutesAgo < prev.minutesAgo) latest[p.name] = p;
     }
