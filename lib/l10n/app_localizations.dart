@@ -338,6 +338,60 @@ abstract class AppLocalizations {
   /// **'조건에 맞는 쇼츠가 아직 없어요'**
   String get homeShortsFilterEmpty;
 
+  /// No description provided for @homeSoloPlaying.
+  ///
+  /// In ko, this message translates to:
+  /// **'{champion} 플레이 중'**
+  String homeSoloPlaying(String champion);
+
+  /// No description provided for @homeSoloEndedAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{ago} 종료'**
+  String homeSoloEndedAgo(String ago);
+
+  /// No description provided for @homeSoloDuration.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String homeSoloDuration(int minutes);
+
+  /// No description provided for @homeSoloWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'승'**
+  String get homeSoloWin;
+
+  /// No description provided for @homeSoloLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'패'**
+  String get homeSoloLoss;
+
+  /// No description provided for @homeSoloQuietTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 솔랭 중인 선수 없음'**
+  String get homeSoloQuietTitle;
+
+  /// No description provided for @homeSoloQuietSubscribed.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 {count}명'**
+  String homeSoloQuietSubscribed(int count);
+
+  /// No description provided for @homeSoloLastGameWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 경기 {ago} · {name} 승리'**
+  String homeSoloLastGameWin(String ago, String name);
+
+  /// No description provided for @homeSoloLastGameLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 경기 {ago} · {name} 패배'**
+  String homeSoloLastGameLoss(String ago, String name);
+
   /// No description provided for @matchList.
   ///
   /// In ko, this message translates to:

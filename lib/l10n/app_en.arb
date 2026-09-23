@@ -61,6 +61,33 @@
     "placeholders": { "days": { "type": "int" } }
   },
   "homeShortsFilterEmpty": "No shorts match this filter yet",
+  "homeSoloPlaying": "Playing {champion}",
+  "@homeSoloPlaying": {
+    "placeholders": { "champion": { "type": "String" } }
+  },
+  "homeSoloEndedAgo": "Ended {ago}",
+  "@homeSoloEndedAgo": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "homeSoloDuration": "{minutes} min",
+  "@homeSoloDuration": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeSoloWin": "W",
+  "homeSoloLoss": "L",
+  "homeSoloQuietTitle": "No one is in solo queue right now",
+  "homeSoloQuietSubscribed": "{count} subscribed",
+  "@homeSoloQuietSubscribed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeSoloLastGameWin": "Last game {ago} · {name} won",
+  "@homeSoloLastGameWin": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+  },
+  "homeSoloLastGameLoss": "Last game {ago} · {name} lost",
+  "@homeSoloLastGameLoss": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+  },
 
   "matchList": "Match List",
   "season": "Season",

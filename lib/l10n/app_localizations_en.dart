@@ -142,6 +142,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeShortsFilterEmpty => 'No shorts match this filter yet';
 
   @override
+  String homeSoloPlaying(String champion) {
+    return 'Playing $champion';
+  }
+
+  @override
+  String homeSoloEndedAgo(String ago) {
+    return 'Ended $ago';
+  }
+
+  @override
+  String homeSoloDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get homeSoloWin => 'W';
+
+  @override
+  String get homeSoloLoss => 'L';
+
+  @override
+  String get homeSoloQuietTitle => 'No one is in solo queue right now';
+
+  @override
+  String homeSoloQuietSubscribed(int count) {
+    return '$count subscribed';
+  }
+
+  @override
+  String homeSoloLastGameWin(String ago, String name) {
+    return 'Last game $ago · $name won';
+  }
+
+  @override
+  String homeSoloLastGameLoss(String ago, String name) {
+    return 'Last game $ago · $name lost';
+  }
+
+  @override
   String get matchList => 'Match List';
 
   @override

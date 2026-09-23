@@ -61,6 +61,33 @@
     "placeholders": { "days": { "type": "int" } }
   },
   "homeShortsFilterEmpty": "조건에 맞는 쇼츠가 아직 없어요",
+  "homeSoloPlaying": "{champion} 플레이 중",
+  "@homeSoloPlaying": {
+    "placeholders": { "champion": { "type": "String" } }
+  },
+  "homeSoloEndedAgo": "{ago} 종료",
+  "@homeSoloEndedAgo": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "homeSoloDuration": "{minutes}분",
+  "@homeSoloDuration": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeSoloWin": "승",
+  "homeSoloLoss": "패",
+  "homeSoloQuietTitle": "지금 솔랭 중인 선수 없음",
+  "homeSoloQuietSubscribed": "구독 {count}명",
+  "@homeSoloQuietSubscribed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeSoloLastGameWin": "마지막 경기 {ago} · {name} 승리",
+  "@homeSoloLastGameWin": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+  },
+  "homeSoloLastGameLoss": "마지막 경기 {ago} · {name} 패배",
+  "@homeSoloLastGameLoss": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+  },
 
   "matchList": "경기리스트",
   "season": "시즌",

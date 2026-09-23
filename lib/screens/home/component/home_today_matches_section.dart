@@ -1,67 +1,72 @@
 import 'package:flutter/material.dart';
 
+import '../../../components/dashed_border.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
-import '../../match_list/match_list_screen.dart';
 import 'home_section_header.dart';
 
 /// 오늘 경기 — 가로 스트립. LIVE 경기가 앞으로 온다.
+///
+/// 마지막 카드("일정 전체")와 헤더 링크는 [onSeeSchedule] 로 일정 탭에 보낸다
+/// (spec 사용자 흐름 4). 빈 상태·로딩·에러는 그리지 않는다 — 경기가 없으면
+/// "일정 전체" 카드만 남는다.
 class HomeTodayMatchesSection extends StatelessWidget {
   const HomeTodayMatchesSection({
     super.key,
     required this.viewModel,
     required this.scale,
+    this.onSeeSchedule,
   });
 
   final HomeViewModel viewModel;
   final double scale;
+  final VoidCallback? onSeeSchedule;
+
+  static const Key seeScheduleCardKey = ValueKey('homeSeeScheduleCard');
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final matches = viewModel.todayMatchesSorted;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HomeSectionHeader(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+          child: HomeSectionHeader(
             title: l.homeTodayMatchesTitle,
             scale: scale,
             trailingLabel: l.homeSeeAllSchedule,
-            onTapTrailing: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const MatchListScreen())),
+            onTapTrailing: onSeeSchedule,
           ),
-          SizedBox(height: 10 * scale),
-          SizedBox(
-            height: 108 * scale,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: matches.length + 1,
-              separatorBuilder: (_, _) => SizedBox(width: 8 * scale),
-              itemBuilder: (context, i) {
-                if (i == matches.length) {
-                  return _MoreCard(
-                    label: l.homeSeeAllSchedule,
-                    scale: scale,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const MatchListScreen(),
-                      ),
-                    ),
-                  );
-                }
-                return _MatchCard(match: matches[i], scale: scale);
-              },
-            ),
+        ),
+        SizedBox(height: 10 * scale),
+        SizedBox(
+          height: 108 * scale,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            // 스트립은 화면 끝까지 밀리게 두고 양끝만 20 여백.
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+            itemCount: matches.length + 1,
+            separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
+            itemBuilder: (context, i) {
+              if (i == matches.length) {
+                return _MoreCard(
+                  key: seeScheduleCardKey,
+                  label: l.homeSeeAllSchedule,
+                  scale: scale,
+                  onTap: onSeeSchedule,
+                );
+              }
+              return _MatchCard(match: matches[i], scale: scale);
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -142,38 +147,36 @@ class _MatchCard extends StatelessWidget {
   }
 }
 
+/// 스트립 마지막 "일정 전체 →" 카드 — 목업 `.mc.more` 처럼 점선.
 class _MoreCard extends StatelessWidget {
   const _MoreCard({
+    super.key,
     required this.label,
     required this.scale,
-    required this.onTap,
+    this.onTap,
   });
 
   final String label;
   final double scale;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        width: 172 * scale,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12 * scale),
-          border: Border.all(
-            color: AppColors.narLine2,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Text(
-          '$label →',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 13 * scale,
-            color: AppColors.narText2,
+      child: DashedBorder(
+        radius: 12 * scale,
+        child: Container(
+          width: 172 * scale,
+          alignment: Alignment.center,
+          child: Text(
+            '$label →',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13 * scale,
+              color: AppColors.narText2,
+            ),
           ),
         ),
       ),
@@ -209,7 +212,7 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: live ? AppColors.liveBadgeBg : AppColors.narBgTertiary,
         border: live
-            ? Border.all(color: AppColors.narTextRed)
+            ? Border.all(color: AppColors.liveAccent)
             : Border.all(color: AppColors.narLine2),
         borderRadius: BorderRadius.circular(8 * scale),
       ),

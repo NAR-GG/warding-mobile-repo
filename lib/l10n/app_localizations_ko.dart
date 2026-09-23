@@ -141,6 +141,45 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeShortsFilterEmpty => '조건에 맞는 쇼츠가 아직 없어요';
 
   @override
+  String homeSoloPlaying(String champion) {
+    return '$champion 플레이 중';
+  }
+
+  @override
+  String homeSoloEndedAgo(String ago) {
+    return '$ago 종료';
+  }
+
+  @override
+  String homeSoloDuration(int minutes) {
+    return '$minutes분';
+  }
+
+  @override
+  String get homeSoloWin => '승';
+
+  @override
+  String get homeSoloLoss => '패';
+
+  @override
+  String get homeSoloQuietTitle => '지금 솔랭 중인 선수 없음';
+
+  @override
+  String homeSoloQuietSubscribed(int count) {
+    return '구독 $count명';
+  }
+
+  @override
+  String homeSoloLastGameWin(String ago, String name) {
+    return '마지막 경기 $ago · $name 승리';
+  }
+
+  @override
+  String homeSoloLastGameLoss(String ago, String name) {
+    return '마지막 경기 $ago · $name 패배';
+  }
+
+  @override
   String get matchList => '경기리스트';
 
   @override

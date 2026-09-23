@@ -39,6 +39,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  /// 오늘 경기 "일정 전체" — 일정 탭으로 전환한다(spec 사용자 흐름 4).
+  void _openSchedule() {
+    Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+  }
+
+  /// 구독 0명 빈 카드의 "선수 구독하기" — 마이구독 탭(비회원은 그 화면이
+  /// 로그인 안내를 띄운다).
+  void _openSubscription() {
+    Navigator.of(context).pushReplacement(tabRoute(const SubscriptionScreen()));
+  }
+
+  /// 벨 — 알림함. 읽고 돌아오면 배지를 다시 센다.
+  Future<void> _openNotifications() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const NotificationScreen()));
+    await _viewModel.refreshUnreadNotifications();
+  }
+
   /// 하단 네비 탭 선택. '홈'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.schedule) {
@@ -71,7 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
               listenable: _viewModel,
               builder: (context, _) => Column(
                 children: [
-                  _TopBar(scale: scale),
+                  _TopBar(
+                    scale: scale,
+                    unreadCount: _viewModel.unreadNotificationCount,
+                    onBellTap: _openNotifications,
+                  ),
                   if (_viewModel.bannerVisible)
                     NarBanner(
                       scale: scale,
@@ -96,14 +119,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // "구독 N명 전체"(onOpenMyPlayers)는 내 선수 화면이
+                          // 생기면 연결한다 — 그 전까지는 누를 곳이 없다.
                           HomeSoloRankSection(
                             viewModel: _viewModel,
                             scale: scale,
+                            onSubscribe: _openSubscription,
                           ),
                           SizedBox(height: 28 * scale),
                           HomeTodayMatchesSection(
                             viewModel: _viewModel,
                             scale: scale,
+                            onSeeSchedule: _openSchedule,
                           ),
                           SizedBox(height: 28 * scale),
                           HomeStandingsSection(
@@ -144,10 +171,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+/// 로고 + 알림 벨. 배지는 커뮤니티 알림함 미읽음 수이고 0 이면 숨긴다.
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.scale});
+  const _TopBar({
+    required this.scale,
+    required this.unreadCount,
+    required this.onBellTap,
+  });
 
   final double scale;
+  final int unreadCount;
+  final VoidCallback onBellTap;
 
   @override
   Widget build(BuildContext context) {
@@ -162,9 +196,7 @@ class _TopBar extends StatelessWidget {
           SvgPicture.asset('assets/images/warding.svg', height: 20 * scale),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationScreen()),
-            ),
+            onTap: onBellTap,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -186,33 +218,34 @@ class _TopBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: -2 * scale,
-                  right: -2 * scale,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 4.5 * scale,
-                      vertical: 1.5 * scale,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.liveAccent,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: AppColors.narDark800,
-                        width: 2 * scale,
+                if (unreadCount > 0)
+                  Positioned(
+                    top: -2 * scale,
+                    right: -2 * scale,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 4.5 * scale,
+                        vertical: 1.5 * scale,
                       ),
-                    ),
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 9.5 * scale,
-                        color: AppColors.narText,
+                      decoration: BoxDecoration(
+                        color: AppColors.liveAccent,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: AppColors.narDark800,
+                          width: 2 * scale,
+                        ),
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 9.5 * scale,
+                          color: AppColors.narText,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
