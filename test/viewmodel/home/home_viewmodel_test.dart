@@ -8,6 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'dart:async';
 
 import 'package:warding/model/home_models.dart';
+import 'package:warding/model/player_subscription.dart';
 import 'package:warding/model/schedule_match.dart';
 import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/repository/home/home_sources.dart';
@@ -17,6 +18,9 @@ import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/repository/subscription/subscription_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+
+import '../../support/fake_subscription_repository.dart';
 
 class _FakeSolo implements SoloRankSource {
   _FakeSolo(this.snap);
@@ -225,8 +229,16 @@ void main() {
     NewsSource news = const MockNewsSource(),
   }) {
     if (subscribed != null) {
+      // 솔랭 항목은 구독한 선수만 보이므로, 스냅샷에 나온 선수를 먼저 구독
+      // 목록에 넣고 나머지를 'Sub{i}' 로 채워 [subscribed] 명을 맞춘다.
+      final names = <String>{
+        for (final p in snap.live) p.name,
+        for (final p in snap.finished) p.name,
+      }.take(subscribed).toList();
       server.subscriptions = [
-        for (var i = 0; i < subscribed; i++) _sub('Sub$i', 'T1', 'T1'),
+        for (final n in names) _sub(n, 'T1', 'T1'),
+        for (var i = names.length; i < subscribed; i++)
+          _sub('Sub$i', 'T1', 'T1'),
       ];
       setUpServer(loggedIn: true);
     }
@@ -355,16 +367,18 @@ void main() {
       expect(vm.soloHiddenCount, 10 - 1 - 1);
     });
 
-    test('숨김 수는 음수가 되지 않는다', () async {
+    test('숨김 수는 음수가 되지 않는다 — 구독 안 한 선수는 세지 않는다', () async {
       final vm = build(
         snap: SoloRankSnapshot(
           live: [live('A', 60), live('B', 30)],
           finished: [done('C', 3)],
           subscribedTotal: 0,
         ),
-        subscribed: 1,
+        subscribed: 1, // A 만 구독
       );
       await pumpEventQueue();
+      expect(vm.soloLive.map((p) => p.name), ['A']);
+      expect(vm.soloFinished, isEmpty);
       expect(vm.soloHiddenCount, 0);
     });
 
@@ -413,6 +427,80 @@ void main() {
       await pumpEventQueue();
       expect(vm.subscribedTotal, 0);
       expect(vm.soloState, SoloCardState.noSubscription);
+    });
+  });
+
+  group('솔랭 항목은 실제 구독과 대조한다', () {
+    PlayerSubscription subOf(String name) => PlayerSubscription(
+      playerId: name.hashCode,
+      playerName: name,
+      playerImageUrl: '',
+      role: 'MID',
+      teamId: 1,
+      teamCode: 'T1',
+      teamName: 'T1',
+      teamImageUrl: '',
+      subscribed: true,
+      startEnabled: true,
+      endEnabled: true,
+    );
+
+    final fixture = SoloRankSnapshot(
+      live: [live('Faker', 300), live('Chovy', 100), live('Zeus', 50)],
+      finished: [
+        done('Oner', 12),
+        done('Canyon', 40),
+        done('Faker', 90),
+        done('Oner', 200),
+        done('Ruler', 5),
+      ],
+      subscribedTotal: 0,
+    );
+    final subs = [
+      for (final n in ['Faker', 'Chovy', 'Oner', 'Canyon', 'Keria']) subOf(n),
+    ];
+
+    test('구독하지 않은 선수의 솔랭은 홈에 나오지 않는다', () async {
+      final repo = MockSubscriptionRepository();
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      final vm = HomeViewModel(
+        subscriptions: repo,
+        soloRank: _FakeSolo(fixture),
+        reviews: const MockReviewSource(),
+        news: const MockNewsSource(),
+      );
+      addTearDown(vm.dispose);
+      await pumpEventQueue();
+
+      expect(vm.soloLive.map((p) => p.name), ['Chovy', 'Faker']);
+      expect(vm.soloFinished.map((p) => p.name), ['Oner', 'Canyon']);
+      expect(vm.soloHiddenCount, 5 - 2 - 2);
+    });
+
+    test('홈과 내 선수 화면이 같은 fixture 에서 같은 결과를 낸다', () async {
+      final repo = MockSubscriptionRepository();
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      final home = HomeViewModel(
+        subscriptions: repo,
+        soloRank: _FakeSolo(fixture),
+        reviews: const MockReviewSource(),
+        news: const MockNewsSource(),
+      );
+      addTearDown(home.dispose);
+      final mine = MyPlayersViewModel(
+        subscriptions: repo,
+        soloRank: _FakeSolo(fixture),
+      );
+      addTearDown(mine.dispose);
+      await pumpEventQueue();
+
+      expect(home.soloLive.map((p) => p.name), [
+        for (final e in mine.liveSolo) e.player.playerName,
+      ]);
+      expect(home.soloFinished.map((p) => p.name), [
+        for (final e in mine.playedToday) e.player.playerName,
+      ]);
+      expect(home.soloHiddenCount, mine.quiet.length);
     });
   });
 

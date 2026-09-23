@@ -19,6 +19,7 @@ import '../../repository/shorts/shorts_repository.dart';
 import '../../repository/standings/standings_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../util/match_status.dart';
+import 'solo_rank_rules.dart';
 
 /// 커뮤니티 섹션 정렬 기준.
 enum HomeCommunitySort { latest, hot, review }
@@ -302,27 +303,30 @@ class HomeViewModel extends ChangeNotifier {
     final snap = _soloSnapshot;
     if (snap == null) return;
 
-    final live = [...snap.live];
-    live.sort((a, b) {
-      final aPinned = _pinnedPlayerNames.contains(a.name) ? 0 : 1;
-      final bPinned = _pinnedPlayerNames.contains(b.name) ? 0 : 1;
-      if (aPinned != bPinned) return aPinned - bPinned;
-      return a.elapsedSeconds.compareTo(b.elapsedSeconds);
-    });
+    // 구독 목록을 받았으면 구독한 선수만 남긴다 — 그래야 숨김 수(구독 수 −
+    // 보이는 선수 수)가 맞고 내 선수 화면과 같은 선수를 보여준다. 비회원·실패는
+    // 구독 0명이라 어차피 빈 카드다.
+    final subscribed = _subscribedPlayers == null
+        ? null
+        : {
+            for (final p in _subscribedPlayers!)
+              SoloRankClassification.soloKey(p.playerName),
+          };
+    final solo = SoloRankClassification.of(snap, subscribed: subscribed);
+
+    // 핀 고정 선수가 먼저, 그 안에서는 공용 규칙(최근 시작 먼저).
+    final live = solo.liveByName.values.toList()
+      ..sort((a, b) {
+        final aPinned = _pinnedPlayerNames.contains(a.name) ? 0 : 1;
+        final bPinned = _pinnedPlayerNames.contains(b.name) ? 0 : 1;
+        if (aPinned != bPinned) return aPinned - bPinned;
+        return SoloRankClassification.compareLive(a, b);
+      });
     _soloLive = live;
 
-    // 지금 진행 중인 선수는 아래 줄에서 뺀다 — 위 큰 카드에 이미 있어서, 남기면
-    // 같은 선수가 두 번 나오고 숨김 수도 두 번 빠진다(spec 결정).
-    // 그다음 선수당 가장 최근(minutesAgo 최소) 1건만 남긴다.
-    final liveNames = {for (final p in snap.live) p.name};
-    final latest = <String, HomeFinishedSoloPlayer>{};
-    for (final p in snap.finished) {
-      if (liveNames.contains(p.name)) continue;
-      final prev = latest[p.name];
-      if (prev == null || p.minutesAgo < prev.minutesAgo) latest[p.name] = p;
-    }
-    final finished = latest.values.toList()
-      ..sort((a, b) => a.minutesAgo.compareTo(b.minutesAgo));
+    // 최대 [_maxFinished]명은 홈 카드만의 표시 상한이다.
+    final finished = solo.finishedByName.values.toList()
+      ..sort(SoloRankClassification.compareFinished);
     _soloFinished = finished.take(_maxFinished).toList();
 
     // 진행 중 선수가 줄어 스와이프 위치가 범위를 벗어나면 처음으로 돌린다.

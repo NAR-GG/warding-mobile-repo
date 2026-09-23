@@ -115,8 +115,10 @@ void main() {
 
   testWidgets('진행 중 — 큰 카드의 숫자는 경과 시간뿐, 아래 끝난 줄은 "N분 전 종료"', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
+    // 솔랭 항목은 구독한 선수만 보이므로 Faker·Oner·Ruler 를 포함해 10명.
     server.subscriptions = [
-      for (var i = 0; i < 10; i++) subscriptionJson('P$i', 'GEN'),
+      for (final n in ['Faker', 'Oner', 'Ruler']) subscriptionJson(n, 'GEN'),
+      for (var i = 3; i < 10; i++) subscriptionJson('P$i', 'GEN'),
     ];
     var opened = 0;
     await pumpHomeSection(

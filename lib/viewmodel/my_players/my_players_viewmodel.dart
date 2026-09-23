@@ -6,6 +6,7 @@ import '../../model/home_models.dart';
 import '../../model/player_subscription.dart';
 import '../../repository/home/home_sources.dart';
 import '../../repository/subscription/subscription_repository.dart';
+import '../home/solo_rank_rules.dart';
 
 /// 내 선수 화면의 상태 묶음 (spec: 솔랭 중 / 오늘 경기함 / 소식 없음).
 enum MyPlayerStatus { liveSolo, playedToday, quiet }
@@ -108,18 +109,12 @@ class MyPlayersViewModel extends ChangeNotifier {
   }
 
   void _classify() {
-    final snap = _solo;
-    final liveByName = <String, HomeLiveSoloPlayer>{
-      for (final p in snap?.live ?? const <HomeLiveSoloPlayer>[]) p.name: p,
-    };
-    // 선수당 가장 최근(minutesAgo 최소) 1건.
-    final finishedByName = <String, HomeFinishedSoloPlayer>{};
-    for (final p in snap?.finished ?? const <HomeFinishedSoloPlayer>[]) {
-      final prev = finishedByName[p.name];
-      if (prev == null || p.minutesAgo < prev.minutesAgo) {
-        finishedByName[p.name] = p;
-      }
-    }
+    // 분류 규칙(이름 매칭, 진행 중 선수는 끝난 경기에서 제외, 선수당 최신 1건)은
+    // 홈 솔랭 카드와 공유한다. 구독 선수만 아래에서 찾아 쓰므로 여기서는
+    // 구독 필터를 따로 걸지 않는다.
+    final solo = SoloRankClassification.of(_solo);
+    final liveByName = solo.liveByName;
+    final finishedByName = solo.finishedByName;
 
     final live = <MyPlayerEntry>[];
     final played = <MyPlayerEntry>[];
@@ -130,7 +125,8 @@ class MyPlayersViewModel extends ChangeNotifier {
       if (player.teamCode.isNotEmpty && seenTeams.add(player.teamCode)) {
         teams.add(player.teamCode);
       }
-      final l = liveByName[player.playerName];
+      final key = SoloRankClassification.soloKey(player.playerName);
+      final l = liveByName[key];
       // 진행 중이면 오늘 끝난 기록이 있어도 솔랭 중에만 둔다 — 같은 선수가
       // 두 묶음에 나오지 않게(홈 솔랭 카드와 같은 규칙).
       if (l != null) {
@@ -143,7 +139,7 @@ class MyPlayersViewModel extends ChangeNotifier {
         );
         continue;
       }
-      final f = finishedByName[player.playerName];
+      final f = finishedByName[key];
       if (f != null) {
         played.add(
           MyPlayerEntry(
@@ -159,11 +155,9 @@ class MyPlayersViewModel extends ChangeNotifier {
 
     // 솔랭 중: 최근에 시작한(경과 짧은) 선수 먼저. 오늘 경기함: 최근에 끝난
     // 선수 먼저. 소식 없음: 구독 목록 순서 그대로.
-    live.sort(
-      (a, b) => a.live!.elapsedSeconds.compareTo(b.live!.elapsedSeconds),
-    );
+    live.sort((a, b) => SoloRankClassification.compareLive(a.live!, b.live!));
     played.sort(
-      (a, b) => a.finished!.minutesAgo.compareTo(b.finished!.minutesAgo),
+      (a, b) => SoloRankClassification.compareFinished(a.finished!, b.finished!),
     );
 
     _allLive = live;
