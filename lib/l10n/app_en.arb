@@ -87,7 +87,27 @@
   "homeSoloLastGameLoss": "Last game {ago} · {name} lost",
   "@homeSoloLastGameLoss": {
     "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+   },
+
+  "myPlayersTitle": "My players",
+  "myPlayersBack": "Back",
+  "myPlayersSearchHint": "Search players",
+  "myPlayersTeamAll": "All",
+  "myPlayersGroupLive": "In solo queue now",
+  "myPlayersGroupPlayedToday": "Played today",
+  "myPlayersGroupQuiet": "Nothing today",
+  "myPlayersGroupCount": "{count}",
+  "@myPlayersGroupCount": {
+    "placeholders": { "count": { "type": "int" } }
   },
+  "myPlayersShowMore": "Show {count} more",
+  "@myPlayersShowMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "myPlayersShowLess": "Show less",
+  "myPlayersNoGameToday": "No games today",
+  "myPlayersNoResult": "No players found",
+  "myPlayersEmpty": "No subscribed players",
 
   "matchList": "Match List",
   "season": "Season",

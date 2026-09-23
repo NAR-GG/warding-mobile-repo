@@ -9,6 +9,7 @@ import '../../util/tab_route.dart';
 import '../../viewmodel/home/home_viewmodel.dart';
 import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
+import '../my_players/my_players_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -42,6 +43,14 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 오늘 경기 "일정 전체" — 일정 탭으로 전환한다(spec 사용자 흐름 4).
   void _openSchedule() {
     Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+  }
+
+  /// "구독 N명 전체"·조용한 상태 줄 — 내 선수 화면. push 라서 뒤로가기가
+  /// 홈으로 돌아온다(spec 사용자 흐름 3).
+  void _openMyPlayers() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const MyPlayersScreen()));
   }
 
   /// 구독 0명 빈 카드의 "선수 구독하기" — 마이구독 탭(비회원은 그 화면이
@@ -119,11 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // "구독 N명 전체"(onOpenMyPlayers)는 내 선수 화면이
-                          // 생기면 연결한다 — 그 전까지는 누를 곳이 없다.
                           HomeSoloRankSection(
                             viewModel: _viewModel,
                             scale: scale,
+                            onOpenMyPlayers: _openMyPlayers,
                             onSubscribe: _openSubscription,
                           ),
                           SizedBox(height: 28 * scale),

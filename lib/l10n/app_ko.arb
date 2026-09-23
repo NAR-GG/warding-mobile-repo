@@ -87,7 +87,27 @@
   "homeSoloLastGameLoss": "마지막 경기 {ago} · {name} 패배",
   "@homeSoloLastGameLoss": {
     "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+   },
+
+  "myPlayersTitle": "내 선수",
+  "myPlayersBack": "뒤로",
+  "myPlayersSearchHint": "선수 검색",
+  "myPlayersTeamAll": "전체",
+  "myPlayersGroupLive": "지금 솔랭 중",
+  "myPlayersGroupPlayedToday": "오늘 경기함",
+  "myPlayersGroupQuiet": "오늘 소식 없음",
+  "myPlayersGroupCount": "{count}명",
+  "@myPlayersGroupCount": {
+    "placeholders": { "count": { "type": "int" } }
   },
+  "myPlayersShowMore": "{count}명 더 보기",
+  "@myPlayersShowMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "myPlayersShowLess": "접기",
+  "myPlayersNoGameToday": "오늘 경기 없음",
+  "myPlayersNoResult": "찾는 선수가 없어요",
+  "myPlayersEmpty": "구독한 선수가 없어요",
 
   "matchList": "경기리스트",
   "season": "시즌",

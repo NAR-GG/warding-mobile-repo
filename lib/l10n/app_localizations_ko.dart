@@ -180,6 +180,49 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get myPlayersTitle => '내 선수';
+
+  @override
+  String get myPlayersBack => '뒤로';
+
+  @override
+  String get myPlayersSearchHint => '선수 검색';
+
+  @override
+  String get myPlayersTeamAll => '전체';
+
+  @override
+  String get myPlayersGroupLive => '지금 솔랭 중';
+
+  @override
+  String get myPlayersGroupPlayedToday => '오늘 경기함';
+
+  @override
+  String get myPlayersGroupQuiet => '오늘 소식 없음';
+
+  @override
+  String myPlayersGroupCount(int count) {
+    return '$count명';
+  }
+
+  @override
+  String myPlayersShowMore(int count) {
+    return '$count명 더 보기';
+  }
+
+  @override
+  String get myPlayersShowLess => '접기';
+
+  @override
+  String get myPlayersNoGameToday => '오늘 경기 없음';
+
+  @override
+  String get myPlayersNoResult => '찾는 선수가 없어요';
+
+  @override
+  String get myPlayersEmpty => '구독한 선수가 없어요';
+
+  @override
   String get matchList => '경기리스트';
 
   @override

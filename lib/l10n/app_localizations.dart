@@ -392,6 +392,84 @@ abstract class AppLocalizations {
   /// **'마지막 경기 {ago} · {name} 패배'**
   String homeSoloLastGameLoss(String ago, String name);
 
+  /// No description provided for @myPlayersTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 선수'**
+  String get myPlayersTitle;
+
+  /// No description provided for @myPlayersBack.
+  ///
+  /// In ko, this message translates to:
+  /// **'뒤로'**
+  String get myPlayersBack;
+
+  /// No description provided for @myPlayersSearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 검색'**
+  String get myPlayersSearchHint;
+
+  /// No description provided for @myPlayersTeamAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get myPlayersTeamAll;
+
+  /// No description provided for @myPlayersGroupLive.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 솔랭 중'**
+  String get myPlayersGroupLive;
+
+  /// No description provided for @myPlayersGroupPlayedToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 경기함'**
+  String get myPlayersGroupPlayedToday;
+
+  /// No description provided for @myPlayersGroupQuiet.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 소식 없음'**
+  String get myPlayersGroupQuiet;
+
+  /// No description provided for @myPlayersGroupCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명'**
+  String myPlayersGroupCount(int count);
+
+  /// No description provided for @myPlayersShowMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명 더 보기'**
+  String myPlayersShowMore(int count);
+
+  /// No description provided for @myPlayersShowLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get myPlayersShowLess;
+
+  /// No description provided for @myPlayersNoGameToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 경기 없음'**
+  String get myPlayersNoGameToday;
+
+  /// No description provided for @myPlayersNoResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'찾는 선수가 없어요'**
+  String get myPlayersNoResult;
+
+  /// No description provided for @myPlayersEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독한 선수가 없어요'**
+  String get myPlayersEmpty;
+
   /// No description provided for @matchList.
   ///
   /// In ko, this message translates to:

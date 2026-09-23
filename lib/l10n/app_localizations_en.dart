@@ -181,6 +181,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get myPlayersTitle => 'My players';
+
+  @override
+  String get myPlayersBack => 'Back';
+
+  @override
+  String get myPlayersSearchHint => 'Search players';
+
+  @override
+  String get myPlayersTeamAll => 'All';
+
+  @override
+  String get myPlayersGroupLive => 'In solo queue now';
+
+  @override
+  String get myPlayersGroupPlayedToday => 'Played today';
+
+  @override
+  String get myPlayersGroupQuiet => 'Nothing today';
+
+  @override
+  String myPlayersGroupCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String myPlayersShowMore(int count) {
+    return 'Show $count more';
+  }
+
+  @override
+  String get myPlayersShowLess => 'Show less';
+
+  @override
+  String get myPlayersNoGameToday => 'No games today';
+
+  @override
+  String get myPlayersNoResult => 'No players found';
+
+  @override
+  String get myPlayersEmpty => 'No subscribed players';
+
+  @override
   String get matchList => 'Match List';
 
   @override
