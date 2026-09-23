@@ -23,7 +23,7 @@ import 'component/home_today_matches_section.dart';
 /// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠
 /// 5개 섹션 + 하단 네비 '홈' 탭에 해당한다.
 ///
-/// 로그인 후 진입점은 여전히 [ScheduleScreen]이다 — 홈 탭을 눌러야 들어온다.
+/// 앱 진입점(스플래시·로그인·온보딩 완료 이후 첫 화면)이기도 하다.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
