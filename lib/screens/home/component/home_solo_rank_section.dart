@@ -24,28 +24,31 @@ class HomeSoloRankSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final live = HomeViewModel.mockLiveNow;
-    final done = HomeViewModel.mockFinishedToday;
+    final live = viewModel.soloLive;
+    final done = viewModel.soloFinished;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 196 * scale,
-            child: PageView.builder(
-              controller: PageController(viewportFraction: 0.92),
-              onPageChanged: viewModel.setSoloSwipeIndex,
-              itemCount: live.length,
-              itemBuilder: (context, i) => Padding(
-                padding: EdgeInsets.only(
-                  right: i == live.length - 1 ? 0 : 8 * scale,
+          // 진행 중인 선수가 없으면 큰 카드 자리를 비운다. 빈 상태(점선 카드·
+          // 한 줄 상태)는 [HomeViewModel.soloState] 로 따로 그린다(후속 작업).
+          if (live.isNotEmpty)
+            SizedBox(
+              height: 196 * scale,
+              child: PageView.builder(
+                controller: PageController(viewportFraction: 0.92),
+                onPageChanged: viewModel.setSoloSwipeIndex,
+                itemCount: live.length,
+                itemBuilder: (context, i) => Padding(
+                  padding: EdgeInsets.only(
+                    right: i == live.length - 1 ? 0 : 8 * scale,
+                  ),
+                  child: _HeroCard(player: live[i], scale: scale),
                 ),
-                child: _HeroCard(player: live[i], scale: scale),
               ),
             ),
-          ),
           if (live.length > 1) ...[
             SizedBox(height: 8 * scale),
             Row(
@@ -69,7 +72,7 @@ class HomeSoloRankSection extends StatelessWidget {
               ],
             ),
           ],
-          SizedBox(height: 16 * scale),
+          if (live.isNotEmpty) SizedBox(height: 16 * scale),
           Text(
             '${l.homeDoneRowLabel} · ${l.homeDoneRowSub}',
             style: TextStyle(
@@ -104,7 +107,7 @@ class HomeSoloRankSection extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  l.homeSubscribedSeeAll(HomeViewModel.mockSubscribedTotal),
+                  l.homeSubscribedSeeAll(viewModel.subscribedTotal),
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 13 * scale,

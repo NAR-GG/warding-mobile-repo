@@ -47,25 +47,6 @@ class HomeLeagueChip {
   final bool live;
 }
 
-/// 순위표 한 행.
-class HomeStandingRow {
-  const HomeStandingRow({
-    required this.rank,
-    required this.teamCode,
-    required this.teamName,
-    required this.wins,
-    required this.losses,
-    required this.setDiff,
-  });
-
-  final int rank;
-  final String teamCode;
-  final String teamName;
-  final int wins;
-  final int losses;
-  final int setDiff;
-}
-
 /// 콘텐츠 · 뉴스 탭 한 건.
 class HomeNewsArticle {
   const HomeNewsArticle({

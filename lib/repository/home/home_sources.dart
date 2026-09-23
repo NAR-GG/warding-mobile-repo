@@ -30,7 +30,7 @@ abstract class NewsSource {
   Future<List<HomeNewsArticle>> fetchTop();
 }
 
-/// 목업 솔랭 소스. 값의 단일 출처 — `HomeViewModel.mock*`가 이를 참조한다.
+/// 목업 솔랭 소스. 솔랭 DTO가 생기기 전까지 [HomeViewModel] 의 기본 소스다.
 class MockSoloRankSource implements SoloRankSource {
   const MockSoloRankSource();
 

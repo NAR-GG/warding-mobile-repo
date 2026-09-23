@@ -67,13 +67,13 @@ class HomeCommunitySection extends StatelessWidget {
           child: viewModel.communitySort == HomeCommunitySort.review
               ? Column(
                   children: [
-                    for (final review in HomeViewModel.mockReviews)
+                    for (final review in viewModel.reviews)
                       _ReviewTile(review: review, scale: scale),
                   ],
                 )
               : Column(
                   children: [
-                    for (final post in viewModel.communityPostsSorted)
+                    for (final post in viewModel.communityPosts)
                       _PostTile(
                         post: post,
                         hot: viewModel.communitySort == HomeCommunitySort.hot,
@@ -96,7 +96,7 @@ class _PostTile extends StatelessWidget {
 
   String _ago(AppLocalizations l, DateTime? at) {
     if (at == null) return '';
-    final h = DateTime(2026, 9, 12, 20).difference(at).inHours;
+    final h = DateTime.now().difference(at).inHours;
     if (h < 1) return l.homeJustNow;
     if (h < 24) return l.homeHoursAgo(h);
     return l.homeDaysAgo((h / 24).round());

@@ -5,7 +5,7 @@ import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
-import '../../../model/home_models.dart';
+import '../../../model/standing.dart';
 import 'home_section_header.dart';
 
 /// 순위표 — 리그 칩 한 줄 + 리그 테이블. 목업의 세 형태(리그표/스위스/토너먼트)
@@ -32,14 +32,15 @@ class HomeStandingsSection extends StatelessWidget {
           child: HomeSectionHeader(
             title: l.homeStandingsTitle,
             scale: scale,
-            subtitle: '2026 · ${l.homeStandingsScopeLabel}',
+            subtitle:
+                '2026 · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
           ),
         ),
         // NarChipMultiSelect 는 자체 16*scale 좌우 패딩을 갖는 공용 컴포넌트라
         // (match_list_screen 등에서도 그대로 쓴다) 다른 섹션처럼 20*scale 로
         // 감싸지 않고 그대로 둔다 — 감싸면 좌우 패딩이 겹쳐 더 좁아 보인다.
         NarChipMultiSelect(
-          options: [for (final chip in HomeViewModel.leagueChips) chip.code],
+          options: [for (final chip in viewModel.leagueChips) chip.code],
           selectedValues: {viewModel.selectedLeague},
           scale: scale,
           onChanged: (next) {
@@ -65,8 +66,14 @@ class _StandingsTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final legend = HomeViewModel.mockLegendGroup;
-    final rise = HomeViewModel.mockRiseGroup;
+    // 아직 못 받았으면 자리를 비운다(spec: 순위표 로딩·에러는 안 그림).
+    final groups = viewModel.standings?.groups ?? const <StandingGroup>[];
+    if (groups.isEmpty) return const SizedBox.shrink();
+
+    // 첫 그룹(레전드)은 늘 펼쳐 두고, 나머지 그룹(라이즈 등)은 펼치기 뒤에 둔다.
+    final main = groups.first;
+    final rest = groups.skip(1).toList();
+    final restCount = rest.fold<int>(0, (sum, g) => sum + g.rows.length);
     final expanded = viewModel.standingsExpanded;
 
     return Container(
@@ -79,18 +86,24 @@ class _StandingsTable extends StatelessWidget {
       child: Column(
         children: [
           _GroupHeader(
-            label: l.homeStandingsLegendGroup,
+            label: main.name.isEmpty ? l.homeStandingsLegendGroup : main.name,
             hint: l.homeStandingsColumnHint,
             scale: scale,
           ),
-          for (final (i, row) in legend.indexed)
+          for (final (i, row) in main.rows.indexed)
             _StandingRow(row: row, isFirst: i == 0, scale: scale),
-          if (expanded) ...[
-            _GroupHeader.sub(label: l.homeStandingsRiseGroup, scale: scale),
-            for (final (i, row) in rise.indexed)
-              _StandingRow(row: row, isFirst: i == 0, scale: scale),
-          ],
-          if (rise.isNotEmpty)
+          if (expanded)
+            for (final group in rest) ...[
+              _GroupHeader.sub(
+                label: group.name.isEmpty
+                    ? l.homeStandingsRiseGroup
+                    : group.name,
+                scale: scale,
+              ),
+              for (final (i, row) in group.rows.indexed)
+                _StandingRow(row: row, isFirst: i == 0, scale: scale),
+            ],
+          if (restCount > 0)
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: viewModel.toggleStandingsExpanded,
@@ -106,7 +119,7 @@ class _StandingsTable extends StatelessWidget {
                     Text(
                       expanded
                           ? l.homeStandingsCollapse
-                          : l.homeStandingsExpandMore(rise.length),
+                          : l.homeStandingsExpandMore(restCount),
                       style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 13 * scale,
@@ -193,7 +206,7 @@ class _StandingRow extends StatelessWidget {
     this.isFirst = false,
   });
 
-  final HomeStandingRow row;
+  final StandingRow row;
   final double scale;
 
   /// 그룹의 첫 행이면 위 [_GroupHeader] 의 하단 테두리가 이미 구분선 역할을

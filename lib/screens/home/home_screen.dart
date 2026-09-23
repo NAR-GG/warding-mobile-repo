@@ -76,7 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     NarBanner(
                       scale: scale,
                       icon: Text('📢', style: TextStyle(fontSize: 16 * scale)),
-                      text: l.homeNoticeDefault,
+                      text:
+                          _viewModel.promotedNotice?.title ??
+                          l.homeNoticeDefault,
                       onClose: _viewModel.dismissBanner,
                     ),
                   Expanded(

@@ -51,7 +51,7 @@ class HomeContentSection extends StatelessWidget {
         if (tab == HomeContentTab.news)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            child: _NewsList(scale: scale),
+            child: _NewsList(articles: viewModel.news, scale: scale),
           )
         else
           _ShortsDeck(viewModel: viewModel, scale: scale),
@@ -61,15 +61,16 @@ class HomeContentSection extends StatelessWidget {
 }
 
 class _NewsList extends StatelessWidget {
-  const _NewsList({required this.scale});
+  const _NewsList({required this.articles, required this.scale});
 
+  final List<HomeNewsArticle> articles;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        for (final article in HomeViewModel.mockNews)
+        for (final article in articles)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 6 * scale),
             child: Row(
