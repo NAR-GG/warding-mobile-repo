@@ -56,6 +56,9 @@ class _FakeApi {
   /// 구독 선수 응답. null 이면 500.
   List<Map<String, dynamic>>? subscriptions = const [];
 
+  /// 알림함 미읽음 수(커뮤니티 묶음). null 이면 500.
+  int? unreadNotifications = 0;
+
   final List<Uri> requests = [];
   final List<Uri> unknown = [];
 
@@ -123,6 +126,12 @@ class _FakeApi {
       final s = subscriptions;
       return s == null ? _json({'message': 'fail'}, 500) : _json(s);
     }
+    if (path.contains('me/notifications')) {
+      final n = unreadNotifications;
+      return n == null
+          ? _json({'message': 'fail'}, 500)
+          : _json({'notifications': const [], 'unreadCount': n});
+    }
     unknown.add(url);
     return _json({'message': 'unexpected $url'}, 500);
   });
@@ -181,7 +190,15 @@ void main() {
     api.setApiClientForTesting(server.client);
   }
 
-  HomeViewModel build({SoloRankSnapshot snap = _emptySolo}) {
+  /// [subscribed] 를 주면 로그인 상태로 그 수만큼의 구독 선수를 돌려준다 —
+  /// 구독 수는 실제 구독 목록 길이로만 센다(비회원·조회 실패는 0명).
+  HomeViewModel build({SoloRankSnapshot snap = _emptySolo, int? subscribed}) {
+    if (subscribed != null) {
+      server.subscriptions = [
+        for (var i = 0; i < subscribed; i++) _sub('Sub$i', 'T1', 'T1'),
+      ];
+      setUpServer(loggedIn: true);
+    }
     final vm = HomeViewModel(
       soloRank: _FakeSolo(snap),
       reviews: const MockReviewSource(),
@@ -217,8 +234,9 @@ void main() {
         snap: SoloRankSnapshot(
           live: const [],
           finished: [done('Oner', 10)],
-          subscribedTotal: 5,
+          subscribedTotal: 0,
         ),
+        subscribed: 5,
       );
       await pumpEventQueue();
       expect(vm.soloState, SoloCardState.noneActive);
@@ -232,8 +250,9 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 900), live('B', 100), live('C', 500)],
           finished: const [],
-          subscribedTotal: 3,
+          subscribedTotal: 0,
         ),
+        subscribed: 3,
       );
       await pumpEventQueue();
       expect(vm.soloState, SoloCardState.active);
@@ -245,8 +264,9 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 900), live('B', 100), live('C', 500)],
           finished: const [],
-          subscribedTotal: 3,
+          subscribedTotal: 0,
         ),
+        subscribed: 3,
       );
       await pumpEventQueue();
 
@@ -272,8 +292,9 @@ void main() {
             done('P0', 5), // 같은 선수의 더 최근 판 — 이 건만 남아야 한다.
             for (var i = 1; i <= 9; i++) done('P$i', 10 + i),
           ],
-          subscribedTotal: 20,
+          subscribedTotal: 0,
         ),
+        subscribed: 20,
       );
       await pumpEventQueue();
 
@@ -292,8 +313,9 @@ void main() {
           // A 는 오늘 1판을 끝내고 지금 2판째를 하는 중이다.
           live: [live('A', 60)],
           finished: [done('A', 3), done('B', 10)],
-          subscribedTotal: 10,
+          subscribedTotal: 0,
         ),
+        subscribed: 10,
       );
       await pumpEventQueue();
 
@@ -307,8 +329,9 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 60), live('B', 30)],
           finished: [done('C', 3)],
-          subscribedTotal: 1,
+          subscribedTotal: 0,
         ),
+        subscribed: 1,
       );
       await pumpEventQueue();
       expect(vm.soloHiddenCount, 0);
@@ -332,7 +355,21 @@ void main() {
       expect(server.requestsTo('player-subscriptions'), isNotEmpty);
     });
 
-    test('구독 목록 조회가 실패하면 소스의 구독 수로 대신한다', () async {
+    test('비회원은 솔랭 소스가 몇 명을 주든 구독 0명 — noSubscription', () async {
+      final vm = build(
+        snap: SoloRankSnapshot(
+          live: [live('Faker', 60)],
+          finished: [done('Oner', 10)],
+          subscribedTotal: 27,
+        ),
+      );
+      await pumpEventQueue();
+      expect(vm.subscribedTotal, 0);
+      expect(vm.soloState, SoloCardState.noSubscription);
+      expect(vm.soloHiddenCount, 0);
+    });
+
+    test('구독 목록 조회가 실패해도 소스의 구독 수로 대신하지 않는다', () async {
       server.subscriptions = null;
       setUpServer(loggedIn: true);
       final vm = build(
@@ -343,8 +380,8 @@ void main() {
         ),
       );
       await pumpEventQueue();
-      expect(vm.subscribedTotal, 27);
-      expect(vm.soloState, SoloCardState.noneActive);
+      expect(vm.subscribedTotal, 0);
+      expect(vm.soloState, SoloCardState.noSubscription);
     });
   });
 
@@ -535,6 +572,55 @@ void main() {
       expect(vm.shortsFiltered.single.matchedPlayer, isNull);
       vm.setShortsFilter(HomeShortsFilter.player);
       expect(vm.shortsFiltered, isEmpty);
+    });
+  });
+
+  group('쇼츠 링크', () {
+    test('videoUrl 이 있으면 그대로, 없으면 유튜브 쇼츠 주소로 연다', () async {
+      server.shorts = [
+        {..._video('A'), 'videoUrl': 'https://youtu.be/abc'},
+        {..._video('B'), 'youtubeVideoId': 'xyz', 'videoUrl': ''},
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.shortsFiltered.map((v) => v.url), [
+        'https://youtu.be/abc',
+        'https://www.youtube.com/shorts/xyz',
+      ]);
+    });
+  });
+
+  group('알림 배지', () {
+    test('비회원이면 미읽음 0 이고 알림 API 를 부르지 않는다', () async {
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.unreadNotificationCount, 0);
+      expect(server.requestsTo('me/notifications'), isEmpty);
+    });
+
+    test('로그인이면 커뮤니티 묶음 미읽음 수를 받는다', () async {
+      server.unreadNotifications = 4;
+      setUpServer(loggedIn: true);
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.unreadNotificationCount, 4);
+      final req = server.requestsTo('me/notifications').single;
+      expect(req.queryParameters['group'], 'COMMUNITY');
+
+      // 알림함에서 읽고 돌아오면 다시 센다.
+      server.unreadNotifications = 0;
+      await vm.refreshUnreadNotifications();
+      expect(vm.unreadNotificationCount, 0);
+    });
+
+    test('조회가 실패하면 0 으로 둔다(배지 숨김)', () async {
+      server.unreadNotifications = null;
+      setUpServer(loggedIn: true);
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.unreadNotificationCount, 0);
     });
   });
 

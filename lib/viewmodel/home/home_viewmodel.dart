@@ -12,6 +12,7 @@ import '../../model/story_video.dart';
 import '../../repository/community/community_repository.dart';
 import '../../repository/home/home_sources.dart';
 import '../../repository/notice/notice_repository.dart';
+import '../../repository/notification/member_notification_repository.dart';
 import '../../repository/preference/notice_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/shorts/shorts_repository.dart';
@@ -54,6 +55,7 @@ class HomeViewModel extends ChangeNotifier {
     CommunityRepository? community,
     ShortsRepository? shorts,
     SubscriptionRepository? subscriptions,
+    MemberNotificationRepository? memberNotifications,
     SoloRankSource? soloRank,
     ReviewSource? reviews,
     NewsSource? news,
@@ -65,6 +67,8 @@ class HomeViewModel extends ChangeNotifier {
        _community = community ?? CommunityRepository.instance,
        _shortsRepo = shorts ?? ShortsRepository.instance,
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
+       _memberNotifications =
+           memberNotifications ?? MemberNotificationRepository.instance,
        _soloRank = soloRank ?? const MockSoloRankSource(),
        _reviewSource = reviews ?? const MockReviewSource(),
        _newsSource = news ?? const MockNewsSource() {
@@ -82,6 +86,7 @@ class HomeViewModel extends ChangeNotifier {
   final CommunityRepository _community;
   final ShortsRepository _shortsRepo;
   final SubscriptionRepository _subscriptions;
+  final MemberNotificationRepository _memberNotifications;
   final SoloRankSource _soloRank;
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
@@ -103,6 +108,7 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> refreshAll() async {
     await Future.wait([
       _loadPromotedNotice(),
+      refreshUnreadNotifications(),
       _loadSubscriptions(),
       _loadSolo(),
       loadTodayMatches(),
@@ -151,10 +157,36 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  // ---- 상단 알림 배지 ----
+  int _unreadNotificationCount = 0;
+
+  /// 헤더 벨 배지용 미읽음 수. 벨이 여는 알림함이 커뮤니티 묶음만 다루므로
+  /// 같은 묶음(`group=COMMUNITY`)으로 센다. 0 이면 배지를 숨긴다.
+  int get unreadNotificationCount => _unreadNotificationCount;
+
+  /// 미읽음 수를 다시 센다. 알림함에서 돌아올 때도 부른다.
+  /// 비회원(JWT 없음)·실패는 0(배지 숨김)으로 조용히 넘어간다.
+  Future<void> refreshUnreadNotifications() async {
+    var count = 0;
+    try {
+      final page = await _memberNotifications.fetchNotifications(
+        group: 'COMMUNITY',
+        page: 0,
+        size: 1,
+      );
+      count = page.unreadCount;
+    } catch (e) {
+      debugPrint('[Home] 알림 미읽음 수 조회 실패(비회원 포함): $e');
+    }
+    if (_disposed || count == _unreadNotificationCount) return;
+    _unreadNotificationCount = count;
+    _notify();
+  }
+
   // ---- 구독 선수 (솔랭 구독 수·쇼츠 매칭에 함께 쓴다) ----
 
   /// 실제 구독 선수 목록. null 이면 아직 못 받았거나 비회원·실패 —
-  /// 이때 구독 수는 솔랭 소스 값으로 대신한다.
+  /// 이때 구독 수는 0명으로 본다.
   List<PlayerSubscription>? _subscribedPlayers;
 
   Future<void> _loadSubscriptions() async {
@@ -185,9 +217,11 @@ class HomeViewModel extends ChangeNotifier {
 
   static const int _maxFinished = 8;
 
-  /// 구독 수. 실제 구독 목록을 우선 쓰고, 못 받았으면 솔랭 소스 값을 쓴다.
-  int get subscribedTotal =>
-      _subscribedPlayers?.length ?? _soloSnapshot?.subscribedTotal ?? 0;
+  /// 구독 수 — 실제 구독 목록 길이만 센다. 비회원(JWT 없음)이나 조회 실패는
+  /// 0명이다. 솔랭 소스의 [SoloRankSnapshot.subscribedTotal] 로 대신하지
+  /// 않는다 — 목업 소스의 27명이 비회원 홈에 "구독 27명"으로 새어 나와서,
+  /// 구독 0명이면 보여야 할 점선 빈 카드가 가려졌다.
+  int get subscribedTotal => _subscribedPlayers?.length ?? 0;
 
   /// "+N명" — 위·아래 어디에도 안 나온 구독 선수 수.
   int get soloHiddenCount {
@@ -509,6 +543,12 @@ class HomeViewModel extends ChangeNotifier {
       teamCode: teamCode,
       views: video.viewCount,
       matchedPlayer: player?.playerName,
+      url: video.videoUrl.isNotEmpty
+          ? video.videoUrl
+          : video.youtubeVideoId.isNotEmpty
+          ? 'https://www.youtube.com/shorts/${video.youtubeVideoId}'
+          : '',
+      thumbnailUrl: video.thumbnailUrl,
     );
   }
 
