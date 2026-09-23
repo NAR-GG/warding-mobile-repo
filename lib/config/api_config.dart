@@ -475,4 +475,10 @@ class ApiConfig {
     final base = '$apiBaseUrl/auth/logout';
     return deviceId == null ? base : '$base?deviceId=$deviceId';
   }
+
+  // ── 순위표 (인증 불필요) ─────────────────────────────────────────
+
+  /// 리그 순위표 조회. 현재 서버는 LCK만 준다.
+  static String standingsUrl({required String league}) =>
+      '$apiBaseUrl/standings?league=${Uri.encodeQueryComponent(league)}';
 }
