@@ -1,5 +1,9 @@
 # Bundle Update Log
 
+## 2026-09-24
+* **홈 화면 완료(spec v29)**: 홈이 앱 진입 화면이 됨(스플래시·로그인·온보딩 완료 → `HomeScreen`). 솔랭·오늘 경기·순위표·커뮤니티·콘텐츠 5섹션과 내 선수 화면 추가. 솔랭·평점·뉴스는 목업(`SoloRankSource`·`ReviewSource`·`NewsSource`), 백엔드 대기.
+* **Creation**: [홈](/features/home.md) 개념 문서 추가.
+
 ## 2026-06-22
 * **#11 완료**: 비회원 온보딩 로컬 저장 + 로그인 동기화. `OnboardingSelection` 모델·`OnboardingPreferenceRepository`·`OnboardingSyncService` 추가, `OnboardingViewModel`·`login_screen` 연동.
 
