@@ -5,6 +5,7 @@ import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../model/home_models.dart';
 import 'home_section_header.dart';
 
 /// 순위표 — 리그 칩 한 줄 + 리그 테이블. 목업의 세 형태(리그표/스위스/토너먼트)

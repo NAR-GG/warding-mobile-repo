@@ -7,6 +7,7 @@ import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../util/champion_name_map.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../model/home_models.dart';
 
 /// 구독 선수 솔랭 상태 — 목업의 "구독 다수" 상태(heroMany)를 재현한다.
 /// 위: 지금 진행 중인 선수 스와이프 카드. 아래: 오늘 끝난 경기 가로 줄.

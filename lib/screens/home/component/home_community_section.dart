@@ -6,6 +6,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../model/home_models.dart';
 import '../../community/community_screen.dart';
 import 'home_section_header.dart';
 

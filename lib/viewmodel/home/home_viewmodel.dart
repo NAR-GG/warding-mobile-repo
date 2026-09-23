@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../model/community_author.dart';
 import '../../model/community_remote_post.dart';
+import '../../model/home_models.dart';
 import '../../model/schedule_match.dart';
+import '../../repository/home/home_sources.dart';
 
 /// 커뮤니티 섹션 정렬 기준.
 enum HomeCommunitySort { latest, hot, review }
@@ -12,125 +14,6 @@ enum HomeContentTab { news, shorts }
 
 /// 쇼츠 탭 필터.
 enum HomeShortsFilter { all, player, team }
-
-/// 지금 솔로 랭크 중인 선수 카드 한 장.
-class HomeLiveSoloPlayer {
-  const HomeLiveSoloPlayer({
-    required this.name,
-    required this.teamCode,
-    required this.champion,
-    required this.elapsedSeconds,
-    this.playerImageUrl,
-  });
-
-  final String name;
-  final String teamCode;
-  final String champion;
-  final int elapsedSeconds;
-
-  /// 선수 사진 URL(상대경로면 호스트 부착). 없으면 빈 자리 유지.
-  final String? playerImageUrl;
-}
-
-/// 오늘 솔로 랭크를 끝낸 선수 한 명(최신 1건).
-class HomeFinishedSoloPlayer {
-  const HomeFinishedSoloPlayer({
-    required this.name,
-    required this.teamCode,
-    required this.won,
-    required this.minutesAgo,
-  });
-
-  final String name;
-  final String teamCode;
-  final bool won;
-  final int minutesAgo;
-}
-
-/// 순위표 리그 칩 하나. [live]가 false면 아직 데이터가 없는 리그(탭 불가).
-class HomeLeagueChip {
-  const HomeLeagueChip({
-    required this.code,
-    required this.label,
-    required this.live,
-  });
-
-  final String code;
-  final String label;
-  final bool live;
-}
-
-/// 순위표 한 행.
-class HomeStandingRow {
-  const HomeStandingRow({
-    required this.rank,
-    required this.teamCode,
-    required this.teamName,
-    required this.wins,
-    required this.losses,
-    required this.setDiff,
-  });
-
-  final int rank;
-  final String teamCode;
-  final String teamName;
-  final int wins;
-  final int losses;
-  final int setDiff;
-}
-
-/// 콘텐츠 · 뉴스 탭 한 건.
-class HomeNewsArticle {
-  const HomeNewsArticle({
-    required this.title,
-    required this.office,
-    required this.minutesAgo,
-    this.hasThumbnail = true,
-  });
-
-  final String title;
-  final String office;
-  final int minutesAgo;
-  final bool hasThumbnail;
-}
-
-/// 콘텐츠 · 쇼츠 탭 한 건.
-class HomeShortsVideo {
-  const HomeShortsVideo({
-    required this.title,
-    required this.teamCode,
-    required this.views,
-    this.matchedPlayer,
-  });
-
-  final String title;
-  final String teamCode;
-  final int views;
-
-  /// 구독 선수와 제목이 매칭됐으면 그 선수 이름(보라 배지). 없으면 null.
-  final String? matchedPlayer;
-}
-
-/// 커뮤니티 · 평점 한줄평 한 건.
-class HomeReviewItem {
-  const HomeReviewItem({
-    required this.playerName,
-    required this.champion,
-    required this.stars,
-    required this.comment,
-    required this.nickname,
-    required this.teamCode,
-    required this.minutesAgo,
-  });
-
-  final String playerName;
-  final String champion;
-  final int stars;
-  final String comment;
-  final String nickname;
-  final String teamCode;
-  final int minutesAgo;
-}
 
 /// 홈 화면 상태.
 ///
@@ -151,85 +34,12 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   // ---- 섹션 1: 구독 선수 솔랭 상태 ----
-  static const int mockSubscribedTotal = 27;
+  static const int mockSubscribedTotal = MockSoloRankSource.subscribedTotal;
 
-  static const List<HomeLiveSoloPlayer> mockLiveNow = [
-    HomeLiveSoloPlayer(
-      name: 'Faker',
-      teamCode: 'T1',
-      champion: '아리',
-      elapsedSeconds: 1452,
-    ),
-    HomeLiveSoloPlayer(
-      name: 'Chovy',
-      teamCode: 'GEN',
-      champion: '신드라',
-      elapsedSeconds: 698,
-    ),
-    HomeLiveSoloPlayer(
-      name: 'Zeus',
-      teamCode: 'HLE',
-      champion: '그웬',
-      elapsedSeconds: 422,
-    ),
-    HomeLiveSoloPlayer(
-      name: 'Keria',
-      teamCode: 'T1',
-      champion: '레나타 글라스크',
-      elapsedSeconds: 135,
-    ),
-  ];
+  static const List<HomeLiveSoloPlayer> mockLiveNow = MockSoloRankSource.live;
 
-  static const List<HomeFinishedSoloPlayer> mockFinishedToday = [
-    HomeFinishedSoloPlayer(
-      name: 'Oner',
-      teamCode: 'T1',
-      won: true,
-      minutesAgo: 12,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Ruler',
-      teamCode: 'HLE',
-      won: false,
-      minutesAgo: 40,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Canyon',
-      teamCode: 'GEN',
-      won: true,
-      minutesAgo: 63,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Peyz',
-      teamCode: 'KT',
-      won: false,
-      minutesAgo: 95,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Doran',
-      teamCode: 'DK',
-      won: true,
-      minutesAgo: 118,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Gumayusi',
-      teamCode: 'T1',
-      won: false,
-      minutesAgo: 140,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Kiin',
-      teamCode: 'GEN',
-      won: true,
-      minutesAgo: 167,
-    ),
-    HomeFinishedSoloPlayer(
-      name: 'Showmaker',
-      teamCode: 'DK',
-      won: true,
-      minutesAgo: 190,
-    ),
-  ];
+  static const List<HomeFinishedSoloPlayer> mockFinishedToday =
+      MockSoloRankSource.finished;
 
   int get soloHiddenCount =>
       mockSubscribedTotal - mockLiveNow.length - mockFinishedToday.length;
@@ -517,53 +327,7 @@ class HomeViewModel extends ChangeNotifier {
     return posts.take(4).toList();
   }
 
-  static const List<HomeReviewItem> mockReviews = [
-    HomeReviewItem(
-      playerName: 'Chovy',
-      champion: '신드라',
-      stars: 5,
-      comment: '라인전부터 그냥 다른 경기 하던데',
-      nickname: '젠지가족#4821',
-      teamCode: 'GEN',
-      minutesAgo: 12,
-    ),
-    HomeReviewItem(
-      playerName: 'Faker',
-      champion: '아리',
-      stars: 4,
-      comment: '한타 각 보는 건 여전히 세계 최고',
-      nickname: 'ABLY#1127',
-      teamCode: 'T1',
-      minutesAgo: 35,
-    ),
-    HomeReviewItem(
-      playerName: 'Zeus',
-      champion: '그웬',
-      stars: 5,
-      comment: '탑 차이로 이긴 경기. 캐리력 미쳤다',
-      nickname: '한화보험왕#0930',
-      teamCode: 'HLE',
-      minutesAgo: 68,
-    ),
-    HomeReviewItem(
-      playerName: 'Ruler',
-      champion: '징크스',
-      stars: 2,
-      comment: '포지셔닝이 오늘따라 아쉬웠음',
-      nickname: '원딜은거들뿐#5985',
-      teamCode: 'GEN',
-      minutesAgo: 95,
-    ),
-    HomeReviewItem(
-      playerName: 'Keria',
-      champion: '레나타',
-      stars: 3,
-      comment: '이니시 좋았는데 뒤가 안 받쳐줬다',
-      nickname: '서폿장인입니다#2210',
-      teamCode: 'T1',
-      minutesAgo: 140,
-    ),
-  ];
+  static const List<HomeReviewItem> mockReviews = MockReviewSource.reviews;
 
   // ---- 섹션 5: 콘텐츠 (뉴스 / 쇼츠) ----
   HomeContentTab _contentTab = HomeContentTab.news;
@@ -584,22 +348,7 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  static const List<HomeNewsArticle> mockNews = [
-    HomeNewsArticle(title: 'T1, 플레이오프 진출 확정', office: 'OSEN', minutesAgo: 40),
-    HomeNewsArticle(title: '젠지, 정규시즌 1위 마감', office: '스포츠조선', minutesAgo: 120),
-    HomeNewsArticle(
-      title: '한화생명, 로스터 변경 발표',
-      office: '인벤',
-      minutesAgo: 200,
-      hasThumbnail: false,
-    ),
-    HomeNewsArticle(
-      title: 'LCK 2026 서머 일정 공개',
-      office: '데일리e스포츠',
-      minutesAgo: 340,
-    ),
-    HomeNewsArticle(title: 'kt, 신인 서포터 영입', office: '포모스', minutesAgo: 600),
-  ];
+  static const List<HomeNewsArticle> mockNews = MockNewsSource.articles;
 
   static const List<HomeShortsVideo> mockShorts = [
     HomeShortsVideo(

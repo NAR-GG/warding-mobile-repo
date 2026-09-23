@@ -5,6 +5,7 @@ import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../model/home_models.dart';
 import 'home_section_header.dart';
 
 /// 콘텐츠 — 뉴스 / 쇼츠 탭 전환. (평점 한줄평은 커뮤니티 섹션 쪽 탭이다 —
