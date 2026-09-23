@@ -27,11 +27,10 @@ void main() {
     var subscribeTaps = 0;
     final vm = await pumpHomeSection(
       tester,
-      // 목업 솔랭 소스가 27명·진행 중 4명을 줘도 비회원은 0명으로 본다.
+      // 목업 솔랭 소스가 진행 중 4명을 줘도 비회원은 구독 0명으로 본다.
       solo: const SoloRankSnapshot(
         live: MockSoloRankSource.live,
         finished: MockSoloRankSource.finished,
-        subscribedTotal: MockSoloRankSource.subscribedTotal,
       ),
       section: (vm) => section(vm, onSubscribe: () => subscribeTaps++),
     );
@@ -46,7 +45,7 @@ void main() {
     );
     expect(find.text('응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요'), findsOneWidget);
     expect(find.byKey(HomeSoloRankSection.heroKey('Faker')), findsNothing);
-    expect(find.textContaining('구독 27명'), findsNothing);
+    expect(find.textContaining(RegExp(r'구독 \d+명')), findsNothing);
 
     await tester.tap(find.text('선수 구독하기'));
     expect(subscribeTaps, 1);
@@ -65,7 +64,6 @@ void main() {
       solo: SoloRankSnapshot(
         live: const [],
         finished: [finishedPlayer('Chovy', 130)],
-        subscribedTotal: 0,
       ),
       section: (vm) => section(vm, onOpenMyPlayers: () => opened++),
     );
@@ -129,7 +127,6 @@ void main() {
           finishedPlayer('Oner', 12, durationMinutes: 32),
           finishedPlayer('Ruler', 40, won: false),
         ],
-        subscribedTotal: 0,
       ),
       section: (vm) => section(vm, onOpenMyPlayers: () => opened++),
     );

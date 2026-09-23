@@ -24,7 +24,8 @@ class MyPlayersScreen extends StatefulWidget {
 
   static const Key searchFieldKey = ValueKey('myPlayersSearch');
   static const Key showMoreKey = ValueKey('myPlayersShowMore');
-  static Key tileKey(String name) => ValueKey('myPlayer-$name');
+  /// 선수 줄 key — 이름은 겹칠 수 있어 playerId 로 만든다.
+  static Key tileKey(int playerId) => ValueKey('myPlayer-$playerId');
 
   @override
   State<MyPlayersScreen> createState() => _MyPlayersScreenState();
@@ -184,7 +185,7 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
         itemBuilder: (context, i) {
           final entry = entries[i];
           return MyPlayerTile(
-            key: MyPlayersScreen.tileKey(entry.player.playerName),
+            key: MyPlayersScreen.tileKey(entry.player.playerId),
             entry: entry,
             scale: scale,
             isFirst: i == 0,

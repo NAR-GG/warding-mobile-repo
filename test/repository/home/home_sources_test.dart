@@ -7,7 +7,6 @@ void main() {
     final snap = await MockSoloRankSource().fetch();
     expect(snap.live, isNotEmpty);
     expect(snap.finished, isNotEmpty);
-    expect(snap.subscribedTotal, greaterThanOrEqualTo(snap.live.length));
   });
 
   test('MockReviewSource: 한줄평이 빈 항목은 없다', () async {

@@ -172,7 +172,9 @@ class HomeViewModel extends ChangeNotifier {
       if (_disposed) return;
       final before = promotedNotice;
       _promotedNotices = notices;
-      _dismissedNoticeIds = dismissed;
+      // 조회하는 사이 ✕ 로 닫은 id 가 저장값 응답에 아직 없을 수 있다 —
+      // 덮어쓰면 닫은 배너가 다시 뜨므로 합친다.
+      _dismissedNoticeIds = {...dismissed, ..._dismissedNoticeIds};
       if (promotedNotice?.id != before?.id) _notify();
     } catch (e) {
       debugPrint('[Home] 배너 공지 조회 실패: $e');
@@ -244,9 +246,7 @@ class HomeViewModel extends ChangeNotifier {
   static const int _maxFinished = 8;
 
   /// 구독 수 — 실제 구독 목록 길이만 센다. 비회원(JWT 없음)이나 조회 실패는
-  /// 0명이다. 솔랭 소스의 [SoloRankSnapshot.subscribedTotal] 로 대신하지
-  /// 않는다 — 목업 소스의 27명이 비회원 홈에 "구독 27명"으로 새어 나와서,
-  /// 구독 0명이면 보여야 할 점선 빈 카드가 가려졌다.
+  /// 0명이다(구독 0명이면 점선 빈 카드).
   int get subscribedTotal => _subscribedPlayers?.length ?? 0;
 
   /// "+N명" — 위·아래 어디에도 안 나온 구독 선수 수.
@@ -597,8 +597,10 @@ class HomeViewModel extends ChangeNotifier {
     var teamCode = player?.teamCode ?? '';
     if (player == null) {
       for (final entry in myTeams.entries) {
+        // 팀 이름도 낱말 경계로 찾는다 — 부분일치면 이름이 코드와 같은 팀
+        // ("T1")이 "T10"·"ST1" 에 걸린다.
         if (_containsWord(haystack, entry.key) ||
-            _containsText(haystack, entry.value)) {
+            _containsWord(haystack, entry.value)) {
           teamCode = entry.key;
           break;
         }
@@ -629,7 +631,4 @@ class HomeViewModel extends ChangeNotifier {
       caseSensitive: false,
     ).hasMatch(text);
   }
-
-  static bool _containsText(String text, String part) =>
-      part.trim().isNotEmpty && text.toLowerCase().contains(part.toLowerCase());
 }

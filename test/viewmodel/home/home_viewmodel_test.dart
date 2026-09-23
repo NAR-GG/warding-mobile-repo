@@ -8,6 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'dart:async';
 
 import 'package:warding/model/home_models.dart';
+import 'package:warding/model/notice.dart';
 import 'package:warding/model/player_subscription.dart';
 import 'package:warding/model/schedule_match.dart';
 import 'package:warding/repository/auth/auth_service.dart';
@@ -30,6 +31,10 @@ class _FakeSolo implements SoloRankSource {
 }
 
 class _MockSchedule extends Mock implements ScheduleRepository {}
+
+class _MockNotices extends Mock implements NoticeRepository {}
+
+class _MockNoticePrefs extends Mock implements NoticePreferenceRepository {}
 
 /// 부를 때마다 [pending] 의 다음 Completer 를 기다리는 솔랭 소스 —
 /// 응답 순서를 테스트가 정한다.
@@ -204,7 +209,7 @@ Map<String, dynamic> _video(
   'viewCount': views,
 };
 
-const _emptySolo = SoloRankSnapshot(live: [], finished: [], subscribedTotal: 0);
+const _emptySolo = SoloRankSnapshot(live: [], finished: []);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -277,7 +282,6 @@ void main() {
         snap: SoloRankSnapshot(
           live: const [],
           finished: [done('Oner', 10)],
-          subscribedTotal: 0,
         ),
         subscribed: 5,
       );
@@ -293,7 +297,6 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 900), live('B', 100), live('C', 500)],
           finished: const [],
-          subscribedTotal: 0,
         ),
         subscribed: 3,
       );
@@ -307,7 +310,6 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 900), live('B', 100), live('C', 500)],
           finished: const [],
-          subscribedTotal: 0,
         ),
         subscribed: 3,
       );
@@ -335,7 +337,6 @@ void main() {
             done('P0', 5), // 같은 선수의 더 최근 판 — 이 건만 남아야 한다.
             for (var i = 1; i <= 9; i++) done('P$i', 10 + i),
           ],
-          subscribedTotal: 0,
         ),
         subscribed: 20,
       );
@@ -356,7 +357,6 @@ void main() {
           // A 는 오늘 1판을 끝내고 지금 2판째를 하는 중이다.
           live: [live('A', 60)],
           finished: [done('A', 3), done('B', 10)],
-          subscribedTotal: 0,
         ),
         subscribed: 10,
       );
@@ -372,7 +372,6 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('A', 60), live('B', 30)],
           finished: [done('C', 3)],
-          subscribedTotal: 0,
         ),
         subscribed: 1, // A 만 구독
       );
@@ -392,7 +391,6 @@ void main() {
         snap: const SoloRankSnapshot(
           live: [],
           finished: [],
-          subscribedTotal: 27,
         ),
       );
       await pumpEventQueue();
@@ -405,7 +403,6 @@ void main() {
         snap: SoloRankSnapshot(
           live: [live('Faker', 60)],
           finished: [done('Oner', 10)],
-          subscribedTotal: 27,
         ),
       );
       await pumpEventQueue();
@@ -421,7 +418,6 @@ void main() {
         snap: const SoloRankSnapshot(
           live: [],
           finished: [],
-          subscribedTotal: 27,
         ),
       );
       await pumpEventQueue();
@@ -454,7 +450,6 @@ void main() {
         done('Oner', 200),
         done('Ruler', 5),
       ],
-      subscribedTotal: 0,
     );
     final subs = [
       for (final n in ['Faker', 'Chovy', 'Oner', 'Canyon', 'Keria']) subOf(n),
@@ -684,6 +679,22 @@ void main() {
       ]);
     });
 
+    test('팀 이름·코드는 낱말 경계로만 잡는다(T1 이 T10·ST1 에 걸리지 않음)', () async {
+      server.subscriptions = [_sub('Faker', 'T1', 'T1')];
+      server.shorts = [
+        _video('T10 스크림 하이라이트', channel: 'LCK'),
+        _video('ST1 팬미팅', channel: 'LCK'),
+        _video('T1전 승리 요약', channel: 'LCK'),
+      ];
+      setUpServer(loggedIn: true);
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.shortsFiltered.map((v) => v.teamCode), ['T1', '', '']);
+      vm.setShortsFilter(HomeShortsFilter.team);
+      expect(vm.shortsFiltered.map((v) => v.title), ['T1전 승리 요약']);
+    });
+
     test('구독이 없으면(비회원) 쇼츠 내 선수 필터는 비어 있다', () async {
       server.shorts = [_video('Faker 하이라이트', views: 1)];
       final vm = build();
@@ -806,6 +817,41 @@ void main() {
       expect(vm.promotedNotice, isNull);
       expect(vm.bannerVisible, isFalse);
     });
+
+    test('조회 중에 닫은 배너는 옛 닫음 목록 응답이 와도 다시 뜨지 않는다', () async {
+      const notice = Notice(
+        id: 7,
+        title: '점검 안내',
+        content: '',
+        pinned: false,
+      );
+      final notices = _MockNotices();
+      final prefs = _MockNoticePrefs();
+      final fetch = Completer<List<Notice>>();
+      when(() => notices.cachedPromoted).thenReturn(const [notice]);
+      when(() => notices.fetchPromoted()).thenAnswer((_) => fetch.future);
+      when(() => prefs.cachedValue).thenReturn(null);
+      // 닫기 전에 읽힌(=7 이 없는) 목록을 돌려준다.
+      when(() => prefs.loadDismissedIds()).thenAnswer((_) async => <int>{});
+      when(() => prefs.addDismissedId(any())).thenAnswer((_) async {});
+
+      final vm = HomeViewModel(
+        notices: notices,
+        noticePreferences: prefs,
+        soloRank: _FakeSolo(_emptySolo),
+        reviews: const MockReviewSource(),
+        news: const MockNewsSource(),
+      );
+      addTearDown(vm.dispose);
+      expect(vm.promotedNotice?.id, 7);
+
+      vm.dismissBanner();
+      expect(vm.bannerVisible, isFalse);
+
+      fetch.complete(const [notice]);
+      await pumpEventQueue();
+      expect(vm.bannerVisible, isFalse);
+    });
   });
 
   group('겹치는 로드 — 나중 요청이 이긴다', () {
@@ -868,7 +914,6 @@ void main() {
         SoloRankSnapshot(
           live: [live('New', 10)],
           finished: const [],
-          subscribedTotal: 0,
         ),
       );
       await second;
@@ -876,7 +921,6 @@ void main() {
         SoloRankSnapshot(
           live: [live('Old', 10)],
           finished: const [],
-          subscribedTotal: 0,
         ),
       );
       await pumpEventQueue();

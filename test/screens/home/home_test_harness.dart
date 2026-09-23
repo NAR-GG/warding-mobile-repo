@@ -155,7 +155,7 @@ Map<String, dynamic> shortsJson(String title, {String channel = ''}) => {
   'viewCount': 12000,
 };
 
-const emptySolo = SoloRankSnapshot(live: [], finished: [], subscribedTotal: 0);
+const emptySolo = SoloRankSnapshot(live: [], finished: []);
 
 /// 테스트마다 부르는 준비 — 캐시를 비우고 가짜 서버를 꽂는다.
 HomeFakeApi setUpHomeApi({bool loggedIn = false}) {

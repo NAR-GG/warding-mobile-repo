@@ -4,15 +4,10 @@ import '../../model/home_models.dart';
 
 /// 솔로 랭크 상태 한 번의 조회 결과.
 class SoloRankSnapshot {
-  const SoloRankSnapshot({
-    required this.live,
-    required this.finished,
-    required this.subscribedTotal,
-  });
+  const SoloRankSnapshot({required this.live, required this.finished});
 
   final List<HomeLiveSoloPlayer> live;
   final List<HomeFinishedSoloPlayer> finished;
-  final int subscribedTotal;
 }
 
 /// 구독 선수 솔랭 상태 소스. 솔랭 DTO(`gameStartTime`·챔피언·직전 결과)가
@@ -65,7 +60,7 @@ class EmptySoloRankSource implements SoloRankSource {
 
   @override
   Future<SoloRankSnapshot> fetch() async =>
-      const SoloRankSnapshot(live: [], finished: [], subscribedTotal: 0);
+      const SoloRankSnapshot(live: [], finished: []);
 }
 
 /// 빈 한줄평 소스 — 홈 커뮤니티의 평점 한줄평 탭이 숨겨진다.
@@ -88,8 +83,6 @@ class EmptyNewsSource implements NewsSource {
 /// 소스다.
 class MockSoloRankSource implements SoloRankSource {
   const MockSoloRankSource();
-
-  static const int subscribedTotal = 27;
 
   static const List<HomeLiveSoloPlayer> live = [
     HomeLiveSoloPlayer(
@@ -178,11 +171,8 @@ class MockSoloRankSource implements SoloRankSource {
   ];
 
   @override
-  Future<SoloRankSnapshot> fetch() async => const SoloRankSnapshot(
-    live: live,
-    finished: finished,
-    subscribedTotal: subscribedTotal,
-  );
+  Future<SoloRankSnapshot> fetch() async =>
+      const SoloRankSnapshot(live: live, finished: finished);
 }
 
 /// 목업 한줄평 소스.

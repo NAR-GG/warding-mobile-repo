@@ -5,6 +5,7 @@ import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/match_status.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
 
@@ -77,7 +78,8 @@ class _MatchCard extends StatelessWidget {
   final ScheduleMatch match;
   final double scale;
 
-  bool get _live => match.matchStatus == 'inProgress';
+  // 서버 표기가 흔들려(inProgress/in_progress/LIVE …) 공용 판정을 쓴다.
+  bool get _live => isLiveMatchStatus(match.matchStatus);
   bool get _done => match.matchStatus == 'completed';
 
   @override

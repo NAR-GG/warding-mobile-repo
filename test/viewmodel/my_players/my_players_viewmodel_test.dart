@@ -97,7 +97,6 @@ void main() {
           // 같은 선수 두 건 — 한 번만.
           done('Oner', 'T1', 200),
         ],
-        subscribedTotal: 0,
       ),
     );
   });
@@ -152,7 +151,6 @@ void main() {
       solo.snap = SoloRankSnapshot(
         live: [live('Zeus', 'HLE', 50)],
         finished: [done('Ruler', 'HLE', 5)],
-        subscribedTotal: 0,
       );
       final vm = await build();
       expect(vm.liveSolo, isEmpty);

@@ -18,6 +18,15 @@ import 'home_section_header.dart';
 ///
 /// 쇼츠를 누르면 유튜브를 앱 밖에서 연다. 홈 안에서 재생할지·전체화면 피드로
 /// 보낼지는 spec 미결이라, 결정 전까지 가장 가벼운 외부 열기로 둔다.
+/// 쇼츠 카드가 외부로 열 주소. https 만 허용한다 — 서버가 준 값이라
+/// `javascript:`·`intent:`·`file:` 같은 스킴이나 깨진 주소는 열지 않는다.
+/// 열 수 없으면 null.
+Uri? shortsLaunchUri(String url) {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
+  return uri;
+}
+
 class HomeContentSection extends StatelessWidget {
   const HomeContentSection({
     super.key,
@@ -238,10 +247,14 @@ class _ShortsCard extends StatelessWidget {
   final double scale;
 
   Future<void> _open() async {
-    final uri = Uri.tryParse(video.url);
-    if (uri == null) return;
+    final uri = shortsLaunchUri(video.url);
+    if (uri == null) {
+      debugPrint('[Home] 쇼츠 주소가 https 가 아니라 열지 않음: ${video.url}');
+      return;
+    }
     try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened) debugPrint('[Home] 쇼츠 열기 실패: $uri');
     } catch (e) {
       debugPrint('[Home] 쇼츠 열기 실패: $e');
     }
@@ -255,7 +268,7 @@ class _ShortsCard extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: video.url.isEmpty ? null : _open,
+      onTap: shortsLaunchUri(video.url) == null ? null : _open,
       child: Container(
         width: width,
         clipBehavior: Clip.antiAlias,
