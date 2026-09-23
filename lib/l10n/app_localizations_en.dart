@@ -18,6 +18,130 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainScreenPlaceholder => 'Main screen (coming soon)';
 
   @override
+  String get homeTodayMatchesTitle => 'Today\'s Matches';
+
+  @override
+  String get homeSeeAllSchedule => 'All matches';
+
+  @override
+  String get homeStandingsTitle => 'Standings';
+
+  @override
+  String get homeStandingsLegendGroup => 'Legend Group';
+
+  @override
+  String get homeStandingsRiseGroup => 'Rise Group';
+
+  @override
+  String get homeStandingsColumnHint => 'W-L · Set diff';
+
+  @override
+  String get homeStandingsScopeLabel => 'Regular season total';
+
+  @override
+  String homeStandingsExpandMore(int count) {
+    return 'Show $count more Rise Group teams';
+  }
+
+  @override
+  String get homeStandingsCollapse => 'Collapse';
+
+  @override
+  String get homeStandingsSoon => 'Coming soon';
+
+  @override
+  String get homeCommunityTitle => 'Community';
+
+  @override
+  String get homeSeeAllCommunity => 'All posts';
+
+  @override
+  String get homeSortLatest => 'Latest';
+
+  @override
+  String get homeSortHot => 'Popular';
+
+  @override
+  String get homeSortReview => 'Ratings';
+
+  @override
+  String get homeContentTitle => 'Content';
+
+  @override
+  String get homeContentTabNews => 'News';
+
+  @override
+  String get homeContentTabShorts => 'Shorts';
+
+  @override
+  String get homeShortsFilterAll => 'All';
+
+  @override
+  String get homeShortsFilterPlayer => 'My players';
+
+  @override
+  String get homeShortsFilterTeam => 'My team';
+
+  @override
+  String get homeHeroEmptyMessage =>
+      'Subscribe to a player to see\ntheir solo queue updates here';
+
+  @override
+  String get homeHeroEmptyButton => 'Subscribe to a player';
+
+  @override
+  String get homeSoloQueueBadge => 'Solo Queue';
+
+  @override
+  String get homeSoloInProgress => 'In progress';
+
+  @override
+  String get homeDoneRowLabel => 'Finished today';
+
+  @override
+  String get homeDoneRowSub => 'Latest match per player';
+
+  @override
+  String homeSubscribedSeeAll(int count) {
+    return 'All $count subscribed';
+  }
+
+  @override
+  String homeHiddenCount(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get homeMatchResultLink => 'Match result';
+
+  @override
+  String homeMinutesAgo(int minutes) {
+    return '${minutes}m ago';
+  }
+
+  @override
+  String homeHoursAgo(int hours) {
+    return '${hours}h ago';
+  }
+
+  @override
+  String get homeNoticeDefault => 'Check out what\'s new';
+
+  @override
+  String get homeMatchStatusDone => 'Ended';
+
+  @override
+  String get homeJustNow => 'Just now';
+
+  @override
+  String homeDaysAgo(int days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String get homeShortsFilterEmpty => 'No shorts match this filter yet';
+
+  @override
   String get matchList => 'Match List';
 
   @override
@@ -895,6 +1019,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get matchLoadFailed => 'Failed to load matches';
+
+  @override
+  String get navHome => 'Home';
 
   @override
   String get navSchedule => 'Schedule';

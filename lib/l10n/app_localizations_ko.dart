@@ -18,6 +18,129 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mainScreenPlaceholder => '메인 화면 (작업 예정)';
 
   @override
+  String get homeTodayMatchesTitle => '오늘의 경기';
+
+  @override
+  String get homeSeeAllSchedule => '일정 전체';
+
+  @override
+  String get homeStandingsTitle => '순위표';
+
+  @override
+  String get homeStandingsLegendGroup => '레전드 그룹';
+
+  @override
+  String get homeStandingsRiseGroup => '라이즈 그룹';
+
+  @override
+  String get homeStandingsColumnHint => '승-패 · 세트 득실';
+
+  @override
+  String get homeStandingsScopeLabel => '정규시즌 통산';
+
+  @override
+  String homeStandingsExpandMore(int count) {
+    return '라이즈 그룹 $count팀 더보기';
+  }
+
+  @override
+  String get homeStandingsCollapse => '접기';
+
+  @override
+  String get homeStandingsSoon => '준비 중';
+
+  @override
+  String get homeCommunityTitle => '커뮤니티';
+
+  @override
+  String get homeSeeAllCommunity => '커뮤니티 전체';
+
+  @override
+  String get homeSortLatest => '최신순';
+
+  @override
+  String get homeSortHot => '인기순';
+
+  @override
+  String get homeSortReview => '평점 한줄평';
+
+  @override
+  String get homeContentTitle => '콘텐츠';
+
+  @override
+  String get homeContentTabNews => '뉴스';
+
+  @override
+  String get homeContentTabShorts => '쇼츠';
+
+  @override
+  String get homeShortsFilterAll => '전체';
+
+  @override
+  String get homeShortsFilterPlayer => '내 선수';
+
+  @override
+  String get homeShortsFilterTeam => '내 팀';
+
+  @override
+  String get homeHeroEmptyMessage => '응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요';
+
+  @override
+  String get homeHeroEmptyButton => '선수 구독하기';
+
+  @override
+  String get homeSoloQueueBadge => '솔로 랭크';
+
+  @override
+  String get homeSoloInProgress => '진행 중';
+
+  @override
+  String get homeDoneRowLabel => '오늘 끝난 경기';
+
+  @override
+  String get homeDoneRowSub => '선수당 최신 1건';
+
+  @override
+  String homeSubscribedSeeAll(int count) {
+    return '구독 $count명 전체';
+  }
+
+  @override
+  String homeHiddenCount(int count) {
+    return '+$count명';
+  }
+
+  @override
+  String get homeMatchResultLink => '경기 결과';
+
+  @override
+  String homeMinutesAgo(int minutes) {
+    return '$minutes분 전';
+  }
+
+  @override
+  String homeHoursAgo(int hours) {
+    return '$hours시간 전';
+  }
+
+  @override
+  String get homeNoticeDefault => '새로운 소식을 확인해보세요';
+
+  @override
+  String get homeMatchStatusDone => '종료';
+
+  @override
+  String get homeJustNow => '방금';
+
+  @override
+  String homeDaysAgo(int days) {
+    return '$days일 전';
+  }
+
+  @override
+  String get homeShortsFilterEmpty => '조건에 맞는 쇼츠가 아직 없어요';
+
+  @override
   String get matchList => '경기리스트';
 
   @override
@@ -866,6 +989,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get matchLoadFailed => '경기를 불러오지 못했어요';
+
+  @override
+  String get navHome => '홈';
 
   @override
   String get navSchedule => '경기일정';

@@ -6,6 +6,62 @@
   "logoutFailed": "로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.",
   "mainScreenPlaceholder": "메인 화면 (작업 예정)",
 
+  "homeTodayMatchesTitle": "오늘의 경기",
+  "homeSeeAllSchedule": "일정 전체",
+  "homeStandingsTitle": "순위표",
+  "homeStandingsLegendGroup": "레전드 그룹",
+  "homeStandingsRiseGroup": "라이즈 그룹",
+  "homeStandingsColumnHint": "승-패 · 세트 득실",
+  "homeStandingsScopeLabel": "정규시즌 통산",
+  "homeStandingsExpandMore": "라이즈 그룹 {count}팀 더보기",
+  "@homeStandingsExpandMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeStandingsCollapse": "접기",
+  "homeStandingsSoon": "준비 중",
+  "homeCommunityTitle": "커뮤니티",
+  "homeSeeAllCommunity": "커뮤니티 전체",
+  "homeSortLatest": "최신순",
+  "homeSortHot": "인기순",
+  "homeSortReview": "평점 한줄평",
+  "homeContentTitle": "콘텐츠",
+  "homeContentTabNews": "뉴스",
+  "homeContentTabShorts": "쇼츠",
+  "homeShortsFilterAll": "전체",
+  "homeShortsFilterPlayer": "내 선수",
+  "homeShortsFilterTeam": "내 팀",
+  "homeHeroEmptyMessage": "응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요",
+  "homeHeroEmptyButton": "선수 구독하기",
+  "homeSoloQueueBadge": "솔로 랭크",
+  "homeSoloInProgress": "진행 중",
+  "homeDoneRowLabel": "오늘 끝난 경기",
+  "homeDoneRowSub": "선수당 최신 1건",
+  "homeSubscribedSeeAll": "구독 {count}명 전체",
+  "@homeSubscribedSeeAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeHiddenCount": "+{count}명",
+  "@homeHiddenCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeMatchResultLink": "경기 결과",
+  "homeMinutesAgo": "{minutes}분 전",
+  "@homeMinutesAgo": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeHoursAgo": "{hours}시간 전",
+  "@homeHoursAgo": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "homeNoticeDefault": "새로운 소식을 확인해보세요",
+  "homeMatchStatusDone": "종료",
+  "homeJustNow": "방금",
+  "homeDaysAgo": "{days}일 전",
+  "@homeDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "homeShortsFilterEmpty": "조건에 맞는 쇼츠가 아직 없어요",
+
   "matchList": "경기리스트",
   "season": "시즌",
   "league": "리그",
@@ -471,6 +527,7 @@
   "matchSchedule": "경기 일정",
   "matchLoadFailed": "경기를 불러오지 못했어요",
 
+  "navHome": "홈",
   "navSchedule": "경기일정",
   "navMatchList": "경기리스트",
   "navCommunity": "커뮤니티",

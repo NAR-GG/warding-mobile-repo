@@ -6,6 +6,62 @@
   "logoutFailed": "Logout failed. Please try again later.",
   "mainScreenPlaceholder": "Main screen (coming soon)",
 
+  "homeTodayMatchesTitle": "Today's Matches",
+  "homeSeeAllSchedule": "All matches",
+  "homeStandingsTitle": "Standings",
+  "homeStandingsLegendGroup": "Legend Group",
+  "homeStandingsRiseGroup": "Rise Group",
+  "homeStandingsColumnHint": "W-L · Set diff",
+  "homeStandingsScopeLabel": "Regular season total",
+  "homeStandingsExpandMore": "Show {count} more Rise Group teams",
+  "@homeStandingsExpandMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeStandingsCollapse": "Collapse",
+  "homeStandingsSoon": "Coming soon",
+  "homeCommunityTitle": "Community",
+  "homeSeeAllCommunity": "All posts",
+  "homeSortLatest": "Latest",
+  "homeSortHot": "Popular",
+  "homeSortReview": "Ratings",
+  "homeContentTitle": "Content",
+  "homeContentTabNews": "News",
+  "homeContentTabShorts": "Shorts",
+  "homeShortsFilterAll": "All",
+  "homeShortsFilterPlayer": "My players",
+  "homeShortsFilterTeam": "My team",
+  "homeHeroEmptyMessage": "Subscribe to a player to see\ntheir solo queue updates here",
+  "homeHeroEmptyButton": "Subscribe to a player",
+  "homeSoloQueueBadge": "Solo Queue",
+  "homeSoloInProgress": "In progress",
+  "homeDoneRowLabel": "Finished today",
+  "homeDoneRowSub": "Latest match per player",
+  "homeSubscribedSeeAll": "All {count} subscribed",
+  "@homeSubscribedSeeAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeHiddenCount": "+{count}",
+  "@homeHiddenCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeMatchResultLink": "Match result",
+  "homeMinutesAgo": "{minutes}m ago",
+  "@homeMinutesAgo": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeHoursAgo": "{hours}h ago",
+  "@homeHoursAgo": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "homeNoticeDefault": "Check out what's new",
+  "homeMatchStatusDone": "Ended",
+  "homeJustNow": "Just now",
+  "homeDaysAgo": "{days}d ago",
+  "@homeDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "homeShortsFilterEmpty": "No shorts match this filter yet",
+
   "matchList": "Match List",
   "season": "Season",
   "league": "League",
@@ -314,6 +370,7 @@
   "matchSchedule": "Match Schedule",
   "matchLoadFailed": "Failed to load matches",
 
+  "navHome": "Home",
   "navSchedule": "Schedule",
   "navMatchList": "Matches",
   "navCommunity": "Community",

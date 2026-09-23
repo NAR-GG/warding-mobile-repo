@@ -5,7 +5,7 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 import '../styles/app_colors.dart';
 
-enum AppNavTab { schedule, list, community, subscription, mypage }
+enum AppNavTab { home, schedule, list, community, subscription, mypage }
 
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
@@ -30,6 +30,7 @@ class AppBottomNav extends StatelessWidget {
 
   /// 탭 순서·아이콘 정의 (디자인 시안 순서). 라벨은 build에서 l10n으로 가져온다.
   static const List<({String icon, AppNavTab tab})> _items = [
+    (icon: 'assets/icons/home.svg', tab: AppNavTab.home),
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
     (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
     (
@@ -40,12 +41,14 @@ class AppBottomNav extends StatelessWidget {
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
   ];
 
-  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
+  /// 탭이 6개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
   ///
-  /// 활성 chip 폭은 라벨 길이에 따라 달라진다(고정폭 아님). 간격을
+  /// 활성 chip 폭은 라벨 길이에 따라 달라진다(고정폭 아님, 최소 105). 간격을
   /// 고정 gap 대신 [MainAxisAlignment.spaceBetween] 으로 자동 분배해,
-  /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다.
-  static const double _inactiveSize = 40;
+  /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다. 홈 탭 추가로
+  /// 비활성 5개 + 활성 1개(최소 105)가 바 안쪽 폭(335-패딩24=311)을 넘지 않게
+  /// 40→34로 줄였다(105+5*34=275, 여유 36을 간격 5칸에 분배).
+  static const double _inactiveSize = 34;
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
     thickness: 16,
@@ -63,6 +66,7 @@ class AppBottomNav extends StatelessWidget {
     final scale = width.clamp(320.0, 430.0) / 375;
 
     final labels = {
+      AppNavTab.home: l.navHome,
       AppNavTab.schedule: l.navSchedule,
       AppNavTab.list: l.navMatchList,
       AppNavTab.community: l.navCommunity,
@@ -322,8 +326,8 @@ class _NavItemActive extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 48 * scale,
-        constraints: BoxConstraints(minWidth: 113 * scale),
-        padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+        constraints: BoxConstraints(minWidth: 105 * scale),
+        padding: EdgeInsets.symmetric(horizontal: 12 * scale),
         decoration: BoxDecoration(
           color: AppColors.narNavSelectedBg,
           borderRadius: BorderRadius.circular(26 * scale),
