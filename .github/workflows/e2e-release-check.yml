@@ -25,8 +25,15 @@ jobs:
       - name: iOS 시뮬레이터 부팅
         run: |
           set -euo pipefail
+          # 러너 이미지가 바뀌면 특정 기기 이름(iPhone 16 등)이 없을 수 있어 이름을 고정하지 않고
+          # 설치된 iOS 런타임의 iPhone 중 첫 번째를 쓴다.
           DEVICE_ID=$(xcrun simctl list devices available --json \
-            | jq -r '.devices | to_entries[] | .value[] | select(.name=="iPhone 16") | .udid' | head -1)
+            | jq -r '.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | startswith("iPhone")) | .udid' | head -1)
+          if [ -z "$DEVICE_ID" ]; then
+            echo "사용 가능한 iPhone 시뮬레이터가 없다:"
+            xcrun simctl list devices available
+            exit 1
+          fi
           echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID" -b
