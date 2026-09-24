@@ -38,7 +38,8 @@ Spec을 승인(머지)할 때, 그 설계가 아키텍처·기능 구조를 바�
 화면 기획(md)과 디자인 목업(html)의 확정본은
 [NAR-GG/warding-docs](https://github.com/NAR-GG/warding-docs)에 있습니다. 계정이 달라도 같은
 파일을 보려고 레포를 따로 뒀습니다. 구현할 때 읽는 법은 [CLAUDE.md](./CLAUDE.md)의
-"기획·디자인 확정본" 절을 참고하세요.
+"기획·디자인 확정본" 절을 참고하세요. `intent/<slug>/spec.md`가 이 파일들을 링크로
+연결합니다.
 
 ## 지금 어떻게 동작하는가: `wiki/`
 

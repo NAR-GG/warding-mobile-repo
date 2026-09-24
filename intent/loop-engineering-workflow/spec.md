@@ -14,6 +14,8 @@ Intent/Spec 초안 생성과 테스트 검증은 CI로 자동화한다.
   (모든 작업에 Intent부터 강제하지 않는다).
 - Intent/Spec 문서는 셀프 머지 가능한 일반 PR로 관리해, "의도가 확정된 시점"이 git 이력에
   남게 한다.
+- 화면 기능의 Spec은 warding-docs(별도 레포)의 목업 html과 백엔드 전달 spec md를 링크로
+  연결한다.
 - Discord `/intent` 슬래시 커맨드로 Intent 초안을 자동 생성해, 슬랙 기반 워크플로우 없이도
   팀이 쓰는 채널(Discord)에서 바로 착수할 수 있게 한다.
 - Intent 머지 시 Spec 초안이, Spec 승인 후에는 개발자가 로컬에서 Plan을 작성해 구현으로
@@ -72,6 +74,9 @@ Intent/Spec 머지 = 승인. 승인자는 작성자 본인(셀프 머지)이어�
 ### spec.md
 `Summary`(Intent 링크, 또는 Intent 없을 시 문제 상황 직접 기술) / `Requirements` /
 `Design / Approach` / `Decisions` / `Out of scope` / `Open questions`.
+
+구현을 위한 spec이다. 화면 기능이면 여기서 warding-docs의 디자인 목업(`mockup.html`)과
+백엔드 전달 spec(`spec.md`)을 링크로 연결한다. 그쪽 내용을 복사하지 않고 링크만 건다.
 
 ### plan.md
 `Context`(Intent·Spec 링크, 있으면) / `Changes`(변경 순서) / `Verification`(테스트 방법).

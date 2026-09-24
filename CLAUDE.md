@@ -179,9 +179,11 @@ shorebird patch android --release-version <pubspec의 version>
   `app_colors.dart`에서 자동 생성되기 때문이다. 목업의 px 값은 375 기준이라 `* scale`을 곱해 옮긴다.
 - 목업 html은 수백 KB라 통째로 읽지 않는다. `spec.md`를 먼저 읽고, 필요한 화면의 구조와 CSS만 골라 본다.
 - 구현하다가 spec과 다르게 가야 하면 코드보다 먼저 warding-docs에 spec 수정 PR을 올린다.
-- 이 레포의 `intent/`와 나누는 기준: 제품 결정(무엇을, 왜)은 warding-docs spec에 두고, 구현 계획
-  (`plan.md`)과 코드 쪽 설계는 이 레포 `intent/`에 둔다. `intent/` 문서에는 해당 warding-docs spec
-  링크를 건다.
+- 이 레포의 Intent → Spec → Plan에서 warding-docs는 **Spec 단계**에 붙는다.
+  - Intent: 기획 의도 (Problem, Proposed outcome, Affected users and systems, Constraints, Open questions)
+  - Spec: 구현용 spec (Summary, Requirements, Design / Approach, Decisions, Out of scope, Open questions).
+    여기서 warding-docs의 `mockup.html`과 백엔드 전달 `spec.md`를 링크로 연결한다.
+  - Plan: 실제 구현 계획 (Context, Changes, Verification)
 
 ## 요건 변경 시 intent/spec 동기화
 
