@@ -12,7 +12,7 @@ void main() {
       expect(url, isNot(contains('league=ALL')));
       for (final code in [
         'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
-        'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP',
+        'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP', 'ASIAN_GAMES',
       ]) {
         expect(url, contains('league=$code'));
       }

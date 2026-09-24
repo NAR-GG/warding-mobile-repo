@@ -77,7 +77,7 @@ class ApiConfig {
   /// `/mobile/schedules/filters` 응답의 '전체'(ALL) 를 제외한 리그 목록과 동일해야 한다.
   static const List<String> _allRealLeagueCodes = [
     'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
-    'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP',
+    'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP', 'ASIAN_GAMES',
   ];
 
   /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).
