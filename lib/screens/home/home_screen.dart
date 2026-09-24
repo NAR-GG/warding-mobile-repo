@@ -5,12 +5,14 @@ import '../../components/app_bottom_nav.dart';
 import '../../components/nar_banner.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
+import '../../model/notice.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/home/home_viewmodel.dart';
 import '../community/community_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
 import '../mypage/mypage_screen.dart';
+import '../notice/notice_detail_screen.dart';
 import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -33,6 +35,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final HomeViewModel _viewModel = HomeViewModel();
+
+  /// 배너 탭 — 스케줄 화면과 같은 공지 상세로 연다.
+  void _openNotice(Notice notice) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            NoticeDetailScreen(notice: notice, showListButton: true),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -129,14 +141,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       text:
                           _viewModel.promotedNotice?.title ??
                           l.homeNoticeDefault,
+                      // 배너는 promotedNotice 가 있을 때만 보이므로 보통 열 공지가 있다.
+                      onTap: _viewModel.promotedNotice == null
+                          ? null
+                          : () => _openNotice(_viewModel.promotedNotice!),
                       onClose: _viewModel.dismissBanner,
                     ),
                   Expanded(
                     child: SingleChildScrollView(
                       // 좌우 여백은 각 섹션이 스스로 20*scale 패딩을 두른다 —
-                      // NarChipMultiSelect(순위표 리그 칩, 커뮤니티 정렬,
-                      // 콘텐츠 탭)는 자체 16*scale 패딩을 가진 공용 컴포넌트라
-                      // 여기서 일괄로 좌우 패딩을 주면 겹쳐서 더 좁아 보인다.
+                      // 칩 줄(NarChipMultiSelect)은 가로 스크롤 영역이라 자체
+                      // horizontalPadding(홈은 20)을 받으므로, 여기서 일괄로
+                      // 좌우 패딩을 주면 겹쳐서 더 좁아 보인다.
                       padding: EdgeInsets.only(
                         top: 16 * scale,
                         // 떠 있는 하단 네비(72*scale + 바닥 26 + 간격 8)에

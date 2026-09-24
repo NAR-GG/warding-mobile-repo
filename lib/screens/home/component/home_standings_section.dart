@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../model/standing.dart';
-import 'home_pill_tabs.dart';
 import 'home_section_header.dart';
 
 /// 순위표 — 리그 칩 한 줄 + 리그 테이블. 목업의 세 형태(리그표/스위스/토너먼트)
@@ -24,9 +24,6 @@ class HomeStandingsSection extends StatelessWidget {
 
   final HomeViewModel viewModel;
   final double scale;
-
-  /// 리그 칩 키 — 테스트가 칩을 찾을 때 쓴다.
-  static Key chipKey(String code) => ValueKey('homeLeagueChip-$code');
 
   /// 순위 숫자 [Text] 키.
   static Key rankKey(int rank) => ValueKey('homeStandingRank-$rank');
@@ -48,18 +45,18 @@ class HomeStandingsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        HomePillTabs<String>(
-          tabs: [
-            for (final chip in viewModel.leagueChips)
-              HomePillTab(
-                value: chip.code,
-                label: chip.label,
-                enabled: chip.live,
-                key: chipKey(chip.code),
-              ),
-          ],
+        // 데이터가 있는 리그(live)만 고를 수 있고 나머지는 점선 칩이다.
+        NarChipMultiSelect.single(
+          options: [for (final chip in viewModel.leagueChips) chip.code],
           selected: viewModel.selectedLeague,
           onSelected: viewModel.selectLeague,
+          labelBuilder: (code) =>
+              viewModel.leagueChips.firstWhere((c) => c.code == code).label,
+          disabledOptions: {
+            for (final chip in viewModel.leagueChips)
+              if (!chip.live) chip.code,
+          },
+          horizontalPadding: 20,
           scale: scale,
         ),
         Padding(

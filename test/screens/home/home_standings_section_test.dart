@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/dashed_border.dart';
+import 'package:warding/components/nar_chip.dart';
 import 'package:warding/screens/home/component/home_standings_section.dart';
 
 import 'home_test_harness.dart';
@@ -8,7 +9,11 @@ import 'home_test_harness.dart';
 /// 순위표 — 데이터 없는 리그(LPL·LEC·LCS·월즈)는 점선 칩이고 누를 수 없다.
 /// 1위 행은 따로 꾸미지 않는다. 로딩·에러는 그리지 않는다.
 void main() {
-  Finder chip(String code) => find.byKey(HomeStandingsSection.chipKey(code));
+  // 리그 칩 — 라벨 텍스트를 품은 NarChip.
+  Finder chip(String code) => find.ancestor(
+    of: find.text(code),
+    matching: find.byType(NarChip),
+  );
 
   testWidgets('LPL·LEC·LCS·월즈 칩은 점선이고 눌러도 리그가 바뀌지 않는다', (tester) async {
     final server = setUpHomeApi();

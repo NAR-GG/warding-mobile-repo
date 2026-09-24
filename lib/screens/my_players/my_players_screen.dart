@@ -46,14 +46,9 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
     super.dispose();
   }
 
-  /// 팀 칩은 한 번에 하나만 고른다. [NarChipMultiSelect] 가 넘겨주는 집합에서
-  /// 새로 더해진 값이 고른 팀이고, 고른 칩을 다시 눌러 빠지면 전체로 돌린다.
-  void _onTeamChanged(Set<String> next) {
-    final current = _viewModel.teamCode ?? _allTeams;
-    final added = next.difference({current});
-    final picked = added.isEmpty ? _allTeams : added.first;
-    _viewModel.setTeamCode(picked == _allTeams ? null : picked);
-  }
+  /// 팀 칩은 한 번에 하나만 고른다. '전체'(내부 키 [_allTeams])는 팀 없음(null).
+  void _onTeamSelected(String value) =>
+      _viewModel.setTeamCode(value == _allTeams ? null : value);
 
   @override
   Widget build(BuildContext context) {
@@ -86,13 +81,12 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
                   onChanged: vm.setQuery,
                 ),
                 if (vm.teamCodes.isNotEmpty)
-                  NarChipMultiSelect(
+                  NarChipMultiSelect.single(
                     options: [_allTeams, ...vm.teamCodes],
-                    selectedValues: {vm.teamCode ?? _allTeams},
-                    pinned: const {_allTeams},
+                    selected: vm.teamCode ?? _allTeams,
                     labelBuilder: (v) =>
                         v == _allTeams ? l.myPlayersTeamAll : v,
-                    onChanged: _onTeamChanged,
+                    onSelected: _onTeamSelected,
                     scale: scale,
                   ),
                 Expanded(

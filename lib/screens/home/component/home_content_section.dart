@@ -2,12 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/dashed_border.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
-import 'home_pill_tabs.dart';
 import 'home_section_header.dart';
 
 /// 콘텐츠 — 밖에서 온 것(뉴스·쇼츠). 평점 한줄평은 유저가 쓴 것이라 커뮤니티
@@ -56,20 +56,17 @@ class HomeContentSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        HomePillTabs<HomeContentTab>(
+        NarChipMultiSelect.single(
           // 뉴스가 없으면(릴리즈 빈 소스) 뉴스 탭을 그리지 않는다.
-          tabs: [
-            for (final t in viewModel.availableContentTabs)
-              HomePillTab(
-                value: t,
-                label: switch (t) {
-                  HomeContentTab.news => l.homeContentTabNews,
-                  HomeContentTab.shorts => l.homeContentTabShorts,
-                },
-              ),
-          ],
-          selected: tab,
-          onSelected: viewModel.setContentTab,
+          options: [for (final t in viewModel.availableContentTabs) t.name],
+          selected: tab.name,
+          onSelected: (name) =>
+              viewModel.setContentTab(HomeContentTab.values.byName(name)),
+          labelBuilder: (name) => switch (HomeContentTab.values.byName(name)) {
+            HomeContentTab.news => l.homeContentTabNews,
+            HomeContentTab.shorts => l.homeContentTabShorts,
+          },
+          horizontalPadding: 20,
           scale: scale,
         ),
         if (tab == HomeContentTab.news)
@@ -180,23 +177,17 @@ class _ShortsDeck extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomePillTabs<HomeShortsFilter>(
-          tabs: [
-            HomePillTab(
-              value: HomeShortsFilter.all,
-              label: l.homeShortsFilterAll,
-            ),
-            HomePillTab(
-              value: HomeShortsFilter.player,
-              label: l.homeShortsFilterPlayer,
-            ),
-            HomePillTab(
-              value: HomeShortsFilter.team,
-              label: l.homeShortsFilterTeam,
-            ),
-          ],
-          selected: viewModel.shortsFilter,
-          onSelected: viewModel.setShortsFilter,
+        NarChipMultiSelect.single(
+          options: [for (final f in HomeShortsFilter.values) f.name],
+          selected: viewModel.shortsFilter.name,
+          onSelected: (name) =>
+              viewModel.setShortsFilter(HomeShortsFilter.values.byName(name)),
+          labelBuilder: (name) => switch (HomeShortsFilter.values.byName(name)) {
+            HomeShortsFilter.all => l.homeShortsFilterAll,
+            HomeShortsFilter.player => l.homeShortsFilterPlayer,
+            HomeShortsFilter.team => l.homeShortsFilterTeam,
+          },
+          horizontalPadding: 20,
           scale: scale,
         ),
         if (videos.isEmpty)

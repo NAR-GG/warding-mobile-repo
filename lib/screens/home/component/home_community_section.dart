@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../model/home_models.dart';
-import 'home_pill_tabs.dart';
 import 'home_section_header.dart';
 
 /// 커뮤니티 — 유저가 쓴 것(글·평점 한줄평). 최신순 / 인기순 / 평점 한줄평 3탭.
@@ -53,14 +53,18 @@ class HomeCommunitySection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        HomePillTabs<HomeCommunitySort>(
-          tabs: [
-            // 한줄평이 없으면(릴리즈 빈 소스) 평점 탭을 그리지 않는다.
-            for (final sort in viewModel.availableCommunitySorts)
-              HomePillTab(value: sort, label: _labelFor(l, sort)),
+        NarChipMultiSelect.single(
+          // 한줄평이 없으면(릴리즈 빈 소스) 평점 탭을 그리지 않는다.
+          options: [
+            for (final sort in viewModel.availableCommunitySorts) sort.name,
           ],
-          selected: viewModel.communitySort,
-          onSelected: viewModel.setCommunitySort,
+          selected: viewModel.communitySort.name,
+          onSelected: (name) => viewModel.setCommunitySort(
+            HomeCommunitySort.values.byName(name),
+          ),
+          labelBuilder: (name) =>
+              _labelFor(l, HomeCommunitySort.values.byName(name)),
+          horizontalPadding: 20,
           scale: scale,
         ),
         _ListBox(

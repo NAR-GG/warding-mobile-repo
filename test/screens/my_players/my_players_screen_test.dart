@@ -234,10 +234,15 @@ void main() {
     expect(find.byKey(MyPlayersScreen.tileKey('Chovy'.hashCode)), findsOneWidget);
     expect(find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)), findsNothing);
 
-    // 고른 칩을 다시 눌러도 전체로 돌아간다.
+    // 고른 칩은 앞으로 튀지 않고 제자리에 있다(전체 → GEN 순서 유지).
+    expect(
+      tester.getTopLeft(_teamChip('전체')).dx,
+      lessThan(tester.getTopLeft(_teamChip('GEN')).dx),
+    );
+    // 고른 칩을 다시 눌러도 그대로다(해제는 '전체' 칩으로).
     await tester.tap(_teamChip('GEN'));
     await tester.pump();
-    expect(vm.teamCode, isNull);
+    expect(vm.teamCode, 'GEN');
 
     await tester.tap(_teamChip('T1'));
     await tester.pump();
