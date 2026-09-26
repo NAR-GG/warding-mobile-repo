@@ -5,6 +5,7 @@ import '../../../components/dashed_border.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
+import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../util/champion_name_map.dart';
@@ -73,6 +74,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
       SoloCardState.noneActive => Padding(
         padding: EdgeInsets.symmetric(horizontal: 20 * scale),
         child: _QuietRow(
+          faces: vm.subscribedFaces,
           subscribedTotal: vm.subscribedTotal,
           lastFinished: vm.soloFinished.isEmpty ? null : vm.soloFinished.first,
           scale: scale,
@@ -279,14 +281,19 @@ class _EmptyCard extends StatelessWidget {
 }
 
 /// 구독은 있는데 진행 중 0명 — 한 줄짜리 조용한 상태. 누르면 내 선수 화면.
+///
+/// 시안(`mockup.html`)의 `.quiet`: 구독 선수 얼굴이 겹쳐 놓인 스택 + 두 줄 글
+/// (구독 수 / 마지막 경기) + 화살표. 구독이 얼굴 수보다 많으면 "+N" 칸이 붙는다.
 class _QuietRow extends StatelessWidget {
   const _QuietRow({
+    required this.faces,
     required this.subscribedTotal,
     required this.lastFinished,
     required this.scale,
     this.onTap,
   });
 
+  final List<PlayerSubscription> faces;
   final int subscribedTotal;
   final HomeFinishedSoloPlayer? lastFinished;
   final double scale;
@@ -296,10 +303,11 @@ class _QuietRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final last = lastFinished;
-    final sub = last == null
-        ? l.homeSoloQuietSubscribed(subscribedTotal)
-        : '${l.homeSoloQuietSubscribed(subscribedTotal)} · '
-              '${last.won ? l.homeSoloLastGameWin(_ago(l, last.minutesAgo), last.name) : l.homeSoloLastGameLoss(_ago(l, last.minutesAgo), last.name)}';
+    final lastLine = last == null
+        ? null
+        : last.won
+        ? l.homeSoloLastGameWin(_ago(l, last.minutesAgo), last.name)
+        : l.homeSoloLastGameLoss(_ago(l, last.minutesAgo), last.name);
 
     return GestureDetector(
       key: HomeSoloRankSection.quietKey,
@@ -308,7 +316,7 @@ class _QuietRow extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: 16 * scale,
-          vertical: 14 * scale,
+          vertical: 18 * scale,
         ),
         decoration: BoxDecoration(
           color: AppColors.narBgTertiary,
@@ -317,6 +325,14 @@ class _QuietRow extends StatelessWidget {
         ),
         child: Row(
           children: [
+            if (faces.isNotEmpty) ...[
+              _FaceStack(
+                faces: faces,
+                extra: subscribedTotal - faces.length,
+                scale: scale,
+              ),
+              SizedBox(width: 14 * scale),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,23 +343,38 @@ class _QuietRow extends StatelessWidget {
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w600,
                       fontSize: 14.5 * scale,
+                      height: 1.35,
                       color: AppColors.narTextTertiary,
                     ),
                   ),
-                  SizedBox(height: 4 * scale),
+                  SizedBox(height: 5 * scale),
                   Text(
-                    sub,
+                    l.homeSoloQuietSubscribed(subscribedTotal),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 11.5 * scale,
+                      height: 1.5,
                       color: AppColors.narText2,
                     ),
                   ),
+                  if (lastLine != null)
+                    Text(
+                      lastLine,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 11.5 * scale,
+                        height: 1.5,
+                        color: AppColors.narDark200,
+                      ),
+                    ),
                 ],
               ),
             ),
+            SizedBox(width: 8 * scale),
             Icon(
               Icons.chevron_right,
               size: 16 * scale,
@@ -351,6 +382,114 @@ class _QuietRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 구독 선수 얼굴을 겹쳐 놓은 스택 — 38 원, 12씩 겹치고 카드 색 2px 테두리로
+/// 서로를 갈라 놓는다. 뒤에 오는 얼굴이 위에 올라온다. [extra] 가 0보다 크면
+/// 마지막에 "+N" 칸을 붙인다.
+class _FaceStack extends StatelessWidget {
+  const _FaceStack({
+    required this.faces,
+    required this.extra,
+    required this.scale,
+  });
+
+  final List<PlayerSubscription> faces;
+  final int extra;
+  final double scale;
+
+  static const double _size = 38;
+  static const double _step = 26; // 38 - 겹침 12
+
+  @override
+  Widget build(BuildContext context) {
+    final count = faces.length + (extra > 0 ? 1 : 0);
+    final size = _size * scale;
+    return SizedBox(
+      width: (_size + _step * (count - 1)) * scale,
+      height: size,
+      child: Stack(
+        children: [
+          for (final (i, p) in faces.indexed)
+            Positioned(
+              left: _step * i * scale,
+              child: _Face(
+                name: p.playerName,
+                url: resolveImageUrl(p.playerImageUrl),
+                size: size,
+                scale: scale,
+              ),
+            ),
+          if (extra > 0)
+            Positioned(
+              left: _step * faces.length * scale,
+              child: _Face(
+                name: '+$extra',
+                url: null,
+                size: size,
+                scale: scale,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Face extends StatelessWidget {
+  const _Face({
+    required this.name,
+    required this.url,
+    required this.size,
+    required this.scale,
+  });
+
+  final String name;
+  final String? url;
+  final double size;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = name.startsWith('+')
+        ? name
+        : (name.length >= 2 ? name.substring(0, 2) : name).toUpperCase();
+    final initials = Center(
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w700,
+          fontSize: 12 * scale,
+          color: AppColors.narText2,
+        ),
+      ),
+    );
+    final photo = url;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.narLine2,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.narBgTertiary, width: 2 * scale),
+      ),
+      child: ClipOval(
+        child: photo == null || photo.isEmpty
+            ? initials
+            : CachedNetworkImage(
+                imageUrl: photo,
+                fit: BoxFit.cover,
+                // 전신 사진이라 얼굴이 위쪽에 있다 — 시안의 `center 12%`.
+                alignment: const Alignment(0, -0.75),
+                memCacheWidth: (size * 3).round(),
+                fadeInDuration: const Duration(milliseconds: 150),
+                placeholder: (_, _) => initials,
+                errorWidget: (_, _, _) => initials,
+              ),
       ),
     );
   }

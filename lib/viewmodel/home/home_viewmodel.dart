@@ -249,6 +249,14 @@ class HomeViewModel extends ChangeNotifier {
   /// 0명이다(구독 0명이면 점선 빈 카드).
   int get subscribedTotal => _subscribedPlayers?.length ?? 0;
 
+  /// 솔랭 중인 선수가 없을 때 조용한 행에 겹쳐 보여줄 구독 선수 얼굴(최대 4명).
+  List<PlayerSubscription> get subscribedFaces =>
+      (_subscribedPlayers ?? const <PlayerSubscription>[])
+          .take(quietFaceCount)
+          .toList();
+
+  static const int quietFaceCount = 4;
+
   /// "+N명" — 위·아래 어디에도 안 나온 구독 선수 수.
   int get soloHiddenCount {
     final hidden = subscribedTotal - _soloLive.length - _soloFinished.length;
@@ -491,9 +499,8 @@ class HomeViewModel extends ChangeNotifier {
       : availableContentTabs.first;
 
   /// 보여줄 콘텐츠 탭. 뉴스가 비면 쇼츠만.
-  List<HomeContentTab> get availableContentTabs => _news.isEmpty
-      ? const [HomeContentTab.shorts]
-      : HomeContentTab.values;
+  List<HomeContentTab> get availableContentTabs =>
+      _news.isEmpty ? const [HomeContentTab.shorts] : HomeContentTab.values;
 
   void setContentTab(HomeContentTab tab) {
     if (tab == contentTab) return;

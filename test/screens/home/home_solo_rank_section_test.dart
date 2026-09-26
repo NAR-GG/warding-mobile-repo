@@ -109,6 +109,32 @@ void main() {
     expect(opened, 1);
   });
 
+  testWidgets('조용한 행 — 구독 선수 얼굴 4명이 겹쳐 놓이고 남은 수는 +N', (tester) async {
+    final server = setUpHomeApi(loggedIn: true);
+    server.subscriptions = [
+      for (final n in ['Faker', 'Chovy', 'Zeus', 'Keria', 'Oner', 'Gumayusi'])
+        subscriptionJson(n, 'T1'),
+    ];
+    final vm = await pumpHomeSection(
+      tester,
+      solo: const SoloRankSnapshot(live: [], finished: []),
+      section: (vm) => section(vm),
+    );
+
+    expect(vm.soloState, SoloCardState.noneActive);
+    expect(vm.subscribedFaces.map((p) => p.playerName), [
+      'Faker',
+      'Chovy',
+      'Zeus',
+      'Keria',
+    ]);
+    // 사진 URL 이 없으면 이름 앞 두 글자로 대신한다.
+    for (final t in ['FA', 'CH', 'ZE', 'KE', '+2']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    expect(find.text('구독 6명'), findsOneWidget);
+  });
+
   testWidgets('진행 중 — 큰 카드의 숫자는 경과 시간뿐, 아래 끝난 줄은 "N분 전 종료"', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
     // 솔랭 항목은 구독한 선수만 보이므로 Faker·Oner·Ruler 를 포함해 10명.
