@@ -85,7 +85,7 @@ void main() {
       expect(find.text(MockReviewSource.reviews.first.comment), findsOneWidget);
     });
 
-    testWidgets('한줄평이 비면(릴리즈 빈 소스) 평점 한줄평 탭이 없다', (tester) async {
+    testWidgets('한줄평이 비면(빈 소스) 평점 한줄평 탭이 없다', (tester) async {
       setUpHomeApi();
       await pumpHomeSection(
         tester,
@@ -94,7 +94,7 @@ void main() {
       );
 
       expect(find.text('최신순'), findsOneWidget);
-      expect(find.text('인기순'), findsOneWidget);
+      expect(find.text('인기순'), findsNothing);
       expect(find.text('평점 한줄평'), findsNothing);
       expect(find.text('글-latest'), findsOneWidget);
     });
@@ -116,7 +116,7 @@ void main() {
       expect(opened, 1);
     });
 
-    testWidgets('탭 순서는 선택과 무관하게 최신순 · 인기순 · 평점 한줄평', (tester) async {
+    testWidgets('탭 순서는 선택과 무관하게 최신순 · 평점 한줄평(인기순은 없다)', (tester) async {
       setUpHomeApi();
       await pumpHomeSection(
         tester,
@@ -125,12 +125,12 @@ void main() {
 
       await tester.tap(find.text('평점 한줄평'));
       await tester.pump();
+      expect(find.text('인기순'), findsNothing);
       final xs = [
         '최신순',
-        '인기순',
         '평점 한줄평',
       ].map((t) => tester.getTopLeft(find.text(t)).dx).toList();
-      expect(xs[0] < xs[1] && xs[1] < xs[2], isTrue, reason: '$xs');
+      expect(xs[0] < xs[1], isTrue, reason: '$xs');
     });
   });
 }

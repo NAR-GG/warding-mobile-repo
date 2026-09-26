@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:warding/repository/home/home_api_sources.dart';
 import 'package:warding/repository/home/home_sources.dart';
 
 void main() {
@@ -21,26 +21,19 @@ void main() {
     expect(await MockNewsSource().fetchTop(), isNotEmpty);
   });
 
-  // 목업은 HOME_MOCKS 게이트 뒤에 있다 — 플래그가 꺼진 빌드(릴리즈 기본값)의
-  // 기본 소스는 빈 소스라 가짜 솔랭·뉴스·평점이 실사용자에게 나가지 않는다.
+  // 목업은 HOME_MOCKS 게이트 뒤에 있다 — 플래그가 꺼진 기본 빌드는 솔랭·뉴스는 실제
+  // API 소스, 평점은 빈 소스(백엔드 #542 배포 전)라 가짜 데이터가 나가지 않는다.
   group('HOME_MOCKS 게이트', () {
-    test('dart-define 이 없으면 kDebugMode 를 따른다', () {
-      expect(kHomeMocks, kDebugMode);
+    test('dart-define 이 없으면 꺼져 있다', () {
+      expect(kHomeMocks, isFalse);
     });
 
-    test('플래그가 꺼지면 기본 소스는 모두 빈 소스', () async {
-      final solo = defaultSoloRankSource(mocks: false);
+    test('플래그가 꺼지면 솔랭·뉴스는 API 소스, 평점은 빈 소스', () async {
+      expect(defaultSoloRankSource(mocks: false), isA<ApiSoloRankSource>());
+      expect(defaultNewsSource(mocks: false), isA<ApiNewsSource>());
       final reviews = defaultReviewSource(mocks: false);
-      final news = defaultNewsSource(mocks: false);
-      expect(solo, isA<EmptySoloRankSource>());
       expect(reviews, isA<EmptyReviewSource>());
-      expect(news, isA<EmptyNewsSource>());
-
-      final snap = await solo.fetch();
-      expect(snap.live, isEmpty);
-      expect(snap.finished, isEmpty);
       expect(await reviews.fetchRecent(), isEmpty);
-      expect(await news.fetchTop(), isEmpty);
     });
 
     test('플래그가 켜지면 목업 소스', () {

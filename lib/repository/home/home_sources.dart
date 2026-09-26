@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart';
-
 import '../../model/home_models.dart';
+import 'home_api_sources.dart';
 
 /// 솔로 랭크 상태 한 번의 조회 결과.
 class SoloRankSnapshot {
@@ -10,8 +9,7 @@ class SoloRankSnapshot {
   final List<HomeFinishedSoloPlayer> finished;
 }
 
-/// 구독 선수 솔랭 상태 소스. 솔랭 DTO(`gameStartTime`·챔피언·직전 결과)가
-/// 백엔드에 생기면 구현체만 교체한다.
+/// 구독 선수 솔랭 상태 소스.
 abstract class SoloRankSource {
   Future<SoloRankSnapshot> fetch();
 }
@@ -21,36 +19,30 @@ abstract class ReviewSource {
   Future<List<HomeReviewItem>> fetchRecent();
 }
 
-/// 홈 뉴스 소스. 실제 `/api/community/news`는 LoL 필터가 붙기 전에는 홈에
-/// 내보내면 안 되므로 목업 구현만 연결한다.
+/// 홈 뉴스 소스.
 abstract class NewsSource {
   Future<List<HomeNewsArticle>> fetchTop();
 }
 
-/// 홈 목업 스위치. 켜져 있으면 솔랭·평점·뉴스의 기본 소스가 목업이고, 꺼져
-/// 있으면 빈 소스다.
+/// 홈 목업 스위치. 켜져 있으면 솔랭·평점·뉴스의 기본 소스가 목업이다. 꺼져 있으면
+/// 솔랭·뉴스는 실제 API, 평점은 빈 소스다(백엔드 #542 배포 전이라 연결 보류).
 ///
-/// 기본값은 [kDebugMode] — 디버그·시뮬레이터에서는 목업을 보고, 릴리즈
-/// (`shorebird release`) 빌드에서는 빈 소스가 나가 가짜 솔랭·실제 언론사 이름을 단
-/// 가짜 뉴스·가짜 한줄평이 실사용자에게 보이지 않는다. 릴리즈 빌드에서 목업을
-/// 보려면 `--dart-define=HOME_MOCKS=true`, 디버그에서 끄려면 `=false`.
-const bool kHomeMocks = bool.fromEnvironment(
-  'HOME_MOCKS',
-  defaultValue: kDebugMode,
-);
+/// 기본값은 꺼짐이다. 디버그에서 목업 화면을 보려면 `--dart-define=HOME_MOCKS=true`.
+const bool kHomeMocks = bool.fromEnvironment('HOME_MOCKS');
 
 /// [HomeViewModel]·[MyPlayersViewModel] 의 기본 솔랭 소스. 테스트는 [mocks] 로
 /// 게이트 결과를 확인한다.
 SoloRankSource defaultSoloRankSource({bool mocks = kHomeMocks}) =>
-    mocks ? const MockSoloRankSource() : const EmptySoloRankSource();
+    mocks ? const MockSoloRankSource() : ApiSoloRankSource();
 
-/// [HomeViewModel] 의 기본 한줄평 소스.
+/// [HomeViewModel] 의 기본 한줄평 소스. 백엔드 nar-back-repo#542(선수 이름·챔피언
+/// 한글명) 배포 뒤에 `GET /api/mobile/ratings/recent` 로 교체한다.
 ReviewSource defaultReviewSource({bool mocks = kHomeMocks}) =>
     mocks ? const MockReviewSource() : const EmptyReviewSource();
 
 /// [HomeViewModel] 의 기본 뉴스 소스.
 NewsSource defaultNewsSource({bool mocks = kHomeMocks}) =>
-    mocks ? const MockNewsSource() : const EmptyNewsSource();
+    mocks ? const MockNewsSource() : ApiNewsSource();
 
 /// 빈 솔랭 소스 — 솔랭 백엔드가 없을 때 릴리즈 빌드의 기본값. 구독이 있으면
 /// 홈 솔랭 카드는 "지금 솔랭 중인 선수 없음" 조용한 행이 되고, 내 선수 화면은

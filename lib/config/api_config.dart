@@ -492,4 +492,12 @@ class ApiConfig {
   /// 서버가 에러 없이 latest로 처리한다. 응답은 Spring `Page` (`content` 래퍼).
   static String shortsUrl({String sort = 'latest', int size = 20}) =>
       '$apiBaseUrl/story/videos?category=shorts&sort=$sort&size=$size';
+
+  // ── 홈 (솔랭·뉴스) ───────────────────────────────────────────────────
+
+  /// 구독 선수 솔랭 상태 (로그인 필수). `live`·`finished` 두 목록을 준다.
+  static String get soloRankUrl => '$apiBaseUrl/mobile/me/solo-rank';
+
+  /// 홈 뉴스 최신 TOP 5 (인증 불필요). nar.kr 웹과 같은 API.
+  static String get homeNewsUrl => '$apiBaseUrl/home/news';
 }

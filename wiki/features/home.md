@@ -1,16 +1,16 @@
 ---
 type: Feature
 title: 홈
-description: 앱 진입 화면. 구독 선수 솔랭·오늘 경기·순위표·커뮤니티·콘텐츠 5개 섹션과 내 선수 화면. 솔랭·평점·뉴스는 HOME_MOCKS 게이트 뒤의 목업(릴리즈는 빈 소스).
+description: 앱 진입 화면. 구독 선수 솔랭·오늘 경기·순위표·커뮤니티·콘텐츠 5개 섹션과 내 선수 화면. 솔랭·뉴스는 실제 API, 평점 한줄평은 백엔드 #542 배포 전이라 빈 소스(HOME_MOCKS=true면 목업).
 tags: [home, mvvm, mock]
-timestamp: 2026-09-24T00:00:00Z
+timestamp: 2026-09-27T00:00:00Z
 ---
 
 # 개요
 
 홈은 앱의 진입 화면이다. 스플래시(로그인 상태)·로그인(온보딩 완료 계정)·온보딩 완료 후 모두 `HomeScreen`으로 들어오며, 하단 네비에 '홈' 탭이 있다. 상태와 로직은 `HomeViewModel`이 갖고, 화면은 섹션별 위젯으로 나눠 렌더링만 한다. 기준 spec은 v29다.
 
-솔랭 상태·평점 한줄평·뉴스는 백엔드가 준비되지 않았다. 이 셋은 `lib/repository/home/home_sources.dart`의 `SoloRankSource`·`ReviewSource`·`NewsSource` 인터페이스 뒤에 있어, 백엔드가 생기면 구현체만 교체한다. 기본 구현체는 `HOME_MOCKS` 스위치로 고른다(아래 "목업 게이트").
+솔랭 상태·평점 한줄평·뉴스는 `lib/repository/home/home_sources.dart`의 `SoloRankSource`·`ReviewSource`·`NewsSource` 인터페이스 뒤에 있다. 솔랭·뉴스는 `home_api_sources.dart`의 실제 API 구현체(`ApiSoloRankSource`·`ApiNewsSource`)가 기본이고, 평점 한줄평은 백엔드 nar-back-repo#542(선수 이름·챔피언 한글명) 배포를 기다리느라 빈 소스다. `HOME_MOCKS` 스위치로 목업을 켠다(아래 "목업 게이트").
 
 # 화면 구성
 
@@ -19,7 +19,7 @@ timestamp: 2026-09-24T00:00:00Z
 1. **구독 선수 솔랭** - 진행 중·끝난 솔랭 카드. 구독 0명이면 점선 빈 카드를 보인다. "구독 N명 전체"를 누르면 내 선수 화면을 연다. 솔랭 항목은 실제 구독 목록에 있는 선수만 보인다. 분류 규칙(이름 매칭, 진행 중 선수는 끝난 경기에서 제외, 선수당 최신 1건)은 `lib/viewmodel/home/solo_rank_rules.dart` 하나를 홈과 내 선수 화면이 함께 쓴다. 끝난 경기 최대 8명은 홈만의 상한이다.
 2. **오늘 경기** - 오늘 일정 카드. 마지막 카드에서 일정 탭으로 이동한다.
 3. **순위표** - 리그 칩 LCK·LPL·LEC·LCS·월즈 중 LCK만 선택 가능하고 나머지 칩은 비활성이다. 순위표 API는 LCK만 지원한다.
-4. **커뮤니티** - 최신·인기·평점 탭. 최신·인기는 커뮤니티 글, 평점은 한줄평이다. 한줄평이 없으면 평점 탭을 숨긴다.
+4. **커뮤니티** - 최신·평점 탭. 최신은 커뮤니티 글, 평점은 한줄평이다. 한줄평이 없으면 평점 탭을 숨긴다. 인기순 칩은 커뮤니티가 활성화될 때까지 뺐다(백엔드 `sort=hot`은 남아 있고 `HomeCommunitySort.hot`도 남겨 뒀다).
 5. **콘텐츠** - 뉴스·쇼츠 탭. 기본은 뉴스이고, 뉴스가 없으면 뉴스 탭을 숨겨 쇼츠만 보인다.
 
 공지 배너와 알림 미읽음 배지도 홈 상단에 있다.
@@ -34,20 +34,23 @@ timestamp: 2026-09-24T00:00:00Z
 |------|------|------|
 | 오늘 경기 | 일정 API | 실데이터 |
 | 순위표 | `/api/standings` (LCK만) | 실데이터 |
-| 커뮤니티 글 | 커뮤니티 글 목록 (`sort=hot\|latest`) | 실데이터 |
+| 커뮤니티 글 | 커뮤니티 글 목록 (홈은 `sort=latest`) | 실데이터 |
 | 공지 배너 | 공지 API | 실데이터 |
 | 쇼츠 | `/api/story/videos` (홈은 `sort=latest`, 리포지토리는 `latest\|views\|likes` 지원) | 실데이터 |
 | 구독 선수 목록·수 | 구독 API | 실데이터 |
 | 알림 미읽음 배지 | 알림 API (COMMUNITY 그룹) | 실데이터 |
-| 솔랭 상태 | `SoloRankSource` (`MockSoloRankSource` / `EmptySoloRankSource`) | 목업(디버그)·빈 소스(릴리즈) |
-| 평점 한줄평 | `ReviewSource` (`MockReviewSource` / `EmptyReviewSource`) | 목업(디버그)·빈 소스(릴리즈) |
-| 뉴스 | `NewsSource` (`MockNewsSource` / `EmptyNewsSource`) | 목업(디버그)·빈 소스(릴리즈) |
+| 솔랭 상태 | `GET /api/mobile/me/solo-rank` (`ApiSoloRankSource`, 로그인 필수) | 실데이터 |
+| 평점 한줄평 | `ReviewSource` (`EmptyReviewSource`, #542 배포 후 `GET /api/mobile/ratings/recent` 연결 예정) | 빈 소스 |
+| 뉴스 | `GET /api/home/news` (`ApiNewsSource`, 최신 TOP 5) | 실데이터 |
 
-**목업 게이트:** `kHomeMocks = bool.fromEnvironment('HOME_MOCKS', defaultValue: kDebugMode)`가 켜져 있으면 `defaultSoloRankSource()`·`defaultReviewSource()`·`defaultNewsSource()`가 목업을, 꺼져 있으면 빈 소스를 준다. `HomeViewModel`·`MyPlayersViewModel`의 기본값이 이 함수들이다.
+**목업 게이트:** `kHomeMocks = bool.fromEnvironment('HOME_MOCKS')`(기본 꺼짐)가 켜져 있으면 `defaultSoloRankSource()`·`defaultReviewSource()`·`defaultNewsSource()`가 목업을 준다. 꺼져 있으면 솔랭·뉴스는 API 소스, 평점은 빈 소스다. `HomeViewModel`·`MyPlayersViewModel`의 기본값이 이 함수들이다. 목업 화면은 `--dart-define=HOME_MOCKS=true`로만 본다.
 
-- 디버그·시뮬레이터: 목업이 보인다.
-- 릴리즈(`shorebird release`): 빈 소스가 나간다. 구독이 있으면 솔랭 카드는 "지금 솔랭 중인 선수 없음" 조용한 행이고(누르면 내 선수 화면, 모두 소식 없음), 뉴스 탭과 평점 한줄평 탭은 숨겨진다. 가짜 솔랭·실제 언론사 이름을 단 가짜 뉴스·가짜 한줄평이 실사용자에게 나가지 않는다.
-- 릴리즈 빌드에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`, 디버그에서 끄려면 `--dart-define=HOME_MOCKS=false`.
+솔랭 API 매핑 규칙:
+
+- 로그인하지 않았으면(토큰 없음) 요청하지 않고 빈 결과를 준다. 서버는 토큰이 없으면 401이다.
+- `live.elapsedSeconds`는 `now − startedAt`, `finished.minutesAgo`는 `now − endedAt`, `durationMinutes`는 `durationSeconds / 60`이다.
+- `win`이 null인 판(결과를 못 받음)은 승/패를 그릴 수 없어 끝난 경기에서 뺀다.
+- 오프셋 없는 시각(뉴스 `createdAt`)은 KST로 해석한다(`parseServerTime`).
 
 비회원(JWT 없음)은 어느 쪽이든 구독 0명으로 취급해 점선 빈 카드를 보인다.
 

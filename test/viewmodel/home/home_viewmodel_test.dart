@@ -567,7 +567,7 @@ void main() {
   });
 
   group('커뮤니티', () {
-    test('기본은 최신순이고 hot 으로 바꾸면 sort=hot 으로 다시 조회한다', () async {
+    test('기본은 최신순이고 평점 탭에서 최신순으로 돌아오면 다시 조회한다', () async {
       final vm = build();
       await pumpEventQueue();
 
@@ -577,14 +577,29 @@ void main() {
       expect(first.queryParameters['size'], '4');
       expect(vm.communityPosts.single.title, '글-latest');
 
-      vm.setCommunitySort(HomeCommunitySort.hot);
+      vm.setCommunitySort(HomeCommunitySort.review);
+      await pumpEventQueue();
+      expect(server.requestsTo('community/posts').length, 1);
+
+      vm.setCommunitySort(HomeCommunitySort.latest);
       await pumpEventQueue();
 
       final calls = server.requestsTo('community/posts');
       expect(calls.length, 2);
-      expect(calls.last.queryParameters['sort'], 'hot');
+      expect(calls.last.queryParameters['sort'], 'latest');
       expect(calls.last.queryParameters['size'], '4');
-      expect(vm.communityPosts.single.title, '글-hot');
+    });
+
+    test('인기순은 칩에 없고 고를 수도 없다', () async {
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(
+        vm.availableCommunitySorts,
+        isNot(contains(HomeCommunitySort.hot)),
+      );
+      vm.setCommunitySort(HomeCommunitySort.hot);
+      expect(vm.communitySort, HomeCommunitySort.latest);
     });
 
     test('평점 탭은 글을 다시 조회하지 않고 ReviewSource 의 한줄평을 보여준다', () async {
@@ -603,8 +618,9 @@ void main() {
       await pumpEventQueue();
       expect(vm.communityPosts.single.title, '글-latest');
 
+      vm.setCommunitySort(HomeCommunitySort.review);
       server.communityFails = true;
-      vm.setCommunitySort(HomeCommunitySort.hot);
+      vm.setCommunitySort(HomeCommunitySort.latest);
       await pumpEventQueue();
 
       expect(vm.communityPosts.single.title, '글-latest');
@@ -728,7 +744,10 @@ void main() {
       final reviews = _SwitchableReviews(MockReviewSource.reviews);
       final vm = build(reviews: reviews);
       await pumpEventQueue();
-      expect(vm.availableCommunitySorts, HomeCommunitySort.values);
+      expect(vm.availableCommunitySorts, [
+        HomeCommunitySort.latest,
+        HomeCommunitySort.review,
+      ]);
 
       vm.setCommunitySort(HomeCommunitySort.review);
       expect(vm.communitySort, HomeCommunitySort.review);
@@ -736,10 +755,7 @@ void main() {
       reviews.items = const [];
       await vm.refreshAll();
       await pumpEventQueue();
-      expect(vm.availableCommunitySorts, [
-        HomeCommunitySort.latest,
-        HomeCommunitySort.hot,
-      ]);
+      expect(vm.availableCommunitySorts, [HomeCommunitySort.latest]);
       expect(vm.communitySort, HomeCommunitySort.latest);
       expect(vm.communityPosts.single.title, '글-latest');
 

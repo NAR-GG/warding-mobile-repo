@@ -44,7 +44,7 @@ class MyPlayersViewModel extends ChangeNotifier {
     SubscriptionRepository? subscriptions,
     SoloRankSource? soloRank,
   }) : _subscriptions = subscriptions ?? SubscriptionRepository.instance,
-       // 목업은 HOME_MOCKS 게이트 뒤 — 릴리즈 빌드 기본값은 빈 소스다.
+       // 기본은 실제 솔랭 API. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource() {
     unawaited(refresh());
   }

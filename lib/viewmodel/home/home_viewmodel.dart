@@ -21,7 +21,7 @@ import '../../repository/subscription/subscription_repository.dart';
 import '../../util/match_status.dart';
 import 'solo_rank_rules.dart';
 
-/// 커뮤니티 섹션 정렬 기준.
+/// 커뮤니티 섹션 정렬 기준. [hot] 은 칩에서 뺀 상태다([HomeViewModel.availableCommunitySorts]).
 enum HomeCommunitySort { latest, hot, review }
 
 /// 콘텐츠 섹션 탭.
@@ -70,7 +70,7 @@ class HomeViewModel extends ChangeNotifier {
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        _memberNotifications =
            memberNotifications ?? MemberNotificationRepository.instance,
-       // 목업은 HOME_MOCKS 게이트 뒤 — 릴리즈 빌드 기본값은 빈 소스다.
+       // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource() {
@@ -427,10 +427,11 @@ class HomeViewModel extends ChangeNotifier {
     if (sort != HomeCommunitySort.review) unawaited(_loadCommunityPosts());
   }
 
-  /// 보여줄 정렬 탭. 한줄평이 없으면(릴리즈 빈 소스 등) 평점 탭을 뺀다.
+  /// 보여줄 정렬 탭. 인기순은 커뮤니티가 활성화될 때까지 뺀다(글이 적어 의미가
+  /// 없다). 한줄평이 없으면(빈 소스 등) 평점 탭도 뺀다.
   List<HomeCommunitySort> get availableCommunitySorts => _reviews.isEmpty
-      ? const [HomeCommunitySort.latest, HomeCommunitySort.hot]
-      : HomeCommunitySort.values;
+      ? const [HomeCommunitySort.latest]
+      : const [HomeCommunitySort.latest, HomeCommunitySort.review];
 
   List<CommunityRemotePost> _communityPosts = const [];
 

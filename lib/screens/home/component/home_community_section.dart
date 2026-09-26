@@ -54,7 +54,7 @@ class HomeCommunitySection extends StatelessWidget {
         ),
         SizedBox(height: 10 * scale),
         NarChipMultiSelect.single(
-          // 한줄평이 없으면(릴리즈 빈 소스) 평점 탭을 그리지 않는다.
+          // 한줄평이 없으면(빈 소스) 평점 탭을 그리지 않는다. 인기순 칩은 없다.
           options: [
             for (final sort in viewModel.availableCommunitySorts) sort.name,
           ],
