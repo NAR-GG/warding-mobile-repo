@@ -2,6 +2,7 @@
 
 
 ## 관련 문서
+- 기획: warding-docs `features/<slug>/spec.md` 링크 (있다면)
 - Plan: `intent/<slug>/plan.md` (있다면)
 - Spec: `intent/<slug>/spec.md` (있다면)
 

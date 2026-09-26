@@ -163,6 +163,30 @@ shorebird patch android --release-version <pubspec의 version>
 이 동기화는 자동 스크립트가 아니라 **작업 중 매번 스스로 판단해 적용하는 규칙**이다. 커밋이나
 저장 시점에 강제로 검증되지 않으므로, 위 조건에 해당하는 변경을 할 때마다 놓치지 않는다.
 
+## 기획·디자인 확정본: warding-docs
+
+화면 기획(`spec.md`)과 디자인 목업(`mockup.html`)의 확정본은 별도 레포
+[NAR-GG/warding-docs](https://github.com/NAR-GG/warding-docs)에 둔다. 그 레포의 `main`에
+머지된 것만 확정본이고, PR 브랜치에 있는 것은 초안이다.
+
+- 화면 기능을 구현하기 전에 `features/<slug>/spec.md`가 있는지 먼저 찾는다. 로컬 클론은
+  뒤처져 있을 수 있으니 `main`을 직접 읽는다.
+  ```bash
+  gh api repos/NAR-GG/warding-docs/contents/features --jq '.[].name'
+  curl -s https://raw.githubusercontent.com/NAR-GG/warding-docs/main/features/<slug>/spec.md
+  ```
+- spec의 **결정**은 그대로 따른다. **미결**에 걸린 부분은 추측해서 구현하지 않고 사용자에게 묻는다.
+  spec 맨 위 상태가 "확정"이 아니면 초안이라는 것을 먼저 알린다.
+- 목업의 `var(--narDark800)`는 `AppColors.narDark800`과 같은 토큰이다. 목업의 `assets/tokens.css`가
+  `app_colors.dart`에서 자동 생성되기 때문이다. 목업의 px 값은 375 기준이라 `* scale`을 곱해 옮긴다.
+- 목업 html은 수백 KB라 통째로 읽지 않는다. `spec.md`를 먼저 읽고, 필요한 화면의 구조와 CSS만 골라 본다.
+- 구현하다가 spec과 다르게 가야 하면 코드보다 먼저 warding-docs에 spec 수정 PR을 올린다.
+- 이 레포의 Intent → Spec → Plan에서 warding-docs는 **Spec 단계**에 붙는다.
+  - Intent: 기획 의도 (Problem, Proposed outcome, Affected users and systems, Constraints, Open questions)
+  - Spec: 구현용 spec (Summary, Requirements, Design / Approach, Decisions, Out of scope, Open questions).
+    여기서 warding-docs의 `mockup.html`과 백엔드 전달 `spec.md`를 링크로 연결한다.
+  - Plan: 실제 구현 계획 (Context, Changes, Verification)
+
 ## 요건 변경 시 intent/spec 동기화
 
 Discord `/intent`를 거치지 않고 대화(채팅)로 바로 기능 변경을 요청받았을 때도 적용되는 규칙이다.
