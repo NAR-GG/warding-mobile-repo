@@ -249,7 +249,11 @@ class _TeamRow extends StatelessWidget {
     final winner = done && team.score > other.score;
     return Row(
       children: [
-        TeamCodeBadge(teamCode: team.teamCode, size: 18 * scale),
+        TeamCodeBadge(
+          teamCode: team.teamCode,
+          imageUrl: team.teamImageUrl,
+          size: 18 * scale,
+        ),
         SizedBox(width: 6 * scale),
         Expanded(
           child: Text(
