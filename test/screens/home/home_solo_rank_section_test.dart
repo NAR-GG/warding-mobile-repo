@@ -83,9 +83,7 @@ void main() {
     expect(opened, 1);
   });
 
-  testWidgets('빈 솔랭 소스(릴리즈 기본) + 구독 있음 — 조용한 행, 누르면 내 선수', (
-    tester,
-  ) async {
+  testWidgets('빈 솔랭 소스(릴리즈 기본) + 구독 있음 — 조용한 행, 누르면 내 선수', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
     server.subscriptions = [
       subscriptionJson('Faker', 'T1'),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../components/dashed_border.dart';
-import '../../../components/team_code_badge.dart';
+import '../../../components/nar_live_dot.dart';
+import '../../../components/team_logo.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
@@ -47,7 +48,7 @@ class HomeTodayMatchesSection extends StatelessWidget {
         ),
         SizedBox(height: 10 * scale),
         SizedBox(
-          height: 108 * scale,
+          height: 110 * scale,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             // 스트립은 화면 끝까지 밀리게 두고 양끝만 20 여백.
@@ -72,6 +73,10 @@ class HomeTodayMatchesSection extends StatelessWidget {
   }
 }
 
+/// 오늘 경기 카드 한 장 — 시안(`mockup.html`)의 `.mc`.
+///
+/// 폭 172, 안쪽 여백 위 10·좌우 12·아래 12, 테두리 1을 더해 높이 110이다.
+/// LIVE 카드는 어두운 배경에 왼쪽 3px 강조선만 두른다.
 class _MatchCard extends StatelessWidget {
   const _MatchCard({required this.match, required this.scale});
 
@@ -86,9 +91,11 @@ class _MatchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 172 * scale,
-      padding: EdgeInsets.symmetric(
-        horizontal: 12 * scale,
-        vertical: 10 * scale,
+      padding: EdgeInsets.fromLTRB(
+        12 * scale,
+        10 * scale,
+        12 * scale,
+        12 * scale,
       ),
       decoration: BoxDecoration(
         color: _live ? AppColors.narDark600 : AppColors.narBgTertiary,
@@ -120,7 +127,7 @@ class _MatchCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
+                    fontFamily: 'Open Sans',
                     fontWeight: FontWeight.w600,
                     fontSize: 11 * scale,
                     color: AppColors.narText2,
@@ -129,14 +136,14 @@ class _MatchCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 8 * scale),
+          SizedBox(height: 10 * scale),
           _TeamRow(
             team: match.teamA,
             other: match.teamB,
             done: _done,
             scale: scale,
           ),
-          SizedBox(height: 4 * scale),
+          SizedBox(height: 6 * scale),
           _TeamRow(
             team: match.teamB,
             other: match.teamA,
@@ -186,6 +193,8 @@ class _MoreCard extends StatelessWidget {
   }
 }
 
+/// 상태 배지 — 시안의 `.badge`. 높이 22·둥근 8, 예정은 시각, 종료는 "종료",
+/// LIVE 는 붉은 테두리에 깜박이는 점이 앞선다.
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({
     required this.live,
@@ -213,24 +222,40 @@ class _StatusBadge extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: live ? AppColors.liveBadgeBg : AppColors.narBgTertiary,
-        border: live
-            ? Border.all(color: AppColors.liveAccent)
-            : Border.all(color: AppColors.narLine2),
+        border: Border.all(
+          color: live ? AppColors.narRed500 : AppColors.narLine2,
+        ),
         borderRadius: BorderRadius.circular(8 * scale),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w700,
-          fontSize: 10 * scale,
-          color: live ? AppColors.liveAccent : AppColors.narText2,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (live) ...[
+            NarLiveDot(size: 5, scale: scale),
+            SizedBox(width: 5 * scale),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'SF Pro',
+              fontWeight: live ? FontWeight.w500 : FontWeight.w600,
+              fontSize: 11 * scale,
+              height: 1,
+              color: live
+                  ? AppColors.liveAccent
+                  : done
+                  ? AppColors.narText2
+                  : AppColors.narTextTertiary,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+/// 팀 한 줄 — 로고 24 · 코드 14 · 점수 16. 끝난 경기에서 진 팀은 코드와 로고를
+/// 흐리게(로고 투명도 .55), 이긴 팀 점수는 빨강으로 그린다.
 class _TeamRow extends StatelessWidget {
   const _TeamRow({
     required this.team,
@@ -246,35 +271,40 @@ class _TeamRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final winner = done && team.score > other.score;
+    final win = done && team.score > other.score;
+    final lose = done && !win;
     return Row(
       children: [
-        TeamCodeBadge(
-          teamCode: team.teamCode,
-          imageUrl: team.teamImageUrl,
-          size: 18 * scale,
+        Opacity(
+          opacity: lose ? 0.55 : 1,
+          child: TeamLogo(
+            teamCode: team.teamCode,
+            imageUrl: team.teamImageUrl,
+            size: 24 * scale,
+          ),
         ),
-        SizedBox(width: 6 * scale),
+        SizedBox(width: 8 * scale),
         Expanded(
           child: Text(
             team.teamCode,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontFamily: 'Open Sans',
+              fontFamily: 'SF Pro',
               fontWeight: FontWeight.w600,
-              fontSize: 12 * scale,
-              color: winner ? AppColors.narText : AppColors.narText2,
+              fontSize: 14 * scale,
+              color: lose ? AppColors.narDark200 : AppColors.narTextTertiary,
             ),
           ),
         ),
         Text(
           '${team.score}',
           style: TextStyle(
-            fontFamily: 'Open Sans',
+            fontFamily: 'SF Pro',
             fontWeight: FontWeight.w700,
-            fontSize: 13 * scale,
-            color: done
-                ? (winner ? AppColors.scoreWin : AppColors.narDark200)
-                : AppColors.narText2,
+            fontSize: 16 * scale,
+            fontFeatures: const [FontFeature.tabularFigures()],
+            color: win ? AppColors.scoreWin : AppColors.narDark200,
           ),
         ),
       ],

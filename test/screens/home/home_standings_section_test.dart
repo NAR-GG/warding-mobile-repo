@@ -10,10 +10,8 @@ import 'home_test_harness.dart';
 /// 1위 행은 따로 꾸미지 않는다. 로딩·에러는 그리지 않는다.
 void main() {
   // 리그 칩 — 라벨 텍스트를 품은 NarChip.
-  Finder chip(String code) => find.ancestor(
-    of: find.text(code),
-    matching: find.byType(NarChip),
-  );
+  Finder chip(String code) =>
+      find.ancestor(of: find.text(code), matching: find.byType(NarChip));
 
   testWidgets('LPL·LEC·LCS·월즈 칩은 점선이고 눌러도 리그가 바뀌지 않는다', (tester) async {
     final server = setUpHomeApi();
