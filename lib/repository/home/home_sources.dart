@@ -234,7 +234,6 @@ class MockNewsSource implements NewsSource {
       title: '한화생명, 로스터 변경 발표',
       office: '인벤',
       minutesAgo: 200,
-      hasThumbnail: false,
     ),
     HomeNewsArticle(
       title: 'LCK 2026 서머 일정 공개',

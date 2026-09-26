@@ -104,7 +104,7 @@ class ApiNewsSource implements NewsSource {
           title: (e as Map<String, dynamic>)['title'] as String? ?? '',
           office: e['officeName'] as String? ?? '',
           minutesAgo: _minutesSince(parseServerTime(e['createdAt']), now),
-          hasThumbnail: (e['thumbnail'] as String?)?.isNotEmpty ?? false,
+          thumbnailUrl: e['thumbnail'] as String?,
         ),
     ];
   }

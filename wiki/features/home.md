@@ -41,7 +41,7 @@ timestamp: 2026-09-27T00:00:00Z
 | 알림 미읽음 배지 | 알림 API (COMMUNITY 그룹) | 실데이터 |
 | 솔랭 상태 | `GET /api/mobile/me/solo-rank` (`ApiSoloRankSource`, 로그인 필수) | 실데이터 |
 | 평점 한줄평 | `ReviewSource` (`EmptyReviewSource`, #542 배포 후 `GET /api/mobile/ratings/recent` 연결 예정) | 빈 소스 |
-| 뉴스 | `GET /api/home/news` (`ApiNewsSource`, 최신 TOP 5) | 실데이터 |
+| 뉴스 | `GET /api/home/news` (`ApiNewsSource`, 최신 TOP 5, 썸네일 이미지 표시) | 실데이터 |
 
 **목업 게이트:** `kHomeMocks = bool.fromEnvironment('HOME_MOCKS')`(기본 꺼짐)가 켜져 있으면 `defaultSoloRankSource()`·`defaultReviewSource()`·`defaultNewsSource()`가 목업을 준다. 꺼져 있으면 솔랭·뉴스는 API 소스, 평점은 빈 소스다. `HomeViewModel`·`MyPlayersViewModel`의 기본값이 이 함수들이다. 목업 화면은 `--dart-define=HOME_MOCKS=true`로만 본다.
 

@@ -7,6 +7,7 @@ import '../../../components/dashed_border.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
 
@@ -114,17 +115,7 @@ class _NewsList extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 썸네일 자리. 기사 이미지는 뉴스 소스가 붙으면 채운다.
-                  Container(
-                    width: 62 * scale,
-                    height: 47 * scale,
-                    decoration: BoxDecoration(
-                      color: article.hasThumbnail
-                          ? AppColors.narLine2
-                          : AppColors.narBgLast,
-                      borderRadius: BorderRadius.circular(7 * scale),
-                    ),
-                  ),
+                  _NewsThumbnail(url: article.thumbnailUrl, scale: scale),
                   SizedBox(width: 11 * scale),
                   Expanded(
                     child: Column(
@@ -159,6 +150,37 @@ class _NewsList extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// 뉴스 행 왼쪽 썸네일. 이미지가 없거나 못 불러오면 빈 자리만 그린다.
+class _NewsThumbnail extends StatelessWidget {
+  const _NewsThumbnail({required this.url, required this.scale});
+
+  final String? url;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = resolveImageUrl(url);
+    return Container(
+      width: 62 * scale,
+      height: 47 * scale,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.narBgLast,
+        borderRadius: BorderRadius.circular(7 * scale),
+      ),
+      child: resolved == null || resolved.isEmpty
+          ? null
+          : CachedNetworkImage(
+              imageUrl: resolved,
+              fit: BoxFit.cover,
+              memCacheWidth: (62 * scale * 3).round(),
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            ),
     );
   }
 }

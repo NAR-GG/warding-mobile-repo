@@ -2,6 +2,7 @@
 
 ## 2026-09-27
 * **홈 솔랭·뉴스 백엔드 연결**: `ApiSoloRankSource`(`/api/mobile/me/solo-rank`)·`ApiNewsSource`(`/api/home/news`)를 기본 소스로. `HOME_MOCKS` 기본값을 꺼짐으로 바꿈. 평점 한줄평은 백엔드 #542 배포 전이라 빈 소스 유지. 커뮤니티 인기순 칩 제거. [홈](/features/home.md) 갱신.
+* **홈 뉴스 썸네일**: `HomeNewsArticle.hasThumbnail`을 `thumbnailUrl`로 바꾸고 뉴스 행에 기사 썸네일 이미지를 그림(없으면 빈 자리).
 * **홈 팀 배지 로고화**: `TeamCodeBadge`가 팀 코드 텍스트 대신 로고 이미지를 그림. 코드만 오는 자리는 `TeamLogoDirectory`로 조회, 실패 시 텍스트 폴백.
 
 ## 2026-09-24

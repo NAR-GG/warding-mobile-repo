@@ -59,13 +59,15 @@ class HomeNewsArticle {
     required this.title,
     required this.office,
     required this.minutesAgo,
-    this.hasThumbnail = true,
+    this.thumbnailUrl,
   });
 
   final String title;
   final String office;
   final int minutesAgo;
-  final bool hasThumbnail;
+
+  /// 기사 썸네일 URL. 없으면 빈 자리를 그린다.
+  final String? thumbnailUrl;
 }
 
 /// 콘텐츠 · 쇼츠 탭 한 건.

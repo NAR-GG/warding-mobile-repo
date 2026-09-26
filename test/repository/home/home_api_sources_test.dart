@@ -177,9 +177,9 @@ void main() {
       expect(list.map((a) => a.title), ['T1, 플레이오프 진출 확정', '썸네일 없는 기사']);
       expect(list.first.office, '포모스');
       expect(list.first.minutesAgo, 40);
-      expect(list.first.hasThumbnail, isTrue);
+      expect(list.first.thumbnailUrl, 'https://img/1.jpg');
       expect(list.last.minutesAgo, 180);
-      expect(list.last.hasThumbnail, isFalse);
+      expect(list.last.thumbnailUrl, isNull);
     });
 
     test('서버 오류면 예외', () async {
