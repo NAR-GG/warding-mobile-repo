@@ -3,7 +3,9 @@
 LCK 등 e스포츠 팬을 위한 Flutter 앱이다.
 
 이 레포에 흩어진 문서 시스템 전체 지도는 [INDEX.md](./INDEX.md)를 참고한다.
-새 기능을 시작할 때 의도·설계를 먼저 남기려면 [intent/](./intent/) 워크플로우를 쓴다
+새 기능을 시작할 때 의도·설계를 먼저 남기려면 [intent/](./intent/) 워크플로우를 쓴다.
+단, warding-docs에 spec이 있는 기능은 intent를 만들지 않는다(기획 의도·제품 결정·미결이 거기 있다).
+intent는 warding-docs에 없는 개발 쪽 작업(버그·리팩터링·CI 등)에 쓴다
 (진입 기준은 `intent/loop-engineering-workflow/spec.md`의 "저장 구조" 표 참고. 모든 작업에
 강제되지는 않는다).
 
