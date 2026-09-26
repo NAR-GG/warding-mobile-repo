@@ -45,10 +45,14 @@ intent/
 
   | 상황 | 시작 지점 |
   |---|---|
+  | warding-docs에 이미 spec이 있는 기능 | Intent 생략 (기획 의도·제품 결정·미결은 warding-docs spec이 단일 출처). 개발 쪽 설계가 필요하면 이 레포 Spec/Plan부터 |
   | 뭘 만들어야 하는지 자체가 불명확 | Intent부터 |
   | 문제는 명확한데 설계 결정이 필요 | Spec부터 (Intent 생략, spec.md 서두에 문제 상황 직접 기술) |
   | 문제·설계 다 명확한 버그/작업 | Plan부터 (Intent/Spec 생략) |
   | 오탈자·자명한 원라이너 | 문서 없이 바로 수정 (기존 CLAUDE.md 원칙 유지) |
+
+- `intent/`는 warding-docs에 없는 개발 쪽 작업(버그·리팩터링·CI 등)의 "왜"를 남기는 용도다.
+  기획 쪽 내용은 warding-docs spec과 두 벌이 되지 않게 여기에 다시 쓰지 않는다.
 
 ## 브랜치 / PR 규칙
 
