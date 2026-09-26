@@ -22,7 +22,7 @@ import '../repository/schedule/schedule_repository.dart';
 import '../styles/app_colors.dart';
 import '../util/home_widget_service.dart';
 import 'login/login_screen.dart';
-import 'schedule/schedule_screen.dart';
+import 'home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -277,9 +277,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
-    final destination = jwt == null
-        ? const LoginScreen()
-        : const ScheduleScreen();
+    final destination = jwt == null ? const LoginScreen() : const HomeScreen();
     final route = MaterialPageRoute(builder: (_) => destination);
     Navigator.of(context).pushReplacement(route);
     // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.

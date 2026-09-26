@@ -11,7 +11,7 @@ import '../../repository/onboarding/onboarding_sync_service.dart';
 import '../../styles/app_colors.dart';
 import '../onboarding/onboarding_screen.dart';
 import 'component/login_consent_notice.dart';
-import '../schedule/schedule_screen.dart';
+import '../home/home_screen.dart';
 import 'component/easy_login_divider.dart';
 import 'component/social_login_button.dart';
 
@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) =>
-              onboarded ? const ScheduleScreen() : const OnboardingScreen(),
+              onboarded ? const HomeScreen() : const OnboardingScreen(),
         ),
         (route) => false,
       );

@@ -12,6 +12,7 @@ import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
 import '../community/community_screen.dart';
+import '../home/home_screen.dart';
 import '../match_day/match_day_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -354,7 +355,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.list) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
     } else if (tab == AppNavTab.community) {
       Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));

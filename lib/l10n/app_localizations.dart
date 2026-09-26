@@ -116,6 +116,360 @@ abstract class AppLocalizations {
   /// **'메인 화면 (작업 예정)'**
   String get mainScreenPlaceholder;
 
+  /// No description provided for @homeTodayMatchesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘의 경기'**
+  String get homeTodayMatchesTitle;
+
+  /// No description provided for @homeSeeAllSchedule.
+  ///
+  /// In ko, this message translates to:
+  /// **'일정 전체'**
+  String get homeSeeAllSchedule;
+
+  /// No description provided for @homeStandingsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'순위표'**
+  String get homeStandingsTitle;
+
+  /// No description provided for @homeStandingsLegendGroup.
+  ///
+  /// In ko, this message translates to:
+  /// **'레전드 그룹'**
+  String get homeStandingsLegendGroup;
+
+  /// No description provided for @homeStandingsRiseGroup.
+  ///
+  /// In ko, this message translates to:
+  /// **'라이즈 그룹'**
+  String get homeStandingsRiseGroup;
+
+  /// No description provided for @homeStandingsColumnHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'승-패 · 세트 득실'**
+  String get homeStandingsColumnHint;
+
+  /// No description provided for @homeStandingsScopeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규시즌 통산'**
+  String get homeStandingsScopeLabel;
+
+  /// No description provided for @homeStandingsExpandMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'라이즈 그룹 {count}팀 더보기'**
+  String homeStandingsExpandMore(int count);
+
+  /// No description provided for @homeStandingsCollapse.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get homeStandingsCollapse;
+
+  /// No description provided for @homeStandingsSoon.
+  ///
+  /// In ko, this message translates to:
+  /// **'준비 중'**
+  String get homeStandingsSoon;
+
+  /// No description provided for @homeCommunityTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티'**
+  String get homeCommunityTitle;
+
+  /// No description provided for @homeSeeAllCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 전체'**
+  String get homeSeeAllCommunity;
+
+  /// No description provided for @homeSortLatest.
+  ///
+  /// In ko, this message translates to:
+  /// **'최신순'**
+  String get homeSortLatest;
+
+  /// No description provided for @homeSortHot.
+  ///
+  /// In ko, this message translates to:
+  /// **'인기순'**
+  String get homeSortHot;
+
+  /// No description provided for @homeSortReview.
+  ///
+  /// In ko, this message translates to:
+  /// **'평점 한줄평'**
+  String get homeSortReview;
+
+  /// No description provided for @homeContentTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'콘텐츠'**
+  String get homeContentTitle;
+
+  /// No description provided for @homeContentTabNews.
+  ///
+  /// In ko, this message translates to:
+  /// **'뉴스'**
+  String get homeContentTabNews;
+
+  /// No description provided for @homeContentTabShorts.
+  ///
+  /// In ko, this message translates to:
+  /// **'쇼츠'**
+  String get homeContentTabShorts;
+
+  /// No description provided for @homeShortsFilterAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get homeShortsFilterAll;
+
+  /// No description provided for @homeShortsFilterPlayer.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 선수'**
+  String get homeShortsFilterPlayer;
+
+  /// No description provided for @homeShortsFilterTeam.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 팀'**
+  String get homeShortsFilterTeam;
+
+  /// No description provided for @homeHeroEmptyMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요'**
+  String get homeHeroEmptyMessage;
+
+  /// No description provided for @homeHeroEmptyButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 구독하기'**
+  String get homeHeroEmptyButton;
+
+  /// No description provided for @homeSoloQueueBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔로 랭크'**
+  String get homeSoloQueueBadge;
+
+  /// No description provided for @homeSoloInProgress.
+  ///
+  /// In ko, this message translates to:
+  /// **'진행 중'**
+  String get homeSoloInProgress;
+
+  /// No description provided for @homeDoneRowLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 끝난 경기'**
+  String get homeDoneRowLabel;
+
+  /// No description provided for @homeDoneRowSub.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수당 최신 1건'**
+  String get homeDoneRowSub;
+
+  /// No description provided for @homeSubscribedSeeAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 {count}명 전체'**
+  String homeSubscribedSeeAll(int count);
+
+  /// No description provided for @homeHiddenCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'+{count}명'**
+  String homeHiddenCount(int count);
+
+  /// No description provided for @homeMatchResultLink.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 결과'**
+  String get homeMatchResultLink;
+
+  /// No description provided for @homeMinutesAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분 전'**
+  String homeMinutesAgo(int minutes);
+
+  /// No description provided for @homeHoursAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간 전'**
+  String homeHoursAgo(int hours);
+
+  /// No description provided for @homeNoticeDefault.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로운 소식을 확인해보세요'**
+  String get homeNoticeDefault;
+
+  /// No description provided for @homeMatchStatusDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'종료'**
+  String get homeMatchStatusDone;
+
+  /// No description provided for @homeJustNow.
+  ///
+  /// In ko, this message translates to:
+  /// **'방금'**
+  String get homeJustNow;
+
+  /// No description provided for @homeDaysAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{days}일 전'**
+  String homeDaysAgo(int days);
+
+  /// No description provided for @homeShortsFilterEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건에 맞는 쇼츠가 아직 없어요'**
+  String get homeShortsFilterEmpty;
+
+  /// No description provided for @homeSoloPlaying.
+  ///
+  /// In ko, this message translates to:
+  /// **'{champion} 플레이 중'**
+  String homeSoloPlaying(String champion);
+
+  /// No description provided for @homeSoloEndedAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{ago} 종료'**
+  String homeSoloEndedAgo(String ago);
+
+  /// No description provided for @homeSoloDuration.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분'**
+  String homeSoloDuration(int minutes);
+
+  /// No description provided for @homeSoloWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'승'**
+  String get homeSoloWin;
+
+  /// No description provided for @homeSoloLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'패'**
+  String get homeSoloLoss;
+
+  /// No description provided for @homeSoloQuietTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 솔랭 중인 선수 없음'**
+  String get homeSoloQuietTitle;
+
+  /// No description provided for @homeSoloQuietSubscribed.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 {count}명'**
+  String homeSoloQuietSubscribed(int count);
+
+  /// No description provided for @homeSoloLastGameWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 경기 {ago} · {name} 승리'**
+  String homeSoloLastGameWin(String ago, String name);
+
+  /// No description provided for @homeSoloLastGameLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 경기 {ago} · {name} 패배'**
+  String homeSoloLastGameLoss(String ago, String name);
+
+  /// No description provided for @myPlayersTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 선수'**
+  String get myPlayersTitle;
+
+  /// No description provided for @myPlayersBack.
+  ///
+  /// In ko, this message translates to:
+  /// **'뒤로'**
+  String get myPlayersBack;
+
+  /// No description provided for @myPlayersSearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 검색'**
+  String get myPlayersSearchHint;
+
+  /// No description provided for @myPlayersTeamAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get myPlayersTeamAll;
+
+  /// No description provided for @myPlayersGroupLive.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 솔랭 중'**
+  String get myPlayersGroupLive;
+
+  /// No description provided for @myPlayersGroupPlayedToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 경기함'**
+  String get myPlayersGroupPlayedToday;
+
+  /// No description provided for @myPlayersGroupQuiet.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 소식 없음'**
+  String get myPlayersGroupQuiet;
+
+  /// No description provided for @myPlayersGroupCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명'**
+  String myPlayersGroupCount(int count);
+
+  /// No description provided for @myPlayersShowMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명 더 보기'**
+  String myPlayersShowMore(int count);
+
+  /// No description provided for @myPlayersShowLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get myPlayersShowLess;
+
+  /// No description provided for @myPlayersNoGameToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 경기 없음'**
+  String get myPlayersNoGameToday;
+
+  /// No description provided for @myPlayersNoResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'찾는 선수가 없어요'**
+  String get myPlayersNoResult;
+
+  /// No description provided for @myPlayersEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독한 선수가 없어요'**
+  String get myPlayersEmpty;
+
   /// No description provided for @matchList.
   ///
   /// In ko, this message translates to:
@@ -1675,6 +2029,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'경기를 불러오지 못했어요'**
   String get matchLoadFailed;
+
+  /// No description provided for @navHome.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈'**
+  String get navHome;
 
   /// No description provided for @navSchedule.
   ///

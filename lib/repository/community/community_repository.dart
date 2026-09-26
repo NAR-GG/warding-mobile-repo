@@ -59,12 +59,14 @@ class CommunityRepository {
     int? boardTeamId,
     int? cursor,
     int size = 20,
+    String? sort,
   }) async {
     final response = await _optionalAuthGet(
       ApiConfig.communityPostsUrl(
         boardTeamId: boardTeamId,
         cursor: cursor,
         size: size,
+        sort: sort,
       ),
     );
     _checkOk(response, 'fetchCommunityPosts');

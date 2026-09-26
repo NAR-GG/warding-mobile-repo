@@ -333,15 +333,17 @@ class ApiConfig {
   // ── 커뮤니티 (읽기는 비로그인 허용, 쓰기는 인증 필요) ────────────────
 
   /// 게시글 목록. [boardTeamId] 생략 = 전체 게시판, 값 = 그 팀 게시판.
-  /// [size] 기본 20, 최대 50.
+  /// [size] 기본 20, 최대 50. [sort]는 'hot' 또는 'latest', null이면 쿼리에 붙이지 않는다.
   static String communityPostsUrl({
     int? boardTeamId,
     int? cursor,
     int size = 20,
+    String? sort,
   }) {
     final query = StringBuffer('size=$size');
     if (boardTeamId != null) query.write('&boardTeamId=$boardTeamId');
     if (cursor != null) query.write('&cursor=$cursor');
+    if (sort != null) query.write('&sort=$sort');
     return '$apiBaseUrl/mobile/community/posts?$query';
   }
 
@@ -475,4 +477,27 @@ class ApiConfig {
     final base = '$apiBaseUrl/auth/logout';
     return deviceId == null ? base : '$base?deviceId=$deviceId';
   }
+
+  // ── 순위표 (인증 불필요) ─────────────────────────────────────────
+
+  /// 리그 순위표 조회. 현재 서버는 LCK만 준다.
+  static String standingsUrl({required String league}) =>
+      '$apiBaseUrl/standings?league=${Uri.encodeQueryComponent(league)}';
+
+  // ── 유튜브 쇼츠 (인증 불필요) ───────────────────────────────────────
+
+  /// 쇼츠 목록. 백엔드 `YoutubeController`의 `GET /api/story/videos`
+  /// (nar-back-repo에서 확인; `/api/videos`는 없다).
+  /// [sort] 는 'latest'(기본) | 'views' | 'likes' — 그 외 값('popular' 등)은
+  /// 서버가 에러 없이 latest로 처리한다. 응답은 Spring `Page` (`content` 래퍼).
+  static String shortsUrl({String sort = 'latest', int size = 20}) =>
+      '$apiBaseUrl/story/videos?category=shorts&sort=$sort&size=$size';
+
+  // ── 홈 (솔랭·뉴스) ───────────────────────────────────────────────────
+
+  /// 구독 선수 솔랭 상태 (로그인 필수). `live`·`finished` 두 목록을 준다.
+  static String get soloRankUrl => '$apiBaseUrl/mobile/me/solo-rank';
+
+  /// 홈 뉴스 최신 TOP 5 (인증 불필요). nar.kr 웹과 같은 API.
+  static String get homeNewsUrl => '$apiBaseUrl/home/news';
 }

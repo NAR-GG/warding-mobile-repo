@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../styles/app_colors.dart';
+import 'dashed_border.dart';
 
 /// [NarChip.active] 의 우측 트레일링 아이콘 종류.
 enum NarChipTrailing {
@@ -23,6 +24,8 @@ enum NarChipTrailing {
 /// - 활성([NarChip.active]): 보라 테두리 + 보라 텍스트 칩.
 ///   라벨 옆에 선택 수/요약 [badge] 를, 우측에 [trailing] 아이콘을 둔다.
 ///   '선수 2명 + chevron', '전체 + circle-x' 처럼 선택 요약 칩에 두루 쓴다.
+/// - 비활성([NarChip.disabled]): 점선 테두리 + 흐린 글자, 탭을 받지 않는 칩.
+///   데이터가 아직 없는 리그처럼 "있지만 아직 못 고르는" 옵션에 쓴다.
 class NarChip extends StatelessWidget {
   const NarChip({
     super.key,
@@ -58,6 +61,15 @@ class NarChip extends StatelessWidget {
        badge = null,
        trailing = NarChipTrailing.chevron,
        onRemove = null;
+
+  /// 점선 테두리의 비활성 칩. 토글 칩과 같은 높이·패딩이며 탭을 받지 않는다.
+  const NarChip.disabled({super.key, required this.label, this.scale = 1})
+    : selected = false,
+      onTap = null,
+      _variant = _ChipVariant.disabled,
+      badge = null,
+      trailing = NarChipTrailing.chevron,
+      onRemove = null;
 
   /// 보라 테두리 활성 칩. 라벨 + (옵션)[badge] + [trailing] 아이콘.
   ///
@@ -100,9 +112,33 @@ class NarChip extends StatelessWidget {
         return _buildFilter();
       case _ChipVariant.active:
         return _buildActive();
+      case _ChipVariant.disabled:
+        return _buildDisabled();
       case _ChipVariant.toggle:
         return _buildToggle();
     }
+  }
+
+  /// 비활성 칩: 토글 칩과 같은 크기, 점선 테두리 + narDark200 글자. 탭 없음.
+  Widget _buildDisabled() {
+    return DashedBorder(
+      radius: 17 * scale, // 높이 34 의 절반 — pill
+      child: Container(
+        height: 34 * scale,
+        padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 14 * scale,
+            height: 1,
+            color: AppColors.narDark200,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildToggle() {
@@ -343,4 +379,4 @@ class _RemoveIcon extends StatelessWidget {
 }
 
 /// 칩 형태 구분.
-enum _ChipVariant { toggle, dropdown, filter, active }
+enum _ChipVariant { toggle, dropdown, filter, active, disabled }

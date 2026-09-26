@@ -21,6 +21,7 @@ import 'component/quiet_hours_section.dart';
 import '../account_setting/account_setting_screen.dart';
 import '../calendar_setting/calendar_setting_screen.dart';
 import '../community/community_screen.dart';
+import '../home/home_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_community_activity/my_community_activity_screen.dart';
@@ -78,7 +79,9 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 하단 네비 탭 선택. 다른 탭이면 해당 화면으로 전환한다.
   /// '마이페이지'는 현재 화면이라 별도 처리하지 않는다.
   void _onTabSelected(BuildContext context, AppNavTab tab) {
-    if (tab == AppNavTab.schedule) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
