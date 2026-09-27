@@ -2,6 +2,7 @@
 
 ## 2026-09-27
 * **홈 솔랭·뉴스 백엔드 연결**: `ApiSoloRankSource`(`/api/mobile/me/solo-rank`)·`ApiNewsSource`(`/api/home/news`)를 기본 소스로. `HOME_MOCKS` 기본값을 꺼짐으로 바꿈. 평점 한줄평은 백엔드 #542 배포 전이라 빈 소스 유지. 커뮤니티 인기순 칩 제거. [홈](/features/home.md) 갱신.
+* **홈 오늘 경기 "일정 전체" 중복 제거**: 헤더 링크와 스트립 마지막 카드가 같은 화면에 두 번 보이던 걸 헤더 링크 하나로 정리. 경기가 없으면 섹션 전체를 숨김. `ScheduleRepository`에 `resetCacheForTesting()` 추가(테스트 간 날짜별 캐시 오염 방지).
 * **홈 솔랭 조용한 행에 선수 얼굴**: 솔랭 중인 선수가 없을 때 구독 선수 사진 4명을 겹쳐 보이고(넘치면 +N), 글은 구독 수 / 마지막 경기 두 줄로 나눔(시안 `.quiet`).
 * **홈 오늘 경기 카드 시안 반영**: `mockup.html`의 `.mc` 기준으로 재작성 — 로고 24(원 없는 `TeamLogo`, 로고 없으면 둥근 네모에 코드), 코드 14·점수 16, 진 팀 흐림, LIVE 배지에 깜박이는 점, 카드 높이 110.
 * **홈 뉴스 썸네일**: `HomeNewsArticle.hasThumbnail`을 `thumbnailUrl`로 바꾸고 뉴스 행에 기사 썸네일 이미지를 그림(없으면 빈 자리).

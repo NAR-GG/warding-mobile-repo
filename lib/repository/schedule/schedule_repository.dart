@@ -39,6 +39,22 @@ class ScheduleRepository {
   ScheduleRepository._();
   static final ScheduleRepository instance = ScheduleRepository._();
 
+  /// 테스트 전용 — 캘린더·날짜별 경기·커서 페이지 캐시를 모두 비운다.
+  ///
+  /// 싱글턴이라 테스트 사이에 [_calendarCacheTtl] 이내로 캐시가 넘어온다.
+  /// 한 테스트가 빈 응답을 캐시해 두면(라이브 경기가 없을 때만 캐시된다)
+  /// 뒤이은 테스트가 같은 날짜·리그 조합을 조회할 때 그 빈 결과를 그대로
+  /// 물려받는다.
+  @visibleForTesting
+  void resetCacheForTesting() {
+    _calendarInFlight.clear();
+    _calendarCache.clear();
+    _matchesByDateInFlight.clear();
+    _matchesByDateCache.clear();
+    _matchesInFlight.clear();
+    _matchesCache.clear();
+  }
+
   /// 라이브 경기가 하나라도 있는지 — 화면과 같은 [isLiveMatchStatus] 기준이다.
   /// 캐시 여부 판단에 쓴다(라이브가 있으면 캐시를 짧게 가져간다).
   bool _hasLiveMatch(List<ScheduleMatch> matches) =>

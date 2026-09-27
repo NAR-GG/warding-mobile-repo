@@ -10,6 +10,7 @@ import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/repository/home/home_sources.dart';
 import 'package:warding/repository/notice/notice_repository.dart';
 import 'package:warding/repository/preference/notice_preference_repository.dart';
+import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/repository/subscription/subscription_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
@@ -42,6 +43,20 @@ class HomeFakeApi {
     standingRow(2, 'HLE', '한화생명e스포츠', 18, 8, 17),
   ];
 
+  /// 오늘 경기 응답. 기본 T1 vs Gen.G 진행 중 1건.
+  List<Map<String, dynamic>> matches = [
+    {
+      'matchId': 'm1',
+      'scheduledTime': '17:00',
+      'leagueName': 'LCK',
+      'matchTitle': '정규시즌',
+      'matchStatus': 'inProgress',
+      'isSynced': true,
+      'blueTeam': {'teamName': 'T1', 'teamCode': 'T1', 'teamImageUrl': ''},
+      'redTeam': {'teamName': 'Gen.G', 'teamCode': 'GEN', 'teamImageUrl': ''},
+    },
+  ];
+
   final List<Uri> requests = [];
 
   List<Uri> requestsTo(String pathPart) =>
@@ -59,28 +74,7 @@ class HomeFakeApi {
     final path = url.path;
     if (path.contains('notices')) return _json(const []);
     if (path.contains('schedule')) {
-      return _json({
-        'matches': [
-          {
-            'matchId': 'm1',
-            'scheduledTime': '17:00',
-            'leagueName': 'LCK',
-            'matchTitle': '정규시즌',
-            'matchStatus': 'inProgress',
-            'isSynced': true,
-            'blueTeam': {
-              'teamName': 'T1',
-              'teamCode': 'T1',
-              'teamImageUrl': '',
-            },
-            'redTeam': {
-              'teamName': 'Gen.G',
-              'teamCode': 'GEN',
-              'teamImageUrl': '',
-            },
-          },
-        ],
-      });
+      return _json({'matches': matches});
     }
     if (path.contains('standings')) {
       return _json({
@@ -167,6 +161,7 @@ HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
   NoticeRepository.instance.resetPromotedCacheForTesting();
   NoticePreferenceRepository.instance.resetCacheForTesting();
   SubscriptionRepository.instance.resetCacheForTesting();
+  ScheduleRepository.instance.resetCacheForTesting();
   api.setApiClientForTesting(server.client);
   addTearDown(() => api.setApiClientForTesting(null));
   return server;

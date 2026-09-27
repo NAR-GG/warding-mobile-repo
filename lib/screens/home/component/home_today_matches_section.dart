@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../components/dashed_border.dart';
 import '../../../components/nar_live_dot.dart';
 import '../../../components/team_logo.dart';
 import '../../../l10n/app_localizations.dart';
@@ -12,9 +11,10 @@ import 'home_section_header.dart';
 
 /// 오늘 경기 — 가로 스트립. LIVE 경기가 앞으로 온다.
 ///
-/// 마지막 카드("일정 전체")와 헤더 링크는 [onSeeSchedule] 로 일정 탭에 보낸다
-/// (spec 사용자 흐름 4). 빈 상태·로딩·에러는 그리지 않는다 — 경기가 없으면
-/// "일정 전체" 카드만 남는다.
+/// 일정 탭으로 가는 길은 헤더의 "일정 전체" 링크 하나뿐이다([onSeeSchedule]).
+/// 예전엔 스트립 마지막에도 같은 링크의 카드가 있었는데, 헤더 바로 아래라
+/// 같은 화면에 "일정 전체"가 두 번 보여 뺐다. 경기가 없으면 섹션 전체를
+/// 그리지 않는다 — 헤더만 남는 빈 자리를 피한다.
 class HomeTodayMatchesSection extends StatelessWidget {
   const HomeTodayMatchesSection({
     super.key,
@@ -27,12 +27,11 @@ class HomeTodayMatchesSection extends StatelessWidget {
   final double scale;
   final VoidCallback? onSeeSchedule;
 
-  static const Key seeScheduleCardKey = ValueKey('homeSeeScheduleCard');
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final matches = viewModel.todayMatchesSorted;
+    if (matches.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,19 +52,10 @@ class HomeTodayMatchesSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             // 스트립은 화면 끝까지 밀리게 두고 양끝만 20 여백.
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            itemCount: matches.length + 1,
+            itemCount: matches.length,
             separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
-            itemBuilder: (context, i) {
-              if (i == matches.length) {
-                return _MoreCard(
-                  key: seeScheduleCardKey,
-                  label: l.homeSeeAllSchedule,
-                  scale: scale,
-                  onTap: onSeeSchedule,
-                );
-              }
-              return _MatchCard(match: matches[i], scale: scale);
-            },
+            itemBuilder: (context, i) =>
+                _MatchCard(match: matches[i], scale: scale),
           ),
         ),
       ],
@@ -151,43 +141,6 @@ class _MatchCard extends StatelessWidget {
             scale: scale,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 스트립 마지막 "일정 전체 →" 카드 — 목업 `.mc.more` 처럼 점선.
-class _MoreCard extends StatelessWidget {
-  const _MoreCard({
-    super.key,
-    required this.label,
-    required this.scale,
-    this.onTap,
-  });
-
-  final String label;
-  final double scale;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: DashedBorder(
-        radius: 12 * scale,
-        child: Container(
-          width: 172 * scale,
-          alignment: Alignment.center,
-          child: Text(
-            '$label →',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 13 * scale,
-              color: AppColors.narText2,
-            ),
-          ),
-        ),
       ),
     );
   }
