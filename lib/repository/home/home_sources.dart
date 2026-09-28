@@ -163,8 +163,26 @@ class MockSoloRankSource implements SoloRankSource {
   ];
 
   @override
-  Future<SoloRankSnapshot> fetch() async =>
-      const SoloRankSnapshot(live: live, finished: finished);
+  Future<SoloRankSnapshot> fetch() async {
+    // elapsedSeconds 는 고정값이라, 매 조회마다 "그만큼 전에 시작한" startedAt
+    // 으로 다시 앵커링해 실기기 카운트업(기기 시계 기준)을 목업에서도 볼 수
+    // 있게 한다. 다음 새로고침 때 같은 값으로 되돌아가는 건 목업 한계다.
+    final now = DateTime.now();
+    return SoloRankSnapshot(
+      live: [
+        for (final p in live)
+          HomeLiveSoloPlayer(
+            name: p.name,
+            teamCode: p.teamCode,
+            champion: p.champion,
+            elapsedSeconds: p.elapsedSeconds,
+            playerImageUrl: p.playerImageUrl,
+            startedAt: now.subtract(Duration(seconds: p.elapsedSeconds)),
+          ),
+      ],
+      finished: finished,
+    );
+  }
 }
 
 /// 목업 한줄평 소스.

@@ -69,6 +69,7 @@ class ApiSoloRankSource implements SoloRankSource {
           ? 0
           : now.difference(startedAt).inSeconds.clamp(0, 1 << 30),
       playerImageUrl: j['playerImageUrl'] as String?,
+      startedAt: startedAt,
     );
   }
 
@@ -80,6 +81,7 @@ class ApiSoloRankSource implements SoloRankSource {
       won: j['win'] as bool,
       minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
       durationMinutes: seconds == null ? null : seconds ~/ 60,
+      playerImageUrl: j['playerImageUrl'] as String?,
     );
   }
 }

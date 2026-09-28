@@ -8,15 +8,24 @@ class HomeLiveSoloPlayer {
     required this.champion,
     required this.elapsedSeconds,
     this.playerImageUrl,
+    this.startedAt,
   });
 
   final String name;
   final String teamCode;
   final String champion;
+
+  /// 조회 시점 기준 경과 시간(초). [startedAt] 이 있으면 화면은 그 시각으로
+  /// 초 단위 카운트업하고, 이 값은 게임 길이 안내 등 조회 시점 스냅샷에만 쓴다.
   final int elapsedSeconds;
 
   /// 선수 사진 URL(상대경로면 호스트 부착). 없으면 빈 자리 유지.
   final String? playerImageUrl;
+
+  /// 게임 시작 시각. 있으면 기기 시계로 [elapsedSeconds] 를 매초 다시 계산해
+  /// 카운트업한다(spec 미룬 것 — "기기 시계 카운트업"). 없으면 [elapsedSeconds]
+  /// 를 고정값으로 보여준다.
+  final DateTime? startedAt;
 }
 
 /// 오늘 솔로 랭크를 끝낸 선수 한 명(최신 1건).
@@ -27,11 +36,15 @@ class HomeFinishedSoloPlayer {
     required this.won,
     required this.minutesAgo,
     this.durationMinutes,
+    this.playerImageUrl,
   });
 
   final String name;
   final String teamCode;
   final bool won;
+
+  /// 선수 사진 URL(상대경로면 호스트 부착). 없으면 이름 이니셜로 대신한다.
+  final String? playerImageUrl;
 
   /// 끝난 지 몇 분 됐는지 — "12분 전 종료".
   final int minutesAgo;

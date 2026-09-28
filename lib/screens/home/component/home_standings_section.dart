@@ -261,7 +261,7 @@ class _StandingRow extends StatelessWidget {
           TeamCodeBadge(
             teamCode: row.teamCode,
             imageUrl: row.imageUrl,
-            size: 26 * scale,
+            size: 34 * scale,
           ),
           SizedBox(width: 8 * scale),
           Expanded(
@@ -316,6 +316,7 @@ class _StandingRow extends StatelessWidget {
               textAlign: TextAlign.right,
             ),
           ),
+          SizedBox(width: 8 * scale),
           SizedBox(
             width: 44 * scale,
             child: Text(

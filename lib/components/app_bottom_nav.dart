@@ -43,11 +43,9 @@ class AppBottomNav extends StatelessWidget {
 
   /// 탭이 6개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
   ///
-  /// 활성 chip 폭은 라벨 길이에 따라 달라진다(고정폭 아님, 최소 105). 간격을
+  /// 활성 chip 폭은 최소폭 없이 아이콘+라벨+패딩(좌우 16)만큼만 차지한다. 간격을
   /// 고정 gap 대신 [MainAxisAlignment.spaceBetween] 으로 자동 분배해,
-  /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다. 홈 탭 추가로
-  /// 비활성 5개 + 활성 1개(최소 105)가 바 안쪽 폭(335-패딩24=311)을 넘지 않게
-  /// 40→34로 줄였다(105+5*34=275, 여유 36을 간격 5칸에 분배).
+  /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다.
   static const double _inactiveSize = 34;
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
@@ -326,8 +324,10 @@ class _NavItemActive extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 48 * scale,
-        constraints: BoxConstraints(minWidth: 105 * scale),
-        padding: EdgeInsets.symmetric(horizontal: 12 * scale),
+        padding: EdgeInsets.symmetric(
+          vertical: 12 * scale,
+          horizontal: 16 * scale,
+        ),
         decoration: BoxDecoration(
           color: AppColors.narNavSelectedBg,
           borderRadius: BorderRadius.circular(26 * scale),

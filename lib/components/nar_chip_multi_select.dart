@@ -31,6 +31,7 @@ class NarChipMultiSelect extends StatelessWidget {
     this.reorderSelected = true,
     this.disabledOptions = const {},
     this.horizontalPadding = 16,
+    this.gap = 8,
     this.scale = 1,
   }) : _onPick = null;
 
@@ -45,6 +46,7 @@ class NarChipMultiSelect extends StatelessWidget {
     this.labelBuilder,
     this.disabledOptions = const {},
     this.horizontalPadding = 16,
+    this.gap = 8,
     this.scale = 1,
   }) : selectedValues = {selected},
        onChanged = _ignore,
@@ -76,6 +78,9 @@ class NarChipMultiSelect extends StatelessWidget {
 
   /// 스크롤 영역 좌우 패딩(기본 16). 섹션 헤더와 칩 줄을 맞출 때 조절한다.
   final double horizontalPadding;
+
+  /// 칩 사이 간격(기본 8).
+  final double gap;
   final double scale;
 
   /// [NarChipMultiSelect.single] 의 선택 콜백. null 이면 멀티 셀렉트.
@@ -140,7 +145,7 @@ class NarChipMultiSelect extends StatelessWidget {
         child: Row(
           children: [
             for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) SizedBox(width: 8 * scale),
+              if (i > 0) SizedBox(width: gap * scale),
               items[i],
             ],
           ],

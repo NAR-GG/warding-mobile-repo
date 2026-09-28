@@ -35,6 +35,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final HomeViewModel _viewModel = HomeViewModel();
+  final BottomNavShrinkController _navShrink = BottomNavShrinkController();
 
   /// 배너 탭 — 스케줄 화면과 같은 공지 상세로 연다.
   void _openNotice(Notice notice) {
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.dispose();
+    _navShrink.dispose();
     super.dispose();
   }
 
@@ -76,11 +78,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   /// "구독 N명 전체"·조용한 상태 줄 — 내 선수 화면. push 라서 뒤로가기가
-  /// 홈으로 돌아온다(spec 사용자 흐름 3).
-  void _openMyPlayers() {
-    Navigator.of(
+  /// 홈으로 돌아온다(spec 사용자 흐름 3). 그 사이 선수가 솔랭을 시작·종료했을
+  /// 수 있어 돌아오면 홈 솔랭 상태를 다시 불러온다(알림함과 같은 방식).
+  Future<void> _openMyPlayers() async {
+    await Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const MyPlayersScreen()));
+    await _viewModel.refreshSoloOnReturn();
   }
 
   /// 구독 0명 빈 카드의 "선수 구독하기" — 마이구독 탭(비회원은 그 화면이
@@ -148,49 +152,58 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       onClose: _viewModel.dismissBanner,
                     ),
                   Expanded(
-                    child: SingleChildScrollView(
-                      // 좌우 여백은 각 섹션이 스스로 20*scale 패딩을 두른다 —
-                      // 칩 줄(NarChipMultiSelect)은 가로 스크롤 영역이라 자체
-                      // horizontalPadding(홈은 20)을 받으므로, 여기서 일괄로
-                      // 좌우 패딩을 주면 겹쳐서 더 좁아 보인다.
-                      padding: EdgeInsets.only(
-                        top: 16 * scale,
-                        // 떠 있는 하단 네비(72*scale + 바닥 26 + 간격 8)에
-                        // 안 가리도록 나머지 화면들과 같은 계산을 쓴다.
-                        bottom: 72 * scale + 34,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          HomeSoloRankSection(
-                            viewModel: _viewModel,
-                            scale: scale,
-                            onOpenMyPlayers: _openMyPlayers,
-                            onSubscribe: _openSubscription,
-                          ),
-                          SizedBox(height: 28 * scale),
-                          HomeTodayMatchesSection(
-                            viewModel: _viewModel,
-                            scale: scale,
-                            onSeeSchedule: _openSchedule,
-                          ),
-                          SizedBox(height: 28 * scale),
-                          HomeStandingsSection(
-                            viewModel: _viewModel,
-                            scale: scale,
-                          ),
-                          SizedBox(height: 28 * scale),
-                          HomeCommunitySection(
-                            viewModel: _viewModel,
-                            scale: scale,
-                            onSeeAllCommunity: _openCommunity,
-                          ),
-                          SizedBox(height: 28 * scale),
-                          HomeContentSection(
-                            viewModel: _viewModel,
-                            scale: scale,
-                          ),
-                        ],
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _navShrink.handleNotification,
+                      child: SingleChildScrollView(
+                        // 좌우 여백은 각 섹션이 스스로 20*scale 패딩을 두른다 —
+                        // 칩 줄(NarChipMultiSelect)은 가로 스크롤 영역이라 자체
+                        // horizontalPadding(홈은 20)을 받으므로, 여기서 일괄로
+                        // 좌우 패딩을 주면 겹쳐서 더 좁아 보인다.
+                        padding: EdgeInsets.only(
+                          top: 16 * scale,
+                          // 떠 있는 하단 네비(72*scale + 바닥 26 + 간격 8)에
+                          // 안 가리도록 나머지 화면들과 같은 계산을 쓴다.
+                          bottom: 72 * scale + 34,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            HomeSoloRankSection(
+                              viewModel: _viewModel,
+                              scale: scale,
+                              onOpenMyPlayers: _openMyPlayers,
+                              onSubscribe: _openSubscription,
+                            ),
+                            // 오늘 경기가 없으면 섹션이 통째로 사라지는데
+                            // (HomeTodayMatchesSection), 앞뒤 SizedBox 는 그대로
+                            // 남아 간격이 두 배로 벌어졌다. 섹션과 그 앞 간격을
+                            // 묶어서 함께 없앤다.
+                            if (_viewModel.todayMatchesSorted.isNotEmpty) ...[
+                              SizedBox(height: 28 * scale),
+                              HomeTodayMatchesSection(
+                                viewModel: _viewModel,
+                                scale: scale,
+                                onSeeSchedule: _openSchedule,
+                              ),
+                            ],
+                            SizedBox(height: 28 * scale),
+                            HomeStandingsSection(
+                              viewModel: _viewModel,
+                              scale: scale,
+                            ),
+                            SizedBox(height: 28 * scale),
+                            HomeCommunitySection(
+                              viewModel: _viewModel,
+                              scale: scale,
+                              onSeeAllCommunity: _openCommunity,
+                            ),
+                            SizedBox(height: 28 * scale),
+                            HomeContentSection(
+                              viewModel: _viewModel,
+                              scale: scale,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -202,9 +215,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               left: 0,
               right: 0,
               bottom: 26,
-              child: AppBottomNav(
-                currentTab: AppNavTab.home,
-                onTabSelected: _onTabSelected,
+              child: ListenableBuilder(
+                listenable: _navShrink,
+                builder: (context, _) => AppBottomNav(
+                  currentTab: AppNavTab.home,
+                  onTabSelected: _onTabSelected,
+                  compact: _navShrink.compact,
+                ),
               ),
             ),
           ],

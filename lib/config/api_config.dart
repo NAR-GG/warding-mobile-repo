@@ -78,6 +78,7 @@ class ApiConfig {
   static const List<String> _allRealLeagueCodes = [
     'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
     'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP',
+    'ASIAN_GAMES',
   ];
 
   /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).

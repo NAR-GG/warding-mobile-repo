@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/dashed_border.dart';
+import '../../../components/nar_live_dot.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
@@ -56,10 +59,36 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
     initialPage: widget.viewModel.soloSwipeIndex,
   );
 
+  // 큰 카드의 경과 시간을 매초 다시 그린다(기기 시계 카운트업 — spec에서
+  // 미뤄뒀던 항목). ViewModel 은 API 응답이 올 때만 갱신되므로, 그 사이는
+  // 이 타이머의 setState 로만 화면을 다시 그린다. 진행 중 카드가 없을 때는
+  // 다시 그려도 보이는 게 안 바뀌니 그때만 건너뛴다.
+  Timer? _clockTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && widget.viewModel.soloState == SoloCardState.active) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _clockTimer?.cancel();
     _pages.dispose();
     super.dispose();
+  }
+
+  /// [player.elapsedSeconds] 의 조회 시점 스냅샷을, [HomeLiveSoloPlayer.startedAt]
+  /// 이 있으면 기기 시계로 다시 계산해 매초 카운트업한다.
+  int _liveElapsedSeconds(HomeLiveSoloPlayer player) {
+    final startedAt = player.startedAt;
+    if (startedAt == null) return player.elapsedSeconds;
+    final seconds = DateTime.now().difference(startedAt).inSeconds;
+    return seconds > player.elapsedSeconds ? seconds : player.elapsedSeconds;
   }
 
   @override
@@ -76,7 +105,6 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
         child: _QuietRow(
           faces: vm.subscribedFaces,
           subscribedTotal: vm.subscribedTotal,
-          lastFinished: vm.soloFinished.isEmpty ? null : vm.soloFinished.first,
           scale: scale,
           onTap: widget.onOpenMyPlayers,
         ),
@@ -91,38 +119,52 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
     final scale = widget.scale;
     final live = vm.soloLive;
     final done = vm.soloFinished;
-    final hidden = vm.soloHiddenCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 196 * scale,
-          child: PageView.builder(
-            controller: _pages,
-            onPageChanged: vm.setSoloSwipeIndex,
-            itemCount: live.length,
-            // 한 장이 폭의 92% — 가운데 정렬(padEnds)이라 첫 장 왼쪽 여백이
-            // 4% + 5 로 다른 섹션의 20 여백과 맞고, 옆 카드가 살짝 보인다.
-            itemBuilder: (context, i) => Padding(
-              padding: EdgeInsets.symmetric(horizontal: 5 * scale),
-              child: _HeroCard(
-                key: HomeSoloRankSection.heroKey(live[i].name),
-                player: live[i],
-                scale: scale,
+        // 진행 중인 선수가 없으면(끝난 경기만 있어 active 상태) 스와이프할
+        // 카드가 없다 — 대신 조용한 상태 줄(_QuietRow)을 그대로 보여주고
+        // 그 아래에 끝난 경기 줄을 잇는다(2026-09-29 결정, spec.md "상태" 표).
+        if (live.isNotEmpty) ...[
+          SizedBox(
+            height: 196 * scale,
+            child: PageView.builder(
+              controller: _pages,
+              onPageChanged: vm.setSoloSwipeIndex,
+              itemCount: live.length,
+              // 한 장이 폭의 92% — 가운데 정렬(padEnds)이라 첫 장 왼쪽 여백이
+              // 4% + 5 로 다른 섹션의 20 여백과 맞고, 옆 카드가 살짝 보인다.
+              itemBuilder: (context, i) => Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5 * scale),
+                child: _HeroCard(
+                  key: HomeSoloRankSection.heroKey(live[i].name),
+                  player: live[i],
+                  elapsedSeconds: _liveElapsedSeconds(live[i]),
+                  scale: scale,
+                ),
               ),
             ),
           ),
-        ),
-        if (live.length > 1) ...[
-          SizedBox(height: 10 * scale),
-          _SwipeDots(
-            count: live.length,
-            index: vm.soloSwipeIndex,
-            scale: scale,
+          if (live.length > 1) ...[
+            SizedBox(height: 10 * scale),
+            _SwipeDots(
+              count: live.length,
+              index: vm.soloSwipeIndex,
+              scale: scale,
+            ),
+          ],
+        ] else
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+            child: _QuietRow(
+              faces: vm.subscribedFaces,
+              subscribedTotal: vm.subscribedTotal,
+              scale: scale,
+              onTap: widget.onOpenMyPlayers,
+            ),
           ),
-        ],
-        if (done.isNotEmpty || hidden > 0) ...[
+        if (done.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 0),
             child: Text.rich(
@@ -152,18 +194,13 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-              itemCount: done.length + (hidden > 0 ? 1 : 0),
+              itemCount: done.length,
               separatorBuilder: (_, _) => SizedBox(width: 8 * scale),
-              itemBuilder: (context, i) {
-                if (i == done.length) {
-                  return _HiddenCountChip(count: hidden, scale: scale);
-                }
-                return _FinishedChip(
-                  key: HomeSoloRankSection.finishedKey(done[i].name),
-                  player: done[i],
-                  scale: scale,
-                );
-              },
+              itemBuilder: (context, i) => _FinishedChip(
+                key: HomeSoloRankSection.finishedKey(done[i].name),
+                player: done[i],
+                scale: scale,
+              ),
             ),
           ),
         ],
@@ -280,34 +317,29 @@ class _EmptyCard extends StatelessWidget {
   }
 }
 
-/// 구독은 있는데 진행 중 0명 — 한 줄짜리 조용한 상태. 누르면 내 선수 화면.
+/// 구독은 있는데 진행 중인 선수도 오늘 끝난 경기도 0명 — 한 줄짜리 조용한
+/// 상태. 누르면 내 선수 화면.
 ///
-/// 시안(`mockup.html`)의 `.quiet`: 구독 선수 얼굴이 겹쳐 놓인 스택 + 두 줄 글
-/// (구독 수 / 마지막 경기) + 화살표. 구독이 얼굴 수보다 많으면 "+N" 칸이 붙는다.
+/// 끝난 경기가 하나라도 있으면 이 대신 끝난 경기 줄(활성 상태)을 보여주므로,
+/// 여기는 정말 아무 소식도 없을 때만 그린다 — "마지막 경기" 같은 보조 정보는
+/// 없다. 시안(`mockup.html`)의 `.quiet`: 구독 선수 얼굴이 겹쳐 놓인 스택 +
+/// 구독 수 한 줄 + 화살표. 구독이 얼굴 수보다 많으면 "+N" 칸이 붙는다.
 class _QuietRow extends StatelessWidget {
   const _QuietRow({
     required this.faces,
     required this.subscribedTotal,
-    required this.lastFinished,
     required this.scale,
     this.onTap,
   });
 
   final List<PlayerSubscription> faces;
   final int subscribedTotal;
-  final HomeFinishedSoloPlayer? lastFinished;
   final double scale;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final last = lastFinished;
-    final lastLine = last == null
-        ? null
-        : last.won
-        ? l.homeSoloLastGameWin(_ago(l, last.minutesAgo), last.name)
-        : l.homeSoloLastGameLoss(_ago(l, last.minutesAgo), last.name);
 
     return GestureDetector(
       key: HomeSoloRankSection.quietKey,
@@ -359,18 +391,6 @@ class _QuietRow extends StatelessWidget {
                       color: AppColors.narText2,
                     ),
                   ),
-                  if (lastLine != null)
-                    Text(
-                      lastLine,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 11.5 * scale,
-                        height: 1.5,
-                        color: AppColors.narDark200,
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -497,9 +517,18 @@ class _Face extends StatelessWidget {
 
 /// 진행 중인 선수 한 명의 큰 카드. 숫자는 경과 시간 하나뿐이다.
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({super.key, required this.player, required this.scale});
+  const _HeroCard({
+    super.key,
+    required this.player,
+    required this.elapsedSeconds,
+    required this.scale,
+  });
 
   final HomeLiveSoloPlayer player;
+
+  /// [player.elapsedSeconds] 의 매초 카운트업 값(부모가 기기 시계로 다시
+  /// 계산해 내려준다). [HomeLiveSoloPlayer.startedAt] 참고.
+  final int elapsedSeconds;
   final double scale;
 
   @override
@@ -507,17 +536,27 @@ class _HeroCard extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final splashUrl = championSplashUrl(championToEn(player.champion));
     final photoUrl = resolveImageUrl(player.playerImageUrl);
+    final radius = BorderRadius.circular(14 * scale);
 
+    // 테두리를 배경 데코레이션이 아니라 foregroundDecoration으로 그린다 —
+    // 배경 데코레이션은 Stack(챔피언 스플래시·선수 사진) 뒤에 깔리고 그 위에
+    // Stack 이 덮어 그려지는 순서라, 사진이 모서리까지 닿으면 안쪽 클립은
+    // 맞아도 테두리 선 자체가 사진에 가려 그 구간만 끊겨 보였다. 테두리를
+    // 맨 위(foreground)에 그리면 어떤 내용이 깔려도 항상 온전히 보인다.
     return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14 * scale),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: radius,
         border: Border.all(color: AppColors.narLine),
-        color: AppColors.narSoloHeroBg,
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: AppColors.narSoloHeroBg,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
           // 배경: 챔피언 스플래시 아트. 카드가 세로로 짧아 상단(얼굴)이 잘리기
           // 쉬워 top 쪽으로 정렬한다.
           if (splashUrl != null)
@@ -543,15 +582,17 @@ class _HeroCard extends StatelessWidget {
               gradient: AppColors.narPlayedChampOverlay,
             ),
           ),
-          // 선수 사진 — 카드 우측 하단에 붙인다. 없으면 빈 자리 유지.
+          // 선수 사진 — 카드 우측 하단에 붙인다. 시안(mockup.html `.hero .ph`)
+          // 대로 카드 가장자리 밖으로 살짝 흘러넘치게 키워, 안쪽 클립이 정확히
+          // 모서리에서 잘라낸다. 없으면 빈 자리 유지.
           if (photoUrl != null && photoUrl.isNotEmpty)
             Positioned(
-              right: 0,
-              bottom: 0,
+              right: -6 * scale,
+              bottom: -10 * scale,
               child: CachedNetworkImage(
                 imageUrl: photoUrl,
-                width: 120 * scale,
-                height: 168 * scale,
+                width: 176 * scale,
+                height: 214 * scale,
                 fit: BoxFit.contain,
                 alignment: Alignment.bottomCenter,
                 fadeInDuration: const Duration(milliseconds: 150),
@@ -573,7 +614,11 @@ class _HeroCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _Dot(size: 5 * scale),
+                    NarLiveDot(
+                      scale: scale,
+                      size: 5,
+                      color: AppColors.narSoloDot,
+                    ),
                     SizedBox(width: 5 * scale),
                     Text(
                       l.homeSoloPlaying(player.champion),
@@ -632,7 +677,7 @@ class _HeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      _clock(player.elapsedSeconds),
+                      _clock(elapsedSeconds),
                       style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontWeight: FontWeight.w700,
@@ -673,7 +718,11 @@ class _HeroCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _Dot(size: 6 * scale),
+                      NarLiveDot(
+                        scale: scale,
+                        size: 6,
+                        color: AppColors.narSoloDot,
+                      ),
                       SizedBox(width: 6 * scale),
                       Text(
                         l.homeSoloQueueBadge,
@@ -690,26 +739,11 @@ class _HeroCard extends StatelessWidget {
               ],
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: const BoxDecoration(
-      color: AppColors.narSoloDot,
-      shape: BoxShape.circle,
-    ),
-  );
 }
 
 /// 스와이프 위치 점. 5개까지만 그리고 넘치면 "+N".
@@ -783,15 +817,11 @@ class _FinishedChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 32 * scale,
-            height: 32 * scale,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppColors.narLine2,
-              shape: BoxShape.circle,
-            ),
-            child: TeamCodeBadge(teamCode: player.teamCode, size: 20 * scale),
+          _Face(
+            name: player.name,
+            url: resolveImageUrl(player.playerImageUrl),
+            size: 32 * scale,
+            scale: scale,
           ),
           SizedBox(width: 7 * scale),
           Column(
@@ -844,36 +874,6 @@ class _FinishedChip extends StatelessWidget {
   }
 }
 
-class _HiddenCountChip extends StatelessWidget {
-  const _HiddenCountChip({required this.count, required this.scale});
-
-  final int count;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Container(
-      height: 44 * scale,
-      alignment: Alignment.center,
-      padding: EdgeInsets.symmetric(horizontal: 15 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narBgTertiary,
-        borderRadius: BorderRadius.circular(22 * scale),
-        border: Border.all(color: AppColors.narLine),
-      ),
-      child: Text(
-        l.homeHiddenCount(count),
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w600,
-          fontSize: 12.5 * scale,
-          color: AppColors.narText2,
-        ),
-      ),
-    );
-  }
-}
 
 class _SeeAllButton extends StatelessWidget {
   const _SeeAllButton({required this.label, required this.scale, this.onTap});

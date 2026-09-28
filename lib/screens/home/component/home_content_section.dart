@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/dashed_border.dart';
+import '../../../components/team_logo.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
@@ -210,6 +211,7 @@ class _ShortsDeck extends StatelessWidget {
             HomeShortsFilter.team => l.homeShortsFilterTeam,
           },
           horizontalPadding: 20,
+          gap: 6,
           scale: scale,
         ),
         if (videos.isEmpty)
@@ -325,9 +327,8 @@ class _ShortsCard extends StatelessWidget {
                     Positioned(
                       left: 6 * scale,
                       top: 6 * scale,
-                      child: _Tag(
+                      child: _PlayerTag(
                         text: video.matchedPlayer!,
-                        mine: true,
                         scale: scale,
                       ),
                     )
@@ -335,11 +336,7 @@ class _ShortsCard extends StatelessWidget {
                     Positioned(
                       left: 6 * scale,
                       top: 6 * scale,
-                      child: _Tag(
-                        text: video.teamCode,
-                        mine: false,
-                        scale: scale,
-                      ),
+                      child: _TeamLogoTag(teamCode: video.teamCode, scale: scale),
                     ),
                   Positioned(
                     left: 7 * scale,
@@ -348,8 +345,8 @@ class _ShortsCard extends StatelessWidget {
                       l.communityViewCount(video.views),
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10 * scale,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11 * scale,
                         color: AppColors.narText,
                       ),
                     ),
@@ -365,7 +362,8 @@ class _ShortsCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
-                  fontSize: 11.5 * scale,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12.5 * scale,
                   height: 1.35,
                   color: AppColors.narTextTertiary,
                 ),
@@ -378,38 +376,59 @@ class _ShortsCard extends StatelessWidget {
   }
 }
 
-/// 썸네일 좌상단 배지 — 내 선수면 브랜드 3색을 옅게, 내 팀이면 무채색.
-class _Tag extends StatelessWidget {
-  const _Tag({required this.text, required this.mine, required this.scale});
+/// 썸네일 좌상단 배지 — 매칭된 내 선수 이름(브랜드 3색을 옅게).
+class _PlayerTag extends StatelessWidget {
+  const _PlayerTag({required this.text, required this.scale});
 
   final String text;
-  final bool mine;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 19 * scale,
+      height: 20 * scale,
       padding: EdgeInsets.symmetric(horizontal: 7 * scale),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        gradient: mine ? AppColors.narSoloTint : null,
-        color: mine ? null : AppColors.narWhite14,
+        gradient: AppColors.narSoloTint,
         borderRadius: BorderRadius.circular(10 * scale),
-        border: Border.all(
-          color: mine ? AppColors.narSoloLine : AppColors.narLine2,
-        ),
+        border: Border.all(color: AppColors.narSoloLine),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w600,
-          fontSize: 10 * scale,
+          fontWeight: FontWeight.w700,
+          fontSize: 11 * scale,
           height: 1,
-          color: mine ? AppColors.narSoloText : AppColors.narGray400,
+          color: AppColors.narSoloText,
         ),
       ),
+    );
+  }
+}
+
+/// 썸네일 좌상단 배지 — 매칭된 내 팀. 팀 코드 텍스트 대신 로고 이미지를 작은
+/// 둥근 네모 안에 그린다.
+class _TeamLogoTag extends StatelessWidget {
+  const _TeamLogoTag({required this.teamCode, required this.scale});
+
+  final String teamCode;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22 * scale,
+      height: 22 * scale,
+      alignment: Alignment.center,
+      padding: EdgeInsets.all(4 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narWhite14,
+        borderRadius: BorderRadius.circular(7 * scale),
+        border: Border.all(color: AppColors.narLine2),
+      ),
+      child: TeamLogo(teamCode: teamCode, size: 14 * scale),
     );
   }
 }

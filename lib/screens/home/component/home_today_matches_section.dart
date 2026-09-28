@@ -41,6 +41,7 @@ class HomeTodayMatchesSection extends StatelessWidget {
           child: HomeSectionHeader(
             title: l.homeTodayMatchesTitle,
             scale: scale,
+            subtitle: _todayLabel(DateTime.now()),
             trailingLabel: l.homeSeeAllSchedule,
             onTapTrailing: onSeeSchedule,
           ),
@@ -62,6 +63,10 @@ class HomeTodayMatchesSection extends StatelessWidget {
     );
   }
 }
+
+/// 헤더 부제 — 시안(`mockup.html`)의 `sh('오늘의 경기', ..., '9월 12일')`처럼
+/// 앞자리 0 없이 "M월 d일"로 쓴다.
+String _todayLabel(DateTime now) => '${now.month}월 ${now.day}일';
 
 /// 오늘 경기 카드 한 장 — 시안(`mockup.html`)의 `.mc`.
 ///

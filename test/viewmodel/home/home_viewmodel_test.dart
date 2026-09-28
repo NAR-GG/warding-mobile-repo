@@ -277,20 +277,34 @@ void main() {
       expect(vm.soloState, SoloCardState.noSubscription);
     });
 
-    test('구독은 있는데 진행 중이 0명이면 noneActive', () async {
+    test('구독은 있는데 진행 중도 끝난 경기도 0명이면 noneActive', () async {
       final vm = build(
-        snap: SoloRankSnapshot(
-          live: const [],
-          finished: [done('Oner', 10)],
-        ),
+        snap: const SoloRankSnapshot(live: [], finished: []),
         subscribed: 5,
       );
       await pumpEventQueue();
       expect(vm.soloState, SoloCardState.noneActive);
       expect(vm.soloLive, isEmpty);
-      expect(vm.soloFinished.map((p) => p.name), ['Oner']);
-      expect(vm.soloHiddenCount, 4);
+      expect(vm.soloFinished, isEmpty);
     });
+
+    test(
+      '진행 중 0명이어도 끝난 경기가 있으면 active(2026-09-29 결정)',
+      () async {
+        final vm = build(
+          snap: SoloRankSnapshot(
+            live: const [],
+            finished: [done('Oner', 10)],
+          ),
+          subscribed: 5,
+        );
+        await pumpEventQueue();
+        expect(vm.soloState, SoloCardState.active);
+        expect(vm.soloLive, isEmpty);
+        expect(vm.soloFinished.map((p) => p.name), ['Oner']);
+        expect(vm.soloHiddenCount, 4);
+      },
+    );
 
     test('진행 중이 있으면 active, 가장 최근 시작(경과 시간 짧은) 선수가 먼저', () async {
       final vm = build(

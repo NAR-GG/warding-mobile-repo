@@ -263,9 +263,14 @@ class HomeViewModel extends ChangeNotifier {
     return hidden < 0 ? 0 : hidden;
   }
 
+  /// 진행 중 0명이어도 오늘 끝난 경기가 있으면 [SoloCardState.active] 다 —
+  /// 큰 카드(스와이프)는 [soloLive] 가 비어 있으면 그리지 않고, 끝난 경기
+  /// 줄은 그대로 보여준다(2026-09-29 결정, spec.md "상태" 표).
   SoloCardState get soloState {
     if (subscribedTotal == 0) return SoloCardState.noSubscription;
-    if (_soloLive.isEmpty) return SoloCardState.noneActive;
+    if (_soloLive.isEmpty && _soloFinished.isEmpty) {
+      return SoloCardState.noneActive;
+    }
     return SoloCardState.active;
   }
 
@@ -292,6 +297,13 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   int _soloGen = 0;
+
+  /// 내 선수 화면(보기 전용)에서 돌아왔을 때 솔랭 상태를 다시 불러온다.
+  /// 홈은 화면 전환(push/pop)으로는 새로고침되지 않고 앱 복귀(30초 간격)
+  /// 때만 갱신되므로, 그 사이 선수가 솔랭을 시작·종료해도 내 선수 화면과
+  /// 어긋난 채로 남는다 — 벨 알림함(_openNotifications)과 같은 방식으로
+  /// 이 화면만 돌아올 때 콕 집어 새로고침한다.
+  Future<void> refreshSoloOnReturn() => _loadSolo();
 
   Future<void> _loadSolo() async {
     final gen = ++_soloGen;

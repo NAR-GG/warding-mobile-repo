@@ -51,7 +51,9 @@ void main() {
     expect(subscribeTaps, 1);
   });
 
-  testWidgets('구독은 있는데 진행 중 0명 — 한 줄짜리 조용한 상태', (tester) async {
+  testWidgets('구독은 있는데 진행 중도 끝난 경기도 0명 — 한 줄짜리 조용한 상태', (
+    tester,
+  ) async {
     final server = setUpHomeApi(loggedIn: true);
     server.subscriptions = [
       subscriptionJson('Faker', 'T1'),
@@ -61,10 +63,7 @@ void main() {
     var opened = 0;
     final vm = await pumpHomeSection(
       tester,
-      solo: SoloRankSnapshot(
-        live: const [],
-        finished: [finishedPlayer('Chovy', 130)],
-      ),
+      solo: const SoloRankSnapshot(live: [], finished: []),
       section: (vm) => section(vm, onOpenMyPlayers: () => opened++),
     );
 
@@ -73,7 +72,6 @@ void main() {
     expect(quiet, findsOneWidget);
     expect(find.text('지금 솔랭 중인 선수 없음'), findsOneWidget);
     expect(find.textContaining('구독 3명'), findsOneWidget);
-    expect(find.textContaining('Chovy 승리'), findsOneWidget);
     // 큰 카드·끝난 경기 줄·빈 카드는 없다.
     expect(find.byType(PageView), findsNothing);
     expect(find.byKey(HomeSoloRankSection.emptyCardKey), findsNothing);
@@ -82,6 +80,43 @@ void main() {
     await tester.tap(quiet);
     expect(opened, 1);
   });
+
+  testWidgets(
+    '진행 중 0명이어도 끝난 경기가 있으면 조용한 행 + 끝난 경기 줄(큰 카드 없음) — 2026-09-29 결정',
+    (tester) async {
+      final server = setUpHomeApi(loggedIn: true);
+      server.subscriptions = [
+        subscriptionJson('Faker', 'T1'),
+        subscriptionJson('Chovy', 'GEN'),
+        subscriptionJson('Oner', 'T1'),
+      ];
+      final vm = await pumpHomeSection(
+        tester,
+        solo: SoloRankSnapshot(
+          live: const [],
+          finished: [finishedPlayer('Chovy', 130)],
+        ),
+        section: (vm) => section(vm),
+      );
+
+      expect(vm.soloState, SoloCardState.active);
+      // 조용한 행은 그대로 위에 뜨고, 그 아래에 끝난 경기 줄이 이어진다.
+      // 스와이프할 큰 카드만 없다.
+      expect(find.byKey(HomeSoloRankSection.quietKey), findsOneWidget);
+      expect(find.text('지금 솔랭 중인 선수 없음'), findsOneWidget);
+      expect(find.byType(PageView), findsNothing);
+      // 라벨은 Text.rich(제목 + 옅은 부제)라 findRichText 없이는 안 잡힌다.
+      expect(
+        find.textContaining('오늘 끝난 경기', findRichText: true),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(HomeSoloRankSection.finishedKey('Chovy')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('구독 3명 전체'), findsOneWidget);
+    },
+  );
 
   testWidgets('빈 솔랭 소스(릴리즈 기본) + 구독 있음 — 조용한 행, 누르면 내 선수', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
@@ -203,15 +238,8 @@ void main() {
       findsOneWidget,
     );
 
-    // 위·아래 어디에도 안 나온 선수 수 — 줄 끝에 있어 밀어서 확인한다.
-    await tester.scrollUntilVisible(
-      find.text('+7명'),
-      100,
-      scrollable: find
-          .ancestor(of: oner, matching: find.byType(Scrollable))
-          .first,
-    );
-    expect(find.text('+7명'), findsOneWidget);
+    // "+N명" 칩은 없앴다 — 끝난 경기 줄에는 실제 끝난 경기만 보인다.
+    expect(find.textContaining('+7명'), findsNothing);
     await tester.tap(find.text('구독 10명 전체'));
     expect(opened, 1);
   });
