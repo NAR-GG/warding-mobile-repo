@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// 아이콘이 있는 리그 코드. `/mobile/schedules/filters` 가 내려주는 11개 리그
+/// 아이콘이 있는 리그 코드. `/mobile/schedules/filters` 가 내려주는 12개 리그
 /// 전부 아이콘을 받았다.
 ///
 /// LCS·MSI·WORLDS 는 원본이 벡터가 아니라 (Figma 가 래스터 레이어를
@@ -19,6 +19,7 @@ const Map<String, String> _leagueIcons = {
   'CBLOL': 'assets/icons/leagues/cblol.svg',
   'FIRST_STAND': 'assets/icons/leagues/first-stand.svg',
   'LCP': 'assets/icons/leagues/lcp.svg',
+  'ASIAN_GAMES': 'assets/icons/leagues/asian-games.svg',
 };
 
 /// [leagueCode] 에 해당하는 아이콘 asset 경로. 대소문자를 가리지 않으며,
