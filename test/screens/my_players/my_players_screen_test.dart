@@ -318,12 +318,16 @@ void main() {
       ),
     );
 
+    // 솔로 랭크 배지 점이 LIVE 배지처럼 무한 반복 애니메이션이라
+    // pumpAndSettle 은 절대 수렴하지 않는다 — 전환 지속시간만큼만 pump.
     await tester.tap(find.text('구독 12명 전체'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(MyPlayersScreen), findsOneWidget);
 
     await tester.tap(_backButton());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(MyPlayersScreen), findsNothing);
     expect(find.byType(HomeSoloRankSection), findsOneWidget);
   });
