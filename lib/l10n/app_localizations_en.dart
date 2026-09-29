@@ -80,9 +80,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeShortsFilterAll => 'All';
 
   @override
-  String get homeShortsFilterPlayer => 'My players';
-
-  @override
   String get homeShortsFilterTeam => 'My team';
 
   @override
@@ -143,6 +140,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeShortsFilterEmpty => 'No shorts match this filter yet';
+
+  @override
+  String get homeShortsTeamUnset =>
+      'Set your favorite team in My Page to see its shorts';
+
+  @override
+  String get homeShortsShowAll => 'Show all';
+
+  @override
+  String get shortsFeedWatchOnYoutube => 'Watch on YouTube';
+
+  @override
+  String get shortsFeedMuted => 'Muted';
+
+  @override
+  String get shortsFeedUnavailable => 'This video can\'t be played';
+
+  @override
+  String get shortsFeedOpenYoutube => 'Open in YouTube';
+
+  @override
+  String get shortsFeedRetry => 'Try again';
+
+  @override
+  String get shortsFeedEnd => 'You\'re all caught up';
+
+  @override
+  String get shortsFeedEndHint => 'Check out more from Home';
+
+  @override
+  String get shortsFeedClose => 'Close';
 
   @override
   String homeSoloPlaying(String champion) {

@@ -195,6 +195,7 @@ PR을 만들거나 본문을 고칠 때는 **항상 먼저 `.github/pull_request
 - 화면 폴더 구조 정리 (`screens/login·home·onboarding`)
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
+- 쇼츠 앱 내 재생: 홈 카드 탭 → 전체화면 세로 피드(`screens/shorts/`, 유튜브 IFrame 임베드·항상 무음). 네이티브 WebView라 스토어 릴리스 필요, Android·실기기 미확인
 - 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/repository/home/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
 ### 다음 작업

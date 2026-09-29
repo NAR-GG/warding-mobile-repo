@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/nar_tab_bar.dart';
@@ -11,7 +10,11 @@ import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../viewmodel/shorts/shorts_feed_viewmodel.dart';
+import '../../shorts/shorts_feed_screen.dart';
 import 'home_section_header.dart';
+
+export '../../../util/shorts_url.dart' show shortsLaunchUri;
 
 /// 콘텐츠 — 밖에서 온 것(뉴스·쇼츠). 평점 한줄평은 유저가 쓴 것이라 커뮤니티
 /// 섹션 탭에 있다(spec 결정: 섹션을 둘로 나눈다).
@@ -19,16 +22,7 @@ import 'home_section_header.dart';
 /// 기본 탭은 뉴스다(spec 결정). 뉴스가 없으면 뉴스 탭을 숨기고 쇼츠만 둔다. 쇼츠 "내 선수" 같은 필터가 0건이면 점선 박스를
 /// 보여준다(spec "상태" 표). 로딩·에러는 그리지 않는다.
 ///
-/// 쇼츠를 누르면 유튜브를 앱 밖에서 연다. 홈 안에서 재생할지·전체화면 피드로
-/// 보낼지는 spec 미결이라, 결정 전까지 가장 가벼운 외부 열기로 둔다.
-/// 쇼츠 카드가 외부로 열 주소. https 만 허용한다 — 서버가 준 값이라
-/// `javascript:`·`intent:`·`file:` 같은 스킴이나 깨진 주소는 열지 않는다.
-/// 열 수 없으면 null.
-Uri? shortsLaunchUri(String url) {
-  final uri = Uri.tryParse(url.trim());
-  if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
-  return uri;
-}
+/// 쇼츠를 누르면 앱 안 전체화면 세로 피드([ShortsFeedScreen])가 열린다.
 
 class HomeContentSection extends StatelessWidget {
   const HomeContentSection({
@@ -193,6 +187,24 @@ class _ShortsDeck extends StatelessWidget {
   final HomeViewModel viewModel;
   final double scale;
 
+  /// 탭한 카드부터 전체화면 피드를 연다. 닫으면 홈으로 돌아와 스크롤 위치는 그대로다.
+  void _openFeed(BuildContext context, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => ShortsFeedScreen(
+          initialVideos: viewModel.shortsVideosFiltered,
+          startIndex: index,
+          filter: viewModel.shortsFilter == HomeShortsFilter.team
+              ? ShortsFeedFilter.team
+              : ShortsFeedFilter.all,
+          initialPageSize: viewModel.shortsFetchSize,
+          resolveTeamCode: viewModel.preferredTeamCode,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -202,7 +214,6 @@ class _ShortsDeck extends StatelessWidget {
       for (final f in HomeShortsFilter.values)
         switch (f) {
           HomeShortsFilter.all => l.homeShortsFilterAll,
-          HomeShortsFilter.player => l.homeShortsFilterPlayer,
           HomeShortsFilter.team => l.homeShortsFilterTeam,
         },
     ];
@@ -235,13 +246,27 @@ class _ShortsDeck extends StatelessWidget {
                   width: double.infinity,
                   constraints: BoxConstraints(minHeight: 120 * scale),
                   alignment: Alignment.center,
-                  child: Text(
-                    l.homeShortsFilterEmpty,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 14 * scale,
-                      color: AppColors.narText2,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        viewModel.shortsFilter == HomeShortsFilter.team &&
+                                !viewModel.hasPreferredTeam
+                            ? l.homeShortsTeamUnset
+                            : l.homeShortsFilterEmpty,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 14 * scale,
+                          color: AppColors.narText2,
+                        ),
+                      ),
+                      if (viewModel.shortsFilter != HomeShortsFilter.all)
+                        TextButton(
+                          onPressed: () =>
+                              viewModel.setShortsFilter(HomeShortsFilter.all),
+                          child: Text(l.homeShortsShowAll),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -257,7 +282,11 @@ class _ShortsDeck extends StatelessWidget {
               itemCount: videos.length,
               separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
               itemBuilder: (context, i) =>
-                  _ShortsCard(video: videos[i], scale: scale),
+                  _ShortsCard(
+                    video: videos[i],
+                    scale: scale,
+                    onTap: () => _openFeed(context, i),
+                  ),
             ),
           ),
       ],
@@ -266,43 +295,40 @@ class _ShortsDeck extends StatelessWidget {
 }
 
 class _ShortsCard extends StatelessWidget {
-  const _ShortsCard({required this.video, required this.scale});
+  const _ShortsCard({
+    required this.video,
+    required this.scale,
+    required this.onTap,
+  });
 
   final HomeShortsVideo video;
   final double scale;
+  final VoidCallback onTap;
 
-  Future<void> _open() async {
-    final uri = shortsLaunchUri(video.url);
-    if (uri == null) {
-      debugPrint('[Home] 쇼츠 주소가 https 가 아니라 열지 않음: ${video.url}');
-      return;
-    }
-    try {
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) debugPrint('[Home] 쇼츠 열기 실패: $uri');
-    } catch (e) {
-      debugPrint('[Home] 쇼츠 열기 실패: $e');
-    }
-  }
+  Widget _fallbackThumbnail() => video.thumbnailUrl.isEmpty
+      ? const SizedBox.shrink()
+      : CachedNetworkImage(
+          imageUrl: video.thumbnailUrl,
+          fit: BoxFit.cover,
+          errorWidget: (_, _, _) => const SizedBox.shrink(),
+        );
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final mine = video.matchedPlayer != null;
+    final vertical = video.verticalThumbnailUrl;
     final width = 112 * scale;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: shortsLaunchUri(video.url) == null ? null : _open,
+      onTap: onTap,
       child: Container(
         width: width,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.narBgTertiary,
           borderRadius: BorderRadius.circular(10 * scale),
-          border: Border.all(
-            color: mine ? AppColors.narSoloLine : AppColors.narLine,
-          ),
+          border: Border.all(color: AppColors.narLine),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,13 +340,17 @@ class _ShortsCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   const ColoredBox(color: AppColors.narBgLast),
-                  if (video.thumbnailUrl.isNotEmpty)
+                  // 9:16 세로 썸네일을 먼저 시도하고, 없는 영상(404)이면 서버가 준
+                  // 4:3 썸네일로 폴백한다.
+                  if (vertical != null)
                     CachedNetworkImage(
-                      imageUrl: video.thumbnailUrl,
+                      imageUrl: vertical,
                       fit: BoxFit.cover,
                       fadeInDuration: const Duration(milliseconds: 150),
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
-                    ),
+                      errorWidget: (_, _, _) => _fallbackThumbnail(),
+                    )
+                  else
+                    _fallbackThumbnail(),
                   const DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: AppColors.narShortsScrim,
@@ -333,16 +363,7 @@ class _ShortsCard extends StatelessWidget {
                       size: 26 * scale,
                     ),
                   ),
-                  if (mine)
-                    Positioned(
-                      left: 6 * scale,
-                      top: 6 * scale,
-                      child: _PlayerTag(
-                        text: video.matchedPlayer!,
-                        scale: scale,
-                      ),
-                    )
-                  else if (video.teamCode.isNotEmpty)
+                  if (video.teamCode.isNotEmpty)
                     Positioned(
                       left: 6 * scale,
                       top: 6 * scale,
@@ -389,39 +410,7 @@ class _ShortsCard extends StatelessWidget {
   }
 }
 
-/// 썸네일 좌상단 배지 — 매칭된 내 선수 이름(브랜드 3색을 옅게).
-class _PlayerTag extends StatelessWidget {
-  const _PlayerTag({required this.text, required this.scale});
-
-  final String text;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 20 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 7 * scale),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: AppColors.narSoloTint,
-        borderRadius: BorderRadius.circular(10 * scale),
-        border: Border.all(color: AppColors.narSoloLine),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w700,
-          fontSize: 12 * scale,
-          height: 1,
-          color: AppColors.narSoloText,
-        ),
-      ),
-    );
-  }
-}
-
-/// 썸네일 좌상단 배지 — 매칭된 내 팀. 팀 코드 텍스트 대신 로고 이미지를 작은
+/// 썸네일 좌상단 배지 — 채널의 팀. 팀 코드 텍스트 대신 로고 이미지를 작은
 /// 둥근 네모 안에 그린다.
 class _TeamLogoTag extends StatelessWidget {
   const _TeamLogoTag({required this.teamCode, required this.scale});

@@ -236,12 +236,6 @@ abstract class AppLocalizations {
   /// **'전체'**
   String get homeShortsFilterAll;
 
-  /// No description provided for @homeShortsFilterPlayer.
-  ///
-  /// In ko, this message translates to:
-  /// **'내 선수'**
-  String get homeShortsFilterPlayer;
-
   /// No description provided for @homeShortsFilterTeam.
   ///
   /// In ko, this message translates to:
@@ -343,6 +337,66 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'조건에 맞는 쇼츠가 아직 없어요'**
   String get homeShortsFilterEmpty;
+
+  /// No description provided for @homeShortsTeamUnset.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이페이지에서 응원팀을 설정하면 내 팀 쇼츠를 볼 수 있어요'**
+  String get homeShortsTeamUnset;
+
+  /// No description provided for @homeShortsShowAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 보기'**
+  String get homeShortsShowAll;
+
+  /// No description provided for @shortsFeedWatchOnYoutube.
+  ///
+  /// In ko, this message translates to:
+  /// **'유튜브에서 보기'**
+  String get shortsFeedWatchOnYoutube;
+
+  /// No description provided for @shortsFeedMuted.
+  ///
+  /// In ko, this message translates to:
+  /// **'소리 꺼짐'**
+  String get shortsFeedMuted;
+
+  /// No description provided for @shortsFeedUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'재생할 수 없어요'**
+  String get shortsFeedUnavailable;
+
+  /// No description provided for @shortsFeedOpenYoutube.
+  ///
+  /// In ko, this message translates to:
+  /// **'유튜브에서 열기'**
+  String get shortsFeedOpenYoutube;
+
+  /// No description provided for @shortsFeedRetry.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 시도'**
+  String get shortsFeedRetry;
+
+  /// No description provided for @shortsFeedEnd.
+  ///
+  /// In ko, this message translates to:
+  /// **'다 봤어요'**
+  String get shortsFeedEnd;
+
+  /// No description provided for @shortsFeedEndHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'홈에서 다른 소식도 둘러보세요'**
+  String get shortsFeedEndHint;
+
+  /// No description provided for @shortsFeedClose.
+  ///
+  /// In ko, this message translates to:
+  /// **'닫기'**
+  String get shortsFeedClose;
 
   /// No description provided for @homeSoloPlaying.
   ///

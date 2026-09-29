@@ -46,10 +46,8 @@ void main() {
       expect(find.text('LCK 하이라이트'), findsOneWidget);
     });
 
-    testWidgets('쇼츠 "내 선수" 필터가 0건이면 점선 박스', (tester) async {
-      final server = setUpHomeApi(loggedIn: true);
-      server.subscriptions = [subscriptionJson('Faker', 'T1')];
-      // 구독 선수 이름이 안 들어간 쇼츠만 있다.
+    testWidgets('쇼츠 "내 팀" 필터는 응원팀이 없으면 설정 안내와 전체 보기', (tester) async {
+      final server = setUpHomeApi();
       server.shorts = [shortsJson('젠지 하이라이트', channel: 'LCK')];
       await pumpHomeSection(
         tester,
@@ -61,17 +59,22 @@ void main() {
       // 전체 필터에서는 카드가 보인다.
       expect(find.text('젠지 하이라이트'), findsOneWidget);
       expect(find.byKey(HomeContentSection.shortsEmptyKey), findsNothing);
+      expect(find.text('내 선수'), findsNothing);
 
-      await tester.tap(find.text('내 선수'));
-      await tester.pump();
+      await tester.tap(find.text('내 팀'));
+      await tester.pumpAndSettle();
       final empty = find.byKey(HomeContentSection.shortsEmptyKey);
       expect(empty, findsOneWidget);
       expect(
         find.descendant(of: empty, matching: find.byType(DashedBorder)),
         findsOneWidget,
       );
-      expect(find.text('조건에 맞는 쇼츠가 아직 없어요'), findsOneWidget);
+      expect(find.textContaining('응원팀을 설정하면'), findsOneWidget);
       expect(find.text('젠지 하이라이트'), findsNothing);
+
+      await tester.tap(find.text('전체 보기'));
+      await tester.pumpAndSettle();
+      expect(find.text('젠지 하이라이트'), findsOneWidget);
     });
   });
 

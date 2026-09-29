@@ -7,13 +7,17 @@ import '../../model/home_models.dart';
 import '../../model/notice.dart';
 import '../../model/player_subscription.dart';
 import '../../model/schedule_match.dart';
+import '../../model/team.dart';
 import '../../model/standing.dart';
 import '../../model/story_video.dart';
+import '../../repository/auth/auth_service.dart';
 import '../../repository/community/community_repository.dart';
 import '../../repository/home/home_sources.dart';
 import '../../repository/notice/notice_repository.dart';
 import '../../repository/notification/member_notification_repository.dart';
+import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/preference/notice_preference_repository.dart';
+import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/shorts/shorts_repository.dart';
 import '../../repository/standings/standings_repository.dart';
@@ -29,7 +33,7 @@ enum HomeCommunitySort { latest, hot, review }
 enum HomeContentTab { news, shorts }
 
 /// 쇼츠 탭 필터.
-enum HomeShortsFilter { all, player, team }
+enum HomeShortsFilter { all, team }
 
 /// 솔랭 카드 상태 (spec "상태" 표).
 ///
@@ -64,6 +68,9 @@ class HomeViewModel extends ChangeNotifier {
     SoloRankSource? soloRank,
     ReviewSource? reviews,
     NewsSource? news,
+    AuthService? auth,
+    OnboardingRepository? onboarding,
+    TeamPreferenceRepository? teamPreferences,
   }) : _notices = notices ?? NoticeRepository.instance,
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
@@ -77,7 +84,10 @@ class HomeViewModel extends ChangeNotifier {
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
        _reviewSource = reviews ?? defaultReviewSource(),
-       _newsSource = news ?? defaultNewsSource() {
+       _newsSource = news ?? defaultNewsSource(),
+       _auth = auth ?? AuthService.instance,
+       _onboarding = onboarding ?? OnboardingRepository.instance,
+       _teamPreferences = teamPreferences ?? TeamPreferenceRepository.instance {
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     _promotedNotices = _notices.cachedPromoted ?? const [];
@@ -125,6 +135,9 @@ class HomeViewModel extends ChangeNotifier {
   final SoloRankSource _soloRank;
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
+  final AuthService _auth;
+  final OnboardingRepository _onboarding;
+  final TeamPreferenceRepository _teamPreferences;
 
   bool _disposed = false;
 
@@ -610,6 +623,13 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  /// 홈 쇼츠 카드 수. 이어서 보는 건 전체화면 피드(후속)가 맡는다.
+  static const int shortsCardCount = 10;
+
+  /// 응원팀 필터는 서버가 아직 팀을 안 거르는 동안에도 카드 10개가 남도록
+  /// 넉넉히 받아 클라이언트에서 거른다.
+  static const int _shortsTeamFetchSize = 30;
+
   HomeShortsFilter _shortsFilter = HomeShortsFilter.all;
   HomeShortsFilter get shortsFilter => _shortsFilter;
 
@@ -617,6 +637,41 @@ class HomeViewModel extends ChangeNotifier {
     if (filter == _shortsFilter) return;
     _shortsFilter = filter;
     _notify();
+    unawaited(_loadShorts());
+  }
+
+  /// "내 팀" 기준인 마이페이지 응원팀. 없거나 아직 모르면 null.
+  Team? _preferredTeam;
+  bool _preferredTeamLoaded = false;
+
+  /// "내 팀" 필터에 쓸 응원팀이 있는지. 없으면 화면이 설정 안내를 보인다.
+  bool get hasPreferredTeam => _preferredTeam != null;
+
+  Future<void> _loadPreferredTeam() async {
+    if (_preferredTeamLoaded) return;
+    try {
+      // teamId 를 알기 전에도 팀 목록은 미리 받아둔다 — fetchMe 와 겹쳐서
+      // 왕복 한 번을 아낀다.
+      final teamsFuture = _onboarding.fetchTeams();
+      final me = await _auth.fetchMe();
+      final teamId = me.favoriteTeamId;
+      final teams = await teamsFuture;
+      Team? team;
+      if (teamId != null) {
+        for (final t in teams) {
+          if (t.id == teamId) {
+            team = t;
+            break;
+          }
+        }
+      }
+      _preferredTeam = team;
+    } catch (e) {
+      // 비로그인 등은 로컬 캐시로 폴백.
+      debugPrint('[Home] 응원팀 서버 조회 실패, 로컬 폴백: $e');
+      _preferredTeam = await _teamPreferences.loadPreferredTeam();
+    }
+    _preferredTeamLoaded = true;
   }
 
   List<StoryVideo> _shorts = const [];
@@ -626,7 +681,23 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> _loadShorts() async {
     final gen = ++_shortsGen;
     try {
-      final videos = await _shortsRepo.fetchShorts(sort: 'latest');
+      final onlyTeam = _shortsFilter == HomeShortsFilter.team;
+      String? teamCode;
+      if (onlyTeam) {
+        await _loadPreferredTeam();
+        if (_disposed || gen != _shortsGen) return;
+        teamCode = _preferredTeam?.code;
+        if (teamCode == null) {
+          _shorts = const [];
+          _notify();
+          return;
+        }
+      }
+      final videos = await _shortsRepo.fetchShorts(
+        sort: 'latest',
+        size: onlyTeam ? _shortsTeamFetchSize : shortsCardCount,
+        teamCode: teamCode,
+      );
       if (_disposed || gen != _shortsGen) return;
       _shorts = videos;
       _notify();
@@ -635,75 +706,41 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  /// 현재 필터를 적용한 쇼츠.
+  /// 현재 필터를 적용한 쇼츠 — 순수 최신순(서버 순서) 최대 [shortsCardCount] 개.
   ///
-  /// 쇼츠 응답에는 팀·선수 필드가 없고 `channelName`·`title` 만 있어서,
-  /// 구독 선수 이름과 소속팀 코드·이름을 문자열로 찾아 매칭한다.
-  /// 선수 한글 활동명("페이커")은 아직 서버에 없어(spec) 영문 이름만 찾는다.
-  ///
-  /// "내 팀"은 구독 선수들의 소속팀 합집합으로 본다 — 따로 고른 응원팀으로 볼지는
-  /// spec 미결이라 잠정안이다.
-  ///
-  /// 전체 필터는 내 선수 → 내 팀 → 나머지 순이다(같은 등급 안에서는 서버 순서).
-  List<HomeShortsVideo> get shortsFiltered {
-    final players = _subscribedPlayers ?? const <PlayerSubscription>[];
-    final myTeams = <String, String>{
-      for (final p in players)
-        if (p.teamCode.isNotEmpty) p.teamCode: p.teamName,
-    };
+  /// "내 팀"은 응원팀 채널의 쇼츠만이다. 응답의 `teamCode` 로 한 번 더 거르니
+  /// LCK 공식 채널(팀 코드 없음)은 "전체"에만 나온다.
+  List<HomeShortsVideo> get shortsFiltered => [
+    for (final v in shortsVideosFiltered) _toShortsVideo(v),
+  ];
 
-    final videos = [
-      for (final v in _shorts) _toShortsVideo(v, players, myTeams),
-    ];
-    bool isMyTeam(HomeShortsVideo v) => myTeams.containsKey(v.teamCode);
-
-    switch (_shortsFilter) {
-      case HomeShortsFilter.player:
-        return videos.where((v) => v.matchedPlayer != null).toList();
-      case HomeShortsFilter.team:
-        return videos.where(isMyTeam).toList();
-      case HomeShortsFilter.all:
-        return [
-          ...videos.where((v) => v.matchedPlayer != null),
-          ...videos.where((v) => v.matchedPlayer == null && isMyTeam(v)),
-          ...videos.where((v) => v.matchedPlayer == null && !isMyTeam(v)),
-        ];
-    }
+  /// [shortsFiltered] 와 같은 순서의 원본 영상 — 전체화면 피드가 이어받는다.
+  List<StoryVideo> get shortsVideosFiltered {
+    final team = _preferredTeam?.code;
+    final source = _shortsFilter == HomeShortsFilter.team
+        ? _shorts.where((v) => team != null && v.teamCode == team)
+        : _shorts;
+    return source.take(shortsCardCount).toList();
   }
 
-  HomeShortsVideo _toShortsVideo(
-    StoryVideo video,
-    List<PlayerSubscription> players,
-    Map<String, String> myTeams,
-  ) {
-    final haystack = '${video.title} ${video.channelName}';
+  /// 홈이 마지막으로 받은 쇼츠 목록의 페이지 크기 — 피드가 다음 페이지부터
+  /// 같은 크기로 이어 받는다.
+  int get shortsFetchSize => _shortsFilter == HomeShortsFilter.team
+      ? _shortsTeamFetchSize
+      : shortsCardCount;
 
-    PlayerSubscription? player;
-    for (final p in players) {
-      if (_containsWord(haystack, p.playerName)) {
-        player = p;
-        break;
-      }
-    }
+  /// 응원팀 코드. 없으면 null. 피드가 "내 팀" 필터를 고를 때 쓴다.
+  Future<String?> preferredTeamCode() async {
+    await _loadPreferredTeam();
+    return _preferredTeam?.code;
+  }
 
-    var teamCode = player?.teamCode ?? '';
-    if (player == null) {
-      for (final entry in myTeams.entries) {
-        // 팀 이름도 낱말 경계로 찾는다 — 부분일치면 이름이 코드와 같은 팀
-        // ("T1")이 "T10"·"ST1" 에 걸린다.
-        if (_containsWord(haystack, entry.key) ||
-            _containsWord(haystack, entry.value)) {
-          teamCode = entry.key;
-          break;
-        }
-      }
-    }
-
+  HomeShortsVideo _toShortsVideo(StoryVideo video) {
     return HomeShortsVideo(
       title: video.title,
-      teamCode: teamCode,
+      teamCode: video.teamCode,
       views: video.viewCount,
-      matchedPlayer: player?.playerName,
+      youtubeVideoId: video.youtubeVideoId,
       url: video.videoUrl.isNotEmpty
           ? video.videoUrl
           : video.youtubeVideoId.isNotEmpty
@@ -711,16 +748,5 @@ class HomeViewModel extends ChangeNotifier {
           : '',
       thumbnailUrl: video.thumbnailUrl,
     );
-  }
-
-  /// [word] 가 영문·숫자 경계로 떨어진 낱말로 들어 있는지(대소문자 무시).
-  /// "T1"·"KT" 같은 짧은 코드가 다른 영단어 안에 섞여 잘못 잡히지 않게 한다.
-  /// 한글과 붙어 있는 건("T1전") 경계로 본다.
-  static bool _containsWord(String text, String word) {
-    if (word.trim().isEmpty) return false;
-    return RegExp(
-      '(^|[^A-Za-z0-9])${RegExp.escape(word)}(\$|[^A-Za-z0-9])',
-      caseSensitive: false,
-    ).hasMatch(text);
   }
 }

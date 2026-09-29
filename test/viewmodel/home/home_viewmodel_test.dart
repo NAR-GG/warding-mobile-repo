@@ -89,6 +89,9 @@ class _FakeApi {
   /// 쇼츠 응답(`content` 배열).
   List<Map<String, dynamic>> shorts = const [];
 
+  /// `GET auth/me` 의 응원팀 ID. null 이면 응원팀 없음.
+  int? favoriteTeamId;
+
   /// 구독 선수 응답. null 이면 500.
   List<Map<String, dynamic>>? subscriptions = const [];
 
@@ -158,10 +161,15 @@ class _FakeApi {
       });
     }
     if (path.contains('story/videos')) return _json({'content': shorts});
-    // TeamLogoDirectory 가 HomeViewModel 생성 시 항상 부른다(팀 로고 프리페치).
-    // 이 테스트 묶음은 팀 로고 자체를 검증하지 않으므로 빈 목록으로 조용히
-    // 채운다 — 안 그러면 모든 테스트가 'unexpected onboarding/teams' 로 깨진다.
-    if (path.contains('onboarding/teams')) return _json(const []);
+    if (path.endsWith('auth/me')) {
+      return _json({'id': 1, 'nickname': 'me#1', 'favoriteTeamId': favoriteTeamId});
+    }
+    if (path.contains('onboarding/teams')) {
+      return _json([
+        {'id': 7, 'name': 'T1', 'code': 'T1', 'imageUrl': ''},
+        {'id': 8, 'name': 'Gen.G', 'code': 'GEN', 'imageUrl': ''},
+      ]);
+    }
     if (path.contains('player-subscriptions')) {
       final s = subscriptions;
       return s == null ? _json({'message': 'fail'}, 500) : _json(s);
@@ -204,8 +212,10 @@ Map<String, dynamic> _video(
   String title, {
   String channel = '',
   int views = 0,
+  String teamCode = '',
 }) => {
   'videoId': title.hashCode,
+  'teamCode': teamCode,
   'youtubeVideoId': 'yt',
   'title': title,
   'videoUrl': '',
@@ -661,86 +671,78 @@ void main() {
       expect(vm.contentTab, HomeContentTab.shorts);
     });
 
-    test('쇼츠 전체 필터: 내 선수 → 내 팀 → 나머지 순', () async {
-      server.subscriptions = [
-        _sub('Faker', 'T1', 'T1'),
-        _sub('Chovy', 'GEN', 'Gen.G'),
-      ];
+    test('쇼츠 전체 필터: 서버 순서(최신순) 그대로, 카드는 10개까지', () async {
       server.shorts = [
-        _video('LCK 이주의 베스트 5', channel: 'LCK', views: 10),
-        _video('T1 vs HLE 풀경기 요약', channel: 'LCK', views: 20),
-        _video('Faker 시즌 최고의 아리', channel: 'T1 Faker', views: 30),
-        _video('젠지 브이로그', channel: 'Gen.G Esports', views: 40),
-        _video('kt 인터뷰', channel: 'kt rolster', views: 50),
-        _video('쵸비 원콤 CHOVY 하이라이트', channel: 'LCK', views: 60),
+        for (var i = 0; i < 12; i++)
+          _video('영상 $i', teamCode: i.isEven ? 'T1' : ''),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      final req = server.requestsTo('story/videos').single.queryParameters;
+      expect(req['sort'], 'latest');
+      expect(req['size'], '10');
+      expect(req.containsKey('teamCode'), isFalse);
+
+      expect(vm.shortsFilter, HomeShortsFilter.all);
+      expect(vm.shortsFiltered.map((v) => v.title), [
+        for (var i = 0; i < 10; i++) '영상 $i',
+      ]);
+      expect(vm.shortsFiltered.first.teamCode, 'T1');
+    });
+
+    test('내 팀 필터는 응원팀 채널만 — 서버 teamCode 로 받고 LCK 는 뺀다', () async {
+      server.favoriteTeamId = 7;
+      server.shorts = [
+        _video('LCK 이주의 베스트 5', teamCode: ''),
+        _video('T1 하이라이트', teamCode: 'T1'),
+        _video('젠지 브이로그', teamCode: 'GEN'),
       ];
       setUpServer(loggedIn: true);
+      AuthService.instance.resetMeCacheForTesting();
+      final vm = build();
+      await pumpEventQueue();
+
+      vm.setShortsFilter(HomeShortsFilter.team);
+      await pumpEventQueue();
+
+      final req = server.requestsTo('story/videos').last.queryParameters;
+      expect(req['teamCode'], 'T1');
+      expect(vm.hasPreferredTeam, isTrue);
+      expect(vm.shortsFiltered.map((v) => v.title), ['T1 하이라이트']);
+
+      // 전체로 돌아오면 LCK·다른 팀도 다시 나온다.
+      vm.setShortsFilter(HomeShortsFilter.all);
+      await pumpEventQueue();
+      expect(vm.shortsFiltered.length, 3);
+    });
+
+    test('응원팀이 없으면 내 팀 필터는 요청 없이 빈 목록', () async {
+      server.favoriteTeamId = null;
+      server.shorts = [_video('T1 하이라이트', teamCode: 'T1')];
+      setUpServer(loggedIn: true);
+      AuthService.instance.resetMeCacheForTesting();
+      final vm = build();
+      await pumpEventQueue();
+      final before = server.requestsTo('story/videos').length;
+
+      vm.setShortsFilter(HomeShortsFilter.team);
+      await pumpEventQueue();
+
+      expect(vm.hasPreferredTeam, isFalse);
+      expect(vm.shortsFiltered, isEmpty);
+      expect(server.requestsTo('story/videos').length, before);
+    });
+
+    test('세로 썸네일 주소는 영상 ID 로 만든다', () async {
+      server.shorts = [_video('A')];
       final vm = build();
       await pumpEventQueue();
 
       expect(
-        server.requestsTo('story/videos').single.queryParameters['sort'],
-        'latest',
+        vm.shortsFiltered.single.verticalThumbnailUrl,
+        'https://i.ytimg.com/vi/yt/oardefault.jpg',
       );
-
-      final all = vm.shortsFiltered;
-      expect(vm.shortsFilter, HomeShortsFilter.all);
-      expect(all.map((v) => v.title), [
-        'Faker 시즌 최고의 아리',
-        '쵸비 원콤 CHOVY 하이라이트',
-        'T1 vs HLE 풀경기 요약',
-        '젠지 브이로그',
-        'LCK 이주의 베스트 5',
-        'kt 인터뷰',
-      ]);
-      expect(all[0].matchedPlayer, 'Faker');
-      expect(all[0].teamCode, 'T1');
-      expect(all[0].views, 30);
-      expect(all[1].matchedPlayer, 'Chovy');
-      expect(all[1].teamCode, 'GEN');
-      expect(all[2].matchedPlayer, isNull);
-      expect(all[2].teamCode, 'T1');
-      expect(all[3].teamCode, 'GEN');
-      expect(all[4].teamCode, '');
-
-      vm.setShortsFilter(HomeShortsFilter.player);
-      expect(vm.shortsFiltered.map((v) => v.matchedPlayer), ['Faker', 'Chovy']);
-
-      // 내 팀 필터는 걸러내기만 한다(정렬 규칙은 전체 필터에만 있다) —
-      // 내 선수 영상도 그 선수의 팀이 내 팀이라 함께 남는다.
-      vm.setShortsFilter(HomeShortsFilter.team);
-      expect(vm.shortsFiltered.map((v) => v.title), [
-        'T1 vs HLE 풀경기 요약',
-        'Faker 시즌 최고의 아리',
-        '젠지 브이로그',
-        '쵸비 원콤 CHOVY 하이라이트',
-      ]);
-    });
-
-    test('팀 이름·코드는 낱말 경계로만 잡는다(T1 이 T10·ST1 에 걸리지 않음)', () async {
-      server.subscriptions = [_sub('Faker', 'T1', 'T1')];
-      server.shorts = [
-        _video('T10 스크림 하이라이트', channel: 'LCK'),
-        _video('ST1 팬미팅', channel: 'LCK'),
-        _video('T1전 승리 요약', channel: 'LCK'),
-      ];
-      setUpServer(loggedIn: true);
-      final vm = build();
-      await pumpEventQueue();
-
-      expect(vm.shortsFiltered.map((v) => v.teamCode), ['T1', '', '']);
-      vm.setShortsFilter(HomeShortsFilter.team);
-      expect(vm.shortsFiltered.map((v) => v.title), ['T1전 승리 요약']);
-    });
-
-    test('구독이 없으면(비회원) 쇼츠 내 선수 필터는 비어 있다', () async {
-      server.shorts = [_video('Faker 하이라이트', views: 1)];
-      final vm = build();
-      await pumpEventQueue();
-
-      expect(vm.shortsFiltered.single.matchedPlayer, isNull);
-      vm.setShortsFilter(HomeShortsFilter.player);
-      expect(vm.shortsFiltered, isEmpty);
     });
   });
 

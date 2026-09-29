@@ -29,7 +29,6 @@
   "homeContentTabNews": "News",
   "homeContentTabShorts": "Shorts",
   "homeShortsFilterAll": "All",
-  "homeShortsFilterPlayer": "My players",
   "homeShortsFilterTeam": "My team",
   "homeHeroEmptyMessage": "Subscribe to a player to see\ntheir solo queue updates here",
   "homeHeroEmptyButton": "Subscribe to a player",
@@ -62,6 +61,16 @@
     "placeholders": { "days": { "type": "int" } }
   },
   "homeShortsFilterEmpty": "No shorts match this filter yet",
+  "homeShortsTeamUnset": "Set your favorite team in My Page to see its shorts",
+  "homeShortsShowAll": "Show all",
+  "shortsFeedWatchOnYoutube": "Watch on YouTube",
+  "shortsFeedMuted": "Muted",
+  "shortsFeedUnavailable": "This video can't be played",
+  "shortsFeedOpenYoutube": "Open in YouTube",
+  "shortsFeedRetry": "Try again",
+  "shortsFeedEnd": "You're all caught up",
+  "shortsFeedEndHint": "Check out more from Home",
+  "shortsFeedClose": "Close",
   "homeSoloPlaying": "Playing {champion}",
   "@homeSoloPlaying": {
     "placeholders": { "champion": { "type": "String" } }

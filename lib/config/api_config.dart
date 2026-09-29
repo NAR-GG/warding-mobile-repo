@@ -490,8 +490,17 @@ class ApiConfig {
   /// (nar-back-repo에서 확인; `/api/videos`는 없다).
   /// [sort] 는 'latest'(기본) | 'views' | 'likes' — 그 외 값('popular' 등)은
   /// 서버가 에러 없이 latest로 처리한다. 응답은 Spring `Page` (`content` 래퍼).
-  static String shortsUrl({String sort = 'latest', int size = 20}) =>
-      '$apiBaseUrl/story/videos?category=shorts&sort=$sort&size=$size';
+  static String shortsUrl({
+    String sort = 'latest',
+    int size = 20,
+    int page = 0,
+    String? teamCode,
+  }) {
+    final team = teamCode == null || teamCode.isEmpty
+        ? ''
+        : '&teamCode=${Uri.encodeQueryComponent(teamCode)}';
+    return '$apiBaseUrl/story/videos?category=shorts&sort=$sort&size=$size&page=$page$team';
+  }
 
   // ── 홈 (솔랭·뉴스) ───────────────────────────────────────────────────
 

@@ -29,7 +29,6 @@
   "homeContentTabNews": "뉴스",
   "homeContentTabShorts": "쇼츠",
   "homeShortsFilterAll": "전체",
-  "homeShortsFilterPlayer": "내 선수",
   "homeShortsFilterTeam": "내 팀",
   "homeHeroEmptyMessage": "응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요",
   "homeHeroEmptyButton": "선수 구독하기",
@@ -62,6 +61,16 @@
     "placeholders": { "days": { "type": "int" } }
   },
   "homeShortsFilterEmpty": "조건에 맞는 쇼츠가 아직 없어요",
+  "homeShortsTeamUnset": "마이페이지에서 응원팀을 설정하면 내 팀 쇼츠를 볼 수 있어요",
+  "homeShortsShowAll": "전체 보기",
+  "shortsFeedWatchOnYoutube": "유튜브에서 보기",
+  "shortsFeedMuted": "소리 꺼짐",
+  "shortsFeedUnavailable": "재생할 수 없어요",
+  "shortsFeedOpenYoutube": "유튜브에서 열기",
+  "shortsFeedRetry": "다시 시도",
+  "shortsFeedEnd": "다 봤어요",
+  "shortsFeedEndHint": "홈에서 다른 소식도 둘러보세요",
+  "shortsFeedClose": "닫기",
   "homeSoloPlaying": "{champion} 플레이 중",
   "@homeSoloPlaying": {
     "placeholders": { "champion": { "type": "String" } }

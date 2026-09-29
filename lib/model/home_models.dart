@@ -89,9 +89,9 @@ class HomeShortsVideo {
     required this.title,
     required this.teamCode,
     required this.views,
-    this.matchedPlayer,
     this.url = '',
     this.thumbnailUrl = '',
+    this.youtubeVideoId = '',
   });
 
   final String title;
@@ -104,8 +104,14 @@ class HomeShortsVideo {
   /// 썸네일 이미지 주소. 비어 있으면 빈 자리를 그린다.
   final String thumbnailUrl;
 
-  /// 구독 선수와 제목이 매칭됐으면 그 선수 이름(보라 배지). 없으면 null.
-  final String? matchedPlayer;
+  /// 세로 썸네일(`oardefault.jpg`)을 만드는 데 쓰는 유튜브 영상 ID.
+  final String youtubeVideoId;
+
+  /// 서버가 주는 4:3 썸네일 대신 먼저 시도하는 9:16 세로 썸네일. 영상 ID 가
+  /// 없으면 null. 일부 영상엔 없어(404) 카드가 [thumbnailUrl] 로 폴백한다.
+  String? get verticalThumbnailUrl => youtubeVideoId.isEmpty
+      ? null
+      : 'https://i.ytimg.com/vi/$youtubeVideoId/oardefault.jpg';
 }
 
 /// 커뮤니티 · 평점 한줄평 한 건.

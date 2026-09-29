@@ -80,9 +80,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeShortsFilterAll => '전체';
 
   @override
-  String get homeShortsFilterPlayer => '내 선수';
-
-  @override
   String get homeShortsFilterTeam => '내 팀';
 
   @override
@@ -142,6 +139,36 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get homeShortsFilterEmpty => '조건에 맞는 쇼츠가 아직 없어요';
+
+  @override
+  String get homeShortsTeamUnset => '마이페이지에서 응원팀을 설정하면 내 팀 쇼츠를 볼 수 있어요';
+
+  @override
+  String get homeShortsShowAll => '전체 보기';
+
+  @override
+  String get shortsFeedWatchOnYoutube => '유튜브에서 보기';
+
+  @override
+  String get shortsFeedMuted => '소리 꺼짐';
+
+  @override
+  String get shortsFeedUnavailable => '재생할 수 없어요';
+
+  @override
+  String get shortsFeedOpenYoutube => '유튜브에서 열기';
+
+  @override
+  String get shortsFeedRetry => '다시 시도';
+
+  @override
+  String get shortsFeedEnd => '다 봤어요';
+
+  @override
+  String get shortsFeedEndHint => '홈에서 다른 소식도 둘러보세요';
+
+  @override
+  String get shortsFeedClose => '닫기';
 
   @override
   String homeSoloPlaying(String champion) {

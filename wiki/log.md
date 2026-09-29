@@ -1,5 +1,9 @@
 # Bundle Update Log
 
+## 2026-09-30
+* **쇼츠 앱 내 재생(전체화면 세로 피드)**: 카드 탭 시 유튜브 앱 대신 `ShortsFeedScreen`을 연다. `youtube_player_iframe` 추가(네이티브 → 스토어 릴리스 필요), `ShortsRepository.fetchShortsPage(page)`·`StoryVideo.channelProfileUrl` 추가, 무음·±1 WebView·오류 자동 스킵·필터(전체/내 팀). iOS 시뮬레이터 검증, Android·실기기 미확인.
+* **홈 쇼츠: 내 선수 제거·응원팀 기반 내 팀·카드 10개·세로 썸네일**: `shorts-player-requirements` 결정안 3단계 반영. `HomeShortsFilter.player`·`matchedPlayer`·`_PlayerTag`·문자열 매칭을 걷어내고 "전체"는 순수 최신순, "내 팀"은 마이페이지 응원팀(`teamCode` 쿼리 + 응답 `teamCode`로 재확인)으로 바꿈. 카드는 10개, 썸네일은 `oardefault.jpg` 우선·서버 썸네일 폴백. `intent/youtube-shorts/intent.md` 갱신.
+
 ## 2026-09-29
 * **홈 UI 다듬기 — 순위표·하단 네비·쇼츠·솔로 랭크 배지**: (1) 순위표 팀 로고를 키우고(28→직접 조정) 승-패·세트 득실 컬럼 사이 8px 간격 누락분 추가(mockup CSS 그리드 gap과 맞춤). (2) 하단 네비를 홈 화면에서도 다른 탭처럼 스크롤 시 축소되게 `BottomNavShrinkController` 연결, 활성 탭 칩의 `minWidth: 105` 고정폭 제거하고 패딩을 `vertical 12·horizontal 16`으로 변경. (3) 쇼츠 "전체/내 선수/내 팀" 필터 칩 간격을 8→6으로 좁힘(`NarChipMultiSelect`에 `gap` 파라미터 추가, 다른 칩 줄은 기본값 8 유지). (4) 쇼츠 영상 썸네일의 팀 코드 텍스트 배지("KT")를 팀 로고 이미지로 교체, 제목·조회수 텍스트를 조금 키우고 두껍게. (5) 솔로 랭크 카드의 "솔로 랭크"·"OO 플레이 중" 배지 점을 오늘 경기 LIVE 배지와 같은 1.2초 깜박임 애니메이션으로 통일 — `NarLiveDot`에 `color` 파라미터를 추가해 재사용(기존 정적 `_Dot` 제거).
 * **홈 오늘 경기: 새 리그(ASIAN_GAMES) 낀 날 섹션 통째로 사라지던 버그 수정**: `league=ALL`을 실제 리그 코드로 펼치는 `ApiConfig._allRealLeagueCodes`가 하드코딩 목록이라 백엔드에 새로 추가된 `ASIAN_GAMES`를 못 따라가 빠져 있었다. 그 리그 경기만 있는 날(2026-09-29)은 홈 "오늘의 경기"가 항상 빈 걸로 나왔다 — 목록에 추가해 해결. 배지에 `ASIAN_GAMES...` 원본 코드가 그대로 잘려 보이는 표시 문제는 별도(미결 항목에 기록).
