@@ -166,15 +166,27 @@ void main() {
     }
 
     expect(find.text('지금 솔랭 중'), findsOneWidget);
-    expect(find.text('오늘 경기함'), findsOneWidget);
+    expect(find.text('마지막 솔랭 기록'), findsOneWidget);
     expect(find.text('오늘 소식 없음'), findsOneWidget);
     expect(find.text('96명'), findsOneWidget);
 
-    expect(find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)), findsOneWidget);
-    expect(find.byKey(MyPlayersScreen.tileKey('Oner'.hashCode)), findsOneWidget);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Oner'.hashCode)),
+      findsOneWidget,
+    );
     // 소식 없음은 앞 5명만.
-    expect(find.byKey(MyPlayersScreen.tileKey('Keria'.hashCode)), findsOneWidget);
-    expect(find.byKey(MyPlayersScreen.tileKey('GEN-p9'.hashCode)), findsNothing);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Keria'.hashCode)),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('GEN-p9'.hashCode)),
+      findsNothing,
+    );
   });
 
   testWidgets('"N명 더 보기"를 누르면 펼치고, 접기로 다시 접는다', (tester) async {
@@ -187,7 +199,10 @@ void main() {
 
     expect(vm.quietExpanded, isTrue);
     expect(find.text('91명 더 보기'), findsNothing);
-    expect(find.byKey(MyPlayersScreen.tileKey('T1-p5'.hashCode)), findsOneWidget);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('T1-p5'.hashCode)),
+      findsOneWidget,
+    );
 
     // 100명을 한꺼번에 만들지 않는다 — 화면 밖 줄은 지연 생성.
     expect(find.byType(MyPlayerTile).evaluate().length, lessThan(96));
@@ -213,10 +228,13 @@ void main() {
     await tester.pump();
 
     expect(vm.query, 'FAK');
-    expect(find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)), findsOneWidget);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)),
+      findsOneWidget,
+    );
     expect(find.byKey(MyPlayersScreen.tileKey('Oner'.hashCode)), findsNothing);
     // 비어 버린 묶음은 제목도 그리지 않는다.
-    expect(find.text('오늘 경기함'), findsNothing);
+    expect(find.text('마지막 솔랭 기록'), findsNothing);
     expect(find.text('오늘 소식 없음'), findsNothing);
 
     await tester.enterText(find.byKey(MyPlayersScreen.searchFieldKey), 'zzz');
@@ -231,7 +249,10 @@ void main() {
     await tester.tap(_teamChip('GEN'));
     await tester.pump();
     expect(vm.teamCode, 'GEN');
-    expect(find.byKey(MyPlayersScreen.tileKey('Chovy'.hashCode)), findsOneWidget);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Chovy'.hashCode)),
+      findsOneWidget,
+    );
     expect(find.byKey(MyPlayersScreen.tileKey('Faker'.hashCode)), findsNothing);
 
     // 고른 칩은 앞으로 튀지 않고 제자리에 있다(전체 → GEN 순서 유지).
@@ -250,7 +271,10 @@ void main() {
     await tester.tap(_teamChip('전체'));
     await tester.pump();
     expect(vm.teamCode, isNull);
-    expect(find.byKey(MyPlayersScreen.tileKey('Chovy'.hashCode)), findsOneWidget);
+    expect(
+      find.byKey(MyPlayersScreen.tileKey('Chovy'.hashCode)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('보기 전용 — 알림 벨이 없고 로딩·에러 UI도 없다', (tester) async {

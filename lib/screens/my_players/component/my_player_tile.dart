@@ -76,7 +76,7 @@ class MyPlayerTile extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: 'Pretendard',
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14 * scale,
+                                fontSize: 16 * scale,
                                 color: AppColors.narTextTertiary,
                               ),
                             ),
@@ -85,7 +85,7 @@ class MyPlayerTile extends StatelessWidget {
                                 text: '  $sub',
                                 style: TextStyle(
                                   fontFamily: 'Open Sans',
-                                  fontSize: 11 * scale,
+                                  fontSize: 13 * scale,
                                   color: AppColors.narText2,
                                 ),
                               ),
@@ -120,7 +120,7 @@ class _StatusLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     TextStyle style(Color color) =>
-        TextStyle(fontFamily: 'Open Sans', fontSize: 11 * scale, color: color);
+        TextStyle(fontFamily: 'Open Sans', fontSize: 13 * scale, color: color);
 
     switch (entry.status) {
       case MyPlayerStatus.liveSolo:
@@ -196,7 +196,7 @@ class _Avatar extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'Pretendard',
           fontWeight: FontWeight.w700,
-          fontSize: 13 * scale,
+          fontSize: 14 * scale,
           color: AppColors.narText3,
         ),
       ),

@@ -33,7 +33,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeStandingsRiseGroup => '라이즈 그룹';
 
   @override
-  String get homeStandingsColumnHint => '승-패 · 세트 득실';
+  String get homeStandingsColumnWL => '승-패';
+
+  @override
+  String get homeStandingsColumnSetDiff => '세트 득실';
 
   @override
   String get homeStandingsScopeLabel => '정규시즌 통산';
@@ -195,7 +198,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPlayersGroupLive => '지금 솔랭 중';
 
   @override
-  String get myPlayersGroupPlayedToday => '오늘 경기함';
+  String get myPlayersGroupPlayedToday => '마지막 솔랭 기록';
 
   @override
   String get myPlayersGroupQuiet => '오늘 소식 없음';

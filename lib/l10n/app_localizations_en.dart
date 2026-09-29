@@ -33,7 +33,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeStandingsRiseGroup => 'Rise Group';
 
   @override
-  String get homeStandingsColumnHint => 'W-L · Set diff';
+  String get homeStandingsColumnWL => 'W-L';
+
+  @override
+  String get homeStandingsColumnSetDiff => 'Set diff';
 
   @override
   String get homeStandingsScopeLabel => 'Regular season total';
@@ -196,7 +199,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPlayersGroupLive => 'In solo queue now';
 
   @override
-  String get myPlayersGroupPlayedToday => 'Played today';
+  String get myPlayersGroupPlayedToday => 'Last solo queue result';
 
   @override
   String get myPlayersGroupQuiet => 'Nothing today';

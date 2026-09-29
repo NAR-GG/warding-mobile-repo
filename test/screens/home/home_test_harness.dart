@@ -12,6 +12,7 @@ import 'package:warding/repository/notice/notice_repository.dart';
 import 'package:warding/repository/preference/notice_preference_repository.dart';
 import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/repository/subscription/subscription_repository.dart';
+import 'package:warding/repository/team/team_logo_directory.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
 
@@ -103,6 +104,9 @@ class HomeFakeApi {
       });
     }
     if (path.contains('story/videos')) return _json({'content': shorts});
+    // TeamLogoDirectory 가 HomeViewModel 생성 시 항상 부른다(팀 로고 프리페치).
+    // 이 하네스는 팀 로고 자체를 검증하지 않으므로 빈 목록으로 조용히 채운다.
+    if (path.contains('onboarding/teams')) return _json(const []);
     if (path.contains('player-subscriptions')) return _json(subscriptions);
     if (path.contains('me/notifications')) {
       return _json({'notifications': const [], 'unreadCount': 0});
@@ -162,6 +166,7 @@ HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
   NoticePreferenceRepository.instance.resetCacheForTesting();
   SubscriptionRepository.instance.resetCacheForTesting();
   ScheduleRepository.instance.resetCacheForTesting();
+  TeamLogoDirectory.instance.resetForTesting();
   api.setApiClientForTesting(server.client);
   addTearDown(() => api.setApiClientForTesting(null));
   return server;

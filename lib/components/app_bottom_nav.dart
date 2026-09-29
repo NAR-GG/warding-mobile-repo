@@ -29,24 +29,29 @@ class AppBottomNav extends StatelessWidget {
   static const double _compactFactor = 0.82;
 
   /// 탭 순서·아이콘 정의 (디자인 시안 순서). 라벨은 build에서 l10n으로 가져온다.
+  ///
+  /// 마이구독은 홈 알림 벨로 진입 경로를 옮기며 하단 네비에서 뺐다(2026-09-29
+  /// 결정). [AppNavTab.subscription] 자체와 화면·라우팅은 그대로 둬 다른
+  /// 진입 경로(구독하기 버튼 등)에는 영향이 없다.
   static const List<({String icon, AppNavTab tab})> _items = [
     (icon: 'assets/icons/home.svg', tab: AppNavTab.home),
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
     (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
-    (
-      icon: 'assets/icons/message-circle-heart.svg',
-      tab: AppNavTab.community,
-    ),
-    (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
+    (icon: 'assets/icons/message-circle-heart.svg', tab: AppNavTab.community),
+    // (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
   ];
 
-  /// 탭이 6개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
+  /// 하단 네비에 실제로 그려지는 탭 수. [AppNavTab.values.length]와 다를 수
+  /// 있다(마이구독처럼 enum은 남아 있지만 목록에서 뺀 탭이 있을 때).
+  static int get visibleTabCount => _items.length;
+
+  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
   ///
   /// 활성 chip 폭은 최소폭 없이 아이콘+라벨+패딩(좌우 16)만큼만 차지한다. 간격을
   /// 고정 gap 대신 [MainAxisAlignment.spaceBetween] 으로 자동 분배해,
   /// 활성 라벨이 길어져도 잘리지 않고 남는 폭만 간격이 줄어든다.
-  static const double _inactiveSize = 34;
+  static const double _inactiveSize = 40;
 
   static const LiquidGlassSettings _glassSettings = LiquidGlassSettings(
     thickness: 16,
@@ -180,7 +185,8 @@ class _GlassOrFallbackState extends State<_GlassOrFallback> {
   void _evaluate() {
     if (!mounted) return;
     final box = _boxKey.currentContext?.findRenderObject();
-    final ok = box is RenderBox &&
+    final ok =
+        box is RenderBox &&
         box.hasSize &&
         box.size.width >= 1 &&
         box.size.height >= 1 &&
@@ -282,10 +288,9 @@ class BottomNavShrinkController extends ChangeNotifier {
 
     // 맨 위(=목록 시작)에서는 항상 원래 크기로 둔다. 오버스크롤 튕김으로
     // 작아지는 걸 막는다. reverse 목록에서는 offset 최대치가 목록 시작이다.
-    final atTop =
-        reversed
-            ? n.metrics.pixels >= n.metrics.maxScrollExtent - 1
-            : n.metrics.pixels <= n.metrics.minScrollExtent + 1;
+    final atTop = reversed
+        ? n.metrics.pixels >= n.metrics.maxScrollExtent - 1
+        : n.metrics.pixels <= n.metrics.minScrollExtent + 1;
     if (atTop) {
       _accumulated = 0;
       _set(false);

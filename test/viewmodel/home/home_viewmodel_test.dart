@@ -17,6 +17,7 @@ import 'package:warding/repository/notice/notice_repository.dart';
 import 'package:warding/repository/preference/notice_preference_repository.dart';
 import 'package:warding/repository/schedule/schedule_repository.dart';
 import 'package:warding/repository/subscription/subscription_repository.dart';
+import 'package:warding/repository/team/team_logo_directory.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
 import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
@@ -157,6 +158,10 @@ class _FakeApi {
       });
     }
     if (path.contains('story/videos')) return _json({'content': shorts});
+    // TeamLogoDirectory 가 HomeViewModel 생성 시 항상 부른다(팀 로고 프리페치).
+    // 이 테스트 묶음은 팀 로고 자체를 검증하지 않으므로 빈 목록으로 조용히
+    // 채운다 — 안 그러면 모든 테스트가 'unexpected onboarding/teams' 로 깨진다.
+    if (path.contains('onboarding/teams')) return _json(const []);
     if (path.contains('player-subscriptions')) {
       final s = subscriptions;
       return s == null ? _json({'message': 'fail'}, 500) : _json(s);
@@ -261,6 +266,7 @@ void main() {
     NoticeRepository.instance.resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
     SubscriptionRepository.instance.resetCacheForTesting();
+    TeamLogoDirectory.instance.resetForTesting();
     setUpServer();
   });
 
@@ -288,23 +294,17 @@ void main() {
       expect(vm.soloFinished, isEmpty);
     });
 
-    test(
-      '진행 중 0명이어도 끝난 경기가 있으면 active(2026-09-29 결정)',
-      () async {
-        final vm = build(
-          snap: SoloRankSnapshot(
-            live: const [],
-            finished: [done('Oner', 10)],
-          ),
-          subscribed: 5,
-        );
-        await pumpEventQueue();
-        expect(vm.soloState, SoloCardState.active);
-        expect(vm.soloLive, isEmpty);
-        expect(vm.soloFinished.map((p) => p.name), ['Oner']);
-        expect(vm.soloHiddenCount, 4);
-      },
-    );
+    test('진행 중 0명이어도 끝난 경기가 있으면 active(2026-09-29 결정)', () async {
+      final vm = build(
+        snap: SoloRankSnapshot(live: const [], finished: [done('Oner', 10)]),
+        subscribed: 5,
+      );
+      await pumpEventQueue();
+      expect(vm.soloState, SoloCardState.active);
+      expect(vm.soloLive, isEmpty);
+      expect(vm.soloFinished.map((p) => p.name), ['Oner']);
+      expect(vm.soloHiddenCount, 4);
+    });
 
     test('진행 중이 있으면 active, 가장 최근 시작(경과 시간 짧은) 선수가 먼저', () async {
       final vm = build(
@@ -402,10 +402,7 @@ void main() {
       ];
       setUpServer(loggedIn: true);
       final vm = build(
-        snap: const SoloRankSnapshot(
-          live: [],
-          finished: [],
-        ),
+        snap: const SoloRankSnapshot(live: [], finished: []),
       );
       await pumpEventQueue();
       expect(vm.subscribedTotal, 2);
@@ -429,10 +426,7 @@ void main() {
       server.subscriptions = null;
       setUpServer(loggedIn: true);
       final vm = build(
-        snap: const SoloRankSnapshot(
-          live: [],
-          finished: [],
-        ),
+        snap: const SoloRankSnapshot(live: [], finished: []),
       );
       await pumpEventQueue();
       expect(vm.subscribedTotal, 0);
@@ -543,7 +537,9 @@ void main() {
 
       expect(vm.todayMatchesSorted.map((m) => m.matchId), ['m1']);
       expect(vm.standings?.groups.single.rows.single.teamCode, 'GEN');
-      expect(vm.communityPosts, isNotEmpty);
+      // 기본 정렬이 평점 한줄평이라(2026-09-29 결정) 글 목록 대신 리뷰로 확인한다.
+      expect(vm.communitySort, HomeCommunitySort.review);
+      expect(vm.reviews, isNotEmpty);
     });
   });
 
@@ -581,14 +577,26 @@ void main() {
   });
 
   group('커뮤니티', () {
-    test('기본은 최신순이고 평점 탭에서 최신순으로 돌아오면 다시 조회한다', () async {
+    test('기본은 평점 한줄평이고 글을 조회하지 않는다', () async {
       final vm = build();
       await pumpEventQueue();
 
-      expect(vm.communitySort, HomeCommunitySort.latest);
-      final first = server.requestsTo('community/posts').single;
-      expect(first.queryParameters['sort'], 'latest');
-      expect(first.queryParameters['size'], '4');
+      expect(vm.communitySort, HomeCommunitySort.review);
+      expect(server.requestsTo('community/posts'), isEmpty);
+      expect(vm.reviews, MockReviewSource.reviews);
+    });
+
+    test('최신순으로 바꾸면 그때 처음 조회한다', () async {
+      final vm = build();
+      await pumpEventQueue();
+
+      vm.setCommunitySort(HomeCommunitySort.latest);
+      await pumpEventQueue();
+
+      final calls = server.requestsTo('community/posts');
+      expect(calls.length, 1);
+      expect(calls.single.queryParameters['sort'], 'latest');
+      expect(calls.single.queryParameters['size'], '4');
       expect(vm.communityPosts.single.title, '글-latest');
 
       vm.setCommunitySort(HomeCommunitySort.review);
@@ -598,10 +606,9 @@ void main() {
       vm.setCommunitySort(HomeCommunitySort.latest);
       await pumpEventQueue();
 
-      final calls = server.requestsTo('community/posts');
-      expect(calls.length, 2);
-      expect(calls.last.queryParameters['sort'], 'latest');
-      expect(calls.last.queryParameters['size'], '4');
+      final after = server.requestsTo('community/posts');
+      expect(after.length, 2);
+      expect(after.last.queryParameters['sort'], 'latest');
     });
 
     test('인기순은 칩에 없고 고를 수도 없다', () async {
@@ -613,22 +620,23 @@ void main() {
         isNot(contains(HomeCommunitySort.hot)),
       );
       vm.setCommunitySort(HomeCommunitySort.hot);
-      expect(vm.communitySort, HomeCommunitySort.latest);
+      expect(vm.communitySort, HomeCommunitySort.review);
     });
 
-    test('평점 탭은 글을 다시 조회하지 않고 ReviewSource 의 한줄평을 보여준다', () async {
+    test('평점 탭은 글을 조회하지 않고 ReviewSource 의 한줄평을 보여준다', () async {
       final vm = build();
       await pumpEventQueue();
 
-      vm.setCommunitySort(HomeCommunitySort.review);
-      await pumpEventQueue();
-
-      expect(server.requestsTo('community/posts').length, 1);
+      expect(vm.communitySort, HomeCommunitySort.review);
+      expect(server.requestsTo('community/posts'), isEmpty);
       expect(vm.reviews, MockReviewSource.reviews);
     });
 
     test('글 조회가 실패하면 마지막 목록을 유지한다', () async {
       final vm = build();
+      await pumpEventQueue();
+
+      vm.setCommunitySort(HomeCommunitySort.latest);
       await pumpEventQueue();
       expect(vm.communityPosts.single.title, '글-latest');
 
@@ -849,12 +857,7 @@ void main() {
     });
 
     test('조회 중에 닫은 배너는 옛 닫음 목록 응답이 와도 다시 뜨지 않는다', () async {
-      const notice = Notice(
-        id: 7,
-        title: '점검 안내',
-        content: '',
-        pinned: false,
-      );
+      const notice = Notice(id: 7, title: '점검 안내', content: '', pinned: false);
       final notices = _MockNotices();
       final prefs = _MockNoticePrefs();
       final fetch = Completer<List<Notice>>();
@@ -891,10 +894,8 @@ void main() {
       final schedule = _MockSchedule();
       final gates = <Completer<List<ScheduleMatch>>>[];
       when(
-        () => schedule.fetchMatchesByDate(
-          any(),
-          leagues: any(named: 'leagues'),
-        ),
+        () =>
+            schedule.fetchMatchesByDate(any(), leagues: any(named: 'leagues')),
       ).thenAnswer((_) {
         final c = Completer<List<ScheduleMatch>>();
         gates.add(c);
@@ -941,17 +942,11 @@ void main() {
       expect(solo.pending.length, 2);
 
       solo.pending[1].complete(
-        SoloRankSnapshot(
-          live: [live('New', 10)],
-          finished: const [],
-        ),
+        SoloRankSnapshot(live: [live('New', 10)], finished: const []),
       );
       await second;
       solo.pending[0].complete(
-        SoloRankSnapshot(
-          live: [live('Old', 10)],
-          finished: const [],
-        ),
+        SoloRankSnapshot(live: [live('Old', 10)], finished: const []),
       );
       await pumpEventQueue();
 
@@ -988,7 +983,9 @@ void main() {
 
     expect(server.requestsTo('schedule').length, 2);
     expect(server.requestsTo('standings').length, 2);
-    expect(server.requestsTo('community/posts').length, 2);
+    // 기본 정렬이 평점 한줄평이라(2026-09-29 결정) 글 목록은 조회하지 않는다.
+    expect(vm.communitySort, HomeCommunitySort.review);
+    expect(server.requestsTo('community/posts').length, 0);
     expect(server.requestsTo('story/videos').length, 2);
     expect(server.requests.length, greaterThan(before));
   });

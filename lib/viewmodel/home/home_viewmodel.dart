@@ -18,6 +18,7 @@ import '../../repository/schedule/schedule_repository.dart';
 import '../../repository/shorts/shorts_repository.dart';
 import '../../repository/standings/standings_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
+import '../../repository/team/team_logo_directory.dart';
 import '../../util/match_status.dart';
 import 'solo_rank_rules.dart';
 
@@ -32,10 +33,13 @@ enum HomeShortsFilter { all, player, team }
 
 /// 솔랭 카드 상태 (spec "상태" 표).
 ///
+/// - [loading]: 첫 구독 조회가 아직 안 끝났다 — 스켈레톤. 구독 0명과 겉보기가
+///   같아(둘 다 아직 화면에 확정된 카드가 없음) 구분하지 않으면 응답이
+///   오는 순간 빈 카드 → 실제 카드로 레이아웃이 튄다(CLS).
 /// - [noSubscription]: 구독 0명 — 점선 빈 카드.
 /// - [noneActive]: 구독은 있는데 진행 중인 선수가 0명 — 한 줄짜리 조용한 상태.
 /// - [active]: 진행 중인 선수가 있다 — 큰 카드 스와이프.
-enum SoloCardState { noSubscription, noneActive, active }
+enum SoloCardState { loading, noSubscription, noneActive, active }
 
 /// 홈 화면 상태.
 ///
@@ -79,6 +83,35 @@ class HomeViewModel extends ChangeNotifier {
     _promotedNotices = _notices.cachedPromoted ?? const [];
     _dismissedNoticeIds = _noticePreferences.cachedValue ?? const {};
     unawaited(refreshAll());
+    // 순위표·솔랭·커뮤니티 섹션이 모두 이 싱글톤 캐시로 팀 로고를 그린다.
+    // 홈 진입 시점에 한 번 당겨두면 나중에 빌드되는 위젯(라이즈 그룹 등)도
+    // 빈 배지로 시작하지 않는다.
+    TeamLogoDirectory.instance.ensureLoaded();
+    // 솔랭 카드는 진행 중인 게임의 실시간성이 중요한 유일한 섹션이라
+    // 5초 폴링을 건다(2026-09-29 결정). 나머지 섹션은 앱 복귀(30초 간격)만
+    // 으로 충분하다 — 경기 일정·순위표·커뮤니티 글은 그 정도로 자주 안 바뀐다.
+    _startSoloPolling();
+  }
+
+  Timer? _soloPollTimer;
+
+  void _startSoloPolling() {
+    _soloPollTimer?.cancel();
+    _soloPollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(_loadSolo()),
+    );
+  }
+
+  /// 앱이 백그라운드로 가면 부른다 — 화면이 안 보이는 동안 5초마다 네트워크를
+  /// 쓰지 않게 폴링을 멈춘다. [resumeSoloPolling] 과 짝이다.
+  void pauseSoloPolling() => _soloPollTimer?.cancel();
+
+  /// 앱이 다시 포그라운드로 오면 부른다. 폴링을 재개하고, 그 사이 놓친 변화를
+  /// 바로 반영하도록 즉시 한 번 조회한다.
+  void resumeSoloPolling() {
+    _startSoloPolling();
+    unawaited(_loadSolo());
   }
 
   final NoticeRepository _notices;
@@ -98,6 +131,7 @@ class HomeViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _soloPollTimer?.cancel();
     super.dispose();
   }
 
@@ -213,6 +247,11 @@ class HomeViewModel extends ChangeNotifier {
   /// 이때 구독 수는 0명으로 본다.
   List<PlayerSubscription>? _subscribedPlayers;
 
+  /// 첫 구독 조회가 아직 끝나지 않았는지. 성공·실패·비회원 어느 쪽으로든
+  /// 한 번 끝나면 계속 false다(이후 새로고침은 이 값에 영향 없음) — 앱 복귀
+  /// 새로고침마다 스켈레톤이 다시 뜨는 걸 막는다.
+  bool _subscriptionsFirstLoadPending = true;
+
   int _subscriptionsGen = 0;
 
   Future<void> _loadSubscriptions() async {
@@ -223,10 +262,14 @@ class HomeViewModel extends ChangeNotifier {
       // 그 사이 더 새 요청이 떴으면 옛 응답은 버린다(아래 로더들도 같다).
       if (_disposed || gen != _subscriptionsGen) return;
       _subscribedPlayers = players;
+      _subscriptionsFirstLoadPending = false;
       _recomputeSolo();
       _notify();
     } catch (e) {
       debugPrint('[Home] 구독 선수 조회 실패(비회원 포함): $e');
+      if (_disposed || gen != _subscriptionsGen) return;
+      _subscriptionsFirstLoadPending = false;
+      _notify();
     }
   }
 
@@ -267,6 +310,7 @@ class HomeViewModel extends ChangeNotifier {
   /// 큰 카드(스와이프)는 [soloLive] 가 비어 있으면 그리지 않고, 끝난 경기
   /// 줄은 그대로 보여준다(2026-09-29 결정, spec.md "상태" 표).
   SoloCardState get soloState {
+    if (_subscriptionsFirstLoadPending) return SoloCardState.loading;
     if (subscribedTotal == 0) return SoloCardState.noSubscription;
     if (_soloLive.isEmpty && _soloFinished.isEmpty) {
       return SoloCardState.noneActive;
@@ -304,6 +348,13 @@ class HomeViewModel extends ChangeNotifier {
   /// 어긋난 채로 남는다 — 벨 알림함(_openNotifications)과 같은 방식으로
   /// 이 화면만 돌아올 때 콕 집어 새로고침한다.
   Future<void> refreshSoloOnReturn() => _loadSolo();
+
+  /// 구독 설정 화면(선수 구독하기)에서 돌아왔을 때 구독 목록과 솔랭 상태를
+  /// 함께 다시 불러온다. 구독 수([subscribedTotal])가 바뀌면 솔랭 카드
+  /// 상태(빈 카드 ↔ 조용한 행 ↔ 진행 중 카드, [soloState])도 같이 바뀌어야
+  /// 하므로 [refreshSoloOnReturn]만으로는 부족하다.
+  Future<void> refreshSubscriptionsOnReturn() =>
+      Future.wait([_loadSubscriptions(), _loadSolo()]);
 
   Future<void> _loadSolo() async {
     final gen = ++_soloGen;
@@ -433,8 +484,10 @@ class HomeViewModel extends ChangeNotifier {
   // ---- 섹션 4: 커뮤니티 ----
   static const int _communityPostCount = 4;
 
-  // 기본은 최신순 — 글이 적을 때 인기순이면 늘 같은 글이 보인다(spec 결정).
-  HomeCommunitySort _communitySort = HomeCommunitySort.latest;
+  // 기본은 평점 한줄평이다(2026-09-29 결정). 인기순은 글이 적을 때 늘 같은
+  // 글이 보여 칩에서 뺐다(spec 결정) — latest/review 둘만 있다.
+  // 리뷰가 비어 있으면(백엔드 미연동 등) [_loadReviews] 가 latest로 되돌린다.
+  HomeCommunitySort _communitySort = HomeCommunitySort.review;
   HomeCommunitySort get communitySort => _communitySort;
 
   /// 정렬을 바꾼다. 글 정렬(latest/hot)이면 그 기준으로 다시 조회하고,
@@ -473,6 +526,25 @@ class HomeViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('[Home] 커뮤니티 글 조회 실패(${sort.name}): $e');
     }
+  }
+
+  /// 게시글 상세에서 삭제하고 돌아왔을 때 홈 목록에서도 지운다.
+  void removeCommunityPost(int postId) {
+    if (!_communityPosts.any((p) => p.id == postId)) return;
+    _communityPosts = [
+      for (final p in _communityPosts)
+        if (p.id != postId) p,
+    ];
+    _notify();
+  }
+
+  /// 게시글 상세에서 좋아요·조회수 등이 바뀌고 돌아왔을 때 홈 목록에도 반영한다.
+  void applyCommunityPostUpdate(CommunityRemotePost updated) {
+    final index = _communityPosts.indexWhere((p) => p.id == updated.id);
+    if (index == -1) return;
+    _communityPosts = [..._communityPosts];
+    _communityPosts[index] = updated;
+    _notify();
   }
 
   List<HomeReviewItem> _reviews = const [];

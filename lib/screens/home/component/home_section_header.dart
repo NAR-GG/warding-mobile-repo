@@ -48,7 +48,7 @@ class HomeSectionHeader extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w400,
-                      fontSize: 12 * scale,
+                      fontSize: 13 * scale,
                       color: AppColors.narText2,
                     ),
                   ),
@@ -67,13 +67,13 @@ class HomeSectionHeader extends StatelessWidget {
                   trailingLabel!,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontSize: 13 * scale,
+                    fontSize: 14 * scale,
                     color: AppColors.narText2,
                   ),
                 ),
                 Icon(
                   Icons.chevron_right,
-                  size: 16 * scale,
+                  size: 18 * scale,
                   color: AppColors.narText2,
                 ),
               ],

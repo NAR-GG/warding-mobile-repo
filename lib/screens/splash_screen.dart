@@ -185,14 +185,13 @@ class _SplashScreenState extends State<SplashScreen>
       // 에러 핸들러를 여기서 바로 붙인다. 아래 unawaited() 로 떼어놓는 순간
       // 이 Future 의 예외는 _bootstrap 의 try/catch 가 아니라 zone 으로 올라가
       // '처리되지 않은 크래시'로 잡힌다.
-      final prefetch =
-          Future.wait([
-            _prefetchCalendar(),
-            _prefetchPromotedNotice(),
-          ]).catchError((Object e) {
-            debugPrint('[Splash] 프리페치 실패(무시): $e');
-            return const <void>[];
-          });
+      final prefetch = Future.wait([
+        _prefetchCalendar(),
+        _prefetchPromotedNotice(),
+      ]).catchError((Object e) {
+        debugPrint('[Splash] 프리페치 실패(무시): $e');
+        return const <void>[];
+      });
 
       final results = await Future.wait([
         Future<void>.delayed(_minSplashDuration),
@@ -236,9 +235,10 @@ class _SplashScreenState extends State<SplashScreen>
       final json = saved.json;
       if (json != null) {
         final savedLeagues = (json['leagues'] as List?)?.cast<String>();
-        leagues = savedLeagues != null && savedLeagues.isNotEmpty
-            ? savedLeagues
-            : ['ALL'];
+        leagues =
+            savedLeagues != null && savedLeagues.isNotEmpty
+                ? savedLeagues
+                : ['ALL'];
         teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
       await ScheduleRepository.instance.fetchCalendar(

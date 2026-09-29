@@ -24,7 +24,7 @@ void main() {
     expect(find.byType(CachedNetworkImage), findsOneWidget);
   });
 
-  testWidgets('imageUrl 이 없으면 팀 코드로 찾고, 찾기 전에는 팀 코드 텍스트', (tester) async {
+  testWidgets('imageUrl 이 없으면 팀 코드로 찾고, 찾기 전에는 빈 원', (tester) async {
     final dir = TeamLogoDirectory(
       load: () async => const [TeamLogoEntry('T1', 'https://img/t1.png')],
     );
@@ -32,7 +32,7 @@ void main() {
     await tester.pumpWidget(
       _wrap(TeamCodeBadge(teamCode: 'T1', size: 20, directory: dir)),
     );
-    expect(find.text('T1'), findsOneWidget);
+    expect(find.text('T1'), findsNothing);
     expect(find.byType(CachedNetworkImage), findsNothing);
 
     await tester.pump();
@@ -41,7 +41,7 @@ void main() {
     expect(find.byType(CachedNetworkImage), findsOneWidget);
   });
 
-  testWidgets('로고가 없는 팀은 팀 코드 텍스트로 대신한다', (tester) async {
+  testWidgets('로고가 없는 팀은 빈 원으로 대신한다(텍스트 없음)', (tester) async {
     final dir = TeamLogoDirectory(
       load: () async => const [TeamLogoEntry('T1', 'https://img/t1.png')],
     );
@@ -52,7 +52,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('LoL'), findsOneWidget);
+    expect(find.text('LoL'), findsNothing);
     expect(find.byType(CachedNetworkImage), findsNothing);
   });
 }

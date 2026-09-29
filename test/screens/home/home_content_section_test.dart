@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/dashed_border.dart';
 import 'package:warding/repository/home/home_sources.dart';
@@ -6,6 +7,12 @@ import 'package:warding/screens/home/component/home_content_section.dart';
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
 
 import 'home_test_harness.dart';
+
+/// [HomeSectionHeader] 의 제목+부제는 RichText(대문자, Text.rich 아님)라
+/// find.text()/find.textContaining() 이 못 찾는다 — 평문으로 변환해 비교한다.
+Finder _richTextContaining(String text) => find.byWidgetPredicate(
+  (w) => w is RichText && w.text.toPlainText().contains(text),
+);
 
 /// 콘텐츠(뉴스·쇼츠)와 커뮤니티(글·평점 한줄평) — spec "결정"의 기본 탭과
 /// 섹션 나눔, "상태" 표의 쇼츠 빈 박스를 확인한다.
@@ -69,33 +76,33 @@ void main() {
   });
 
   group('커뮤니티', () {
-    testWidgets('기본 탭은 최신순이고 평점 한줄평 탭이 여기 있다', (tester) async {
+    testWidgets('정렬 칩 없이 헤더 부제로 현재 정렬만 보여준다 — 기본은 평점 한줄평', (tester) async {
       setUpHomeApi();
       final vm = await pumpHomeSection(
         tester,
         section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
       );
 
-      expect(vm.communitySort, HomeCommunitySort.latest);
-      expect(find.text('글-latest'), findsOneWidget);
-      expect(find.text('평점 한줄평'), findsOneWidget);
-
-      await tester.tap(find.text('평점 한줄평'));
-      await tester.pump();
+      expect(vm.communitySort, HomeCommunitySort.review);
       expect(find.text(MockReviewSource.reviews.first.comment), findsOneWidget);
+      expect(_richTextContaining('평점 한줄평'), findsOneWidget);
+      expect(_richTextContaining('인기순'), findsNothing);
+      // 부제 텍스트일 뿐 탭이 아니다 — 눌러도 정렬이 안 바뀐다.
+      await tester.tap(_richTextContaining('평점 한줄평'));
+      await tester.pump();
+      expect(vm.communitySort, HomeCommunitySort.review);
     });
 
-    testWidgets('한줄평이 비면(빈 소스) 평점 한줄평 탭이 없다', (tester) async {
+    testWidgets('한줄평이 비면(빈 소스) 최신순으로 자동 전환되고 글이 보인다', (tester) async {
       setUpHomeApi();
-      await pumpHomeSection(
+      final vm = await pumpHomeSection(
         tester,
         reviews: const EmptyReviewSource(),
         section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
       );
 
-      expect(find.text('최신순'), findsOneWidget);
-      expect(find.text('인기순'), findsNothing);
-      expect(find.text('평점 한줄평'), findsNothing);
+      expect(vm.communitySort, HomeCommunitySort.latest);
+      expect(_richTextContaining('최신순'), findsOneWidget);
       expect(find.text('글-latest'), findsOneWidget);
     });
 
@@ -114,23 +121,6 @@ void main() {
       await tester.tap(find.text('커뮤니티 전체'));
       await tester.pump();
       expect(opened, 1);
-    });
-
-    testWidgets('탭 순서는 선택과 무관하게 최신순 · 평점 한줄평(인기순은 없다)', (tester) async {
-      setUpHomeApi();
-      await pumpHomeSection(
-        tester,
-        section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
-      );
-
-      await tester.tap(find.text('평점 한줄평'));
-      await tester.pump();
-      expect(find.text('인기순'), findsNothing);
-      final xs = [
-        '최신순',
-        '평점 한줄평',
-      ].map((t) => tester.getTopLeft(find.text(t)).dx).toList();
-      expect(xs[0] < xs[1], isTrue, reason: '$xs');
     });
   });
 }

@@ -6,7 +6,7 @@ import '../styles/app_colors.dart';
 import '../util/app_image.dart';
 
 /// 팀 로고 원형 배지. 로고 이미지를 원 안에 그리고, 로고를 못 구했거나 아직
-/// 불러오는 중이면 [teamCode] 텍스트로 대신한다.
+/// 불러오는 중이면 빈 원만 둔다.
 ///
 /// 로고는 [imageUrl] 이 있으면 그걸, 없으면 팀 코드로 [TeamLogoDirectory] 에서
 /// 찾는다. 순위표·경기 카드처럼 응답에 로고가 실려 오면 [imageUrl] 로 넘기고,
@@ -52,40 +52,22 @@ class TeamCodeBadge extends StatelessWidget {
         color: AppColors.narDark500,
         shape: BoxShape.circle,
       ),
-      child: resolved == null || resolved.isEmpty
-          ? _codeText()
-          : Padding(
-              padding: EdgeInsets.all(size * 0.12),
-              child: CachedNetworkImage(
-                imageUrl: resolved,
-                width: size,
-                height: size,
-                fit: BoxFit.contain,
-                memCacheWidth: (size * 3).round(),
-                fadeInDuration: const Duration(milliseconds: 150),
-                placeholder: (_, _) => _codeText(),
-                errorWidget: (_, _, _) => _codeText(),
+      child:
+          resolved == null || resolved.isEmpty
+              ? null
+              : Padding(
+                padding: EdgeInsets.all(size * 0.12),
+                child: CachedNetworkImage(
+                  imageUrl: resolved,
+                  width: size * 0.76,
+                  height: size * 0.76,
+                  fit: BoxFit.contain,
+                  memCacheWidth: (size * 3).round(),
+                  fadeInDuration: const Duration(milliseconds: 150),
+                  placeholder: (_, _) => const SizedBox.shrink(),
+                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
-            ),
-    );
-  }
-
-  Widget _codeText() {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: size * 0.08),
-        child: Text(
-          teamCode.isEmpty ? '?' : teamCode,
-          maxLines: 1,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w700,
-            fontSize: size * 0.4,
-            color: AppColors.narText,
-          ),
-        ),
-      ),
     );
   }
 }

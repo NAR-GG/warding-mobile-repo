@@ -6,8 +6,8 @@ import '../onboarding/onboarding_repository.dart';
 /// 로고를 그릴 때 쓴다.
 ///
 /// 팀 목록은 [OnboardingRepository.fetchTeams] 가 캐시하므로 여기서는 한 번만
-/// 채운다. 실패하면 [_retryAfter] 뒤에 다시 시도하고, 그동안 배지는 팀 코드
-/// 텍스트로 그려진다.
+/// 채운다. 실패하면 [_retryAfter] 뒤에 다시 시도하고, 그동안 배지는 빈 원으로
+/// 그려진다.
 class TeamLogoDirectory {
   TeamLogoDirectory({Future<List<TeamLogoEntry>> Function()? load})
     : _load = load ?? _loadFromOnboarding;
@@ -54,6 +54,15 @@ class TeamLogoDirectory {
 
   /// [teamCode] 의 로고 URL. 없으면 null.
   String? logoFor(String teamCode) => logos.value[teamCode.toUpperCase()];
+
+  /// 테스트 전용 — 싱글톤([instance])이 이전 테스트의 로드 성공/실패 상태를
+  /// 들고 있어 생기는 테스트 간 간섭을 막는다.
+  @visibleForTesting
+  void resetForTesting() {
+    logos.value = const {};
+    _loading = false;
+    _failedAt = null;
+  }
 
   static Future<List<TeamLogoEntry>> _loadFromOnboarding() async {
     final teams = await OnboardingRepository.instance.fetchTeams();

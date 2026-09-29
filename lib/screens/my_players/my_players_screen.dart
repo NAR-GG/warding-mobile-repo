@@ -24,6 +24,7 @@ class MyPlayersScreen extends StatefulWidget {
 
   static const Key searchFieldKey = ValueKey('myPlayersSearch');
   static const Key showMoreKey = ValueKey('myPlayersShowMore');
+
   /// 선수 줄 key — 이름은 겹칠 수 있어 playerId 로 만든다.
   static Key tileKey(int playerId) => ValueKey('myPlayer-$playerId');
 
@@ -124,7 +125,7 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'Pretendard',
-            fontSize: 13 * scale,
+            fontSize: 14 * scale,
             color: AppColors.narText2,
           ),
         ),
@@ -209,7 +210,7 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final textStyle = TextStyle(
       fontFamily: 'Pretendard',
-      fontSize: 13 * scale,
+      fontSize: 14 * scale,
       height: 1.4,
       color: AppColors.narText,
     );
@@ -272,7 +273,7 @@ class _GroupHeader extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
-              fontSize: 11 * scale,
+              fontSize: 13 * scale,
               letterSpacing: 0.5,
               color: AppColors.narDark200,
             ),
@@ -283,7 +284,7 @@ class _GroupHeader extends StatelessWidget {
               count!,
               style: TextStyle(
                 fontFamily: 'Open Sans',
-                fontSize: 11 * scale,
+                fontSize: 13 * scale,
                 color: AppColors.narDark300,
               ),
             ),
@@ -330,14 +331,14 @@ class _ShowMoreButton extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,
-                fontSize: 12.5 * scale,
+                fontSize: 14 * scale,
                 color: AppColors.narText2,
               ),
             ),
             SizedBox(width: 3 * scale),
             Icon(
               expanded ? Icons.expand_less : Icons.expand_more,
-              size: 14 * scale,
+              size: 16 * scale,
               color: AppColors.narText2,
             ),
           ],

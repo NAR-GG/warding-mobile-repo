@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/nar_chip_multi_select.dart';
+import '../../../components/nar_tab_bar.dart';
 import '../../../components/dashed_border.dart';
 import '../../../components/team_logo.dart';
 import '../../../l10n/app_localizations.dart';
@@ -57,7 +58,7 @@ class HomeContentSection extends StatelessWidget {
             subtitle: tab == HomeContentTab.news ? l.homeSortLatest : null,
           ),
         ),
-        SizedBox(height: 10 * scale),
+        SizedBox(height: 2 * scale),
         NarChipMultiSelect.single(
           // 뉴스가 없으면(릴리즈 빈 소스) 뉴스 탭을 그리지 않는다.
           options: [for (final t in viewModel.availableContentTabs) t.name],
@@ -128,7 +129,7 @@ class _NewsList extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontSize: 13.5 * scale,
+                            fontSize: 15 * scale,
                             height: 1.4,
                             color: AppColors.narTextTertiary,
                           ),
@@ -138,7 +139,7 @@ class _NewsList extends StatelessWidget {
                           '${article.office} · ${_ago(l, article.minutesAgo)}',
                           style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontSize: 11 * scale,
+                            fontSize: 13 * scale,
                             color: AppColors.narDark200,
                           ),
                         ),
@@ -197,23 +198,32 @@ class _ShortsDeck extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final videos = viewModel.shortsFiltered;
 
+    final filterLabels = [
+      for (final f in HomeShortsFilter.values)
+        switch (f) {
+          HomeShortsFilter.all => l.homeShortsFilterAll,
+          HomeShortsFilter.player => l.homeShortsFilterPlayer,
+          HomeShortsFilter.team => l.homeShortsFilterTeam,
+        },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NarChipMultiSelect.single(
-          options: [for (final f in HomeShortsFilter.values) f.name],
-          selected: viewModel.shortsFilter.name,
-          onSelected: (name) =>
-              viewModel.setShortsFilter(HomeShortsFilter.values.byName(name)),
-          labelBuilder: (name) => switch (HomeShortsFilter.values.byName(name)) {
-            HomeShortsFilter.all => l.homeShortsFilterAll,
-            HomeShortsFilter.player => l.homeShortsFilterPlayer,
-            HomeShortsFilter.team => l.homeShortsFilterTeam,
-          },
-          horizontalPadding: 20,
-          gap: 6,
+        // 경기 상세(경기 데이터·라이브 이벤트·선수 평점)와 같은 탭 스타일로
+        // 통일한다 — 칩(NarChipMultiSelect)이 아니라 밑줄 강조 탭.
+        NarTabBar(
+          tabs: filterLabels,
+          selectedIndex: HomeShortsFilter.values.indexOf(
+            viewModel.shortsFilter,
+          ),
+          onChanged: (i) =>
+              viewModel.setShortsFilter(HomeShortsFilter.values[i]),
+          variant: NarTabBarVariant.compact,
+          compactHorizontalPadding: 20,
           scale: scale,
         ),
+        SizedBox(height: 8 * scale),
         if (videos.isEmpty)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
@@ -229,7 +239,7 @@ class _ShortsDeck extends StatelessWidget {
                     l.homeShortsFilterEmpty,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
-                      fontSize: 12.5 * scale,
+                      fontSize: 14 * scale,
                       color: AppColors.narText2,
                     ),
                   ),
@@ -336,7 +346,10 @@ class _ShortsCard extends StatelessWidget {
                     Positioned(
                       left: 6 * scale,
                       top: 6 * scale,
-                      child: _TeamLogoTag(teamCode: video.teamCode, scale: scale),
+                      child: _TeamLogoTag(
+                        teamCode: video.teamCode,
+                        scale: scale,
+                      ),
                     ),
                   Positioned(
                     left: 7 * scale,
@@ -346,7 +359,7 @@ class _ShortsCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontWeight: FontWeight.w700,
-                        fontSize: 11 * scale,
+                        fontSize: 12 * scale,
                         color: AppColors.narText,
                       ),
                     ),
@@ -363,7 +376,7 @@ class _ShortsCard extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontWeight: FontWeight.w500,
-                  fontSize: 12.5 * scale,
+                  fontSize: 13 * scale,
                   height: 1.35,
                   color: AppColors.narTextTertiary,
                 ),
@@ -399,7 +412,7 @@ class _PlayerTag extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'Pretendard',
           fontWeight: FontWeight.w700,
-          fontSize: 11 * scale,
+          fontSize: 12 * scale,
           height: 1,
           color: AppColors.narSoloText,
         ),

@@ -5,17 +5,19 @@ import '../../components/app_bottom_nav.dart';
 import '../../components/nar_banner.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
+import '../../model/community_remote_post.dart';
 import '../../model/notice.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/home/home_viewmodel.dart';
 import '../community/community_screen.dart';
+import '../community/post_detail_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
-import '../notification/notification_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
+import '../subscription/subscription_settings_screen.dart';
 import 'component/home_community_section.dart';
 import 'component/home_content_section.dart';
 import 'component/home_solo_rank_section.dart';
@@ -61,15 +63,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// 앱이 포그라운드로 돌아오면 홈을 다시 불러온다(최근에 불렀으면 건너뜀).
+  /// 앱이 포그라운드로 돌아오면 홈을 다시 불러오고 솔랭 5초 폴링을 재개한다
+  /// (최근에 불렀으면 refreshOnResume 은 건너뜀). 백그라운드로 가면 폴링만
+  /// 멈춘다 — 화면이 안 보이는 동안 네트워크를 계속 쓸 이유가 없다.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _viewModel.refreshOnResume();
+    if (state == AppLifecycleState.resumed) {
+      _viewModel.refreshOnResume();
+      _viewModel.resumeSoloPolling();
+    } else if (state == AppLifecycleState.paused) {
+      _viewModel.pauseSoloPolling();
+    }
   }
 
   /// "커뮤니티 전체" — 커뮤니티 탭으로 전환한다. push 하면 탭 루트가 쌓인다.
   void _openCommunity() {
     Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
+  }
+
+  /// 커뮤니티 글 타일 — 게시글 상세로 이동한다. 삭제·수정 결과를 홈 목록에도
+  /// 반영한다(커뮤니티 탭과 같은 방식).
+  Future<void> _openPost(CommunityRemotePost post) async {
+    final result = await Navigator.of(context).push<PostDetailResult>(
+      MaterialPageRoute<PostDetailResult>(
+        builder: (_) => PostDetailScreen(postId: post.id),
+      ),
+    );
+    if (result == null || !mounted) return;
+    if (result.removed) {
+      _viewModel.removeCommunityPost(post.id);
+    } else if (result.updated != null) {
+      _viewModel.applyCommunityPostUpdate(result.updated!);
+    }
   }
 
   /// 오늘 경기 "일정 전체" — 일정 탭으로 전환한다(spec 사용자 흐름 4).
@@ -87,18 +112,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _viewModel.refreshSoloOnReturn();
   }
 
-  /// 구독 0명 빈 카드의 "선수 구독하기" — 마이구독 탭(비회원은 그 화면이
-  /// 로그인 안내를 띄운다).
+  /// 마이구독 탭으로 전환한다. 벨이 여기로 온다(비회원은 그 화면이 로그인
+  /// 안내를 띄운다).
+  ///
+  /// 벨은 원래 알림함(NotificationScreen)으로 갔는데, 하단 네비에서
+  /// 마이구독 탭을 뺀 자리를 대신하도록 2026-09-29에 바꿨다. 알림함 진입
+  /// 경로는 이 벨 하나뿐이었으므로 당분간 화면 안에서 열 방법이 없다.
   void _openSubscription() {
     Navigator.of(context).pushReplacement(tabRoute(const SubscriptionScreen()));
   }
 
-  /// 벨 — 알림함. 읽고 돌아오면 배지를 다시 센다.
-  Future<void> _openNotifications() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const NotificationScreen()));
-    await _viewModel.refreshUnreadNotifications();
+  /// 구독 0명 빈 카드의 "선수 구독하기" — 실제로 선수를 고르는 구독 설정
+  /// 화면으로 바로 보낸다(마이구독 목록 화면을 거치지 않는다). 돌아오면
+  /// 구독 목록·솔랭 상태를 다시 불러온다 — 안 그러면 방금 구독한 선수가
+  /// 반영되지 않고 빈 카드가 그대로 남는다.
+  Future<void> _openSubscriptionSettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const SubscriptionSettingsScreen(),
+      ),
+    );
+    await _viewModel.refreshSubscriptionsOnReturn();
   }
 
   /// 하단 네비 탭 선택. '홈'을 제외한 탭이면 해당 화면으로 전환한다.
@@ -136,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   _TopBar(
                     scale: scale,
                     unreadCount: _viewModel.unreadNotificationCount,
-                    onBellTap: _openNotifications,
+                    onBellTap: _openSubscription,
                   ),
                   if (_viewModel.bannerVisible)
                     NarBanner(
@@ -172,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               viewModel: _viewModel,
                               scale: scale,
                               onOpenMyPlayers: _openMyPlayers,
-                              onSubscribe: _openSubscription,
+                              onSubscribe: _openSubscriptionSettings,
                             ),
                             // 오늘 경기가 없으면 섹션이 통째로 사라지는데
                             // (HomeTodayMatchesSection), 앞뒤 SizedBox 는 그대로
@@ -196,6 +230,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               viewModel: _viewModel,
                               scale: scale,
                               onSeeAllCommunity: _openCommunity,
+                              onTapPost: _openPost,
                             ),
                             SizedBox(height: 28 * scale),
                             HomeContentSection(

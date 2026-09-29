@@ -13,8 +13,9 @@ import 'home_section_header.dart';
 ///
 /// spec "상태" 표: 데이터가 없는 리그(LPL·LEC·LCS, 월즈도 이번 스코프 밖)는
 /// 점선 칩으로 두고 누를 수 없다. 로딩·에러는 그리지 않는다 — 아직 못 받았으면
-/// 표 자리를 비운다. 1위 행은 따로 꾸미지 않는다(라이즈 그룹 1위가 전체 1위로
-/// 읽히지 않게 — spec 결정).
+/// 표 자리를 비운다. 각 그룹(레전드·라이즈 등)의 1위 순위 숫자를 메인
+/// 보라색(narChipActive)으로 강조한다(2026-09-29 결정) — 그룹별 1위라 여러
+/// 개가 보일 수 있다.
 class HomeStandingsSection extends StatelessWidget {
   const HomeStandingsSection({
     super.key,
@@ -44,7 +45,7 @@ class HomeStandingsSection extends StatelessWidget {
                 '2026 · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
           ),
         ),
-        SizedBox(height: 10 * scale),
+        SizedBox(height: 2 * scale),
         // 데이터가 있는 리그(live)만 고를 수 있고 나머지는 점선 칩이다.
         NarChipMultiSelect.single(
           options: [for (final chip in viewModel.leagueChips) chip.code],
@@ -98,7 +99,8 @@ class _StandingsTable extends StatelessWidget {
         children: [
           _GroupHeader(
             label: main.name.isEmpty ? l.homeStandingsLegendGroup : main.name,
-            hint: l.homeStandingsColumnHint,
+            wlHint: l.homeStandingsColumnWL,
+            setDiffHint: l.homeStandingsColumnSetDiff,
             scale: scale,
           ),
           for (final (i, row) in main.rows.indexed)
@@ -139,7 +141,7 @@ class _StandingsTable extends StatelessWidget {
                           : l.homeStandingsExpandMore(restCount),
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontSize: 13 * scale,
+                        fontSize: 14 * scale,
                         color: AppColors.narText2,
                       ),
                     ),
@@ -148,7 +150,7 @@ class _StandingsTable extends StatelessWidget {
                       expanded
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
-                      size: 14 * scale,
+                      size: 16 * scale,
                       color: AppColors.narText2,
                     ),
                   ],
@@ -161,21 +163,27 @@ class _StandingsTable extends StatelessWidget {
   }
 }
 
-/// 그룹 헤더 — 기본(레전드 그룹): 하단 테두리 + 우측 컬럼 힌트.
+/// 그룹 헤더 — 기본(레전드 그룹): 하단 테두리 + 우측 컬럼 힌트(W-L·득실칸).
 /// [_GroupHeader.sub](라이즈 그룹): 상단 테두리로 앞 그룹과 구분, 힌트 없음.
+///
+/// 힌트 두 칸은 [_StandingRow]의 W-L 칸(54)·득실 칸(44)과 같은 폭으로 둬야
+/// 아래 행과 위아래로 정확히 겹친다.
 class _GroupHeader extends StatelessWidget {
   const _GroupHeader({
     required this.label,
-    required this.hint,
+    required this.wlHint,
+    required this.setDiffHint,
     required this.scale,
   }) : sub = false;
 
   const _GroupHeader.sub({required this.label, required this.scale})
-    : hint = null,
+    : wlHint = null,
+      setDiffHint = null,
       sub = true;
 
   final String label;
-  final String? hint;
+  final String? wlHint;
+  final String? setDiffHint;
   final bool sub;
   final double scale;
 
@@ -196,20 +204,43 @@ class _GroupHeader extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
-              fontSize: (sub ? 12 : 13) * scale,
-              color: sub ? AppColors.narGray400 : AppColors.narTextTertiary,
+              fontSize: 14 * scale,
+              color: AppColors.narTextTertiary,
             ),
           ),
           const Spacer(),
-          if (hint != null)
-            Text(
-              hint!,
-              style: TextStyle(
-                fontFamily: 'Open Sans',
-                fontSize: 11 * scale,
-                color: AppColors.narText2,
+          if (wlHint != null)
+            SizedBox(
+              width: 54 * scale,
+              child: Text(
+                wlHint!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Open Sans',
+                  fontSize: 11 * scale,
+                  color: AppColors.narText2,
+                ),
               ),
             ),
+          if (setDiffHint != null) ...[
+            SizedBox(width: 4 * scale),
+            SizedBox(
+              width: 48 * scale,
+              child: Text(
+                setDiffHint!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontFamily: 'Open Sans',
+                  fontSize: 11 * scale,
+                  color: AppColors.narText2,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -234,6 +265,10 @@ class _StandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 각 그룹(레전드·라이즈 등) 안에서 1위 숫자를 보라색으로 강조한다
+    // (2026-09-29 결정). 그룹별로 rank가 1부터 다시 매겨지므로, 이 강조는
+    // "전체 1위"가 아니라 "그 그룹의 1위"를 가리킨다.
+    final isTopRank = row.rank == 1;
     return Container(
       height: 46 * scale,
       padding: EdgeInsets.symmetric(horizontal: 14 * scale),
@@ -251,18 +286,19 @@ class _StandingRow extends StatelessWidget {
               key: rankKey,
               style: TextStyle(
                 fontFamily: 'Open Sans',
-                fontWeight: FontWeight.w600,
-                fontSize: 13 * scale,
-                color: AppColors.narTextTertiary,
+                fontWeight: FontWeight.w800,
+                fontSize: 15 * scale,
+                color: isTopRank
+                    ? AppColors.narChipActive
+                    : AppColors.narTextTertiary,
               ),
             ),
           ),
           SizedBox(width: 8 * scale),
-          TeamCodeBadge(
-            teamCode: row.teamCode,
-            imageUrl: row.imageUrl,
-            size: 34 * scale,
-          ),
+          // 커뮤니티 등 다른 홈 섹션과 같은 이미지 소스([TeamLogoDirectory])를
+          // 쓰도록 이 응답의 imageUrl은 넘기지 않는다 — 두 소스가 서로 다른
+          // 원본(여백·비율)을 내려줘 같은 배지 크기에서도 로고가 다르게 보였다.
+          TeamCodeBadge(teamCode: row.teamCode, size: 28 * scale),
           SizedBox(width: 8 * scale),
           Expanded(
             child: Column(
@@ -274,7 +310,7 @@ class _StandingRow extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Open Sans',
                     fontWeight: FontWeight.w600,
-                    fontSize: 14 * scale,
+                    fontSize: 16 * scale,
                     color: AppColors.narTextTertiary,
                   ),
                 ),
@@ -284,7 +320,7 @@ class _StandingRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontSize: 11 * scale,
+                    fontSize: 13 * scale,
                     color: AppColors.narText2,
                   ),
                 ),
@@ -298,13 +334,13 @@ class _StandingRow extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Open Sans',
                   fontWeight: FontWeight.w700,
-                  fontSize: 14 * scale,
+                  fontSize: 16 * scale,
                   color: AppColors.narTextTertiary,
                 ),
                 children: [
                   TextSpan(text: '${row.wins}'),
                   TextSpan(
-                    text: '-',
+                    text: ' - ',
                     style: TextStyle(
                       fontWeight: FontWeight.w400,
                       color: AppColors.narDark200,
@@ -313,18 +349,18 @@ class _StandingRow extends StatelessWidget {
                   TextSpan(text: '${row.losses}'),
                 ],
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(width: 8 * scale),
+          SizedBox(width: 4 * scale),
           SizedBox(
-            width: 44 * scale,
+            width: 48 * scale,
             child: Text(
               row.setDiff > 0 ? '+${row.setDiff}' : '${row.setDiff}',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontFamily: 'Open Sans',
-                fontSize: 12 * scale,
+                fontSize: 14 * scale,
                 color: row.setDiff > 0
                     ? AppColors.scoreWin
                     : AppColors.narText3,

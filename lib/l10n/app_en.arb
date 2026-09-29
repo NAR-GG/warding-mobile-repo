@@ -11,7 +11,8 @@
   "homeStandingsTitle": "Standings",
   "homeStandingsLegendGroup": "Legend Group",
   "homeStandingsRiseGroup": "Rise Group",
-  "homeStandingsColumnHint": "W-L · Set diff",
+  "homeStandingsColumnWL": "W-L",
+  "homeStandingsColumnSetDiff": "Set diff",
   "homeStandingsScopeLabel": "Regular season total",
   "homeStandingsExpandMore": "Show {count} more Rise Group teams",
   "@homeStandingsExpandMore": {
@@ -94,7 +95,7 @@
   "myPlayersSearchHint": "Search players",
   "myPlayersTeamAll": "All",
   "myPlayersGroupLive": "In solo queue now",
-  "myPlayersGroupPlayedToday": "Played today",
+  "myPlayersGroupPlayedToday": "Last solo queue result",
   "myPlayersGroupQuiet": "Nothing today",
   "myPlayersGroupCount": "{count}",
   "@myPlayersGroupCount": {

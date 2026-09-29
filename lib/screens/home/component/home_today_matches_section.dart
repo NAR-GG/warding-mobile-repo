@@ -5,6 +5,7 @@ import '../../../components/team_logo.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/schedule_match.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/match_detail_router.dart';
 import '../../../util/match_status.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
@@ -71,7 +72,8 @@ String _todayLabel(DateTime now) => '${now.month}월 ${now.day}일';
 /// 오늘 경기 카드 한 장 — 시안(`mockup.html`)의 `.mc`.
 ///
 /// 폭 172, 안쪽 여백 위 10·좌우 12·아래 12, 테두리 1을 더해 높이 110이다.
-/// LIVE 카드는 어두운 배경에 왼쪽 3px 강조선만 두른다.
+/// LIVE 카드는 어두운 배경에 일반 카드와 같은 옅은 테두리(narLine)를 두르고,
+/// 왼쪽만 3px 강조선(liveSideBorder)으로 덧대 눈에 띄게 한다.
 class _MatchCard extends StatelessWidget {
   const _MatchCard({required this.match, required this.scale});
 
@@ -82,70 +84,100 @@ class _MatchCard extends StatelessWidget {
   bool get _live => isLiveMatchStatus(match.matchStatus);
   bool get _done => match.matchStatus == 'completed';
 
+  /// 경기 상세로 이동한다. 딥링크(라이브 위젯·푸시)와 같은 창구를 써야
+  /// 이미 열려 있는 같은 경기 상세를 재사용한다(직접 push 하면 중복 스택).
+  void _openDetail(BuildContext context) {
+    MatchDetailRouter.open(
+      matchId: match.matchId,
+      match: match,
+      context: context,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 172 * scale,
-      padding: EdgeInsets.fromLTRB(
-        12 * scale,
-        10 * scale,
-        12 * scale,
-        12 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: _live ? AppColors.narDark600 : AppColors.narBgTertiary,
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: _live
-            ? Border(
-                left: BorderSide(
-                  color: AppColors.liveSideBorder,
-                  width: 3 * scale,
-                ),
-              )
-            : Border.all(color: AppColors.narLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _StatusBadge(
-                live: _live,
-                done: _done,
-                time: match.scheduledTime,
-                scale: scale,
+    final radius = BorderRadius.circular(12 * scale);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openDetail(context),
+      // LIVE 카드는 테두리 색이 왼쪽(강조)과 나머지 3면(옅은 선)으로 다른데,
+      // BoxDecoration.border는 borderRadius와 함께 쓸 때 색이 균일해야 한다
+      // ("A borderRadius can only be given on borders with uniform colors").
+      // 그래서 균일한 옅은 테두리를 바탕 Container에 두고, 왼쪽 강조선은
+      // Stack으로 그 위에 따로 얹는다. ClipRRect로 Stack 전체를 카드와 같은
+      // radius로 한 번 더 잘라야, 사각형인 강조선이 카드 모서리 둥근 구간에서
+      // 바깥으로 삐져나오지 않고 곡선을 따라 자연스럽게 잘린다.
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          children: [
+            Container(
+              width: 172 * scale,
+              padding: EdgeInsets.fromLTRB(
+                12 * scale,
+                10 * scale,
+                12 * scale,
+                12 * scale,
               ),
-              SizedBox(width: 6 * scale),
-              Expanded(
-                child: Text(
-                  '${match.leagueInfo} · ${match.matchTitle.split(' | ').first}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Open Sans',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11 * scale,
-                    color: AppColors.narText2,
+              decoration: BoxDecoration(
+                color: _live ? AppColors.narDark600 : AppColors.narBgTertiary,
+                borderRadius: radius,
+                border: Border.all(color: AppColors.narLine),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _StatusBadge(
+                        live: _live,
+                        done: _done,
+                        time: match.scheduledTime,
+                        scale: scale,
+                      ),
+                      SizedBox(width: 6 * scale),
+                      Expanded(
+                        child: Text(
+                          '${match.leagueInfo} · ${match.matchTitle.split(' | ').first}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13 * scale,
+                            color: AppColors.narText2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  SizedBox(height: 10 * scale),
+                  _TeamRow(
+                    team: match.teamA,
+                    other: match.teamB,
+                    done: _done,
+                    scale: scale,
+                  ),
+                  SizedBox(height: 6 * scale),
+                  _TeamRow(
+                    team: match.teamB,
+                    other: match.teamA,
+                    done: _done,
+                    scale: scale,
+                  ),
+                ],
               ),
-            ],
-          ),
-          SizedBox(height: 10 * scale),
-          _TeamRow(
-            team: match.teamA,
-            other: match.teamB,
-            done: _done,
-            scale: scale,
-          ),
-          SizedBox(height: 6 * scale),
-          _TeamRow(
-            team: match.teamB,
-            other: match.teamA,
-            done: _done,
-            scale: scale,
-          ),
-        ],
+            ),
+            if (_live)
+              Positioned(
+                left: 1 * scale,
+                top: 1 * scale,
+                bottom: 1 * scale,
+                width: 3 * scale,
+                child: ColoredBox(color: AppColors.liveSideBorder),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -197,7 +229,7 @@ class _StatusBadge extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'SF Pro',
               fontWeight: live ? FontWeight.w500 : FontWeight.w600,
-              fontSize: 11 * scale,
+              fontSize: 12 * scale,
               height: 1,
               color: live
                   ? AppColors.liveAccent

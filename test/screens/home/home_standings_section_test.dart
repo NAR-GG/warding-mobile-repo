@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/dashed_border.dart';
 import 'package:warding/components/nar_chip.dart';
 import 'package:warding/screens/home/component/home_standings_section.dart';
+import 'package:warding/styles/app_colors.dart';
 
 import 'home_test_harness.dart';
 
 /// 순위표 — 데이터 없는 리그(LPL·LEC·LCS·월즈)는 점선 칩이고 누를 수 없다.
-/// 1위 행은 따로 꾸미지 않는다. 로딩·에러는 그리지 않는다.
+/// 1위 순위 숫자만 메인 보라색으로 강조한다(2026-09-29 결정 — 팀 이름 줄
+/// 등 나머지는 다른 행과 동일). 로딩·에러는 그리지 않는다.
 void main() {
   // 리그 칩 — 라벨 텍스트를 품은 NarChip.
   Finder chip(String code) =>
@@ -50,7 +52,7 @@ void main() {
     );
   });
 
-  testWidgets('1위 행은 다른 행과 같은 스타일이다', (tester) async {
+  testWidgets('1위 순위 숫자만 메인 보라색이고 나머지 줄은 다른 행과 같은 스타일이다', (tester) async {
     setUpHomeApi();
     await pumpHomeSection(
       tester,
@@ -63,9 +65,10 @@ void main() {
     final second = tester.widget<Text>(
       find.byKey(HomeStandingsSection.rankKey(2)),
     );
-    expect(first.style, second.style);
+    expect(first.style?.color, AppColors.narChipActive);
+    expect(second.style?.color, isNot(AppColors.narChipActive));
 
-    // 팀 이름 줄도 같다(팀 코드는 로고 대체 글자와 겹쳐 이름으로 비교).
+    // 팀 이름 줄은 같다(팀 코드는 로고 대체 글자와 겹쳐 이름으로 비교).
     Text teamText(String name) => tester.widget<Text>(find.text(name));
     expect(teamText('젠지').style, teamText('한화생명e스포츠').style);
   });

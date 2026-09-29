@@ -146,11 +146,17 @@ abstract class AppLocalizations {
   /// **'라이즈 그룹'**
   String get homeStandingsRiseGroup;
 
-  /// No description provided for @homeStandingsColumnHint.
+  /// No description provided for @homeStandingsColumnWL.
   ///
   /// In ko, this message translates to:
-  /// **'승-패 · 세트 득실'**
-  String get homeStandingsColumnHint;
+  /// **'승-패'**
+  String get homeStandingsColumnWL;
+
+  /// No description provided for @homeStandingsColumnSetDiff.
+  ///
+  /// In ko, this message translates to:
+  /// **'세트 득실'**
+  String get homeStandingsColumnSetDiff;
 
   /// No description provided for @homeStandingsScopeLabel.
   ///
@@ -425,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @myPlayersGroupPlayedToday.
   ///
   /// In ko, this message translates to:
-  /// **'오늘 경기함'**
+  /// **'마지막 솔랭 기록'**
   String get myPlayersGroupPlayedToday;
 
   /// No description provided for @myPlayersGroupQuiet.
