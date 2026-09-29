@@ -70,7 +70,7 @@ class MatchCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double scale;
 
-  /// 리그 정보. LCK·MSI·EWC·KeSPA 경기가 아니면 알림 버튼을 숨긴다.
+  /// 리그 정보. LCK·MSI·EWC·KeSPA·아시안게임 경기가 아니면 알림 버튼을 숨긴다.
   final String leagueInfo;
 
   /// 스포방지 on/off. false 면 [_SpoilerOverlay] 없이 스코어를 바로 보여준다.
@@ -92,7 +92,8 @@ class MatchCard extends StatelessWidget {
     return info.contains('LCK') ||
         info.contains('MSI') ||
         info.contains('EWC') ||
-        info.contains('KESPA');
+        info.contains('KESPA') ||
+        info.contains('ASIAN_GAMES');
   }
 
   @override
