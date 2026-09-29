@@ -25,6 +25,9 @@ void main() {
   // API 소스, 평점은 빈 소스(백엔드 #542 배포 전)라 가짜 데이터가 나가지 않는다.
   group('HOME_MOCKS 게이트', () {
     test('dart-define 이 없으면 꺼져 있다', () {
+      // HOME_MOCKS=true로 테스트를 돌리면(예: 로컬에서 목업 확인차) 이
+      // 단언은 실패한다 — 그런 실행에서는 기본값 검사만 건너뛴다.
+      if (const bool.hasEnvironment('HOME_MOCKS')) return;
       expect(kHomeMocks, isFalse);
     });
 

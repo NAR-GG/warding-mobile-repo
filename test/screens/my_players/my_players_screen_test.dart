@@ -199,8 +199,11 @@ void main() {
 
     expect(vm.quietExpanded, isTrue);
     expect(find.text('91명 더 보기'), findsNothing);
+    // 접힌 상태에서 숨겨지던 선수(GEN-p9, 178행에서 확인)가 펼치면 보여야
+    // 실제로 펼쳐졌다는 걸 검증한다 — T1-p5는 quietVisibleCap(5) 안에 들어
+    // 접기 전에도 보이므로 이 검증엔 못 쓴다.
     expect(
-      find.byKey(MyPlayersScreen.tileKey('T1-p5'.hashCode)),
+      find.byKey(MyPlayersScreen.tileKey('GEN-p9'.hashCode)),
       findsOneWidget,
     );
 

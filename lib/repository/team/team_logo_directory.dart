@@ -22,11 +22,17 @@ class TeamLogoDirectory {
   final ValueNotifier<Map<String, String>> logos = ValueNotifier(const {});
 
   bool _loading = false;
+
+  /// 로드가 성공적으로 끝났는지. `logos.value.isNotEmpty` 로는 구분할 수
+  /// 없다 — 모든 팀의 imageUrl이 비어 있으면 성공해도 결과가 빈 맵이라,
+  /// 그 경우를 "아직 안 채움"으로 오인해 [HomeSoloRankSection] 의 1초
+  /// 타이머가 재빌드할 때마다(=[TeamCodeBadge] 마다) 매번 다시 조회했다.
+  bool _loaded = false;
   DateTime? _failedAt;
 
   /// 아직 안 채웠으면 채운다. 여러 번 불려도 요청은 하나다.
   void ensureLoaded() {
-    if (_loading || logos.value.isNotEmpty) return;
+    if (_loading || _loaded) return;
     final failedAt = _failedAt;
     if (failedAt != null && DateTime.now().difference(failedAt) < _retryAfter) {
       return;
@@ -43,6 +49,7 @@ class TeamLogoDirectory {
           if (e.code.isNotEmpty && e.imageUrl.isNotEmpty)
             e.code.toUpperCase(): e.imageUrl,
       };
+      _loaded = true;
       _failedAt = null;
     } catch (e) {
       debugPrint('[TeamLogo] 팀 로고 목록 조회 실패: $e');
@@ -61,6 +68,7 @@ class TeamLogoDirectory {
   void resetForTesting() {
     logos.value = const {};
     _loading = false;
+    _loaded = false;
     _failedAt = null;
   }
 

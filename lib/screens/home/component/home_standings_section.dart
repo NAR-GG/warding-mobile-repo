@@ -41,8 +41,11 @@ class HomeStandingsSection extends StatelessWidget {
           child: HomeSectionHeader(
             title: l.homeStandingsTitle,
             scale: scale,
+            // StandingsResult에 시즌 연도 필드가 없어 기기 시계 연도로 대신한다
+            // (하드코딩된 2026이 다음 시즌에도 안 바뀌는 문제 — 백엔드가 연도를
+            // 내려주면 그걸로 교체한다).
             subtitle:
-                '2026 · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
+                '${DateTime.now().year} · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
           ),
         ),
         SizedBox(height: 2 * scale),

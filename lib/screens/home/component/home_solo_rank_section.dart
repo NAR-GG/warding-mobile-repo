@@ -128,6 +128,23 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
     final live = vm.soloLive;
     final done = vm.soloFinished;
 
+    // 새로고침(5초 폴링 포함)으로 진행 중 선수 수가 줄면
+    // HomeViewModel._recomputeSolo 가 soloSwipeIndex 를 0으로 되돌린다.
+    // PageController 는 이미 만들어진 페이지 범위에 맞춰 스스로 마지막
+    // 페이지로 clamp 될 뿐 onPageChanged 를 부르지 않는다 — 그대로 두면
+    // SwipeDots 는 0번째를 표시하는데 실제로는 다른 카드가 보이는 상태로
+    // 어긋난다. 빌드 후 컨트롤러 위치와 뷰모델 인덱스를 비교해 다르면
+    // 강제로 맞춘다.
+    if (live.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_pages.hasClients) return;
+        final target = vm.soloSwipeIndex;
+        if ((_pages.page ?? 0).round() != target) {
+          _pages.jumpToPage(target);
+        }
+      });
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../components/nar_live_dot.dart';
 import '../../../components/team_logo.dart';
@@ -42,7 +43,7 @@ class HomeTodayMatchesSection extends StatelessWidget {
           child: HomeSectionHeader(
             title: l.homeTodayMatchesTitle,
             scale: scale,
-            subtitle: _todayLabel(DateTime.now()),
+            subtitle: _todayLabel(context, DateTime.now()),
             trailingLabel: l.homeSeeAllSchedule,
             onTapTrailing: onSeeSchedule,
           ),
@@ -66,8 +67,10 @@ class HomeTodayMatchesSection extends StatelessWidget {
 }
 
 /// 헤더 부제 — 시안(`mockup.html`)의 `sh('오늘의 경기', ..., '9월 12일')`처럼
-/// 앞자리 0 없이 "M월 d일"로 쓴다.
-String _todayLabel(DateTime now) => '${now.month}월 ${now.day}일';
+/// "M월 d일" 형태로 쓴다. 현재 로케일에 맞춰 포맷하므로 영어 사용자는
+/// "Sep 12" 처럼 보인다(전엔 한글 포맷이 고정으로 나갔다).
+String _todayLabel(BuildContext context, DateTime now) =>
+    DateFormat.MMMd(Localizations.localeOf(context).toString()).format(now);
 
 /// 오늘 경기 카드 한 장 — 시안(`mockup.html`)의 `.mc`.
 ///
