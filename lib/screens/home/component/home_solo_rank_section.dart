@@ -11,7 +11,6 @@ import '../../../model/home_models.dart';
 import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
-import '../../../util/champion_name_map.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 
 /// 구독 선수 솔랭 상태 — spec "상태" 표의 세 갈래를 [HomeViewModel.soloState]
@@ -647,7 +646,14 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final splashUrl = championSplashUrl(championToEn(player.champion));
+    // 백엔드가 준 챔피언 이미지를 먼저 쓰고, 없을 때만 이름으로 Data Dragon
+    // 스플래시를 짜맞춘다(`championSplashUrl` 이 한국어명도 받는다).
+    // `resolveImageUrl` 은 빈 문자열을 빈 문자열로 돌려주므로 ?? 로는 폴백이
+    // 걸리지 않는다 — 비었는지 직접 본다.
+    final fromServer = resolveImageUrl(player.championImageUrl);
+    final splashUrl = (fromServer != null && fromServer.isNotEmpty)
+        ? fromServer
+        : championSplashUrl(player.champion);
     final photoUrl = resolveImageUrl(player.playerImageUrl);
     final radius = BorderRadius.circular(14 * scale);
 

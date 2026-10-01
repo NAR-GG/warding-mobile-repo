@@ -172,6 +172,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// 벨은 원래 알림함(NotificationScreen)으로 갔는데, 하단 네비에서
   /// 마이구독 탭을 뺀 자리를 대신하도록 2026-09-29에 바꿨다. 알림함 진입
   /// 경로는 이 벨 하나뿐이었으므로 당분간 화면 안에서 열 방법이 없다.
+  ///
+  /// 목적지를 다시 바꾸면 벨 배지 범위도 함께 맞춘다 —
+  /// [HomeViewModel.unreadNotificationCount] 는 이 화면의 피드와 같은
+  /// 범위(전체)로 세고 있다.
   void _openSubscription() {
     Navigator.of(context).pushReplacement(tabRoute(const SubscriptionScreen()));
   }

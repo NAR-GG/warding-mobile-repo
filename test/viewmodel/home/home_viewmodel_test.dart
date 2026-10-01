@@ -843,7 +843,7 @@ void main() {
       expect(server.requestsTo('me/notifications'), isEmpty);
     });
 
-    test('로그인이면 커뮤니티 묶음 미읽음 수를 받는다', () async {
+    test('로그인이면 전체 묶음 미읽음 수를 받는다', () async {
       server.unreadNotifications = 4;
       setUpServer(loggedIn: true);
       final vm = build();
@@ -851,9 +851,11 @@ void main() {
 
       expect(vm.unreadNotificationCount, 4);
       final req = server.requestsTo('me/notifications').single;
-      expect(req.queryParameters['group'], 'COMMUNITY');
+      // 벨이 여는 마이구독 피드가 group 없이(전체) 조회하므로 배지도 전체다 —
+      // COMMUNITY 로 좁히면 거기서 다 읽어도 배지가 안 사라진다.
+      expect(req.queryParameters.containsKey('group'), isFalse);
 
-      // 알림함에서 읽고 돌아오면 다시 센다.
+      // 알림을 읽고 돌아오면 다시 센다.
       server.unreadNotifications = 0;
       await vm.refreshUnreadNotifications();
       expect(vm.unreadNotificationCount, 0);

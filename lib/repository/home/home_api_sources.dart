@@ -69,6 +69,7 @@ class ApiSoloRankSource implements SoloRankSource {
           ? 0
           : now.difference(startedAt).inSeconds.clamp(0, 1 << 30),
       playerImageUrl: j['playerImageUrl'] as String?,
+      championImageUrl: j['championImageUrl'] as String?,
       startedAt: startedAt,
     );
   }
