@@ -57,6 +57,42 @@ void main() {
     test('이름이 비면 null', () {
       expect(championSplashUrl(''), isNull);
     });
+
+    test('한국어명도 영문 키로 바꿔 넣는다', () {
+      expect(
+        championSplashUrl('베인'),
+        'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Vayne_0.jpg',
+      );
+    });
+
+    // 표시명을 그대로 URL 에 넣던 시절 CDN 403 으로 배경이 비던 챔피언들 —
+    // 공백·아포스트로피·`.`·`&` 가 있거나 키가 표시명과 아예 다른 경우다.
+    test('공백·특수문자가 있는 챔피언도 올바른 키를 쓴다', () {
+      String keyOf(String name) =>
+          championSplashUrl(name)!.split('/').last.replaceAll('_0.jpg', '');
+
+      expect(keyOf('리 신'), 'LeeSin');
+      expect(keyOf('카이사'), 'Kaisa');
+      expect(keyOf('문도 박사'), 'DrMundo');
+      expect(keyOf('미스 포츈'), 'MissFortune');
+      expect(keyOf('아우렐리온 솔'), 'AurelionSol');
+      expect(keyOf('자르반 4세'), 'JarvanIV');
+      expect(keyOf('트위스티드 페이트'), 'TwistedFate');
+      expect(keyOf('신 짜오'), 'XinZhao');
+      expect(keyOf('탐 켄치'), 'TahmKench');
+      expect(keyOf('크산테'), 'KSante');
+      expect(keyOf('코그모'), 'KogMaw');
+      // 키가 표시명과 무관하게 정해진 경우.
+      expect(keyOf('오공'), 'MonkeyKing');
+      expect(keyOf('누누와 윌럼프'), 'Nunu');
+      expect(keyOf('레나타 글라스크'), 'Renata');
+      // URL 에는 공백·아포스트로피·`&` 가 남지 않는다.
+      for (final ko in ['리 신', '카이사', '누누와 윌럼프', '문도 박사']) {
+        expect(championSplashUrl(ko), isNot(contains(' ')));
+        expect(championSplashUrl(ko), isNot(contains("'")));
+        expect(championSplashUrl(ko), isNot(contains('&')));
+      }
+    });
   });
 
   group('cloudinaryScaled', () {

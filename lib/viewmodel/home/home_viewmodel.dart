@@ -242,17 +242,20 @@ class HomeViewModel extends ChangeNotifier {
   // ---- 상단 알림 배지 ----
   int _unreadNotificationCount = 0;
 
-  /// 헤더 벨 배지용 미읽음 수. 벨이 여는 알림함이 커뮤니티 묶음만 다루므로
-  /// 같은 묶음(`group=COMMUNITY`)으로 센다. 0 이면 배지를 숨긴다.
+  /// 헤더 벨 배지용 미읽음 수. 0 이면 배지를 숨긴다.
+  ///
+  /// 벨이 여는 화면(마이구독)의 피드와 **같은 범위**로 세야 한다 — 거기서
+  /// 다 읽었는데 배지가 남으면 유저는 지울 방법이 없다. 그 피드는
+  /// `SubscriptionFeedViewModel` 을 group 없이(=전체) 쓰므로 여기도 전체다.
+  /// 벨 목적지를 바꾸면 이 범위도 함께 맞춘다.
   int get unreadNotificationCount => _unreadNotificationCount;
 
-  /// 미읽음 수를 다시 센다. 알림함에서 돌아올 때도 부른다.
+  /// 미읽음 수를 다시 센다. 알림 화면에서 돌아올 때도 부른다.
   /// 비회원(JWT 없음)·실패는 0(배지 숨김)으로 조용히 넘어간다.
   Future<void> refreshUnreadNotifications() async {
     var count = 0;
     try {
       final page = await _memberNotifications.fetchNotifications(
-        group: 'COMMUNITY',
         page: 0,
         size: 1,
       );

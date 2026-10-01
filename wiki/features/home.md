@@ -25,6 +25,8 @@ timestamp: 2026-10-01T00:00:00Z
 
 공지 배너와 알림 미읽음 배지도 홈 상단에 있다.
 
+**알림 배지 범위는 벨 목적지와 같아야 한다.** 배지는 `HomeViewModel.refreshUnreadNotifications`가 알림 API의 `unreadCount`로 세는데, 이 범위가 벨이 여는 화면의 읽음 처리 범위와 어긋나면 사용자가 배지를 지울 방법이 없어진다. 2026-09-29에 벨 목적지를 알림함에서 마이구독 탭으로 바꿨는데 배지는 `group=COMMUNITY`로 남아 있어, 마이구독에서 알림을 다 읽어도 배지가 그대로 남는 버그가 있었다(2026-10-01 수정). 마이구독 피드(`SubscriptionFeedViewModel`)는 `group` 없이 전체를 읽으므로 배지도 전체로 센다. 벨 목적지를 또 바꾸면 이 범위도 함께 맞춘다.
+
 앱이 포그라운드로 돌아오면 마지막 새로고침에서 30초 넘게 지났을 때만 전 섹션을 다시 불러온다(`HomeViewModel.refreshOnResume`). 섹션 로더마다 세대 번호가 있어 겹친 요청 중 늦게 도착한 옛 응답은 버린다. "커뮤니티 전체"는 다른 탭 전환처럼 `pushReplacement`로 커뮤니티 탭을 연다.
 
 하단 네비는 홈을 포함한 모든 탭 화면에서 스크롤하면 `BottomNavShrinkController`로 축소된다(다른 탭과 동일한 동작으로 홈에도 연결). 활성 탭 칩은 최소 폭 없이 아이콘·라벨·패딩(수직 12·수평 16)만큼만 차지한다.
@@ -42,7 +44,7 @@ timestamp: 2026-10-01T00:00:00Z
 | 공지 배너 | 공지 API | 실데이터 |
 | 쇼츠 | `/api/story/videos` (홈은 `sort=latest&size=10`, 내 팀은 `teamCode`·`size=30`, 리포지토리는 `latest\|views\|likes` 지원) | 실데이터 |
 | 구독 선수 목록·수 | 구독 API | 실데이터 |
-| 알림 미읽음 배지 | 알림 API (COMMUNITY 그룹) | 실데이터 |
+| 알림 미읽음 배지 | 알림 API (전체 — 벨 목적지와 같은 범위) | 실데이터 |
 | 솔랭 상태 | `GET /api/mobile/me/solo-rank` (`ApiSoloRankSource`, 로그인 필수) | 실데이터 |
 | 평점 한줄평 | `GET /api/mobile/ratings/recent` (`ApiReviewSource`, 인증 불필요) | 실데이터 |
 | 뉴스 | `GET /api/home/news` (`ApiNewsSource`, 최신 TOP 5, 썸네일 이미지 표시) | 실데이터 |
@@ -55,6 +57,7 @@ timestamp: 2026-10-01T00:00:00Z
 - `live.elapsedSeconds`는 `now − startedAt`, `finished.minutesAgo`는 `now − endedAt`, `durationMinutes`는 `durationSeconds / 60`이다.
 - `win`이 null인 판(결과를 못 받음)은 승/패를 그릴 수 없어 끝난 경기에서 뺀다.
 - 오프셋 없는 시각(뉴스 `createdAt`)은 KST로 해석한다(`parseServerTime`).
+- 큰 카드 배경 챔피언 이미지는 응답의 `championImageUrl`을 먼저 쓰고, 없을 때만 `championName`으로 Data Dragon 스플래시 URL을 만든다(`championSplashUrl`). 이름으로 URL을 만들 때는 표시명이 아니라 Data Dragon **키**를 넣어야 한다 — `champion_image.dart`의 `ChampionImage.ddragonKeyOf`가 그 변환(공백·아포스트로피·`.`·`&` 제거 + `오공`→`MonkeyKing` 같은 예외표)을 한 곳에서 담당하고, 아이콘·스플래시가 같은 키를 공유한다.
 
 **팀 배지:** 팀 표시 원형(`TeamCodeBadge`)은 로고 이미지를 그린다. 순위표(`imageUrl`)·오늘 경기(`teamImageUrl`)는 응답의 로고를 쓰고, 팀 코드만 오는 솔랭·한줄평·내 선수·커뮤니티는 `TeamLogoDirectory`(온보딩 팀 목록 캐시 기반 코드→로고 사전)에서 찾는다. 로고를 못 구했거나 불러오는 중이면 팀 코드 텍스트로 대신한다.
 

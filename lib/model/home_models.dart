@@ -8,12 +8,18 @@ class HomeLiveSoloPlayer {
     required this.champion,
     required this.elapsedSeconds,
     this.playerImageUrl,
+    this.championImageUrl,
     this.startedAt,
   });
 
   final String name;
   final String teamCode;
   final String champion;
+
+  /// 백엔드가 주는 챔피언 이미지 URL. 있으면 [champion] 이름으로 Data Dragon
+  /// 주소를 짜맞추는 것보다 이걸 먼저 쓴다 — 이름→키 변환을 거치지 않아
+  /// 신챔·개명에도 깨지지 않는다. 없으면 이름으로 폴백한다.
+  final String? championImageUrl;
 
   /// 조회 시점 기준 경과 시간(초). [startedAt] 이 있으면 화면은 그 시각으로
   /// 초 단위 카운트업하고, 이 값은 게임 길이 안내 등 조회 시점 스냅샷에만 쓴다.

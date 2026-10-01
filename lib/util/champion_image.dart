@@ -69,6 +69,10 @@ class ChampionImage {
     return 'https://ddragon.leagueoflegends.com/cdn/$_ddragonVersion/img/champion/$key.png';
   }
 
+  /// 영어 챔피언명 → Data Dragon 파일명 키. 아이콘뿐 아니라 스플래시 아트
+  /// URL(`championSplashUrl`)도 같은 키를 쓰므로 공개한다.
+  static String ddragonKeyOf(String name) => _ddragonKey(name);
+
   /// 백엔드 영어 챔피언명 → Data Dragon 파일명 키.
   static String _ddragonKey(String name) {
     final exception = _keyExceptions[name];

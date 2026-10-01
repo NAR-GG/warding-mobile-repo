@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import '../config/api_config.dart';
+import 'champion_image.dart';
+import 'champion_name_map.dart';
 
 /// 백엔드가 상대경로(`/images/...`)로 주는 이미지 URL에 API 호스트를 붙이고,
 /// 평문 `http://` 는 `https://` 로 올린다.
@@ -100,13 +102,22 @@ String? cloudinaryScaled(String? url, {required int targetPixelWidth}) {
 const int kChampionSplashWidth = 1215;
 const int kChampionSplashHeight = 717;
 
-/// 챔피언 영문 키로 Data Dragon 스플래시 아트 URL 을 만든다(배경용).
+/// 챔피언명으로 Data Dragon 스플래시 아트 URL 을 만든다(배경용).
 /// 스플래시 경로는 버전이 없어 패치와 무관하게 동작한다.
 ///
-/// 예) 'Vayne' → 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Vayne_0.jpg'
+/// 한국어·영어 어느 쪽이든 받는다 — 한국어면 [championToEn] 으로 영어명을
+/// 얻고, 거기서 [ChampionImage.ddragonKeyOf] 로 파일명 키를 뽑는다. URL 경로에
+/// 들어가는 건 표시명이 아니라 키다. 표시명을 그대로 넣으면 공백·아포스트로피·
+/// `.`·`&` 가 있는 챔피언(`Lee Sin`, `Kai'Sa`, `Dr. Mundo` 등 21명)이 CDN 403
+/// 으로 빠져 배경만 비어 보였다 — 단어 하나인 챔피언만 우연히 동작했다.
+///
+/// 예) 'Vayne'·'베인' → '.../champion/splash/Vayne_0.jpg'
+///     '리 신' → '.../champion/splash/LeeSin_0.jpg'
 /// 이름이 비어 있으면 null 을 반환한다.
 String? championSplashUrl(String championName) {
   if (championName.isEmpty) return null;
+  final key = ChampionImage.ddragonKeyOf(championToEn(championName));
+  if (key.isEmpty) return null;
   return 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/'
-      '${championName}_0.jpg';
+      '${key}_0.jpg';
 }
