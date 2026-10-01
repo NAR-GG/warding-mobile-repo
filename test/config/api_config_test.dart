@@ -13,6 +13,7 @@ void main() {
       for (final code in [
         'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
         'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP', 'ASIAN_GAMES',
+        'DEMACIA_CUP',
       ]) {
         expect(url, contains('league=$code'));
       }
