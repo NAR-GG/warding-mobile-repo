@@ -270,7 +270,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             // (HomeTodayMatchesSection), 앞뒤 SizedBox 는 그대로
                             // 남아 간격이 두 배로 벌어졌다. 섹션과 그 앞 간격을
                             // 묶어서 함께 없앤다.
-                            if (_viewModel.todayMatchesSorted.isNotEmpty) ...[
+                            if (_viewModel.todayMatchesSorted.isNotEmpty ||
+                                _viewModel.todayMatchesLoading) ...[
                               SizedBox(height: 28 * scale),
                               HomeTodayMatchesSection(
                                 viewModel: _viewModel,
@@ -294,7 +295,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             // 평점 한줄평이 없으면 섹션이 통째로 사라지는데
                             // (HomeReviewSection), 오늘 경기와 같은 이유로 앞
                             // 간격을 함께 묶어서 없앤다.
-                            if (_viewModel.reviews.isNotEmpty) ...[
+                            if (_viewModel.reviews.isNotEmpty ||
+                                _viewModel.reviewsLoading) ...[
                               SizedBox(height: 28 * scale),
                               HomeReviewSection(
                                 viewModel: _viewModel,

@@ -443,6 +443,11 @@ class HomeViewModel extends ChangeNotifier {
   /// 오늘 모든 리그의 경기를 불러온다. 실패하면 마지막 값을 유지한다.
   int _todayGen = 0;
 
+  /// 첫 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다. 이후 새로고침은
+  /// 마지막 값을 유지하고 스켈레톤을 다시 띄우지 않는다.
+  bool _todayFirstLoadPending = true;
+  bool get todayMatchesLoading => _todayFirstLoadPending;
+
   Future<void> loadTodayMatches() async {
     final gen = ++_todayGen;
     try {
@@ -452,9 +457,13 @@ class HomeViewModel extends ChangeNotifier {
       );
       if (_disposed || gen != _todayGen) return;
       _todayMatches = matches;
+      _todayFirstLoadPending = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 오늘 경기 조회 실패: $e');
+      if (_disposed || gen != _todayGen) return;
+      _todayFirstLoadPending = false;
+      _notify();
     }
   }
 
@@ -493,6 +502,10 @@ class HomeViewModel extends ChangeNotifier {
   /// 선택한 리그(LCK 등 리그 테이블 형식)의 순위표. 아직 못 받았으면 null.
   StandingsResult? get standings => _standings;
 
+  /// 첫 순위표 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다.
+  bool _standingsFirstLoadPending = true;
+  bool get standingsLoading => _standingsFirstLoadPending;
+
   Future<void> _loadStandings() async {
     final league = _selectedLeague;
     try {
@@ -500,9 +513,13 @@ class HomeViewModel extends ChangeNotifier {
       // 그 사이 리그를 바꿨으면 옛 응답은 버린다.
       if (_disposed || league != _selectedLeague) return;
       _standings = result;
+      _standingsFirstLoadPending = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 순위표 조회 실패($league): $e');
+      if (_disposed || league != _selectedLeague) return;
+      _standingsFirstLoadPending = false;
+      _notify();
     }
   }
 
@@ -569,6 +586,10 @@ class HomeViewModel extends ChangeNotifier {
   /// 현재 정렬 기준의 커뮤니티 글(최대 4건). 조회 실패 시 마지막 목록 유지.
   List<CommunityRemotePost> get communityPosts => _communityPosts;
 
+  /// 첫 커뮤니티 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다.
+  bool _communityFirstLoadPending = true;
+  bool get communityLoading => _communityFirstLoadPending;
+
   Future<void> _loadCommunityPosts() async {
     final sort = _communitySort;
     try {
@@ -579,9 +600,13 @@ class HomeViewModel extends ChangeNotifier {
       // 응답이 오는 사이 정렬을 바꿨으면 버린다 — 바뀐 정렬이 다시 조회한다.
       if (_disposed || sort != _communitySort) return;
       _communityPosts = page.posts;
+      _communityFirstLoadPending = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 커뮤니티 글 조회 실패(${sort.name}): $e');
+      if (_disposed || sort != _communitySort) return;
+      _communityFirstLoadPending = false;
+      _notify();
     }
   }
 
@@ -614,15 +639,24 @@ class HomeViewModel extends ChangeNotifier {
 
   int _reviewsGen = 0;
 
+  /// 첫 한줄평 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다. 끝난 뒤
+  /// 비어 있으면 섹션 전체를 숨긴다.
+  bool _reviewsFirstLoadPending = true;
+  bool get reviewsLoading => _reviewsFirstLoadPending;
+
   Future<void> _loadReviews() async {
     final gen = ++_reviewsGen;
     try {
       final reviews = await _reviewSource.fetchRecent();
       if (_disposed || gen != _reviewsGen) return;
       _reviews = reviews;
+      _reviewsFirstLoadPending = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 평점 한줄평 조회 실패: $e');
+      if (_disposed || gen != _reviewsGen) return;
+      _reviewsFirstLoadPending = false;
+      _notify();
     }
   }
 
@@ -637,8 +671,12 @@ class HomeViewModel extends ChangeNotifier {
       : availableContentTabs.first;
 
   /// 보여줄 콘텐츠 탭. 뉴스가 비면 쇼츠만.
+  /// 뉴스 첫 응답을 기다리는 동안은 뉴스 탭을 둔다(스켈레톤) — 그래야 비었을 때
+  /// 쇼츠로 넘어가는 한 번의 전환만 생긴다.
   List<HomeContentTab> get availableContentTabs =>
-      _news.isEmpty ? const [HomeContentTab.shorts] : HomeContentTab.values;
+      _news.isEmpty && !_newsFirstLoadPending
+      ? const [HomeContentTab.shorts]
+      : HomeContentTab.values;
 
   void setContentTab(HomeContentTab tab) {
     if (tab == contentTab) return;
@@ -652,15 +690,24 @@ class HomeViewModel extends ChangeNotifier {
 
   int _newsGen = 0;
 
+  /// 첫 뉴스 응답(성공·실패 모두)이 오기 전 true — 뉴스 탭 자리에 스켈레톤을
+  /// 그린다. 끝난 뒤 비어 있으면 뉴스 탭을 숨기고 쇼츠가 실제 탭이 된다.
+  bool _newsFirstLoadPending = true;
+  bool get newsLoading => _newsFirstLoadPending;
+
   Future<void> _loadNews() async {
     final gen = ++_newsGen;
     try {
       final articles = await _newsSource.fetchTop();
       if (_disposed || gen != _newsGen) return;
       _news = articles;
+      _newsFirstLoadPending = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 뉴스 조회 실패: $e');
+      if (_disposed || gen != _newsGen) return;
+      _newsFirstLoadPending = false;
+      _notify();
     }
   }
 

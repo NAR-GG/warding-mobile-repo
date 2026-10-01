@@ -9,6 +9,7 @@ import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
+import 'home_skeletons.dart';
 
 /// 커뮤니티 — 유저가 쓴 글 목록.
 ///
@@ -62,20 +63,23 @@ class HomeCommunitySection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        HomeListBox(
-          scale: scale,
-          children: [
-            for (final (i, post) in viewModel.communityPosts.indexed)
-              _PostTile(
-                post: post,
-                rank: viewModel.communitySort == HomeCommunitySort.hot
-                    ? i + 1
-                    : null,
-                scale: scale,
-                onTap: onTapPost == null ? null : () => onTapPost!(post),
-              ),
-          ],
-        ),
+        if (viewModel.communityLoading && viewModel.communityPosts.isEmpty)
+          HomeListSkeleton(scale: scale)
+        else
+          HomeListBox(
+            scale: scale,
+            children: [
+              for (final (i, post) in viewModel.communityPosts.indexed)
+                _PostTile(
+                  post: post,
+                  rank: viewModel.communitySort == HomeCommunitySort.hot
+                      ? i + 1
+                      : null,
+                  scale: scale,
+                  onTap: onTapPost == null ? null : () => onTapPost!(post),
+                ),
+            ],
+          ),
       ],
     );
   }
