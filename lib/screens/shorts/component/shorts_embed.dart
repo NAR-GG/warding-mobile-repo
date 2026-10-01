@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show Factory;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -151,5 +153,13 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
     //     pop을 "전체화면 탈출"로만 소비해, 화면을 아예 닫을 수 없었다.
     enableFullScreenOnVerticalDrag: false,
     autoFullScreen: false,
+    // 패키지 기본값은 "세로·가로 제스처를 플레이어(WebView)가 흡수"하는
+    // 것이라, 위 두 플래그를 꺼도 네이티브 WebView가 포인터 이벤트를 먼저
+    // 가져가 버려 부모 PageView가 세로 스와이프를 전혀 못 받았다.
+    // VerticalDragGestureRecognizer를 명시적으로 등록해 제스처 아레나에서
+    // Flutter 쪽(PageView)과 정상적으로 경쟁하게 한다.
+    gestureRecognizers: {
+      Factory<VerticalDragGestureRecognizer>(VerticalDragGestureRecognizer.new),
+    },
   );
 }
