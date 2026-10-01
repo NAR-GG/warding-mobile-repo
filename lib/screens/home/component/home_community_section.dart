@@ -151,7 +151,7 @@ class _PostTile extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w500,
-                      fontSize: 16 * scale,
+                      fontSize: 14 * scale,
                       color: AppColors.narTextTertiary,
                     ),
                   ),
@@ -234,7 +234,7 @@ Widget _metaText(String text, double scale) => Text(
   text,
   style: TextStyle(
     fontFamily: 'Pretendard',
-    fontSize: 13 * scale,
+    fontSize: 11 * scale,
     color: AppColors.narText2,
   ),
 );
@@ -260,7 +260,7 @@ Widget _iconMeta(
       style: TextStyle(
         fontFamily: 'Pretendard',
         fontWeight: FontWeight.w600,
-        fontSize: 13 * scale,
+        fontSize: 11 * scale,
         color: color,
       ),
     ),

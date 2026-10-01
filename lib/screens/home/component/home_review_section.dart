@@ -92,7 +92,7 @@ class _ReviewTile extends StatelessWidget {
                     review.comment,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
-                      fontSize: 16 * scale,
+                      fontSize: 14 * scale,
                       color: AppColors.narText,
                     ),
                   ),
@@ -121,7 +121,7 @@ class _ReviewTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'Pretendard',
-                            fontSize: 13 * scale,
+                            fontSize: 11 * scale,
                             color: AppColors.narText2,
                           ),
                         ),
