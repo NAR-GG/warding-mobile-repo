@@ -6,7 +6,7 @@ import '../../components/nar_detail_header.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/onboarding/onboarding_viewmodel.dart';
-import '../schedule/schedule_screen.dart';
+import '../home/home_screen.dart';
 import 'component/onboarding_progress_bar.dart';
 import 'step/league_step.dart';
 import 'step/notification_step.dart';
@@ -63,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // 비회원 선호 팀 로컬 저장은 OnboardingViewModel 이 끝낸 뒤 호출한다.
     // (회원 백엔드 온보딩 완료 API 연동은 추후)
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const ScheduleScreen()),
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
       (route) => false,
     );
   }

@@ -18,6 +18,280 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainScreenPlaceholder => 'Main screen (coming soon)';
 
   @override
+  String get homeTodayMatchesTitle => 'Today\'s Matches';
+
+  @override
+  String get homeSeeAllSchedule => 'All matches';
+
+  @override
+  String get homeStandingsTitle => 'Standings';
+
+  @override
+  String get homeStandingsLegendGroup => 'Legend Group';
+
+  @override
+  String get homeStandingsRiseGroup => 'Rise Group';
+
+  @override
+  String get homeStandingsColumnWL => 'W-L';
+
+  @override
+  String get homeStandingsColumnSetDiff => 'Set diff';
+
+  @override
+  String get homeStandingsScopeLabel => 'Regular season total';
+
+  @override
+  String homeStandingsExpandMore(int count) {
+    return 'Show $count more Rise Group teams';
+  }
+
+  @override
+  String get homeStandingsCollapse => 'Collapse';
+
+  @override
+  String get homeStandingsSoon => 'Coming soon';
+
+  @override
+  String get homeStandingsWorldsSwissScope => '2025 · Swiss Stage';
+
+  @override
+  String get homeStandingsWorldsKnockoutScope => '2025 · Knockout Bracket';
+
+  @override
+  String get homeStandingsWorldsSwissTitle => 'Swiss Stage';
+
+  @override
+  String get homeStandingsWorldsKnockoutTitle => 'Knockout Bracket';
+
+  @override
+  String get homeStandingsWorldsSwissHint =>
+      '3 wins advance · 3 losses eliminated';
+
+  @override
+  String get homeStandingsWorldsKnockoutHint => 'Quarterfinals → Finals';
+
+  @override
+  String get homeStandingsWorldsShowKnockout => 'View knockout bracket';
+
+  @override
+  String get homeStandingsWorldsShowSwiss => 'View Swiss stage';
+
+  @override
+  String get homeStandingsWorldsAdvanced => 'Advanced';
+
+  @override
+  String get homeStandingsWorldsEliminated => 'Eliminated';
+
+  @override
+  String get homeStandingsWorldsSeeAllBracket => 'Full bracket';
+
+  @override
+  String get homeCommunityTitle => 'Community';
+
+  @override
+  String get homeSeeAllCommunity => 'All posts';
+
+  @override
+  String get homeSortLatest => 'Latest';
+
+  @override
+  String get homeSortHot => 'Popular';
+
+  @override
+  String get homeSortReview => 'Ratings';
+
+  @override
+  String get homeReviewTitle => 'Ratings';
+
+  @override
+  String get homeContentTitle => 'Content';
+
+  @override
+  String get homeContentTabNews => 'News';
+
+  @override
+  String get homeContentTabShorts => 'Shorts';
+
+  @override
+  String get homeShortsFilterAll => 'All';
+
+  @override
+  String get homeShortsFilterTeam => 'Supported team';
+
+  @override
+  String get homeHeroEmptyMessage =>
+      'Subscribe to a player to see\ntheir solo queue updates here';
+
+  @override
+  String get homeHeroEmptyButton => 'Subscribe to a player';
+
+  @override
+  String get homeSoloQueueBadge => 'Solo Queue';
+
+  @override
+  String get homeSoloInProgress => 'In progress';
+
+  @override
+  String get homeDoneRowLabel => 'Finished today';
+
+  @override
+  String get homeDoneRowSub => 'Latest match per player';
+
+  @override
+  String homeSubscribedSeeAll(int count) {
+    return 'All $count subscribed';
+  }
+
+  @override
+  String homeHiddenCount(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get homeMatchResultLink => 'Match result';
+
+  @override
+  String homeMinutesAgo(int minutes) {
+    return '${minutes}m ago';
+  }
+
+  @override
+  String homeHoursAgo(int hours) {
+    return '${hours}h ago';
+  }
+
+  @override
+  String get homeNoticeDefault => 'Check out what\'s new';
+
+  @override
+  String get homeMatchStatusDone => 'Ended';
+
+  @override
+  String get homeJustNow => 'Just now';
+
+  @override
+  String homeDaysAgo(int days) {
+    return '${days}d ago';
+  }
+
+  @override
+  String get homeShortsFilterEmpty => 'No shorts match this filter yet';
+
+  @override
+  String get homeShortsTeamUnset =>
+      'Set your favorite team in My Page to see its shorts';
+
+  @override
+  String get homeShortsShowAll => 'Show all';
+
+  @override
+  String get shortsFeedWatchOnYoutube => 'Watch on YouTube';
+
+  @override
+  String get shortsFeedMuted => 'Muted';
+
+  @override
+  String get shortsFeedUnavailable => 'This video can\'t be played';
+
+  @override
+  String get shortsFeedOpenYoutube => 'Open in YouTube';
+
+  @override
+  String get shortsFeedRetry => 'Try again';
+
+  @override
+  String get shortsFeedEnd => 'You\'re all caught up';
+
+  @override
+  String get shortsFeedEndHint => 'Check out more from Home';
+
+  @override
+  String get shortsFeedClose => 'Close';
+
+  @override
+  String homeSoloPlaying(String champion) {
+    return 'Playing $champion';
+  }
+
+  @override
+  String homeSoloEndedAgo(String ago) {
+    return 'Ended $ago';
+  }
+
+  @override
+  String homeSoloDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get homeSoloWin => 'W';
+
+  @override
+  String get homeSoloLoss => 'L';
+
+  @override
+  String get homeSoloQuietTitle => 'No one is in solo queue right now';
+
+  @override
+  String homeSoloQuietSubscribed(int count) {
+    return '$count subscribed';
+  }
+
+  @override
+  String homeSoloLastGameWin(String ago, String name) {
+    return 'Last game $ago · $name won';
+  }
+
+  @override
+  String homeSoloLastGameLoss(String ago, String name) {
+    return 'Last game $ago · $name lost';
+  }
+
+  @override
+  String get myPlayersTitle => 'My players';
+
+  @override
+  String get myPlayersBack => 'Back';
+
+  @override
+  String get myPlayersSearchHint => 'Search players';
+
+  @override
+  String get myPlayersTeamAll => 'All';
+
+  @override
+  String get myPlayersGroupLive => 'In solo queue now';
+
+  @override
+  String get myPlayersGroupPlayedToday => 'Last solo queue result';
+
+  @override
+  String get myPlayersGroupQuiet => 'No solo queue today';
+
+  @override
+  String myPlayersGroupCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String myPlayersShowMore(int count) {
+    return 'Show $count more';
+  }
+
+  @override
+  String get myPlayersShowLess => 'Show less';
+
+  @override
+  String get myPlayersNoGameToday => 'No solo queue today';
+
+  @override
+  String get myPlayersNoResult => 'No players found';
+
+  @override
+  String get myPlayersEmpty => 'No subscribed players';
+
+  @override
   String get matchList => 'Match List';
 
   @override
@@ -895,6 +1169,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get matchLoadFailed => 'Failed to load matches';
+
+  @override
+  String get navHome => 'Home';
 
   @override
   String get navSchedule => 'Schedule';

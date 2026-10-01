@@ -17,7 +17,7 @@ LCK 등 e스포츠 팬을 위한 Flutter 모바일 앱 `warding`의 지식 번�
 
 # 기능
 
-* [Features](features/) - 로그인·온보딩·경기·라이브 알림 등 기능별 지식
+* [Features](features/) - 로그인·온보딩·홈·경기·라이브 알림 등 기능별 지식
 
 # 플레이북
 

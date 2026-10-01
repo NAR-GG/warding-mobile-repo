@@ -4,7 +4,7 @@
 요청/응답 스키마 등 전체 상세는 원본 스펙 `docs/openapi_spec.json`을 참고한다 (이 문서는 요약).
 
 - 스펙 버전: `v3.0.0`
-- 총 142개 경로, 166개 엔드포인트
+- 총 144개 경로, 168개 엔드포인트
 - 갱신 방법: 리포지토리 루트 README의 "API 스펙 갱신" 참고
 
 ## Mobile. 마이구독 알림
@@ -172,13 +172,14 @@ iOS 잠금화면 실시간 경기 카드의 ActivityKit 푸시 토큰 관리 API
 - **GET** `/api/standings` — 리그 순위표 조회
 
 ## Mobile. 선수 구독
-마이페이지 LCK 선수 구독 관리 API
+모바일 구독 선수 솔로 랭크 상태 API
 
 - **GET** `/api/mobile/me/player-subscriptions` — 내 구독 선수 목록 조회
 - **POST** `/api/mobile/me/player-subscriptions` — 선수 구독 추가
 - **GET** `/api/mobile/me/player-subscriptions/available-players` — 구독 가능한 2026 LCK 선수 검색
 - **PUT** `/api/mobile/me/player-subscriptions/{playerId}` — 선수 알림 토글 변경
 - **DELETE** `/api/mobile/me/player-subscriptions/{playerId}` — 선수 구독 해제
+- **GET** `/api/mobile/me/solo-rank` — 구독 선수 솔랭 상태 조회
 
 ## 6. Home API
 홈 화면용 데이터 제공 API (경기 일정, 커뮤니티, 뉴스, 챔피언/선수 통계)
@@ -223,6 +224,17 @@ iOS 잠금화면 실시간 경기 카드의 ActivityKit 푸시 토큰 관리 API
 - **DELETE** `/api/mobile/live/games/{gameId}/participants/{participantId}/my-rating` — 내 선수 평가 삭제
 - **GET** `/api/mobile/live/games/{gameId}/participants/{participantId}/ratings` — 선수 평점 상세 및 리뷰 조회
 - **GET** `/api/mobile/live/games/{gameId}/ratings` — 세트 선수 평점 목록 조회
+- **GET** `/api/mobile/ratings/recent` — 최근 한줄평 목록 조회
+
+## Mobile. 선수 구독
+모바일 구독 선수 솔로 랭크 상태 API
+
+- **GET** `/api/mobile/me/player-subscriptions` — 내 구독 선수 목록 조회
+- **POST** `/api/mobile/me/player-subscriptions` — 선수 구독 추가
+- **GET** `/api/mobile/me/player-subscriptions/available-players` — 구독 가능한 2026 LCK 선수 검색
+- **PUT** `/api/mobile/me/player-subscriptions/{playerId}` — 선수 알림 토글 변경
+- **DELETE** `/api/mobile/me/player-subscriptions/{playerId}` — 선수 구독 해제
+- **GET** `/api/mobile/me/solo-rank` — 구독 선수 솔랭 상태 조회
 
 ## app-store-webhook-controller
 - **POST** `/api/webhooks/appstore`

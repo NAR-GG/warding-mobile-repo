@@ -23,22 +23,26 @@ void main() {
     );
   }
 
-  testWidgets('정상 크기에서 다섯 탭이 모두 렌더된다', (tester) async {
+  testWidgets('정상 크기에서 노출 탭이 모두 렌더된다', (tester) async {
     await tester.pumpWidget(
       wrap(AppBottomNav(currentTab: AppNavTab.schedule, onTabSelected: (_) {})),
     );
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    // 활성 탭은 라벨까지, 비활성은 아이콘만 — 아이콘 5개가 항상 있어야 한다.
+    // 활성 탭은 라벨까지, 비활성은 아이콘만 — 노출 탭 수만큼 아이콘이 있어야
+    // 한다(마이구독은 AppNavTab.values엔 있지만 하단 네비 목록에선 뺐다).
     expect(find.byType(AppBottomNav), findsOneWidget);
-    expect(find.byType(SvgPicture), findsNWidgets(AppNavTab.values.length));
+    expect(
+      find.byType(SvgPicture),
+      findsNWidgets(AppBottomNav.visibleTabCount),
+    );
   });
 
   // 탭이 4개에서 5개로 늘며 바 폭(335)에 맞추려고 gap 과 비활성 chip 을 줄였다.
   // 라벨이 가장 긴 탭이 활성일 때가 최악이므로 그 상태로 세 폭을 다 밟는다.
   for (final width in [320.0, 375.0, 430.0]) {
-    testWidgets('폭 $width 에서 다섯 탭이 overflow 없이 들어간다', (tester) async {
+    testWidgets('폭 $width 에서 노출 탭이 overflow 없이 들어간다', (tester) async {
       await tester.pumpWidget(
         wrap(
           AppBottomNav(currentTab: AppNavTab.mypage, onTabSelected: (_) {}),
@@ -58,10 +62,9 @@ void main() {
   testWidgets('탭을 누르면 콜백이 선택된 탭으로 불린다', (tester) async {
     final tapped = <AppNavTab>[];
     await tester.pumpWidget(
-      wrap(AppBottomNav(
-        currentTab: AppNavTab.schedule,
-        onTabSelected: tapped.add,
-      )),
+      wrap(
+        AppBottomNav(currentTab: AppNavTab.schedule, onTabSelected: tapped.add),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -75,18 +78,15 @@ void main() {
   testWidgets('면적이 0 에 가까운 제약에서도 예외 없이 그려진다', (tester) async {
     // 전환 애니메이션 중간처럼 폭이 거의 없는 프레임을 흉내 낸다.
     await tester.pumpWidget(
-      wrap(
-        const SizedBox(
-          width: 0,
-          height: 0,
-          child: _NavProbe(),
-        ),
-      ),
+      wrap(const SizedBox(width: 0, height: 0, child: _NavProbe())),
     );
     await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull,
-        reason: '면적 0 프레임에서 셰이더가 돌아 죽으면 안 된다');
+    expect(
+      tester.takeException(),
+      isNull,
+      reason: '면적 0 프레임에서 셰이더가 돌아 죽으면 안 된다',
+    );
   });
 
   testWidgets('작은 화면(320)에서도 예외 없이 그려진다', (tester) async {
@@ -107,11 +107,8 @@ class _NavProbe extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => OverflowBox(
-        maxWidth: 400,
-        maxHeight: 100,
-        child: AppBottomNav(
-          currentTab: AppNavTab.list,
-          onTabSelected: (_) {},
-        ),
-      );
+    maxWidth: 400,
+    maxHeight: 100,
+    child: AppBottomNav(currentTab: AppNavTab.list, onTabSelected: (_) {}),
+  );
 }

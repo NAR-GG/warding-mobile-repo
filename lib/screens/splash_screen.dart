@@ -22,7 +22,7 @@ import '../repository/schedule/schedule_repository.dart';
 import '../styles/app_colors.dart';
 import '../util/home_widget_service.dart';
 import 'login/login_screen.dart';
-import 'schedule/schedule_screen.dart';
+import 'home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -185,14 +185,13 @@ class _SplashScreenState extends State<SplashScreen>
       // 에러 핸들러를 여기서 바로 붙인다. 아래 unawaited() 로 떼어놓는 순간
       // 이 Future 의 예외는 _bootstrap 의 try/catch 가 아니라 zone 으로 올라가
       // '처리되지 않은 크래시'로 잡힌다.
-      final prefetch =
-          Future.wait([
-            _prefetchCalendar(),
-            _prefetchPromotedNotice(),
-          ]).catchError((Object e) {
-            debugPrint('[Splash] 프리페치 실패(무시): $e');
-            return const <void>[];
-          });
+      final prefetch = Future.wait([
+        _prefetchCalendar(),
+        _prefetchPromotedNotice(),
+      ]).catchError((Object e) {
+        debugPrint('[Splash] 프리페치 실패(무시): $e');
+        return const <void>[];
+      });
 
       final results = await Future.wait([
         Future<void>.delayed(_minSplashDuration),
@@ -236,9 +235,10 @@ class _SplashScreenState extends State<SplashScreen>
       final json = saved.json;
       if (json != null) {
         final savedLeagues = (json['leagues'] as List?)?.cast<String>();
-        leagues = savedLeagues != null && savedLeagues.isNotEmpty
-            ? savedLeagues
-            : ['ALL'];
+        leagues =
+            savedLeagues != null && savedLeagues.isNotEmpty
+                ? savedLeagues
+                : ['ALL'];
         teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
       await ScheduleRepository.instance.fetchCalendar(
@@ -277,9 +277,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
-    final destination = jwt == null
-        ? const LoginScreen()
-        : const ScheduleScreen();
+    final destination = jwt == null ? const LoginScreen() : const HomeScreen();
     final route = MaterialPageRoute(builder: (_) => destination);
     Navigator.of(context).pushReplacement(route);
     // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.

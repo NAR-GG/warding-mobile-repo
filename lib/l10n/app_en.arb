@@ -6,6 +6,131 @@
   "logoutFailed": "Logout failed. Please try again later.",
   "mainScreenPlaceholder": "Main screen (coming soon)",
 
+  "homeTodayMatchesTitle": "Today's Matches",
+  "homeSeeAllSchedule": "All matches",
+  "homeStandingsTitle": "Standings",
+  "homeStandingsLegendGroup": "Legend Group",
+  "homeStandingsRiseGroup": "Rise Group",
+  "homeStandingsColumnWL": "W-L",
+  "homeStandingsColumnSetDiff": "Set diff",
+  "homeStandingsScopeLabel": "Regular season total",
+  "homeStandingsExpandMore": "Show {count} more Rise Group teams",
+  "@homeStandingsExpandMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeStandingsCollapse": "Collapse",
+  "homeStandingsSoon": "Coming soon",
+  "homeStandingsWorldsSwissScope": "2025 · Swiss Stage",
+  "homeStandingsWorldsKnockoutScope": "2025 · Knockout Bracket",
+  "homeStandingsWorldsSwissTitle": "Swiss Stage",
+  "homeStandingsWorldsKnockoutTitle": "Knockout Bracket",
+  "homeStandingsWorldsSwissHint": "3 wins advance · 3 losses eliminated",
+  "homeStandingsWorldsKnockoutHint": "Quarterfinals → Finals",
+  "homeStandingsWorldsShowKnockout": "View knockout bracket",
+  "homeStandingsWorldsShowSwiss": "View Swiss stage",
+  "homeStandingsWorldsAdvanced": "Advanced",
+  "homeStandingsWorldsEliminated": "Eliminated",
+  "homeStandingsWorldsSeeAllBracket": "Full bracket",
+  "homeCommunityTitle": "Community",
+  "homeSeeAllCommunity": "All posts",
+  "homeSortLatest": "Latest",
+  "homeSortHot": "Popular",
+  "homeSortReview": "Ratings",
+  "homeReviewTitle": "Ratings",
+  "homeContentTitle": "Content",
+  "homeContentTabNews": "News",
+  "homeContentTabShorts": "Shorts",
+  "homeShortsFilterAll": "All",
+  "homeShortsFilterTeam": "Supported team",
+  "homeHeroEmptyMessage": "Subscribe to a player to see\ntheir solo queue updates here",
+  "homeHeroEmptyButton": "Subscribe to a player",
+  "homeSoloQueueBadge": "Solo Queue",
+  "homeSoloInProgress": "In progress",
+  "homeDoneRowLabel": "Finished today",
+  "homeDoneRowSub": "Latest match per player",
+  "homeSubscribedSeeAll": "All {count} subscribed",
+  "@homeSubscribedSeeAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeHiddenCount": "+{count}",
+  "@homeHiddenCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeMatchResultLink": "Match result",
+  "homeMinutesAgo": "{minutes}m ago",
+  "@homeMinutesAgo": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeHoursAgo": "{hours}h ago",
+  "@homeHoursAgo": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "homeNoticeDefault": "Check out what's new",
+  "homeMatchStatusDone": "Ended",
+  "homeJustNow": "Just now",
+  "homeDaysAgo": "{days}d ago",
+  "@homeDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "homeShortsFilterEmpty": "No shorts match this filter yet",
+  "homeShortsTeamUnset": "Set your favorite team in My Page to see its shorts",
+  "homeShortsShowAll": "Show all",
+  "shortsFeedWatchOnYoutube": "Watch on YouTube",
+  "shortsFeedMuted": "Muted",
+  "shortsFeedUnavailable": "This video can't be played",
+  "shortsFeedOpenYoutube": "Open in YouTube",
+  "shortsFeedRetry": "Try again",
+  "shortsFeedEnd": "You're all caught up",
+  "shortsFeedEndHint": "Check out more from Home",
+  "shortsFeedClose": "Close",
+  "homeSoloPlaying": "Playing {champion}",
+  "@homeSoloPlaying": {
+    "placeholders": { "champion": { "type": "String" } }
+  },
+  "homeSoloEndedAgo": "Ended {ago}",
+  "@homeSoloEndedAgo": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "homeSoloDuration": "{minutes} min",
+  "@homeSoloDuration": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "homeSoloWin": "W",
+  "homeSoloLoss": "L",
+  "homeSoloQuietTitle": "No one is in solo queue right now",
+  "homeSoloQuietSubscribed": "{count} subscribed",
+  "@homeSoloQuietSubscribed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "homeSoloLastGameWin": "Last game {ago} · {name} won",
+  "@homeSoloLastGameWin": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+  },
+  "homeSoloLastGameLoss": "Last game {ago} · {name} lost",
+  "@homeSoloLastGameLoss": {
+    "placeholders": { "ago": { "type": "String" }, "name": { "type": "String" } }
+   },
+
+  "myPlayersTitle": "My players",
+  "myPlayersBack": "Back",
+  "myPlayersSearchHint": "Search players",
+  "myPlayersTeamAll": "All",
+  "myPlayersGroupLive": "In solo queue now",
+  "myPlayersGroupPlayedToday": "Last solo queue result",
+  "myPlayersGroupQuiet": "No solo queue today",
+  "myPlayersGroupCount": "{count}",
+  "@myPlayersGroupCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "myPlayersShowMore": "Show {count} more",
+  "@myPlayersShowMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "myPlayersShowLess": "Show less",
+  "myPlayersNoGameToday": "No solo queue today",
+  "myPlayersNoResult": "No players found",
+  "myPlayersEmpty": "No subscribed players",
+
   "matchList": "Match List",
   "season": "Season",
   "league": "League",
@@ -314,6 +439,7 @@
   "matchSchedule": "Match Schedule",
   "matchLoadFailed": "Failed to load matches",
 
+  "navHome": "Home",
   "navSchedule": "Schedule",
   "navMatchList": "Matches",
   "navCommunity": "Community",

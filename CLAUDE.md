@@ -134,10 +134,11 @@ shorebird patch android --release-version <pubspec의 version>
 - 날짜순으로 보려면:
   `git tag --sort=-creatordate --format='%(creatordate:short)  %(refname:short)  %(contents:subject)'`
 
-패치 태그(`patch/<version>/<번호>`)는 만들지 않는다. shorebird 패치를 당분간 쓰지 않기로 했다.
-다시 쓰게 되면 같은 방식으로 패치 직전에 찍는다.
+**2026-09-29부터 shorebird 패치를 다시 쓴다** (한동안 미사용이었다가 재개 결정). 패치 직전에도
+릴리즈와 같은 방식으로 태그를 찍는다 — `patch/<release version>/<번호>`, `-a` 필수. 번호는
+같은 릴리즈 버전에 패치를 낼 때마다 1부터 순서대로 올린다.
 
-패치 규칙 (현재 미사용, 재개할 때 참고):
+패치 규칙:
 - 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출이 필요하다.
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시가 발생할 위험이 있다.
 - 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
@@ -194,8 +195,11 @@ PR을 만들거나 본문을 고칠 때는 **항상 먼저 `.github/pull_request
 - 화면 폴더 구조 정리 (`screens/login·home·onboarding`)
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
+- 쇼츠 앱 내 재생: 홈 카드 탭 → 전체화면 세로 피드(`screens/shorts/`, 유튜브 IFrame 임베드·항상 무음). 네이티브 WebView라 스토어 릴리스 필요, Android·실기기 미확인
+- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/repository/home/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
 ### 다음 작업
+- 솔랭·평점·뉴스 백엔드 연동(홈 소스 구현체 교체)
 - 경기 페이지
 
 ### 남은 TODO

@@ -26,9 +26,17 @@ open -a Simulator
 
 ## 2. 앱 실행
 
+레포 루트(이 스킬이 속한 `warding-mobile-repo`)에서 실행한다:
+
 ```bash
-cd "/Volumes/Extreme SSD/Projects/teamProject/warding"
 fvm flutter run -d "$DEVICE" &
+```
+
+홈 화면의 솔랭·평점·뉴스·월즈 순위표처럼 `HOME_MOCKS` 뒤에 있는 목업 데이터를 봐야 하면
+`--dart-define=HOME_MOCKS=true`를 붙인다(기본값은 꺼짐 — 릴리즈처럼 빈 화면이 보인다):
+
+```bash
+fvm flutter run -d "$DEVICE" --dart-define=HOME_MOCKS=true &
 ```
 
 빌드 로그에 `Flutter run key commands`가 보이면 앱이 뜬 것이다. 최초 빌드는 1~3분 걸릴 수 있다.

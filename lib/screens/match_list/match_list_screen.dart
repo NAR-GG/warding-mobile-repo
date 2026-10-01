@@ -19,6 +19,7 @@ import '../../util/tab_route.dart';
 import '../../util/match_detail_router.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
 import '../community/community_screen.dart';
+import '../home/home_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
@@ -286,7 +287,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
 
   /// 하단 네비 탭 선택. '경기리스트'를 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.schedule) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.community) {
       Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));

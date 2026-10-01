@@ -230,4 +230,45 @@ class AppColors {
 
   /// rgba(255,255,255,0.62) — 룬 트리 헤더(결의/영감 등) 왼쪽 보더.
   static const Color narWhiteBorder62 = Color(0x9EFFFFFF);
+
+  // 홈 솔랭 강조 — 브랜드 3색(narBg)을 옅게 깐다. 초록·주황·단색 보라 같은
+  // 신호색은 쓰지 않는다(warding-docs policy/design.md, 2026-09-22 결정).
+  // 값은 홈 목업 v29 의 --solo* 변수 그대로다.
+
+  /// 솔랭 배지("솔로 랭크")·쇼츠 내 선수 배지 배경 — narBg 30/26/30%.
+  static const LinearGradient narSoloTint = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0x4DE87558), Color(0x42C865C9), Color(0x4D791BB8)],
+  );
+
+  /// 솔랭 카드 옅은 배경 — narBg 14/12/14%.
+  static const LinearGradient narSoloTintSoft = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0x24E87558), Color(0x1FC865C9), Color(0x24791BB8)],
+  );
+
+  /// 솔랭 강조 테두리 — narBg 가운데 색(#C865C9) 60%.
+  static const Color narSoloLine = Color(0x99C865C9);
+
+  /// 솔랭 강조 글자 — narBg 가운데 색을 밝힌 핑크.
+  static const Color narSoloText = Color(0xFFF3BEDC);
+
+  /// 솔랭 진행 중 점.
+  static const Color narSoloDot = Color(0xFFE9A0C8);
+
+  /// 솔랭 히어로 카드 스플래시 아래 바탕 — 목업 #1B1C21.
+  static const Color narSoloHeroBg = Color(0xFF1B1C21);
+
+  /// 쇼츠 썸네일 하단 어둡게 — rgba(11,12,14,.72) → 투명.
+  static const LinearGradient narShortsScrim = LinearGradient(
+    begin: Alignment.bottomCenter,
+    end: Alignment.topCenter,
+    colors: [Color(0xB80B0C0E), Color(0x000B0C0E)],
+    stops: [0.0, 0.38],
+  );
+
+  /// 쇼츠 "내 팀" 배지 배경 — 흰색 14%.
+  static const Color narWhite14 = Color(0x24FFFFFF);
 }

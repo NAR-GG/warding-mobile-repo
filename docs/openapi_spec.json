@@ -123,6 +123,10 @@
     {
       "name": "Mobile. 선수 평점",
       "description": "모바일 라이브 경기 선수 평점 및 한줄평 API"
+    },
+    {
+      "name": "Mobile. 선수 구독",
+      "description": "모바일 구독 선수 솔로 랭크 상태 API"
     }
   ],
   "paths": {
@@ -1977,6 +1981,14 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -3851,7 +3863,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "카테고리 (all: 전체, pro: 프로팀, shorts: 쇼츠 채널)",
+            "description": "카테고리 (all: 전체, pro: 프로팀, shorts: LCK·팀 공식 쇼츠)",
             "required": false,
             "schema": {
               "type": "string",
@@ -3882,6 +3894,16 @@
             "example": "all"
           },
           {
+            "name": "teamCode",
+            "in": "query",
+            "description": "팀 코드 (예: T1, GEN). 그 팀 공식 채널의 영상만 준다. LCK 공식 채널은 팀이 아니라 걸리지 않는다",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "GEN"
+          },
+          {
             "name": "page",
             "in": "query",
             "description": "페이지 번호 (0부터 시작)",
@@ -3896,7 +3918,7 @@
           {
             "name": "size",
             "in": "query",
-            "description": "페이지 크기",
+            "description": "페이지 크기 (1~100, 범위를 벗어나면 맞춘다)",
             "required": false,
             "schema": {
               "type": "integer",
@@ -4045,7 +4067,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.097678012",
+                      "timestamp": "2026-10-01T09:31:12.9375301",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -4094,7 +4116,7 @@
                 "examples": {
                   "INVALID_MATCH_ID": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.107312211",
+                      "timestamp": "2026-10-01T09:31:12.948389291",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCH_ID",
@@ -4111,7 +4133,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.107322128",
+                      "timestamp": "2026-10-01T09:31:12.948395999",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -4183,7 +4205,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.124796092",
+                      "timestamp": "2026-10-01T09:31:12.964553037",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -4550,6 +4572,76 @@
             }
           }
         }
+      }
+    },
+    "/api/mobile/ratings/recent": {
+      "get": {
+        "tags": [
+          "Mobile. 선수 평점"
+        ],
+        "summary": "최근 한줄평 목록 조회",
+        "description": "모든 경기의 평가 중 한줄평이 달린 것만 최신순으로 조회합니다. 로그인이면 차단한 회원의 평가를 뺍니다.",
+        "operationId": "getRecent",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentRatingListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/me/solo-rank": {
+      "get": {
+        "tags": [
+          "Mobile. 선수 구독"
+        ],
+        "summary": "구독 선수 솔랭 상태 조회",
+        "description": "지금 솔랭 중인 구독 선수와, 최근 24시간 안에 끝낸 선수(선수당 마지막 1판)를 조회합니다.",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoloRankStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/mobile/me/ratings": {
@@ -5821,7 +5913,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.533217312",
+                      "timestamp": "2026-10-01T09:31:13.438525531",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -5838,7 +5930,7 @@
                 "examples": {
                   "MATCH_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.533205311",
+                      "timestamp": "2026-10-01T09:31:13.438519531",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "MATCH_NOT_FOUND",
@@ -5888,7 +5980,7 @@
                 "examples": {
                   "INVALID_COMBINATION_ID": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.540060459",
+                      "timestamp": "2026-10-01T09:31:13.445281485",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_COMBINATION_ID",
@@ -5905,7 +5997,7 @@
                 "examples": {
                   "COMBINATION_NOT_FOUND": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.540083502",
+                      "timestamp": "2026-10-01T09:31:13.445301026",
                       "status": 404,
                       "error": "NOT_FOUND",
                       "code": "COMBINATION_NOT_FOUND",
@@ -6058,7 +6150,7 @@
                 "examples": {
                   "INVALID_INPUT_VALUE": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.551243544",
+                      "timestamp": "2026-10-01T09:31:13.45640709",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_INPUT_VALUE",
@@ -6067,7 +6159,7 @@
                   },
                   "INVALID_MATCHUP_REQUEST": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.551252086",
+                      "timestamp": "2026-10-01T09:31:13.456413382",
                       "status": 400,
                       "error": "BAD_REQUEST",
                       "code": "INVALID_MATCHUP_REQUEST",
@@ -6084,7 +6176,7 @@
                 "examples": {
                   "DATA_INTEGRITY_ERROR": {
                     "value": {
-                      "timestamp": "2026-09-03T12:57:55.551253961",
+                      "timestamp": "2026-10-01T09:31:13.456415132",
                       "status": 500,
                       "error": "INTERNAL_SERVER_ERROR",
                       "code": "DATA_INTEGRITY_ERROR",
@@ -10786,6 +10878,9 @@
           },
           "channelProfileUrl": {
             "type": "string"
+          },
+          "teamCode": {
+            "type": "string"
           }
         }
       },
@@ -11880,8 +11975,139 @@
           },
           "match": {
             "$ref": "#/components/schemas/MatchInfo"
+          },
+          "nickname": {
+            "type": "string",
+            "description": "작성자 닉네임(이름#태그)",
+            "example": "젠지가족#4821"
+          },
+          "playerTeamCode": {
+            "type": "string",
+            "description": "평가 대상 선수의 그 경기 팀 코드. 매치 진영으로 정하고, 매치를 모르면 라이브 피드 이름 접두사(\"HLE Zeus\")로 정한다. 둘 다 없으면 null",
+            "nullable": true,
+            "example": "HLE"
           }
         }
+      },
+      "RecentRatingListResponse": {
+        "type": "object",
+        "properties": {
+          "ratings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyRatingItem"
+            }
+          },
+          "nextCursor": {
+            "type": "integer",
+            "description": "다음 페이지 커서(마지막 ratingId). 더 없으면 null",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "description": "모든 경기의 최근 한줄평 목록 응답 (한줄평이 달린 평가만, 최신순)"
+      },
+      "FinishedPlayer": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "playerName": {
+            "type": "string"
+          },
+          "playerImageUrl": {
+            "type": "string"
+          },
+          "teamCode": {
+            "type": "string"
+          },
+          "championName": {
+            "type": "string"
+          },
+          "championImageUrl": {
+            "type": "string"
+          },
+          "win": {
+            "type": "boolean"
+          },
+          "kills": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deaths": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assists": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "description": "경기 길이(초)",
+            "format": "int32",
+            "example": 1920
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-25T21:35:12+09:00"
+          }
+        },
+        "description": "최근 24시간 안에 끝난 게임, 선수당 마지막 1판. 최근 종료순. 노출 기간·인원 상한은 앱이 정한다"
+      },
+      "LivePlayer": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "playerName": {
+            "type": "string"
+          },
+          "playerImageUrl": {
+            "type": "string"
+          },
+          "teamCode": {
+            "type": "string"
+          },
+          "championName": {
+            "type": "string"
+          },
+          "championImageUrl": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "게임 시작 시각. 로딩 화면에 감지돼 실제 시작을 아직 모르면 감지 시각",
+            "format": "date-time",
+            "example": "2026-09-25T21:03:12+09:00"
+          }
+        },
+        "description": "지금 솔랭 중. 최근 시작순"
+      },
+      "SoloRankStatusResponse": {
+        "type": "object",
+        "properties": {
+          "live": {
+            "type": "array",
+            "description": "지금 솔랭 중. 최근 시작순",
+            "items": {
+              "$ref": "#/components/schemas/LivePlayer"
+            }
+          },
+          "finished": {
+            "type": "array",
+            "description": "최근 24시간 안에 끝난 게임, 선수당 마지막 1판. 최근 종료순. 노출 기간·인원 상한은 앱이 정한다",
+            "items": {
+              "$ref": "#/components/schemas/FinishedPlayer"
+            }
+          }
+        },
+        "description": "구독 선수의 솔로 랭크 상태 — 지금 하는 중인 선수와 최근 24시간 안에 끝낸 선수"
       },
       "MyRatingListResponse": {
         "type": "object",
@@ -12653,6 +12879,29 @@
           }
         }
       },
+      "ItemBuild": {
+        "type": "object",
+        "properties": {
+          "core": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "questItem": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "trinket": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "consumables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          }
+        }
+      },
       "LiveGameChampionsResponse": {
         "type": "object",
         "properties": {
@@ -12695,6 +12944,9 @@
             "type": "string"
           },
           "championImageUrl": {
+            "type": "string"
+          },
+          "championIconUrl": {
             "type": "string"
           },
           "playerName": {
@@ -12772,6 +13024,9 @@
           },
           "runes": {
             "$ref": "#/components/schemas/RuneBuild"
+          },
+          "items": {
+            "$ref": "#/components/schemas/ItemBuild"
           }
         }
       },
@@ -12841,6 +13096,12 @@
         "type": "object",
         "properties": {
           "teamName": {
+            "type": "string"
+          },
+          "teamCode": {
+            "type": "string"
+          },
+          "teamImageUrl": {
             "type": "string"
           },
           "picks": {

@@ -2,20 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../styles/app_colors.dart';
 
-/// LIVE 배지 안의 빨간 점. 진행 중임을 알리려 천천히 깜박인다.
+/// LIVE·솔로 배지 안의 점. 진행 중임을 알리려 천천히 깜박인다.
 ///
 /// 투명도만 1 ↔ 0.3 으로 오가서(1.2초 주기) 배지 크기·위치는 흔들리지 않는다.
-/// 크기가 변하면 옆 'LIVE' 글자가 밀려 리스트 전체가 들썩이기 때문이다.
+/// 크기가 변하면 옆 글자가 밀려 리스트 전체가 들썩이기 때문이다.
 ///
 /// 시스템 '동작 줄이기'(iOS Reduce Motion / Android 애니메이션 끄기)가 켜져
 /// 있으면 깜박이지 않고 불투명하게 고정한다.
 class NarLiveDot extends StatefulWidget {
-  const NarLiveDot({super.key, this.scale = 1, this.size = 6});
+  const NarLiveDot({
+    super.key,
+    this.scale = 1,
+    this.size = 6,
+    this.color = AppColors.liveAccent,
+  });
 
   final double scale;
 
   /// 점 지름. 시안 기준 6.
   final double size;
+
+  /// 점 색. 기본은 LIVE 배지의 빨강, 솔로 배지는 [AppColors.narSoloDot] 을 넘긴다.
+  final Color color;
 
   @override
   State<NarLiveDot> createState() => _NarLiveDotState();
@@ -60,10 +68,7 @@ class _NarLiveDotState extends State<NarLiveDot>
     final dot = Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.liveAccent,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
     );
     return FadeTransition(
       opacity: Tween<double>(begin: 1, end: 0.3).animate(

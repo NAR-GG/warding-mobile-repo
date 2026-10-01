@@ -39,6 +39,32 @@ class ScheduleRepository {
   ScheduleRepository._();
   static final ScheduleRepository instance = ScheduleRepository._();
 
+  /// 테스트 전용 — 캘린더·날짜별 경기·커서 페이지 캐시를 모두 비운다.
+  ///
+  /// 싱글턴이라 테스트 사이에 [_calendarCacheTtl] 이내로 캐시가 넘어온다.
+  /// 한 테스트가 빈 응답을 캐시해 두면(라이브 경기가 없을 때만 캐시된다)
+  /// 뒤이은 테스트가 같은 날짜·리그 조합을 조회할 때 그 빈 결과를 그대로
+  /// 물려받는다.
+  ///
+  /// in-flight 맵만 비우는 걸로는 부족하다 — 초기화 전에 시작한 요청은
+  /// 취소되지 않고 계속 진행 중이라, 초기화 이후에 완료되면 그 완료 콜백이
+  /// 이전 테스트의 응답을 새 테스트의 캐시에 다시 써 넣는다. 세대 번호를
+  /// 올려서 그런 "늦게 도착한" 완료 콜백이 캐시에 아무것도 못 쓰게 막는다.
+  @visibleForTesting
+  void resetCacheForTesting() {
+    _cacheGeneration++;
+    _calendarInFlight.clear();
+    _calendarCache.clear();
+    _matchesByDateInFlight.clear();
+    _matchesByDateCache.clear();
+    _matchesInFlight.clear();
+    _matchesCache.clear();
+  }
+
+  /// [resetCacheForTesting] 이 불릴 때마다 올라간다. 요청 시작 시점의 세대와
+  /// 완료 시점의 세대가 다르면(그 사이 리셋이 있었으면) 캐시에 쓰지 않는다.
+  int _cacheGeneration = 0;
+
   /// 라이브 경기가 하나라도 있는지 — 화면과 같은 [isLiveMatchStatus] 기준이다.
   /// 캐시 여부 판단에 쓴다(라이브가 있으면 캐시를 짧게 가져간다).
   bool _hasLiveMatch(List<ScheduleMatch> matches) =>
@@ -69,10 +95,7 @@ class ScheduleRepository {
   /// 응답을 그대로 붙들고 있었다. 캐시 키가 월·리그·팀 조합이라 필터를
   /// 이것저것 만져 보는 사용자에게는 조합 수만큼 쌓인다. 쓸 때 함께 쓸어내
   /// 실제 사용 범위 언저리로 유지한다.
-  static void _sweepExpired<T>(
-    Map<String, (DateTime, T)> cache,
-    Duration ttl,
-  ) {
+  static void _sweepExpired<T>(Map<String, (DateTime, T)> cache, Duration ttl) {
     final now = DateTime.now();
     cache.removeWhere((_, entry) => now.difference(entry.$1) >= ttl);
   }
@@ -97,8 +120,7 @@ class ScheduleRepository {
     List<int>? teamIds,
     bool forceRefresh = false,
   }) {
-    final monthStr =
-        '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    final monthStr = '${month.year}-${month.month.toString().padLeft(2, '0')}';
     final url = ApiConfig.mobileScheduleCalendarUrl(
       month: monthStr,
       leagues: leagues,
@@ -119,22 +141,29 @@ class ScheduleRepository {
       }
     }
 
+    final startGeneration = _cacheGeneration;
     final request = _fetchCalendar(url, monthStr)
         .timeout(_calendarTimeout)
         .then((days) {
-      _sweepExpired(_calendarCache, _calendarCacheTtl);
-      _calendarCache[url] = (DateTime.now(), days);
-      return days;
-    });
+          if (startGeneration == _cacheGeneration) {
+            _sweepExpired(_calendarCache, _calendarCacheTtl);
+            _calendarCache[url] = (DateTime.now(), days);
+          }
+          return days;
+        });
     // 성공·실패 무관하게 진행 중 목록에서 뺀다. 실패한 요청이 남아 있으면
     // 다음 조회가 이미 끝난 실패 future 에 합류해 계속 같은 에러만 받는다.
     // 그 사이 새 요청이 들어와 있으면(같은 url) 그 쪽을 지우지 않도록 확인한다.
     // 정리용 체인 자체의 에러는 여기서 삼킨다 — 원본 에러는 호출자가 받는다.
-    unawaited(request.whenComplete(() {
-      if (identical(_calendarInFlight[url], request)) {
-        _calendarInFlight.remove(url);
-      }
-    }).catchError((_) => const <MatchCalendarDay>[]));
+    unawaited(
+      request
+          .whenComplete(() {
+            if (identical(_calendarInFlight[url], request)) {
+              _calendarInFlight.remove(url);
+            }
+          })
+          .catchError((_) => const <MatchCalendarDay>[]),
+    );
     _calendarInFlight[url] = request;
     return request;
   }
@@ -145,8 +174,10 @@ class ScheduleRepository {
   ) async {
     debugPrint('[Schedule] GET $url');
     final response = await http.get(Uri.parse(url));
-    debugPrint('[Schedule] calendar ← ${response.statusCode} '
-        '(${response.body.length} bytes)');
+    debugPrint(
+      '[Schedule] calendar ← ${response.statusCode} '
+      '(${response.body.length} bytes)',
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('경기 캘린더 조회 실패 (${response.statusCode})');
@@ -175,7 +206,8 @@ class ScheduleRepository {
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
   }) {
-    final dateStr = '${date.year}-'
+    final dateStr =
+        '${date.year}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
     final url = ApiConfig.mobileSchedulesUrl(
@@ -196,22 +228,27 @@ class ScheduleRepository {
       return inFlight;
     }
 
+    final startGeneration = _cacheGeneration;
     final request = _fetchMatchesByDate(url, dateStr)
         .timeout(_calendarTimeout)
         .then((matches) {
-      // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
-      // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
-      if (!_hasLiveMatch(matches)) {
-        _sweepExpired(_matchesByDateCache, _calendarCacheTtl);
-        _matchesByDateCache[url] = (DateTime.now(), matches);
-      }
-      return matches;
-    });
-    unawaited(request.whenComplete(() {
-      if (identical(_matchesByDateInFlight[url], request)) {
-        _matchesByDateInFlight.remove(url);
-      }
-    }).catchError((_) => const <ScheduleMatch>[]));
+          // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
+          // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
+          if (startGeneration == _cacheGeneration && !_hasLiveMatch(matches)) {
+            _sweepExpired(_matchesByDateCache, _calendarCacheTtl);
+            _matchesByDateCache[url] = (DateTime.now(), matches);
+          }
+          return matches;
+        });
+    unawaited(
+      request
+          .whenComplete(() {
+            if (identical(_matchesByDateInFlight[url], request)) {
+              _matchesByDateInFlight.remove(url);
+            }
+          })
+          .catchError((_) => const <ScheduleMatch>[]),
+    );
     _matchesByDateInFlight[url] = request;
     return request;
   }
@@ -298,22 +335,31 @@ class ScheduleRepository {
       return inFlight;
     }
 
+    final startGeneration = _cacheGeneration;
     final request = _fetchMatches(url).timeout(_calendarTimeout).then((page) {
       // 진행 중인 경기가 섞여 있으면 캐시하지 않는다 — 스코어가 실시간으로
       // 바뀌는데 캐시하면 재진입 시 [_calendarCacheTtl] 동안 옛 스코어를 보여준다.
-      if (!_hasLiveMatch(page.matches)) {
+      if (startGeneration == _cacheGeneration && !_hasLiveMatch(page.matches)) {
         _sweepExpired(_matchesCache, _calendarCacheTtl);
         _matchesCache[url] = (DateTime.now(), page);
       }
       return page;
     });
-    unawaited(request.whenComplete(() {
-      if (identical(_matchesInFlight[url], request)) {
-        _matchesInFlight.remove(url);
-      }
-    }).catchError((_) {
-      return const MatchPage(matches: [], nextCursor: null, hasNext: false);
-    }));
+    unawaited(
+      request
+          .whenComplete(() {
+            if (identical(_matchesInFlight[url], request)) {
+              _matchesInFlight.remove(url);
+            }
+          })
+          .catchError((_) {
+            return const MatchPage(
+              matches: [],
+              nextCursor: null,
+              hasNext: false,
+            );
+          }),
+    );
     _matchesInFlight[url] = request;
     return request;
   }
@@ -330,8 +376,10 @@ class ScheduleRepository {
     final matches = (data['matches'] as List<dynamic>? ?? const [])
         .map((e) => ScheduleMatch.fromJson(e as Map<String, dynamic>))
         .toList();
-    debugPrint('[Schedule] matches ← ${response.statusCode} '
-        '(${matches.length} matches)');
+    debugPrint(
+      '[Schedule] matches ← ${response.statusCode} '
+      '(${matches.length} matches)',
+    );
     return MatchPage(
       matches: matches,
       nextCursor: data['nextCursor'] as String?,
@@ -357,9 +405,7 @@ class ScheduleRepository {
   ///
   /// 같은 리그 요청이 이미 떠 있거나 방금 끝났으면([_filtersCacheTtl] 이내)
   /// 그 결과를 재사용한다.
-  Future<ScheduleFilterOptions> fetchFilterOptions({
-    String league = 'LCK',
-  }) {
+  Future<ScheduleFilterOptions> fetchFilterOptions({String league = 'LCK'}) {
     final cached = _filtersCache[league];
     if (cached != null &&
         DateTime.now().difference(cached.$1) < _filtersCacheTtl) {
@@ -373,11 +419,15 @@ class ScheduleRepository {
       _filtersCache[league] = (DateTime.now(), options);
       return options;
     });
-    unawaited(request.whenComplete(() {
-      if (identical(_filtersInFlight[league], request)) {
-        _filtersInFlight.remove(league);
-      }
-    }).then<void>((_) {}, onError: (_) {}));
+    unawaited(
+      request
+          .whenComplete(() {
+            if (identical(_filtersInFlight[league], request)) {
+              _filtersInFlight.remove(league);
+            }
+          })
+          .then<void>((_) {}, onError: (_) {}),
+    );
     _filtersInFlight[league] = request;
     return request;
   }

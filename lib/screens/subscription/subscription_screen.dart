@@ -23,6 +23,7 @@ import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_layout.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
 import '../community/community_screen.dart';
+import '../home/home_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -544,7 +545,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.schedule) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));

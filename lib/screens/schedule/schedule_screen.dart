@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
-import '../../components/guide_popup.dart';
 import '../../components/load_error.dart';
-import '../../components/nar_banner.dart';
 import '../../l10n/app_localizations.dart';
-import '../../model/notice.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
 import '../community/community_screen.dart';
+import '../home/home_screen.dart';
 import '../match_day/match_day_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
-import '../notice/notice_detail_screen.dart';
 import '../subscription/subscription_screen.dart';
 import 'component/calendar_month_label.dart';
 import 'component/filter_sheet.dart';
@@ -130,12 +127,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         } else {
           openWhenReady();
         }
-      });
-    } else {
-      // 사용 가이드 팝업. 위젯에서 필터를 열려고 들어온 경우엔 띄우지 않는다 —
-      // 사용자가 의도한 필터 모달 위에 겹친다.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) maybeShowGuidePopup(context);
       });
     }
   }
@@ -304,16 +295,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     );
   }
 
-  /// 띠배너 탭 → 공지 상세. 목록을 거치지 않고 왔으므로 목록 이동 아이콘을 켠다.
-  void _openNotice(Notice notice) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            NoticeDetailScreen(notice: notice, showListButton: true),
-      ),
-    );
-  }
-
   /// 캘린더 영역. 아직 데이터가 하나도 없는 상태(최초 진입·재시도 전)에서
   /// 로딩 중이면 스켈레톤, 조회 실패면 안내+재시도를 보여준다. 그 외(성공해서
   /// 데이터가 있거나, 성공했지만 그 달에 경기가 없는 경우)엔 캘린더 그대로.
@@ -354,7 +335,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.list) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
     } else if (tab == AppNavTab.community) {
       Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
@@ -415,21 +398,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       teamSelected: _viewModel.teamSelected,
                       onTeamTap: _viewModel.toggleTeamSelected,
                     ),
-                    // 공지 띠배너 — 활성 공지가 있고 ✕로 닫지 않았을 때만.
-                    if (_viewModel.promotedNotice != null)
-                      Padding(
-                        padding: EdgeInsets.only(top: 8 * scale),
-                        child: NarBanner(
-                          scale: scale,
-                          icon: Text(
-                            '📢',
-                            style: TextStyle(fontSize: 16 * scale),
-                          ),
-                          text: _viewModel.promotedNotice!.title,
-                          onTap: () => _openNotice(_viewModel.promotedNotice!),
-                          onClose: _viewModel.dismissPromotedNotice,
-                        ),
-                      ),
                     // 캘린더가 남은 세로 공간을 채우되, 떠 있는 하단 네비에
                     // 가리지 않도록 네비 footprint(72*scale + 바닥 26 + 간격 8)
                     // 만큼 아래를 띄운다.

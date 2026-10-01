@@ -10,6 +10,7 @@ import '../../repository/notification/member_notification_repository.dart';
 import '../../styles/app_colors.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/community/community_list_viewmodel.dart';
+import '../home/home_screen.dart';
 import '../login/login_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';
@@ -108,7 +109,9 @@ class _CommunityScreenState extends State<CommunityScreen>
   }
 
   void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.schedule) {
+    if (tab == AppNavTab.home) {
+      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+    } else if (tab == AppNavTab.schedule) {
       Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
     } else if (tab == AppNavTab.list) {
       Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));

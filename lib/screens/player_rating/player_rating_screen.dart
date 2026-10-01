@@ -42,6 +42,7 @@ class PlayerRatingScreen extends StatefulWidget {
     required this.playerId,
     this.games = const [],
     this.currentSetNumber = 1,
+    this.highlightRatingId,
   });
 
   /// 진입 시 탭한 선수.
@@ -66,6 +67,10 @@ class PlayerRatingScreen extends StatefulWidget {
   final List<MatchGame> games;
   final int currentSetNumber;
 
+  /// 홈 평점 섹션에서 들어왔을 때 바로 보여줄 한줄평 ID. 로드된 리뷰 중
+  /// 이 ID를 찾으면 그 타일로 스크롤하고 배경을 강조한다. 없으면 평소대로.
+  final int? highlightRatingId;
+
   @override
   State<PlayerRatingScreen> createState() => _PlayerRatingScreenState();
 }
@@ -73,6 +78,8 @@ class PlayerRatingScreen extends StatefulWidget {
 class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
   late String _currentSet = widget.initialSet;
   final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _commentKeys = {};
+  bool _scrolledToHighlight = false;
 
   late final PlayerRatingViewModel _vm = PlayerRatingViewModel(
     gameId: widget.gameId,
@@ -92,10 +99,39 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
         _vm.loadMoreReviews();
       }
     });
+    if (widget.highlightRatingId != null) {
+      _vm.addListener(_maybeScrollToHighlight);
+    }
+  }
+
+  /// 목표 한줄평이 로드된 리뷰 목록에 나타나면 한 번만 그 타일로 스크롤한다.
+  /// 다음 페이지에서 찾아질 수도 있어 매 알림마다 확인하되, 성공하면 더 이상
+  /// 확인하지 않는다 — 그 뒤 리뷰가 늘어도 다시 스크롤되지 않게.
+  ///
+  /// `notifyListeners()` 시점엔 [ListenableBuilder] 가 아직 새 리뷰로 다시
+  /// 빌드하지 않아 [_commentKeys] 가 비어 있을 수 있다 — 이 리스너가
+  /// `ListenableBuilder` 보다 먼저 `_vm` 에 등록돼 먼저 불리기 때문이다.
+  /// 그래서 매번 프레임이 끝난 뒤(빌드가 끝난 뒤) 다시 키를 조회한다.
+  void _maybeScrollToHighlight() {
+    if (_scrolledToHighlight) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _scrolledToHighlight) return;
+      final targetId = widget.highlightRatingId;
+      final key = targetId == null ? null : _commentKeys[targetId];
+      final context = key?.currentContext;
+      if (context == null) return;
+      _scrolledToHighlight = true;
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.1,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _vm.removeListener(_maybeScrollToHighlight);
     _scrollController.dispose();
     _vm.dispose();
     super.dispose();
@@ -225,6 +261,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
 
   /// 리뷰를 코멘트 타일 모델로 변환.
   PlayerComment _toComment(Review r) => PlayerComment(
+    ratingId: r.ratingId,
     username: r.nickname,
     timeAgo: ratingTimeAgo(r.createdAt),
     rating: r.rating,
@@ -232,6 +269,11 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     profileImageUrl: r.profileImageUrl,
     teamImageUrl: r.teamImageUrl,
   );
+
+  /// [PlayerCommentSection] 이 쓸 타일 키 — 한 번 만든 키는 재사용해야 리뷰
+  /// 목록이 다시 빌드돼도 [Scrollable.ensureVisible] 대상이 안정적이다.
+  GlobalKey _keyFor(int ratingId) =>
+      _commentKeys.putIfAbsent(ratingId, () => GlobalKey());
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +387,11 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           child: PlayerCommentSection(
                             comments: _vm.reviews.map(_toComment).toList(),
                             scale: scale,
+                            highlightRatingId: widget.highlightRatingId,
+                            commentKeys: {
+                              for (final r in _vm.reviews)
+                                r.ratingId: _keyFor(r.ratingId),
+                            },
                           ),
                         ),
                       ],
