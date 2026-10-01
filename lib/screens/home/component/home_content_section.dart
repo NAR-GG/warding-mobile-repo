@@ -14,6 +14,7 @@ import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../viewmodel/shorts/shorts_feed_viewmodel.dart';
 import '../../shorts/shorts_feed_screen.dart';
 import 'home_section_header.dart';
+import 'home_skeletons.dart';
 
 export '../../../util/shorts_url.dart' show shortsLaunchUri;
 
@@ -68,7 +69,9 @@ class HomeContentSection extends StatelessWidget {
           scale: scale,
         ),
         if (tab == HomeContentTab.news)
-          _NewsList(articles: viewModel.news, scale: scale)
+          viewModel.newsLoading && viewModel.news.isEmpty
+              ? HomeNewsSkeleton(scale: scale)
+              : _NewsList(articles: viewModel.news, scale: scale)
         else
           _ShortsDeck(viewModel: viewModel, scale: scale),
       ],
@@ -295,12 +298,11 @@ class _ShortsDeck extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 20 * scale),
               itemCount: videos.length,
               separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
-              itemBuilder: (context, i) =>
-                  _ShortsCard(
-                    video: videos[i],
-                    scale: scale,
-                    onTap: () => _openFeed(context, i),
-                  ),
+              itemBuilder: (context, i) => _ShortsCard(
+                video: videos[i],
+                scale: scale,
+                onTap: () => _openFeed(context, i),
+              ),
             ),
           ),
       ],
@@ -367,7 +369,11 @@ class _ShortsDeckSkeletonState extends State<_ShortsDeckSkeleton>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(width: width, height: width * 16 / 9, color: blockColor),
+                  Container(
+                    width: width,
+                    height: width * 16 / 9,
+                    color: blockColor,
+                  ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       8 * scale,

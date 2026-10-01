@@ -8,6 +8,7 @@ import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../model/standing.dart';
 import '../../../model/worlds_standings.dart';
 import 'home_section_header.dart';
+import 'home_skeletons.dart';
 
 /// 순위표 — 리그 칩 한 줄 + 선택한 리그에 맞는 몸통. LCK 등은 리그 테이블
 /// ([_StandingsTable]), 월즈는 스위스 전적 버킷([_WorldsBracket])과 토너먼트
@@ -168,7 +169,11 @@ class _WorldsStandingsCard extends StatelessWidget {
 /// 리그 테이블의 "승-패" 같은 짧은 라벨 전용이라 이 긴 문구엔 폭이 모자라
 /// 거의 다 잘렸다 — 월즈 전용으로 폭 제한 없이 둔다.
 class _WorldsCardHeader extends StatelessWidget {
-  const _WorldsCardHeader({required this.label, required this.hint, required this.scale});
+  const _WorldsCardHeader({
+    required this.label,
+    required this.hint,
+    required this.scale,
+  });
 
   final String label;
   final String hint;
@@ -178,7 +183,10 @@ class _WorldsCardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(minHeight: 34 * scale),
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 8 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 14 * scale,
+        vertical: 8 * scale,
+      ),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.narLine)),
       ),
@@ -269,7 +277,10 @@ class _WorldsBracket extends StatelessWidget {
                       for (final code in row.teamCodes)
                         Opacity(
                           opacity: row.advanced ? 1 : 0.45,
-                          child: TeamCodeBadge(teamCode: code, size: 26 * scale),
+                          child: TeamCodeBadge(
+                            teamCode: code,
+                            size: 26 * scale,
+                          ),
                         ),
                     ],
                   ),
@@ -480,9 +491,7 @@ class _WorldsMatchNode extends StatelessWidget {
         border: isToday
             ? null
             : Border.all(
-                color: match.isFinal
-                    ? Colors.transparent
-                    : AppColors.narLine2,
+                color: match.isFinal ? Colors.transparent : AppColors.narLine2,
               ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -522,7 +531,10 @@ class _WorldsMatchNode extends StatelessWidget {
           gradient: AppColors.narBg,
           borderRadius: BorderRadius.circular(10 * scale),
         ),
-        child: Semantics(label: l.homeStandingsWorldsKnockoutTitle, child: card),
+        child: Semantics(
+          label: l.homeStandingsWorldsKnockoutTitle,
+          child: card,
+        ),
       );
     }
     return card;
@@ -605,7 +617,11 @@ class _StandingsTable extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     // 아직 못 받았으면 자리를 비운다(spec: 순위표 로딩·에러는 안 그림).
     final groups = viewModel.standings?.groups ?? const <StandingGroup>[];
-    if (groups.isEmpty) return const SizedBox.shrink();
+    if (groups.isEmpty) {
+      return viewModel.standingsLoading
+          ? HomeStandingsSkeleton(scale: scale)
+          : const SizedBox.shrink();
+    }
 
     // 첫 그룹(레전드)은 늘 펼쳐 두고, 나머지 그룹(라이즈 등)은 펼치기 뒤에 둔다.
     final main = groups.first;

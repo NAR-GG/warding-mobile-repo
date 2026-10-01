@@ -10,6 +10,7 @@ import '../../../util/match_detail_router.dart';
 import '../../../util/match_status.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
+import 'home_skeletons.dart';
 
 /// 오늘 경기 — 가로 스트립. LIVE 경기가 앞으로 온다.
 ///
@@ -33,7 +34,8 @@ class HomeTodayMatchesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final matches = viewModel.todayMatchesSorted;
-    if (matches.isEmpty) return const SizedBox.shrink();
+    final loading = viewModel.todayMatchesLoading;
+    if (matches.isEmpty && !loading) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,18 +51,21 @@ class HomeTodayMatchesSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        SizedBox(
-          height: 110 * scale,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            // 스트립은 화면 끝까지 밀리게 두고 양끝만 20 여백.
-            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            itemCount: matches.length,
-            separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
-            itemBuilder: (context, i) =>
-                _MatchCard(match: matches[i], scale: scale),
+        if (matches.isEmpty)
+          HomeTodayMatchesSkeleton(scale: scale)
+        else
+          SizedBox(
+            height: 110 * scale,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              // 스트립은 화면 끝까지 밀리게 두고 양끝만 20 여백.
+              padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+              itemCount: matches.length,
+              separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
+              itemBuilder: (context, i) =>
+                  _MatchCard(match: matches[i], scale: scale),
+            ),
           ),
-        ),
       ],
     );
   }

@@ -12,6 +12,7 @@ import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import 'home_skeletons.dart';
 
 /// 구독 선수 솔랭 상태 — spec "상태" 표의 세 갈래를 [HomeViewModel.soloState]
 /// 로 나눠 그린다.
@@ -99,9 +100,17 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
     final vm = widget.viewModel;
     final scale = widget.scale;
     return switch (vm.soloState) {
-      SoloCardState.loading => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-        child: _HeroCardSkeleton(scale: scale),
+      SoloCardState.loading => Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+            child: _HeroCardSkeleton(scale: scale),
+          ),
+          // 오늘 끝난 경기 줄 자리 — 구독 조회가 끝나기 전엔 몇 명인지 몰라
+          // 칩 줄 모양만 잡아 둔다.
+          SizedBox(height: 10 * scale),
+          HomeFinishedSoloSkeleton(scale: scale),
+        ],
       ),
       SoloCardState.noSubscription => Padding(
         padding: EdgeInsets.symmetric(horizontal: 20 * scale),
@@ -646,14 +655,16 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    // 백엔드가 준 챔피언 이미지를 먼저 쓰고, 없을 때만 이름으로 Data Dragon
-    // 스플래시를 짜맞춘다(`championSplashUrl` 이 한국어명도 받는다).
+    // 가로형 Data Dragon 스플래시(1215×717)를 먼저 쓴다. 백엔드의
+    // `championImageUrl` 은 400×600 세로형으로 이미 잘려 와서, 가로로 긴 이
+    // 카드에 `cover` 로 깔면 한가운데만 크게 확대돼 보였다. 이름으로 URL 을
+    // 만들 수 없을 때(`championSplashUrl` 이 null)만 서버 이미지로 폴백한다.
     // `resolveImageUrl` 은 빈 문자열을 빈 문자열로 돌려주므로 ?? 로는 폴백이
     // 걸리지 않는다 — 비었는지 직접 본다.
     final fromServer = resolveImageUrl(player.championImageUrl);
-    final splashUrl = (fromServer != null && fromServer.isNotEmpty)
-        ? fromServer
-        : championSplashUrl(player.champion);
+    final splashUrl =
+        championSplashUrl(player.champion) ??
+        ((fromServer != null && fromServer.isNotEmpty) ? fromServer : null);
     final photoUrl = resolveImageUrl(player.playerImageUrl);
     final radius = BorderRadius.circular(14 * scale);
 

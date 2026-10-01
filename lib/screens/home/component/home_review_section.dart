@@ -6,6 +6,7 @@ import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
+import 'home_skeletons.dart';
 
 /// 평점 — 최근 선수 한줄평. 커뮤니티 섹션과 같은 레이아웃(헤더 + 둥근
 /// 목록 상자)을 쓰는 독립 섹션이다. 한줄평이 없으면([ReviewSource] 계약)
@@ -30,7 +31,9 @@ class HomeReviewSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reviews = viewModel.reviews;
-    if (reviews.isEmpty) return const SizedBox.shrink();
+    if (reviews.isEmpty && !viewModel.reviewsLoading) {
+      return const SizedBox.shrink();
+    }
 
     final l = AppLocalizations.of(context)!;
     return Column(
@@ -45,17 +48,22 @@ class HomeReviewSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        HomeListBox(
-          scale: scale,
-          children: [
-            for (final review in reviews)
-              _ReviewTile(
-                review: review,
-                scale: scale,
-                onTap: onTapReview == null ? null : () => onTapReview!(review),
-              ),
-          ],
-        ),
+        if (reviews.isEmpty)
+          HomeListSkeleton(scale: scale)
+        else
+          HomeListBox(
+            scale: scale,
+            children: [
+              for (final review in reviews)
+                _ReviewTile(
+                  review: review,
+                  scale: scale,
+                  onTap: onTapReview == null
+                      ? null
+                      : () => onTapReview!(review),
+                ),
+            ],
+          ),
       ],
     );
   }
