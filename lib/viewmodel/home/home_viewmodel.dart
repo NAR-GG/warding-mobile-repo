@@ -109,12 +109,19 @@ class HomeViewModel extends ChangeNotifier {
 
   Timer? _soloPollTimer;
 
+  // 솔랭 조회가 5초(폴링 간격)보다 오래 걸리면 다음 틱이 _soloGen 을 먼저
+  // 올려 버려, 느린 응답이 돌아와도 gen 불일치로 버려지고 카드가 멈춰
+  // 보인다(그 사이 요청만 계속 쌓인다). 이전 조회가 끝나기 전엔 새 틱을
+  // 건너뛰어 막는다.
+  bool _soloPollInFlight = false;
+
   void _startSoloPolling() {
     _soloPollTimer?.cancel();
-    _soloPollTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) => unawaited(_loadSolo()),
-    );
+    _soloPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_soloPollInFlight) return;
+      _soloPollInFlight = true;
+      unawaited(_loadSolo().whenComplete(() => _soloPollInFlight = false));
+    });
   }
 
   /// 앱이 백그라운드로 가면 부른다 — 화면이 안 보이는 동안 5초마다 네트워크를
