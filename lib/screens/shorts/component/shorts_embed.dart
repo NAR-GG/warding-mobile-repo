@@ -140,5 +140,16 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
   }
 
   @override
-  Widget build(BuildContext context) => YoutubePlayer(controller: _controller);
+  Widget build(BuildContext context) => YoutubePlayer(
+    controller: _controller,
+    // 이 화면은 이미 그 자체로 전체화면 세로 피드라 패키지의 "전체화면"
+    // 기능이 필요 없다. 기본값(둘 다 true)을 켜 두면 두 가지 문제가 있었다:
+    // (1) 플레이어 위 세로 드래그를 "전체화면 진입" 제스처로 가로채서,
+    //     다음 영상으로 넘기려는 PageView 세로 스와이프가 영상 위에서는
+    //     먹지 않았다.
+    // (2) 전체화면 상태에서는 패키지의 PopScope가 시스템 뒤로가기·X 버튼의
+    //     pop을 "전체화면 탈출"로만 소비해, 화면을 아예 닫을 수 없었다.
+    enableFullScreenOnVerticalDrag: false,
+    autoFullScreen: false,
+  );
 }
