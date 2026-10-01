@@ -671,9 +671,17 @@ class HomeViewModel extends ChangeNotifier {
   HomeShortsFilter _shortsFilter = HomeShortsFilter.all;
   HomeShortsFilter get shortsFilter => _shortsFilter;
 
+  /// "내 팀" 필터로 바꾼 직후 응원팀·영상 목록을 다시 받는 동안 true.
+  /// 이 플래그가 없으면 필터를 바꾼 첫 프레임에 이전(전체) 목록을 새
+  /// 필터로 걸러 빈 리스트가 되고, 아직 응원팀 조회 전이라 "응원팀 미설정"
+  /// 안내가 한 프레임 잘못 떴다가 실제 결과로 바뀌는 깜빡임이 있었다.
+  bool _shortsLoading = false;
+  bool get shortsLoading => _shortsLoading;
+
   void setShortsFilter(HomeShortsFilter filter) {
     if (filter == _shortsFilter) return;
     _shortsFilter = filter;
+    _shortsLoading = true;
     _notify();
     unawaited(_loadShorts());
   }
@@ -727,6 +735,7 @@ class HomeViewModel extends ChangeNotifier {
         teamCode = _preferredTeam?.code;
         if (teamCode == null) {
           _shorts = const [];
+          _shortsLoading = false;
           _notify();
           return;
         }
@@ -738,9 +747,12 @@ class HomeViewModel extends ChangeNotifier {
       );
       if (_disposed || gen != _shortsGen) return;
       _shorts = videos;
+      _shortsLoading = false;
       _notify();
     } catch (e) {
       debugPrint('[Home] 쇼츠 조회 실패: $e');
+      _shortsLoading = false;
+      _notify();
     }
   }
 

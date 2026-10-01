@@ -78,6 +78,31 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('젠지 하이라이트'), findsOneWidget);
     });
+
+    testWidgets('"내 팀" 전환 직후(응원팀 조회 전)에는 스켈레톤이 뜨고, 끝나면 사라진다', (
+      tester,
+    ) async {
+      final server = setUpHomeApi();
+      server.shorts = [shortsJson('젠지 하이라이트', channel: 'LCK')];
+      final vm = await pumpHomeSection(
+        tester,
+        section: (vm) => HomeContentSection(viewModel: vm, scale: 1),
+      );
+
+      await tester.tap(find.text('쇼츠'));
+      await tester.pump();
+
+      // setShortsFilter 호출 직후(아직 await 지점에 안 걸린 동기 구간)
+      // shortsLoading이 바로 true가 돼야, 화면이 "응원팀 미설정" 안내를
+      // 건너뛰고 스켈레톤을 먼저 그릴 수 있다. 예전엔 이 플래그가 없어서
+      // 그 프레임에 안내 문구가 한 번 잘못 떴다가 최종 상태로 바뀌는
+      // 깜빡임이 있었다.
+      vm.setShortsFilter(HomeShortsFilter.team);
+      expect(vm.shortsLoading, isTrue);
+
+      await tester.pumpAndSettle();
+      expect(vm.shortsLoading, isFalse);
+    });
   });
 
   group('커뮤니티', () {
