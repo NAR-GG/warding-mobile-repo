@@ -6,14 +6,11 @@ import '../../l10n/app_strings.dart';
 
 import '../../model/calendar_week_start.dart';
 import '../../model/match_calendar_day.dart';
-import '../../model/notice.dart';
 import '../../model/team.dart';
 import '../../repository/auth/auth_service.dart';
-import '../../repository/notice/notice_repository.dart';
 import '../../repository/onboarding/onboarding_repository.dart';
 import '../../repository/preference/calendar_week_start_preference_repository.dart';
 import '../../repository/preference/filter_preference_repository.dart';
-import '../../repository/preference/notice_preference_repository.dart';
 import '../../repository/preference/team_preference_repository.dart';
 import '../../repository/schedule/schedule_repository.dart';
 import '../../util/home_widget_service.dart';
@@ -29,8 +26,6 @@ class ScheduleViewModel extends ChangeNotifier {
     FilterPreferenceRepository? filterPreferences,
     AuthService? auth,
     OnboardingRepository? onboarding,
-    NoticeRepository? notices,
-    NoticePreferenceRepository? noticePreferences,
     CalendarWeekStartPreferenceRepository? weekStartPreferences,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
        _repository = repository ?? ScheduleRepository.instance,
@@ -40,20 +35,11 @@ class ScheduleViewModel extends ChangeNotifier {
            filterPreferences ?? FilterPreferenceRepository.instance,
        _auth = auth ?? AuthService.instance,
        _onboarding = onboarding ?? OnboardingRepository.instance,
-       _notices = notices ?? NoticeRepository.instance,
-       _noticePreferences =
-           noticePreferences ?? NoticePreferenceRepository.instance,
        _weekStartPreferences = weekStartPreferences ??
            CalendarWeekStartPreferenceRepository.instance {
     _weekStart = _weekStartPreferences.cachedValue ?? CalendarWeekStart.monday;
-    // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다.
-    // 배너는 캘린더 위에 얹혀 있어서, 뒤늦게 나타나면 캘린더를 아래로 밀고
-    // 높이까지 줄여 화면이 한 번 출렁인다.
-    _promotedNotices = _notices.cachedPromoted ?? const [];
-    _dismissedNoticeIds = _noticePreferences.cachedValue ?? const {};
     _init();
     _loadPreferredTeam();
-    _loadPromotedNotice();
     _restoreWeekStart();
   }
 
@@ -62,52 +48,7 @@ class ScheduleViewModel extends ChangeNotifier {
   final FilterPreferenceRepository _filterPreferences;
   final AuthService _auth;
   final OnboardingRepository _onboarding;
-  final NoticeRepository _notices;
-  final NoticePreferenceRepository _noticePreferences;
   final CalendarWeekStartPreferenceRepository _weekStartPreferences;
-
-  // ── 캘린더 상단 공지 띠배너 ─────────────────────────────────────
-
-  List<Notice> _promotedNotices = const [];
-  Set<int> _dismissedNoticeIds = const {};
-
-  /// 띠배너에 노출할 공지 — 닫지 않은 것 중 최신 발행. null 이면 배너 미표시.
-  Notice? get promotedNotice {
-    for (final notice in _promotedNotices) {
-      if (!_dismissedNoticeIds.contains(notice.id)) return notice;
-    }
-    return null;
-  }
-
-  /// 배너 공지 목록을 불러온다. ✕로 닫았던 공지는 건너뛴다.
-  /// 실패해도 캘린더 화면 자체는 정상 동작해야 하므로 조용히 무시한다.
-  ///
-  /// 생성자에서 캐시로 이미 맞춘 값과 결과가 같으면 알리지 않는다 — 스플래시가
-  /// 미리 받아 둔 경우가 그렇고, 거기서 notify 하면 배너가 그대로인데도 목록이
-  /// 다시 그려진다.
-  Future<void> _loadPromotedNotice() async {
-    try {
-      final notices = await _notices.fetchPromoted();
-      final dismissed = await _noticePreferences.loadDismissedIds();
-      if (_disposed) return;
-      final before = promotedNotice;
-      _promotedNotices = notices;
-      _dismissedNoticeIds = dismissed;
-      // 공지가 내려갔으면 배너도 걷어야 하므로, 빈 목록이어도 그대로 반영한다.
-      if (promotedNotice?.id != before?.id) notifyListeners();
-    } catch (e) {
-      debugPrint('[Schedule] 배너 공지 조회 실패: $e');
-    }
-  }
-
-  /// 띠배너 ✕ — 해당 공지를 닫음 처리하고 다음 안 닫은 배너가 있으면 이어서 보여준다.
-  void dismissPromotedNotice() {
-    final notice = promotedNotice;
-    if (notice == null) return;
-    _dismissedNoticeIds = {..._dismissedNoticeIds, notice.id};
-    notifyListeners();
-    unawaited(_noticePreferences.addDismissedId(notice.id));
-  }
 
   /// 저장된 필터를 읽지 못했는지. true 면 디스크에 값이 살아 있을 수 있어
   /// 현재 화면 상태(기본값 '전체')로 덮어쓰면 안 된다. [_persistFilter] 가 막는다.

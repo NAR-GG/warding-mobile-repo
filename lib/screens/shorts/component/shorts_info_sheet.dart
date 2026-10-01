@@ -58,22 +58,6 @@ class ShortsInfoSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              // 상태 표시일 뿐 토글이 아니다 — 소리는 항상 끈 채로 재생한다.
-              Icon(
-                Icons.volume_off_rounded,
-                size: 14 * scale,
-                color: AppColors.narText2,
-                semanticLabel: l.shortsFeedMuted,
-              ),
-              SizedBox(width: 3 * scale),
-              Text(
-                l.shortsFeedMuted,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 11 * scale,
-                  color: AppColors.narText2,
-                ),
-              ),
             ],
           ),
           SizedBox(height: 8 * scale),

@@ -53,6 +53,39 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeStandingsSoon => '준비 중';
 
   @override
+  String get homeStandingsWorldsSwissScope => '2025 · 스위스 스테이지';
+
+  @override
+  String get homeStandingsWorldsKnockoutScope => '2025 · 토너먼트 대진';
+
+  @override
+  String get homeStandingsWorldsSwissTitle => '스위스 전적';
+
+  @override
+  String get homeStandingsWorldsKnockoutTitle => '토너먼트 대진';
+
+  @override
+  String get homeStandingsWorldsSwissHint => '3승 진출 · 3패 탈락';
+
+  @override
+  String get homeStandingsWorldsKnockoutHint => '8강 → 결승';
+
+  @override
+  String get homeStandingsWorldsShowKnockout => '토너먼트 대진 보기';
+
+  @override
+  String get homeStandingsWorldsShowSwiss => '스위스 전적 보기';
+
+  @override
+  String get homeStandingsWorldsAdvanced => '진출';
+
+  @override
+  String get homeStandingsWorldsEliminated => '탈락';
+
+  @override
+  String get homeStandingsWorldsSeeAllBracket => '전체 대진';
+
+  @override
   String get homeCommunityTitle => '커뮤니티';
 
   @override
@@ -68,6 +101,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeSortReview => '평점 한줄평';
 
   @override
+  String get homeReviewTitle => '평점 한줄평';
+
+  @override
   String get homeContentTitle => '콘텐츠';
 
   @override
@@ -80,7 +116,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeShortsFilterAll => '전체';
 
   @override
-  String get homeShortsFilterTeam => '내 팀';
+  String get homeShortsFilterTeam => '응원 팀';
 
   @override
   String get homeHeroEmptyMessage => '응원하는 선수를 구독하면\n솔랭 소식이 여기 떠요';
@@ -228,7 +264,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPlayersGroupPlayedToday => '마지막 솔랭 기록';
 
   @override
-  String get myPlayersGroupQuiet => '오늘 소식 없음';
+  String get myPlayersGroupQuiet => '오늘 솔랭 경기 없음';
 
   @override
   String myPlayersGroupCount(int count) {
@@ -244,7 +280,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPlayersShowLess => '접기';
 
   @override
-  String get myPlayersNoGameToday => '오늘 경기 없음';
+  String get myPlayersNoGameToday => '오늘 솔랭 없음';
 
   @override
   String get myPlayersNoResult => '찾는 선수가 없어요';

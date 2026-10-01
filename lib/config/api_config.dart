@@ -509,4 +509,8 @@ class ApiConfig {
 
   /// 홈 뉴스 최신 TOP 5 (인증 불필요). nar.kr 웹과 같은 API.
   static String get homeNewsUrl => '$apiBaseUrl/home/news';
+
+  /// 최근 한줄평 목록 (인증 불필요, 로그인이면 차단 회원 평가를 뺀다).
+  static String recentRatingsUrl({int size = 20}) =>
+      '$apiBaseUrl/mobile/ratings/recent?size=$size';
 }

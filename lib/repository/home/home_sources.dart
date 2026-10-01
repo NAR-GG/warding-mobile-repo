@@ -25,7 +25,7 @@ abstract class NewsSource {
 }
 
 /// 홈 목업 스위치. 켜져 있으면 솔랭·평점·뉴스의 기본 소스가 목업이다. 꺼져 있으면
-/// 솔랭·뉴스는 실제 API, 평점은 빈 소스다(백엔드 #542 배포 전이라 연결 보류).
+/// 셋 다 실제 API다.
 ///
 /// 기본값은 꺼짐이다. 디버그에서 목업 화면을 보려면 `--dart-define=HOME_MOCKS=true`.
 const bool kHomeMocks = bool.fromEnvironment('HOME_MOCKS');
@@ -35,10 +35,10 @@ const bool kHomeMocks = bool.fromEnvironment('HOME_MOCKS');
 SoloRankSource defaultSoloRankSource({bool mocks = kHomeMocks}) =>
     mocks ? const MockSoloRankSource() : ApiSoloRankSource();
 
-/// [HomeViewModel] 의 기본 한줄평 소스. 백엔드 nar-back-repo#542(선수 이름·챔피언
-/// 한글명) 배포 뒤에 `GET /api/mobile/ratings/recent` 로 교체한다.
+/// [HomeViewModel] 의 기본 한줄평 소스. 백엔드 nar-back-repo#542 배포 후
+/// `GET /api/mobile/ratings/recent` 를 쓴다.
 ReviewSource defaultReviewSource({bool mocks = kHomeMocks}) =>
-    mocks ? const MockReviewSource() : const EmptyReviewSource();
+    mocks ? const MockReviewSource() : ApiReviewSource();
 
 /// [HomeViewModel] 의 기본 뉴스 소스.
 NewsSource defaultNewsSource({bool mocks = kHomeMocks}) =>
@@ -55,7 +55,7 @@ class EmptySoloRankSource implements SoloRankSource {
       const SoloRankSnapshot(live: [], finished: []);
 }
 
-/// 빈 한줄평 소스 — 홈 커뮤니티의 평점 한줄평 탭이 숨겨진다.
+/// 빈 한줄평 소스 — 홈 평점 섹션이 통째로 숨겨진다.
 class EmptyReviewSource implements ReviewSource {
   const EmptyReviewSource();
 

@@ -10,6 +10,7 @@ import '../../model/schedule_match.dart';
 import '../../model/team.dart';
 import '../../model/standing.dart';
 import '../../model/story_video.dart';
+import '../../model/worlds_standings.dart';
 import '../../repository/auth/auth_service.dart';
 import '../../repository/community/community_repository.dart';
 import '../../repository/home/home_sources.dart';
@@ -27,13 +28,16 @@ import '../../util/match_status.dart';
 import 'solo_rank_rules.dart';
 
 /// 커뮤니티 섹션 정렬 기준. [hot] 은 칩에서 뺀 상태다([HomeViewModel.availableCommunitySorts]).
-enum HomeCommunitySort { latest, hot, review }
+enum HomeCommunitySort { latest, hot }
 
 /// 콘텐츠 섹션 탭.
 enum HomeContentTab { news, shorts }
 
 /// 쇼츠 탭 필터.
 enum HomeShortsFilter { all, team }
+
+/// 월즈 순위표 카드가 보여주는 뷰. 하단 버튼으로 전환한다.
+enum WorldsStandingsView { swiss, knockout }
 
 /// 솔랭 카드 상태 (spec "상태" 표).
 ///
@@ -49,7 +53,7 @@ enum SoloCardState { loading, noSubscription, noneActive, active }
 ///
 /// 섹션마다 따로 불러온다(`/api/mobile/home` 한 번에 받기는 spec 미결).
 /// 실데이터가 있는 섹션(공지·오늘 경기·순위·커뮤니티 글·쇼츠·구독 수)은
-/// repository 로, 백엔드에 아직 없는 섹션(솔랭 상태·평점 한줄평·뉴스)은
+/// repository 로, 홈 전용 매핑이 필요한 섹션(솔랭 상태·평점 한줄평·뉴스)은
 /// [SoloRankSource]/[ReviewSource]/[NewsSource] 로 받는다.
 ///
 /// spec 상 로딩·에러 상태는 그리지 않으므로 그런 getter 를 두지 않는다.
@@ -445,14 +449,16 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   // ---- 섹션 3: 순위표 ----
-  // 월즈는 리그 테이블과 다른 화면(스위스 전적·토너먼트 대진)이 필요해 이번
-  // 스코프에서는 제외한다 — 칩만 노출하고 LPL/LEC/LCS 처럼 탭 비활성 상태로 둔다.
+  // 월즈는 리그 테이블과 형식이 달라([WorldsStandings] — 스위스 전적 버킷 +
+  // 토너먼트 대진) 전용 데이터·뷰 전환 상태를 구현해 뒀지만, 칩은 다시
+  // 비활성으로 둔다(출시 보류 — 사용자 요청). 코드값은 [ApiConfig]의 리그
+  // 코드 체계와 맞춰 'WORLDS'를 쓰고 라벨만 한글.
   static const List<HomeLeagueChip> _leagueChips = [
     HomeLeagueChip(code: 'LCK', label: 'LCK', live: true),
     HomeLeagueChip(code: 'LPL', label: 'LPL', live: false),
     HomeLeagueChip(code: 'LEC', label: 'LEC', live: false),
     HomeLeagueChip(code: 'LCS', label: 'LCS', live: false),
-    HomeLeagueChip(code: '월즈', label: '월즈', live: false),
+    HomeLeagueChip(code: 'WORLDS', label: '월즈', live: false),
   ];
 
   List<HomeLeagueChip> get leagueChips => _leagueChips;
@@ -465,12 +471,16 @@ class HomeViewModel extends ChangeNotifier {
     if (!selectable || code == _selectedLeague) return;
     _selectedLeague = code;
     _notify();
-    unawaited(_loadStandings());
+    if (code == 'WORLDS') {
+      unawaited(_loadWorldsStandings());
+    } else {
+      unawaited(_loadStandings());
+    }
   }
 
   StandingsResult? _standings;
 
-  /// 선택한 리그의 순위표. 아직 못 받았으면 null.
+  /// 선택한 리그(LCK 등 리그 테이블 형식)의 순위표. 아직 못 받았으면 null.
   StandingsResult? get standings => _standings;
 
   Future<void> _loadStandings() async {
@@ -486,6 +496,33 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  WorldsStandings? _worldsStandings;
+
+  /// 월즈 순위표(스위스 전적 + 토너먼트 대진). 아직 못 받았으면 null.
+  WorldsStandings? get worldsStandings => _worldsStandings;
+
+  Future<void> _loadWorldsStandings() async {
+    try {
+      final result = await _standingsRepo.fetchWorldsStandings();
+      if (_disposed || _selectedLeague != 'WORLDS') return;
+      _worldsStandings = result;
+      _notify();
+    } catch (e) {
+      debugPrint('[Home] 월즈 순위표 조회 실패: $e');
+    }
+  }
+
+  WorldsStandingsView _worldsView = WorldsStandingsView.swiss;
+  WorldsStandingsView get worldsView => _worldsView;
+
+  /// 월즈 카드 하단 버튼으로 스위스 전적 ↔ 토너먼트 대진을 전환한다.
+  void toggleWorldsView() {
+    _worldsView = _worldsView == WorldsStandingsView.swiss
+        ? WorldsStandingsView.knockout
+        : WorldsStandingsView.swiss;
+    _notify();
+  }
+
   bool _standingsExpanded = false;
   bool get standingsExpanded => _standingsExpanded;
 
@@ -497,27 +534,25 @@ class HomeViewModel extends ChangeNotifier {
   // ---- 섹션 4: 커뮤니티 ----
   static const int _communityPostCount = 4;
 
-  // 기본은 평점 한줄평이다(2026-09-29 결정). 인기순은 글이 적을 때 늘 같은
-  // 글이 보여 칩에서 뺐다(spec 결정) — latest/review 둘만 있다.
-  // 리뷰가 비어 있으면(백엔드 미연동 등) [_loadReviews] 가 latest로 되돌린다.
-  HomeCommunitySort _communitySort = HomeCommunitySort.review;
+  // 인기순은 글이 적을 때 늘 같은 글이 보여 칩에서 뺐다(spec 결정) —
+  // 지금은 latest 하나뿐이라 토글은 없지만 hot 로직은 남겨 둔다.
+  HomeCommunitySort _communitySort = HomeCommunitySort.latest;
   HomeCommunitySort get communitySort => _communitySort;
 
-  /// 정렬을 바꾼다. 글 정렬(latest/hot)이면 그 기준으로 다시 조회하고,
-  /// 평점 탭([HomeCommunitySort.review])은 [reviews] 를 보여줄 뿐 조회하지 않는다.
+  /// 정렬을 바꾼다(latest/hot). 그 기준으로 글을 다시 조회한다.
   void setCommunitySort(HomeCommunitySort sort) {
     if (sort == _communitySort) return;
     if (!availableCommunitySorts.contains(sort)) return;
     _communitySort = sort;
     _notify();
-    if (sort != HomeCommunitySort.review) unawaited(_loadCommunityPosts());
+    unawaited(_loadCommunityPosts());
   }
 
   /// 보여줄 정렬 탭. 인기순은 커뮤니티가 활성화될 때까지 뺀다(글이 적어 의미가
-  /// 없다). 한줄평이 없으면(빈 소스 등) 평점 탭도 뺀다.
-  List<HomeCommunitySort> get availableCommunitySorts => _reviews.isEmpty
-      ? const [HomeCommunitySort.latest]
-      : const [HomeCommunitySort.latest, HomeCommunitySort.review];
+  /// 없다).
+  List<HomeCommunitySort> get availableCommunitySorts => const [
+    HomeCommunitySort.latest,
+  ];
 
   List<CommunityRemotePost> _communityPosts = const [];
 
@@ -526,7 +561,6 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadCommunityPosts() async {
     final sort = _communitySort;
-    if (sort == HomeCommunitySort.review) return;
     try {
       final page = await _community.fetchPosts(
         size: _communityPostCount,
@@ -560,10 +594,13 @@ class HomeViewModel extends ChangeNotifier {
     _notify();
   }
 
+  static const int _reviewCount = 4;
+
   List<HomeReviewItem> _reviews = const [];
 
-  /// 평점 한줄평(한줄평이 달린 것만 — [ReviewSource] 계약).
-  List<HomeReviewItem> get reviews => _reviews;
+  /// 평점 한줄평(한줄평이 달린 것만 — [ReviewSource] 계약) 최대
+  /// [_reviewCount]건. 비어 있으면 평점 섹션 전체를 숨긴다([HomeReviewSection]).
+  List<HomeReviewItem> get reviews => _reviews.take(_reviewCount).toList();
 
   int _reviewsGen = 0;
 
@@ -573,12 +610,6 @@ class HomeViewModel extends ChangeNotifier {
       final reviews = await _reviewSource.fetchRecent();
       if (_disposed || gen != _reviewsGen) return;
       _reviews = reviews;
-      // 평점 탭을 보고 있었는데 한줄평이 비었으면 탭이 사라지므로 최신순으로
-      // 돌리고 그 기준으로 글을 다시 받는다.
-      if (reviews.isEmpty && _communitySort == HomeCommunitySort.review) {
-        _communitySort = HomeCommunitySort.latest;
-        unawaited(_loadCommunityPosts());
-      }
       _notify();
     } catch (e) {
       debugPrint('[Home] 평점 한줄평 조회 실패: $e');

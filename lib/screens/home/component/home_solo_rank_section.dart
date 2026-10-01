@@ -977,7 +977,7 @@ class _FinishedChip extends StatelessWidget {
                 '${player.won ? l.homeSoloWin : l.homeSoloLoss}',
                 style: TextStyle(
                   fontFamily: 'Pretendard',
-                  fontSize: 12 * scale,
+                  fontSize: 11 * scale,
                   // 승자 빨강 / 패자 회색 — 스코어 표시 관례(policy/design.md).
                   color: player.won ? AppColors.scoreWin : AppColors.narDark200,
                 ),

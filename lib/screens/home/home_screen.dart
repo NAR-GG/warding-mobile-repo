@@ -2,30 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_bottom_nav.dart';
+import '../../components/guide_popup.dart';
+import '../../components/nar_badge.dart';
 import '../../components/nar_banner.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
 import '../../model/community_remote_post.dart';
+import '../../model/home_models.dart';
 import '../../model/notice.dart';
 import '../../util/tab_route.dart';
 import '../../viewmodel/home/home_viewmodel.dart';
 import '../community/community_screen.dart';
 import '../community/post_detail_screen.dart';
+import '../match_detail/component/match_detail_team_rating_section.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
 import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
+import '../player_rating/player_rating_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../subscription/subscription_settings_screen.dart';
 import 'component/home_community_section.dart';
 import 'component/home_content_section.dart';
+import 'component/home_review_section.dart';
 import 'component/home_solo_rank_section.dart';
 import 'component/home_standings_section.dart';
 import 'component/home_today_matches_section.dart';
 
-/// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠
-/// 5개 섹션 + 하단 네비 '홈' 탭에 해당한다.
+/// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠 ·
+/// 평점 한줄평 6개 섹션 + 하단 네비 '홈' 탭에 해당한다.
 ///
 /// 앱 진입점(스플래시·로그인·온보딩 완료 이후 첫 화면)이기도 하다.
 class HomeScreen extends StatefulWidget {
@@ -53,6 +59,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // 사용 가이드 팝업. 앱 진입 화면이 홈이라 여기서 띄운다(일정 탭에서 옮김).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowGuidePopup(context);
+    });
   }
 
   @override
@@ -97,9 +107,53 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// 평점 한줄평 타일 — 그 선수의 평점 상세(한줄평 목록)로 바로 이동한다.
+  /// `gameId`·`participantId`·`playerId` 가 모두 있어야 라우팅할 수 있다.
+  void _openReview(HomeReviewItem review) {
+    final gameId = review.gameId;
+    final participantId = review.participantId;
+    final playerId = review.playerId;
+    if (gameId == null ||
+        gameId.isEmpty ||
+        participantId == null ||
+        playerId == null) {
+      return;
+    }
+    final side = review.teamSide?.toUpperCase() == 'RED'
+        ? BadgeSide.red
+        : BadgeSide.blue;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlayerRatingScreen(
+          player: PlayerRating(
+            name: review.playerName,
+            position: '',
+            rating: review.stars.toDouble(),
+            raterCount: 0,
+            participantId: participantId,
+            playerId: playerId,
+          ),
+          teamName: review.teamCode,
+          teamCode: review.teamCode,
+          side: side,
+          gameId: gameId,
+          participantId: participantId,
+          playerId: playerId,
+          highlightRatingId: review.ratingId,
+        ),
+      ),
+    );
+  }
+
   /// 오늘 경기 "일정 전체" — 일정 탭으로 전환한다(spec 사용자 흐름 4).
   void _openSchedule() {
     Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+  }
+
+  /// 월즈 순위표 "전체 대진" — 경기 리스트 탭으로 전환한다. 월즈 전용
+  /// 대진표 화면이 따로 없어 하단 네비 '리스트' 탭과 같은 경로를 쓴다.
+  void _openMatchList() {
+    Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
   }
 
   /// "구독 N명 전체"·조용한 상태 줄 — 내 선수 화면. push 라서 뒤로가기가
@@ -224,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             HomeStandingsSection(
                               viewModel: _viewModel,
                               scale: scale,
+                              onSeeAllBracket: _openMatchList,
                             ),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(
@@ -232,6 +287,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               onSeeAllCommunity: _openCommunity,
                               onTapPost: _openPost,
                             ),
+                            // 평점 한줄평이 없으면 섹션이 통째로 사라지는데
+                            // (HomeReviewSection), 오늘 경기와 같은 이유로 앞
+                            // 간격을 함께 묶어서 없앤다.
+                            if (_viewModel.reviews.isNotEmpty) ...[
+                              SizedBox(height: 28 * scale),
+                              HomeReviewSection(
+                                viewModel: _viewModel,
+                                scale: scale,
+                                onTapReview: _openReview,
+                              ),
+                            ],
                             SizedBox(height: 28 * scale),
                             HomeContentSection(
                               viewModel: _viewModel,

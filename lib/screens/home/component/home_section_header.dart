@@ -83,3 +83,34 @@ class HomeSectionHeader extends StatelessWidget {
     );
   }
 }
+
+/// 홈 섹션 공용 목록 상자 — 행 사이는 구분선. 비어 있으면 아무것도 그리지
+/// 않는다(커뮤니티·평점 섹션이 함께 쓴다).
+class HomeListBox extends StatelessWidget {
+  const HomeListBox({super.key, required this.children, required this.scale});
+
+  final List<Widget> children;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20 * scale),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.narBgTertiary,
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: AppColors.narLine),
+      ),
+      child: Column(
+        children: [
+          for (final (i, child) in children.indexed) ...[
+            if (i > 0) const Divider(height: 1, color: AppColors.narLine),
+            child,
+          ],
+        ],
+      ),
+    );
+  }
+}

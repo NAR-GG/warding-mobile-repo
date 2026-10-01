@@ -8,18 +8,17 @@ import '../../../model/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
-import '../../../model/home_models.dart';
 import 'home_section_header.dart';
 
-/// 커뮤니티 — 유저가 쓴 것(글·평점 한줄평).
+/// 커뮤니티 — 유저가 쓴 글 목록.
 ///
 /// 콘텐츠 섹션의 "뉴스" 탭처럼 정렬 칩 없이 헤더 부제로 현재 정렬만
-/// 보여준다(2026-09-29 결정) — 기본은 평점 한줄평, 한줄평이 없으면
-/// ([ReviewSource] 계약) 뷰모델이 최신순으로 자동 전환한다. 인기순(hot)은
-/// 글이 적을 때 늘 같은 글이 보여 애초에 노출하지 않는다(spec 결정) —
-/// 관련 로직(순위·좋아요순 정렬)은 남겨 뒀다가 글이 쌓이면 다시 켤 수 있다.
-/// 글 메타 줄의 추천·댓글 아이콘은 커뮤니티 탭([PostListItem])과 같다.
-/// 로딩·에러는 그리지 않는다 — 아직 없으면 목록 자리를 비운다.
+/// 보여준다(2026-09-29 결정). 인기순(hot)은 글이 적을 때 늘 같은 글이 보여
+/// 애초에 노출하지 않는다(spec 결정) — 관련 로직(순위·좋아요순 정렬)은
+/// 남겨 뒀다가 글이 쌓이면 다시 켤 수 있다. 글 메타 줄의 추천·댓글 아이콘은
+/// 커뮤니티 탭([PostListItem])과 같다. 평점 한줄평은 별도 섹션
+/// ([HomeReviewSection])이다. 로딩·에러는 그리지 않는다 — 아직 없으면 목록
+/// 자리를 비운다.
 class HomeCommunitySection extends StatelessWidget {
   const HomeCommunitySection({
     super.key,
@@ -43,7 +42,6 @@ class HomeCommunitySection extends StatelessWidget {
       switch (sort) {
         HomeCommunitySort.latest => l.homeSortLatest,
         HomeCommunitySort.hot => l.homeSortHot,
-        HomeCommunitySort.review => l.homeSortReview,
       };
 
   @override
@@ -64,56 +62,21 @@ class HomeCommunitySection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 10 * scale),
-        _ListBox(
+        HomeListBox(
           scale: scale,
-          children: viewModel.communitySort == HomeCommunitySort.review
-              ? [
-                  for (final review in viewModel.reviews)
-                    _ReviewTile(review: review, scale: scale),
-                ]
-              : [
-                  for (final (i, post) in viewModel.communityPosts.indexed)
-                    _PostTile(
-                      post: post,
-                      rank: viewModel.communitySort == HomeCommunitySort.hot
-                          ? i + 1
-                          : null,
-                      scale: scale,
-                      onTap: onTapPost == null ? null : () => onTapPost!(post),
-                    ),
-                ],
+          children: [
+            for (final (i, post) in viewModel.communityPosts.indexed)
+              _PostTile(
+                post: post,
+                rank: viewModel.communitySort == HomeCommunitySort.hot
+                    ? i + 1
+                    : null,
+                scale: scale,
+                onTap: onTapPost == null ? null : () => onTapPost!(post),
+              ),
+          ],
         ),
       ],
-    );
-  }
-}
-
-/// 목록을 담는 둥근 상자 — 행 사이는 구분선. 비어 있으면 아무것도 그리지 않는다.
-class _ListBox extends StatelessWidget {
-  const _ListBox({required this.children, required this.scale});
-
-  final List<Widget> children;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    if (children.isEmpty) return const SizedBox.shrink();
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20 * scale),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.narBgTertiary,
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: AppColors.narLine),
-      ),
-      child: Column(
-        children: [
-          for (final (i, child) in children.indexed) ...[
-            if (i > 0) const Divider(height: 1, color: AppColors.narLine),
-            child,
-          ],
-        ],
-      ),
     );
   }
 }
@@ -262,78 +225,6 @@ class _PostThumbnail extends StatelessWidget {
               fadeInDuration: const Duration(milliseconds: 150),
               errorWidget: (_, _, _) => const SizedBox.shrink(),
             ),
-    );
-  }
-}
-
-class _ReviewTile extends StatelessWidget {
-  const _ReviewTile({required this.review, required this.scale});
-
-  final HomeReviewItem review;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 14 * scale,
-        vertical: 11 * scale,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TeamCodeBadge(teamCode: review.teamCode, size: 28 * scale),
-          SizedBox(width: 10 * scale),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  review.comment,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 16 * scale,
-                    color: AppColors.narText,
-                  ),
-                ),
-                SizedBox(height: 4 * scale),
-                Row(
-                  children: [
-                    Text(
-                      '★' * review.stars,
-                      style: TextStyle(
-                        fontSize: 12 * scale,
-                        color: AppColors.narYellow6,
-                      ),
-                    ),
-                    Text(
-                      '☆' * (5 - review.stars),
-                      style: TextStyle(
-                        fontSize: 12 * scale,
-                        color: AppColors.narLine2,
-                      ),
-                    ),
-                    SizedBox(width: 4 * scale),
-                    Expanded(
-                      child: Text(
-                        '${review.playerName} ${review.champion} · ${review.nickname} · ${(review.minutesAgo < 60 ? l.homeMinutesAgo(review.minutesAgo) : l.homeHoursAgo(review.minutesAgo ~/ 60))}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontSize: 13 * scale,
-                          color: AppColors.narText2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

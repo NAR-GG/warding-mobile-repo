@@ -162,7 +162,11 @@ class _FakeApi {
     }
     if (path.contains('story/videos')) return _json({'content': shorts});
     if (path.endsWith('auth/me')) {
-      return _json({'id': 1, 'nickname': 'me#1', 'favoriteTeamId': favoriteTeamId});
+      return _json({
+        'id': 1,
+        'nickname': 'me#1',
+        'favoriteTeamId': favoriteTeamId,
+      });
     }
     if (path.contains('onboarding/teams')) {
       return _json([
@@ -251,10 +255,11 @@ void main() {
     if (subscribed != null) {
       // 솔랭 항목은 구독한 선수만 보이므로, 스냅샷에 나온 선수를 먼저 구독
       // 목록에 넣고 나머지를 'Sub{i}' 로 채워 [subscribed] 명을 맞춘다.
-      final names = <String>{
-        for (final p in snap.live) p.name,
-        for (final p in snap.finished) p.name,
-      }.take(subscribed).toList();
+      final names =
+          <String>{
+            for (final p in snap.live) p.name,
+            for (final p in snap.finished) p.name,
+          }.take(subscribed).toList();
       server.subscriptions = [
         for (final n in names) _sub(n, 'T1', 'T1'),
         for (var i = names.length; i < subscribed; i++)
@@ -411,9 +416,7 @@ void main() {
         _sub('Chovy', 'GEN', 'Gen.G'),
       ];
       setUpServer(loggedIn: true);
-      final vm = build(
-        snap: const SoloRankSnapshot(live: [], finished: []),
-      );
+      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
       await pumpEventQueue();
       expect(vm.subscribedTotal, 2);
       expect(server.requestsTo('player-subscriptions'), isNotEmpty);
@@ -435,9 +438,7 @@ void main() {
     test('구독 목록 조회가 실패해도 소스의 구독 수로 대신하지 않는다', () async {
       server.subscriptions = null;
       setUpServer(loggedIn: true);
-      final vm = build(
-        snap: const SoloRankSnapshot(live: [], finished: []),
-      );
+      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
       await pumpEventQueue();
       expect(vm.subscribedTotal, 0);
       expect(vm.soloState, SoloCardState.noSubscription);
@@ -547,8 +548,8 @@ void main() {
 
       expect(vm.todayMatchesSorted.map((m) => m.matchId), ['m1']);
       expect(vm.standings?.groups.single.rows.single.teamCode, 'GEN');
-      // 기본 정렬이 평점 한줄평이라(2026-09-29 결정) 글 목록 대신 리뷰로 확인한다.
-      expect(vm.communitySort, HomeCommunitySort.review);
+      expect(vm.communitySort, HomeCommunitySort.latest);
+      expect(vm.communityPosts, isNotEmpty);
       expect(vm.reviews, isNotEmpty);
     });
   });
@@ -563,11 +564,13 @@ void main() {
         'LPL',
         'LEC',
         'LCS',
-        '월즈',
+        'WORLDS',
       ]);
       expect(vm.leagueChips.where((c) => c.live).map((c) => c.code), ['LCK']);
       expect(vm.selectedLeague, 'LCK');
       vm.selectLeague('LPL');
+      expect(vm.selectedLeague, 'LCK');
+      vm.selectLeague('WORLDS');
       expect(vm.selectedLeague, 'LCK');
       expect(vm.standings?.league, 'LCK');
       expect(
@@ -575,6 +578,35 @@ void main() {
         ['LCK'],
       );
     });
+
+    test(
+      '월즈를 고르면 스위스/토너먼트 목업을 받고 뷰를 전환할 수 있다',
+      skip:
+          '월즈 칩이 다시 비활성(live:false)이라 selectLeague(\'WORLDS\')가 무시돼 '
+          '이 경로로 도달 불가 — 칩을 다시 켜면 같이 되살린다.',
+      () async {
+        final vm = build();
+        await pumpEventQueue();
+
+        vm.selectLeague('WORLDS');
+        await pumpEventQueue();
+
+        expect(vm.selectedLeague, 'WORLDS');
+        expect(vm.worldsView, WorldsStandingsView.swiss);
+        // HOME_MOCKS 가 꺼져 있으면 월즈 데이터가 없고(null), 켜져 있으면
+        // (--dart-define=HOME_MOCKS=true 로 이 테스트를 돌릴 때) 목업이 온다.
+        if (kHomeMocks) {
+          expect(vm.worldsStandings, isNotNull);
+          expect(vm.worldsStandings!.bracket, isNotEmpty);
+          expect(vm.worldsStandings!.knockout, isNotEmpty);
+        } else {
+          expect(vm.worldsStandings, isNull);
+        }
+
+        vm.toggleWorldsView();
+        expect(vm.worldsView, WorldsStandingsView.knockout);
+      },
+    );
 
     test('그룹 펼치기/접기 토글', () {
       final vm = build();
@@ -587,38 +619,16 @@ void main() {
   });
 
   group('커뮤니티', () {
-    test('기본은 평점 한줄평이고 글을 조회하지 않는다', () async {
+    test('기본은 최신순이고 글을 바로 조회한다', () async {
       final vm = build();
       await pumpEventQueue();
 
-      expect(vm.communitySort, HomeCommunitySort.review);
-      expect(server.requestsTo('community/posts'), isEmpty);
-      expect(vm.reviews, MockReviewSource.reviews);
-    });
-
-    test('최신순으로 바꾸면 그때 처음 조회한다', () async {
-      final vm = build();
-      await pumpEventQueue();
-
-      vm.setCommunitySort(HomeCommunitySort.latest);
-      await pumpEventQueue();
-
+      expect(vm.communitySort, HomeCommunitySort.latest);
       final calls = server.requestsTo('community/posts');
       expect(calls.length, 1);
       expect(calls.single.queryParameters['sort'], 'latest');
       expect(calls.single.queryParameters['size'], '4');
       expect(vm.communityPosts.single.title, '글-latest');
-
-      vm.setCommunitySort(HomeCommunitySort.review);
-      await pumpEventQueue();
-      expect(server.requestsTo('community/posts').length, 1);
-
-      vm.setCommunitySort(HomeCommunitySort.latest);
-      await pumpEventQueue();
-
-      final after = server.requestsTo('community/posts');
-      expect(after.length, 2);
-      expect(after.last.queryParameters['sort'], 'latest');
     });
 
     test('인기순은 칩에 없고 고를 수도 없다', () async {
@@ -630,32 +640,48 @@ void main() {
         isNot(contains(HomeCommunitySort.hot)),
       );
       vm.setCommunitySort(HomeCommunitySort.hot);
-      expect(vm.communitySort, HomeCommunitySort.review);
-    });
-
-    test('평점 탭은 글을 조회하지 않고 ReviewSource 의 한줄평을 보여준다', () async {
-      final vm = build();
-      await pumpEventQueue();
-
-      expect(vm.communitySort, HomeCommunitySort.review);
-      expect(server.requestsTo('community/posts'), isEmpty);
-      expect(vm.reviews, MockReviewSource.reviews);
+      expect(vm.communitySort, HomeCommunitySort.latest);
     });
 
     test('글 조회가 실패하면 마지막 목록을 유지한다', () async {
       final vm = build();
       await pumpEventQueue();
-
-      vm.setCommunitySort(HomeCommunitySort.latest);
-      await pumpEventQueue();
       expect(vm.communityPosts.single.title, '글-latest');
 
-      vm.setCommunitySort(HomeCommunitySort.review);
       server.communityFails = true;
-      vm.setCommunitySort(HomeCommunitySort.latest);
+      await vm.refreshAll();
       await pumpEventQueue();
 
       expect(vm.communityPosts.single.title, '글-latest');
+    });
+  });
+
+  group('평점', () {
+    test('ReviewSource 의 한줄평을 독립 섹션으로 최대 4건 보여준다', () async {
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.reviews, MockReviewSource.reviews.take(4));
+    });
+
+    test('한줄평이 비면 reviews 가 빈 목록이라 섹션이 숨겨진다', () async {
+      final vm = build(reviews: const EmptyReviewSource());
+      await pumpEventQueue();
+
+      expect(vm.reviews, isEmpty);
+      // 평점이 비어도 커뮤니티 글 조회에는 영향이 없다.
+      expect(vm.communitySort, HomeCommunitySort.latest);
+      expect(vm.communityPosts, isNotEmpty);
+    });
+
+    test('소스가 5건 이상 줘도 최대 4건만 보여준다', () async {
+      final many = [
+        for (var i = 0; i < 7; i++) MockReviewSource.reviews[i % 5],
+      ];
+      final vm = build(reviews: _SwitchableReviews(many));
+      await pumpEventQueue();
+
+      expect(vm.reviews.length, 4);
     });
   });
 
@@ -764,28 +790,20 @@ void main() {
       expect(vm.contentTab, HomeContentTab.news);
     });
 
-    test('한줄평이 비면 평점 탭을 빼고, 골라 둔 평점 탭은 최신순으로 돌린다', () async {
+    test('한줄평이 비어도 커뮤니티 글 조회·정렬은 그대로다', () async {
       final reviews = _SwitchableReviews(MockReviewSource.reviews);
       final vm = build(reviews: reviews);
       await pumpEventQueue();
-      expect(vm.availableCommunitySorts, [
-        HomeCommunitySort.latest,
-        HomeCommunitySort.review,
-      ]);
-
-      vm.setCommunitySort(HomeCommunitySort.review);
-      expect(vm.communitySort, HomeCommunitySort.review);
+      expect(vm.reviews, isNotEmpty);
+      expect(vm.communitySort, HomeCommunitySort.latest);
 
       reviews.items = const [];
       await vm.refreshAll();
       await pumpEventQueue();
-      expect(vm.availableCommunitySorts, [HomeCommunitySort.latest]);
+
+      expect(vm.reviews, isEmpty);
       expect(vm.communitySort, HomeCommunitySort.latest);
       expect(vm.communityPosts.single.title, '글-latest');
-
-      // 빈 상태에서는 평점 탭을 고를 수 없다.
-      vm.setCommunitySort(HomeCommunitySort.review);
-      expect(vm.communitySort, HomeCommunitySort.latest);
     });
 
     test('빈 솔랭 소스 + 구독 있음이면 조용한 상태(noneActive)', () async {
@@ -985,9 +1003,8 @@ void main() {
 
     expect(server.requestsTo('schedule').length, 2);
     expect(server.requestsTo('standings').length, 2);
-    // 기본 정렬이 평점 한줄평이라(2026-09-29 결정) 글 목록은 조회하지 않는다.
-    expect(vm.communitySort, HomeCommunitySort.review);
-    expect(server.requestsTo('community/posts').length, 0);
+    expect(vm.communitySort, HomeCommunitySort.latest);
+    expect(server.requestsTo('community/posts').length, 2);
     expect(server.requestsTo('story/videos').length, 2);
     expect(server.requests.length, greaterThan(before));
   });

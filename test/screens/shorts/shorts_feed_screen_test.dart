@@ -93,9 +93,8 @@ void main() {
     expect(find.text('영상 3'), findsOneWidget);
     expect(find.text('조회 300'), findsOneWidget);
     expect(find.text('유튜브에서 보기'), findsOneWidget);
-    expect(find.text('소리 꺼짐'), findsOneWidget);
     expect(find.text('전체'), findsOneWidget);
-    expect(find.text('내 팀'), findsOneWidget);
+    expect(find.text('응원 팀'), findsOneWidget);
   });
 
   testWidgets('플레이어는 현재 ±1 페이지만 만든다(WebView 최대 3개)', (tester) async {
@@ -124,7 +123,7 @@ void main() {
   testWidgets('내 팀을 눌렀는데 응원팀이 없으면 설정 안내와 전체 보기', (tester) async {
     await _pump(tester, videos: [_v(1), _v(2)]);
 
-    await tester.tap(find.text('내 팀'));
+    await tester.tap(find.text('응원 팀'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(ShortsFeedScreen.emptyKey), findsOneWidget);

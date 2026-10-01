@@ -109,7 +109,7 @@ class MyPlayerTile extends StatelessWidget {
 }
 
 /// 오늘 상태 한 줄. 솔랭 중은 솔랭 톤 점 + "챔피언 · 경과", 오늘 경기함은
-/// "N분 전 · 승/패", 소식 없음은 흐린 "오늘 경기 없음".
+/// "N분 전 · 승/패", 소식 없음은 흐린 "오늘 솔랭 없음".
 class _StatusLine extends StatelessWidget {
   const _StatusLine({required this.entry, required this.scale});
 

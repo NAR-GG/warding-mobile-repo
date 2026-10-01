@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/dashed_border.dart';
+import 'package:warding/model/home_models.dart';
 import 'package:warding/repository/home/home_sources.dart';
 import 'package:warding/screens/home/component/home_community_section.dart';
 import 'package:warding/screens/home/component/home_content_section.dart';
+import 'package:warding/screens/home/component/home_review_section.dart';
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
 
 import 'home_test_harness.dart';
@@ -14,7 +16,7 @@ Finder _richTextContaining(String text) => find.byWidgetPredicate(
   (w) => w is RichText && w.text.toPlainText().contains(text),
 );
 
-/// 콘텐츠(뉴스·쇼츠)와 커뮤니티(글·평점 한줄평) — spec "결정"의 기본 탭과
+/// 콘텐츠(뉴스·쇼츠), 커뮤니티(글), 평점(한줄평) — spec "결정"의 기본 탭과
 /// 섹션 나눔, "상태" 표의 쇼츠 빈 박스를 확인한다.
 void main() {
   group('콘텐츠', () {
@@ -61,7 +63,7 @@ void main() {
       expect(find.byKey(HomeContentSection.shortsEmptyKey), findsNothing);
       expect(find.text('내 선수'), findsNothing);
 
-      await tester.tap(find.text('내 팀'));
+      await tester.tap(find.text('응원 팀'));
       await tester.pumpAndSettle();
       final empty = find.byKey(HomeContentSection.shortsEmptyKey);
       expect(empty, findsOneWidget);
@@ -79,34 +81,17 @@ void main() {
   });
 
   group('커뮤니티', () {
-    testWidgets('정렬 칩 없이 헤더 부제로 현재 정렬만 보여준다 — 기본은 평점 한줄평', (tester) async {
+    testWidgets('정렬 칩 없이 헤더 부제로 현재 정렬만 보여준다 — 기본은 최신순', (tester) async {
       setUpHomeApi();
       final vm = await pumpHomeSection(
         tester,
-        section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
-      );
-
-      expect(vm.communitySort, HomeCommunitySort.review);
-      expect(find.text(MockReviewSource.reviews.first.comment), findsOneWidget);
-      expect(_richTextContaining('평점 한줄평'), findsOneWidget);
-      expect(_richTextContaining('인기순'), findsNothing);
-      // 부제 텍스트일 뿐 탭이 아니다 — 눌러도 정렬이 안 바뀐다.
-      await tester.tap(_richTextContaining('평점 한줄평'));
-      await tester.pump();
-      expect(vm.communitySort, HomeCommunitySort.review);
-    });
-
-    testWidgets('한줄평이 비면(빈 소스) 최신순으로 자동 전환되고 글이 보인다', (tester) async {
-      setUpHomeApi();
-      final vm = await pumpHomeSection(
-        tester,
-        reviews: const EmptyReviewSource(),
         section: (vm) => HomeCommunitySection(viewModel: vm, scale: 1),
       );
 
       expect(vm.communitySort, HomeCommunitySort.latest);
-      expect(_richTextContaining('최신순'), findsOneWidget);
       expect(find.text('글-latest'), findsOneWidget);
+      expect(_richTextContaining('최신순'), findsOneWidget);
+      expect(_richTextContaining('인기순'), findsNothing);
     });
 
     testWidgets('"커뮤니티 전체"는 콜백으로 넘긴다(탭 전환은 홈 화면 몫)', (tester) async {
@@ -124,6 +109,50 @@ void main() {
       await tester.tap(find.text('커뮤니티 전체'));
       await tester.pump();
       expect(opened, 1);
+    });
+  });
+
+  group('평점', () {
+    testWidgets('ReviewSource 의 한줄평을 독립 섹션으로 보여준다', (tester) async {
+      setUpHomeApi();
+      await pumpHomeSection(
+        tester,
+        section: (vm) => HomeReviewSection(viewModel: vm, scale: 1),
+      );
+
+      expect(find.text(MockReviewSource.reviews.first.comment), findsOneWidget);
+      expect(_richTextContaining('평점 한줄평'), findsOneWidget);
+      expect(_richTextContaining('최신순'), findsOneWidget);
+    });
+
+    testWidgets('한줄평이 비면(빈 소스) 섹션 전체가 사라진다', (tester) async {
+      setUpHomeApi();
+      await pumpHomeSection(
+        tester,
+        reviews: const EmptyReviewSource(),
+        section: (vm) => HomeReviewSection(viewModel: vm, scale: 1),
+      );
+
+      expect(_richTextContaining('평점 한줄평'), findsNothing);
+      expect(find.byType(HomeReviewSection), findsOneWidget);
+    });
+
+    testWidgets('탭하면 onTapReview 로 그 한줄평을 넘긴다', (tester) async {
+      setUpHomeApi();
+      HomeReviewItem? tapped;
+      await pumpHomeSection(
+        tester,
+        section: (vm) => HomeReviewSection(
+          viewModel: vm,
+          scale: 1,
+          onTapReview: (review) => tapped = review,
+        ),
+      );
+
+      await tester.tap(find.text(MockReviewSource.reviews.first.comment));
+      await tester.pump();
+
+      expect(tapped?.comment, MockReviewSource.reviews.first.comment);
     });
   });
 }

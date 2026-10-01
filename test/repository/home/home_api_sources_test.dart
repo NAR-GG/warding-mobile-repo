@@ -147,6 +147,82 @@ void main() {
     });
   });
 
+  group('ApiReviewSource', () {
+    test('선수·챔피언·별점·한줄평·작성자·경과 분을 매핑한다(오프셋 없는 KST 시각)', () async {
+      Uri? url;
+      api.setApiClientForTesting(MockClient((request) async {
+        url = request.url;
+        return json({
+          'ratings': [
+            {
+              'ratingId': 1,
+              'gameId': '113990000000000001',
+              'participantId': 3,
+              'playerId': 7,
+              'playerName': 'Chovy',
+              'championName': '신드라',
+              'rating': 5,
+              'comment': '라인전부터 그냥 다른 경기 하던데',
+              'nickname': '젠지가족#4821',
+              'playerTeamCode': 'GEN',
+              'teamSide': 'BLUE',
+              'createdAt': '2026-09-25T21:18:00',
+            },
+          ],
+          'nextCursor': null,
+        });
+      }));
+
+      final reviews = await ApiReviewSource(now: () => now).fetchRecent();
+
+      expect(url!.path, '/api/mobile/ratings/recent');
+      final review = reviews.single;
+      expect(review.playerName, 'Chovy');
+      expect(review.champion, '신드라');
+      expect(review.stars, 5);
+      expect(review.comment, '라인전부터 그냥 다른 경기 하던데');
+      expect(review.nickname, '젠지가족#4821');
+      expect(review.teamCode, 'GEN');
+      expect(review.minutesAgo, 12);
+      expect(review.gameId, '113990000000000001');
+      expect(review.participantId, 3);
+      expect(review.playerId, 7);
+      expect(review.teamSide, 'BLUE');
+    });
+
+    test('식별자 필드가 없으면 null', () async {
+      api.setApiClientForTesting(MockClient((_) async => json({
+        'ratings': [
+          {
+            'playerName': 'Faker',
+            'championName': '아리',
+            'rating': 4,
+            'comment': '좋았다',
+            'nickname': 'ABLY#1127',
+            'playerTeamCode': 'T1',
+            'createdAt': '2026-09-25T21:18:00',
+          },
+        ],
+      })));
+
+      final reviews = await ApiReviewSource(now: () => now).fetchRecent();
+
+      final review = reviews.single;
+      expect(review.gameId, isNull);
+      expect(review.participantId, isNull);
+      expect(review.playerId, isNull);
+      expect(review.teamSide, isNull);
+    });
+
+    test('서버 오류면 예외', () async {
+      api.setApiClientForTesting(
+        MockClient((_) async => json({'message': 'fail'}, 500)),
+      );
+
+      expect(ApiReviewSource(now: () => now).fetchRecent(), throwsException);
+    });
+  });
+
   group('ApiNewsSource', () {
     test('제목·언론사·경과 분·썸네일 유무를 매핑한다(KST 오프셋 없는 시각)', () async {
       Uri? url;
@@ -178,8 +254,10 @@ void main() {
       expect(list.first.office, '포모스');
       expect(list.first.minutesAgo, 40);
       expect(list.first.thumbnailUrl, 'https://img/1.jpg');
+      expect(list.first.postUrl, 'https://n.news.naver.com/1');
       expect(list.last.minutesAgo, 180);
       expect(list.last.thumbnailUrl, isNull);
+      expect(list.last.postUrl, isNull);
     });
 
     test('서버 오류면 예외', () async {

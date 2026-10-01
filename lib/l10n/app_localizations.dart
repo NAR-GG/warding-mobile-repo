@@ -182,6 +182,72 @@ abstract class AppLocalizations {
   /// **'준비 중'**
   String get homeStandingsSoon;
 
+  /// No description provided for @homeStandingsWorldsSwissScope.
+  ///
+  /// In ko, this message translates to:
+  /// **'2025 · 스위스 스테이지'**
+  String get homeStandingsWorldsSwissScope;
+
+  /// No description provided for @homeStandingsWorldsKnockoutScope.
+  ///
+  /// In ko, this message translates to:
+  /// **'2025 · 토너먼트 대진'**
+  String get homeStandingsWorldsKnockoutScope;
+
+  /// No description provided for @homeStandingsWorldsSwissTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'스위스 전적'**
+  String get homeStandingsWorldsSwissTitle;
+
+  /// No description provided for @homeStandingsWorldsKnockoutTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'토너먼트 대진'**
+  String get homeStandingsWorldsKnockoutTitle;
+
+  /// No description provided for @homeStandingsWorldsSwissHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'3승 진출 · 3패 탈락'**
+  String get homeStandingsWorldsSwissHint;
+
+  /// No description provided for @homeStandingsWorldsKnockoutHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'8강 → 결승'**
+  String get homeStandingsWorldsKnockoutHint;
+
+  /// No description provided for @homeStandingsWorldsShowKnockout.
+  ///
+  /// In ko, this message translates to:
+  /// **'토너먼트 대진 보기'**
+  String get homeStandingsWorldsShowKnockout;
+
+  /// No description provided for @homeStandingsWorldsShowSwiss.
+  ///
+  /// In ko, this message translates to:
+  /// **'스위스 전적 보기'**
+  String get homeStandingsWorldsShowSwiss;
+
+  /// No description provided for @homeStandingsWorldsAdvanced.
+  ///
+  /// In ko, this message translates to:
+  /// **'진출'**
+  String get homeStandingsWorldsAdvanced;
+
+  /// No description provided for @homeStandingsWorldsEliminated.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈락'**
+  String get homeStandingsWorldsEliminated;
+
+  /// No description provided for @homeStandingsWorldsSeeAllBracket.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 대진'**
+  String get homeStandingsWorldsSeeAllBracket;
+
   /// No description provided for @homeCommunityTitle.
   ///
   /// In ko, this message translates to:
@@ -212,6 +278,12 @@ abstract class AppLocalizations {
   /// **'평점 한줄평'**
   String get homeSortReview;
 
+  /// No description provided for @homeReviewTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'평점 한줄평'**
+  String get homeReviewTitle;
+
   /// No description provided for @homeContentTitle.
   ///
   /// In ko, this message translates to:
@@ -239,7 +311,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeShortsFilterTeam.
   ///
   /// In ko, this message translates to:
-  /// **'내 팀'**
+  /// **'응원 팀'**
   String get homeShortsFilterTeam;
 
   /// No description provided for @homeHeroEmptyMessage.
@@ -491,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @myPlayersGroupQuiet.
   ///
   /// In ko, this message translates to:
-  /// **'오늘 소식 없음'**
+  /// **'오늘 솔랭 경기 없음'**
   String get myPlayersGroupQuiet;
 
   /// No description provided for @myPlayersGroupCount.
@@ -515,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @myPlayersNoGameToday.
   ///
   /// In ko, this message translates to:
-  /// **'오늘 경기 없음'**
+  /// **'오늘 솔랭 없음'**
   String get myPlayersNoGameToday;
 
   /// No description provided for @myPlayersNoResult.

@@ -53,6 +53,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeStandingsSoon => 'Coming soon';
 
   @override
+  String get homeStandingsWorldsSwissScope => '2025 · Swiss Stage';
+
+  @override
+  String get homeStandingsWorldsKnockoutScope => '2025 · Knockout Bracket';
+
+  @override
+  String get homeStandingsWorldsSwissTitle => 'Swiss Stage';
+
+  @override
+  String get homeStandingsWorldsKnockoutTitle => 'Knockout Bracket';
+
+  @override
+  String get homeStandingsWorldsSwissHint =>
+      '3 wins advance · 3 losses eliminated';
+
+  @override
+  String get homeStandingsWorldsKnockoutHint => 'Quarterfinals → Finals';
+
+  @override
+  String get homeStandingsWorldsShowKnockout => 'View knockout bracket';
+
+  @override
+  String get homeStandingsWorldsShowSwiss => 'View Swiss stage';
+
+  @override
+  String get homeStandingsWorldsAdvanced => 'Advanced';
+
+  @override
+  String get homeStandingsWorldsEliminated => 'Eliminated';
+
+  @override
+  String get homeStandingsWorldsSeeAllBracket => 'Full bracket';
+
+  @override
   String get homeCommunityTitle => 'Community';
 
   @override
@@ -68,6 +102,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSortReview => 'Ratings';
 
   @override
+  String get homeReviewTitle => 'Ratings';
+
+  @override
   String get homeContentTitle => 'Content';
 
   @override
@@ -80,7 +117,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeShortsFilterAll => 'All';
 
   @override
-  String get homeShortsFilterTeam => 'My team';
+  String get homeShortsFilterTeam => 'Supported team';
 
   @override
   String get homeHeroEmptyMessage =>
@@ -230,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPlayersGroupPlayedToday => 'Last solo queue result';
 
   @override
-  String get myPlayersGroupQuiet => 'Nothing today';
+  String get myPlayersGroupQuiet => 'No solo queue today';
 
   @override
   String myPlayersGroupCount(int count) {
@@ -246,7 +283,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPlayersShowLess => 'Show less';
 
   @override
-  String get myPlayersNoGameToday => 'No games today';
+  String get myPlayersNoGameToday => 'No solo queue today';
 
   @override
   String get myPlayersNoResult => 'No players found';

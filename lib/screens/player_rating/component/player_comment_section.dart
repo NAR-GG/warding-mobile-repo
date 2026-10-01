@@ -9,6 +9,7 @@ import '../../../util/app_image.dart';
 /// 한 선수 평점 코멘트.
 class PlayerComment {
   const PlayerComment({
+    required this.ratingId,
     required this.username,
     required this.timeAgo,
     required this.rating,
@@ -16,6 +17,9 @@ class PlayerComment {
     this.profileImageUrl,
     this.teamImageUrl,
   });
+
+  /// 평가 ID. 홈 평점 섹션에서 들어왔을 때 그 한줄평으로 스크롤·하이라이트하는 데 쓴다.
+  final int ratingId;
 
   /// 작성자 닉네임(예: 'Faker_팬티도둑').
   final String username;
@@ -46,10 +50,19 @@ class PlayerCommentSection extends StatelessWidget {
     super.key,
     required this.comments,
     this.scale = 1,
+    this.highlightRatingId,
+    this.commentKeys,
   });
 
   final List<PlayerComment> comments;
   final double scale;
+
+  /// 홈 평점 섹션에서 들어왔을 때 강조할 한줄평 ID. 없으면 평소대로 그린다.
+  final int? highlightRatingId;
+
+  /// [highlightRatingId] 로 스크롤하기 위한 타일 키. 호출부가 `ratingId → GlobalKey`
+  /// 맵을 미리 만들어 넘기면, 로드된 리스트에서 해당 타일을 찾아 `ensureVisible` 할 수 있다.
+  final Map<int, GlobalKey>? commentKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +102,12 @@ class PlayerCommentSection extends StatelessWidget {
           ),
         ),
         for (final comment in comments)
-          _CommentTile(comment: comment, scale: scale),
+          _CommentTile(
+            key: commentKeys?[comment.ratingId],
+            comment: comment,
+            scale: scale,
+            highlighted: comment.ratingId == highlightRatingId,
+          ),
       ],
     );
   }
@@ -97,18 +115,37 @@ class PlayerCommentSection extends StatelessWidget {
 
 /// 코멘트 한 장. padding 16/0, gap 8, 하단 narLine2 구분선.
 class _CommentTile extends StatelessWidget {
-  const _CommentTile({required this.comment, required this.scale});
+  const _CommentTile({
+    super.key,
+    required this.comment,
+    required this.scale,
+    this.highlighted = false,
+  });
 
   final PlayerComment comment;
   final double scale;
+
+  /// 홈에서 이 한줄평을 보려고 들어왔을 때 배경을 강조한다.
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final hasComment = comment.comment != null && comment.comment!.isNotEmpty;
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16 * scale),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.narLine2, width: 1)),
+      padding: EdgeInsets.symmetric(
+        horizontal: highlighted ? 10 * scale : 0,
+        vertical: 16 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: highlighted ? AppColors.narBgTertiary : null,
+        borderRadius: highlighted
+            ? BorderRadius.circular(10 * scale)
+            : BorderRadius.zero,
+        border: highlighted
+            ? null
+            : const Border(
+                bottom: BorderSide(color: AppColors.narLine2, width: 1),
+              ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

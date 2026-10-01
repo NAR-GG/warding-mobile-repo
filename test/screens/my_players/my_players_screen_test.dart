@@ -167,7 +167,7 @@ void main() {
 
     expect(find.text('지금 솔랭 중'), findsOneWidget);
     expect(find.text('마지막 솔랭 기록'), findsOneWidget);
-    expect(find.text('오늘 소식 없음'), findsOneWidget);
+    expect(find.text('오늘 솔랭 경기 없음'), findsOneWidget);
     expect(find.text('96명'), findsOneWidget);
 
     expect(
@@ -238,7 +238,7 @@ void main() {
     expect(find.byKey(MyPlayersScreen.tileKey('Oner'.hashCode)), findsNothing);
     // 비어 버린 묶음은 제목도 그리지 않는다.
     expect(find.text('마지막 솔랭 기록'), findsNothing);
-    expect(find.text('오늘 소식 없음'), findsNothing);
+    expect(find.text('오늘 솔랭 경기 없음'), findsNothing);
 
     await tester.enterText(find.byKey(MyPlayersScreen.searchFieldKey), 'zzz');
     await tester.pump();

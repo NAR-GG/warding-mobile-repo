@@ -1,10 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/nar_tab_bar.dart';
 import '../../../components/dashed_border.dart';
-import '../../../components/team_logo.dart';
+import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
@@ -87,6 +88,13 @@ class _NewsList extends StatelessWidget {
     return l.homeDaysAgo(minutes ~/ (60 * 24));
   }
 
+  /// 기사 원문을 외부 브라우저로 연다. URL 이 없으면 아무 일도 하지 않는다.
+  Future<void> _open(HomeNewsArticle article) async {
+    final url = article.postUrl;
+    if (url == null || url.isEmpty) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (articles.isEmpty) return const SizedBox.shrink();
@@ -103,44 +111,48 @@ class _NewsList extends StatelessWidget {
         children: [
           for (final (i, article) in articles.indexed) ...[
             if (i > 0) const Divider(height: 1, color: AppColors.narLine),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 13 * scale,
-                vertical: 11 * scale,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _NewsThumbnail(url: article.thumbnailUrl, scale: scale),
-                  SizedBox(width: 11 * scale),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          article.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontSize: 15 * scale,
-                            height: 1.4,
-                            color: AppColors.narTextTertiary,
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _open(article),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 13 * scale,
+                  vertical: 11 * scale,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _NewsThumbnail(url: article.thumbnailUrl, scale: scale),
+                    SizedBox(width: 11 * scale),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            article.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 15 * scale,
+                              height: 1.4,
+                              color: AppColors.narTextTertiary,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4 * scale),
-                        Text(
-                          '${article.office} · ${_ago(l, article.minutesAgo)}',
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontSize: 13 * scale,
-                            color: AppColors.narDark200,
+                          SizedBox(height: 4 * scale),
+                          Text(
+                            '${article.office} · ${_ago(l, article.minutesAgo)}',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 13 * scale,
+                              color: AppColors.narDark200,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -365,11 +377,11 @@ class _ShortsCard extends StatelessWidget {
                   ),
                   if (video.teamCode.isNotEmpty)
                     Positioned(
-                      left: 6 * scale,
+                      right: 6 * scale,
                       top: 6 * scale,
-                      child: _TeamLogoTag(
+                      child: TeamCodeBadge(
                         teamCode: video.teamCode,
-                        scale: scale,
+                        size: 22 * scale,
                       ),
                     ),
                   Positioned(
@@ -406,31 +418,6 @@ class _ShortsCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// 썸네일 좌상단 배지 — 채널의 팀. 팀 코드 텍스트 대신 로고 이미지를 작은
-/// 둥근 네모 안에 그린다.
-class _TeamLogoTag extends StatelessWidget {
-  const _TeamLogoTag({required this.teamCode, required this.scale});
-
-  final String teamCode;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22 * scale,
-      height: 22 * scale,
-      alignment: Alignment.center,
-      padding: EdgeInsets.all(4 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narWhite14,
-        borderRadius: BorderRadius.circular(7 * scale),
-        border: Border.all(color: AppColors.narLine2),
-      ),
-      child: TeamLogo(teamCode: teamCode, size: 14 * scale),
     );
   }
 }

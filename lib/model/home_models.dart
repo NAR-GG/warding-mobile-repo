@@ -73,6 +73,7 @@ class HomeNewsArticle {
     required this.office,
     required this.minutesAgo,
     this.thumbnailUrl,
+    this.postUrl,
   });
 
   final String title;
@@ -81,6 +82,9 @@ class HomeNewsArticle {
 
   /// 기사 썸네일 URL. 없으면 빈 자리를 그린다.
   final String? thumbnailUrl;
+
+  /// 기사 원문 URL. 없으면 탭해도 이동하지 않는다.
+  final String? postUrl;
 }
 
 /// 콘텐츠 · 쇼츠 탭 한 건.
@@ -124,6 +128,11 @@ class HomeReviewItem {
     required this.nickname,
     required this.teamCode,
     required this.minutesAgo,
+    this.gameId,
+    this.participantId,
+    this.playerId,
+    this.teamSide,
+    this.ratingId,
   });
 
   final String playerName;
@@ -133,4 +142,17 @@ class HomeReviewItem {
   final String nickname;
   final String teamCode;
   final int minutesAgo;
+
+  /// 선수 평점 상세([PlayerRatingScreen]) 진입에 필요한 식별자. 셋 다 있어야
+  /// 탭해서 그 선수의 평점 상세(한줄평 목록)로 이동할 수 있다.
+  final String? gameId;
+  final int? participantId;
+  final int? playerId;
+
+  /// 평가 대상 선수의 진영("BLUE"/"RED"). 팀 배지 색 판별에 쓴다.
+  final String? teamSide;
+
+  /// 이 한줄평의 평가 ID. 평점 상세 화면에서 이 한줄평으로 스크롤·강조하는
+  /// 데 쓴다([PlayerRatingScreen.highlightRatingId]).
+  final int? ratingId;
 }

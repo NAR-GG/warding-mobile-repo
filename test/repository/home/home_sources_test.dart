@@ -21,8 +21,8 @@ void main() {
     expect(await MockNewsSource().fetchTop(), isNotEmpty);
   });
 
-  // 목업은 HOME_MOCKS 게이트 뒤에 있다 — 플래그가 꺼진 기본 빌드는 솔랭·뉴스는 실제
-  // API 소스, 평점은 빈 소스(백엔드 #542 배포 전)라 가짜 데이터가 나가지 않는다.
+  // 목업은 HOME_MOCKS 게이트 뒤에 있다 — 플래그가 꺼진 기본 빌드는 솔랭·평점·뉴스
+  // 모두 실제 API 소스라 가짜 데이터가 나가지 않는다.
   group('HOME_MOCKS 게이트', () {
     test('dart-define 이 없으면 꺼져 있다', () {
       // HOME_MOCKS=true로 테스트를 돌리면(예: 로컬에서 목업 확인차) 이
@@ -31,12 +31,10 @@ void main() {
       expect(kHomeMocks, isFalse);
     });
 
-    test('플래그가 꺼지면 솔랭·뉴스는 API 소스, 평점은 빈 소스', () async {
+    test('플래그가 꺼지면 솔랭·평점·뉴스 모두 API 소스', () async {
       expect(defaultSoloRankSource(mocks: false), isA<ApiSoloRankSource>());
       expect(defaultNewsSource(mocks: false), isA<ApiNewsSource>());
-      final reviews = defaultReviewSource(mocks: false);
-      expect(reviews, isA<EmptyReviewSource>());
-      expect(await reviews.fetchRecent(), isEmpty);
+      expect(defaultReviewSource(mocks: false), isA<ApiReviewSource>());
     });
 
     test('플래그가 켜지면 목업 소스', () {
