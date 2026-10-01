@@ -83,7 +83,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeStandingsWorldsEliminated => '탈락';
 
   @override
-  String get homeStandingsWorldsSeeAllBracket => '전체 대진';
+  String get homeStandingsSeeAllMatches => '전체 경기';
 
   @override
   String get homeCommunityTitle => '커뮤니티';

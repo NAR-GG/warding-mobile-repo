@@ -30,8 +30,8 @@ class HomeStandingsSection extends StatelessWidget {
   final HomeViewModel viewModel;
   final double scale;
 
-  /// 월즈 "전체 대진" — 오늘 경기 섹션의 "일정 전체"와 같은 패턴으로 경기
-  /// 리스트 탭을 연다. 월즈가 선택됐을 때만 헤더에 노출한다.
+  /// "전체 경기" — 오늘 경기 섹션의 "일정 전체"와 같은 패턴으로 경기 리스트
+  /// 탭을 연다. 선택한 리그와 무관하게 항상 헤더에 노출한다.
   final VoidCallback? onSeeAllBracket;
 
   /// 순위 숫자 [Text] 키.
@@ -58,8 +58,8 @@ class HomeStandingsSection extends StatelessWidget {
                       ? l.homeStandingsWorldsSwissScope
                       : l.homeStandingsWorldsKnockoutScope)
                 : '${DateTime.now().year} · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
-            trailingLabel: isWorlds ? l.homeStandingsWorldsSeeAllBracket : null,
-            onTapTrailing: isWorlds ? onSeeAllBracket : null,
+            trailingLabel: l.homeStandingsSeeAllMatches,
+            onTapTrailing: onSeeAllBracket,
           ),
         ),
         SizedBox(height: 2 * scale),
