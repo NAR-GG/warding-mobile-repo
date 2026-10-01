@@ -242,11 +242,11 @@ abstract class AppLocalizations {
   /// **'탈락'**
   String get homeStandingsWorldsEliminated;
 
-  /// No description provided for @homeStandingsWorldsSeeAllBracket.
+  /// No description provided for @homeStandingsSeeAllMatches.
   ///
   /// In ko, this message translates to:
-  /// **'전체 대진'**
-  String get homeStandingsWorldsSeeAllBracket;
+  /// **'전체 경기'**
+  String get homeStandingsSeeAllMatches;
 
   /// No description provided for @homeCommunityTitle.
   ///

@@ -65,6 +65,23 @@ void main() {
     );
   });
 
+  testWidgets('"전체 경기"는 리그와 무관하게 항상 보이고 누르면 콜백을 넘긴다', (tester) async {
+    setUpHomeApi();
+    var tapped = 0;
+    await pumpHomeSection(
+      tester,
+      section: (vm) => HomeStandingsSection(
+        viewModel: vm,
+        scale: 1,
+        onSeeAllBracket: () => tapped++,
+      ),
+    );
+
+    expect(find.text('전체 경기'), findsOneWidget);
+    await tester.tap(find.text('전체 경기'));
+    expect(tapped, 1);
+  });
+
   testWidgets('1위 순위 숫자만 메인 보라색이고 나머지 줄은 다른 행과 같은 스타일이다', (tester) async {
     setUpHomeApi();
     await pumpHomeSection(

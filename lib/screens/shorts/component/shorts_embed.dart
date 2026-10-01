@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show Factory;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -69,6 +71,8 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
   /// 꺼지게 만든다.
   bool _loaded = false;
 
+  bool _scrollLocked = false;
+
   @override
   void initState() {
     super.initState();
@@ -91,12 +95,37 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
       _reportError(v.error.code);
       return;
     }
+    if (!_scrollLocked) {
+      // iframe 문서가 로드된 뒤에만 의미가 있어 처음 상태 변화(unknown 탈출)
+      // 시점에 한 번만 건다 — 그 전엔 document.body 가 아직 없을 수 있다.
+      _scrollLocked = true;
+      unawaited(_lockWebViewScroll());
+    }
     if (v.playerState == _lastState) return;
     _lastState = v.playerState;
     if (!widget.active) return;
     if (v.playerState == PlayerState.playing) widget.onPlaying();
     if (v.playerState == PlayerState.ended) widget.onEnded();
   }
+
+  // 유튜브 IFrame 문서 자체가 세로로 스크롤 가능한 상태라, 플레이어 위
+  // 세로 드래그를 네이티브 WebView(WKWebView/Android WebView)의 내장
+  // 스크롤뷰가 Flutter 제스처 아레나보다 먼저 가로채 버렸다. 문서를
+  // 스크롤 불가능하게 고정해 그 내장 스크롤뷰가 애초에 움직일 일이
+  // 없게 만든다 — gestureRecognizers 등록만으로는 네이티브 스크롤뷰의
+  // 우선 소비를 막지 못했다.
+  Future<void> _lockWebViewScroll() => _controller.webViewController
+      .runJavaScript(
+        "document.documentElement.style.overflow='hidden';"
+        "document.documentElement.style.margin='0';"
+        "document.body.style.overflow='hidden';"
+        "document.body.style.margin='0';"
+        "document.body.style.position='fixed';"
+        "document.body.style.inset='0';"
+        "document.body.style.width='100%';"
+        "document.body.style.height='100%';",
+      )
+      .catchError((Object _) {});
 
   // WebView 쪽 IFrame API 가 끝내 ready 이벤트를 못 쏴 주면(네트워크 문제 등)
   // 패키지가 30초 뒤 TimeoutException 을 던진다 — 잡아서 기존 오류 폴백으로 보낸다.
@@ -114,9 +143,11 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
       if (_loaded) {
         // 이미 로드했던 영상으로 되돌아온 것 — 다시 로드하면 유튜브 기본
         // 컨트롤로 켠 소리가 꺼지므로 재생만 재개한다.
-        unawaited(_controller.playVideo().catchError((Object e) {
-          _reportError(e);
-        }));
+        unawaited(
+          _controller.playVideo().catchError((Object e) {
+            _reportError(e);
+          }),
+        );
       } else {
         // 미리 로드만 해 둔(cue) 플레이어는 playVideo 만으로 시작하지 않는
         // 경우가 있어, 처음 한 번은 로드하면서 재생한다.
@@ -140,5 +171,24 @@ class _YoutubeShortsEmbedState extends State<_YoutubeShortsEmbed> {
   }
 
   @override
-  Widget build(BuildContext context) => YoutubePlayer(controller: _controller);
+  Widget build(BuildContext context) => YoutubePlayer(
+    controller: _controller,
+    // 이 화면은 이미 그 자체로 전체화면 세로 피드라 패키지의 "전체화면"
+    // 기능이 필요 없다. 기본값(둘 다 true)을 켜 두면 두 가지 문제가 있었다:
+    // (1) 플레이어 위 세로 드래그를 "전체화면 진입" 제스처로 가로채서,
+    //     다음 영상으로 넘기려는 PageView 세로 스와이프가 영상 위에서는
+    //     먹지 않았다.
+    // (2) 전체화면 상태에서는 패키지의 PopScope가 시스템 뒤로가기·X 버튼의
+    //     pop을 "전체화면 탈출"로만 소비해, 화면을 아예 닫을 수 없었다.
+    enableFullScreenOnVerticalDrag: false,
+    autoFullScreen: false,
+    // 패키지 기본값은 "세로·가로 제스처를 플레이어(WebView)가 흡수"하는
+    // 것이라, 위 두 플래그를 꺼도 네이티브 WebView가 포인터 이벤트를 먼저
+    // 가져가 버려 부모 PageView가 세로 스와이프를 전혀 못 받았다.
+    // VerticalDragGestureRecognizer를 명시적으로 등록해 제스처 아레나에서
+    // Flutter 쪽(PageView)과 정상적으로 경쟁하게 한다.
+    gestureRecognizers: {
+      Factory<VerticalDragGestureRecognizer>(VerticalDragGestureRecognizer.new),
+    },
+  );
 }

@@ -247,7 +247,9 @@ class _ShortsDeck extends StatelessWidget {
           scale: scale,
         ),
         SizedBox(height: 8 * scale),
-        if (videos.isEmpty)
+        if (viewModel.shortsLoading)
+          _ShortsDeckSkeleton(scale: scale)
+        else if (videos.isEmpty)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
             child: KeyedSubtree(
@@ -302,6 +304,107 @@ class _ShortsDeck extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// "내 팀" 필터로 바꾼 직후 응원팀·영상을 다시 받는 동안 보여주는 스켈레톤.
+/// [_ShortsCard]와 같은 자리(9:16 썸네일 112×199 + 제목 두 줄)를 차지해,
+/// 데이터가 도착했을 때 레이아웃이 튀지 않는다. 카드 4장이면 가로 스크롤
+/// 폭을 넘겨 "로딩 중"임이 자연스럽게 드러난다.
+class _ShortsDeckSkeleton extends StatefulWidget {
+  const _ShortsDeckSkeleton({required this.scale});
+
+  final double scale;
+
+  @override
+  State<_ShortsDeckSkeleton> createState() => _ShortsDeckSkeletonState();
+}
+
+class _ShortsDeckSkeletonState extends State<_ShortsDeckSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = widget.scale;
+    final width = 112 * scale;
+    return SizedBox(
+      height: 250 * scale,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          final opacity = 0.3 + (_ctrl.value * 0.3);
+          final blockColor = AppColors.narLine2.withValues(alpha: opacity);
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+            itemCount: 4,
+            separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
+            itemBuilder: (context, i) => Container(
+              width: width,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppColors.narBgTertiary,
+                borderRadius: BorderRadius.circular(10 * scale),
+                border: Border.all(color: AppColors.narLine),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(width: width, height: width * 16 / 9, color: blockColor),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      8 * scale,
+                      8 * scale,
+                      8 * scale,
+                      0,
+                    ),
+                    child: Container(
+                      height: 12 * scale,
+                      decoration: BoxDecoration(
+                        color: blockColor,
+                        borderRadius: BorderRadius.circular(4 * scale),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      8 * scale,
+                      6 * scale,
+                      8 * scale,
+                      0,
+                    ),
+                    child: Container(
+                      height: 12 * scale,
+                      width: width * 0.6,
+                      decoration: BoxDecoration(
+                        color: blockColor,
+                        borderRadius: BorderRadius.circular(4 * scale),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
