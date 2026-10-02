@@ -19,8 +19,8 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SearchSelectBox(
-            options: MatchListViewModel.seasons,
-            value: MatchListViewModel.seasons.last,
+            options: MatchListViewModel.fallbackSeasons,
+            value: MatchListViewModel.fallbackSeasons.last,
             onChanged: (_) {},
           ),
         ),
