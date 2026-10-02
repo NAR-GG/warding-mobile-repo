@@ -30,9 +30,36 @@ class LiveMatchActivityController {
   ///
   /// 알림을 켠 경기 ID 목록을 먼저 보고, 그다음 구독 팀이 나오는 경기(오늘·어제)를
   /// 훑는다. 앞쪽이 후보가 훨씬 적어 대부분 거기서 끝난다.
-  Future<void> dismissStaleCards() async {
+  /// 스캔 최소 간격. 포그라운드 복귀마다 도는 자리라 쓰로틀이 없으면 알림을
+  /// 확인하러 잠깐 나갔다 올 때마다 경기 수만큼 API 를 다시 쏜다(실측 20개
+  /// 기준 약 6초어치). 홈 화면의 복귀 새로고침과 같은 간격을 쓴다.
+  static const Duration minScanInterval = Duration(seconds: 30);
+
+  DateTime? _lastScanAt;
+
+  /// 테스트에서 쓰로틀 상태를 되돌릴 때 쓴다.
+  @visibleForTesting
+  void resetScanThrottle() => _lastScanAt = null;
+
+  Future<void> dismissStaleCards({bool force = false}) async {
+    if (!force) {
+      final last = _lastScanAt;
+      if (last != null &&
+          DateTime.now().difference(last) < minScanInterval) {
+        return;
+      }
+    }
     if (!await _service.isSupported()) return;
 
+    // 떠 있는 카드가 없으면 치울 것도 없다 — 경기 상태 조회(구독 목록 + 경기
+    // 수만큼의 상세 조회)를 통째로 건너뛴다. 카드가 없는 쪽이 훨씬 흔해서
+    // 평소 복귀 비용이 네이티브 호출 한 번으로 줄어든다.
+    if (!await _service.hasActiveActivities()) {
+      _lastScanAt = DateTime.now();
+      return;
+    }
+
+    _lastScanAt = DateTime.now();
     try {
       // 경기 단위 구독은 인증이 필요해 비회원·로그인 전에는 조회가 실패한다.
       // 그때는 후보가 없는 것으로 보고 팀 구독 경로만 본다.
