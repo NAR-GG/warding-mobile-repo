@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/dashed_border.dart';
@@ -55,7 +56,8 @@ class HomeSoloRankSection extends StatefulWidget {
   State<HomeSoloRankSection> createState() => _HomeSoloRankSectionState();
 }
 
-class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
+class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
+    with WidgetsBindingObserver {
   // 컨트롤러를 build 마다 새로 만들면 스와이프 → notifyListeners → 재빌드 때
   // 첫 장으로 되돌아간다. 상태에 붙여 둔다.
   late final PageController _pages = PageController(
@@ -65,23 +67,59 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
 
   // 큰 카드의 경과 시간을 매초 다시 그린다(기기 시계 카운트업 — spec에서
   // 미뤄뒀던 항목). ViewModel 은 API 응답이 올 때만 갱신되므로, 그 사이는
-  // 이 타이머의 setState 로만 화면을 다시 그린다. 진행 중 카드가 없을 때는
-  // 다시 그려도 보이는 게 안 바뀌니 그때만 건너뛴다.
+  // 이 타이머가 화면을 다시 그린다.
+  //
+  // 예전엔 틱마다 `setState(() {})` 를 불러 **섹션 전체**(스플래시·선수 사진
+  // 3장과 PageView, 끝난 경기 칩 줄까지)를 매초 재구성했다. 실제로 바뀌는 건
+  // 카드 하단의 경과 시간 텍스트 하나뿐이라, 이 notifier 를 구독하는 그
+  // 텍스트만 다시 그린다([_ElapsedText]).
+  final ValueNotifier<int> _tick = ValueNotifier<int>(0);
   Timer? _clockTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _syncClock();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeSoloRankSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 폴링 응답으로 진행 중 선수가 생기거나 사라지면 타이머도 따라 켜고 끈다.
+    _syncClock();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 화면이 안 보이는 동안 초당 리빌드를 돌릴 이유가 없다. 솔랭 폴링이
+    // `HomeViewModel.pauseSoloPolling` 으로 멈추는 것과 같은 맥락이다.
+    _syncClock(foreground: state == AppLifecycleState.resumed);
+  }
+
+  /// 카운트업이 **실제로 필요할 때만** 타이머를 돌린다.
+  ///
+  /// 조건이 `soloState == active` 였는데, 끝난 경기만 있어도 active 라
+  /// (`HomeViewModel.soloState` 참고) 카운트업할 카드가 없는데도 매초 돌았다.
+  /// 경과 시간이 올라가는 건 진행 중(`soloLive`) 카드뿐이라 그걸 본다.
+  void _syncClock({bool foreground = true}) {
+    final needsClock = foreground && widget.viewModel.soloLive.isNotEmpty;
+    if (needsClock == (_clockTimer != null)) return;
+    if (!needsClock) {
+      _clockTimer?.cancel();
+      _clockTimer = null;
+      return;
+    }
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && widget.viewModel.soloState == SoloCardState.active) {
-        setState(() {});
-      }
+      if (mounted) _tick.value++;
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTimer?.cancel();
+    _tick.dispose();
     _pages.dispose();
     super.dispose();
   }
@@ -173,7 +211,8 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection> {
                 child: _HeroCard(
                   key: HomeSoloRankSection.heroKey(live[i].name),
                   player: live[i],
-                  elapsedSeconds: _liveElapsedSeconds(live[i]),
+                  secondsOf: () => _liveElapsedSeconds(live[i]),
+                  tick: _tick,
                   scale: scale,
                 ),
               ),
@@ -641,15 +680,21 @@ class _HeroCard extends StatelessWidget {
   const _HeroCard({
     super.key,
     required this.player,
-    required this.elapsedSeconds,
+    required this.secondsOf,
+    required this.tick,
     required this.scale,
   });
 
   final HomeLiveSoloPlayer player;
 
-  /// [player.elapsedSeconds] 의 매초 카운트업 값(부모가 기기 시계로 다시
-  /// 계산해 내려준다). [HomeLiveSoloPlayer.startedAt] 참고.
-  final int elapsedSeconds;
+  /// 지금 보여줄 경과 초를 계산한다(기기 시계 기준).
+  /// [tick] 이 바뀔 때마다 다시 불러 초를 갱신한다.
+  /// [HomeLiveSoloPlayer.startedAt] 참고.
+  final int Function() secondsOf;
+
+  /// 1초마다 값이 바뀌는 카운터. 이 카드에서 경과 시간 텍스트만 구독한다 —
+  /// 카드(스플래시·선수 사진)까지 매초 다시 그리지 않기 위해서다.
+  final ValueListenable<int> tick;
   final double scale;
 
   @override
@@ -809,15 +854,20 @@ class _HeroCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        _clock(elapsedSeconds),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 30 * scale,
-                          height: 1,
-                          color: AppColors.narText,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                      // 매초 바뀌는 건 이 텍스트뿐이다 — 섹션 전체가 아니라
+                      // 여기만 다시 그린다([_HomeSoloRankSectionState._tick]).
+                      ValueListenableBuilder<int>(
+                        valueListenable: tick,
+                        builder: (context, _, _) => Text(
+                          _clock(secondsOf()),
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 30 * scale,
+                            height: 1,
+                            color: AppColors.narText,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                       SizedBox(width: 8 * scale),

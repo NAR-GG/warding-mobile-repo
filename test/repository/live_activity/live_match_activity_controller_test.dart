@@ -1,5 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:warding/repository/live_activity/live_activity_service.dart';
 import 'package:warding/repository/live_activity/live_match_activity_controller.dart';
+
+class _MockService extends Mock implements LiveActivityService {}
 
 /// 서버 matchStatus → "카드를 유지할 경기인가" 판정 검증.
 ///
@@ -68,6 +72,54 @@ void main() {
       for (final s in const ['unstarted', 'SCHEDULED', '경기 예정']) {
         expect(controller.isFinishedStatus(s), isFalse, reason: s);
       }
+    });
+  });
+
+  group('정리 스캔 비용 — 쓸데없이 API 를 쏘지 않는다', () {
+    late _MockService service;
+    late LiveMatchActivityController c;
+
+    setUp(() {
+      service = _MockService();
+      c = LiveMatchActivityController(service: service);
+      when(() => service.isSupported()).thenAnswer((_) async => true);
+      when(() => service.hasActiveActivities()).thenAnswer((_) async => false);
+      when(() => service.endAll()).thenAnswer((_) async {});
+    });
+
+    // 떠 있는 카드가 없으면 치울 것도 없다. 예전엔 이 확인 없이 구독 목록과
+    // 경기 상태를 전부 조회했다(실측 20개 기준 약 6초어치).
+    test('떠 있는 카드가 없으면 경기 조회까지 가지 않는다', () async {
+      await c.dismissStaleCards();
+
+      verify(() => service.hasActiveActivities()).called(1);
+      verifyNever(() => service.endAll());
+    });
+
+    // 포그라운드 복귀마다 도는 자리라 쓰로틀이 없으면 앱을 잠깐 내렸다
+    // 올릴 때마다 스캔이 통째로 다시 돈다.
+    test('최소 간격 안에 다시 부르면 건너뛴다', () async {
+      await c.dismissStaleCards();
+      await c.dismissStaleCards();
+      await c.dismissStaleCards();
+
+      verify(() => service.hasActiveActivities()).called(1);
+    });
+
+    test('force 면 쓰로틀을 무시한다', () async {
+      await c.dismissStaleCards();
+      await c.dismissStaleCards(force: true);
+
+      verify(() => service.hasActiveActivities()).called(2);
+    });
+
+    test('지원하지 않는 기기면 아무것도 묻지 않는다', () async {
+      when(() => service.isSupported()).thenAnswer((_) async => false);
+
+      await c.dismissStaleCards();
+
+      verifyNever(() => service.hasActiveActivities());
+      verifyNever(() => service.endAll());
     });
   });
 }

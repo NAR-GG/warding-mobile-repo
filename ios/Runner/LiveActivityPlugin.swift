@@ -10,6 +10,7 @@ import ActivityKit
 ///
 /// 채널: `com.warding.app/live_activity`
 /// - `isSupported` → Bool
+/// - `hasActiveActivities` → Bool (떠 있는 경기 카드가 있는지)
 /// - `start(payload)` → 액티비티 시작, activityId 반환
 /// - `update(payload)` → 현재 액티비티 상태 갱신
 /// - `end(payload)` → 액티비티 종료
@@ -50,6 +51,8 @@ final class LiveActivityPlugin: NSObject {
         switch call.method {
         case "isSupported":
             result(isSupported())
+        case "hasActiveActivities":
+            result(hasActiveActivities())
         case "start":
             start(args: call.arguments as? [String: Any] ?? [:], result: result)
         case "update":
@@ -230,6 +233,20 @@ final class LiveActivityPlugin: NSObject {
     private func endAll(result: @escaping FlutterResult) {
         endAllActivities()
         result(true)
+    }
+
+    /// 지금 떠 있는 경기 액티비티가 하나라도 있는지.
+    ///
+    /// 고착 카드 정리 스캔(`LiveMatchActivityController.dismissStaleCards`)이
+    /// 먼저 물어본다 — 카드가 없으면 치울 것도 없으므로, 경기 상태를 확인하는
+    /// 수십 건의 API 호출을 통째로 건너뛸 수 있다.
+    private func hasActiveActivities() -> Bool {
+        #if canImport(ActivityKit)
+        guard #available(iOS 16.1, *) else { return false }
+        return !Activity<MatchLiveAttributes>.activities.isEmpty
+        #else
+        return false
+        #endif
     }
 
     private func endAllActivities() {

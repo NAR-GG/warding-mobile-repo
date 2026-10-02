@@ -57,6 +57,23 @@ class LiveActivityService {
     }
   }
 
+  /// 지금 잠금화면에 떠 있는 경기 카드가 하나라도 있는지.
+  ///
+  /// 고착 카드 정리 스캔이 먼저 물어본다 — 카드가 없으면 치울 것도 없어서,
+  /// 경기 상태를 확인하는 수십 건의 API 호출을 통째로 건너뛸 수 있다.
+  /// 확인에 실패하면 false 로 본다(스캔을 건너뛴다) — 카드가 없는 쪽이 훨씬
+  /// 흔하고, 설령 남아 있어도 다음 복귀 때 다시 확인한다.
+  Future<bool> hasActiveActivities() async {
+    if (!_supportedPlatform) return false;
+    _ensureHandlerRegistered();
+    try {
+      return await _channel.invokeMethod<bool>('hasActiveActivities') ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('[LiveActivity] hasActiveActivities 실패: ${e.message}');
+      return false;
+    }
+  }
+
   /// 네이티브(iOS)에서 오는 콜백을 처리한다.
   ///
   /// - `pushToken` : 카드가 발급한 APNs 푸시 토큰. 서버에 등록해야 세트
