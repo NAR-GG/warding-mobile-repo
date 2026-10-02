@@ -61,4 +61,32 @@ void main() {
       expect(ChampionImage.resolve(null, 'Wukong'), contains('MonkeyKing.png'));
     });
   });
+
+  group('Data Dragon 버전', () {
+    tearDown(ChampionImage.resetDdragonVersion);
+
+    test('조회 전에는 폴백 버전을 쓴다', () {
+      expect(ChampionImage.ddragonVersion, ChampionImage.fallbackDdragonVersion);
+      expect(
+        ChampionImage.resolve(null, 'Ahri'),
+        contains('/cdn/${ChampionImage.fallbackDdragonVersion}/'),
+      );
+    });
+
+    // 버전을 앱에 박아 두면 그 뒤에 나온 챔피언 아이콘이 404 로 빠진다
+    // (15.13.1 고정이라 유나라·자헨이 안 나왔다). 조회가 성공하면 URL 이
+    // 최신 버전을 따라가야 한다.
+    test('조회에 성공하면 그 버전으로 URL 을 만든다', () async {
+      await ChampionImage.refreshDdragonVersion();
+
+      // 네트워크가 없는 환경에서는 폴백이 유지된다 — 그 경우도 URL 은
+      // 깨지지 않아야 하므로, 어느 쪽이든 현재 버전과 일치하는지만 본다.
+      expect(
+        ChampionImage.resolve(null, 'Ahri'),
+        contains('/cdn/${ChampionImage.ddragonVersion}/'),
+      );
+      expect(RegExp(r'^\d+\.\d+\.\d+$').hasMatch(ChampionImage.ddragonVersion),
+          isTrue);
+    });
+  });
 }

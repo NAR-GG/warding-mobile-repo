@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConfig {
   ApiConfig._();
 
@@ -73,13 +75,44 @@ class ApiConfig {
     return '$apiBaseUrl/mobile/schedules/calendar?$query';
   }
 
-  /// `league=ALL` 을 이 목록으로 치환할 때 쓰는 실제 리그 코드 전체.
-  /// `/mobile/schedules/filters` 응답의 '전체'(ALL) 를 제외한 리그 목록과 동일해야 한다.
-  static const List<String> _allRealLeagueCodes = [
+  /// `league=ALL` 치환에 쓸 리그 코드 — 서버 목록을 못 받았을 때의 폴백.
+  ///
+  /// 평소에는 [allRealLeagueCodes] 가 `/mobile/schedules/filters` 로 받아 둔
+  /// 최신 목록을 돌려준다. 이 상수는 첫 실행·오프라인처럼 아직 못 받은
+  /// 상태에서만 쓰인다 — 비워 두면 그 상태에서 경기 조회 자체가 실패한다.
+  ///
+  /// **여기에 리그를 추가하는 것으로 대응을 끝내지 않는다.** 백엔드가 리그를
+  /// 추가하면 서버 목록으로 자동으로 따라가는 게 정상 경로다(이 목록을 손으로
+  /// 맞추다 ASIAN_GAMES·DEMACIA_CUP 을 빠뜨려 "그 리그만 있는 날 경기가 통째로
+  /// 사라지는" 버그가 반복됐다).
+  static const List<String> fallbackLeagueCodes = [
     'LCK', 'LPL', 'LEC', 'LCS', 'MSI', 'WORLDS',
     'EWC', 'FIRST_STAND', 'KESPA', 'CBLOL', 'LCP', 'ASIAN_GAMES',
     'DEMACIA_CUP',
   ];
+
+  /// 서버에서 받아 둔 리그 코드 전체. null 이면 아직 못 받았다.
+  static List<String>? _serverLeagueCodes;
+
+  /// `league=ALL` 을 펼칠 실제 리그 코드 전체.
+  /// 서버 목록이 있으면 그걸, 없으면 [fallbackLeagueCodes] 를 쓴다.
+  static List<String> get allRealLeagueCodes =>
+      _serverLeagueCodes ?? fallbackLeagueCodes;
+
+  /// `/mobile/schedules/filters` 로 받은 리그 목록을 반영한다.
+  /// 'ALL' 은 치환 대상이 아니므로 걸러 낸다. 빈 목록은 무시한다(폴백 유지).
+  static void updateLeagueCodes(Iterable<String> codes) {
+    final filtered = codes
+        .where((c) => c.isNotEmpty && c != 'ALL')
+        .toSet()
+        .toList(growable: false);
+    if (filtered.isEmpty) return;
+    _serverLeagueCodes = filtered;
+  }
+
+  /// 테스트에서 상태를 되돌릴 때 쓴다.
+  @visibleForTesting
+  static void resetLeagueCodes() => _serverLeagueCodes = null;
 
   /// 모바일 선택 날짜의 경기 리스트 카드 조회 (인증 불필요).
   /// [date] 형식은 'yyyy-MM-dd' (예: '2026-04-01').
@@ -94,7 +127,7 @@ class ApiConfig {
     List<int>? teamIds,
   }) {
     final effectiveLeagues =
-        leagues.length == 1 && leagues.first == 'ALL' ? _allRealLeagueCodes : leagues;
+        leagues.length == 1 && leagues.first == 'ALL' ? allRealLeagueCodes : leagues;
     final query = StringBuffer('date=$date')
       ..write(_repeatedParam('league', effectiveLeagues));
     if (teamIds != null && teamIds.isNotEmpty) {

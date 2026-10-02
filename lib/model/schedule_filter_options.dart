@@ -7,6 +7,7 @@ class ScheduleFilterOptions {
     required this.defaultLeague,
     required this.leagues,
     required this.teams,
+    this.seasonYears = const [],
   });
 
   /// 기본 선택 리그 코드. 예: 'LCK'.
@@ -18,7 +19,21 @@ class ScheduleFilterOptions {
   /// 현재 리그의 팀 목록.
   final List<FilterTeam> teams;
 
+  /// 선택 가능한 시즌 **연도** 목록(오름차순, 중복 제거).
+  ///
+  /// 서버는 `seasons` 를 연도+스플릿 단위로 준다(`2026 Split 1/2/3`).
+  /// 시즌 필터는 연도 단위라(`seasonYear` 파라미터·`fetchTree(year:)`)
+  /// 연도만 뽑아 쓴다. 응답에 없으면 빈 목록 — 호출부가 폴백한다.
+  final List<int> seasonYears;
+
   factory ScheduleFilterOptions.fromJson(Map<String, dynamic> json) {
+    final years = <int>{
+      for (final e in json['seasons'] as List<dynamic>? ?? const [])
+        if (e is Map<String, dynamic> && e['year'] is num)
+          (e['year'] as num).toInt(),
+    }.toList()
+      ..sort();
+
     return ScheduleFilterOptions(
       defaultLeague: json['defaultLeague'] as String? ?? '',
       leagues: (json['leagues'] as List<dynamic>? ?? const [])
@@ -27,6 +42,7 @@ class ScheduleFilterOptions {
       teams: (json['teams'] as List<dynamic>? ?? const [])
           .map((e) => FilterTeam.fromJson(e as Map<String, dynamic>))
           .toList(),
+      seasonYears: years,
     );
   }
 }

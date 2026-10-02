@@ -383,6 +383,66 @@ void main() {
         ));
   });
 
+  // 예전엔 ['2025','2026'] 으로 박혀 있어 해가 바뀌면 새 시즌을 고를 수
+  // 없었다(목록에 없으면 seasonYear 로 요청하지도 못한다).
+  // 지금은 /mobile/schedules/filters 의 seasons 를 쓰고, 못 받았을 때만
+  // 기기 시계로 계산한 폴백을 쓴다.
+  group('시즌 목록은 서버(필터 API)를 따라간다', () {
+    test('서버가 준 연도를 쓴다 — 폴백(작년·올해)과 달라도 그대로 반영된다', () async {
+      when(() => sched.fetchFilterOptions(league: any(named: 'league')))
+          .thenAnswer((_) async => const ScheduleFilterOptions(
+                defaultLeague: 'LCK',
+                leagues: [FilterLeague(code: 'ALL', name: '전체')],
+                teams: [],
+                // 기기 시계로는 못 만드는 조합(과거 3개 연도)을 일부러 쓴다.
+                seasonYears: [2022, 2023, 2024],
+              ));
+
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      addTearDown(vm.dispose);
+      await pumpEventQueue();
+
+      expect(vm.seasons, ['2022', '2023', '2024']);
+      // 선택값도 서버 목록 안으로 들어와야 한다 — 폴백 기준 올해는 목록에 없다.
+      expect(vm.selectedSeason, '2024');
+    });
+
+    test('서버가 seasons 를 안 주면 폴백을 유지한다', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      addTearDown(vm.dispose);
+      await pumpEventQueue();
+
+      expect(vm.seasons, MatchListViewModel.fallbackSeasons);
+    });
+  });
+
+  group('시즌 목록 폴백 — 서버 응답 전', () {
+    test('올해가 포함되고, 마지막 항목이 올해다', () {
+      final thisYear = '${DateTime.now().year}';
+
+      expect(MatchListViewModel.fallbackSeasons, contains(thisYear));
+      expect(MatchListViewModel.fallbackSeasons.last, thisYear);
+    });
+
+    test('작년도 함께 보여준다', () {
+      final lastYear = '${DateTime.now().year - 1}';
+
+      expect(MatchListViewModel.fallbackSeasons, contains(lastYear));
+    });
+
+    test('연도 문자열만 담고 오름차순이다', () {
+      final seasons = MatchListViewModel.fallbackSeasons;
+
+      for (final s in seasons) {
+        expect(int.tryParse(s), isNotNull, reason: '$s 는 연도 문자열이어야 한다');
+      }
+      final years = seasons.map(int.parse).toList();
+      expect(years, orderedEquals(List.of(years)..sort()));
+    });
+  });
+
   group('필터 저장·복원', () {
     late MockFilterPreferenceRepository prefs;
 

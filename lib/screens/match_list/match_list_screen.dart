@@ -554,7 +554,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                                 label: l.season,
                                 scale: scale,
                                 child: SearchSelectBox(
-                                  options: MatchListViewModel.seasons,
+                                  options: _viewModel.seasons,
                                   value: _viewModel.selectedSeason,
                                   onChanged: _viewModel.selectSeason,
                                   sheetTitle: l.season,

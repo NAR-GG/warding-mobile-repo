@@ -19,6 +19,7 @@ import 'repository/notification/live_match_notification_store.dart';
 import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
+import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
 
 /// 홈 화면 위젯 백그라운드 갱신 콜백.
@@ -88,6 +89,9 @@ Future<void> main() async {
       _initFirebaseMessaging(),
       AppLanguage.instance.load(),
       HomeWidgetService.init(),
+      // 챔피언 아이콘 URL 에 들어갈 Data Dragon 버전. 실패해도 폴백 버전으로
+      // 그냥 동작한다(이 함수는 예외를 던지지 않는다).
+      ChampionImage.refreshDdragonVersion(),
     ]).timeout(const Duration(seconds: 8));
   } catch (e) {
     debugPrint('[main] 시작 초기화 실패·지연(무시하고 앱은 띄운다): $e');

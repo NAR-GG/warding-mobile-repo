@@ -127,8 +127,34 @@ class MatchListViewModel extends ChangeNotifier {
   /// 자동 prefetch 최대 시도 횟수. 결과가 적을 때 추가 페이지를 커서로 더 받는다.
   static const int _maxPrefetchPages = 5;
 
-  /// 선택 가능한 시즌 목록.
-  static const List<String> seasons = ['2025', '2026'];
+  /// 선택 가능한 시즌 목록(연도 문자열, 오름차순).
+  ///
+  /// 서버(`/mobile/schedules/filters` 의 `seasons`)가 준 연도를 쓰고, 아직
+  /// 못 받았으면 [fallbackSeasons] 로 폴백한다.
+  ///
+  /// 예전엔 `['2025', '2026']` 으로 박혀 있었다. 이건 해가 바뀌는 순간 조용히
+  /// 깨진다 — 새 시즌이 목록에 없어 고를 수 없고, 고를 수 없으니 그 연도를
+  /// `seasonYear` 로 요청하지도 못한다. 서버에 데이터가 있어도 앱이 물어보질
+  /// 않는 상태가 되고, 아무 에러도 나지 않아 알아채기 어렵다.
+  List<String> get seasons =>
+      _serverSeasons.isNotEmpty ? _serverSeasons : fallbackSeasons;
+
+  /// 서버가 준 시즌 연도. 비어 있으면 아직 못 받았다.
+  List<String> _serverSeasons = const [];
+
+  /// 서버 목록을 못 받았을 때 쓰는 폴백 — 기기 시계 기준 "작년, 올해".
+  ///
+  /// 첫 진입(필터 응답 전)·오프라인에서도 시즌을 고를 수 있어야 한다.
+  /// 과거 시즌을 더 보여줘야 하면 [_seasonHistory] 를 늘린다.
+  static List<String> get fallbackSeasons {
+    final thisYear = DateTime.now().year;
+    return [
+      for (var i = _seasonHistory; i >= 0; i--) '${thisYear - i}',
+    ];
+  }
+
+  /// 올해 말고 더 보여줄 과거 시즌 수. 1이면 "작년, 올해".
+  static const int _seasonHistory = 1;
 
   /// 정렬 순서 옵션 라벨 — l10n 에서 가져온다.
   /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정이고 기본은 '오래된 순'.
@@ -195,8 +221,8 @@ class MatchListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 현재 선택된 시즌. 기본값은 가장 최근 시즌.
-  String _selectedSeason = seasons.last;
+  /// 현재 선택된 시즌. 기본값은 가장 최근 시즌(필터 응답 전이라 폴백 기준).
+  String _selectedSeason = fallbackSeasons.last;
   String get selectedSeason => _selectedSeason;
 
   /// 마지막으로 받아온 카테고리 트리. 리그 변경 시 재요청 없이 팀을 갱신한다.
@@ -366,6 +392,15 @@ class MatchListViewModel extends ChangeNotifier {
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
       final options = results[1] as ScheduleFilterOptions;
+      // 시즌 목록도 이 응답이 준다(연도+스플릿 → 연도만 추린 값).
+      // 선택 중이던 시즌이 서버 목록에 없으면 가장 최근 시즌으로 되돌린다 —
+      // 그대로 두면 목록에 없는 값이 선택된 채로 남아 칩이 비어 보인다.
+      if (options.seasonYears.isNotEmpty) {
+        _serverSeasons = [for (final y in options.seasonYears) '$y'];
+        if (!_serverSeasons.contains(_selectedSeason)) {
+          _selectedSeason = _serverSeasons.last;
+        }
+      }
       // 서버가 이미 맨 앞에 '전체'(code ALL) 옵션을 포함해 내려준다.
       _leagues = options.leagues.map((l) => l.name).toList();
       if (_selectedLeague == null || !_leagues.contains(_selectedLeague)) {

@@ -18,15 +18,29 @@ enum TodayMatchesFetcher {
 
     private static let host = "https://api.nar.kr"
 
-    /// `league=ALL` 을 치환할 실제 리그 코드 전체.
+    /// `league=ALL` 을 치환할 리그 코드 — 앱이 저장해 둔 목록이 없을 때의 폴백.
     ///
     /// 이 엔드포인트는 일부 날짜에서 `league=ALL` 자체를 400 으로 거부하는
-    /// 백엔드 버그가 있어, 앱(`ApiConfig.mobileSchedulesUrl`)과 똑같이 코드를
-    /// 나열해 보낸다. 앱 쪽 목록이 바뀌면 여기도 같이 고쳐야 한다.
-    private static let allRealLeagueCodes = [
+    /// 백엔드 버그가 있어 코드를 나열해 보내야 한다.
+    ///
+    /// **이 목록을 손으로 맞추지 않는다.** 예전엔 앱 쪽 목록을 여기에 복사해
+    /// 뒀는데, 앱에 ASIAN_GAMES·DEMACIA_CUP 이 추가될 때 이 사본은 그대로라
+    /// 그 리그만 있는 날 위젯이 "경기 없음" 으로 비었다(네이티브라 코드 푸시로도
+    /// 못 고친다). 지금은 앱이 필터 API 로 받은 최신 목록을 App Group 의
+    /// `widget_all_league_codes` 에 내려 주고([allLeagueCodes]), 이 상수는
+    /// 앱이 아직 한 번도 저장하지 못한 상태에서만 쓰인다.
+    private static let fallbackLeagueCodes = [
         "LCK", "LPL", "LEC", "LCS", "MSI", "WORLDS",
         "EWC", "FIRST_STAND", "KESPA", "CBLOL", "LCP",
+        "ASIAN_GAMES", "DEMACIA_CUP",
     ]
+
+    /// 앱이 내려 준 리그 코드 전체. 없으면 [fallbackLeagueCodes].
+    private static func allLeagueCodes(_ ud: UserDefaults) -> [String] {
+        let saved = decodeJSONArray(ud.string(forKey: "widget_all_league_codes")) as? [String] ?? []
+        let cleaned = saved.filter { !$0.isEmpty && $0 != "ALL" }
+        return cleaned.isEmpty ? fallbackLeagueCodes : cleaned
+    }
 
     /// 저장된 필터로 오늘 경기를 받아 App Group 에 쓴다.
     ///
@@ -212,8 +226,8 @@ enum TodayMatchesFetcher {
     /// (`HomeWidgetService._saveWidgetFilters`).
     private static func effectiveLeagues(_ ud: UserDefaults) -> [String] {
         let saved = decodeJSONArray(ud.string(forKey: "widget_leagues")) as? [String] ?? []
-        if saved.isEmpty { return allRealLeagueCodes }
-        if saved.count == 1 && saved.first == "ALL" { return allRealLeagueCodes }
+        if saved.isEmpty { return allLeagueCodes(ud) }
+        if saved.count == 1 && saved.first == "ALL" { return allLeagueCodes(ud) }
         return saved
     }
 
