@@ -8,6 +8,7 @@ import '../../config/api_config.dart';
 import '../../model/match_calendar_day.dart';
 import '../../model/schedule_filter_options.dart';
 import '../../model/schedule_match.dart';
+import '../../util/home_widget_service.dart';
 import '../../util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.
@@ -417,6 +418,12 @@ class ScheduleRepository {
     final request = _fetchFilterOptions(league).then((options) {
       _sweepExpired(_filtersCache, _filtersCacheTtl);
       _filtersCache[league] = (DateTime.now(), options);
+      // `league=ALL` 치환 목록을 서버 응답으로 갱신한다. 앱에 박아 둔 목록을
+      // 손으로 맞추다 새 리그를 빠뜨리면 "그 리그만 있는 날 경기가 통째로
+      // 사라지는" 버그가 났다 — 여기서 따라가면 그 경로가 없어진다.
+      // iOS 위젯도 같은 목록을 쓰므로 App Group 에 함께 내려보낸다.
+      ApiConfig.updateLeagueCodes(options.leagues.map((l) => l.code));
+      unawaited(HomeWidgetService.saveLeagueCodes(ApiConfig.allRealLeagueCodes));
       return options;
     });
     unawaited(

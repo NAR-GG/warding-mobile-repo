@@ -127,8 +127,26 @@ class MatchListViewModel extends ChangeNotifier {
   /// 자동 prefetch 최대 시도 횟수. 결과가 적을 때 추가 페이지를 커서로 더 받는다.
   static const int _maxPrefetchPages = 5;
 
-  /// 선택 가능한 시즌 목록.
-  static const List<String> seasons = ['2025', '2026'];
+  /// 선택 가능한 시즌 목록 — 기기 시계 기준 "작년, 올해".
+  ///
+  /// 예전엔 `['2025', '2026']` 으로 박혀 있었다. 이건 해가 바뀌는 순간 조용히
+  /// 깨진다 — 2027 시즌이 시작돼도 목록에 없어서 사용자가 고를 수 없고,
+  /// 고를 수 없으니 그 연도를 `fetchTree(year:)` 로 요청하지도 못한다.
+  /// 서버에 2027 데이터가 있어도 앱이 물어보질 않는 상태가 되고, 아무 에러도
+  /// 나지 않아 알아채기도 어렵다.
+  ///
+  /// 카테고리 트리 API 가 `year` 를 필수로 받아(연도를 모르면 호출 자체가
+  /// 불가) 서버에서 목록을 받아올 수는 없어, 기기 시계로 계산한다.
+  /// 과거 시즌을 더 보여줘야 하면 [_seasonHistory] 를 늘린다.
+  static List<String> get seasons {
+    final thisYear = DateTime.now().year;
+    return [
+      for (var i = _seasonHistory; i >= 0; i--) '${thisYear - i}',
+    ];
+  }
+
+  /// 올해 말고 더 보여줄 과거 시즌 수. 1이면 "작년, 올해".
+  static const int _seasonHistory = 1;
 
   /// 정렬 순서 옵션 라벨 — l10n 에서 가져온다.
   /// 순서(0=최근순, 1=오래된 순, 2=오늘 이후)는 고정이고 기본은 '오래된 순'.

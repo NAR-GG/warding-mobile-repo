@@ -1,3 +1,9 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+
+import 'api_client.dart' as http;
+
 /// 서버가 내려주는 챔피언 이미지의 해상도.
 ///
 /// Cloudinary 변환(`w_400,h_600,c_fill,g_auto`)으로 고정돼 있다. 디코딩 폭을
@@ -12,8 +18,23 @@ const int kChampionImageHeight = 600;
 class ChampionImage {
   ChampionImage._();
 
-  /// Data Dragon 챔피언 아이콘 버전.
-  static const String _ddragonVersion = '15.13.1';
+  /// 조회에 실패했을 때 쓸 Data Dragon 버전.
+  ///
+  /// 신챔이 나오면 이 버전에는 그 아이콘이 없어 404/403 이 된다 — 그래서
+  /// 평소에는 [refreshDdragonVersion] 이 받아온 최신 버전을 쓰고, 이 값은
+  /// 조회가 실패했을 때의 최후 수단이다. (스플래시 아트 URL 은 경로에 버전이
+  /// 없어 이 문제가 없다. 아이콘만 버전이 박힌다.)
+  static const String fallbackDdragonVersion = '15.13.1';
+
+  /// 지금 쓰는 Data Dragon 버전. [refreshDdragonVersion] 이 갱신한다.
+  static String _ddragonVersion = fallbackDdragonVersion;
+
+  /// 현재 적용된 버전(테스트·디버깅용).
+  static String get ddragonVersion => _ddragonVersion;
+
+  /// 테스트에서 상태를 되돌릴 때 쓴다.
+  @visibleForTesting
+  static void resetDdragonVersion() => _ddragonVersion = fallbackDdragonVersion;
 
   /// 챔피언 이미지 URL 을 해석한다.
   ///
@@ -67,6 +88,40 @@ class ChampionImage {
     final key = _ddragonKey(championName);
     if (key.isEmpty) return null;
     return 'https://ddragon.leagueoflegends.com/cdn/$_ddragonVersion/img/champion/$key.png';
+  }
+
+  /// Data Dragon 최신 버전을 받아 [ddragonVersion] 을 갱신한다.
+  ///
+  /// 앱 시작 시 한 번 부른다. 라이엇이 신챔을 내면 버전이 올라가는데, 앱에
+  /// 버전을 박아 두면 그 챔피언 아이콘이 404 로 빠져 빈칸이 된다(실제로
+  /// 15.13.1 고정이라 유나라·자헨 아이콘이 안 나왔다). `versions.json` 의
+  /// 첫 항목이 최신이다.
+  ///
+  /// **실패해도 조용히 넘어간다** — 이 조회는 앱 기능이 아니라 이미지 품질
+  /// 문제라, 네트워크가 없으면 [fallbackDdragonVersion] 으로 그냥 동작한다.
+  /// 호출부가 await 하지 않아도 되게 예외를 던지지 않는다.
+  static Future<void> refreshDdragonVersion({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://ddragon.leagueoflegends.com/api/versions.json'),
+        timeout: timeout,
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return;
+      final versions = jsonDecode(utf8.decode(response.bodyBytes));
+      if (versions is! List || versions.isEmpty) return;
+      final latest = versions.first;
+      // 'x.y.z' 형태만 받는다 — 예상 밖 응답으로 URL 이 깨지는 걸 막는다.
+      if (latest is! String ||
+          !RegExp(r'^\d+\.\d+\.\d+$').hasMatch(latest)) {
+        return;
+      }
+      _ddragonVersion = latest;
+      debugPrint('[ChampionImage] Data Dragon 버전 → $latest');
+    } catch (e) {
+      debugPrint('[ChampionImage] 버전 조회 실패(무시, $_ddragonVersion 유지): $e');
+    }
   }
 
   /// 영어 챔피언명 → Data Dragon 파일명 키. 아이콘뿐 아니라 스플래시 아트

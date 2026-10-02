@@ -383,6 +383,33 @@ void main() {
         ));
   });
 
+  // 예전엔 ['2025','2026'] 으로 박혀 있어 해가 바뀌면 새 시즌을 고를 수
+  // 없었다(목록에 없으면 fetchTree(year:) 로 요청하지도 못한다).
+  group('시즌 목록은 기기 시계를 따라간다', () {
+    test('올해가 포함되고, 마지막 항목이 올해다', () {
+      final thisYear = '${DateTime.now().year}';
+
+      expect(MatchListViewModel.seasons, contains(thisYear));
+      expect(MatchListViewModel.seasons.last, thisYear);
+    });
+
+    test('작년도 함께 보여준다', () {
+      final lastYear = '${DateTime.now().year - 1}';
+
+      expect(MatchListViewModel.seasons, contains(lastYear));
+    });
+
+    test('연도 문자열만 담고 오름차순이다', () {
+      final seasons = MatchListViewModel.seasons;
+
+      for (final s in seasons) {
+        expect(int.tryParse(s), isNotNull, reason: '$s 는 연도 문자열이어야 한다');
+      }
+      final years = seasons.map(int.parse).toList();
+      expect(years, orderedEquals(List.of(years)..sort()));
+    });
+  });
+
   group('필터 저장·복원', () {
     late MockFilterPreferenceRepository prefs;
 

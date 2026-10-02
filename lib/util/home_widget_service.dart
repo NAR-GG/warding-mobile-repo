@@ -182,6 +182,25 @@ class HomeWidgetService {
     }
   }
 
+  /// `league=ALL` 을 펼칠 실제 리그 코드 전체를 위젯에 전달한다.
+  ///
+  /// 위젯(iOS `TodayMatchesFetcher`)은 앱과 별개 프로세스로 깨어나 필터 API 를
+  /// 부를 여유가 없어, 리그 목록을 Swift 에도 복사해 두고 있었다. 그 사본이
+  /// 앱보다 뒤처지면(ASIAN_GAMES·DEMACIA_CUP 누락) 그 리그만 있는 날 위젯이
+  /// "경기 없음"으로 비는데, 네이티브라 코드 푸시로도 못 고친다.
+  /// 앱이 받은 최신 목록을 여기에 내려 두면 위젯이 그걸 읽어 쓴다.
+  static Future<void> saveLeagueCodes(List<String> codes) async {
+    if (codes.isEmpty) return;
+    try {
+      await HomeWidget.saveWidgetData<String>(
+        'widget_all_league_codes',
+        jsonEncode(codes),
+      );
+    } catch (e) {
+      debugPrint('[HomeWidget] 리그 코드 저장 실패: $e');
+    }
+  }
+
   /// 오늘 경기 리스트(시간·대진·상태)를 위젯에 전달한다.
   ///
   /// 조회에 실패해도 오늘 날짜로 빈 목록을 저장한다. 그냥 리턴하면 어제
