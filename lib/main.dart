@@ -20,6 +20,7 @@ import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/analytics.dart';
+import 'util/api_client.dart' show loadAppVersion;
 import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
 
@@ -94,6 +95,8 @@ Future<void> main() async {
       // 그냥 동작한다(이 함수는 예외를 던지지 않는다).
       ChampionImage.refreshDdragonVersion(),
       Analytics.init(),
+      // 모든 API 요청의 X-App-Version 헤더용. 실패해도 헤더만 빠진다.
+      loadAppVersion(),
     ]).timeout(const Duration(seconds: 8));
   } catch (e) {
     debugPrint('[main] 시작 초기화 실패·지연(무시하고 앱은 띄운다): $e');
