@@ -780,6 +780,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mixpanel_flutter:
+    dependency: "direct main"
+    description:
+      name: mixpanel_flutter
+      sha256: "8880601e30d1f5b6e0f698ea1a663e3dd515e750d74a96d77df4c63340e73d46"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.14.0"
+  mixpanel_flutter_common:
+    dependency: transitive
+    description:
+      name: mixpanel_flutter_common
+      sha256: bb4d48da0297f27086bfd2a9e9b7f5a2192e88bdaa1aa14698e49974860b3b36
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   mocktail:
     dependency: "direct dev"
     description:
