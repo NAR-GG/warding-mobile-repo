@@ -17,6 +17,7 @@ import '../../config/app_globals.dart';
 import '../../l10n/app_strings.dart';
 import '../../model/user_profile.dart';
 import '../../screens/login/login_screen.dart';
+import '../../util/analytics.dart';
 import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
 
@@ -357,7 +358,10 @@ class AuthService {
 
     // 로그인 성공 → Sentry에 사용자 ID 설정 + info 로그
     final memberId = data['memberId']?.toString();
-    if (memberId != null) SentryLogger.setUser(memberId);
+    if (memberId != null) {
+      SentryLogger.setUser(memberId);
+      Analytics.identify(memberId);
+    }
     SentryLogger.info(module: 'API', eventName: 'postLogin');
 
     return AuthResult(jwt: jwt, isOnboarded: isOnboarded);
@@ -677,5 +681,6 @@ class AuthService {
     _setCachedJwt(null);
     await _storage.delete(key: _refreshKey);
     SentryLogger.clearUser();
+    Analytics.reset();
   }
 }

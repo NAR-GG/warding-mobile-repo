@@ -105,10 +105,25 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
+  - json-enum (1.2.3)
+  - jsonlogic (1.2.4):
+    - json-enum (~> 1.2.3)
   - "kakao_flutter_sdk_auth (2.0.0+1)":
     - Flutter
   - "kakao_flutter_sdk_common (2.0.0+1)":
     - Flutter
+  - Mixpanel-swift (6.7.0):
+    - jsonlogic (~> 1.2.0)
+    - Mixpanel-swift/Complete (= 6.7.0)
+    - MixpanelSwiftCommon (~> 1.1.0)
+  - Mixpanel-swift/Complete (6.7.0):
+    - jsonlogic (~> 1.2.0)
+    - MixpanelSwiftCommon (~> 1.1.0)
+  - mixpanel_flutter (2.14.0):
+    - Flutter
+    - Mixpanel-swift (= 6.7.0)
+    - MixpanelSwiftCommon (~> 1.1.0)
+  - MixpanelSwiftCommon (1.1.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -160,6 +175,7 @@ DEPENDENCIES:
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - kakao_flutter_sdk_auth (from `.symlinks/plugins/kakao_flutter_sdk_auth/ios`)
   - kakao_flutter_sdk_common (from `.symlinks/plugins/kakao_flutter_sdk_common/ios`)
+  - mixpanel_flutter (from `.symlinks/plugins/mixpanel_flutter/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
@@ -184,6 +200,10 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
+    - json-enum
+    - jsonlogic
+    - Mixpanel-swift
+    - MixpanelSwiftCommon
     - nanopb
     - NidThirdPartyLogin
     - PromisesObjC
@@ -218,6 +238,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/kakao_flutter_sdk_auth/ios"
   kakao_flutter_sdk_common:
     :path: ".symlinks/plugins/kakao_flutter_sdk_common/ios"
+  mixpanel_flutter:
+    :path: ".symlinks/plugins/mixpanel_flutter/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -261,8 +283,13 @@ SPEC CHECKSUMS:
   home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
+  json-enum: 57ad746d2f0d7852796e9aa50267bd84a778222e
+  jsonlogic: 006f892470384401b8ca5b5d8d4cdadb3a0d5c9b
   kakao_flutter_sdk_auth: da21a83cca6faeb8d173d1ae04c76fb37fe0f920
   kakao_flutter_sdk_common: 6049de6b16e18cc7cbe826470d70781205dee17b
+  Mixpanel-swift: 8b80f070e52ab3bda438f64692a2d428d833dcc2
+  mixpanel_flutter: 04ab351d0673991d71efd28cc24e97d1f61ac490
+  MixpanelSwiftCommon: 558018032a946849b1277812b3f810bdeb22f654
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   NidThirdPartyLogin: ed291a543cc60a433bcad522b6bf7d3126ad4fdc
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
@@ -281,4 +308,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 0307d9c9bb6ce5a39c959bf8d7109187c0682c60
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0
