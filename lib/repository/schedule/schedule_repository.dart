@@ -9,6 +9,7 @@ import '../../model/match_calendar_day.dart';
 import '../../model/schedule_filter_options.dart';
 import '../../model/schedule_match.dart';
 import '../../util/home_widget_service.dart';
+import '../../util/league_meta.dart';
 import '../../util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.
@@ -60,6 +61,8 @@ class ScheduleRepository {
     _matchesByDateCache.clear();
     _matchesInFlight.clear();
     _matchesCache.clear();
+    _filtersInFlight.clear();
+    _filtersCache.clear();
   }
 
   /// [resetCacheForTesting] 이 불릴 때마다 올라간다. 요청 시작 시점의 세대와
@@ -423,6 +426,7 @@ class ScheduleRepository {
       // 사라지는" 버그가 났다 — 여기서 따라가면 그 경로가 없어진다.
       // iOS 위젯도 같은 목록을 쓰므로 App Group 에 함께 내려보낸다.
       ApiConfig.updateLeagueCodes(options.leagues.map((l) => l.code));
+      LeagueMeta.update(options);
       unawaited(HomeWidgetService.saveLeagueCodes(ApiConfig.allRealLeagueCodes));
       return options;
     });

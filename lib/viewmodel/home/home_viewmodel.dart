@@ -192,6 +192,7 @@ class HomeViewModel extends ChangeNotifier {
       _loadSubscriptions(),
       _loadSolo(),
       loadTodayMatches(),
+      _loadLeagueChips(),
       _loadStandings(),
       _loadCommunityPosts(),
       _loadReviews(),
@@ -472,7 +473,12 @@ class HomeViewModel extends ChangeNotifier {
   // 토너먼트 대진) 전용 데이터·뷰 전환 상태를 구현해 뒀지만, 칩은 다시
   // 비활성으로 둔다(출시 보류 — 사용자 요청). 코드값은 [ApiConfig]의 리그
   // 코드 체계와 맞춰 'WORLDS'를 쓰고 라벨만 한글.
-  static const List<HomeLeagueChip> _leagueChips = [
+  //
+  // 칩 목록은 서버(`/mobile/schedules/filters` 의 `standings`)가 정한다 —
+  // null=칩 없음 / false=점선 / true=선택 가능([_loadLeagueChips]). 앱에 박아
+  // 두면 백엔드가 순위표를 연 리그가 앱 배포 전엔 안 보인다. 서버가 메타를 안
+  // 주거나 못 받으면 [_fallbackLeagueChips] 로 폴백한다.
+  static const List<HomeLeagueChip> _fallbackLeagueChips = [
     HomeLeagueChip(code: 'LCK', label: 'LCK', live: true),
     HomeLeagueChip(code: 'LPL', label: 'LPL', live: false),
     HomeLeagueChip(code: 'LEC', label: 'LEC', live: false),
@@ -480,7 +486,89 @@ class HomeViewModel extends ChangeNotifier {
     HomeLeagueChip(code: 'WORLDS', label: '월즈', live: false),
   ];
 
+  /// 서버 응답을 받기 전에는 기본 리그 칩 하나만 둔다 — 폴백 5개를 먼저 그렸다가
+  /// 서버가 지운 칩이 사라지는 깜빡임을 피한다.
+  List<HomeLeagueChip> _leagueChips = const [
+    HomeLeagueChip(code: 'LCK', label: 'LCK', live: true),
+  ];
+
   List<HomeLeagueChip> get leagueChips => _leagueChips;
+
+  /// 칩 순서 — 기존 화면 순서를 먼저, 새 리그는 서버 순서대로 뒤에 붙인다.
+  static const List<String> _chipOrder = ['LCK', 'LPL', 'LEC', 'LCS', 'WORLDS'];
+
+  /// 칩 라벨. 월즈만 한글, 나머지는 리그 코드 그대로.
+  static String _chipLabel(String code) => code == 'WORLDS' ? '월즈' : code;
+
+  /// 서버가 `standings: true` 를 준 리그가 실제로 순위표를 주는지(`supported`)
+  /// 확인한 결과와 시각. 등록만 되고 데이터가 없는 리그(예: DEMACIA_CUP
+  /// `UNAVAILABLE`)는 칩을 켜 줘도 표가 비어, 점선으로 처리한다.
+  final Map<String, (DateTime, bool)> _standingsSupport = {};
+  static const Duration _standingsSupportTtl = Duration(minutes: 10);
+
+  Future<bool> _isStandingsSupported(String code) async {
+    // 월즈는 리그 테이블 형식이 아니라(전용 API·뷰) 이 확인 대상이 아니다.
+    if (code == 'WORLDS') return true;
+    final cached = _standingsSupport[code];
+    if (cached != null &&
+        DateTime.now().difference(cached.$1) < _standingsSupportTtl) {
+      return cached.$2;
+    }
+    try {
+      final result = await _standingsRepo.fetchStandings(code);
+      _standingsSupport[code] = (DateTime.now(), result.supported);
+      return result.supported;
+    } catch (e) {
+      // 확인 실패로 칩을 숨기지 않는다 — 서버 값을 믿는다.
+      debugPrint('[Home] 순위표 지원 확인 실패($code): $e');
+      return true;
+    }
+  }
+
+  Future<void> _loadLeagueChips() async {
+    List<HomeLeagueChip> chips;
+    try {
+      final options = await _schedule.fetchFilterOptions();
+      if (!options.hasLeagueMeta) {
+        chips = _fallbackLeagueChips;
+      } else {
+        final served = [
+          for (final l in options.leagues)
+            if (l.code != 'ALL' && l.standings != null) l,
+        ];
+        int rank(String code) {
+          final i = _chipOrder.indexOf(code);
+          return i < 0 ? _chipOrder.length : i;
+        }
+
+        // sort 는 안정 정렬이 아니라서 서버 순서를 인덱스로 직접 보존한다.
+        final indexed = [
+          for (var i = 0; i < served.length; i++) (i, served[i]),
+        ]..sort((a, b) {
+            final byRank = rank(a.$2.code).compareTo(rank(b.$2.code));
+            return byRank != 0 ? byRank : a.$1.compareTo(b.$1);
+          });
+        chips = await Future.wait([
+          for (final (_, l) in indexed)
+            () async {
+              final live =
+                  l.standings == true && await _isStandingsSupported(l.code);
+              return HomeLeagueChip(
+                code: l.code,
+                label: _chipLabel(l.code),
+                live: live,
+              );
+            }(),
+        ]);
+      }
+    } catch (e) {
+      debugPrint('[Home] 리그 칩 조회 실패(하드코딩 폴백): $e');
+      chips = _fallbackLeagueChips;
+    }
+    if (_disposed) return;
+    _leagueChips = chips;
+    _notify();
+  }
 
   String _selectedLeague = 'LCK';
   String get selectedLeague => _selectedLeague;

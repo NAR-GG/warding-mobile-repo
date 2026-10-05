@@ -1,6 +1,7 @@
 # Bundle Update Log
 
 ## 2026-10-05
+* **리그 메타를 서버에서 받게 연결(순위표 칩·알림 벨·아이콘)**: 백엔드 nar-back-repo#548 이 `/mobile/schedules/filters` 의 `LeagueOption` 에 `standings`·`alarm`·`iconUrl` 을 추가했다(warding-docs#11 요청). `FilterLeague` 가 세 필드를 파싱하고, 받은 값은 `LeagueMeta`(`lib/util/league_meta.dart`)에 보관한다 — 경기 카드 알림 벨(`match_card`)과 리그 아이콘(`leagueIconWidget`: 서버 PNG URL 우선, 없으면 번들)이 이걸 쓴다. 홈 순위표 칩은 `HomeViewModel._loadLeagueChips` 가 서버 `standings` 로 만든다(null=숨김·false=점선·true=선택 가능, `supported:false` 리그는 점선). 서버가 메타를 안 주면(`alarm` 필드 없음 = 구버전) 기존 하드코딩 값으로 폴백한다. **동작 변화:** 서버가 LPL·LEC·LCS·WORLDS 에 `null` 을 줘서 이 칩 4개가 사라지고, ASIAN_GAMES 칩이 새로 생긴다.
 * **Mixpanel SDK 세팅**: `mixpanel_flutter` 를 추가하고 `lib/util/analytics.dart`(`Analytics`) 래퍼를 만들었다. 프로젝트 토큰(US 데이터 센터)은 Sentry DSN 처럼 코드 기본값으로 두고 `--dart-define=MIXPANEL_TOKEN=...` 로 덮어쓸 수 있다(릴리즈 명령에 플래그를 안 붙여도 켜진다). 디버그 빌드에서는 init 을 건너뛰어 모든 호출이 무시된다(운영 데이터 오염 방지) — 시뮬레이터는 release 모드를 못 돌리므로 동작 확인은 `flutter run --dart-define=MIXPANEL_DEBUG=true` 로 디버그에서 켜서 한다. `main()` 의 시작 초기화 `Future.wait` 에 `Analytics.init()` 를 넣었고, Sentry 사용자 설정과 같은 지점에서 로그인 시 `identify(memberId)`, 로그아웃 시 `reset()` 을 부른다. 네이티브 플러그인이라 코드 푸시로는 못 나가고 스토어 재배포가 필요하다.
 
 ## 2026-10-02
