@@ -567,6 +567,42 @@ void main() {
       expect(find.text('8강'), findsOneWidget);
     });
 
+    // 리그를 바꾼 직후 새 응답이 오기 전까지 옛 리그의 **표**가 새 칩 아래
+    // 그대로 남아 있었다(대진만 비우고 표는 안 비웠다). 새 조회가 실패하면
+    // 계속 남는다.
+    testWidgets('리그를 바꾸면 옛 순위표가 즉시 사라진다', (tester) async {
+      final server = setUpHomeApi();
+      useAsianGames(server);
+      // 리그가 바뀌면 표 내용도 바뀌어야 확인이 된다 — ASIAN_GAMES 는 대진으로
+      // 내려 LCK 표가 사라지는지 본다.
+      server.standingsBracketLeagues = {
+        'ASIAN_GAMES': bracketPayload(
+          rounds: [
+            {
+              'name': '결승',
+              'matches': [match(a: 'KOR', b: 'TPE', isFinal: true)],
+            },
+          ],
+        ),
+      };
+      final vm = await pumpHomeSection(
+        tester,
+        section: (vm) => HomeStandingsSection(viewModel: vm, scale: 1),
+      );
+      // LCK 표가 그려진 상태.
+      expect(find.text('젠지'), findsOneWidget);
+
+      // selectLeague 직후(동기 시점)에 이미 비워져 있어야 한다. 테스트의
+      // MockClient 는 즉시 응답하므로 pump 뒤에는 새 데이터가 들어와 있다.
+      vm.selectLeague('ASIAN_GAMES');
+      expect(vm.standings, isNull, reason: '옛 리그 표를 들고 있으면 안 된다');
+      expect(vm.standingsLoading, isTrue, reason: '스켈레톤으로 되돌아간다');
+
+      await tester.pumpAndSettle();
+      // 새 리그 응답이 온 뒤에는 옛 리그 팀이 남아 있으면 안 된다.
+      expect(find.text('젠지'), findsNothing);
+    });
+
     testWidgets('대진 리그에서 표 리그로 돌아오면 옛 대진이 남지 않는다', (tester) async {
       final server = setUpHomeApi();
       useAsianGames(server);

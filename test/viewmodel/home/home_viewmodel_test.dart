@@ -665,6 +665,46 @@ void main() {
       expect(vm.selectedLeague, 'LCK');
     });
 
+    // 불변식: 선택된 리그는 항상 고를 수 있는 칩이어야 한다. 사용자가 고른
+    // 리그라도 서버가 그 칩을 내리면 그대로 둘 수 없다 — 선택된 칩이 목록에
+    // 없어 순위표가 빈 채로 남는다.
+    test('사용자가 고른 리그가 더 이상 live 가 아니면 떨어뜨린다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+      vm.selectLeague('LCK');
+      expect(vm.selectedLeague, 'LCK');
+
+      // 서버가 LCK 순위표를 내린다(점선).
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: false),
+      ];
+      ScheduleRepository.instance.resetCacheForTesting();
+      await vm.refreshAll();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+      expect(
+        vm.leagueChips.where((c) => c.live).map((c) => c.code),
+        contains(vm.selectedLeague),
+      );
+    });
+
+    test('고를 수 있는 칩이 하나도 없으면 선택을 그대로 둔다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [league('LCK', standings: false)];
+      final vm = build();
+      await pumpEventQueue();
+
+      // 바꿀 후보가 없으니 기존 선택을 유지한다(빈 문자열로 만들지 않는다).
+      expect(vm.selectedLeague, 'LCK');
+    });
+
     test('칩 라벨은 서버 name 을 쓰고, 비면 코드로 폴백한다', () async {
       server.filterLeagues = [
         league('LCK', standings: true),

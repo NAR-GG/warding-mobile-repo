@@ -44,11 +44,17 @@ class LeagueMeta {
     };
   }
 
-  /// [leagueInfo]('LCK', 'LCK 2026 ...' 처럼 리그 코드를 포함한 문자열)가
+  /// [leagueInfo]('LCK', 'LCK 2026 ...' 처럼 리그 코드로 시작하는 문자열)가
   /// 알림 가능 리그인지.
+  ///
+  /// **부분 문자열이 아니라 첫 토큰을 정확히 비교한다.** `contains` 로 보면
+  /// 코드가 다른 코드의 접두사인 리그(`LCK` vs 가상의 `LCK_CL`)에서 오탐이
+  /// 난다 — 알림을 끈 리그에 벨이 뜬다. 지금 백엔드 `ALLOWED_LEAGUES` 에는
+  /// 그런 쌍이 없지만, 이 목록은 서버가 늘리는 값이라(앱 배포 없이 리그가
+  /// 추가되는 게 이 구조의 목적이다) 미리 막아 둔다.
   static bool alarmEnabled(String leagueInfo) {
-    final info = leagueInfo.toUpperCase();
-    return alarmLeagues.any(info.contains);
+    final code = leagueInfo.trim().toUpperCase().split(RegExp(r'\s+')).first;
+    return alarmLeagues.contains(code);
   }
 
   /// [leagueCode] 의 서버 아이콘 URL. 없으면 null(번들 아이콘 폴백).

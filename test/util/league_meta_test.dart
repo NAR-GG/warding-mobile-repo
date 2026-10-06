@@ -38,6 +38,30 @@ void main() {
     expect(LeagueMeta.iconUrl('LCK'), isNull);
   });
 
+  // contains 로 보면 코드가 다른 코드의 접두사인 리그에서 오탐이 난다 —
+  // 알림을 끈 리그에 벨이 뜬다.
+  test('리그 코드는 부분 문자열이 아니라 전체로 비교한다', () {
+    LeagueMeta.update(
+      _options(const [
+        FilterLeague(code: 'LCK', name: 'LCK', alarm: true),
+        FilterLeague(code: 'LCK_CL', name: 'LCK CL', alarm: false),
+      ]),
+    );
+
+    expect(LeagueMeta.alarmEnabled('LCK'), isTrue);
+    expect(
+      LeagueMeta.alarmEnabled('LCK_CL'),
+      isFalse,
+      reason: 'LCK 를 포함한다고 벨이 뜨면 안 된다',
+    );
+  });
+
+  test('리그 코드 뒤에 시즌 등이 붙어도 코드로 판단한다', () {
+    expect(LeagueMeta.alarmEnabled('LCK 2026 Split 3'), isTrue);
+    expect(LeagueMeta.alarmEnabled('  lck  '), isTrue);
+    expect(LeagueMeta.alarmEnabled('LPL 2026'), isFalse);
+  });
+
   test('메타 없는 응답은 무시하고 폴백을 유지한다', () {
     LeagueMeta.update(_options(const [FilterLeague(code: 'LCK', name: 'LCK')]));
 

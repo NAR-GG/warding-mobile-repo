@@ -574,20 +574,28 @@ class HomeViewModel extends ChangeNotifier {
     // 서버가 그 리그를 안 주거나(칩 없음) 데이터가 없으면(점선) **선택된 칩이
     // 목록에 없는 상태**가 된다 — 순위표 자리가 빈 채로 열린다.
     //
-    // 서버 기본값이 고를 수 있는 칩이 아니면 첫 번째 live 칩으로 떨어뜨린다.
-    // 사용자가 이미 다른 리그를 골랐으면(_leagueTouched) 건드리지 않는다.
-    if (!_leagueTouched) {
-      final livable = chips.where((c) => c.live).map((c) => c.code).toList();
-      final next = livable.contains(serverDefault)
-          ? serverDefault
-          : (livable.contains(_selectedLeague)
-                ? _selectedLeague
-                : (livable.isEmpty ? _selectedLeague : livable.first));
-      if (next != _selectedLeague) {
-        _selectedLeague = next;
-        _worldsStandings = null;
-        unawaited(_loadStandings());
-      }
+    // 지켜야 할 불변식: **선택된 리그는 항상 고를 수 있는 칩이어야 한다.**
+    // 그래서 사용자가 고른 리그라도(_leagueTouched) 그게 더 이상 live 가
+    // 아니면 그대로 둘 수 없다 — 그 경우에도 떨어뜨린다. 반대로 사용자가 고른
+    // 리그가 아직 live 면 서버 기본값으로 되돌리지 않는다.
+    final livable = chips.where((c) => c.live).map((c) => c.code).toList();
+    final keepsCurrent = livable.contains(_selectedLeague);
+    final String next;
+    if (_leagueTouched && keepsCurrent) {
+      next = _selectedLeague; // 사용자 선택이 아직 유효하다
+    } else if (livable.contains(serverDefault)) {
+      next = serverDefault;
+    } else if (keepsCurrent) {
+      next = _selectedLeague;
+    } else if (livable.isNotEmpty) {
+      next = livable.first;
+    } else {
+      next = _selectedLeague; // 고를 수 있는 칩이 하나도 없다 — 그대로 둔다
+    }
+    if (next != _selectedLeague) {
+      _selectedLeague = next;
+      _clearStandings();
+      unawaited(_loadStandings());
     }
     _notify();
   }
@@ -604,13 +612,21 @@ class HomeViewModel extends ChangeNotifier {
     if (!selectable || code == _selectedLeague) return;
     _selectedLeague = code;
     _leagueTouched = true;
-    // 리그가 바뀌면 이전 리그의 대진은 즉시 버린다 — 새 응답이 오기 전까지
-    // 옛 대진이 남아 보이면 안 된다.
-    _worldsStandings = null;
+    _clearStandings();
     _notify();
     // 리그 코드로 분기하지 않는다. 표인지 대진인지는 `/api/standings` 응답
     // (`reason: BRACKET_ONLY` · `bracket`)이 정한다.
     unawaited(_loadStandings());
+  }
+
+  /// 리그가 바뀔 때 이전 리그의 순위표·대진을 즉시 버리고 스켈레톤으로
+  /// 되돌린다. 안 비우면 새 응답이 오기 전까지 **새 칩 아래 옛 리그의 표가**
+  /// 그대로 남고, 새 조회가 실패하면 계속 남는다. 대진만 비우고 표는 안
+  /// 비우던 비대칭을 없앤다.
+  void _clearStandings() {
+    _standings = null;
+    _worldsStandings = null;
+    _standingsFirstLoadPending = true;
   }
 
   StandingsResult? _standings;
