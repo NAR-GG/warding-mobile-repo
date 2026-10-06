@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +22,7 @@ import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/analytics.dart';
+import 'util/api_client.dart' show loadAppVersion;
 import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
 
@@ -85,6 +88,13 @@ Future<void> main() async {
   // 아예 호출되지 않아 화면이 영원히 검게 남는다 — 사용자에겐 '앱이 안 열림'
   // 이고, 스토어 심사에선 손상된 기능(로드 문제)으로 리젝된다. 알림·위젯이
   // 준비되지 않은 앱이 열리는 게 안 열리는 앱보다 낫다.
+
+  // X-App-Version 헤더용 버전 조회 — **기다리지 않는다.** 아래 Future.wait 에
+  // 넣으면 플랫폼 채널이 응답하지 않을 때 첫 화면이 최대 8초 늦어지는데, 이건
+  // 로그용 헤더라 그만한 값이 아니다. 조회가 끝나기 전 요청은 헤더 없이 나가고
+  // ([VersionedClient] 가 null 이면 안 붙인다), 끝난 뒤 요청부터 실린다.
+  unawaited(loadAppVersion());
+
   try {
     await Future.wait([
       _initFirebaseMessaging(),

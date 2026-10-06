@@ -17,6 +17,7 @@ library;
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 
 // 호출부가 이 파일 하나만 임포트해도 되도록, 쓰이는 타입들을 다시 내보낸다.
 export 'package:http/http.dart'
@@ -29,9 +30,49 @@ export 'package:http/http.dart'
 /// 이미지 업로드처럼 오래 걸릴 수 있는 요청은 호출부에서 [timeout] 으로 늘린다.
 const Duration kDefaultApiTimeout = Duration(seconds: 15);
 
+/// 앱 시작 때 [loadAppVersion] 이 채운다. `<버전>+<빌드>` (예: 1.0.31+69).
+String? _appVersion;
+
+/// 앱 버전을 읽어 둔다. 실패하면 헤더 없이 간다(요청은 막지 않는다).
+///
+/// 요청마다 읽지 않는 이유: 플랫폼 채널 호출이라 비동기인데, 요청 경로에서 이걸 기다리면
+/// 위젯 테스트(가짜 비동기)에서 요청이 끝나지 않아 타임아웃 타이머가 남는다.
+Future<void> loadAppVersion() async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    _appVersion = '${info.version}+${info.buildNumber}';
+  } catch (_) {}
+}
+
+/// 모든 요청에 `X-App-Version` 헤더를 붙인다.
+///
+/// 서버가 로그로 "어느 버전이 이 API 를 불렀나"를 알아야 업데이트 비율과 버전별 오류를 잴 수 있다.
+/// 요청 경로가 이 파일 하나라 여기서 한 번만 붙이면 전 호출에 실린다.
+class VersionedClient extends http.BaseClient {
+  VersionedClient(this._inner, [String? Function()? version])
+      : _version = version ?? (() => _appVersion);
+
+  final http.Client _inner;
+  final String? Function() _version;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    final v = _version();
+    if (v != null) request.headers['X-App-Version'] = v;
+    return _inner.send(request);
+  }
+
+  /// 감싼 클라이언트까지 닫는다. [http.BaseClient.close] 기본 구현은 아무것도
+  /// 하지 않아, 이걸 안 두면 [_inner] 의 연결 풀이 그대로 남는다. 앱 전역
+  /// 클라이언트([_client])는 닫지 않지만, 테스트나 다른 호출부가 감싼 인스턴스를
+  /// 닫을 때 안쪽이 새지 않게 위임한다.
+  @override
+  void close() => _inner.close();
+}
+
 /// 앱이 살아있는 동안 유지되는 단일 클라이언트. 닫지 않는다 —
 /// 닫는 순간 연결 풀이 비워져 이 파일의 목적이 사라진다.
-final http.Client _client = http.Client();
+final http.Client _client = VersionedClient(http.Client());
 
 /// 테스트에서 주입한 클라이언트. null 이면 [_client] 를 쓴다.
 http.Client? _override;
