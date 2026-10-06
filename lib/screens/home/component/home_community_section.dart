@@ -139,9 +139,13 @@ class _PostTile extends StatelessWidget {
               ),
               SizedBox(width: 8 * scale),
             ],
+            // 로고는 사전([TeamLogoDirectory])이 먼저다 — 사전에 없는 팀만
+            // 응답이 준 작성 시점 스냅샷([CommunityAuthor.teamImageUrl])으로
+            // 받친다(사전은 온보딩 팀 목록이라 거기 없는 팀은 빈 원이 된다).
             TeamCodeBadge(
               teamCode: post.author?.teamCode ?? 'LoL',
               size: 28 * scale,
+              fallbackImageUrl: post.author?.teamImageUrl,
             ),
             SizedBox(width: 10 * scale),
             Expanded(

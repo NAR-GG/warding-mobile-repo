@@ -13,6 +13,7 @@ import '../../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../../repository/match/match_subscription_repository.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/league_meta.dart';
 import '../../login/login_screen.dart';
 import 'match_alarm_sheet.dart';
 import '../../../config/secure_storage.dart';
@@ -87,15 +88,8 @@ class MatchCard extends StatelessWidget {
   /// 선이 겹쳐 보이므로 false 로 끈다. LIVE 카드는 위 보더가 없어 무관.
   final bool showTopBorder;
 
-  bool get _isAlarmEligibleLeague {
-    final info = leagueInfo.toUpperCase();
-    return info.contains('LCK') ||
-        info.contains('MSI') ||
-        info.contains('EWC') ||
-        info.contains('KESPA') ||
-        info.contains('ASIAN_GAMES') ||
-        info.contains('DEMACIA_CUP');
-  }
+  /// 알림 벨을 띄우는 리그인지 — 서버 리그 메타를 따른다([LeagueMeta]).
+  bool get _isAlarmEligibleLeague => LeagueMeta.alarmEnabled(leagueInfo);
 
   @override
   Widget build(BuildContext context) {

@@ -164,11 +164,17 @@ abstract class AppLocalizations {
   /// **'정규시즌 통산'**
   String get homeStandingsScopeLabel;
 
-  /// No description provided for @homeStandingsExpandMore.
+  /// 숨겨진 그룹이 하나일 때 — 그룹 이름은 서버가 내려준 값(라이즈 그룹 등)
   ///
   /// In ko, this message translates to:
-  /// **'라이즈 그룹 {count}팀 더보기'**
-  String homeStandingsExpandMore(int count);
+  /// **'{group} {count}팀 더보기'**
+  String homeStandingsExpandMore(String group, int count);
+
+  /// 숨겨진 그룹이 둘 이상일 때 — 이름을 다 나열하면 버튼이 넘쳐 개수로 줄인다
+  ///
+  /// In ko, this message translates to:
+  /// **'{groupCount}개 그룹 {count}팀 더보기'**
+  String homeStandingsExpandMoreGroups(int groupCount, int count);
 
   /// No description provided for @homeStandingsCollapse.
   ///
@@ -181,18 +187,6 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'준비 중'**
   String get homeStandingsSoon;
-
-  /// No description provided for @homeStandingsWorldsSwissScope.
-  ///
-  /// In ko, this message translates to:
-  /// **'2025 · 스위스 스테이지'**
-  String get homeStandingsWorldsSwissScope;
-
-  /// No description provided for @homeStandingsWorldsKnockoutScope.
-  ///
-  /// In ko, this message translates to:
-  /// **'2025 · 토너먼트 대진'**
-  String get homeStandingsWorldsKnockoutScope;
 
   /// No description provided for @homeStandingsWorldsSwissTitle.
   ///

@@ -53,4 +53,46 @@ void main() {
       expect(options.seasonYears, [2027]);
     });
   });
+
+  group('리그 메타(standings·alarm·iconUrl)', () {
+    test('서버가 준 값을 그대로 파싱하고 빈 iconUrl 은 null 로 본다', () {
+      final options = ScheduleFilterOptions.fromJson({
+        'defaultLeague': 'LCK',
+        'leagues': [
+          {'code': 'ALL', 'name': '전체', 'standings': null, 'alarm': false},
+          {
+            'code': 'LCK',
+            'name': 'LCK',
+            'standings': true,
+            'alarm': true,
+            'iconUrl': 'https://x/lck.png',
+          },
+          {'code': 'LPL', 'name': 'LPL', 'alarm': false, 'iconUrl': ''},
+        ],
+        'teams': [],
+      });
+
+      final lck = options.leagues[1];
+      expect(lck.standings, isTrue);
+      expect(lck.alarm, isTrue);
+      expect(lck.iconUrl, 'https://x/lck.png');
+      final lpl = options.leagues[2];
+      expect(lpl.standings, isNull);
+      expect(lpl.iconUrl, isNull);
+      expect(options.hasLeagueMeta, isTrue);
+    });
+
+    test('필드가 없는 구버전 응답은 hasLeagueMeta 가 false', () {
+      final options = ScheduleFilterOptions.fromJson({
+        'defaultLeague': 'LCK',
+        'leagues': [
+          {'code': 'LCK', 'name': 'LCK'},
+        ],
+        'teams': [],
+      });
+
+      expect(options.hasLeagueMeta, isFalse);
+      expect(options.leagues.single.alarm, isNull);
+    });
+  });
 }

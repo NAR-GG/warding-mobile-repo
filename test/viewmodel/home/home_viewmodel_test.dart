@@ -98,6 +98,16 @@ class _FakeApi {
   /// 알림함 미읽음 수(커뮤니티 묶음). null 이면 500.
   int? unreadNotifications = 0;
 
+  /// `/mobile/schedules/filters` 의 `leagues` 배열. null 이면 메타 없는 구버전
+  /// 서버처럼 `leagues` 없이 내려준다.
+  List<Map<String, dynamic>>? filterLeagues;
+
+  /// 리그별 `/standings` 의 `supported`. 없으면 true.
+  final Map<String, bool> standingsSupported = {};
+
+  /// `/mobile/schedules/filters` 의 `defaultLeague`. 홈이 처음 고르는 리그다.
+  String defaultLeague = 'LCK';
+
   final List<Uri> requests = [];
   final List<Uri> unknown = [];
 
@@ -115,6 +125,15 @@ class _FakeApi {
     requests.add(url);
     final path = url.path;
     if (path.contains('notices')) return _json(const []);
+    if (path.contains('schedules/filters')) {
+      final leagues = filterLeagues;
+      return _json({
+        'defaultLeague': defaultLeague,
+        'leagues': ?leagues,
+        'teams': const [],
+        'seasons': const [],
+      });
+    }
     if (path.contains('schedule')) {
       final s = schedule;
       return s == null
@@ -124,7 +143,7 @@ class _FakeApi {
     if (path.contains('standings')) {
       return _json({
         'league': url.queryParameters['league'],
-        'supported': true,
+        'supported': standingsSupported[url.queryParameters['league']] ?? true,
         'scopeLabel': '정규시즌',
         'groups': [
           {
@@ -551,6 +570,203 @@ void main() {
       expect(vm.communitySort, HomeCommunitySort.latest);
       expect(vm.communityPosts, isNotEmpty);
       expect(vm.reviews, isNotEmpty);
+    });
+  });
+
+  group('순위표 칩 — 서버 리그 메타', () {
+    Map<String, dynamic> league(String code, {bool? standings}) => {
+      'code': code,
+      'name': code,
+      'standings': standings,
+      'alarm': false,
+    };
+
+    setUp(() => ScheduleRepository.instance.resetCacheForTesting());
+    tearDown(() => ScheduleRepository.instance.resetCacheForTesting());
+
+    test('standings 가 null 인 리그는 칩에서 빠지고 false 는 점선, true 는 live', () async {
+      server.filterLeagues = [
+        league('ALL'),
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+        league('LPL'),
+        league('NEWLEAGUE', standings: false),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      // 순서는 서버가 준 그대로다(ALL·standings null 만 걸러낸다). 앱이
+      // LCK 를 앞으로 당기던 고정 순서는 없앴다 — 백엔드가 순서를 바꾸면
+      // 앱 배포 없이 따라가야 한다.
+      expect(vm.leagueChips.map((c) => c.code), [
+        'ASIAN_GAMES',
+        'LCK',
+        'NEWLEAGUE',
+      ]);
+      expect(vm.leagueChips.map((c) => c.live), [true, true, false]);
+    });
+
+    test('기본 선택 리그는 서버 defaultLeague 를 따른다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+    });
+
+    // 이게 이 변경의 핵심 — 앱이 'LCK' 를 박아 두면 서버가 그 칩을 안 줄 때
+    // "선택된 칩이 목록에 없는" 상태가 돼 순위표가 빈 채로 열린다.
+    test('defaultLeague 가 고를 수 없는 칩이면 첫 live 칩으로 떨어진다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: false), // 점선 — 고를 수 없다
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+    });
+
+    test('서버가 LCK 칩을 아예 안 줘도 선택이 목록 안에 남는다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [league('ASIAN_GAMES', standings: true)];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+      expect(
+        vm.leagueChips.map((c) => c.code),
+        contains(vm.selectedLeague),
+        reason: '선택된 칩은 항상 목록에 있어야 한다',
+      );
+    });
+
+    test('사용자가 고른 리그는 이후 칩 갱신이 덮지 않는다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.selectedLeague, 'ASIAN_GAMES', reason: '처음엔 서버 기본값');
+
+      // 사용자가 직접 바꾼 뒤 앱 복귀 등으로 칩을 다시 불러도 유지돼야 한다.
+      vm.selectLeague('LCK');
+      ScheduleRepository.instance.resetCacheForTesting();
+      await vm.refreshAll();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'LCK');
+    });
+
+    // 불변식: 선택된 리그는 항상 고를 수 있는 칩이어야 한다. 사용자가 고른
+    // 리그라도 서버가 그 칩을 내리면 그대로 둘 수 없다 — 선택된 칩이 목록에
+    // 없어 순위표가 빈 채로 남는다.
+    test('사용자가 고른 리그가 더 이상 live 가 아니면 떨어뜨린다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+      vm.selectLeague('LCK');
+      expect(vm.selectedLeague, 'LCK');
+
+      // 서버가 LCK 순위표를 내린다(점선).
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: false),
+      ];
+      ScheduleRepository.instance.resetCacheForTesting();
+      await vm.refreshAll();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+      expect(
+        vm.leagueChips.where((c) => c.live).map((c) => c.code),
+        contains(vm.selectedLeague),
+      );
+    });
+
+    test('고를 수 있는 칩이 하나도 없으면 선택을 그대로 둔다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [league('LCK', standings: false)];
+      final vm = build();
+      await pumpEventQueue();
+
+      // 바꿀 후보가 없으니 기존 선택을 유지한다(빈 문자열로 만들지 않는다).
+      expect(vm.selectedLeague, 'LCK');
+    });
+
+    test('칩 라벨은 서버 name 을 쓰고, 비면 코드로 폴백한다', () async {
+      server.filterLeagues = [
+        league('LCK', standings: true),
+        // 서버가 표시명을 바꿔도 앱 배포 없이 따라가야 한다.
+        {...league('WORLDS', standings: false), 'name': '월드 챔피언십'},
+        {...league('LPL', standings: false), 'name': ''},
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.leagueChips.map((c) => c.label), [
+        'LCK',
+        '월드 챔피언십',
+        'LPL',
+      ]);
+    });
+
+    test('true 여도 순위표가 비어 있는 리그(supported=false)는 점선 칩', () async {
+      server.filterLeagues = [
+        league('LCK', standings: true),
+        league('DEMACIA_CUP', standings: true),
+      ];
+      server.standingsSupported['DEMACIA_CUP'] = false;
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.leagueChips.map((c) => c.code), ['LCK', 'DEMACIA_CUP']);
+      expect(vm.leagueChips.map((c) => c.live), [true, false]);
+      vm.selectLeague('DEMACIA_CUP');
+      expect(vm.selectedLeague, 'LCK');
+    });
+
+    test('서버가 선택 가능으로 준 새 리그는 눌러서 순위표를 불러온다', () async {
+      server.filterLeagues = [
+        league('LCK', standings: true),
+        league('ASIAN_GAMES', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      vm.selectLeague('ASIAN_GAMES');
+      await pumpEventQueue();
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+      expect(vm.standings?.league, 'ASIAN_GAMES');
+    });
+
+    test('메타 없는 구버전 서버면 하드코딩 칩으로 폴백한다', () async {
+      server.filterLeagues = [
+        {'code': 'LCK', 'name': 'LCK'},
+        {'code': 'LPL', 'name': 'LPL'},
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.leagueChips.map((c) => c.code), [
+        'LCK',
+        'LPL',
+        'LEC',
+        'LCS',
+        'WORLDS',
+      ]);
+      expect(vm.leagueChips.where((c) => c.live).map((c) => c.code), ['LCK']);
     });
   });
 

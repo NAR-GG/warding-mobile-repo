@@ -4,6 +4,7 @@ import '../../../components/nar_chip_multi_select.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/standings_group_label.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../model/standing.dart';
 import '../../../model/worlds_standings.dart';
@@ -15,8 +16,8 @@ import 'home_skeletons.dart';
 /// 대진([_WorldsKnockout])을 카드 하단 버튼으로 전환한다
 /// (warding-docs `features/home/mockup.html` 시안).
 ///
-/// spec "상태" 표: 데이터가 없는 리그(LPL·LEC·LCS)는 점선 칩으로 두고 누를
-/// 수 없다. 로딩·에러는 그리지 않는다 — 아직 못 받았으면 표 자리를 비운다.
+/// 칩 목록·활성 여부는 서버가 정한다([HomeViewModel.leagueChips]). 데이터가 없는
+/// 리그는 점선 칩으로 두고 누를 수 없다. 로딩·에러는 그리지 않는다 — 아직 못 받았으면 표 자리를 비운다.
 /// 리그 테이블의 각 그룹(레전드·라이즈 등) 1위 순위 숫자를 메인 보라색
 /// (narChipActive)으로 강조한다(2026-09-29 결정) — 그룹별 1위라 여러 개가
 /// 보일 수 있다.
@@ -41,7 +42,8 @@ class HomeStandingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final isWorlds = viewModel.selectedLeague == 'WORLDS';
+    // 리그 코드가 아니라 응답이 형식을 정한다(`reason: BRACKET_ONLY`).
+    final isBracket = viewModel.standingsIsBracket;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,11 +56,11 @@ class HomeStandingsSection extends StatelessWidget {
             // StandingsResult에 시즌 연도 필드가 없어 기기 시계 연도로 대신한다
             // (하드코딩된 2026이 다음 시즌에도 안 바뀌는 문제 — 백엔드가 연도를
             // 내려주면 그걸로 교체한다).
-            subtitle: isWorlds
-                ? (viewModel.worldsView == WorldsStandingsView.swiss
-                      ? l.homeStandingsWorldsSwissScope
-                      : l.homeStandingsWorldsKnockoutScope)
-                : '${DateTime.now().year} · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
+            // 대진이든 표든 범위 문구는 서버 `scopeLabel` 을 쓴다. 예전엔
+            // 월즈만 "2025 · 스위스 스테이지" 로 연도까지 박아 뒀는데, 대진이
+            // 월즈 전용이 아니게 되면서 그 문구가 다른 대회에서 틀려진다.
+            subtitle:
+                '${DateTime.now().year} · ${viewModel.standings?.scopeLabel.isNotEmpty == true ? viewModel.standings!.scopeLabel : l.homeStandingsScopeLabel}',
             trailingLabel: l.homeStandingsSeeAllMatches,
             onTapTrailing: onSeeAllBracket,
           ),
@@ -80,7 +82,7 @@ class HomeStandingsSection extends StatelessWidget {
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-          child: isWorlds
+          child: isBracket
               ? _WorldsStandingsCard(viewModel: viewModel, scale: scale)
               : _StandingsTable(viewModel: viewModel, scale: scale),
         ),
@@ -100,10 +102,14 @@ class _WorldsStandingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    // 호출부([HomeStandingsSection])가 데이터가 있을 때만 이 카드를 그린다
+    // ([HomeViewModel.standingsIsBracket]). 방어적으로만 둔다.
     final data = viewModel.worldsStandings;
     if (data == null) return const SizedBox.shrink();
 
-    final isSwiss = viewModel.worldsView == WorldsStandingsView.swiss;
+    final isSwiss =
+        viewModel.effectiveWorldsView == WorldsStandingsView.swiss;
+    final canToggle = viewModel.worldsHasBothViews;
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -117,51 +123,73 @@ class _WorldsStandingsCard extends StatelessWidget {
             label: isSwiss
                 ? l.homeStandingsWorldsSwissTitle
                 : l.homeStandingsWorldsKnockoutTitle,
+            // 녹아웃 힌트는 실제 라운드 이름으로 만든다("4강 → 결승"). 예전엔
+            // "8강 → 결승" 이 박혀 있어, 8강부터 시작하지 않는 대회에서 틀렸다.
+            //
+            // 스위스 힌트("3승 진출 · 3패 탈락")는 아직 고정이다 — 응답의
+            // `advanced` 는 bool 이라 진출·탈락 기준 승수를 알 수 없다. 대회마다
+            // 다르면 서버가 그 문구를 내려줘야 한다(warding-docs#12 후속).
             hint: isSwiss
                 ? l.homeStandingsWorldsSwissHint
-                : l.homeStandingsWorldsKnockoutHint,
+                : _knockoutHint(data.knockout, l),
             scale: scale,
           ),
           if (isSwiss)
             _WorldsBracket(rows: data.bracket, scale: scale)
           else
             _WorldsKnockout(rounds: data.knockout, scale: scale),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: viewModel.toggleWorldsView,
-            child: Container(
-              height: 40 * scale,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.narLine)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    isSwiss
-                        ? l.homeStandingsWorldsShowKnockout
-                        : l.homeStandingsWorldsShowSwiss,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 14 * scale,
+          // 한쪽만 있는 대회(그룹 스테이지 없이 녹아웃만 하는 등)는 전환
+          // 버튼을 숨긴다 — 누르면 빈 화면으로 넘어가기 때문이다.
+          if (canToggle)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: viewModel.toggleWorldsView,
+              child: Container(
+                height: 40 * scale,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.narLine)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isSwiss
+                          ? l.homeStandingsWorldsShowKnockout
+                          : l.homeStandingsWorldsShowSwiss,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 14 * scale,
+                        color: AppColors.narText2,
+                      ),
+                    ),
+                    SizedBox(width: 4 * scale),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16 * scale,
                       color: AppColors.narText2,
                     ),
-                  ),
-                  SizedBox(width: 4 * scale),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16 * scale,
-                    color: AppColors.narText2,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
+}
+
+/// 녹아웃 카드 우측 힌트 — 첫 라운드와 마지막 라운드 이름을 잇는다
+/// ("8강 → 결승", "4강 → 결승"). 라운드가 하나뿐이면 그 이름만, 비어 있으면
+/// 기존 고정 문구로 폴백한다.
+String _knockoutHint(List<WorldsKnockoutRound> rounds, AppLocalizations l) {
+  final names = [
+    for (final r in rounds)
+      if (r.name.trim().isNotEmpty) r.name.trim(),
+  ];
+  if (names.isEmpty) return l.homeStandingsWorldsKnockoutHint;
+  if (names.length == 1) return names.first;
+  return '${names.first} → ${names.last}';
 }
 
 /// 월즈 카드 헤더 — 좌측 라벨("스위스 전적"/"토너먼트 대진") + 우측 힌트
@@ -323,8 +351,11 @@ class _WorldsKnockout extends StatelessWidget {
   // 모든 노드(오늘 경기 포함)를 같은 높이로 통일한다 — "오늘" 시각은 스코어
   // 자리에 대신 넣어서 별도 줄을 안 둔다(전엔 셋째 줄을 더 둬서 노드가 더
   // 높았고, 그만큼 라운드 간 간격 공식도 커져 브래킷 전체가 헐렁했다).
-  // 팀 로우 2개(각 padding 12 + 텍스트 라인하이트 ~20) + 구분선 1 ≈ 64.
-  static const double _nodeHeight = 68;
+  // 팀 로우 2개 + 구분선 1. 로우 하나는 세로 padding 12 + 내용 높이인데,
+  // 내용은 배지(20)가 아니라 **팀 코드 텍스트의 라인 박스**가 결정한다
+  // (13px Pretendard 기준 22 남짓) — 68 로 뒀더니 2px 넘쳐서 72 로 올렸다.
+  // 이 값은 연결선 좌표 계산([centerY])에도 쓰이므로 상수로 유지한다.
+  static const double _nodeHeight = 72;
   static const double _roundHeaderHeight = 24;
   // 첫 라운드(8강) 매치 사이 간격 — 다음 라운드는 이 배수로 넓어진다.
   static const double _firstRoundGap = 12;
@@ -563,7 +594,13 @@ class _WorldsMatchTeamRow extends StatelessWidget {
       child: Row(
         children: [
           if (!team.isTbd) ...[
-            TeamCodeBadge(teamCode: team.teamCode!, size: 20 * scale),
+            // 순위표 행과 같은 규칙 — 사전에 없는 팀(국가대표 국기)만 응답
+            // 이미지로 받친다.
+            TeamCodeBadge(
+              teamCode: team.teamCode!,
+              size: 20 * scale,
+              fallbackImageUrl: team.imageUrl,
+            ),
             SizedBox(width: 6 * scale),
           ],
           Expanded(
@@ -629,6 +666,20 @@ class _StandingsTable extends StatelessWidget {
     final restCount = rest.fold<int>(0, (sum, g) => sum + g.rows.length);
     final expanded = viewModel.standingsExpanded;
 
+    // 더보기 라벨은 숨은 그룹을 서버 이름으로 가리킨다 — 리그마다 그룹 구성이
+    // 달라(LCK는 레전드·라이즈, ASIAN_GAMES는 그룹 A·B) "라이즈 그룹"을 박아
+    // 두면 다른 리그에서 틀린 이름이 뜬다. 숨은 그룹이 둘 이상이면 이름을 다
+    // 나열하는 대신 개수로 줄인다(버튼 한 줄을 넘기지 않으려고).
+    final String expandLabel;
+    if (rest.length == 1) {
+      expandLabel = l.homeStandingsExpandMore(
+        standingsGroupLabel(rest.first.name, l) ?? l.homeStandingsRiseGroup,
+        restCount,
+      );
+    } else {
+      expandLabel = l.homeStandingsExpandMoreGroups(rest.length, restCount);
+    }
+
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -639,7 +690,8 @@ class _StandingsTable extends StatelessWidget {
       child: Column(
         children: [
           _GroupHeader(
-            label: main.name.isEmpty ? l.homeStandingsLegendGroup : main.name,
+            label:
+                standingsGroupLabel(main.name, l) ?? l.homeStandingsLegendGroup,
             wlHint: l.homeStandingsColumnWL,
             setDiffHint: l.homeStandingsColumnSetDiff,
             scale: scale,
@@ -655,9 +707,9 @@ class _StandingsTable extends StatelessWidget {
           if (expanded)
             for (final group in rest) ...[
               _GroupHeader.sub(
-                label: group.name.isEmpty
-                    ? l.homeStandingsRiseGroup
-                    : group.name,
+                label:
+                    standingsGroupLabel(group.name, l) ??
+                    l.homeStandingsRiseGroup,
                 scale: scale,
               ),
               for (final (i, row) in group.rows.indexed)
@@ -677,9 +729,7 @@ class _StandingsTable extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      expanded
-                          ? l.homeStandingsCollapse
-                          : l.homeStandingsExpandMore(restCount),
+                      expanded ? l.homeStandingsCollapse : expandLabel,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 14 * scale,
@@ -837,9 +887,16 @@ class _StandingRow extends StatelessWidget {
           ),
           SizedBox(width: 8 * scale),
           // 커뮤니티 등 다른 홈 섹션과 같은 이미지 소스([TeamLogoDirectory])를
-          // 쓰도록 이 응답의 imageUrl은 넘기지 않는다 — 두 소스가 서로 다른
+          // 쓰도록 이 응답의 imageUrl은 우선하지 않는다 — 두 소스가 서로 다른
           // 원본(여백·비율)을 내려줘 같은 배지 크기에서도 로고가 다르게 보였다.
-          TeamCodeBadge(teamCode: row.teamCode, size: 28 * scale),
+          // 다만 사전은 온보딩 **팀** 목록이라 국가대표가 없다. ASIAN_GAMES는
+          // 국기(`/images/flags/kor.png`)가 응답에만 있어 사전만 보면 빈 원이
+          // 된다 — 사전에 없는 코드일 때만 응답 이미지로 받친다.
+          TeamCodeBadge(
+            teamCode: row.teamCode,
+            size: 28 * scale,
+            fallbackImageUrl: row.imageUrl,
+          ),
           SizedBox(width: 8 * scale),
           Expanded(
             child: Column(

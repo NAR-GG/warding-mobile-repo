@@ -14,14 +14,24 @@
   "homeStandingsColumnWL": "W-L",
   "homeStandingsColumnSetDiff": "Set diff",
   "homeStandingsScopeLabel": "Regular season total",
-  "homeStandingsExpandMore": "Show {count} more Rise Group teams",
+  "homeStandingsExpandMore": "Show {count} more {group} teams",
   "@homeStandingsExpandMore": {
-    "placeholders": { "count": { "type": "int" } }
+    "description": "숨겨진 그룹이 하나일 때 — 그룹 이름은 서버가 내려준 값(라이즈 그룹 등)",
+    "placeholders": {
+      "group": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "homeStandingsExpandMoreGroups": "Show {count} more teams in {groupCount} groups",
+  "@homeStandingsExpandMoreGroups": {
+    "description": "숨겨진 그룹이 둘 이상일 때 — 이름을 다 나열하면 버튼이 넘쳐 개수로 줄인다",
+    "placeholders": {
+      "groupCount": { "type": "int" },
+      "count": { "type": "int" }
+    }
   },
   "homeStandingsCollapse": "Collapse",
   "homeStandingsSoon": "Coming soon",
-  "homeStandingsWorldsSwissScope": "2025 · Swiss Stage",
-  "homeStandingsWorldsKnockoutScope": "2025 · Knockout Bracket",
   "homeStandingsWorldsSwissTitle": "Swiss Stage",
   "homeStandingsWorldsKnockoutTitle": "Knockout Bracket",
   "homeStandingsWorldsSwissHint": "3 wins advance · 3 losses eliminated",

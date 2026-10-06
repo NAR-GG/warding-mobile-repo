@@ -42,8 +42,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeStandingsScopeLabel => 'Regular season total';
 
   @override
-  String homeStandingsExpandMore(int count) {
-    return 'Show $count more Rise Group teams';
+  String homeStandingsExpandMore(String group, int count) {
+    return 'Show $count more $group teams';
+  }
+
+  @override
+  String homeStandingsExpandMoreGroups(int groupCount, int count) {
+    return 'Show $count more teams in $groupCount groups';
   }
 
   @override
@@ -51,12 +56,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeStandingsSoon => 'Coming soon';
-
-  @override
-  String get homeStandingsWorldsSwissScope => '2025 · Swiss Stage';
-
-  @override
-  String get homeStandingsWorldsKnockoutScope => '2025 · Knockout Bracket';
 
   @override
   String get homeStandingsWorldsSwissTitle => 'Swiss Stage';
