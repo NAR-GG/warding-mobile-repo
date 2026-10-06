@@ -22,6 +22,7 @@ import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/analytics.dart';
+import 'util/ads_bootstrap.dart';
 import 'util/api_client.dart' show loadAppVersion;
 import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
@@ -181,6 +182,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 서버가 만든 카드는 앱 없이 렌더되므로 로고를 미리 저장해 둬야 한다.
     // 이미 받아둔 팀은 존재 확인만 하고 넘어간다.
     liveActivityLogoPrefetcher.prefetchLeague();
+
+    // 광고 SDK 준비(UMP 동의 → ATT → 초기화). ATT 팝업은 앱이 활성 상태일 때만
+    // 뜨므로 첫 프레임 뒤에 시작하고, 끝나길 기다리지 않는다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => AdsBootstrap.start());
   }
 
   @override
