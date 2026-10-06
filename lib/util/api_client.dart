@@ -61,6 +61,13 @@ class VersionedClient extends http.BaseClient {
     if (v != null) request.headers['X-App-Version'] = v;
     return _inner.send(request);
   }
+
+  /// 감싼 클라이언트까지 닫는다. [http.BaseClient.close] 기본 구현은 아무것도
+  /// 하지 않아, 이걸 안 두면 [_inner] 의 연결 풀이 그대로 남는다. 앱 전역
+  /// 클라이언트([_client])는 닫지 않지만, 테스트나 다른 호출부가 감싼 인스턴스를
+  /// 닫을 때 안쪽이 새지 않게 위임한다.
+  @override
+  void close() => _inner.close();
 }
 
 /// 앱이 살아있는 동안 유지되는 단일 클라이언트. 닫지 않는다 —
