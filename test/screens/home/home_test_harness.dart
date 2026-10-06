@@ -44,6 +44,20 @@ class HomeFakeApi {
     standingRow(2, 'HLE', '한화생명e스포츠', 18, 8, 17),
   ];
 
+  /// 순위표 그룹 전체를 직접 지정한다. null 이면 [standingsRows] 로 레전드
+  /// 그룹 하나만 내려준다 — 그룹이 둘 이상인 리그(LCK 레전드·라이즈,
+  /// ASIAN_GAMES 그룹 스테이지)의 "더보기" 라벨을 검증할 때 쓴다.
+  List<Map<String, dynamic>>? standingsGroups;
+
+  /// 리그 코드 → `bracket` 응답. 여기 담긴 리그는 `supported: false` +
+  /// `reason: "BRACKET_ONLY"` 로 내려가 앱이 대진 카드를 그려야 한다.
+  /// 리그 코드와 무관하게 응답만으로 분기하는지 확인할 때 쓴다.
+  Map<String, Map<String, dynamic>> standingsBracketLeagues = {};
+
+  /// `/mobile/schedules/filters` 의 리그 메타(`LeagueOption`). null 이면
+  /// 메타 없는 구버전 응답이라 앱이 하드코딩 폴백 칩을 쓴다.
+  List<Map<String, dynamic>>? leagueMeta;
+
   /// 오늘 경기 응답. 기본 T1 vs Gen.G 진행 중 1건.
   List<Map<String, dynamic>> matches = [
     {
@@ -75,16 +89,35 @@ class HomeFakeApi {
     final path = url.path;
     if (path.contains('notices')) return _json(const []);
     if (path.contains('schedule')) {
+      // 리그 메타(`alarm` 필드)를 담아 주면 앱이 서버 값으로 칩을 만든다.
+      // 비워 두면 `hasLeagueMeta: false` 라 하드코딩 폴백 칩이 쓰인다.
+      if (path.contains('filters') && leagueMeta != null) {
+        return _json({'leagues': leagueMeta});
+      }
       return _json({'matches': matches});
     }
     if (path.contains('standings')) {
+      final league = url.queryParameters['league'];
+      // 대진 포맷으로 둔 리그는 BRACKET_ONLY + bracket 을 준다.
+      if (standingsBracketLeagues.containsKey(league)) {
+        return _json({
+          'league': league,
+          'supported': false,
+          'reason': 'BRACKET_ONLY',
+          'scopeLabel': '녹아웃 스테이지',
+          'groups': const [],
+          'bracket': standingsBracketLeagues[league],
+        });
+      }
       return _json({
-        'league': url.queryParameters['league'],
+        'league': league,
         'supported': true,
         'scopeLabel': '정규시즌',
-        'groups': [
-          {'name': '레전드 그룹', 'rows': standingsRows},
-        ],
+        'groups':
+            standingsGroups ??
+            [
+              {'name': '레전드 그룹', 'rows': standingsRows},
+            ],
       });
     }
     if (path.contains('community/posts')) {

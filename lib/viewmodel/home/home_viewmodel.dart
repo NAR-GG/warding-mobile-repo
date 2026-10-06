@@ -469,10 +469,14 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   // ---- 섹션 3: 순위표 ----
-  // 월즈는 리그 테이블과 형식이 달라([WorldsStandings] — 스위스 전적 버킷 +
-  // 토너먼트 대진) 전용 데이터·뷰 전환 상태를 구현해 뒀지만, 칩은 다시
-  // 비활성으로 둔다(출시 보류 — 사용자 요청). 코드값은 [ApiConfig]의 리그
-  // 코드 체계와 맞춰 'WORLDS'를 쓰고 라벨만 한글.
+  // 표인지 대진인지는 **응답이 정한다** — `/api/standings` 의
+  // `reason: "BRACKET_ONLY"` 면 대진 카드([WorldsStandings] — 스위스 전적
+  // 버킷 + 토너먼트), 아니면 리그 테이블이다. 예전엔 `selectedLeague ==
+  // 'WORLDS'` 하드코딩이라 월즈 말고는 어느 리그도 대진을 못 그렸다.
+  //
+  // 아래 폴백의 월즈 `live: false` 는 출시 보류 결정(사용자 요청)이라 그대로
+  // 둔다 — 포맷 분기와는 별개다. 코드값은 [ApiConfig]의 리그 코드 체계와
+  // 맞춰 'WORLDS'를 쓰고 라벨만 한글.
   //
   // 칩 목록은 서버(`/mobile/schedules/filters` 의 `standings`)가 정한다 —
   // null=칩 없음 / false=점선 / true=선택 가능([_loadLeagueChips]). 앱에 박아
@@ -494,10 +498,8 @@ class HomeViewModel extends ChangeNotifier {
 
   List<HomeLeagueChip> get leagueChips => _leagueChips;
 
-  /// 칩 순서 — 기존 화면 순서를 먼저, 새 리그는 서버 순서대로 뒤에 붙인다.
-  static const List<String> _chipOrder = ['LCK', 'LPL', 'LEC', 'LCS', 'WORLDS'];
-
-  /// 칩 라벨. 월즈만 한글, 나머지는 리그 코드 그대로.
+  /// 칩 라벨 **폴백** — 서버 `name` 이 비었을 때만 쓴다. 월즈만 한글,
+  /// 나머지는 리그 코드 그대로. 서버가 표시명을 주면 그쪽이 이긴다.
   static String _chipLabel(String code) => code == 'WORLDS' ? '월즈' : code;
 
   /// 서버가 `standings: true` 를 준 리그가 실제로 순위표를 주는지(`supported`)
@@ -507,8 +509,6 @@ class HomeViewModel extends ChangeNotifier {
   static const Duration _standingsSupportTtl = Duration(minutes: 10);
 
   Future<bool> _isStandingsSupported(String code) async {
-    // 월즈는 리그 테이블 형식이 아니라(전용 API·뷰) 이 확인 대상이 아니다.
-    if (code == 'WORLDS') return true;
     final cached = _standingsSupport[code];
     if (cached != null &&
         DateTime.now().difference(cached.$1) < _standingsSupportTtl) {
@@ -516,8 +516,12 @@ class HomeViewModel extends ChangeNotifier {
     }
     try {
       final result = await _standingsRepo.fetchStandings(code);
-      _standingsSupport[code] = (DateTime.now(), result.supported);
-      return result.supported;
+      // `supported: false` 여도 대진이 실려 왔으면 그릴 게 있다 — 리그
+      // 테이블이 없다는 뜻이지 보여줄 게 없다는 뜻이 아니다. 예전엔 월즈를
+      // 코드로 예외 처리했는데, 이제 응답으로 판단한다.
+      final usable = result.supported || result.hasBracket;
+      _standingsSupport[code] = (DateTime.now(), usable);
+      return usable;
     } catch (e) {
       // 확인 실패로 칩을 숨기지 않는다 — 서버 값을 믿는다.
       debugPrint('[Home] 순위표 지원 확인 실패($code): $e');
@@ -532,30 +536,24 @@ class HomeViewModel extends ChangeNotifier {
       if (!options.hasLeagueMeta) {
         chips = _fallbackLeagueChips;
       } else {
+        // 순서는 서버가 준 그대로다 — 앱에서 다시 정렬하지 않는다. 예전엔
+        // LCK·LPL·LEC·LCS·월즈를 앞으로 당기는 고정 순서를 뒀는데, 그러면
+        // 백엔드가 순서를 바꿔도 앱 배포 전엔 반영되지 않는다.
         final served = [
           for (final l in options.leagues)
             if (l.code != 'ALL' && l.standings != null) l,
         ];
-        int rank(String code) {
-          final i = _chipOrder.indexOf(code);
-          return i < 0 ? _chipOrder.length : i;
-        }
-
-        // sort 는 안정 정렬이 아니라서 서버 순서를 인덱스로 직접 보존한다.
-        final indexed = [
-          for (var i = 0; i < served.length; i++) (i, served[i]),
-        ]..sort((a, b) {
-            final byRank = rank(a.$2.code).compareTo(rank(b.$2.code));
-            return byRank != 0 ? byRank : a.$1.compareTo(b.$1);
-          });
         chips = await Future.wait([
-          for (final (_, l) in indexed)
+          for (final l in served)
             () async {
               final live =
                   l.standings == true && await _isStandingsSupported(l.code);
               return HomeLeagueChip(
                 code: l.code,
-                label: _chipLabel(l.code),
+                // 서버가 준 표시명을 쓴다. 비어 있을 때만 앱 라벨로 폴백 —
+                // 예전엔 서버 `name` 을 버리고 코드로만 라벨을 만들어서,
+                // 백엔드가 표시명을 바꿔도 앱 배포 전엔 반영되지 않았다.
+                label: l.name.isNotEmpty ? l.name : _chipLabel(l.code),
                 live: live,
               );
             }(),
@@ -577,12 +575,13 @@ class HomeViewModel extends ChangeNotifier {
     final selectable = _leagueChips.any((c) => c.code == code && c.live);
     if (!selectable || code == _selectedLeague) return;
     _selectedLeague = code;
+    // 리그가 바뀌면 이전 리그의 대진은 즉시 버린다 — 새 응답이 오기 전까지
+    // 옛 대진이 남아 보이면 안 된다.
+    _worldsStandings = null;
     _notify();
-    if (code == 'WORLDS') {
-      unawaited(_loadWorldsStandings());
-    } else {
-      unawaited(_loadStandings());
-    }
+    // 리그 코드로 분기하지 않는다. 표인지 대진인지는 `/api/standings` 응답
+    // (`reason: BRACKET_ONLY` · `bracket`)이 정한다.
+    unawaited(_loadStandings());
   }
 
   StandingsResult? _standings;
@@ -601,6 +600,15 @@ class HomeViewModel extends ChangeNotifier {
       // 그 사이 리그를 바꿨으면 옛 응답은 버린다.
       if (_disposed || league != _selectedLeague) return;
       _standings = result;
+      // 대진은 응답에 실려 왔을 때만 그린다. 안 실려 오면 리그 테이블이다.
+      _worldsStandings = result.hasBracket
+          ? result.bracket!.toWorldsStandings()
+          : null;
+      // 백엔드에 아직 대진 API 가 없어, 목업 빌드에서만 대진 UI 를 미리 본다
+      // (`--dart-define=HOME_MOCKS=true`). 릴리즈에는 영향이 없다.
+      if (_worldsStandings == null && kHomeMocks && !result.supported) {
+        unawaited(_loadBracketMock(league));
+      }
       _standingsFirstLoadPending = false;
       _notify();
     } catch (e) {
@@ -613,29 +621,54 @@ class HomeViewModel extends ChangeNotifier {
 
   WorldsStandings? _worldsStandings;
 
-  /// 월즈 순위표(스위스 전적 + 토너먼트 대진). 아직 못 받았으면 null.
+  /// 대진 데이터(스위스 전적 + 토너먼트). 리그 테이블 형식이면 null.
+  ///
+  /// 이름이 `worlds` 인 건 월즈용으로 먼저 만들었기 때문이고, 지금은 응답이
+  /// `bracket` 을 주는 어느 리그든 여기에 담긴다.
   WorldsStandings? get worldsStandings => _worldsStandings;
 
-  Future<void> _loadWorldsStandings() async {
+  /// 대진 UI 미리보기용 목업. `HOME_MOCKS=true` 빌드에서만 값이 온다.
+  Future<void> _loadBracketMock(String league) async {
     try {
       final result = await _standingsRepo.fetchWorldsStandings();
-      if (_disposed || _selectedLeague != 'WORLDS') return;
+      if (_disposed || league != _selectedLeague) return;
       _worldsStandings = result;
       _notify();
     } catch (e) {
-      debugPrint('[Home] 월즈 순위표 조회 실패: $e');
+      debugPrint('[Home] 대진 목업 조회 실패($league): $e');
     }
   }
+
+  /// 리그 테이블 대신 대진 카드를 그려야 하는지 — **대진 데이터가 실제로
+  /// 있을 때만** true 다. 리그 코드도, `reason` 도 보지 않는다.
+  bool get standingsIsBracket => _worldsStandings != null;
 
   WorldsStandingsView _worldsView = WorldsStandingsView.swiss;
   WorldsStandingsView get worldsView => _worldsView;
 
-  /// 월즈 카드 하단 버튼으로 스위스 전적 ↔ 토너먼트 대진을 전환한다.
+  /// 대진 카드 하단 버튼으로 스위스 전적 ↔ 토너먼트 대진을 전환한다.
   void toggleWorldsView() {
     _worldsView = _worldsView == WorldsStandingsView.swiss
         ? WorldsStandingsView.knockout
         : WorldsStandingsView.swiss;
     _notify();
+  }
+
+  /// 지금 리그에 스위스·녹아웃이 **둘 다** 있는지. 한쪽만 있으면 전환 버튼을
+  /// 숨기고 있는 쪽을 그린다 — 그룹 스테이지 없이 녹아웃만 하는 대회
+  /// (ASIAN_GAMES 등)에서 빈 화면으로 전환되는 걸 막는다.
+  bool get worldsHasBothViews {
+    final d = _worldsStandings;
+    return d != null && d.bracket.isNotEmpty && d.knockout.isNotEmpty;
+  }
+
+  /// 데이터가 있는 쪽을 고른 실제 표시 뷰.
+  WorldsStandingsView get effectiveWorldsView {
+    final d = _worldsStandings;
+    if (d == null) return _worldsView;
+    if (d.bracket.isEmpty) return WorldsStandingsView.knockout;
+    if (d.knockout.isEmpty) return WorldsStandingsView.swiss;
+    return _worldsView;
   }
 
   bool _standingsExpanded = false;

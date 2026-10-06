@@ -69,12 +69,17 @@ class WorldsMatchTeam {
   const WorldsMatchTeam({
     this.teamCode,
     this.teamName,
+    this.imageUrl,
     this.gameWins,
     this.won,
   });
 
   final String? teamCode;
   final String? teamName;
+
+  /// 응답이 준 로고 URL. 국가대표 국기처럼 팀 로고 사전(온보딩 팀 목록)에
+  /// 없는 팀을 위해 쓴다 — 사전에 코드가 있으면 사전 값이 이긴다.
+  final String? imageUrl;
 
   /// 이 매치에서 딴 세트 수. 경기 전이면 null.
   final int? gameWins;

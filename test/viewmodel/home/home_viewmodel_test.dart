@@ -592,13 +592,32 @@ void main() {
       final vm = build();
       await pumpEventQueue();
 
-      // 기존 순서(LCK 먼저)를 지키고 새 리그는 뒤에 서버 순서대로.
+      // 순서는 서버가 준 그대로다(ALL·standings null 만 걸러낸다). 앱이
+      // LCK 를 앞으로 당기던 고정 순서는 없앴다 — 백엔드가 순서를 바꾸면
+      // 앱 배포 없이 따라가야 한다.
       expect(vm.leagueChips.map((c) => c.code), [
-        'LCK',
         'ASIAN_GAMES',
+        'LCK',
         'NEWLEAGUE',
       ]);
       expect(vm.leagueChips.map((c) => c.live), [true, true, false]);
+    });
+
+    test('칩 라벨은 서버 name 을 쓰고, 비면 코드로 폴백한다', () async {
+      server.filterLeagues = [
+        league('LCK', standings: true),
+        // 서버가 표시명을 바꿔도 앱 배포 없이 따라가야 한다.
+        {...league('WORLDS', standings: false), 'name': '월드 챔피언십'},
+        {...league('LPL', standings: false), 'name': ''},
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.leagueChips.map((c) => c.label), [
+        'LCK',
+        '월드 챔피언십',
+        'LPL',
+      ]);
     });
 
     test('true 여도 순위표가 비어 있는 리그(supported=false)는 점선 칩', () async {
