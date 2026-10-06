@@ -42,8 +42,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeStandingsScopeLabel => '정규시즌 통산';
 
   @override
-  String homeStandingsExpandMore(int count) {
-    return '라이즈 그룹 $count팀 더보기';
+  String homeStandingsExpandMore(String group, int count) {
+    return '$group $count팀 더보기';
+  }
+
+  @override
+  String homeStandingsExpandMoreGroups(int groupCount, int count) {
+    return '$groupCount개 그룹 $count팀 더보기';
   }
 
   @override
