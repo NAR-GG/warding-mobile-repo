@@ -10,18 +10,25 @@ import '../util/app_image.dart';
 /// 로고는 [imageUrl] 이 있으면 그걸, 없으면 팀 코드로 [TeamLogoDirectory] 에서
 /// 찾는다. 못 구했거나 불러오는 중이면 시안의 `.tbd` 처럼 둥근 네모 안에 팀
 /// 코드를 작게 적는다. 원형 배지는 [TeamCodeBadge].
+///
+/// [fallbackImageUrl] 은 사전을 먼저 보고 **거기에 없을 때만** 쓴다
+/// ([TeamCodeBadge.fallbackImageUrl] 와 같은 규칙).
 class TeamLogo extends StatelessWidget {
   const TeamLogo({
     super.key,
     required this.teamCode,
     required this.size,
     this.imageUrl,
+    this.fallbackImageUrl,
     this.directory,
   });
 
   final String teamCode;
   final double size;
   final String? imageUrl;
+
+  /// 사전에 [teamCode] 가 없을 때만 쓰는 로고 URL.
+  final String? fallbackImageUrl;
 
   /// 테스트에서 갈아끼운다. 기본은 [TeamLogoDirectory.instance].
   final TeamLogoDirectory? directory;
@@ -35,7 +42,7 @@ class TeamLogo extends StatelessWidget {
     dir.ensureLoaded();
     return ValueListenableBuilder<Map<String, String>>(
       valueListenable: dir.logos,
-      builder: (_, _, _) => _logo(dir.logoFor(teamCode)),
+      builder: (_, _, _) => _logo(dir.logoFor(teamCode) ?? fallbackImageUrl),
     );
   }
 
