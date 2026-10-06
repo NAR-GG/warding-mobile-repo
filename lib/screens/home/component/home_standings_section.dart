@@ -123,9 +123,15 @@ class _WorldsStandingsCard extends StatelessWidget {
             label: isSwiss
                 ? l.homeStandingsWorldsSwissTitle
                 : l.homeStandingsWorldsKnockoutTitle,
+            // 녹아웃 힌트는 실제 라운드 이름으로 만든다("4강 → 결승"). 예전엔
+            // "8강 → 결승" 이 박혀 있어, 8강부터 시작하지 않는 대회에서 틀렸다.
+            //
+            // 스위스 힌트("3승 진출 · 3패 탈락")는 아직 고정이다 — 응답의
+            // `advanced` 는 bool 이라 진출·탈락 기준 승수를 알 수 없다. 대회마다
+            // 다르면 서버가 그 문구를 내려줘야 한다(warding-docs#12 후속).
             hint: isSwiss
                 ? l.homeStandingsWorldsSwissHint
-                : l.homeStandingsWorldsKnockoutHint,
+                : _knockoutHint(data.knockout, l),
             scale: scale,
           ),
           if (isSwiss)
@@ -171,6 +177,19 @@ class _WorldsStandingsCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 녹아웃 카드 우측 힌트 — 첫 라운드와 마지막 라운드 이름을 잇는다
+/// ("8강 → 결승", "4강 → 결승"). 라운드가 하나뿐이면 그 이름만, 비어 있으면
+/// 기존 고정 문구로 폴백한다.
+String _knockoutHint(List<WorldsKnockoutRound> rounds, AppLocalizations l) {
+  final names = [
+    for (final r in rounds)
+      if (r.name.trim().isNotEmpty) r.name.trim(),
+  ];
+  if (names.isEmpty) return l.homeStandingsWorldsKnockoutHint;
+  if (names.length == 1) return names.first;
+  return '${names.first} → ${names.last}';
 }
 
 /// 월즈 카드 헤더 — 좌측 라벨("스위스 전적"/"토너먼트 대진") + 우측 힌트

@@ -58,12 +58,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeStandingsSoon => 'Coming soon';
 
   @override
-  String get homeStandingsWorldsSwissScope => '2025 · Swiss Stage';
-
-  @override
-  String get homeStandingsWorldsKnockoutScope => '2025 · Knockout Bracket';
-
-  @override
   String get homeStandingsWorldsSwissTitle => 'Swiss Stage';
 
   @override

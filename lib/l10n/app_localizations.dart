@@ -188,18 +188,6 @@ abstract class AppLocalizations {
   /// **'준비 중'**
   String get homeStandingsSoon;
 
-  /// No description provided for @homeStandingsWorldsSwissScope.
-  ///
-  /// In ko, this message translates to:
-  /// **'2025 · 스위스 스테이지'**
-  String get homeStandingsWorldsSwissScope;
-
-  /// No description provided for @homeStandingsWorldsKnockoutScope.
-  ///
-  /// In ko, this message translates to:
-  /// **'2025 · 토너먼트 대진'**
-  String get homeStandingsWorldsKnockoutScope;
-
   /// No description provided for @homeStandingsWorldsSwissTitle.
   ///
   /// In ko, this message translates to:

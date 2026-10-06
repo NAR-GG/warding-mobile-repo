@@ -58,12 +58,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeStandingsSoon => '준비 중';
 
   @override
-  String get homeStandingsWorldsSwissScope => '2025 · 스위스 스테이지';
-
-  @override
-  String get homeStandingsWorldsKnockoutScope => '2025 · 토너먼트 대진';
-
-  @override
   String get homeStandingsWorldsSwissTitle => '스위스 전적';
 
   @override

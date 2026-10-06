@@ -362,10 +362,67 @@ void main() {
       expect(vm.standingsIsBracket, isTrue);
       // 라운드 이름과 팀이 대진 카드로 그려진다.
       expect(find.text('4강'), findsOneWidget);
-      expect(find.text('결승'), findsOneWidget);
+      expect(find.text('결승'), findsWidgets);
       // 리그 테이블(그룹 헤더)은 안 그려진다.
       expect(find.text('레전드 그룹'), findsNothing);
       expect(find.textContaining('더보기'), findsNothing);
+    });
+
+    // 카드 우측 힌트가 "8강 → 결승" 으로 박혀 있었다 — 8강부터 시작하지 않는
+    // 대회에서 틀린다. 실제 라운드 이름으로 만든다.
+    testWidgets('녹아웃 힌트는 실제 라운드 이름으로 만든다', (tester) async {
+      final server = setUpHomeApi();
+      useAsianGames(server);
+      server.standingsBracketLeagues = {
+        'ASIAN_GAMES': bracketPayload(
+          rounds: [
+            {
+              'name': '4강',
+              'matches': [match(a: 'KOR', b: 'VIE'), match(a: 'TPE', b: 'KSA')],
+            },
+            {
+              'name': '결승',
+              'matches': [match(a: 'KOR', b: 'TPE', isFinal: true)],
+            },
+          ],
+        ),
+      };
+
+      final vm = await pumpHomeSection(
+        tester,
+        section: (vm) => HomeStandingsSection(viewModel: vm, scale: 1),
+      );
+      vm.selectLeague('ASIAN_GAMES');
+      await tester.pumpAndSettle();
+
+      expect(find.text('4강 → 결승'), findsOneWidget);
+      expect(find.text('8강 → 결승'), findsNothing);
+    });
+
+    testWidgets('녹아웃 라운드가 하나면 그 이름만 힌트로 쓴다', (tester) async {
+      final server = setUpHomeApi();
+      useAsianGames(server);
+      server.standingsBracketLeagues = {
+        'ASIAN_GAMES': bracketPayload(
+          rounds: [
+            {
+              'name': '결승',
+              'matches': [match(a: 'KOR', b: 'TPE', isFinal: true)],
+            },
+          ],
+        ),
+      };
+
+      final vm = await pumpHomeSection(
+        tester,
+        section: (vm) => HomeStandingsSection(viewModel: vm, scale: 1),
+      );
+      vm.selectLeague('ASIAN_GAMES');
+      await tester.pumpAndSettle();
+
+      // 헤더 힌트와 라운드 라벨 둘 다 "결승" 이라 2개.
+      expect(find.text('결승'), findsNWidgets(2));
+      expect(find.textContaining('→'), findsNothing);
     });
 
     testWidgets('녹아웃만 있으면 스위스 전환 버튼을 숨긴다', (tester) async {
@@ -392,7 +449,7 @@ void main() {
       expect(vm.worldsHasBothViews, isFalse);
       expect(find.text('스위스 전적 보기'), findsNothing);
       expect(find.text('토너먼트 대진 보기'), findsNothing);
-      expect(find.text('결승'), findsOneWidget);
+      expect(find.text('결승'), findsWidgets);
     });
 
     testWidgets('스위스·녹아웃이 둘 다 있으면 전환 버튼이 있다', (tester) async {
@@ -430,7 +487,7 @@ void main() {
 
       vm.toggleWorldsView();
       await tester.pumpAndSettle();
-      expect(find.text('결승'), findsOneWidget);
+      expect(find.text('결승'), findsWidgets);
     });
 
     // `reason` 이 아니라 데이터 유무로 판단한다 — 백엔드의 BRACKET_ONLY 는
@@ -530,7 +587,7 @@ void main() {
       );
       vm.selectLeague('ASIAN_GAMES');
       await tester.pumpAndSettle();
-      expect(find.text('결승'), findsOneWidget);
+      expect(find.text('결승'), findsWidgets);
 
       vm.selectLeague('LCK');
       await tester.pumpAndSettle();
