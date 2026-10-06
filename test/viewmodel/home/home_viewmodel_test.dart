@@ -105,6 +105,9 @@ class _FakeApi {
   /// 리그별 `/standings` 의 `supported`. 없으면 true.
   final Map<String, bool> standingsSupported = {};
 
+  /// `/mobile/schedules/filters` 의 `defaultLeague`. 홈이 처음 고르는 리그다.
+  String defaultLeague = 'LCK';
+
   final List<Uri> requests = [];
   final List<Uri> unknown = [];
 
@@ -125,7 +128,7 @@ class _FakeApi {
     if (path.contains('schedules/filters')) {
       final leagues = filterLeagues;
       return _json({
-        'defaultLeague': 'LCK',
+        'defaultLeague': defaultLeague,
         'leagues': ?leagues,
         'teams': const [],
         'seasons': const [],
@@ -601,6 +604,65 @@ void main() {
         'NEWLEAGUE',
       ]);
       expect(vm.leagueChips.map((c) => c.live), [true, true, false]);
+    });
+
+    test('기본 선택 리그는 서버 defaultLeague 를 따른다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+    });
+
+    // 이게 이 변경의 핵심 — 앱이 'LCK' 를 박아 두면 서버가 그 칩을 안 줄 때
+    // "선택된 칩이 목록에 없는" 상태가 돼 순위표가 빈 채로 열린다.
+    test('defaultLeague 가 고를 수 없는 칩이면 첫 live 칩으로 떨어진다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: false), // 점선 — 고를 수 없다
+      ];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+    });
+
+    test('서버가 LCK 칩을 아예 안 줘도 선택이 목록 안에 남는다', () async {
+      server.defaultLeague = 'LCK';
+      server.filterLeagues = [league('ASIAN_GAMES', standings: true)];
+      final vm = build();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'ASIAN_GAMES');
+      expect(
+        vm.leagueChips.map((c) => c.code),
+        contains(vm.selectedLeague),
+        reason: '선택된 칩은 항상 목록에 있어야 한다',
+      );
+    });
+
+    test('사용자가 고른 리그는 이후 칩 갱신이 덮지 않는다', () async {
+      server.defaultLeague = 'ASIAN_GAMES';
+      server.filterLeagues = [
+        league('ASIAN_GAMES', standings: true),
+        league('LCK', standings: true),
+      ];
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.selectedLeague, 'ASIAN_GAMES', reason: '처음엔 서버 기본값');
+
+      // 사용자가 직접 바꾼 뒤 앱 복귀 등으로 칩을 다시 불러도 유지돼야 한다.
+      vm.selectLeague('LCK');
+      ScheduleRepository.instance.resetCacheForTesting();
+      await vm.refreshAll();
+      await pumpEventQueue();
+
+      expect(vm.selectedLeague, 'LCK');
     });
 
     test('칩 라벨은 서버 name 을 쓰고, 비면 코드로 폴백한다', () async {

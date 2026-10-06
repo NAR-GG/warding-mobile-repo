@@ -531,8 +531,12 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadLeagueChips() async {
     List<HomeLeagueChip> chips;
+    // 서버가 준 기본 리그. 메타를 못 받으면 비어 있고, 그때는 기존 기본값을
+    // 그대로 둔다.
+    String serverDefault = '';
     try {
       final options = await _schedule.fetchFilterOptions();
+      serverDefault = options.defaultLeague;
       if (!options.hasLeagueMeta) {
         chips = _fallbackLeagueChips;
       } else {
@@ -565,8 +569,32 @@ class HomeViewModel extends ChangeNotifier {
     }
     if (_disposed) return;
     _leagueChips = chips;
+
+    // 기본 선택도 서버가 정한다(`defaultLeague`). 앱은 'LCK' 를 박아 뒀는데,
+    // 서버가 그 리그를 안 주거나(칩 없음) 데이터가 없으면(점선) **선택된 칩이
+    // 목록에 없는 상태**가 된다 — 순위표 자리가 빈 채로 열린다.
+    //
+    // 서버 기본값이 고를 수 있는 칩이 아니면 첫 번째 live 칩으로 떨어뜨린다.
+    // 사용자가 이미 다른 리그를 골랐으면(_leagueTouched) 건드리지 않는다.
+    if (!_leagueTouched) {
+      final livable = chips.where((c) => c.live).map((c) => c.code).toList();
+      final next = livable.contains(serverDefault)
+          ? serverDefault
+          : (livable.contains(_selectedLeague)
+                ? _selectedLeague
+                : (livable.isEmpty ? _selectedLeague : livable.first));
+      if (next != _selectedLeague) {
+        _selectedLeague = next;
+        _worldsStandings = null;
+        unawaited(_loadStandings());
+      }
+    }
     _notify();
   }
+
+  /// 사용자가 칩을 직접 골랐는지. 칩 목록이 늦게 도착해도 그 선택을 덮지
+  /// 않으려고 둔다(홈 진입 직후 칩을 누르면 두 흐름이 겹친다).
+  bool _leagueTouched = false;
 
   String _selectedLeague = 'LCK';
   String get selectedLeague => _selectedLeague;
@@ -575,6 +603,7 @@ class HomeViewModel extends ChangeNotifier {
     final selectable = _leagueChips.any((c) => c.code == code && c.live);
     if (!selectable || code == _selectedLeague) return;
     _selectedLeague = code;
+    _leagueTouched = true;
     // 리그가 바뀌면 이전 리그의 대진은 즉시 버린다 — 새 응답이 오기 전까지
     // 옛 대진이 남아 보이면 안 된다.
     _worldsStandings = null;
