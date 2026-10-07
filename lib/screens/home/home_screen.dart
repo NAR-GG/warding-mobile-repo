@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/guide_popup.dart';
+import '../../components/inline_banner_ad.dart';
+import '../../config/ad_config.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_banner.dart';
 import '../../l10n/app_localizations.dart';
@@ -284,6 +286,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               viewModel: _viewModel,
                               scale: scale,
                               onSeeAllBracket: _openMatchList,
+                            ),
+                            InlineBannerAd(
+                              unitId: AdConfig.homeBannerUnitId,
+                              scale: scale,
                             ),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(
