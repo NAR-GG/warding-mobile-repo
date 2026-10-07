@@ -38,6 +38,11 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
   int _unreadCount = 0;
   int get unreadCount => _unreadCount;
 
+  /// 첫 [load] 가 성공으로 끝났는지. `_unreadCount` 는 0 에서 시작하므로
+  /// 이 플래그가 없으면 "아직 못 받음"과 "받아보니 0건"을 구분할 수 없다
+  /// ([markAllReadOnExit] 가 전자를 후자로 오해해 요청을 건너뛰었다).
+  bool _loadedOnce = false;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -98,6 +103,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
       _unreadCount = pageData.unreadCount;
       _page = pageData.page;
       _hasMore = pageData.hasMore;
+      _loadedOnce = true;
     } catch (e, st) {
       _error = appStrings?.notificationLoadFailed ?? 'Failed to load notifications.';
       debugPrint('[Feed] load 에러: $e\n$st');
@@ -200,9 +206,15 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
   /// 머무는 동안은 그대로 유지된다), 실패해도 복구할 대상이 없다. 다음 진입
   /// 때 서버 값을 그대로 다시 받으므로 실패는 조용히 넘긴다.
   ///
-  /// dispose 에서 불리므로 await 하지 않는다 — 호출 측에서 unawaited 로 띄운다.
+  /// 화면 전환 **전에** 불러 완료를 기다린다([SubscriptionScreen._leaveTo]) —
+  /// 홈의 미읽음 조회보다 늦게 끝나면 배지가 옛 수로 남는다. `dispose` 경로는
+  /// 그 전환을 거치지 않는 이탈(안드로이드 뒤로가기 등)만 받는 보완책이다.
+  ///
+  /// 건너뛰는 건 **첫 조회가 끝났고 그 결과가 0건일 때뿐**이다. `_unreadCount`
+  /// 만 보면 아직 응답이 안 온 초기값 0 까지 "읽을 게 없다"로 오해해, 목록이
+  /// 뜨기 전에 나간 사용자의 알림이 미읽음으로 남는다.
   Future<void> markAllReadOnExit() async {
-    if (_unreadCount == 0) return;
+    if (_loadedOnce && _unreadCount == 0) return;
     try {
       await _repo.markAllRead(group: group);
     } catch (e) {
