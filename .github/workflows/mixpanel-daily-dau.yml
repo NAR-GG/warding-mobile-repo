@@ -80,7 +80,6 @@ jobs:
             for ep in \
               "query/segmentation|event=%24mp_session_start&from_date=$TARGET&to_date=$TARGET&type=unique&unit=day" \
               "query/events/names|type=general" \
-              "2.0/export|from_date=$TARGET&to_date=$TARGET" \
               "query/insights|bookmark_id=$MP_BOOKMARK"; do
               P="${ep%%|*}"; Q="${ep#*|}"
               C=$(curl -sS -o /tmp/probe.json -w '%{http_code}' --connect-timeout 15 --max-time 45 \
@@ -89,6 +88,12 @@ jobs:
               echo "── [$P] HTTP $C"
               head -c 200 /tmp/probe.json 2>/dev/null; echo
             done
+            # Export API 는 호스트가 다르다(data.mixpanel.com).
+            C=$(curl -sS -o /tmp/probe.json -w '%{http_code}' --connect-timeout 15 --max-time 45 \
+              -u "$MP_USER:$MP_SECRET" \
+              "https://data.mixpanel.com/api/2.0/export?project_id=$MP_PROJECT&from_date=$TARGET&to_date=$TARGET" || echo "000")
+            echo "── [data.mixpanel.com 2.0/export] HTTP $C"
+            head -c 200 /tmp/probe.json 2>/dev/null; echo
             echo "── 진단 끝 (200 이 하나라도 있으면 그 경로로 만들 수 있다)"
             exit 0
           fi
