@@ -859,8 +859,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
       return cached;
     }
     final out = <_ListItem>[];
-    for (final day in schedule) {
-      if (out.isNotEmpty && _adBefore(day.date)) out.add(_AdItem(day.date));
+    for (var i = 0; i < schedule.length; i++) {
+      final day = schedule[i];
+      if (_adBefore(i)) out.add(_AdItem(day.date));
       out.add(_HeaderItem(day.date));
       if (!groupByLeague) {
         for (final m in day.matches) {
@@ -886,18 +887,17 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return out;
   }
 
-  /// 날짜 그룹 앞에 광고를 낄지. 달력 5일마다 한 번이다(경기 있는 날 기준
-  /// 대략 3일치). 목록 위치가 아니라 날짜로 정해서, 과거 페이지가 앞에 붙어도
-  /// 광고 자리가 밀리지 않는다. 그룹 경계에만 끼워 카드 구분선 규칙을 건드리지 않는다.
+  /// [index] 번째 날짜 그룹 앞에 광고를 낄지. 첫 그룹 바로 뒤(1)에 하나, 그다음은
+  /// 3그룹마다 하나다. 목록 맨 앞부터 세므로 어떤 필터에서도 첫 화면 가까이에
+  /// 첫 광고가 오고 간격이 일정하다. 그룹 경계에만 끼워 카드 구분선 규칙을
+  /// 건드리지 않는다.
+  ///
+  /// 과거 페이지가 앞에 붙으면 번호가 밀려 광고 자리가 한 번 옮겨 간다.
   ///
   /// [_estimatedOffsetTo] 는 광고 높이를 더하지 않는다 — 광고는 로드돼야 높이가
   /// 생기고 안 로드되면 0 이라, 어림값이 실제보다 작게 나오는 쪽이 안전하다
   /// (크게 나오면 대상이 화면 위로 지나쳐 스크롤이 거꾸로 못 간다).
-  static bool _adBefore(DateTime d) =>
-      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
-          Duration.millisecondsPerDay %
-          5 ==
-      0;
+  static bool _adBefore(int index) => index % 3 == 1;
 
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
