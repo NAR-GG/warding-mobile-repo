@@ -58,9 +58,15 @@ jobs:
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
+          # cancelled 를 실패와 구분한다. 사람이 일부러 멈춘 것(옛 커밋을 돌던
+          # run 을 새 커밋 푸시 후 취소하는 등)까지 빨간 "실패" 로 나가면,
+          # 아무도 안 깨뜨렸는데 릴리즈가 막힌 것처럼 보인다.
           if [ "$STATUS" = "success" ]; then
             TITLE="✅ 릴리즈 직전 e2e 통과"
             COLOR=3066993
+          elif [ "$STATUS" = "cancelled" ]; then
+            TITLE="⚪ 릴리즈 직전 e2e 취소됨"
+            COLOR=9807270
           else
             TITLE="🔴 릴리즈 직전 e2e 실패"
             COLOR=15158332
