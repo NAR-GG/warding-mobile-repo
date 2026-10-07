@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -127,6 +129,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     WidgetsBinding.instance.removeObserver(this);
     feedRefreshTick.removeListener(_reloadFeed);
     _feedViewModel.removeListener(_maybeFillViewport);
+    // 읽음 처리는 _leaveTo 에서 화면 전환 **전에** 끝낸다. 여기서 띄우면
+    // 이미 늦다 — dispose 는 pushReplacement 가 새 화면을 만든 뒤에 불려서,
+    // 홈의 미읽음 조회(GET)와 읽음 처리(POST)가 순서 없이 경쟁한다.
+    // 안드로이드 뒤로가기 등 _leaveTo 를 거치지 않는 이탈만 여기서 받는다.
+    unawaited(_feedViewModel.markAllReadOnExit());
     _feedViewModel.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -546,16 +553,35 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
   void _onTabSelected(AppNavTab tab) {
     if (tab == AppNavTab.home) {
-      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
+      _leaveTo(const HomeScreen());
     } else if (tab == AppNavTab.schedule) {
-      Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
+      _leaveTo(const ScheduleScreen());
     } else if (tab == AppNavTab.list) {
-      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
+      _leaveTo(const MatchListScreen());
     } else if (tab == AppNavTab.community) {
-      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
+      _leaveTo(const CommunityScreen());
     } else if (tab == AppNavTab.mypage) {
-      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
+      _leaveTo(const MypageScreen());
     }
+  }
+
+  /// 이 화면을 떠나 [next] 로 전환한다. **전환 전에** 읽음 처리를 끝낸다.
+  ///
+  /// 순서가 핵심이다 — 홈은 진입하면서 `HomeViewModel` 생성자가 미읽음 수를
+  /// 조회한다. 읽음 처리(POST)를 기다리지 않고 전환하면 그 조회(GET)가 먼저
+  /// 끝나 **옛 미읽음 수**를 받아 배지가 그대로 남을 수 있다. `dispose` 에서
+  /// 부르면 이미 늦다(그때는 새 화면이 만들어진 뒤다).
+  ///
+  /// 읽음 처리는 실패해도 예외를 던지지 않으므로 전환이 막히지 않는다. 다만
+  /// 응답이 느리면 그만큼 전환이 밀리므로 2초에서 끊고 넘어간다 — 배지가
+  /// 한 박자 늦게 사라지는 편이 탭이 먹통으로 느껴지는 것보다 낫다.
+  Future<void> _leaveTo(Widget next) async {
+    await _feedViewModel.markAllReadOnExit().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () {},
+    );
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(tabRoute(next));
   }
 
   @override
