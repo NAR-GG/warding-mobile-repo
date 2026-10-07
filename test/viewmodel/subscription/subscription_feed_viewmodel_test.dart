@@ -118,6 +118,76 @@ void main() {
     expect(vm.notifications.map((n) => n.id), [1, 2]);
   });
 
+  group('markAllReadOnExit', () {
+    test('미읽음이 있으면 전체 읽음 API 를 부르고 목록은 건드리지 않는다', () async {
+      when(() => repo.fetchNotifications(
+            page: any(named: 'page'),
+            size: any(named: 'size'),
+          )).thenAnswer((_) async => _page([_n(1), _n(2, read: true)], 1));
+      when(() => repo.markAllRead(group: any(named: 'group')))
+          .thenAnswer((_) async {});
+
+      final vm = SubscriptionFeedViewModel(repository: repo);
+      await vm.load();
+
+      await vm.markAllReadOnExit();
+
+      verify(() => repo.markAllRead(group: null)).called(1);
+      // 화면이 사라지는 시점이라 낙관적 갱신을 하지 않는다 —
+      // 머무는 동안 미읽음 강조가 유지되는 게 이 방식의 핵심이다.
+      expect(vm.notifications.first.read, isFalse);
+      expect(vm.unreadCount, 1);
+    });
+
+    test('미읽음이 0 이면 API 를 부르지 않는다', () async {
+      when(() => repo.fetchNotifications(
+            page: any(named: 'page'),
+            size: any(named: 'size'),
+          )).thenAnswer((_) async => _page([_n(1, read: true)], 0));
+
+      final vm = SubscriptionFeedViewModel(repository: repo);
+      await vm.load();
+
+      await vm.markAllReadOnExit();
+
+      verifyNever(() => repo.markAllRead(group: any(named: 'group')));
+    });
+
+    test('실패해도 예외를 던지지 않는다 (dispose 에서 불린다)', () async {
+      when(() => repo.fetchNotifications(
+            page: any(named: 'page'),
+            size: any(named: 'size'),
+          )).thenAnswer((_) async => _page([_n(1)], 1));
+      when(() => repo.markAllRead(group: any(named: 'group')))
+          .thenThrow(Exception('boom'));
+
+      final vm = SubscriptionFeedViewModel(repository: repo);
+      await vm.load();
+
+      await expectLater(vm.markAllReadOnExit(), completes);
+    });
+
+    test('group 범위를 그대로 넘긴다 (알림함은 COMMUNITY)', () async {
+      when(() => repo.fetchNotifications(
+            group: any(named: 'group'),
+            page: any(named: 'page'),
+            size: any(named: 'size'),
+          )).thenAnswer((_) async => _page([_n(1)], 1));
+      when(() => repo.markAllRead(group: any(named: 'group')))
+          .thenAnswer((_) async {});
+
+      final vm = SubscriptionFeedViewModel(
+        repository: repo,
+        group: 'COMMUNITY',
+      );
+      await vm.load();
+
+      await vm.markAllReadOnExit();
+
+      verify(() => repo.markAllRead(group: 'COMMUNITY')).called(1);
+    });
+  });
+
   test('deleteAll: 목록 비우고 미읽음 0', () async {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),

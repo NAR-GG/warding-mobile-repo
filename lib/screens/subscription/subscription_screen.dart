@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -127,6 +129,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     WidgetsBinding.instance.removeObserver(this);
     feedRefreshTick.removeListener(_reloadFeed);
     _feedViewModel.removeListener(_maybeFillViewport);
+    // 유저가 이 목록을 눈으로 확인했으니 나갈 때 전부 읽음으로 넘긴다 —
+    // 홈으로 돌아가면 HomeViewModel 이 새로 만들어지며 미읽음 수를 다시 세고,
+    // 그때 벨 배지가 사라진다. dispose 라 await 할 수 없어 띄워 보낸다
+    // (ViewModel 은 _notify 가 _disposed 가드를 두고 있어 안전하다).
+    unawaited(_feedViewModel.markAllReadOnExit());
     _feedViewModel.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();

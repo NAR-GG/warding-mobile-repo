@@ -192,6 +192,24 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     }
   }
 
+  /// 화면을 나갈 때 이 범위를 전부 읽음으로 넘긴다 — 유저가 목록을 눈으로
+  /// 확인했으므로 홈 벨 배지가 남아 있을 이유가 없다.
+  ///
+  /// [markAllRead] 와 달리 목록 상태를 건드리지 않는다. 화면이 사라지는
+  /// 시점이라 낙관적 갱신을 보여줄 UI 가 없고(그래서 보라색 미읽음 강조가
+  /// 머무는 동안은 그대로 유지된다), 실패해도 복구할 대상이 없다. 다음 진입
+  /// 때 서버 값을 그대로 다시 받으므로 실패는 조용히 넘긴다.
+  ///
+  /// dispose 에서 불리므로 await 하지 않는다 — 호출 측에서 unawaited 로 띄운다.
+  Future<void> markAllReadOnExit() async {
+    if (_unreadCount == 0) return;
+    try {
+      await _repo.markAllRead(group: group);
+    } catch (e) {
+      debugPrint('[Feed] 이탈 시 전체읽음 실패(무시): $e');
+    }
+  }
+
   /// 전체 삭제(낙관적 비움 후 서버 호출, 실패 시 복구).
   Future<void> deleteAll() async {
     final backup = _notifications;
