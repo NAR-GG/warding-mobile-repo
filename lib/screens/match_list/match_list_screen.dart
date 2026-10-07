@@ -3,6 +3,8 @@ import '../../l10n/app_localizations.dart';
 
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
+import '../../components/inline_banner_ad.dart';
+import '../../config/ad_config.dart';
 import '../../components/labeled_field.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_chip_multi_select.dart';
@@ -739,6 +741,15 @@ class _MatchListScreenState extends State<MatchListScreen> {
       itemBuilder: (context, index) {
         if (index == items.length) return _buildFooter(scale);
         final item = items[index];
+        if (item is _AdItem) {
+          return InlineBannerAd(
+            key: ValueKey('ad-${item.date}'),
+            unitId: AdConfig.matchListBannerUnitId,
+            scale: scale,
+            topPadding: 16,
+            bottomPadding: 8,
+          );
+        }
         if (item is _HeaderItem) {
           // 자동 스크롤 대상 헤더에 GlobalKey 를 달아 정확히 맞춘다.
           final key =
@@ -849,6 +860,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     }
     final out = <_ListItem>[];
     for (final day in schedule) {
+      if (out.isNotEmpty && _adBefore(day.date)) out.add(_AdItem(day.date));
       out.add(_HeaderItem(day.date));
       if (!groupByLeague) {
         for (final m in day.matches) {
@@ -873,6 +885,19 @@ class _MatchListScreenState extends State<MatchListScreen> {
     _cachedFlattenedGroupByLeague = groupByLeague;
     return out;
   }
+
+  /// 날짜 그룹 앞에 광고를 낄지. 달력 5일마다 한 번이다(경기 있는 날 기준
+  /// 대략 3일치). 목록 위치가 아니라 날짜로 정해서, 과거 페이지가 앞에 붙어도
+  /// 광고 자리가 밀리지 않는다. 그룹 경계에만 끼워 카드 구분선 규칙을 건드리지 않는다.
+  ///
+  /// [_estimatedOffsetTo] 는 광고 높이를 더하지 않는다 — 광고는 로드돼야 높이가
+  /// 생기고 안 로드되면 0 이라, 어림값이 실제보다 작게 나오는 쪽이 안전하다
+  /// (크게 나오면 대상이 화면 위로 지나쳐 스크롤이 거꾸로 못 간다).
+  static bool _adBefore(DateTime d) =>
+      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
+          Duration.millisecondsPerDay %
+          5 ==
+      0;
 
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
@@ -906,6 +931,13 @@ class _HeaderItem extends _ListItem {
 class _LeagueHeaderItem extends _ListItem {
   const _LeagueHeaderItem(this.leagueName);
   final String leagueName;
+}
+
+/// 날짜 그룹 사이 배너 자리. [date] 는 바로 뒤따르는 날짜 헤더의 날짜로,
+/// 과거 페이지가 앞에 붙어도 같은 광고가 같은 자리에 남도록 키로 쓴다.
+class _AdItem extends _ListItem {
+  const _AdItem(this.date);
+  final DateTime date;
 }
 
 class _CardItem extends _ListItem {

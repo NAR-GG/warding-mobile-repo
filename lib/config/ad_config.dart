@@ -15,6 +15,8 @@ class AdConfig {
   static const String _homeBannerAndroid =
       'ca-app-pub-9725078965412256/4755491391';
   static const String _homeBannerIos = 'ca-app-pub-9725078965412256/1581698991';
+  static const String _matchListBannerAndroid = 'MATCH_LIST_ANDROID_UNIT';
+  static const String _matchListBannerIos = 'MATCH_LIST_IOS_UNIT';
 
   // https://developers.google.com/admob/flutter/test-ads
   static const String _testBannerAndroid =
@@ -25,6 +27,15 @@ class AdConfig {
   static String get homeBannerUnitId {
     final android = Platform.isAndroid;
     if (kReleaseMode) return android ? _homeBannerAndroid : _homeBannerIos;
+    return android ? _testBannerAndroid : _testBannerIos;
+  }
+
+  /// 경기 리스트 날짜 그룹 사이 배너.
+  static String get matchListBannerUnitId {
+    final android = Platform.isAndroid;
+    if (kReleaseMode) {
+      return android ? _matchListBannerAndroid : _matchListBannerIos;
+    }
     return android ? _testBannerAndroid : _testBannerIos;
   }
 }
