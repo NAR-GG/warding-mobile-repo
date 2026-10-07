@@ -2,38 +2,30 @@ name: Mixpanel DAU 일일 요약
 
 # 매일 아침 어제 하루의 활성 사용자(DAU)를 Mixpanel 에서 읽어 Discord 로 보낸다.
 #
-# 왜 Insights Query API 인가: Segmentation Query API 는 Mixpanel 이 유지보수
-# 모드로 돌려 신규 사용을 권장하지 않는다. 대신 Insights 리포트를 대시보드에서
-# 만들어 두고 그 bookmark_id 로 조회한다 — 쿼리 정의가 코드가 아니라 대시보드에
-# 있어서, 보고 싶은 지표가 바뀌면 워크플로우를 안 고치고 리포트만 고치면 된다.
+# 왜 Export API 인가: 무료 플랜에서 **조회(Query) API 가 전부 막혀 있다.**
+# 실측(2026-10-07)으로 `query/insights`·`query/segmentation`·`query/events/names`
+# 가 모두 HTTP 402 "Your plan does not allow API calls" 였다. 반면 원시 이벤트
+# Export(`data.mixpanel.com/api/2.0/export`)는 200 이라, 이벤트를 직접 받아
+# 고유 사용자 수를 세는 쪽으로 간다. 집계는 우리가 하므로 리포트(bookmark)도
+# 필요 없다.
 #
 # 필요한 Secret:
 #   MIXPANEL_SERVICE_ACCOUNT   서비스 계정 사용자명 (Project Settings > Service Accounts)
 #   MIXPANEL_SERVICE_SECRET    서비스 계정 비밀번호
-#   MIXPANEL_PROJECT_ID        프로젝트 ID (Project Settings > Overview)
-#   MIXPANEL_DAU_BOOKMARK_ID   DAU Insights 리포트의 bookmark_id
-#                              (리포트 URL 의 `report-<ID>` 부분)
+#   MIXPANEL_PROJECT_ID        프로젝트 ID
 #   DISCORD_DAU_WEBHOOK_URL    보낼 채널 웹훅 (PR 알림과 섞지 않으려고 분리)
 #
 # Secret 이 하나라도 없으면 조용히 건너뛴다 — 설정 전에 매일 실패 알림이
 # 쌓이지 않게 한다.
 
 on:
-  # 2026-10-07: 자동 실행을 꺼 뒀다. 현재 Mixpanel 플랜에서는 Query API 가
-  # 막혀 있어(HTTP 402 "Your plan does not allow API calls") 매일 아침
-  # 실패 알림만 가기 때문이다. 플랜을 올리면 아래 두 줄의 주석을 풀면 된다
-  # — Secret 5개는 이미 등록돼 있어 그것만으로 동작한다.
-  #
-  # schedule:
-  #   # 매일 09:00 KST (00:00 UTC). Mixpanel 집계가 끝난 뒤를 노린다.
-  #   - cron: '0 0 * * *'
+  schedule:
+    # 매일 09:00 KST (00:00 UTC). Mixpanel 수집이 끝난 뒤를 노린다.
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       date:
         description: '조회할 날짜(YYYY-MM-DD). 비우면 어제'
-        required: false
-      probe:
-        description: '1 이면 엔드포인트 진단만 하고 끝낸다(임시)'
         required: false
 
 permissions:
@@ -48,15 +40,13 @@ jobs:
           MP_USER: ${{ secrets.MIXPANEL_SERVICE_ACCOUNT }}
           MP_SECRET: ${{ secrets.MIXPANEL_SERVICE_SECRET }}
           MP_PROJECT: ${{ secrets.MIXPANEL_PROJECT_ID }}
-          MP_BOOKMARK: ${{ secrets.MIXPANEL_DAU_BOOKMARK_ID }}
           WEBHOOK: ${{ secrets.DISCORD_DAU_WEBHOOK_URL }}
           INPUT_DATE: ${{ inputs.date }}
-          PROBE: ${{ inputs.probe }}
         run: |
           set -euo pipefail
 
           # 설정이 덜 됐으면 실패가 아니라 건너뛴다.
-          for v in MP_USER MP_SECRET MP_PROJECT MP_BOOKMARK WEBHOOK; do
+          for v in MP_USER MP_SECRET MP_PROJECT WEBHOOK; do
             if [ -z "${!v}" ]; then
               echo "::notice::$v 가 비어 있어 DAU 요약을 건너뛴다"
               exit 0
@@ -65,133 +55,108 @@ jobs:
 
           TARGET="${INPUT_DATE:-$(date -u -d 'yesterday' +%Y-%m-%d)}"
           # 수동 실행 입력은 사람이 손으로 넣는 값이라 형식을 먼저 막는다.
-          # 엉뚱한 문자열이면 아래 날짜 계산이 깨지거나, 어느 키와도 안 맞아
-          # 조용히 0 이 나간다.
+          # 엉뚱한 문자열이면 아래 날짜 계산이 깨지거나, Mixpanel 이 400 을 준다.
           if ! printf '%s' "$TARGET" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
             echo "::error::날짜 형식이 올바르지 않다: $TARGET (YYYY-MM-DD)"
             exit 1
           fi
-          echo "조회 날짜: $TARGET"
+          PREV=$(date -u -d "$TARGET -1 day" +%Y-%m-%d)
+          echo "조회 날짜: $TARGET (전일 $PREV)"
 
-          # [임시 진단] 402 가 Insights 전용인지 조회 API 전반인지 가린다.
-          # Export API 는 문서에 플랜 제약이 안 적혀 있어 직접 확인해야 한다.
-          # 확인 끝나면 이 블록을 지운다.
-          if [ "${PROBE:-}" = "1" ]; then
-            for ep in \
-              "query/segmentation|event=%24mp_session_start&from_date=$TARGET&to_date=$TARGET&type=unique&unit=day" \
-              "query/events/names|type=general" \
-              "query/insights|bookmark_id=$MP_BOOKMARK"; do
-              P="${ep%%|*}"; Q="${ep#*|}"
-              C=$(curl -sS -o /tmp/probe.json -w '%{http_code}' --connect-timeout 15 --max-time 45 \
-                -u "$MP_USER:$MP_SECRET" \
-                "https://mixpanel.com/api/$P?project_id=$MP_PROJECT&$Q" || echo "000")
-              echo "── [$P] HTTP $C"
-              head -c 200 /tmp/probe.json 2>/dev/null; echo
-            done
-            # Export API 는 호스트가 다르다(data.mixpanel.com).
-            C=$(curl -sS -o /tmp/probe.json -w '%{http_code}' --connect-timeout 15 --max-time 45 \
-              -u "$MP_USER:$MP_SECRET" \
-              "https://data.mixpanel.com/api/2.0/export?project_id=$MP_PROJECT&from_date=$TARGET&to_date=$TARGET" || echo "000")
-            echo "── [data.mixpanel.com 2.0/export] HTTP $C"
-            head -c 200 /tmp/probe.json 2>/dev/null; echo
-            echo "── 진단 끝 (200 이 하나라도 있으면 그 경로로 만들 수 있다)"
-            exit 0
-          fi
-
-          # Insights 리포트 조회. 실패해도 워크플로우를 죽이지 않고 아래에서
-          # 알림으로 알린다 — 조용히 실패하면 지표가 끊긴 걸 아무도 모른다.
+          # 하루치 원시 이벤트를 받는다. 응답은 JSONL(한 줄에 이벤트 하나).
           #
           # 타임아웃을 거는 이유: Mixpanel 이 응답 없이 매달리면 curl 이
           # 돌아올 때까지 실패 알림조차 안 나간다. 잡 기본 제한이 360분이라
-          # 그만큼 조용히 멈춰 있을 수 있다. 끊어서 아래 HTTP != 200 경로로
-          # 보낸다(--max-time 은 연결 후 전체 소요까지 포함).
-          HTTP=$(curl -sS -o /tmp/mp.json -w '%{http_code}' -G \
-            --connect-timeout 15 --max-time 60 \
-            -u "$MP_USER:$MP_SECRET" \
-            --data-urlencode "project_id=$MP_PROJECT" \
-            --data-urlencode "bookmark_id=$MP_BOOKMARK" \
-            "https://mixpanel.com/api/query/insights" || echo "000")
+          # 그만큼 조용히 멈춰 있을 수 있다.
+          fetch_day() {
+            local day="$1" out="$2"
+            curl -sS -o "$out" -w '%{http_code}' -G \
+              --connect-timeout 15 --max-time 120 \
+              -u "$MP_USER:$MP_SECRET" \
+              --data-urlencode "project_id=$MP_PROJECT" \
+              --data-urlencode "from_date=$day" \
+              --data-urlencode "to_date=$day" \
+              "https://data.mixpanel.com/api/2.0/export" || echo "000"
+          }
 
+          HTTP=$(fetch_day "$TARGET" /tmp/mp.jsonl)
           if [ "$HTTP" != "200" ]; then
             echo "Mixpanel 조회 실패 (HTTP $HTTP)"
-            head -c 500 /tmp/mp.json || true
+            head -c 500 /tmp/mp.jsonl || true
             # 상태코드마다 할 일이 다르다. 뭉뚱그려 "계정을 확인하라" 고 쓰면
             # 402(플랜 제약)인데 Secret 을 들여다보게 만든다.
             case "$HTTP" in
-              402) HINT="현재 Mixpanel 플랜에서 Query API 가 막혀 있다. 플랜을 올리거나 다른 집계 경로를 쓴다 — Secret 문제가 아니다." ;;
+              402) HINT="현재 Mixpanel 플랜에서 이 API 가 막혀 있다 — Secret 문제가 아니다." ;;
               401|403) HINT="인증이 거부됐다. 서비스 계정 사용자명·시크릿과 프로젝트 권한(Analyst 이상)을 확인한다." ;;
-              400|404) HINT="요청이 거부됐다. project_id·bookmark_id 가 맞는지, 리포트가 삭제되지 않았는지 확인한다." ;;
+              400) HINT="요청이 거부됐다. project_id 와 날짜 형식을 확인한다." ;;
               429) HINT="요청 한도를 넘었다(시간당 60회). 잠시 뒤 다시 시도한다." ;;
               000) HINT="응답을 받지 못했다(타임아웃·네트워크). 잠시 뒤 다시 시도한다." ;;
-              *) HINT="서비스 계정·bookmark_id 와 Mixpanel 상태를 확인한다." ;;
+              *) HINT="서비스 계정과 Mixpanel 상태를 확인한다." ;;
             esac
-            jq -n --arg t "⚠️ DAU 요약 실패 (HTTP $HTTP)" \
-                  --arg d "$HINT" \
+            jq -n --arg t "⚠️ DAU 요약 실패 (HTTP $HTTP)" --arg d "$HINT" \
                   '{embeds:[{title:$t,description:$d,color:15158332}]}' \
               | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @- || true
             exit 1
           fi
 
-          # 리포트가 조회 날짜를 **포함하는지** 먼저 본다.
+          # DAU = 그날 이벤트를 보낸 고유 distinct_id 수.
           #
-          # 아래 합산은 키가 하나도 안 맞으면 `// 0` 으로 0 을 돌려준다. 그런데
-          # 리포트 기간이 TARGET 을 안 덮으면(대시보드에서 기간을 "최근 7일"
-          # 같은 걸로 바꿔 놨거나, 집계가 아직 안 끝났거나) 그 0 이 그대로
-          # "DAU 0명" 으로 나간다 — **진짜 0 과 구분이 안 되고, 사용자가 전부
-          # 끊긴 것처럼 보인다.** 조용한 오보보다 실패가 낫다.
-          FROM=$(jq -r '.date_range.from_date // empty' /tmp/mp.json | cut -c1-10)
-          TO=$(jq -r '.date_range.to_date // empty' /tmp/mp.json | cut -c1-10)
-          if [ -z "$FROM" ] || [ -z "$TO" ] || \
-             [ "$TARGET" \< "$FROM" ] || [ "$TARGET" \> "$TO" ]; then
-            echo "리포트 기간($FROM ~ $TO)이 조회 날짜($TARGET)를 덮지 않는다"
-            jq -n --arg t "⚠️ DAU 요약 건너뜀" \
-                  --arg d "리포트 기간(\`${FROM:-?} ~ ${TO:-?}\`)이 조회 날짜 \`$TARGET\` 을 포함하지 않아 집계를 중단했다. Insights 리포트의 기간 설정을 확인한다." \
-                  '{embeds:[{title:$t,description:$d,color:16426522}]}' \
-              | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @- || true
-            exit 1
+          # 빈 응답(그날 이벤트 0건)도 200 이라 그대로 0 이 나온다 — 이건
+          # 오류가 아니라 사실이므로 그대로 보고한다. Insights 로 하던 때와
+          # 달리 "리포트 기간이 안 덮어서 0" 인 경우가 없어 구분이 필요 없다.
+          count_uniques() {
+            jq -rs 'map(.properties.distinct_id // empty) | unique | length' "$1" 2>/dev/null || echo 0
+          }
+          DAU=$(count_uniques /tmp/mp.jsonl)
+          EVENTS=$(grep -c . /tmp/mp.jsonl 2>/dev/null || echo 0)
+
+          # 전일은 증감 표시에만 쓴다. 실패해도 전체를 죽이지 않는다 —
+          # 오늘 숫자는 이미 손에 있는데 어제 때문에 알림을 통째로 거르면
+          # 아깝다.
+          PREV_HTTP=$(fetch_day "$PREV" /tmp/mp_prev.jsonl)
+          if [ "$PREV_HTTP" = "200" ]; then
+            DAU_PREV=$(count_uniques /tmp/mp_prev.jsonl)
+          else
+            echo "전일 조회 실패(HTTP $PREV_HTTP) — 증감 생략"
+            DAU_PREV=""
           fi
 
-          # series 는 {계열명: {ISO날짜: 값}} 구조다. 계열이 하나라고 가정하지
-          # 않고 전부 합산한다 — 리포트에서 분기(breakdown)를 걸어도 총합은 맞다.
-          #
-          # 어제 값과 그 전날 값을 각각 뽑아 증감을 만든다. 날짜 키는 ISO 라
-          # 접두사(YYYY-MM-DD)로 맞춘다.
-          PREV=$(date -u -d "$TARGET -1 day" +%Y-%m-%d)
+          echo "DAU=$DAU (이벤트 $EVENTS건) PREV=${DAU_PREV:-조회실패}"
 
-          DAU=$(jq -r --arg d "$TARGET" '
-            def sum_for($day):
-              [ .series[]? | to_entries[]? | select(.key | startswith($day)) | .value ]
-              | map(select(type == "number")) | add // 0;
-            sum_for($d)
-          ' /tmp/mp.json)
-          DAU_PREV=$(jq -r --arg p "$PREV" '
-            def sum_for($day):
-              [ .series[]? | to_entries[]? | select(.key | startswith($day)) | .value ]
-              | map(select(type == "number")) | add // 0;
-            sum_for($p)
-          ' /tmp/mp.json)
-
-          echo "DAU=$DAU PREV=$DAU_PREV"
-
-          # 증감률. 전날이 0이면 비율이 의미 없으므로 생략한다.
-          if [ "${DAU_PREV%.*}" -gt 0 ] 2>/dev/null; then
+          # 증감률. 전날이 0이거나 못 받았으면 비율이 의미 없다.
+          if [ -n "$DAU_PREV" ] && [ "$DAU_PREV" -gt 0 ] 2>/dev/null; then
             DELTA=$(awk -v a="$DAU" -v b="$DAU_PREV" 'BEGIN{printf "%+.1f%%", (a-b)/b*100}')
             TREND=$(awk -v a="$DAU" -v b="$DAU_PREV" 'BEGIN{print (a>=b) ? "▲" : "▼"}')
             DELTA_TEXT="$TREND $DELTA (전일 $DAU_PREV)"
+          elif [ -n "$DAU_PREV" ]; then
+            DELTA_TEXT="전일 0"
           else
-            DELTA_TEXT="전일 데이터 없음"
+            DELTA_TEXT="전일 조회 실패"
+          fi
+
+          # 표본이 작으면 증감률이 쉽게 출렁인다(3→5명이 +66.7%). 숫자를
+          # 오해하지 않도록 꼬리말을 붙인다. Mixpanel 은 1.0.32+71 부터
+          # 들어가서, 그 이전 버전 사용자는 애초에 집계되지 않는다.
+          if [ "$DAU" -lt 30 ] 2>/dev/null; then
+            FOOTER="표본이 작아 증감률이 크게 흔들린다 · 1.0.32+71 이상만 집계"
+          else
+            FOOTER="1.0.32+71 이상만 집계"
           fi
 
           jq -n \
             --arg t "📊 DAU $TARGET" \
             --arg dau "$DAU" \
             --arg delta "$DELTA_TEXT" \
+            --arg ev "$EVENTS" \
+            --arg f "$FOOTER" \
             '{embeds:[{
                title: $t,
                color: 3447003,
                fields: [
                  {name: "활성 사용자", value: $dau, inline: true},
-                 {name: "전일 대비", value: $delta, inline: true}
-               ]
+                 {name: "전일 대비", value: $delta, inline: true},
+                 {name: "이벤트 수", value: $ev, inline: true}
+               ],
+               footer: {text: $f}
              }]}' \
             | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
