@@ -15,8 +15,10 @@ class AdConfig {
   static const String _homeBannerAndroid =
       'ca-app-pub-9725078965412256/4755491391';
   static const String _homeBannerIos = 'ca-app-pub-9725078965412256/1581698991';
-  static const String _matchListBannerAndroid = 'MATCH_LIST_ANDROID_UNIT';
-  static const String _matchListBannerIos = 'MATCH_LIST_IOS_UNIT';
+  static const String _matchListBannerAndroid =
+      'ca-app-pub-9725078965412256/5096461657';
+  static const String _matchListBannerIos =
+      'ca-app-pub-9725078965412256/4472635961';
 
   // https://developers.google.com/admob/flutter/test-ads
   static const String _testBannerAndroid =
