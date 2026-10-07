@@ -19,13 +19,21 @@ name: Mixpanel DAU 일일 요약
 # 쌓이지 않게 한다.
 
 on:
-  schedule:
-    # 매일 09:00 KST (00:00 UTC). Mixpanel 집계가 끝난 뒤를 노린다.
-    - cron: '0 0 * * *'
+  # 2026-10-07: 자동 실행을 꺼 뒀다. 현재 Mixpanel 플랜에서는 Query API 가
+  # 막혀 있어(HTTP 402 "Your plan does not allow API calls") 매일 아침
+  # 실패 알림만 가기 때문이다. 플랜을 올리면 아래 두 줄의 주석을 풀면 된다
+  # — Secret 5개는 이미 등록돼 있어 그것만으로 동작한다.
+  #
+  # schedule:
+  #   # 매일 09:00 KST (00:00 UTC). Mixpanel 집계가 끝난 뒤를 노린다.
+  #   - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       date:
         description: '조회할 날짜(YYYY-MM-DD). 비우면 어제'
+        required: false
+      probe:
+        description: '1 이면 엔드포인트 진단만 하고 끝낸다(임시)'
         required: false
 
 permissions:
@@ -43,6 +51,7 @@ jobs:
           MP_BOOKMARK: ${{ secrets.MIXPANEL_DAU_BOOKMARK_ID }}
           WEBHOOK: ${{ secrets.DISCORD_DAU_WEBHOOK_URL }}
           INPUT_DATE: ${{ inputs.date }}
+          PROBE: ${{ inputs.probe }}
         run: |
           set -euo pipefail
 
@@ -64,6 +73,26 @@ jobs:
           fi
           echo "조회 날짜: $TARGET"
 
+          # [임시 진단] 402 가 Insights 전용인지 조회 API 전반인지 가린다.
+          # Export API 는 문서에 플랜 제약이 안 적혀 있어 직접 확인해야 한다.
+          # 확인 끝나면 이 블록을 지운다.
+          if [ "${PROBE:-}" = "1" ]; then
+            for ep in \
+              "query/segmentation|event=%24mp_session_start&from_date=$TARGET&to_date=$TARGET&type=unique&unit=day" \
+              "query/events/names|type=general" \
+              "2.0/export|from_date=$TARGET&to_date=$TARGET" \
+              "query/insights|bookmark_id=$MP_BOOKMARK"; do
+              P="${ep%%|*}"; Q="${ep#*|}"
+              C=$(curl -sS -o /tmp/probe.json -w '%{http_code}' --connect-timeout 15 --max-time 45 \
+                -u "$MP_USER:$MP_SECRET" \
+                "https://mixpanel.com/api/$P?project_id=$MP_PROJECT&$Q" || echo "000")
+              echo "── [$P] HTTP $C"
+              head -c 200 /tmp/probe.json 2>/dev/null; echo
+            done
+            echo "── 진단 끝 (200 이 하나라도 있으면 그 경로로 만들 수 있다)"
+            exit 0
+          fi
+
           # Insights 리포트 조회. 실패해도 워크플로우를 죽이지 않고 아래에서
           # 알림으로 알린다 — 조용히 실패하면 지표가 끊긴 걸 아무도 모른다.
           #
@@ -81,8 +110,18 @@ jobs:
           if [ "$HTTP" != "200" ]; then
             echo "Mixpanel 조회 실패 (HTTP $HTTP)"
             head -c 500 /tmp/mp.json || true
-            jq -n --arg t "⚠️ DAU 요약 실패" \
-                  --arg d "Mixpanel 조회가 HTTP $HTTP 로 실패했다. 서비스 계정·bookmark_id 를 확인한다." \
+            # 상태코드마다 할 일이 다르다. 뭉뚱그려 "계정을 확인하라" 고 쓰면
+            # 402(플랜 제약)인데 Secret 을 들여다보게 만든다.
+            case "$HTTP" in
+              402) HINT="현재 Mixpanel 플랜에서 Query API 가 막혀 있다. 플랜을 올리거나 다른 집계 경로를 쓴다 — Secret 문제가 아니다." ;;
+              401|403) HINT="인증이 거부됐다. 서비스 계정 사용자명·시크릿과 프로젝트 권한(Analyst 이상)을 확인한다." ;;
+              400|404) HINT="요청이 거부됐다. project_id·bookmark_id 가 맞는지, 리포트가 삭제되지 않았는지 확인한다." ;;
+              429) HINT="요청 한도를 넘었다(시간당 60회). 잠시 뒤 다시 시도한다." ;;
+              000) HINT="응답을 받지 못했다(타임아웃·네트워크). 잠시 뒤 다시 시도한다." ;;
+              *) HINT="서비스 계정·bookmark_id 와 Mixpanel 상태를 확인한다." ;;
+            esac
+            jq -n --arg t "⚠️ DAU 요약 실패 (HTTP $HTTP)" \
+                  --arg d "$HINT" \
                   '{embeds:[{title:$t,description:$d,color:15158332}]}' \
               | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @- || true
             exit 1
