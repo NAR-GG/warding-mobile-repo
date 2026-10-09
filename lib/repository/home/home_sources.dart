@@ -14,6 +14,30 @@ abstract class SoloRankSource {
   Future<SoloRankSnapshot> fetch();
 }
 
+/// 응원 전송 결과 — 서버 기준 이 판 합계와 내가 보낸 수.
+class CheerResult {
+  const CheerResult({required this.total, required this.mine});
+
+  final int total;
+  final int mine;
+}
+
+/// 서버가 응원을 받지 않는다고 답했다(409 솔랭 중 아님 / 400 count 범위 밖).
+/// 재시도해도 같은 결과라 호출부는 미결 응원을 버린다.
+class CheerRejected implements Exception {
+  const CheerRejected(this.statusCode);
+
+  final int statusCode;
+
+  @override
+  String toString() => 'CheerRejected($statusCode)';
+}
+
+/// 솔랭 응원 전송 소스. [count] 는 1..30 이다.
+abstract class CheerSource {
+  Future<CheerResult> send(int playerId, int count);
+}
+
 /// 최근 평점 한줄평 소스. 한줄평이 달린 것만 반환한다는 계약.
 abstract class ReviewSource {
   Future<List<HomeReviewItem>> fetchRecent();
@@ -34,6 +58,10 @@ const bool kHomeMocks = bool.fromEnvironment('HOME_MOCKS');
 /// 게이트 결과를 확인한다.
 SoloRankSource defaultSoloRankSource({bool mocks = kHomeMocks}) =>
     mocks ? const MockSoloRankSource() : ApiSoloRankSource();
+
+/// [HomeViewModel] 의 기본 응원 전송 소스. 목업 모드에선 서버 없이 받아 준다.
+CheerSource defaultCheerSource({bool mocks = kHomeMocks}) =>
+    mocks ? MockCheerSource() : ApiCheerSource();
 
 /// [HomeViewModel] 의 기본 한줄평 소스. 백엔드 nar-back-repo#542 배포 후
 /// `GET /api/mobile/ratings/recent` 를 쓴다.
@@ -82,12 +110,16 @@ class MockSoloRankSource implements SoloRankSource {
       teamCode: 'T1',
       champion: '아리',
       elapsedSeconds: 1452,
+      playerId: 1,
+      cheerTotal: 1284,
     ),
     HomeLiveSoloPlayer(
       name: 'Chovy',
       teamCode: 'GEN',
       champion: '신드라',
       elapsedSeconds: 698,
+      playerId: 2,
+      cheerTotal: 432,
     ),
     HomeLiveSoloPlayer(
       name: 'Zeus',
@@ -110,6 +142,7 @@ class MockSoloRankSource implements SoloRankSource {
       won: true,
       minutesAgo: 12,
       durationMinutes: 32,
+      cheerTotal: 871,
     ),
     HomeFinishedSoloPlayer(
       name: 'Ruler',
@@ -178,10 +211,30 @@ class MockSoloRankSource implements SoloRankSource {
             elapsedSeconds: p.elapsedSeconds,
             playerImageUrl: p.playerImageUrl,
             startedAt: now.subtract(Duration(seconds: p.elapsedSeconds)),
+            playerId: p.playerId,
+            cheerTotal: p.cheerTotal,
+            cheerMine: p.cheerMine,
           ),
       ],
       finished: finished,
     );
+  }
+}
+
+/// 목업 응원 소스 — 보낸 만큼 누적해 돌려준다.
+class MockCheerSource implements CheerSource {
+  MockCheerSource();
+
+  final Map<int, int> _mine = {};
+
+  @override
+  Future<CheerResult> send(int playerId, int count) async {
+    final mine = _mine.update(
+      playerId,
+      (v) => v + count,
+      ifAbsent: () => count,
+    );
+    return CheerResult(total: 100 + mine, mine: mine);
   }
 }
 

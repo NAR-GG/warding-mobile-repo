@@ -10,11 +10,24 @@ class HomeLiveSoloPlayer {
     this.playerImageUrl,
     this.championImageUrl,
     this.startedAt,
+    this.playerId,
+    this.cheerTotal = 0,
+    this.cheerMine = 0,
   });
 
   final String name;
   final String teamCode;
   final String champion;
+
+  /// 응원 전송에 쓰는 선수 id. 솔랭 응답이 주면 쓰고, 없으면 홈 뷰모델이 구독
+  /// 목록에서 이름으로 찾아 채운다.
+  final int? playerId;
+
+  /// 이 판 전체 응원 수(서버 값). 옛 서버라 필드가 없으면 0.
+  final int cheerTotal;
+
+  /// 내가 이 판에 보낸 응원 수(서버 값). 옛 서버라 필드가 없으면 0.
+  final int cheerMine;
 
   /// 백엔드가 주는 챔피언 이미지 URL. 있으면 [champion] 이름으로 Data Dragon
   /// 주소를 짜맞추는 것보다 이걸 먼저 쓴다 — 이름→키 변환을 거치지 않아
@@ -43,11 +56,15 @@ class HomeFinishedSoloPlayer {
     required this.minutesAgo,
     this.durationMinutes,
     this.playerImageUrl,
+    this.cheerTotal = 0,
   });
 
   final String name;
   final String teamCode;
   final bool won;
+
+  /// 그 판의 응원 합계(서버 값). 0 이면 칩에 그리지 않는다.
+  final int cheerTotal;
 
   /// 선수 사진 URL(상대경로면 호스트 부착). 없으면 이름 이니셜로 대신한다.
   final String? playerImageUrl;

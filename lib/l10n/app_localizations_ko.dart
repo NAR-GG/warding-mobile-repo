@@ -221,6 +221,17 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get homeCheerLabel => '이 판 응원';
+
+  @override
+  String get homeCheerButton => '응원하기';
+
+  @override
+  String homeCheerButtonSemantics(String name) {
+    return '$name 응원하기';
+  }
+
+  @override
   String get homeSoloWin => '승';
 
   @override

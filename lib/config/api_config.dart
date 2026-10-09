@@ -541,6 +541,10 @@ class ApiConfig {
   /// 구독 선수 솔랭 상태 (로그인 필수). `live`·`finished` 두 목록을 준다.
   static String get soloRankUrl => '$apiBaseUrl/mobile/me/solo-rank';
 
+  /// 솔랭 응원 전송 (POST, 로그인 필수). body `{"count": 1..30}`.
+  static String soloRankCheerUrl(int playerId) =>
+      '$apiBaseUrl/mobile/solo-rank/players/$playerId/cheers';
+
   /// 홈 뉴스 최신 TOP 5 (인증 불필요). nar.kr 웹과 같은 API.
   static String get homeNewsUrl => '$apiBaseUrl/home/news';
 

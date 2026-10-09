@@ -25,6 +25,7 @@ import '../../repository/standings/standings_repository.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../../repository/team/team_logo_directory.dart';
 import '../../util/match_status.dart';
+import 'solo_cheer_controller.dart';
 import 'solo_rank_rules.dart';
 
 /// 커뮤니티 섹션 정렬 기준. [hot] 은 칩에서 뺀 상태다([HomeViewModel.availableCommunitySorts]).
@@ -70,6 +71,7 @@ class HomeViewModel extends ChangeNotifier {
     SubscriptionRepository? subscriptions,
     MemberNotificationRepository? memberNotifications,
     SoloRankSource? soloRank,
+    CheerSource? cheer,
     ReviewSource? reviews,
     NewsSource? news,
     AuthService? auth,
@@ -87,6 +89,7 @@ class HomeViewModel extends ChangeNotifier {
            memberNotifications ?? MemberNotificationRepository.instance,
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
+       cheers = SoloCheerController(source: cheer ?? defaultCheerSource()),
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource(),
        _auth = auth ?? AuthService.instance,
@@ -144,6 +147,10 @@ class HomeViewModel extends ChangeNotifier {
   final SubscriptionRepository _subscriptions;
   final MemberNotificationRepository _memberNotifications;
   final SoloRankSource _soloRank;
+
+  /// 솔랭 카드 응원 — 낙관적 숫자와 묶음 전송. 카드는 이걸 직접 구독해 탭마다
+  /// 홈 전체가 아니라 응원 영역만 다시 그린다.
+  final SoloCheerController cheers;
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
   final AuthService _auth;
@@ -156,6 +163,9 @@ class HomeViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _soloPollTimer?.cancel();
+    // 남은 응원은 화면이 닫혀도 보낸다. 컨트롤러는 dispose 뒤에도 안전하다.
+    unawaited(cheers.flushAll());
+    cheers.dispose();
     super.dispose();
   }
 
@@ -422,6 +432,7 @@ class HomeViewModel extends ChangeNotifier {
         return SoloRankClassification.compareLive(a, b);
       });
     _soloLive = live;
+    _syncCheers(live);
 
     // 최대 [_maxFinished]명은 홈 카드만의 표시 상한이다.
     final finished = solo.finishedByName.values.toList()
@@ -431,6 +442,32 @@ class HomeViewModel extends ChangeNotifier {
     // 진행 중 선수가 줄어 스와이프 위치가 범위를 벗어나면 처음으로 돌린다.
     if (_soloSwipeIndex >= _soloLive.length) _soloSwipeIndex = 0;
   }
+
+  /// 서버 응원 수를 컨트롤러에 합치고, 카드가 사라진 선수의 미결은 보낸다.
+  /// 전송 대상 id 는 솔랭 응답에 있으면 그것, 없으면 구독 목록에서 이름으로 찾는다.
+  void _syncCheers(List<HomeLiveSoloPlayer> live) {
+    final idByName = {
+      for (final p in _subscribedPlayers ?? const <PlayerSubscription>[])
+        SoloRankClassification.soloKey(p.playerName): p.playerId,
+    };
+    for (final p in live) {
+      final key = SoloRankClassification.soloKey(p.name);
+      cheers.sync(
+        key,
+        total: p.cheerTotal,
+        mine: p.cheerMine,
+        playerId: p.playerId ?? idByName[key],
+      );
+    }
+    unawaited(
+      cheers.flushMissing({
+        for (final p in live) SoloRankClassification.soloKey(p.name),
+      }),
+    );
+  }
+
+  /// 앱이 백그라운드로 갈 때 미결 응원을 보낸다.
+  Future<void> flushCheers() => cheers.flushAll();
 
   // ---- 섹션 2: 오늘 경기 ----
   List<ScheduleMatch> _todayMatches = const [];
