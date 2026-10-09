@@ -107,8 +107,7 @@ class _WorldsStandingsCard extends StatelessWidget {
     final data = viewModel.worldsStandings;
     if (data == null) return const SizedBox.shrink();
 
-    final isSwiss =
-        viewModel.effectiveWorldsView == WorldsStandingsView.swiss;
+    final isSwiss = viewModel.effectiveWorldsView == WorldsStandingsView.swiss;
     final canToggle = viewModel.worldsHasBothViews;
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -307,6 +306,7 @@ class _WorldsBracket extends StatelessWidget {
                           opacity: row.advanced ? 1 : 0.45,
                           child: TeamCodeBadge(
                             teamCode: code,
+                            fallbackImageUrl: row.teamImages[code],
                             size: 26 * scale,
                           ),
                         ),

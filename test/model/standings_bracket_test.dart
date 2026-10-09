@@ -94,7 +94,8 @@ void main() {
           ]
         }
       }
-      ''') as Map<String, dynamic>,
+      ''')
+          as Map<String, dynamic>,
     );
 
     expect(r.hasBracket, isTrue);
@@ -189,5 +190,33 @@ void main() {
     final m = r2.bracket!.toWorldsStandings().knockout.first.matches.first;
     expect(m.status, WorldsMatchStatus.upcoming);
     expect(m.todayTime, isNull);
+  });
+
+  test('swiss teams[] 의 로고를 코드별로 담는다(없으면 비어 있다)', () {
+    final b = StandingsBracket.fromJson({
+      'swiss': [
+        {
+          'record': '2-0',
+          'teamCodes': ['KT', 'WE'],
+          'teams': [
+            {'teamCode': 'KT', 'teamName': 'kt Rolster', 'imageUrl': null},
+            {
+              'teamCode': 'WE',
+              'teamName': 'Team WE',
+              'imageUrl': 'https://x/we.png',
+            },
+          ],
+          'advanced': true,
+        },
+        {
+          'record': '1-2',
+          'teamCodes': ['JDG'],
+          'advanced': false,
+        },
+      ],
+    });
+    expect(b.swiss[0].teamImages, {'WE': 'https://x/we.png'});
+    expect(b.swiss[0].toWorldsRow().teamImages, {'WE': 'https://x/we.png'});
+    expect(b.swiss[1].teamImages, isEmpty);
   });
 }
