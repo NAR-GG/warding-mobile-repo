@@ -139,11 +139,15 @@ class StandingsBracketRow {
     required this.record,
     required this.teamCodes,
     required this.advanced,
+    this.teamImages = const {},
   });
 
   final String record;
   final List<String> teamCodes;
   final bool advanced;
+
+  /// 팀 코드 → 로고 URL(`teams[]`). 구버전 서버 응답엔 없어 비어 있다.
+  final Map<String, String> teamImages;
 
   factory StandingsBracketRow.fromJson(Map<String, dynamic> json) {
     return StandingsBracketRow(
@@ -153,6 +157,13 @@ class StandingsBracketRow {
           if (c is String) c,
       ],
       advanced: json['advanced'] as bool? ?? false,
+      teamImages: {
+        for (final t in (json['teams'] as List<dynamic>? ?? const []))
+          if (t is Map<String, dynamic> &&
+              t['teamCode'] is String &&
+              t['imageUrl'] is String)
+            t['teamCode'] as String: t['imageUrl'] as String,
+      },
     );
   }
 
@@ -160,6 +171,7 @@ class StandingsBracketRow {
     record: record,
     teamCodes: teamCodes,
     advanced: advanced,
+    teamImages: teamImages,
   );
 }
 

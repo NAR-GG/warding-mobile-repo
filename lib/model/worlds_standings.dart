@@ -19,12 +19,16 @@ class WorldsBracketRow {
     required this.record,
     required this.teamCodes,
     required this.advanced,
+    this.teamImages = const {},
   });
 
   /// "3-0", "2-3" 같은 승-패 표기.
   final String record;
 
   final List<String> teamCodes;
+
+  /// 팀 코드 → 로고 URL. 서버가 준 것만 담긴다(온보딩 사전에 없는 해외팀용).
+  final Map<String, String> teamImages;
 
   /// 3승(진출) 또는 3패(탈락) 확정 여부.
   final bool advanced;
