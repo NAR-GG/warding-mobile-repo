@@ -105,6 +105,12 @@
   "@homeSoloDuration": {
     "placeholders": { "minutes": { "type": "int" } }
   },
+  "homeCheerLabel": "이 판 응원",
+  "homeCheerButton": "응원하기",
+  "homeCheerButtonSemantics": "{name} 응원하기",
+  "@homeCheerButtonSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "homeSoloWin": "승",
   "homeSoloLoss": "패",
   "homeSoloQuietTitle": "지금 솔랭 중인 선수 없음",

@@ -14,6 +14,7 @@ import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_skeletons.dart';
+import 'home_solo_cheer.dart';
 
 /// 구독 선수 솔랭 상태 — spec "상태" 표의 세 갈래를 [HomeViewModel.soloState]
 /// 로 나눠 그린다.
@@ -51,6 +52,8 @@ class HomeSoloRankSection extends StatefulWidget {
   static const Key quietKey = ValueKey('homeSoloQuiet');
   static Key heroKey(String name) => ValueKey('homeSoloHero-$name');
   static Key finishedKey(String name) => ValueKey('homeSoloDone-$name');
+  static Key finishedCheerKey(String name) =>
+      ValueKey('homeSoloDoneCheer-$name');
 
   @override
   State<HomeSoloRankSection> createState() => _HomeSoloRankSectionState();
@@ -95,6 +98,10 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     // 화면이 안 보이는 동안 초당 리빌드를 돌릴 이유가 없다. 솔랭 폴링이
     // `HomeViewModel.pauseSoloPolling` 으로 멈추는 것과 같은 맥락이다.
     _syncClock(foreground: state == AppLifecycleState.resumed);
+    // 응원은 묶어서 보내므로, 앱이 내려가기 전에 남은 걸 flush 한다.
+    if (state != AppLifecycleState.resumed) {
+      unawaited(widget.viewModel.flushCheers());
+    }
   }
 
   /// 카운트업이 **실제로 필요할 때만** 타이머를 돌린다.
@@ -199,7 +206,8 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         // 그 아래에 끝난 경기 줄을 잇는다(2026-09-29 결정, spec.md "상태" 표).
         if (live.isNotEmpty) ...[
           SizedBox(
-            height: 196 * scale,
+            // 솔랭 카드 196 + 응원 영역 74.
+            height: (196 + SoloCheerCard.barHeight) * scale,
             child: PageView.builder(
               controller: _pages,
               onPageChanged: vm.setSoloSwipeIndex,
@@ -208,12 +216,19 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
               // 4% + 5 로 다른 섹션의 20 여백과 맞고, 옆 카드가 살짝 보인다.
               itemBuilder: (context, i) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 5 * scale),
-                child: _HeroCard(
-                  key: HomeSoloRankSection.heroKey(live[i].name),
-                  player: live[i],
-                  secondsOf: () => _liveElapsedSeconds(live[i]),
-                  tick: _tick,
+                child: SoloCheerCard(
+                  playerName: live[i].name,
+                  controller: vm.cheers,
+                  heroHeight: 196 * scale,
                   scale: scale,
+                  hero: _HeroCard(
+                    key: HomeSoloRankSection.heroKey(live[i].name),
+                    player: live[i],
+                    secondsOf: () => _liveElapsedSeconds(live[i]),
+                    tick: _tick,
+                    scale: scale,
+                    embedded: true,
+                  ),
                 ),
               ),
             ),
@@ -683,9 +698,14 @@ class _HeroCard extends StatelessWidget {
     required this.secondsOf,
     required this.tick,
     required this.scale,
+    this.embedded = false,
   });
 
   final HomeLiveSoloPlayer player;
+
+  /// 응원 영역과 한 장으로 묶일 때 true — 모서리·테두리는 바깥 [SoloCheerCard] 가
+  /// 그린다.
+  final bool embedded;
 
   /// 지금 보여줄 경과 초를 계산한다(기기 시계 기준).
   /// [tick] 이 바뀔 때마다 다시 불러 초를 갱신한다.
@@ -719,14 +739,16 @@ class _HeroCard extends StatelessWidget {
     // 맞아도 테두리 선 자체가 사진에 가려 그 구간만 끊겨 보였다. 테두리를
     // 맨 위(foreground)에 그리면 어떤 내용이 깔려도 항상 온전히 보인다.
     return Container(
-      foregroundDecoration: BoxDecoration(
-        borderRadius: radius,
-        border: Border.all(color: AppColors.narLine),
-      ),
+      foregroundDecoration: embedded
+          ? null
+          : BoxDecoration(
+              borderRadius: radius,
+              border: Border.all(color: AppColors.narLine),
+            ),
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: radius,
+          borderRadius: embedded ? null : radius,
           color: AppColors.narSoloHeroBg,
         ),
         child: Stack(
@@ -1051,6 +1073,26 @@ class _FinishedChip extends StatelessWidget {
               ),
             ],
           ),
+          if (player.cheerTotal > 0) ...[
+            SizedBox(width: 10 * scale),
+            Icon(
+              Icons.local_fire_department_rounded,
+              size: 13 * scale,
+              color: AppColors.narGuideAccent,
+            ),
+            SizedBox(width: 2 * scale),
+            Text(
+              formatCheerCount(player.cheerTotal),
+              key: HomeSoloRankSection.finishedCheerKey(player.name),
+              style: TextStyle(
+                fontFamily: 'Open Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 12 * scale,
+                color: AppColors.narGuideAccent,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ],
       ),
     );

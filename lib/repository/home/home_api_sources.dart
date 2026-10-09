@@ -71,6 +71,9 @@ class ApiSoloRankSource implements SoloRankSource {
       playerImageUrl: j['playerImageUrl'] as String?,
       championImageUrl: j['championImageUrl'] as String?,
       startedAt: startedAt,
+      playerId: (j['playerId'] as num?)?.toInt(),
+      cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+      cheerMine: (j['cheerMine'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -83,6 +86,43 @@ class ApiSoloRankSource implements SoloRankSource {
       minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
       durationMinutes: seconds == null ? null : seconds ~/ 60,
       playerImageUrl: j['playerImageUrl'] as String?,
+      cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// 솔랭 응원 전송 (`POST /api/mobile/solo-rank/players/{playerId}/cheers`, 로그인 필수).
+///
+/// 200 이면 서버 합계를 돌려준다. 409(그 선수가 지금 솔랭 중이 아님)·400(count 범위
+/// 밖)은 다시 보내도 소용없으므로 [CheerRejected] 로 구분한다. 그 밖의 실패(네트워크·
+/// 5xx·인증)는 일반 예외라 호출부가 재시도한다.
+class ApiCheerSource implements CheerSource {
+  ApiCheerSource({AuthService? auth}) : _auth = auth ?? AuthService.instance;
+
+  final AuthService _auth;
+
+  @override
+  Future<CheerResult> send(int playerId, int count) async {
+    final response = await _auth.authorizedRequest(
+      (t) => http.post(
+        Uri.parse(ApiConfig.soloRankCheerUrl(playerId)),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'count': count}),
+      ),
+    );
+    final code = response.statusCode;
+    if (code == 409 || code == 400) throw CheerRejected(code);
+    if (code < 200 || code >= 300) {
+      throw Exception('응원 전송 실패 ($code)');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return CheerResult(
+      total: (data['cheerTotal'] as num?)?.toInt() ?? 0,
+      mine: (data['cheerMine'] as num?)?.toInt() ?? 0,
     );
   }
 }

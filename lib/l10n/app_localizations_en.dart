@@ -224,6 +224,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get homeCheerLabel => 'Cheering this game';
+
+  @override
+  String get homeCheerButton => 'Cheer';
+
+  @override
+  String homeCheerButtonSemantics(String name) {
+    return 'Cheer for $name';
+  }
+
+  @override
   String get homeSoloWin => 'W';
 
   @override

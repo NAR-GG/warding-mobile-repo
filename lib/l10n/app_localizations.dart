@@ -482,6 +482,24 @@ abstract class AppLocalizations {
   /// **'{minutes}분'**
   String homeSoloDuration(int minutes);
 
+  /// No description provided for @homeCheerLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 판 응원'**
+  String get homeCheerLabel;
+
+  /// No description provided for @homeCheerButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원하기'**
+  String get homeCheerButton;
+
+  /// No description provided for @homeCheerButtonSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 응원하기'**
+  String homeCheerButtonSemantics(String name);
+
   /// No description provided for @homeSoloWin.
   ///
   /// In ko, this message translates to:

@@ -105,6 +105,12 @@
   "@homeSoloDuration": {
     "placeholders": { "minutes": { "type": "int" } }
   },
+  "homeCheerLabel": "Cheering this game",
+  "homeCheerButton": "Cheer",
+  "homeCheerButtonSemantics": "Cheer for {name}",
+  "@homeCheerButtonSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "homeSoloWin": "W",
   "homeSoloLoss": "L",
   "homeSoloQuietTitle": "No one is in solo queue right now",

@@ -212,6 +212,7 @@ Future<HomeViewModel> pumpHomeSection(
   SoloRankSnapshot solo = emptySolo,
   ReviewSource reviews = const MockReviewSource(),
   NewsSource news = const MockNewsSource(),
+  CheerSource? cheer,
 }) async {
   late HomeViewModel vm;
   await tester.runAsync(() async {
@@ -219,6 +220,7 @@ Future<HomeViewModel> pumpHomeSection(
       soloRank: FakeSoloSource(solo),
       reviews: reviews,
       news: news,
+      cheer: cheer,
     );
     // 생성자가 띄운 로드와 별개로 한 번 더 기다려 결과가 확실히 반영되게 한다.
     await vm.refreshAll();
