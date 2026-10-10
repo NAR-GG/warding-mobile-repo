@@ -42,13 +42,15 @@ class AdvertiserBanner extends StatelessWidget {
         ),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: 16 * scale,
-            vertical: 14 * scale,
+            horizontal: 18 * scale,
+            vertical: 16 * scale,
           ),
           decoration: BoxDecoration(
-            color: AppColors.narBgSecondary,
-            border: Border.all(color: AppColors.narLine),
-            borderRadius: BorderRadius.circular(10 * scale),
+            gradient: AppColors.narBg,
+            borderRadius: BorderRadius.circular(14 * scale),
+            border: Border.all(
+              color: AppColors.narText.withValues(alpha: 0.22),
+            ),
           ),
           child: Row(
             children: [
@@ -60,30 +62,39 @@ class AdvertiserBanner extends StatelessWidget {
                       l10n.advertiserBannerTitle,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15 * scale,
-                        height: 1.4,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18 * scale,
+                        height: 1.3,
                         color: AppColors.narText,
                       ),
                     ),
-                    SizedBox(height: 2 * scale),
+                    SizedBox(height: 3 * scale),
                     Text(
                       l10n.advertiserBannerBody,
                       style: TextStyle(
                         fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12.5 * scale,
                         height: 1.4,
-                        color: AppColors.narText2,
+                        color: AppColors.narText.withValues(alpha: 0.85),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 20 * scale,
-                color: AppColors.narText2,
+              SizedBox(width: 12 * scale),
+              Container(
+                width: 28 * scale,
+                height: 28 * scale,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.narText.withValues(alpha: 0.22),
+                ),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 20 * scale,
+                  color: AppColors.narText,
+                ),
               ),
             ],
           ),

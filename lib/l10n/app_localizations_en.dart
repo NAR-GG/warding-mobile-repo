@@ -1926,9 +1926,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get advertiserBannerTitle => 'Advertise with us';
+  String get advertiserBannerTitle => 'Advertise on Warding';
 
   @override
-  String get advertiserBannerBody =>
-      'Promote your team, channel or service here';
+  String get advertiserBannerBody => 'Teams / Channels & streamers / Services';
 }
