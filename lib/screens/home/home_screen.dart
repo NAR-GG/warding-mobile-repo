@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../components/advertiser_banner.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/guide_popup.dart';
 import '../../components/nar_badge.dart';
@@ -285,6 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               scale: scale,
                               onSeeAllBracket: _openMatchList,
                             ),
+                            AdvertiserBanner(scale: scale),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(
                               viewModel: _viewModel,
