@@ -741,5 +741,7 @@
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "advertiserBannerTitle": "Support Warding",
+  "advertiserBannerBody": "Personal banner / Team promo / Free support"
 }

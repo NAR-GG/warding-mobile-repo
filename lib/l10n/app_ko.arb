@@ -913,5 +913,7 @@
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "advertiserBannerTitle": "와딩 후원하기",
+  "advertiserBannerBody": "개인배너 / 팀홍보 / 자유후원"
 }

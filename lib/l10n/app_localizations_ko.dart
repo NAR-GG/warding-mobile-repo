@@ -1880,4 +1880,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String communityPhotoCount(int count) {
     return '$count/5';
   }
+
+  @override
+  String get advertiserBannerTitle => '와딩 후원하기';
+
+  @override
+  String get advertiserBannerBody => '개인배너 / 팀홍보 / 자유후원';
 }

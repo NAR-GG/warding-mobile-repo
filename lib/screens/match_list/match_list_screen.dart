@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
+import '../../components/advertiser_banner.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
-import '../../components/inline_banner_ad.dart';
-import '../../config/ad_config.dart';
 import '../../components/labeled_field.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_chip_multi_select.dart';
@@ -742,9 +741,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
         if (index == items.length) return _buildFooter(scale);
         final item = items[index];
         if (item is _AdItem) {
-          return InlineBannerAd(
+          return AdvertiserBanner(
             key: ValueKey('ad-${item.date}'),
-            unitId: AdConfig.matchListBannerUnitId,
             scale: scale,
             topPadding: 16,
             bottomPadding: 8,
