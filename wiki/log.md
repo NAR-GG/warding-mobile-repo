@@ -1,7 +1,7 @@
 # Bundle Update Log
 
 ## 2026-10-10
-* **AdMob 제거, 광고주 모집 배너로 교체**: 홈 순위표 아래와 경기리스트 날짜 사이(3번째 날짜마다)의 `InlineBannerAd` 를 `AdvertiserBanner`("와딩에 광고하기" 문구와 브랜드 그라데이션, 탭하면 고객센터 문의 폼)로 바꿨다. `google_mobile_ads`·`app_tracking_transparency` 의존성, `AdsBootstrap`(UMP·ATT·SDK 초기화), `AdConfig`, Info.plist 의 `GADApplicationIdentifier`·`NSUserTrackingUsageDescription`·`SKAdNetworkItems`, AndroidManifest 의 AdMob 앱 ID 를 걷었다. 네이티브 변경이라 Shorebird 패치로는 못 나가고 스토어 빌드가 필요하다. 설계는 warding-docs `features/ad-sales`.
+* **AdMob 제거, 광고주 모집 배너로 교체**: 홈 순위표 아래와 경기리스트 날짜 사이(3번째 날짜마다)의 `InlineBannerAd` 를 `AdvertiserBanner`("와딩 후원하기" 문구와 브랜드 그라데이션, 탭하면 고객센터 문의 폼)로 바꿨다. `google_mobile_ads`·`app_tracking_transparency` 의존성, `AdsBootstrap`(UMP·ATT·SDK 초기화), `AdConfig`, Info.plist 의 `GADApplicationIdentifier`·`NSUserTrackingUsageDescription`·`SKAdNetworkItems`, AndroidManifest 의 AdMob 앱 ID 를 걷었다. 네이티브 변경이라 Shorebird 패치로는 못 나가고 스토어 빌드가 필요하다. 설계는 warding-docs `features/ad-sales`.
 
 ## 2026-10-09
 * **홈 솔랭 카드 응원 버튼**: 진행 중 카드 하단에 응원 영역(총 숫자·`+N`·응원하기)을 붙이고, 탭을 모아 `count` 로 한 번에 보내는 `SoloCheerController` 를 추가했다. 끝난 경기 칩에 응원 합계를 붙인다. 백엔드 응원 API 머지·배포 뒤에 머지한다. 자세한 내용은 [홈](/features/home.md).
