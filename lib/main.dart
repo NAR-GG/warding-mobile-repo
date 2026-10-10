@@ -22,7 +22,6 @@ import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/analytics.dart';
-import 'util/ads_bootstrap.dart';
 import 'util/api_client.dart' show loadAppVersion;
 import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
@@ -63,9 +62,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// 셋이 서로 순서 의존이 있어(핸들러 등록·initMessaging 모두 Firebase 초기화가
 /// 먼저 끝나야 함) 하나로 묶어, [main] 에서 다른 무관한 초기화와 병렬로 돌린다.
 Future<void> _initFirebaseMessaging() async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   // 포그라운드 알림 표시·알림 탭 핸들링을 준비한다 (토큰 등록은 로그인 후).
   await FcmService.instance.initMessaging();
@@ -128,7 +125,8 @@ Future<void> main() async {
         (options) {
           options.dsn = const String.fromEnvironment(
             'SENTRY_DSN',
-            defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
+            defaultValue:
+                'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
           );
           options.environment = const String.fromEnvironment(
             'APP_ENV',
@@ -182,10 +180,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 서버가 만든 카드는 앱 없이 렌더되므로 로고를 미리 저장해 둬야 한다.
     // 이미 받아둔 팀은 존재 확인만 하고 넘어간다.
     liveActivityLogoPrefetcher.prefetchLeague();
-
-    // 광고 SDK 준비(UMP 동의 → ATT → 초기화). ATT 팝업은 앱이 활성 상태일 때만
-    // 뜨므로 첫 프레임 뒤에 시작하고, 끝나길 기다리지 않는다.
-    WidgetsBinding.instance.addPostFrameCallback((_) => AdsBootstrap.start());
   }
 
   @override

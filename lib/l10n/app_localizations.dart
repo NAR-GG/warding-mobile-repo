@@ -3547,6 +3547,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'{count}/5'**
   String communityPhotoCount(int count);
+
+  /// No description provided for @advertiserBannerTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고주 모집'**
+  String get advertiserBannerTitle;
+
+  /// No description provided for @advertiserBannerBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 자리에 우리 팀·채널·서비스를 소개해 보세요'**
+  String get advertiserBannerBody;
 }
 
 class _AppLocalizationsDelegate

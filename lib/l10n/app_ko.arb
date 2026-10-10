@@ -913,5 +913,7 @@
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "advertiserBannerTitle": "광고주 모집",
+  "advertiserBannerBody": "이 자리에 우리 팀·채널·서비스를 소개해 보세요"
 }

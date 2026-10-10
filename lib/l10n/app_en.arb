@@ -741,5 +741,7 @@
   "communityPhotoCount": "{count}/5",
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "advertiserBannerTitle": "Advertise with us",
+  "advertiserBannerBody": "Promote your team, channel or service here"
 }

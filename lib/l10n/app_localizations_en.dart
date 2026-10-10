@@ -1924,4 +1924,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String communityPhotoCount(int count) {
     return '$count/5';
   }
+
+  @override
+  String get advertiserBannerTitle => 'Advertise with us';
+
+  @override
+  String get advertiserBannerBody =>
+      'Promote your team, channel or service here';
 }
