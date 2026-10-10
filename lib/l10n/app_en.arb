@@ -742,6 +742,6 @@
   "@communityPhotoCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "advertiserBannerTitle": "Advertise on Warding",
-  "advertiserBannerBody": "Teams / Channels & streamers / Services"
+  "advertiserBannerTitle": "Support Warding",
+  "advertiserBannerBody": "Personal banner / Team promo / Free support"
 }

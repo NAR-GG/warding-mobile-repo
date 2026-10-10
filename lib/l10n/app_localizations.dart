@@ -3551,13 +3551,13 @@ abstract class AppLocalizations {
   /// No description provided for @advertiserBannerTitle.
   ///
   /// In ko, this message translates to:
-  /// **'와딩에 광고하기'**
+  /// **'와딩 후원하기'**
   String get advertiserBannerTitle;
 
   /// No description provided for @advertiserBannerBody.
   ///
   /// In ko, this message translates to:
-  /// **'팀 홍보 / 채널·스트리머 / 서비스 광고'**
+  /// **'개인배너 / 팀홍보 / 자유후원'**
   String get advertiserBannerBody;
 }
 

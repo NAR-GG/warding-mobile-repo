@@ -1882,8 +1882,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get advertiserBannerTitle => '와딩에 광고하기';
+  String get advertiserBannerTitle => '와딩 후원하기';
 
   @override
-  String get advertiserBannerBody => '팀 홍보 / 채널·스트리머 / 서비스 광고';
+  String get advertiserBannerBody => '개인배너 / 팀홍보 / 자유후원';
 }
