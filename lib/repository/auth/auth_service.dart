@@ -442,9 +442,15 @@ class AuthService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('회원 정보 조회 실패 (${response.statusCode})');
     }
-    return UserProfile.fromJson(
+    final me = UserProfile.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
+    // 로그인 화면을 거치지 않고 저장된 토큰으로 복원된 세션도 식별한다.
+    // identify 가 로그인 성공 시점에만 불리면, Mixpanel 을 넣기 전부터 로그인해
+    // 둔 사용자는 영원히 `$device:` 익명 ID 로 남아 DAU 가 회원 ID 와 갈라져 센다.
+    // 같은 ID 로 다시 불러도 SDK 가 무시하므로 반복 호출은 안전하다.
+    Analytics.identify(me.id.toString());
+    return me;
   }
 
   /// 로그인 회원의 닉네임(이름·태그)·응원 팀·프로필 이미지를 수정한다
