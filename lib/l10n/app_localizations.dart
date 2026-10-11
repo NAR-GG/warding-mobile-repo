@@ -1658,6 +1658,24 @@ abstract class AppLocalizations {
   /// **'관리자'**
   String get noticeAdmin;
 
+  /// No description provided for @adGuide.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고 안내'**
+  String get adGuide;
+
+  /// No description provided for @adGuideApply.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고 신청하기'**
+  String get adGuideApply;
+
+  /// No description provided for @adGuideLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고 안내를 불러오지 못했어요'**
+  String get adGuideLoadFailed;
+
   /// No description provided for @noticeEmpty.
   ///
   /// In ko, this message translates to:

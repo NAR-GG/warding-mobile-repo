@@ -333,6 +333,11 @@ class ApiConfig {
   static String noticesUrl({int page = 0, int size = 20}) =>
       '$apiBaseUrl/notices?page=$page&size=$size';
 
+  /// 앱 전용 고정 페이지 1건(예: slug=`ad-guide` 광고 안내). 공지 목록·띠배너에는
+  /// 나오지 않는다. 발행분만, 없거나 임시저장이면 404.
+  static String noticePageUrl(String slug) =>
+      '$apiBaseUrl/notices/by-slug/$slug';
+
   /// 공지 조회수 +1 (POST, 본문 없음, 204). 목록 응답에 본문이 함께 오므로
   /// 상세 조회 요청이 없다 — 앱이 상세를 열 때 직접 알려줘야 조회수가 쌓인다.
   static String noticeViewUrl(int id) => '$apiBaseUrl/notices/$id/view';

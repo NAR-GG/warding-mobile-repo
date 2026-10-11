@@ -10,6 +10,7 @@ class Notice {
     required this.content,
     required this.pinned,
     this.publishedAt,
+    this.actionUrl,
   });
 
   final int id;
@@ -24,6 +25,10 @@ class Notice {
   /// 발행 시각. null 이면 임시저장 — ADMIN 계정으로 조회할 때만 내려온다.
   final DateTime? publishedAt;
 
+  /// 하단 고정 버튼이 외부 브라우저로 여는 주소(https). 광고 안내 같은 전용
+  /// 페이지만 값이 있고 일반 공지는 null 이다.
+  final String? actionUrl;
+
   bool get isDraft => publishedAt == null;
 
   factory Notice.fromJson(Map<String, dynamic> json) => Notice(
@@ -32,7 +37,11 @@ class Notice {
         content: json['content'] as String? ?? '',
         pinned: json['pinned'] as bool? ?? false,
         publishedAt: DateTime.tryParse(json['publishedAt'] as String? ?? ''),
+        actionUrl: _nonBlank(json['actionUrl'] as String?),
       );
+
+  static String? _nonBlank(String? value) =>
+      value == null || value.trim().isEmpty ? null : value.trim();
 }
 
 /// 공지사항 페이지 응답 (Spring Pageable).
