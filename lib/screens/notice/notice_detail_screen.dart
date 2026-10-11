@@ -175,6 +175,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   static final _imagePattern = RegExp(r'^!\[([^\]]*)\]\((.+)\)$');
   static final _imageWidthPattern = RegExp(r'\|(\d+)$');
 
+  /// alt 가 `scroll:캡션|px` 인 이미지가 연달아 나오면(사이 빈 줄 무시) 가로 스크롤 한 줄로 묶고,
+  /// 각 이미지 아래에 캡션을 붙인다. 접두어가 없는 이미지는 기존 그대로.
+  static const _stripPrefix = 'scroll:';
+
   /// 인라인 문법: `**굵게**`, `[텍스트](url)` 링크.
   static final _inlinePattern = RegExp(
     r'\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)]+)\)',
@@ -228,6 +232,55 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     return Text.rich(TextSpan(style: base, children: spans));
   }
 
+  Widget _imageStrip(List<RegExpMatch> items, double scale, TextStyle body) {
+    final caption = body.copyWith(fontSize: 12 * scale, height: 1.4);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6 * scale),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final m in items)
+              Padding(
+                padding: EdgeInsets.only(right: 10 * scale),
+                child: _stripItem(m, scale, caption),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _stripItem(RegExpMatch m, double scale, TextStyle caption) {
+    final alt = m.group(1)!.substring(_stripPrefix.length);
+    final widthMatch = _imageWidthPattern.firstMatch(alt);
+    final width = double.parse(widthMatch?.group(1) ?? '200') * scale;
+    final label = widthMatch == null ? alt : alt.substring(0, widthMatch.start);
+    return SizedBox(
+      width: width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10 * scale),
+            child: CachedNetworkImage(
+              imageUrl: m.group(2)!,
+              width: width,
+              fit: BoxFit.fitWidth,
+              errorWidget: (_, _, _) => SizedBox(height: 40 * scale),
+            ),
+          ),
+          if (label.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: 6 * scale),
+              child: Text(label, style: caption),
+            ),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _buildContent(String content, double scale) {
     final body = TextStyle(
       fontFamily: 'Pretendard',
@@ -253,7 +306,9 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     );
 
     final widgets = <Widget>[];
-    for (final line in content.split('\n')) {
+    final lines = content.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
       // 에디터(tiptap-markdown)가 넣는 이스케이프 정리:
       // 단독 '\' 줄은 hard break — 빈 줄 취급, '\~' 같은 이스케이프는 원문자로.
       final trimmed = line.trim() == r'\'
@@ -263,7 +318,24 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
               (m) => m.group(1)!,
             );
       final image = _imagePattern.firstMatch(trimmed);
-      if (trimmed.isEmpty) {
+      if (image != null && image.group(1)!.startsWith(_stripPrefix)) {
+        final strip = <RegExpMatch>[image];
+        // 다음 줄들이 같은 종류의 이미지면 이어서 모은다(빈 줄은 건너뜀).
+        var j = i + 1;
+        while (j < lines.length) {
+          final next = lines[j].trim();
+          if (next.isEmpty || next == r'\') {
+            j++;
+            continue;
+          }
+          final m = _imagePattern.firstMatch(next);
+          if (m == null || !m.group(1)!.startsWith(_stripPrefix)) break;
+          strip.add(m);
+          i = j;
+          j++;
+        }
+        widgets.add(_imageStrip(strip, scale, body));
+      } else if (trimmed.isEmpty) {
         widgets.add(SizedBox(height: 10 * scale));
       } else if (image != null) {
         // alt 꼬리의 `|px` → 백오피스에서 지정한 폭 (375 기준 시안 폭에 scale 적용).
@@ -347,7 +419,12 @@ class _ActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20 * scale, 40 * scale, 20 * scale, 16 * scale),
+      padding: EdgeInsets.fromLTRB(
+        20 * scale,
+        40 * scale,
+        20 * scale,
+        16 * scale,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.bottomCenter,
@@ -358,10 +435,8 @@ class _ActionBar extends StatelessWidget {
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => launchUrl(
-          Uri.parse(url),
-          mode: LaunchMode.externalApplication,
-        ),
+        onTap: () =>
+            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
         child: Container(
           height: 52 * scale,
           alignment: Alignment.center,

@@ -28,9 +28,7 @@ void main() {
 
   setUp(() {
     // 상세를 열면 조회수 +1 요청이 나간다 — 네트워크는 막아 둔다.
-    api.setApiClientForTesting(
-      MockClient((_) async => http.Response('', 204)),
-    );
+    api.setApiClientForTesting(MockClient((_) async => http.Response('', 204)));
   });
 
   tearDown(() => api.setApiClientForTesting(null));
@@ -47,11 +45,18 @@ void main() {
     );
 
     expect(find.text('광고 신청하기'), findsOneWidget);
-    expect(find.text('광고 안내'), findsOneWidget, reason: '헤더 타이틀은 공지사항이 아니라 전용 이름');
+    expect(
+      find.text('광고 안내'),
+      findsOneWidget,
+      reason: '헤더 타이틀은 공지사항이 아니라 전용 이름',
+    );
 
     // 본문을 끝까지 내려도 버튼은 같은 자리에 있다.
     final before = tester.getTopLeft(find.text('광고 신청하기'));
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -3000));
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -3000),
+    );
     await tester.pump();
     expect(tester.getTopLeft(find.text('광고 신청하기')), before);
   });
@@ -65,7 +70,10 @@ void main() {
         ),
       ),
     );
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -5000));
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -5000),
+    );
     await tester.pump();
 
     final lastLine = tester.getRect(find.textContaining('항목 39'));
@@ -86,9 +94,37 @@ void main() {
     expect(Notice.fromJson({'id': 1, 'actionUrl': '  '}).actionUrl, isNull);
     expect(Notice.fromJson({'id': 1}).actionUrl, isNull);
     expect(
-      Notice.fromJson({'id': 1, 'actionUrl': ' https://forms.gle/abc '})
-          .actionUrl,
+      Notice.fromJson({
+        'id': 1,
+        'actionUrl': ' https://forms.gle/abc ',
+      }).actionUrl,
       'https://forms.gle/abc',
     );
+  });
+  testWidgets('scroll: 이미지는 가로 스크롤 한 줄로 묶이고 캡션이 붙는다', (tester) async {
+    final n = Notice(
+      id: 8,
+      title: '예시',
+      content: [
+        '![scroll:스플래시|200](https://x.test/a.png)',
+        '',
+        '![scroll:팝업|200](https://x.test/b.png)',
+        '',
+        '![scroll:배너|200](https://x.test/c.png)',
+        '끝 문단',
+      ].join('\n'),
+      pinned: false,
+      publishedAt: DateTime(2026, 10, 12),
+    );
+    await tester.pumpWidget(host(NoticeDetailScreen(notice: n)));
+
+    expect(find.text('스플래시'), findsOneWidget);
+    expect(find.text('팝업'), findsOneWidget);
+    expect(find.text('배너'), findsOneWidget);
+    expect(find.text('끝 문단'), findsOneWidget);
+    final horizontal = find.byWidgetPredicate(
+      (w) => w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
+    );
+    expect(horizontal, findsOneWidget);
   });
 }
