@@ -27,6 +27,7 @@ import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_community_activity/my_community_activity_screen.dart';
 import '../my_review/my_review_screen.dart';
 import '../my_subscription_setting/my_subscription_setting_screen.dart';
+import '../notice/ad_guide_screen.dart';
 import '../notice/notice_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -320,6 +321,17 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () => _launchUrl(
                               'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
                             ),
+                          ),
+                          // 광고 신청 안내 — 본문은 백오피스 공지(slug=ad-guide).
+                          MypageCardItem(
+                            title: AppLocalizations.of(context)!.adGuide,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const AdGuideScreen(),
+                                ),
+                              );
+                            },
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.account,

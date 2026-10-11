@@ -17,9 +17,19 @@ class NoticeDetailScreen extends StatefulWidget {
     super.key,
     required this.notice,
     this.showListButton = false,
+    this.headerTitle,
+    this.actionLabel,
   });
 
   final Notice notice;
+
+  /// 헤더 타이틀. null 이면 '공지사항'. 광고 안내 같은 전용 페이지가 자기
+  /// 이름을 넘긴다.
+  final String? headerTitle;
+
+  /// 하단 고정 버튼 문구. [Notice.actionUrl] 이 있고 이 값도 있을 때만 버튼을
+  /// 그린다(일반 공지는 둘 다 없어 화면이 그대로다).
+  final String? actionLabel;
 
   /// 헤더 우측에 공지 목록 이동 아이콘 표시 여부.
   /// 띠배너처럼 목록을 거치지 않고 진입한 경우에만 켠다
@@ -48,6 +58,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
     final l = AppLocalizations.of(context)!;
+    final hasAction = notice.actionUrl != null && widget.actionLabel != null;
 
     return Scaffold(
       backgroundColor: AppColors.narDark800,
@@ -56,7 +67,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             NarDetailHeader(
-              title: l.notice,
+              title: widget.headerTitle ?? l.notice,
               scale: scale,
               trailing: showListButton
                   ? GestureDetector(
@@ -85,47 +96,74 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                   : null,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20 * scale,
-                  8 * scale,
-                  20 * scale,
-                  40 * scale,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notice.title,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 19 * scale,
-                        height: 1.35,
-                        color: AppColors.narTextTertiary,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _buildScroll(notice, scale, l, hasAction),
+                  if (hasAction)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _ActionBar(
+                        label: widget.actionLabel!,
+                        url: notice.actionUrl!,
+                        scale: scale,
                       ),
                     ),
-                    SizedBox(height: 8 * scale),
-                    Text(
-                      '${l.noticeAdmin} · '
-                      '${notice.isDraft ? l.noticeDraft : DateFormat('yyyy.MM.dd HH:mm').format(notice.publishedAt!)}',
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12.5 * scale,
-                        color: AppColors.narText2,
-                      ),
-                    ),
-                    SizedBox(height: 14 * scale),
-                    const Divider(color: AppColors.narLine, height: 1),
-                    SizedBox(height: 16 * scale),
-                    ..._buildContent(notice.content, scale),
-                  ],
-                ),
+                ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 본문 스크롤 영역. 하단 고정 버튼이 있으면 마지막 줄이 가려지지 않도록
+  /// 버튼 높이만큼 아래 여백을 더한다.
+  Widget _buildScroll(
+    Notice notice,
+    double scale,
+    AppLocalizations l,
+    bool hasAction,
+  ) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        20 * scale,
+        8 * scale,
+        20 * scale,
+        (hasAction ? 40 + 52 + 24 : 40) * scale,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            notice.title,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w700,
+              fontSize: 19 * scale,
+              height: 1.35,
+              color: AppColors.narTextTertiary,
+            ),
+          ),
+          SizedBox(height: 8 * scale),
+          Text(
+            '${l.noticeAdmin} · '
+            '${notice.isDraft ? l.noticeDraft : DateFormat('yyyy.MM.dd HH:mm').format(notice.publishedAt!)}',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+              fontSize: 12.5 * scale,
+              color: AppColors.narText2,
+            ),
+          ),
+          SizedBox(height: 14 * scale),
+          const Divider(color: AppColors.narLine, height: 1),
+          SizedBox(height: 16 * scale),
+          ..._buildContent(notice.content, scale),
+        ],
       ),
     );
   }
@@ -290,5 +328,59 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       }
     }
     return widgets;
+  }
+}
+
+/// 스크롤해도 화면 하단에 떠 있는 직사각형 외곽선 버튼. 눌러 [url] 을 외부
+/// 브라우저로 연다(구글폼 등). 위쪽은 본문이 비치지 않도록 배경색으로 서서히 덮는다.
+class _ActionBar extends StatelessWidget {
+  const _ActionBar({
+    required this.label,
+    required this.url,
+    required this.scale,
+  });
+
+  final String label;
+  final String url;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20 * scale, 40 * scale, 20 * scale, 16 * scale),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          stops: [0.62, 1],
+          colors: [AppColors.narDark800, Color(0x00141517)],
+        ),
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication,
+        ),
+        child: Container(
+          height: 52 * scale,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.narDark800,
+            borderRadius: BorderRadius.circular(10 * scale),
+            border: Border.all(color: AppColors.narButton1Bg, width: 1.5),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w700,
+              fontSize: 16 * scale,
+              color: AppColors.narButton1Bg,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

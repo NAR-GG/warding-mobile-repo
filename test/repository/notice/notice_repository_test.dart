@@ -126,4 +126,37 @@ void main() {
 
     expect(retried.single.title, '복구됨');
   });
+
+  group('전용 페이지 조회(fetchPage)', () {
+    test('slug 경로로 조회하고 버튼 주소까지 읽는다', () async {
+      Uri? requested;
+      api.setApiClientForTesting(MockClient((request) async {
+        requested = request.url;
+        return http.Response(
+          jsonEncode({
+            'id': 9,
+            'title': '와딩 광고 안내',
+            'content': '본문',
+            'pinned': false,
+            'publishedAt': '2026-10-12T18:00:00',
+            'actionUrl': 'https://forms.gle/abc',
+          }),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      }));
+
+      final page = await repo.fetchPage('ad-guide');
+
+      expect(requested!.path, endsWith('/notices/by-slug/ad-guide'));
+      expect(page.title, '와딩 광고 안내');
+      expect(page.actionUrl, 'https://forms.gle/abc');
+    });
+
+    test('없는 페이지(404)는 예외를 던진다', () async {
+      mockBanner('', status: 404);
+
+      expect(() => repo.fetchPage('ad-guide'), throwsException);
+    });
+  });
 }

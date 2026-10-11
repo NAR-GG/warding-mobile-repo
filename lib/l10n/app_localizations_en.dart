@@ -904,6 +904,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noticeAdmin => 'Admin';
 
   @override
+  String get adGuide => 'Advertise';
+
+  @override
+  String get adGuideApply => 'Apply for an ad';
+
+  @override
+  String get adGuideLoadFailed => 'Couldn\'t load the advertising guide';
+
+  @override
   String get noticeEmpty => 'No notices yet';
 
   @override

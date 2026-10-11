@@ -880,6 +880,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get noticeAdmin => '관리자';
 
   @override
+  String get adGuide => '광고 안내';
+
+  @override
+  String get adGuideApply => '광고 신청하기';
+
+  @override
+  String get adGuideLoadFailed => '광고 안내를 불러오지 못했어요';
+
+  @override
   String get noticeEmpty => '공지사항이 없어요';
 
   @override

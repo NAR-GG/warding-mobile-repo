@@ -45,6 +45,17 @@ class NoticeRepository {
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
+  /// 앱 전용 고정 페이지(예: `ad-guide`)를 조회한다. 없거나 임시저장이면 예외.
+  Future<Notice> fetchPage(String slug) async {
+    final response = await http.get(Uri.parse(ApiConfig.noticePageUrl(slug)));
+    debugPrint('[Notice] 페이지 $slug ← ${response.statusCode}');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('공지 페이지 조회 실패 (${response.statusCode})');
+    }
+    return Notice.fromJson(
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
+  }
+
   /// 공지 조회수 +1. 화면 표시와 무관한 집계라 실패해도 조용히 무시한다
   /// (열람 자체는 이미 성공한 상태 — 에러를 띄울 이유가 없다).
   Future<void> markViewed(int id) async {
