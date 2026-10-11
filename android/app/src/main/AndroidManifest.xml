@@ -47,11 +47,6 @@
             </intent-filter>
         </activity>
 
-        <!-- AdMob 앱 ID. 없으면 SDK 가 시작 때 앱을 죽인다. -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9725078965412256~5501917656" />
-
         <!-- 네이버 로그인 SDK 키 (strings.xml 참조) -->
         <meta-data
             android:name="com.naver.sdk.clientId"

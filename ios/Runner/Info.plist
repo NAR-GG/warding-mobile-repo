@@ -72,17 +72,6 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-9725078965412256~1436706252</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>맞춤 광고를 보여 주기 위해 광고 식별자를 사용합니다. 허용하지 않아도 앱의 모든 기능을 그대로 쓸 수 있습니다.</string>
-	<key>SKAdNetworkItems</key>
-	<array>
-		<dict>
-			<key>SKAdNetworkIdentifier</key>
-			<string>cstr6suwn9.skadnetwork</string>
-		</dict>
-	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>프로필 사진을 바꾸거나 커뮤니티 글에 사진을 첨부하려면 사진 라이브러리 접근이 필요합니다.</string>
 	<key>NidAppName</key>
