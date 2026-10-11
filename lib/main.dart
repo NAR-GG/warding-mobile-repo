@@ -62,7 +62,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// 셋이 서로 순서 의존이 있어(핸들러 등록·initMessaging 모두 Firebase 초기화가
 /// 먼저 끝나야 함) 하나로 묶어, [main] 에서 다른 무관한 초기화와 병렬로 돌린다.
 Future<void> _initFirebaseMessaging() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   // 포그라운드 알림 표시·알림 탭 핸들링을 준비한다 (토큰 등록은 로그인 후).
   await FcmService.instance.initMessaging();
@@ -125,8 +127,7 @@ Future<void> main() async {
         (options) {
           options.dsn = const String.fromEnvironment(
             'SENTRY_DSN',
-            defaultValue:
-                'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
+            defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
           );
           options.environment = const String.fromEnvironment(
             'APP_ENV',
