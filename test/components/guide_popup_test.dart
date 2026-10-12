@@ -13,10 +13,8 @@ Widget _host({bool allowPostpone = true}) {
     home: Scaffold(
       body: Builder(
         builder: (context) => ElevatedButton(
-          onPressed: () => showGuidePopup(
-            context,
-            allowPostpone: allowPostpone,
-          ),
+          onPressed: () =>
+              showGuidePopup(context, allowPostpone: allowPostpone),
           child: const Text('open'),
         ),
       ),

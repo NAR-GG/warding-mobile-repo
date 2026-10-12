@@ -6,18 +6,23 @@ import 'package:warding/l10n/app_localizations.dart';
 import '../support/l10n_test_setup.dart';
 
 void main() {
-  testWidgets('구독/구독중 버튼은 텍스트 길이가 달라도 동일한 폭을 가진다', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('구독/구독중 버튼은 텍스트 길이가 달라도 동일한 폭을 가진다', (WidgetTester tester) async {
     // 구독 버튼은 폭을 로케일 문구로 재므로 delegate 없이는 렌더되지 않는다.
     Future<Size> pumpAndGetSize(String label, NarButtonVariant variant) async {
       await tester.pumpWidget(
-        wrapWithL10n(Center(child: NarButton(label: label, variant: variant))),
+        wrapWithL10n(
+          Center(
+            child: NarButton(label: label, variant: variant),
+          ),
+        ),
       );
       return tester.getSize(find.byType(NarButton));
     }
 
-    final subscribeSize = await pumpAndGetSize('구독', NarButtonVariant.subscribe);
+    final subscribeSize = await pumpAndGetSize(
+      '구독',
+      NarButtonVariant.subscribe,
+    );
     final subscribedSize = await pumpAndGetSize(
       '구독중',
       NarButtonVariant.subscribed,
@@ -32,10 +37,7 @@ void main() {
     await tester.pumpWidget(
       wrapWithL10n(
         const Center(
-          child: NarButton(
-            label: '구독중',
-            variant: NarButtonVariant.subscribed,
-          ),
+          child: NarButton(label: '구독중', variant: NarButtonVariant.subscribed),
         ),
       ),
     );
