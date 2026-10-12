@@ -27,10 +27,14 @@ const double _guideImageHeight = 331;
 /// 진입 팝업이 지금 떠 있는지. 같은 팝업이 겹쳐 뜨는 것을 막는다.
 bool _showing = false;
 
+/// 이번 앱 실행에서 진입 가이드 팝업을 한 번이라도 띄웠는지. 응원 광고 팝업이 가이드가
+/// 뜬 실행을 건너뛰는 데 쓴다(탭을 오가며 홈이 다시 만들어져도 유지된다).
+bool guidePopupShownThisSession = false;
+
 /// 앱 진입 시 사용 가이드 팝업을 '아직 안 봤다면' 띄운다.
 ///
 /// 진입 화면에서 한 번 호출한다. 이미 본 적이 있으면 아무것도 하지 않으므로
-/// 호출 쪽에서 조건을 따로 두지 않아도 된다.
+/// 호출 쪽에서 조건을 따로 두지 않아도 된다. 팝업을 띄웠으면 true 를 돌려준다.
 ///
 /// 어느 버튼으로 닫든 '봤다'고 기록해 다음 진입부터는 뜨지 않는다 —
 /// '다음에 볼게요'도 마찬가지다. 팝업 문구가 마이페이지에서 다시 볼 수 있다고
@@ -38,19 +42,23 @@ bool _showing = false;
 ///
 /// 서버와 통신하지 않는다 — 가이드 내용은 앱에 담겨 있고, 봤는지 여부만
 /// 기기에 저장한다.
-Future<void> maybeShowGuidePopup(BuildContext context) async {
+Future<bool> maybeShowGuidePopup(BuildContext context) async {
   // '봤다'는 기록은 팝업을 닫은 뒤에야 남는다. 그 사이 다른 탭을 거쳐
   // 진입 화면이 다시 만들어지면 이 함수가 또 불려 팝업이 겹친다.
-  if (_showing) return;
-  if (!await GuidePopupPreferenceRepository.instance.shouldShow()) return;
-  if (!context.mounted) return;
+  if (_showing) return false;
+  if (!await GuidePopupPreferenceRepository.instance.shouldShow()) {
+    return false;
+  }
+  if (!context.mounted) return false;
   _showing = true;
+  guidePopupShownThisSession = true;
   try {
     await showGuidePopup(context);
   } finally {
     _showing = false;
   }
   await GuidePopupPreferenceRepository.instance.markSeen();
+  return true;
 }
 
 /// 사용 가이드 팝업을 조건 없이 띄운다.

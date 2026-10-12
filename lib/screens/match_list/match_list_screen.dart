@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
-import '../../components/advertiser_banner.dart';
+import '../../components/cheer_ad_banner.dart';
 import '../../components/app_bottom_nav.dart';
 import '../../components/app_bottom_sheet.dart';
 import '../../components/labeled_field.dart';
@@ -741,11 +741,11 @@ class _MatchListScreenState extends State<MatchListScreen> {
         if (index == items.length) return _buildFooter(scale);
         final item = items[index];
         if (item is _AdItem) {
-          return AdvertiserBanner(
+          return CheerAdBanner(
             key: ValueKey('ad-${item.date}'),
             scale: scale,
             topPadding: 16,
-            bottomPadding: 8,
+            bottomPadding: 16,
           );
         }
         if (item is _HeaderItem) {
@@ -885,8 +885,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return out;
   }
 
-  /// [index] 번째 날짜 그룹 앞에 광고를 낄지. 첫 그룹 바로 뒤(1)에 하나, 그다음은
-  /// 3그룹마다 하나다. 목록 맨 앞부터 세므로 어떤 필터에서도 첫 화면 가까이에
+  /// [index] 번째 날짜 그룹 앞에 광고를 낄지. 세 번째 그룹 앞(2)에 하나, 그다음은
+  /// 8그룹마다 하나다. 목록 맨 앞부터 세므로 어떤 필터에서도 첫 화면 가까이에
   /// 첫 광고가 오고 간격이 일정하다. 그룹 경계에만 끼워 카드 구분선 규칙을
   /// 건드리지 않는다.
   ///
@@ -895,7 +895,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// [_estimatedOffsetTo] 는 광고 높이를 더하지 않는다 — 광고는 로드돼야 높이가
   /// 생기고 안 로드되면 0 이라, 어림값이 실제보다 작게 나오는 쪽이 안전하다
   /// (크게 나오면 대상이 화면 위로 지나쳐 스크롤이 거꾸로 못 간다).
-  static bool _adBefore(int index) => index % 3 == 1;
+  static bool _adBefore(int index) => index % 8 == 2;
 
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;

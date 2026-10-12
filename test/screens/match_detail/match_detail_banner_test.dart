@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/advertiser_banner.dart';
+import 'package:warding/components/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/screens/match_detail/match_detail_screen.dart';
 
@@ -24,6 +24,6 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byType(AdvertiserBanner), findsOneWidget);
+    expect(find.byType(CheerAdBanner), findsOneWidget);
   });
 }

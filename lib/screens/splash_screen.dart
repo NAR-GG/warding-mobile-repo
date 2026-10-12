@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../components/cheer_ad_banner.dart';
 import '../components/nar_alert_dialog.dart';
 import '../config/app_globals.dart';
 import '../config/app_language.dart';
@@ -148,11 +149,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// 로고가 최소한 이만큼은 보이도록 잡아두는 시간.
   ///
+  /// 하단 응원 광고 카드가 보일 시간을 주려고 3.5초로 늘렸다(다른 서비스는 3~4초).
+  /// 광고를 빼면 600ms 로 되돌린다.
+  ///
   /// 예전엔 2초를 무조건 기다렸다. Keychain 조회는 수십 ms 라 나머지 시간은
   /// 순수한 대기였고, 그 뒤에야 일정 화면이 캘린더를 부르기 시작해
   /// 사용자는 '2초 + API' 를 겪었다. 지금은 이 시간 동안 캘린더를 미리
   /// 받아두므로(=[_prefetchCalendar]) 대기가 실제 로딩과 겹친다.
-  static const _minSplashDuration = Duration(milliseconds: 600);
+  static const _minSplashDuration = Duration(milliseconds: 3500);
 
   Future<void> _bootstrap() async {
     final String? jwt;
@@ -381,37 +385,47 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.of(context).size.width.clamp(320.0, 430.0) / 375;
     return Scaffold(
       backgroundColor: AppColors.narDark800,
-      body: Center(
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 뒤에 깔리는 blur 글로우 레이어 (opacity로 빛 세기 조절)
-            Opacity(
-              opacity: 0.5,
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 14.5, sigmaY: 14.5),
-                child: SvgPicture.asset(
-                  'assets/images/warding.svg',
-                  width: 240,
-                  height: 48,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-            // 앞의 선명한 로고
-            SvgPicture.asset(
+      body: Stack(
+        children: [
+          Center(child: _logo()),
+          // 응원 광고 자리 — 스플래시 하단 카드. 눌리지 않는다.
+          Positioned(
+            left: 20 * scale,
+            right: 20 * scale,
+            bottom: 24 * scale + MediaQuery.of(context).padding.bottom,
+            child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.splash),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _logo() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 뒤에 깔리는 blur 글로우 레이어 (opacity로 빛 세기 조절)
+        Opacity(
+          opacity: 0.5,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 14.5, sigmaY: 14.5),
+            child: SvgPicture.asset(
               'assets/images/warding.svg',
               width: 240,
               height: 48,
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
             ),
-          ],
+          ),
         ),
-      ),
+        // 앞의 선명한 로고
+        SvgPicture.asset('assets/images/warding.svg', width: 240, height: 48),
+      ],
     );
   }
 }

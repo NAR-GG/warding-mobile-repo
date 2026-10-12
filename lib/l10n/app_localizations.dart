@@ -380,6 +380,84 @@ abstract class AppLocalizations {
   /// **'새로운 소식을 확인해보세요'**
   String get homeNoticeDefault;
 
+  /// No description provided for @homeCheerAdTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'우리 선수 응원 광고 신청'**
+  String get homeCheerAdTitle;
+
+  /// No description provided for @homeCheerAdSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'와딩 앱에 응원 메시지를 올려드려요'**
+  String get homeCheerAdSubtitle;
+
+  /// No description provided for @cheerAdScreenTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응원 광고 신청'**
+  String get cheerAdScreenTitle;
+
+  /// No description provided for @cheerAdHeadline.
+  ///
+  /// In ko, this message translates to:
+  /// **'우리 선수의 특별한 날,\n와딩에 응원을 띄워보세요.'**
+  String get cheerAdHeadline;
+
+  /// No description provided for @cheerAdSubheadline.
+  ///
+  /// In ko, this message translates to:
+  /// **'생일, 우승, 데뷔 기념일. 응원 메시지를 와딩 앱에 올려드려요.'**
+  String get cheerAdSubheadline;
+
+  /// No description provided for @cheerAdSlotSplash.
+  ///
+  /// In ko, this message translates to:
+  /// **'스플래시 (1일)'**
+  String get cheerAdSlotSplash;
+
+  /// No description provided for @cheerAdSlotPopup.
+  ///
+  /// In ko, this message translates to:
+  /// **'팝업 (1일)'**
+  String get cheerAdSlotPopup;
+
+  /// No description provided for @cheerAdSlotBanner.
+  ///
+  /// In ko, this message translates to:
+  /// **'배너 (1일)'**
+  String get cheerAdSlotBanner;
+
+  /// No description provided for @cheerAdOpenBadge.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 특가'**
+  String get cheerAdOpenBadge;
+
+  /// No description provided for @cheerAdPrice.
+  ///
+  /// In ko, this message translates to:
+  /// **'{price}원'**
+  String cheerAdPrice(String price);
+
+  /// No description provided for @cheerAdViewDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'상세 보기'**
+  String get cheerAdViewDetail;
+
+  /// No description provided for @cheerAdPopupClose.
+  ///
+  /// In ko, this message translates to:
+  /// **'닫기'**
+  String get cheerAdPopupClose;
+
+  /// No description provided for @cheerAdPopupConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'자세히 보기'**
+  String get cheerAdPopupConfirm;
+
   /// No description provided for @homeMatchStatusDone.
   ///
   /// In ko, this message translates to:

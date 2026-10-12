@@ -1,5 +1,8 @@
 # Bundle Update Log
 
+## 2026-10-13
+* **응원 광고 자리 도입**: 홈·경기 리스트·경기 상세의 `AdvertiserBanner` 를 회색 `CheerAdBanner`("우리 선수 응원 광고 신청", 오른쪽에 자리별 예시 사진)로 바꾸고, 누르면 가격 타일 3개가 있는 `CheerAdScreen` → 하단 `상세 보기` → 기존 `AdGuideScreen`(백오피스 공지 `ad-guide` + 구글폼)으로 잇는다. 스플래시 하단에 같은 카드를 두고 대기를 600ms→3.5초로 늘렸다. 홈 진입 팝업(`maybeShowCheerAdPopup`)은 하루(KST) 한 번·실행당 한 번이고 가이드 팝업이 뜬 세션에서는 건너뛴다(디버그에선 하루 제한 무시). 광고 안내 화면은 `NoticeDetailScreen(landing: true)` 로 작성자·날짜 줄을 빼고 제목·본문 크기를 조정했다. 경기 리스트 광고는 3그룹마다에서 8그룹마다(3번째 그룹 앞부터)로 줄였다. 카드 비율은 광고 규격(배너 960×300, 스플래시 1080×720, 팝업 1080×1440). 가격은 `CheerAdScreen` 에 하드코딩(배너 2만·팝업 4만·스플래시 6만, 오픈 50% 할인)이라 백오피스 공지 가격과 이중 관리다.
+
 ## 2026-10-10
 * **AdMob 제거, 광고주 모집 배너로 교체**: 홈 순위표 아래와 경기리스트 날짜 사이(3번째 날짜마다)의 `InlineBannerAd` 를 `AdvertiserBanner`("와딩 후원하기" 문구와 브랜드 그라데이션, 탭하면 고객센터 문의 폼)로 바꿨다. `google_mobile_ads`·`app_tracking_transparency` 의존성, `AdsBootstrap`(UMP·ATT·SDK 초기화), `AdConfig`, Info.plist 의 `GADApplicationIdentifier`·`NSUserTrackingUsageDescription`·`SKAdNetworkItems`, AndroidManifest 의 AdMob 앱 ID 를 걷었다. 네이티브 변경이라 Shorebird 패치로는 못 나가고 스토어 빌드가 필요하다. 설계는 warding-docs `features/ad-sales`.
 
