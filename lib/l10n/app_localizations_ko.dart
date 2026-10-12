@@ -162,6 +162,47 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeNoticeDefault => '새로운 소식을 확인해보세요';
 
   @override
+  String get homeCheerAdTitle => '우리 선수 응원 광고 신청';
+
+  @override
+  String get homeCheerAdSubtitle => '와딩 앱에 응원 메시지를 올려드려요';
+
+  @override
+  String get cheerAdScreenTitle => '응원 광고 신청';
+
+  @override
+  String get cheerAdHeadline => '우리 선수의 특별한 날,\n와딩에 응원을 띄워보세요.';
+
+  @override
+  String get cheerAdSubheadline => '생일, 우승, 데뷔 기념일. 응원 메시지를 와딩 앱에 올려드려요.';
+
+  @override
+  String get cheerAdSlotSplash => '스플래시 (1일)';
+
+  @override
+  String get cheerAdSlotPopup => '팝업 (1일)';
+
+  @override
+  String get cheerAdSlotBanner => '배너 (1일)';
+
+  @override
+  String get cheerAdOpenBadge => '오픈 특가';
+
+  @override
+  String cheerAdPrice(String price) {
+    return '$price원';
+  }
+
+  @override
+  String get cheerAdViewDetail => '상세 보기';
+
+  @override
+  String get cheerAdPopupClose => '닫기';
+
+  @override
+  String get cheerAdPopupConfirm => '자세히 보기';
+
+  @override
   String get homeMatchStatusDone => '종료';
 
   @override

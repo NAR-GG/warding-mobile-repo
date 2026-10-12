@@ -105,6 +105,7 @@ flutter:
     - assets/images/3.0x/
     - assets/images/guide/
     - assets/images/guide/3.0x/
+    - assets/images/cheer_ad/
     - assets/icons/
     - assets/icons/leagues/
     - shorebird.yaml

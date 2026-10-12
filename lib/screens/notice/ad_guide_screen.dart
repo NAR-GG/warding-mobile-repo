@@ -50,6 +50,7 @@ class _AdGuideScreenState extends State<AdGuideScreen> {
             notice: notice,
             headerTitle: l.adGuide,
             actionLabel: l.adGuideApply,
+            landing: true,
           );
         }
         final width = MediaQuery.of(context).size.width;

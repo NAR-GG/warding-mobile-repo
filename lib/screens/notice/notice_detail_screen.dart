@@ -19,6 +19,7 @@ class NoticeDetailScreen extends StatefulWidget {
     this.showListButton = false,
     this.headerTitle,
     this.actionLabel,
+    this.landing = false,
   });
 
   final Notice notice;
@@ -30,6 +31,10 @@ class NoticeDetailScreen extends StatefulWidget {
   /// 하단 고정 버튼 문구. [Notice.actionUrl] 이 있고 이 값도 있을 때만 버튼을
   /// 그린다(일반 공지는 둘 다 없어 화면이 그대로다).
   final String? actionLabel;
+
+  /// 광고 안내 같은 전용 페이지 스타일. 작성자·날짜 줄과 구분선을 빼고, 제목을 크게,
+  /// 본문을 조금 작게, 소제목 위 간격을 넓게 그린다. 일반 공지는 false 라 그대로다.
+  final bool landing;
 
   /// 헤더 우측에 공지 목록 이동 아이콘 표시 여부.
   /// 띠배너처럼 목록을 거치지 않고 진입한 경우에만 켠다
@@ -143,25 +148,27 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w700,
-              fontSize: 19 * scale,
+              fontSize: (widget.landing ? 20 : 19) * scale,
               height: 1.35,
               color: AppColors.narTextTertiary,
             ),
           ),
-          SizedBox(height: 8 * scale),
-          Text(
-            '${l.noticeAdmin} · '
-            '${notice.isDraft ? l.noticeDraft : DateFormat('yyyy.MM.dd HH:mm').format(notice.publishedAt!)}',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-              fontSize: 12.5 * scale,
-              color: AppColors.narText2,
+          if (!widget.landing) ...[
+            SizedBox(height: 8 * scale),
+            Text(
+              '${l.noticeAdmin} · '
+              '${notice.isDraft ? l.noticeDraft : DateFormat('yyyy.MM.dd HH:mm').format(notice.publishedAt!)}',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w500,
+                fontSize: 12.5 * scale,
+                color: AppColors.narText2,
+              ),
             ),
-          ),
-          SizedBox(height: 14 * scale),
-          const Divider(color: AppColors.narLine, height: 1),
-          SizedBox(height: 16 * scale),
+            SizedBox(height: 14 * scale),
+            const Divider(color: AppColors.narLine, height: 1),
+          ],
+          SizedBox(height: (widget.landing ? 20 : 16) * scale),
           ..._buildContent(notice.content, scale),
         ],
       ),
@@ -285,7 +292,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     final body = TextStyle(
       fontFamily: 'Pretendard',
       fontWeight: FontWeight.w400,
-      fontSize: 14 * scale,
+      fontSize: (widget.landing ? 13 : 14) * scale,
       height: 1.6,
       color: AppColors.narText3,
     );
@@ -374,7 +381,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       } else if (trimmed.startsWith('## ')) {
         widgets.add(
           Padding(
-            padding: EdgeInsets.only(top: 4 * scale, bottom: 4 * scale),
+            padding: EdgeInsets.only(
+              top: (widget.landing ? 20 : 4) * scale,
+              bottom: 4 * scale,
+            ),
             child: Text(trimmed.substring(3), style: heading),
           ),
         );

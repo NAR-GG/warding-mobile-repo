@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../components/advertiser_banner.dart';
 import '../../components/app_bottom_nav.dart';
+import '../../components/cheer_ad_banner.dart';
+import '../../components/cheer_ad_popup.dart';
 import '../../components/guide_popup.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_banner.dart';
@@ -24,6 +25,7 @@ import '../player_rating/player_rating_screen.dart';
 import '../schedule/schedule_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../subscription/subscription_settings_screen.dart';
+
 import 'component/home_community_section.dart';
 import 'component/home_content_section.dart';
 import 'component/home_review_section.dart';
@@ -61,8 +63,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // 사용 가이드 팝업. 앱 진입 화면이 홈이라 여기서 띄운다(일정 탭에서 옮김).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeShowGuidePopup(context);
+    // 가이드 팝업이 뜬 세션에서는 응원 광고 팝업을 건너뛴다(가이드가 우선).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final guideShown = await maybeShowGuidePopup(context);
+      if (!guideShown && mounted) maybeShowCheerAdPopup(context);
     });
   }
 
@@ -286,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               scale: scale,
                               onSeeAllBracket: _openMatchList,
                             ),
-                            AdvertiserBanner(scale: scale),
+                            CheerAdBanner(scale: scale, topPadding: 16),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(
                               viewModel: _viewModel,

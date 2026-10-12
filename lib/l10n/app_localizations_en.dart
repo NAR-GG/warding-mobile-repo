@@ -164,6 +164,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoticeDefault => 'Check out what\'s new';
 
   @override
+  String get homeCheerAdTitle => 'Book a cheer ad for our player';
+
+  @override
+  String get homeCheerAdSubtitle =>
+      'We\'ll put your message up in the Warding app';
+
+  @override
+  String get cheerAdScreenTitle => 'Cheer ad';
+
+  @override
+  String get cheerAdHeadline =>
+      'On our player\'s special day,\nput your cheer up on Warding.';
+
+  @override
+  String get cheerAdSubheadline =>
+      'Birthday, title win, debut anniversary. We\'ll post your message in the Warding app.';
+
+  @override
+  String get cheerAdSlotSplash => 'Splash (1 day)';
+
+  @override
+  String get cheerAdSlotPopup => 'Popup (1 day)';
+
+  @override
+  String get cheerAdSlotBanner => 'Banner (1 day)';
+
+  @override
+  String get cheerAdOpenBadge => 'Launch deal';
+
+  @override
+  String cheerAdPrice(String price) {
+    return '₩$price';
+  }
+
+  @override
+  String get cheerAdViewDetail => 'View details';
+
+  @override
+  String get cheerAdPopupClose => 'Close';
+
+  @override
+  String get cheerAdPopupConfirm => 'Learn more';
+
+  @override
   String get homeMatchStatusDone => 'Ended';
 
   @override

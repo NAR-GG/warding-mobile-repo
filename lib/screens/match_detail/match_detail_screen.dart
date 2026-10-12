@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../components/advertiser_banner.dart';
+import '../../components/cheer_ad_banner.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -828,7 +828,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                       SliverToBoxAdapter(
                         child: ColoredBox(
                           color: AppColors.narBgContent,
-                          child: AdvertiserBanner(scale: scale, topPadding: 24),
+                          child: CheerAdBanner(scale: scale, topPadding: 24),
                         ),
                       ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
@@ -1082,8 +1082,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
         ),
         _championPickContent(scale),
         // 섹션 헤더 키(_sectionKeys)는 그대로라 스크롤스파이·스냅에 영향 없다.
-        AdvertiserBanner(scale: scale, topPadding: 16),
-        SizedBox(height: 8 * scale),
+        CheerAdBanner(scale: scale, topPadding: 16, bottomPadding: 16),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Stats".
         MatchDetailSectionHeader(
           key: _sectionKeys[1],
