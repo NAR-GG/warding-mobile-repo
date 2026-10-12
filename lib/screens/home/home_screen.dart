@@ -66,8 +66,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // 가이드 팝업이 뜬 세션에서는 응원 광고 팝업을 건너뛴다(가이드가 우선).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final guideShown = await maybeShowGuidePopup(context);
-      if (!guideShown && mounted) maybeShowCheerAdPopup(context);
+      await maybeShowGuidePopup(context);
+      if (!guidePopupShownThisSession && mounted) {
+        maybeShowCheerAdPopup(context);
+      }
     });
   }
 

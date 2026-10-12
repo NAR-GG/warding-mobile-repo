@@ -29,9 +29,11 @@ Future<void> maybeShowCheerAdPopup(BuildContext context) async {
   _showing = true;
   _shownThisSession = true;
   try {
+    // 팝업을 먼저 연 뒤에 '오늘 띄움'을 기록한다. 기록을 기다리는 사이 홈을 떠나면
+    // 팝업을 못 보고도 오늘 분이 날아가기 때문이다.
+    final shown = _showCheerAdPopup(context);
     await CheerAdPopupPreferenceRepository.instance.markShownToday();
-    if (!context.mounted) return;
-    await _showCheerAdPopup(context);
+    await shown;
   } finally {
     _showing = false;
   }

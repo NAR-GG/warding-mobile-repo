@@ -33,7 +33,8 @@ class CheerAdPopupPreferenceRepository {
   /// 오늘 아직 안 띄웠는지. 읽기에 실패하면 띄우지 않는다(같은 날 반복 노출이 더 나쁘다).
   Future<bool> shouldShowToday() async {
     try {
-      return await readOrNull(_key) != _todayKst();
+      // 읽기 실패는 예외로 올라와 catch 에서 false 가 된다(null 은 '저장된 적 없음'뿐).
+      return await readOrThrowIfUnavailable(_key) != _todayKst();
     } catch (e) {
       debugPrint('[CheerAdPopup] 복원 실패: $e');
       return false;

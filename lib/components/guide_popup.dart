@@ -27,6 +27,10 @@ const double _guideImageHeight = 331;
 /// 진입 팝업이 지금 떠 있는지. 같은 팝업이 겹쳐 뜨는 것을 막는다.
 bool _showing = false;
 
+/// 이번 앱 실행에서 진입 가이드 팝업을 한 번이라도 띄웠는지. 응원 광고 팝업이 가이드가
+/// 뜬 실행을 건너뛰는 데 쓴다(탭을 오가며 홈이 다시 만들어져도 유지된다).
+bool guidePopupShownThisSession = false;
+
 /// 앱 진입 시 사용 가이드 팝업을 '아직 안 봤다면' 띄운다.
 ///
 /// 진입 화면에서 한 번 호출한다. 이미 본 적이 있으면 아무것도 하지 않으므로
@@ -47,6 +51,7 @@ Future<bool> maybeShowGuidePopup(BuildContext context) async {
   }
   if (!context.mounted) return false;
   _showing = true;
+  guidePopupShownThisSession = true;
   try {
     await showGuidePopup(context);
   } finally {

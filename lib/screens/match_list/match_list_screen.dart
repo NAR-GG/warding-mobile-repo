@@ -885,7 +885,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
     return out;
   }
 
-  /// [index] 번째 날짜 그룹 앞에 광고를 낄지. 세 번째 그룹 앞(3)에 하나, 그다음은
+  /// [index] 번째 날짜 그룹 앞에 광고를 낄지. 세 번째 그룹 앞(2)에 하나, 그다음은
   /// 8그룹마다 하나다. 목록 맨 앞부터 세므로 어떤 필터에서도 첫 화면 가까이에
   /// 첫 광고가 오고 간격이 일정하다. 그룹 경계에만 끼워 카드 구분선 규칙을
   /// 건드리지 않는다.
@@ -895,7 +895,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// [_estimatedOffsetTo] 는 광고 높이를 더하지 않는다 — 광고는 로드돼야 높이가
   /// 생기고 안 로드되면 0 이라, 어림값이 실제보다 작게 나오는 쪽이 안전하다
   /// (크게 나오면 대상이 화면 위로 지나쳐 스크롤이 거꾸로 못 간다).
-  static bool _adBefore(int index) => index % 8 == 3;
+  static bool _adBefore(int index) => index % 8 == 2;
 
   String _shortName(MatchTeam team) =>
       team.teamCode.isNotEmpty ? team.teamCode : team.teamName;
