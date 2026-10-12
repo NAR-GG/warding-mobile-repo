@@ -100,9 +100,7 @@ void main() {
   });
 
   testWidgets('넘기지 않은 영역은 그리지 않는다 — 콘텐츠만 있는 팝업', (tester) async {
-    await tester.pumpWidget(
-      _host(child: const Text('본문만')),
-    );
+    await tester.pumpWidget(_host(child: const Text('본문만')));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -116,9 +114,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    final barrier = tester.widget<ModalBarrier>(
-      find.byType(ModalBarrier).last,
-    );
+    final barrier = tester.widget<ModalBarrier>(find.byType(ModalBarrier).last);
     expect(barrier.color, AppColors.narPopupBarrier);
     expect(AppColors.narPopupBarrier, const Color(0xB3000000));
   });

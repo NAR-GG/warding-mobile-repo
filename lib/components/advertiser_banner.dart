@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../l10n/app_localizations.dart';
+import '../screens/notice/ad_guide_screen.dart';
 import '../styles/app_colors.dart';
-
-// ponytail: 문의 폼은 마이페이지 고객센터와 같은 폼을 쓴다. 광고주 전용 폼·소재 노출은
-// 광고주가 생기면 features/ad-sales 의 `GET /api/mobile/ads` 로 바꾼다.
-const _inquiryUrl =
-    'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform';
 
 /// 광고주 모집 배너. 광고가 들어오기 전까지 광고 자리에 둔다.
 ///
-/// 누르면 문의 폼을 외부 브라우저로 연다.
+/// 누르면 광고 안내 화면으로 이동한다(거기서 신청 폼으로 연결).
 class AdvertiserBanner extends StatelessWidget {
   const AdvertiserBanner({
     super.key,
@@ -36,10 +30,9 @@ class AdvertiserBanner extends StatelessWidget {
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => launchUrl(
-          Uri.parse(_inquiryUrl),
-          mode: LaunchMode.externalApplication,
-        ),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AdGuideScreen())),
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: 18 * scale,

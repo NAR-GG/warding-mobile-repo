@@ -48,10 +48,7 @@ void main() {
 
   testWidgets('320px 에서도 한 줄로 유지된다', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const NarDetailHeader(title: 'Hanwha Life Esports 게시판'),
-        width: 320,
-      ),
+      wrap(const NarDetailHeader(title: 'Hanwha Life Esports 게시판'), width: 320),
     );
 
     expect(

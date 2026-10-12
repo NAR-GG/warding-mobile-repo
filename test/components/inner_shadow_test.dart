@@ -22,7 +22,10 @@ void main() {
   ///
   /// [ui.Image.toByteData] 는 실제 비동기 작업이라 테스트의 가짜 async 구역
   /// 안에서는 끝나지 않는다 — [WidgetTester.runAsync] 안에서 처리한다.
-  Future<List<List<int>>> render(WidgetTester tester, InnerShadow shadow) async {
+  Future<List<List<int>>> render(
+    WidgetTester tester,
+    InnerShadow shadow,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Center(
