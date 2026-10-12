@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../components/advertiser_banner.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -815,6 +816,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                           ),
                         ),
                       ),
+                    ),
+                    // 광고주 모집 배너: 탭 콘텐츠 맨 아래(스크롤 끝). 한 화면에 한 번만.
+                    SliverToBoxAdapter(
+                      child: AdvertiserBanner(scale: scale, topPadding: 24),
                     ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
                     _bottomFloatingClearance(scale),
