@@ -140,6 +140,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
       !_viewModel.loadingGames &&
       _viewModel.currentSetStatus == MatchGameStatus.scheduled;
 
+  /// 광고 배너를 챔피언 픽 탭 안(픽·스탯 사이)에 두는지. 아니면 화면 맨 아래.
+  bool get _bannerInPickTab => _tabIndex == 0 && !isChampionTabLocked;
+
   /// "Player Builds" 섹션에 표시 중인 선수(블루팀 여부, 팀 내 인덱스).
   /// Champion Pick 의 챔피언 카드나 Player Stats 의 선수 행을 탭하면 바뀐다.
   bool _selectedBuildBlueSide = true;
@@ -817,14 +820,17 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                         ),
                       ),
                     ),
-                    // 광고주 모집 배너: 탭 콘텐츠 맨 아래(스크롤 끝). 한 화면에 한 번만.
-                    // 탭 콘텐츠와 같은 배경색으로 감싸야 Scaffold 배경이 띠로 비치지 않는다.
-                    SliverToBoxAdapter(
-                      child: ColoredBox(
-                        color: AppColors.narBgContent,
-                        child: AdvertiserBanner(scale: scale, topPadding: 24),
+                    // 광고주 모집 배너: 한 화면에 한 번만. 경기 데이터 탭(잠금 아님)은
+                    // 픽·스탯 사이([_buildChampionPickTab])에 있고, 그 외(잠금·다른 탭)는
+                    // 탭 콘텐츠 맨 아래. 탭 콘텐츠와 같은 배경색으로 감싸야 Scaffold
+                    // 배경이 띠로 비치지 않는다.
+                    if (!_bannerInPickTab)
+                      SliverToBoxAdapter(
+                        child: ColoredBox(
+                          color: AppColors.narBgContent,
+                          child: AdvertiserBanner(scale: scale, topPadding: 24),
+                        ),
                       ),
-                    ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
                     _bottomFloatingClearance(scale),
                   ],
@@ -1075,6 +1081,8 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
           scale: scale,
         ),
         _championPickContent(scale),
+        // 섹션 헤더 키(_sectionKeys)는 그대로라 스크롤스파이·스냅에 영향 없다.
+        AdvertiserBanner(scale: scale, topPadding: 16),
         SizedBox(height: 8 * scale),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Stats".
         MatchDetailSectionHeader(
