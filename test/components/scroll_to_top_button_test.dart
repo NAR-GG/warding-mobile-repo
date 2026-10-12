@@ -11,7 +11,8 @@ void main() {
             ListView.builder(
               controller: controller,
               itemCount: 100,
-              itemBuilder: (_, i) => SizedBox(height: 60, child: Text('item $i')),
+              itemBuilder: (_, i) =>
+                  SizedBox(height: 60, child: Text('item $i')),
             ),
             ScrollToTopButton(scrollController: controller, showAfter: 300),
           ],
@@ -20,9 +21,7 @@ void main() {
     );
   }
 
-  testWidgets('300 이상 스크롤해야 나타나고, 탭하면 맨 위로 스크롤한다', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('300 이상 스크롤해야 나타나고, 탭하면 맨 위로 스크롤한다', (WidgetTester tester) async {
     final controller = ScrollController();
     addTearDown(controller.dispose);
     await tester.pumpWidget(buildApp(controller));
