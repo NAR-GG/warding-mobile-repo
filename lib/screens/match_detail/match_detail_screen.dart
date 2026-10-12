@@ -818,8 +818,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                       ),
                     ),
                     // 광고주 모집 배너: 탭 콘텐츠 맨 아래(스크롤 끝). 한 화면에 한 번만.
+                    // 탭 콘텐츠와 같은 배경색으로 감싸야 Scaffold 배경이 띠로 비치지 않는다.
                     SliverToBoxAdapter(
-                      child: AdvertiserBanner(scale: scale, topPadding: 24),
+                      child: ColoredBox(
+                        color: AppColors.narBgContent,
+                        child: AdvertiserBanner(scale: scale, topPadding: 24),
+                      ),
                     ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
                     _bottomFloatingClearance(scale),
