@@ -124,7 +124,7 @@ class _AdPopupDialog extends StatelessWidget {
                 image,
                 Container(
                   height: 56 * scale,
-                  color: AppColors.narDark500,
+                  color: AppColors.narDark600,
                   child: Row(
                     children: [
                       button(dismissLabel, onDismissToday),
