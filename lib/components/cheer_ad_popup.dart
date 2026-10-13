@@ -51,9 +51,10 @@ Future<void> _showCheerAdPopup(BuildContext context) {
       NarPopupAction(
         label: l.cheerAdPopupDismissToday,
         onPressed: () async {
-          // 먼저 닫는다 — 저장을 기다리는 사이 버튼이 먹지 않는 것처럼 보인다.
-          navigator.pop();
+          // 저장을 끝낸 뒤에 닫는다. 먼저 닫으면 _showing 이 풀려서, 저장이 끝나기
+          // 전에 홈으로 되돌아온 경우 옛 날짜를 읽고 팝업이 다시 뜬다.
           await CheerAdPopupPreferenceRepository.instance.markDismissedToday();
+          navigator.pop();
         },
       ),
       NarPopupAction(

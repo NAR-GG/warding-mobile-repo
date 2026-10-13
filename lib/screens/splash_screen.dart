@@ -393,14 +393,19 @@ class _SplashScreenState extends State<SplashScreen>
           // 가운데보다 조금 위 — 아래 응원 광고 카드와 사이를 띄운다.
           Align(alignment: const Alignment(0, -0.25), child: _logo()),
           // 응원 광고 자리 — 스플래시 하단 카드. 눌리지 않는다.
+          // 등록 광고는 이동 주소가 있으면 탭에 반응하므로(RegisteredAdCard),
+          // 여기서는 IgnorePointer 로 막는다 — 시작 3.5초 동안 실수로 눌러
+          // 외부 브라우저가 열리면 앱 진입 자체가 끊긴다.
           Positioned(
             left: 20 * scale,
             right: 20 * scale,
             bottom: 24 * scale + MediaQuery.of(context).padding.bottom,
-            child: CheerAdSlotView(
-              placement: 'splash',
-              scale: scale,
-              slot: CheerAdSlot.splash,
+            child: IgnorePointer(
+              child: CheerAdSlotView(
+                placement: 'splash',
+                scale: scale,
+                slot: CheerAdSlot.splash,
+              ),
             ),
           ),
         ],
