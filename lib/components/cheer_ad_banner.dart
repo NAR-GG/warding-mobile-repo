@@ -1,38 +1,88 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
+import '../repository/ad/ad_repository.dart';
 import '../screens/cheer_ad/cheer_ad_screen.dart';
 import '../styles/app_colors.dart';
 
-/// '우리 선수 응원 광고' 배너. 광고 자리(홈·경기 리스트·경기 상세)에 두고,
-/// 누르면 [CheerAdScreen] 으로 이동한다.
-class CheerAdBanner extends StatelessWidget {
+/// 광고 자리(홈·경기 리스트·경기 상세)의 배너. 백오피스에서 등록한 광고가 [placement] 에
+/// 노출 중이면 그 이미지를, 없으면 '우리 선수 응원 광고' 모집 배너([CheerAdBannerCard])를 둔다.
+/// 모집 배너는 누르면 [CheerAdScreen], 등록 광고는 이동 주소가 있으면 외부 브라우저로 연다.
+class CheerAdBanner extends StatefulWidget {
   const CheerAdBanner({
     super.key,
+    required this.placement,
     required this.scale,
     this.topPadding = 28,
     this.bottomPadding = 0,
   });
 
+  /// 백오피스 광고 위치 키: home | match_list | match_detail.
+  final String placement;
   final double scale;
   final double topPadding;
   final double bottomPadding;
 
   @override
+  State<CheerAdBanner> createState() => _CheerAdBannerState();
+}
+
+class _CheerAdBannerState extends State<CheerAdBanner> {
+  late final Future<Ad?> _ad = AdRepository.instance.forPlacement(
+    widget.placement,
+  );
+
+  @override
   Widget build(BuildContext context) {
+    final scale = widget.scale;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16 * scale,
-        topPadding * scale,
+        widget.topPadding * scale,
         16 * scale,
-        bottomPadding * scale,
+        widget.bottomPadding * scale,
       ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute<void>(builder: (_) => const CheerAdScreen())),
-        child: CheerAdBannerCard(scale: scale),
+      child: FutureBuilder<Ad?>(
+        future: _ad,
+        builder: (context, snapshot) {
+          final ad = snapshot.data;
+          if (ad == null) {
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
+              ),
+              child: CheerAdBannerCard(scale: scale),
+            );
+          }
+          final link = ad.linkUrl;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: link == null
+                ? null
+                : () => launchUrl(
+                    Uri.parse(link),
+                    mode: LaunchMode.externalApplication,
+                  ),
+            child: AspectRatio(
+              aspectRatio: CheerAdSlot.banner.aspectRatio,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12 * scale),
+                child: CachedNetworkImage(
+                  imageUrl: ad.imageUrl,
+                  fit: BoxFit.cover,
+                  // 로딩·실패 땐 회색 자리만 — 모집 배너로 바꿨다 되돌리면 깜빡여서.
+                  placeholder: (_, _) =>
+                      const ColoredBox(color: AppColors.narDark500),
+                  errorWidget: (_, _, _) =>
+                      const ColoredBox(color: AppColors.narDark500),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
