@@ -99,8 +99,9 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
   /// 내부 공간을 깎지 않게 한다(시안의 38·padding 8 을 그대로 유지).
   Widget _buildBox(double scale, String resolvedHint) {
     final radius = BorderRadius.circular(10 * scale);
-    final leading =
-        widget.value != null ? widget.leadingBuilder?.call(widget.value!) : null;
+    final leading = widget.value != null
+        ? widget.leadingBuilder?.call(widget.value!)
+        : null;
     return GestureDetector(
       onTap: _openSheet,
       behavior: HitTestBehavior.opaque,
@@ -145,7 +146,8 @@ class _SearchSelectBoxState extends State<SearchSelectBox> {
             Expanded(
               child: Text(
                 widget.value != null
-                    ? (widget.labelBuilder?.call(widget.value!) ?? widget.value!)
+                    ? (widget.labelBuilder?.call(widget.value!) ??
+                          widget.value!)
                     : resolvedHint,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -236,8 +238,10 @@ class _SearchSelectSheetState extends State<_SearchSelectSheet> {
     // 전체가 다 들어갈 만큼만 필요하면 그 높이로, 그보다 많으면 화면 절반까지만
     // 쓰고 안에서 스크롤한다. 항목이 아주 적어도 안내 문구가 들어갈 만큼은 둔다.
     final maxListHeight = media.size.height * 0.5;
-    final listHeight = (widget.options.length * _optionHeight * scale)
-        .clamp(_optionHeight * 2 * scale, maxListHeight);
+    final listHeight = (widget.options.length * _optionHeight * scale).clamp(
+      _optionHeight * 2 * scale,
+      maxListHeight,
+    );
     return Padding(
       // 검색창에 포커스가 가면 키보드가 시트를 가리므로 그만큼 밀어 올린다.
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
@@ -391,7 +395,8 @@ class _SearchSelectSheetState extends State<_SearchSelectSheet> {
                   height: 1.55, // 155%
                   letterSpacing: 0,
                   color: selected
-                      ? AppColors.narRed500 // 선택됨
+                      ? AppColors
+                            .narRed500 // 선택됨
                       : AppColors.narTextSecondary, // #FFFFFF
                 ),
               ),

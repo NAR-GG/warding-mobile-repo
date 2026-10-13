@@ -7,11 +7,7 @@ import '../styles/app_colors.dart';
 ///
 /// 한 줄 안내 메시지와 '다시 시도' 버튼을 가운데에 그린다.
 class LoadError extends StatelessWidget {
-  const LoadError({
-    super.key,
-    required this.message,
-    required this.onRetry,
-  });
+  const LoadError({super.key, required this.message, required this.onRetry});
 
   /// 사용자에게 보여줄 한 줄 안내. 예: '팀 목록을 불러오지 못했어요'.
   final String message;

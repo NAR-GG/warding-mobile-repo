@@ -69,10 +69,7 @@ Future<bool> maybeShowGuidePopup(BuildContext context) async {
 ///
 /// 여기서는 '봤다'고 기록하지 않는다. 기록은 진입 팝업([maybeShowGuidePopup])이
 /// 자동으로 뜬 경우에만 의미가 있다.
-Future<void> showGuidePopup(
-  BuildContext context, {
-  bool allowPostpone = true,
-}) {
+Future<void> showGuidePopup(BuildContext context, {bool allowPostpone = true}) {
   final l = AppLocalizations.of(context)!;
   return showNarPopup<void>(
     context: context,

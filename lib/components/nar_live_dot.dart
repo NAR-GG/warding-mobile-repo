@@ -71,9 +71,10 @@ class _NarLiveDotState extends State<NarLiveDot>
       decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
     );
     return FadeTransition(
-      opacity: Tween<double>(begin: 1, end: 0.3).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-      ),
+      opacity: Tween<double>(
+        begin: 1,
+        end: 0.3,
+      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut)),
       child: dot,
     );
   }

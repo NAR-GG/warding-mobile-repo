@@ -43,7 +43,12 @@ enum BadgeSide { blue, red }
 /// BLUE: 인디고 톤(indigo/3 보더 + indigo/8 텍스트).
 /// RED: 빨강 톤(red/3 보더 + red/8 텍스트).
 class NarBadgeSide extends StatelessWidget {
-  const NarBadgeSide({super.key, required this.side, this.scale = 1, this.label});
+  const NarBadgeSide({
+    super.key,
+    required this.side,
+    this.scale = 1,
+    this.label,
+  });
 
   final BadgeSide side;
   final double scale;

@@ -61,22 +61,21 @@ class TeamCodeBadge extends StatelessWidget {
         color: AppColors.narDark500,
         shape: BoxShape.circle,
       ),
-      child:
-          resolved == null || resolved.isEmpty
-              ? null
-              : Padding(
-                padding: EdgeInsets.all(size * 0.12),
-                child: CachedNetworkImage(
-                  imageUrl: resolved,
-                  width: size * 0.76,
-                  height: size * 0.76,
-                  fit: BoxFit.contain,
-                  memCacheWidth: (size * 3).round(),
-                  fadeInDuration: const Duration(milliseconds: 150),
-                  placeholder: (_, _) => const SizedBox.shrink(),
-                  errorWidget: (_, _, _) => const SizedBox.shrink(),
-                ),
+      child: resolved == null || resolved.isEmpty
+          ? null
+          : Padding(
+              padding: EdgeInsets.all(size * 0.12),
+              child: CachedNetworkImage(
+                imageUrl: resolved,
+                width: size * 0.76,
+                height: size * 0.76,
+                fit: BoxFit.contain,
+                memCacheWidth: (size * 3).round(),
+                fadeInDuration: const Duration(milliseconds: 150),
+                placeholder: (_, _) => const SizedBox.shrink(),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
+            ),
     );
   }
 }
