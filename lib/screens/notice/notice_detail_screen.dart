@@ -450,10 +450,10 @@ class _ActionBar extends StatelessWidget {
         child: Container(
           height: 52 * scale,
           alignment: Alignment.center,
+          // 와딩 브랜드 그라데이션(narBg)으로 채워 주 행동 버튼임을 드러낸다.
           decoration: BoxDecoration(
-            color: AppColors.narDark800,
+            gradient: AppColors.narBg,
             borderRadius: BorderRadius.circular(10 * scale),
-            border: Border.all(color: AppColors.narButton1Bg, width: 1.5),
           ),
           child: Text(
             label,
@@ -461,7 +461,7 @@ class _ActionBar extends StatelessWidget {
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w700,
               fontSize: 16 * scale,
-              color: AppColors.narButton1Bg,
+              color: AppColors.narText,
             ),
           ),
         ),
