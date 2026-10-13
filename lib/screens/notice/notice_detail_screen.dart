@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../components/bottom_action_bar.dart';
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
@@ -110,10 +111,16 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      child: _ActionBar(
+                      // 와딩 브랜드 그라데이션으로 채워 주 행동 버튼임을 드러낸다.
+                      child: BottomActionBar(
                         label: widget.actionLabel!,
-                        url: notice.actionUrl!,
                         scale: scale,
+                        gradient: AppColors.narBg,
+                        textColor: AppColors.narText,
+                        onTap: () => launchUrl(
+                          Uri.parse(notice.actionUrl!),
+                          mode: LaunchMode.externalApplication,
+                        ),
                       ),
                     ),
                 ],
@@ -138,7 +145,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         20 * scale,
         8 * scale,
         20 * scale,
-        (hasAction ? 40 + 52 + 24 : 40) * scale,
+        (hasAction ? BottomActionBar.scrollInset : 40) * scale,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,62 +417,5 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       }
     }
     return widgets;
-  }
-}
-
-/// 스크롤해도 화면 하단에 떠 있는 직사각형 외곽선 버튼. 눌러 [url] 을 외부
-/// 브라우저로 연다(구글폼 등). 위쪽은 본문이 비치지 않도록 배경색으로 서서히 덮는다.
-class _ActionBar extends StatelessWidget {
-  const _ActionBar({
-    required this.label,
-    required this.url,
-    required this.scale,
-  });
-
-  final String label;
-  final String url;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        20 * scale,
-        40 * scale,
-        20 * scale,
-        16 * scale,
-      ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          stops: [0.62, 1],
-          colors: [AppColors.narDark800, Color(0x00141517)],
-        ),
-      ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () =>
-            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-        child: Container(
-          height: 52 * scale,
-          alignment: Alignment.center,
-          // 와딩 브랜드 그라데이션(narBg)으로 채워 주 행동 버튼임을 드러낸다.
-          decoration: BoxDecoration(
-            gradient: AppColors.narBg,
-            borderRadius: BorderRadius.circular(10 * scale),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w700,
-              fontSize: 16 * scale,
-              color: AppColors.narText,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

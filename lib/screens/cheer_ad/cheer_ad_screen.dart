@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../components/common_button.dart';
+import '../../components/bottom_action_bar.dart';
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
@@ -43,72 +43,74 @@ class CheerAdScreen extends StatelessWidget {
           children: [
             NarDetailHeader(title: l.cheerAdScreenTitle, scale: scale),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20 * scale,
-                  16 * scale,
-                  20 * scale,
-                  24 * scale,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l.cheerAdHeadline,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20 * scale,
-                        height: 1.35,
-                        color: AppColors.narText,
-                      ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      20 * scale,
+                      16 * scale,
+                      20 * scale,
+                      BottomActionBar.scrollInset * scale,
                     ),
-                    SizedBox(height: 8 * scale),
-                    Text(
-                      l.cheerAdSubheadline,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 13 * scale,
-                        height: 1.55,
-                        color: AppColors.narText3,
-                      ),
-                    ),
-                    SizedBox(height: 20 * scale),
-                    Wrap(
-                      spacing: 12 * scale,
-                      runSpacing: 20 * scale,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final (name, asset, price) in slots)
-                          _SlotTile(
-                            name: name,
-                            asset: asset,
-                            price: price,
-                            width:
-                                (width.clamp(320.0, 430.0) -
-                                    40 * scale -
-                                    12 * scale) /
-                                2,
-                            scale: scale,
+                        Text(
+                          l.cheerAdHeadline,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 20 * scale,
+                            height: 1.35,
+                            color: AppColors.narText,
                           ),
+                        ),
+                        SizedBox(height: 8 * scale),
+                        Text(
+                          l.cheerAdSubheadline,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 13 * scale,
+                            height: 1.55,
+                            color: AppColors.narText3,
+                          ),
+                        ),
+                        SizedBox(height: 20 * scale),
+                        Wrap(
+                          spacing: 12 * scale,
+                          runSpacing: 20 * scale,
+                          children: [
+                            for (final (name, asset, price) in slots)
+                              _SlotTile(
+                                name: name,
+                                asset: asset,
+                                price: price,
+                                width:
+                                    (width.clamp(320.0, 430.0) -
+                                        40 * scale -
+                                        12 * scale) /
+                                    2,
+                                scale: scale,
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                20 * scale,
-                8 * scale,
-                20 * scale,
-                16 * scale,
-              ),
-              child: CommonButton(
-                label: l.cheerAdViewDetail,
-                variant: CommonButtonVariant.light,
-                scale: scale,
-                onPressed: () => _openDetail(context),
+                  ),
+                  // 광고 안내와 같은 하단 버튼(색은 이 화면의 밝은 회색 그대로).
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: BottomActionBar(
+                      label: l.cheerAdViewDetail,
+                      scale: scale,
+                      onTap: () => _openDetail(context),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
