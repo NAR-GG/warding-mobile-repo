@@ -162,10 +162,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeNoticeDefault => '새로운 소식을 확인해보세요';
 
   @override
-  String get homeCheerAdTitle => '우리 선수 응원 광고 신청';
+  String get homeCheerAdTitle => '와딩 광고 신청';
 
   @override
-  String get homeCheerAdSubtitle => '와딩 앱에 응원 메시지를 올려드려요';
+  String get homeCheerAdSubtitle => '전하고 싶은 메시지를 와딩 앱에 올려보세요';
 
   @override
   String get cheerAdScreenTitle => '응원 광고 신청';

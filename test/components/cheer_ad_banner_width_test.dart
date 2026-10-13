@@ -83,9 +83,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     for (final slot in CheerAdSlot.values) {
-      await tester.pumpWidget(
-        _host(CheerAdBannerCard(scale: 1, slot: slot)),
-      );
+      await tester.pumpWidget(_host(CheerAdBannerCard(scale: 1, slot: slot)));
       await tester.pump();
 
       expect(find.text('AD'), findsOneWidget, reason: '$slot 에 AD 뱃지가 없다');

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../repository/ad/ad_repository.dart';
 import '../repository/preference/cheer_ad_popup_preference_repository.dart';
 import '../screens/cheer_ad/cheer_ad_screen.dart';
 import 'cheer_ad_banner.dart';
@@ -45,16 +46,7 @@ Future<void> _showCheerAdPopup(BuildContext context) {
   final navigator = Navigator.of(context);
   return showNarPopup<void>(
     context: context,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        navigator.pop();
-        navigator.push(
-          MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
-        );
-      },
-      child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.popup),
-    ),
+    child: _PopupAdCard(scale: scale, navigator: navigator),
     actions: [
       NarPopupAction(
         label: l.cheerAdPopupDismissToday,
@@ -71,4 +63,49 @@ Future<void> _showCheerAdPopup(BuildContext context) {
       ),
     ],
   );
+}
+
+/// 팝업 안 카드. 백오피스에 `popup` 자리 광고가 있으면 그 광고를(탭하면 광고주
+/// 주소로), 없으면 모집 배너를(탭하면 신청 화면으로) 띄운다.
+class _PopupAdCard extends StatefulWidget {
+  const _PopupAdCard({required this.scale, required this.navigator});
+
+  final double scale;
+  final NavigatorState navigator;
+
+  @override
+  State<_PopupAdCard> createState() => _PopupAdCardState();
+}
+
+class _PopupAdCardState extends State<_PopupAdCard> {
+  late final Future<Ad?> _ad = AdRepository.instance.forPlacement('popup');
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = widget.scale;
+    return FutureBuilder<Ad?>(
+      future: _ad,
+      builder: (context, snapshot) {
+        final ad = snapshot.data;
+        if (ad != null) {
+          // 등록 광고는 자기 이동 주소를 갖는다(RegisteredAdCard 가 탭을 처리).
+          return RegisteredAdCard(
+            ad: ad,
+            scale: scale,
+            slot: CheerAdSlot.popup,
+          );
+        }
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            widget.navigator.pop();
+            widget.navigator.push(
+              MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
+            );
+          },
+          child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.popup),
+        );
+      },
+    );
+  }
 }

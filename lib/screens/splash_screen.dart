@@ -397,7 +397,11 @@ class _SplashScreenState extends State<SplashScreen>
             left: 20 * scale,
             right: 20 * scale,
             bottom: 24 * scale + MediaQuery.of(context).padding.bottom,
-            child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.splash),
+            child: CheerAdSlotView(
+              placement: 'splash',
+              scale: scale,
+              slot: CheerAdSlot.splash,
+            ),
           ),
         ],
       ),
