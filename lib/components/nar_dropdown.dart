@@ -34,9 +34,7 @@ class NarDropdown extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: variant == NarDropdownVariant.round
-          ? _buildRound()
-          : _buildRect(),
+      child: variant == NarDropdownVariant.round ? _buildRound() : _buildRect(),
     );
   }
 

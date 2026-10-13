@@ -67,7 +67,8 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
 
   void _onScroll() {
     final controller = widget.scrollController;
-    final show = controller.hasClients &&
+    final show =
+        controller.hasClients &&
         _distanceFromTop(controller.position) > widget.showAfter;
     if (show != _visible) setState(() => _visible = show);
   }

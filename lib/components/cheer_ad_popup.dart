@@ -5,9 +5,8 @@ import '../l10n/app_localizations.dart';
 import '../repository/ad/ad_repository.dart';
 import '../repository/preference/cheer_ad_popup_preference_repository.dart';
 import '../screens/cheer_ad/cheer_ad_screen.dart';
+import '../styles/app_colors.dart';
 import 'cheer_ad_banner.dart';
-import 'nar_button.dart';
-import 'nar_popup_dialog.dart';
 
 /// 팝업이 지금 떠 있는지(겹침 방지).
 bool _showing = false;
@@ -38,32 +37,113 @@ Future<void> maybeShowCheerAdPopup(BuildContext context) async {
 }
 
 /// 하단 버튼은 '오늘 하루 보지 않기'(왼쪽)·'닫기'(오른쪽) 둘뿐이고, 신청 화면으로는
-/// 배너 카드를 직접 눌러 들어간다 — 광고 자리 자체가 버튼이라 자세히 보기 버튼을
+/// 광고 이미지를 직접 눌러 들어간다 — 광고 자리 자체가 버튼이라 자세히 보기 버튼을
 /// 따로 두지 않는다.
+///
+/// 가이드 팝업이 쓰는 공용 [showNarPopup] 은 안쪽 여백 24 에 어두운 버튼이라 광고가
+/// 작아 보인다. 광고는 이미지를 가장자리까지 채우고 하단에 흰 버튼 바를 두는 전용
+/// 레이아웃([_AdPopupDialog])으로 띄운다(공용 팝업·가이드 팝업은 건드리지 않는다).
 Future<void> _showCheerAdPopup(BuildContext context) {
   final l = AppLocalizations.of(context)!;
   final scale = MediaQuery.of(context).size.width.clamp(320.0, 430.0) / 375;
   final navigator = Navigator.of(context);
-  return showNarPopup<void>(
+  return showDialog<void>(
     context: context,
-    child: _PopupAdCard(scale: scale, navigator: navigator),
-    actions: [
-      NarPopupAction(
-        label: l.cheerAdPopupDismissToday,
-        onPressed: () async {
-          // 저장을 끝낸 뒤에 닫는다. 먼저 닫으면 _showing 이 풀려서, 저장이 끝나기
-          // 전에 홈으로 되돌아온 경우 옛 날짜를 읽고 팝업이 다시 뜬다.
-          await CheerAdPopupPreferenceRepository.instance.markDismissedToday();
-          navigator.pop();
-        },
-      ),
-      NarPopupAction(
-        label: l.cheerAdPopupClose,
-        variant: NarButtonVariant.type1,
-        onPressed: () => navigator.pop(),
-      ),
-    ],
+    barrierColor: AppColors.narPopupBarrier,
+    builder: (_) => _AdPopupDialog(
+      scale: scale,
+      image: _PopupAdCard(scale: scale, navigator: navigator),
+      dismissLabel: l.cheerAdPopupDismissToday,
+      closeLabel: l.cheerAdPopupClose,
+      onDismissToday: () async {
+        // 저장을 끝낸 뒤에 닫는다. 먼저 닫으면 _showing 이 풀려서, 저장이 끝나기
+        // 전에 홈으로 되돌아온 경우 옛 날짜를 읽고 팝업이 다시 뜬다.
+        await CheerAdPopupPreferenceRepository.instance.markDismissedToday();
+        navigator.pop();
+      },
+      onClose: () => navigator.pop(),
+    ),
   );
+}
+
+/// 광고 팝업 틀. 위는 광고 이미지(여백 없음), 아래는 흰 버튼 바 — 왼쪽 '오늘 하루
+/// 보지 않기', 오른쪽 '닫기' 를 가는 세로선으로 나눈다.
+class _AdPopupDialog extends StatelessWidget {
+  const _AdPopupDialog({
+    required this.scale,
+    required this.image,
+    required this.dismissLabel,
+    required this.closeLabel,
+    required this.onDismissToday,
+    required this.onClose,
+  });
+
+  final double scale;
+  final Widget image;
+  final String dismissLabel;
+  final String closeLabel;
+  final VoidCallback onDismissToday;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = TextStyle(
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w500,
+      fontSize: 15 * scale,
+      color: AppColors.narDark800,
+    );
+    Widget button(String text, VoidCallback onTap) => Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Center(
+          // 긴 문구가 두 줄로 꺾이지 않게 줄여 맞춘다.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8 * scale),
+              child: Text(text, style: label, maxLines: 1),
+            ),
+          ),
+        ),
+      ),
+    );
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 335 * scale),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16 * scale),
+          child: ColoredBox(
+            color: AppColors.narDark800,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                image,
+                Container(
+                  height: 56 * scale,
+                  color: AppColors.narText,
+                  child: Row(
+                    children: [
+                      button(dismissLabel, onDismissToday),
+                      Container(
+                        width: 1,
+                        height: 24 * scale,
+                        color: AppColors.narDark500,
+                      ),
+                      button(closeLabel, onClose),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// 팝업 안 카드. 백오피스에 `popup` 자리 광고가 있으면 그 광고를(탭하면 광고주
@@ -94,6 +174,7 @@ class _PopupAdCardState extends State<_PopupAdCard> {
             ad: ad,
             scale: scale,
             slot: CheerAdSlot.popup,
+            radius: 0,
           );
         }
         return GestureDetector(
@@ -104,7 +185,11 @@ class _PopupAdCardState extends State<_PopupAdCard> {
               MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
             );
           },
-          child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.popup),
+          child: CheerAdBannerCard(
+            scale: scale,
+            slot: CheerAdSlot.popup,
+            radius: 0,
+          ),
         );
       },
     );

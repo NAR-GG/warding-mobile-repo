@@ -77,11 +77,15 @@ class RegisteredAdCard extends StatelessWidget {
     required this.ad,
     required this.scale,
     this.slot = CheerAdSlot.banner,
+    this.radius,
   });
 
   final Ad ad;
   final double scale;
   final CheerAdSlot slot;
+
+  /// 모서리 반경. 비우면 12. 팝업처럼 바깥 컨테이너가 이미 잘라 주면 0 으로 넘긴다.
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +101,7 @@ class RegisteredAdCard extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: slot.aspectRatio,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12 * scale),
+          borderRadius: BorderRadius.circular((radius ?? 12) * scale),
           child: Stack(
             children: [
               Positioned.fill(
@@ -159,11 +163,7 @@ class _CheerAdSlotViewState extends State<CheerAdSlotView> {
         if (ad == null) {
           return CheerAdBannerCard(scale: widget.scale, slot: widget.slot);
         }
-        return RegisteredAdCard(
-          ad: ad,
-          scale: widget.scale,
-          slot: widget.slot,
-        );
+        return RegisteredAdCard(ad: ad, scale: widget.scale, slot: widget.slot);
       },
     );
   }
@@ -229,10 +229,14 @@ class CheerAdBannerCard extends StatelessWidget {
     super.key,
     required this.scale,
     this.slot = CheerAdSlot.banner,
+    this.radius,
   });
 
   final double scale;
   final CheerAdSlot slot;
+
+  /// 모서리 반경. 비우면 12 (팝업 안에서는 0).
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +305,7 @@ class CheerAdBannerCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.narDark500,
-          borderRadius: BorderRadius.circular(12 * scale),
+          borderRadius: BorderRadius.circular((radius ?? 12) * scale),
         ),
         child: LayoutBuilder(
           builder: (context, c) => Stack(
@@ -320,7 +324,8 @@ class CheerAdBannerCard extends StatelessWidget {
                   bottom: 0,
                   right: 0,
                   // 스플래시 예시 사진은 광고만 잘라낸 그림이라 넓게 보여준다.
-                  width: c.maxWidth * (slot == CheerAdSlot.splash ? 0.52 : 0.45),
+                  width:
+                      c.maxWidth * (slot == CheerAdSlot.splash ? 0.52 : 0.45),
                   child: image,
                 ),
               Padding(

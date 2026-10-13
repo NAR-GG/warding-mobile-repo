@@ -60,10 +60,9 @@ class NarInput extends StatelessWidget {
       height: 55 * scale,
       padding: EdgeInsets.symmetric(horizontal: 16 * scale),
       decoration: BoxDecoration(
-        color:
-            hasError
-                ? AppColors.narDark800
-                : AppColors.narDark800.withValues(alpha: 0.1),
+        color: hasError
+            ? AppColors.narDark800
+            : AppColors.narDark800.withValues(alpha: 0.1),
         border: Border.all(
           color: hasError ? AppColors.narTextRed : AppColors.narInputBorder,
         ),

@@ -94,10 +94,7 @@ class NotificationCard extends StatelessWidget {
                     color: AppColors.narTextTertiary, // #FCFDFE
                   ),
                 ),
-                if (action != null) ...[
-                  SizedBox(height: 4 * scale),
-                  action!,
-                ],
+                if (action != null) ...[SizedBox(height: 4 * scale), action!],
                 SizedBox(height: 4 * scale),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

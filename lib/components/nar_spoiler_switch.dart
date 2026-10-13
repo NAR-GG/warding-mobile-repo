@@ -73,9 +73,7 @@ class NarSpoilerSwitch extends StatelessWidget {
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 150),
                 curve: Curves.easeInOut,
-                alignment: value
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
+                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
                   width: knobSize,
                   height: knobSize,

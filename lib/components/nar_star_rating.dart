@@ -55,10 +55,7 @@ class _Star extends StatelessWidget {
       'assets/icons/star.svg',
       width: size,
       height: size,
-      colorFilter: const ColorFilter.mode(
-        AppColors.narLine2,
-        BlendMode.srcIn,
-      ),
+      colorFilter: const ColorFilter.mode(AppColors.narLine2, BlendMode.srcIn),
     );
     if (fraction <= 0) return emptyStar;
 

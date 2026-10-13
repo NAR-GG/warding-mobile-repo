@@ -112,9 +112,14 @@ class NarButton extends StatelessWidget {
         // 로케일별 실제 문구를 재서, 영어 등 더 긴 언어에서도 버튼 텍스트가
         // 넘치지 않게 한다.
         final l = AppLocalizations.of(context)!;
-        final subscribeWidth = _measureText(l.subscribe, _textStyle(scale)).width;
-        final subscribingWidth =
-            _measureText(l.subscribing, _textStyle(scale)).width;
+        final subscribeWidth = _measureText(
+          l.subscribe,
+          _textStyle(scale),
+        ).width;
+        final subscribingWidth = _measureText(
+          l.subscribing,
+          _textStyle(scale),
+        ).width;
         final labelWidth = subscribeWidth > subscribingWidth
             ? subscribeWidth
             : subscribingWidth;

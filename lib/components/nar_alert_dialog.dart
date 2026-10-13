@@ -16,15 +16,14 @@ Future<bool?> showNarConfirmDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder:
-        (ctx) => NarAlertDialog(
-          title: title,
-          message: message,
-          cancelLabel: cancelLabel,
-          confirmLabel: confirmLabel,
-          onCancel: () => Navigator.of(ctx).pop(false),
-          onConfirm: () => Navigator.of(ctx).pop(true),
-        ),
+    builder: (ctx) => NarAlertDialog(
+      title: title,
+      message: message,
+      cancelLabel: cancelLabel,
+      confirmLabel: confirmLabel,
+      onCancel: () => Navigator.of(ctx).pop(false),
+      onConfirm: () => Navigator.of(ctx).pop(true),
+    ),
   );
 }
 
