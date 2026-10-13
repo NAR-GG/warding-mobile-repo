@@ -8,57 +8,66 @@ import 'cheer_ad_banner.dart';
 import 'nar_button.dart';
 import 'nar_popup_dialog.dart';
 
-/// 팝업이 지금 떠 있는지(겹침 방지). 앱을 다시 켜기 전까지 한 세션에 한 번만 띄운다.
+/// 팝업이 지금 떠 있는지(겹침 방지).
 bool _showing = false;
-bool _shownThisSession = false;
 
-/// 홈 진입 시 '우리 선수 응원 광고 신청' 팝업을 하루(KST) 한 번, 콜드스타트당 한 번만
-/// 띄운다. 가이드 팝업이 뜬 세션에서는 호출하지 않는다(호출 쪽에서 가린다).
+/// 홈 진입 시 '우리 선수 응원 광고 신청' 팝업을 띄운다.
+///
+/// '오늘 하루 보지 않기' 를 누르지 않는 한 홈에 들어올 때마다 계속 띄운다 — 그냥
+/// 닫은 것은 '관심 없다'는 뜻이 아니다. 그 버튼을 누른 날에만 그날치를 건너뛴다.
+/// 가이드 팝업이 뜬 세션에서는 호출하지 않는다(호출 쪽에서 가린다).
 Future<void> maybeShowCheerAdPopup(BuildContext context) async {
-  if (_showing || _shownThisSession) {
-    debugPrint('[CheerAdPopup] 이번 실행에서 이미 떠서 건너뜀');
+  if (_showing) {
+    debugPrint('[CheerAdPopup] 이미 떠 있어 건너뜀');
     return;
   }
-  // 디버그에서는 하루 한 번 제한을 무시한다 — 확인하려고 앱을 켤 때마다 뜬다.
+  // 디버그에서는 '오늘 하루 보지 않기' 기록을 무시한다 — 확인하려고 앱을 켤 때마다 뜬다.
   if (!kDebugMode &&
       !await CheerAdPopupPreferenceRepository.instance.shouldShowToday()) {
-    debugPrint('[CheerAdPopup] 오늘 이미 떠서 건너뜀');
+    debugPrint('[CheerAdPopup] 오늘 하루 보지 않기를 눌러서 건너뜀');
     return;
   }
   if (!context.mounted) return;
   _showing = true;
-  _shownThisSession = true;
   try {
-    // 팝업을 먼저 연 뒤에 '오늘 띄움'을 기록한다. 기록을 기다리는 사이 홈을 떠나면
-    // 팝업을 못 보고도 오늘 분이 날아가기 때문이다.
-    final shown = _showCheerAdPopup(context);
-    await CheerAdPopupPreferenceRepository.instance.markShownToday();
-    await shown;
+    await _showCheerAdPopup(context);
   } finally {
     _showing = false;
   }
 }
 
+/// 하단 버튼은 '오늘 하루 보지 않기'(왼쪽)·'닫기'(오른쪽) 둘뿐이고, 신청 화면으로는
+/// 배너 카드를 직접 눌러 들어간다 — 광고 자리 자체가 버튼이라 자세히 보기 버튼을
+/// 따로 두지 않는다.
 Future<void> _showCheerAdPopup(BuildContext context) {
   final l = AppLocalizations.of(context)!;
   final scale = MediaQuery.of(context).size.width.clamp(320.0, 430.0) / 375;
+  final navigator = Navigator.of(context);
   return showNarPopup<void>(
     context: context,
-    child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.popup),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        navigator.pop();
+        navigator.push(
+          MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
+        );
+      },
+      child: CheerAdBannerCard(scale: scale, slot: CheerAdSlot.popup),
+    ),
     actions: [
       NarPopupAction(
-        label: l.cheerAdPopupClose,
-        onPressed: () => Navigator.of(context).pop(),
+        label: l.cheerAdPopupDismissToday,
+        onPressed: () async {
+          // 먼저 닫는다 — 저장을 기다리는 사이 버튼이 먹지 않는 것처럼 보인다.
+          navigator.pop();
+          await CheerAdPopupPreferenceRepository.instance.markDismissedToday();
+        },
       ),
       NarPopupAction(
-        label: l.cheerAdPopupConfirm,
+        label: l.cheerAdPopupClose,
         variant: NarButtonVariant.type1,
-        onPressed: () {
-          Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const CheerAdScreen()),
-          );
-        },
+        onPressed: () => navigator.pop(),
       ),
     ],
   );

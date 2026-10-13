@@ -205,7 +205,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cheerAdPopupClose => 'Close';
 
   @override
-  String get cheerAdPopupConfirm => 'Learn more';
+  String get cheerAdPopupDismissToday => 'Don\'t show again today';
 
   @override
   String get homeMatchStatusDone => 'Ended';

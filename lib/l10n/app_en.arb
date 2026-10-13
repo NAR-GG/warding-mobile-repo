@@ -89,7 +89,7 @@
   "@cheerAdPrice": {"placeholders": {"price": {"type": "String"}}},
   "cheerAdViewDetail": "View details",
   "cheerAdPopupClose": "Close",
-  "cheerAdPopupConfirm": "Learn more",
+  "cheerAdPopupDismissToday": "Don't show again today",
   "homeMatchStatusDone": "Ended",
   "homeJustNow": "Just now",
   "homeDaysAgo": "{days}d ago",

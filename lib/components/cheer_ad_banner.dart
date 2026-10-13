@@ -17,6 +17,7 @@ class CheerAdBanner extends StatefulWidget {
     required this.scale,
     this.topPadding = 28,
     this.bottomPadding = 0,
+    this.horizontalPadding = 16,
   });
 
   /// 백오피스 광고 위치 키: home | match_list | match_detail.
@@ -24,6 +25,10 @@ class CheerAdBanner extends StatefulWidget {
   final double scale;
   final double topPadding;
   final double bottomPadding;
+
+  /// 좌우 여백. 홈은 양옆 카드들과 맞춰 16 을 두고, 경기 리스트·경기 상세는
+  /// 0 을 넘겨 화면 폭을 꽉 채운다.
+  final double horizontalPadding;
 
   @override
   State<CheerAdBanner> createState() => _CheerAdBannerState();
@@ -39,9 +44,9 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
     final scale = widget.scale;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        16 * scale,
+        widget.horizontalPadding * scale,
         widget.topPadding * scale,
-        16 * scale,
+        widget.horizontalPadding * scale,
         widget.bottomPadding * scale,
       ),
       child: FutureBuilder<Ad?>(
@@ -70,14 +75,26 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
               aspectRatio: CheerAdSlot.banner.aspectRatio,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12 * scale),
-                child: CachedNetworkImage(
-                  imageUrl: ad.imageUrl,
-                  fit: BoxFit.cover,
-                  // 로딩·실패 땐 회색 자리만 — 모집 배너로 바꿨다 되돌리면 깜빡여서.
-                  placeholder: (_, _) =>
-                      const ColoredBox(color: AppColors.narDark500),
-                  errorWidget: (_, _, _) =>
-                      const ColoredBox(color: AppColors.narDark500),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl: ad.imageUrl,
+                        fit: BoxFit.cover,
+                        // 로딩·실패 땐 회색 자리만 — 모집 배너로 바꿨다 되돌리면 깜빡여서.
+                        placeholder: (_, _) =>
+                            const ColoredBox(color: AppColors.narDark500),
+                        errorWidget: (_, _, _) =>
+                            const ColoredBox(color: AppColors.narDark500),
+                      ),
+                    ),
+                    // 실제 광고일수록 표시가 필요하다 — 모집 배너와 같은 자리에 둔다.
+                    Positioned(
+                      top: 8 * scale,
+                      right: 8 * scale,
+                      child: AdBadge(scale: scale),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -239,8 +256,47 @@ class CheerAdBannerCard extends StatelessWidget {
                 ),
                 child: text,
               ),
+              // 광고 표시는 항상 맨 위에 — 사진·문구에 가리면 표시 의무를 못 지킨다.
+              Positioned(
+                top: 8 * scale,
+                right: 8 * scale,
+                child: AdBadge(scale: scale),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 광고 자리임을 알리는 둥근 'AD' 뱃지. 배너·스플래시·팝업 세 자리에 모두 붙는다.
+///
+/// 스토어 심사(App Store 3.2.2 / Play 광고 정책)가 광고임을 알아볼 수 있게 표시하도록
+/// 요구한다. 콘텐츠를 가리지 않게 작게 두되, 사진 위에 올라가도 읽히도록 반투명 검정
+/// 배경을 깐다.
+class AdBadge extends StatelessWidget {
+  const AdBadge({super.key, required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narAdBadgeBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        'AD',
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          fontSize: 9 * scale,
+          height: 1.2,
+          letterSpacing: 0.3 * scale,
+          color: AppColors.narAdBadgeText,
         ),
       ),
     );

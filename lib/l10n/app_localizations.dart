@@ -452,11 +452,11 @@ abstract class AppLocalizations {
   /// **'닫기'**
   String get cheerAdPopupClose;
 
-  /// No description provided for @cheerAdPopupConfirm.
+  /// No description provided for @cheerAdPopupDismissToday.
   ///
   /// In ko, this message translates to:
-  /// **'자세히 보기'**
-  String get cheerAdPopupConfirm;
+  /// **'오늘 하루 보지 않기'**
+  String get cheerAdPopupDismissToday;
 
   /// No description provided for @homeMatchStatusDone.
   ///

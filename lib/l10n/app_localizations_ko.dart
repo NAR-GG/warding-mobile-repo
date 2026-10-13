@@ -200,7 +200,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cheerAdPopupClose => '닫기';
 
   @override
-  String get cheerAdPopupConfirm => '자세히 보기';
+  String get cheerAdPopupDismissToday => '오늘 하루 보지 않기';
 
   @override
   String get homeMatchStatusDone => '종료';

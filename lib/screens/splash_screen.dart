@@ -390,7 +390,8 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.narDark800,
       body: Stack(
         children: [
-          Center(child: _logo()),
+          // 가운데보다 조금 위 — 아래 응원 광고 카드와 사이를 띄운다.
+          Align(alignment: const Alignment(0, -0.25), child: _logo()),
           // 응원 광고 자리 — 스플래시 하단 카드. 눌리지 않는다.
           Positioned(
             left: 20 * scale,

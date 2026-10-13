@@ -829,10 +829,11 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                         child: ColoredBox(
                           color: AppColors.narBgContent,
                           child: CheerAdBanner(
-                              placement: 'match_detail',
-                              scale: scale,
-                              topPadding: 24,
-                            ),
+                            placement: 'match_detail',
+                            scale: scale,
+                            topPadding: 24,
+                            horizontalPadding: 8,
+                          ),
                         ),
                       ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
@@ -1091,6 +1092,7 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
           scale: scale,
           topPadding: 16,
           bottomPadding: 16,
+          horizontalPadding: 8,
         ),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Stats".
         MatchDetailSectionHeader(

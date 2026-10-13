@@ -89,7 +89,7 @@
   "@cheerAdPrice": {"placeholders": {"price": {"type": "String"}}},
   "cheerAdViewDetail": "상세 보기",
   "cheerAdPopupClose": "닫기",
-  "cheerAdPopupConfirm": "자세히 보기",
+  "cheerAdPopupDismissToday": "오늘 하루 보지 않기",
   "homeMatchStatusDone": "종료",
   "homeJustNow": "방금",
   "homeDaysAgo": "{days}일 전",

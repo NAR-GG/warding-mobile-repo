@@ -140,6 +140,11 @@ class AppColors {
     0x4D7048E8,
   ); // rgba(112,72,232,0.3) — 선택 수 배지 배경
 
+  // 광고 표시 뱃지 (응원 광고 자리 — 배너·스플래시·팝업 공통)
+  // 광고임을 알리는 표시라 사진 위에서도 읽혀야 해서 반투명 검정 위에 흐린 흰 글씨를 쓴다.
+  static const Color narAdBadgeBg = Color(0x99000000); // rgba(0,0,0,0.6)
+  static const Color narAdBadgeText = Color(0xCCFFFFFF); // rgba(255,255,255,0.8)
+
   // live match card (라이브 경기 카드 / 라이브 칩)
   static const Color liveBadgeBg = Color(0x1AE03131); // rgba(224,49,49,0.1)
   static const Color liveAccent = Color(0xFFE03131); // 점/LIVE 텍스트
