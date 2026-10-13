@@ -346,6 +346,9 @@ class ApiConfig {
   /// 없으면 204.
   static String get promotedNoticeUrl => '$apiBaseUrl/notices/promoted';
 
+  /// 노출 중인 광고 배너 목록 (공개). 위치별 첫 건을 앱이 쓴다.
+  static String get adsUrl => '$apiBaseUrl/ads';
+
   // ── Live Activity 푸시 토큰 (인증 필요) ──────────────────────────────
 
   /// 실시간 경기 카드 푸시 토큰 등록(POST {matchId, pushToken}).

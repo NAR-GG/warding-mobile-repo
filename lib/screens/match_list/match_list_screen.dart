@@ -742,6 +742,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
         final item = items[index];
         if (item is _AdItem) {
           return CheerAdBanner(
+            placement: 'match_list',
             key: ValueKey('ad-${item.date}'),
             scale: scale,
             topPadding: 16,

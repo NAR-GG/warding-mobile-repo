@@ -828,7 +828,11 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
                       SliverToBoxAdapter(
                         child: ColoredBox(
                           color: AppColors.narBgContent,
-                          child: CheerAdBanner(scale: scale, topPadding: 24),
+                          child: CheerAdBanner(
+                              placement: 'match_detail',
+                              scale: scale,
+                              topPadding: 24,
+                            ),
                         ),
                       ),
                     // 고정 "새로고침" 캡슐·"맨 위로" 버튼이 콘텐츠 끝을 가리지 않게(#287).
@@ -1082,7 +1086,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
         ),
         _championPickContent(scale),
         // 섹션 헤더 키(_sectionKeys)는 그대로라 스크롤스파이·스냅에 영향 없다.
-        CheerAdBanner(scale: scale, topPadding: 16, bottomPadding: 16),
+        CheerAdBanner(
+          placement: 'match_detail',
+          scale: scale,
+          topPadding: 16,
+          bottomPadding: 16,
+        ),
         // 시안 텍스트 그대로 — 로케일과 무관하게 항상 영문 "Player Stats".
         MatchDetailSectionHeader(
           key: _sectionKeys[1],

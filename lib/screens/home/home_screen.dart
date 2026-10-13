@@ -293,7 +293,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               scale: scale,
                               onSeeAllBracket: _openMatchList,
                             ),
-                            CheerAdBanner(scale: scale, topPadding: 16),
+                            CheerAdBanner(
+                              placement: 'home',
+                              scale: scale,
+                              topPadding: 16,
+                            ),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(
                               viewModel: _viewModel,
