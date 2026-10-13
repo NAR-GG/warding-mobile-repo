@@ -164,11 +164,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoticeDefault => 'Check out what\'s new';
 
   @override
-  String get homeCheerAdTitle => 'Book a cheer ad for our player';
+  String get homeCheerAdTitle => 'Advertise on Warding';
 
   @override
-  String get homeCheerAdSubtitle =>
-      'We\'ll put your message up in the Warding app';
+  String get homeCheerAdSubtitle => 'Put your message up in the Warding app';
 
   @override
   String get cheerAdScreenTitle => 'Cheer ad';
@@ -205,7 +204,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cheerAdPopupClose => 'Close';
 
   @override
-  String get cheerAdPopupConfirm => 'Learn more';
+  String get cheerAdPopupDismissToday => 'Don\'t show again today';
 
   @override
   String get homeMatchStatusDone => 'Ended';

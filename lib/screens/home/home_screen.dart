@@ -297,6 +297,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               placement: 'home',
                               scale: scale,
                               topPadding: 16,
+                              // 홈의 다른 섹션들과 같은 좌우 여백(20).
+                              horizontalPadding: 20,
                             ),
                             SizedBox(height: 28 * scale),
                             HomeCommunitySection(

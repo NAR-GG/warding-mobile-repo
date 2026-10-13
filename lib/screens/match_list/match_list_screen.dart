@@ -747,6 +747,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
             scale: scale,
             topPadding: 16,
             bottomPadding: 16,
+            horizontalPadding: 8,
           );
         }
         if (item is _HeaderItem) {

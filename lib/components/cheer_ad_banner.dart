@@ -17,6 +17,7 @@ class CheerAdBanner extends StatefulWidget {
     required this.scale,
     this.topPadding = 28,
     this.bottomPadding = 0,
+    this.horizontalPadding = 16,
   });
 
   /// 백오피스 광고 위치 키: home | match_list | match_detail.
@@ -24,6 +25,10 @@ class CheerAdBanner extends StatefulWidget {
   final double scale;
   final double topPadding;
   final double bottomPadding;
+
+  /// 좌우 여백. 홈은 양옆 카드들과 맞춰 16 을 두고, 경기 리스트·경기 상세는
+  /// 0 을 넘겨 화면 폭을 꽉 채운다.
+  final double horizontalPadding;
 
   @override
   State<CheerAdBanner> createState() => _CheerAdBannerState();
@@ -39,9 +44,9 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
     final scale = widget.scale;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        16 * scale,
+        widget.horizontalPadding * scale,
         widget.topPadding * scale,
-        16 * scale,
+        widget.horizontalPadding * scale,
         widget.bottomPadding * scale,
       ),
       child: FutureBuilder<Ad?>(
@@ -57,19 +62,45 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
               child: CheerAdBannerCard(scale: scale),
             );
           }
-          final link = ad.linkUrl;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: link == null
-                ? null
-                : () => launchUrl(
-                    Uri.parse(link),
-                    mode: LaunchMode.externalApplication,
-                  ),
-            child: AspectRatio(
-              aspectRatio: CheerAdSlot.banner.aspectRatio,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12 * scale),
+          return RegisteredAdCard(ad: ad, scale: scale);
+        },
+      ),
+    );
+  }
+}
+
+/// 백오피스에 등록된 광고 한 건을 [slot] 규격 비율로 그린다. 이동 주소가 있으면
+/// 눌러서 외부 브라우저로 연다. 다섯 자리(배너 3곳·스플래시·팝업)가 함께 쓴다.
+class RegisteredAdCard extends StatelessWidget {
+  const RegisteredAdCard({
+    super.key,
+    required this.ad,
+    required this.scale,
+    this.slot = CheerAdSlot.banner,
+  });
+
+  final Ad ad;
+  final double scale;
+  final CheerAdSlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final link = ad.linkUrl;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: link == null
+          ? null
+          : () => launchUrl(
+              Uri.parse(link),
+              mode: LaunchMode.externalApplication,
+            ),
+      child: AspectRatio(
+        aspectRatio: slot.aspectRatio,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12 * scale),
+          child: Stack(
+            children: [
+              Positioned.fill(
                 child: CachedNetworkImage(
                   imageUrl: ad.imageUrl,
                   fit: BoxFit.cover,
@@ -80,10 +111,60 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
                       const ColoredBox(color: AppColors.narDark500),
                 ),
               ),
-            ),
-          );
-        },
+              // 실제 광고일수록 표시가 필요하다 — 모집 배너와 같은 자리에 둔다.
+              Positioned(
+                top: 8 * scale,
+                right: 8 * scale,
+                child: AdBadge(scale: scale),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+/// 스플래시·팝업 자리. 등록 광고가 있으면 그 이미지를, 없으면 모집 배너를 둔다.
+/// 배너 3곳의 [CheerAdBanner] 와 같은 일을 하되 여백·탭 동작은 호출 쪽에 맡긴다
+/// (스플래시는 눌리지 않고, 팝업은 카드 전체가 신청 화면으로 가는 버튼이다).
+class CheerAdSlotView extends StatefulWidget {
+  const CheerAdSlotView({
+    super.key,
+    required this.placement,
+    required this.scale,
+    required this.slot,
+  });
+
+  /// 백오피스 광고 위치 키: splash | popup.
+  final String placement;
+  final double scale;
+  final CheerAdSlot slot;
+
+  @override
+  State<CheerAdSlotView> createState() => _CheerAdSlotViewState();
+}
+
+class _CheerAdSlotViewState extends State<CheerAdSlotView> {
+  late final Future<Ad?> _ad = AdRepository.instance.forPlacement(
+    widget.placement,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Ad?>(
+      future: _ad,
+      builder: (context, snapshot) {
+        final ad = snapshot.data;
+        if (ad == null) {
+          return CheerAdBannerCard(scale: widget.scale, slot: widget.slot);
+        }
+        return RegisteredAdCard(
+          ad: ad,
+          scale: widget.scale,
+          slot: widget.slot,
+        );
+      },
     );
   }
 }
@@ -95,25 +176,29 @@ enum CheerAdSlot {
   banner(
     'assets/images/cheer_ad/banner.png',
     960 / 300,
-    Alignment(0, 0.15),
+    Alignment(0, -0.52),
     16,
     12,
+    zoom: 0.8,
   ),
   splash(
     'assets/images/cheer_ad/splash.png',
     1080 / 720,
-    Alignment(0, 0.85),
+    // 이 에셋은 폰 목업이 아니라 광고 부분만 잘라낸 그림이다. 줄여서 넣어
+    // 위아래 여백이 보이게 한다.
+    Alignment(0, 0),
     22,
     15,
-    zoom: 0.72,
+    zoom: 0.78,
   ),
   popup(
     'assets/images/cheer_ad/popup.png',
     1080 / 1440,
-    Alignment(0, -0.2),
+    Alignment(0, -0.32),
     24,
-    15,
-    zoom: 0.72,
+    // 부제가 길어 15 에서는 두 줄로 쪼개진다("...올려보세 / 요").
+    13,
+    zoom: 0.32,
   );
 
   const CheerAdSlot(
@@ -164,8 +249,15 @@ class CheerAdBannerCard extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, area) => ClipRect(
           child: OverflowBox(
-            alignment: Alignment(portrait ? 0 : 1, slot.focus.y),
-            maxWidth: area.maxWidth,
+            // 스플래시 예시 사진은 광고만 잘라낸 그림이라 가운데에 둔다(오른쪽에
+            // 붙이면 줄여 넣었을 때 한쪽으로 쏠린다).
+            alignment: Alignment(
+              portrait || slot == CheerAdSlot.splash ? 0 : 1,
+              slot.focus.y,
+            ),
+            // zoom > 1 로 확대하려면 폭 제한도 함께 풀어야 한다 — area.maxWidth 로
+            // 묶어 두면 SizedBox 가 그 값으로 잘려 확대가 먹지 않는다.
+            maxWidth: area.maxWidth * (slot.zoom > 1 ? slot.zoom : 1),
             minHeight: 0,
             maxHeight: double.infinity,
             child: SizedBox(
@@ -227,7 +319,8 @@ class CheerAdBannerCard extends StatelessWidget {
                   top: 0,
                   bottom: 0,
                   right: 0,
-                  width: c.maxWidth * 0.45,
+                  // 스플래시 예시 사진은 광고만 잘라낸 그림이라 넓게 보여준다.
+                  width: c.maxWidth * (slot == CheerAdSlot.splash ? 0.52 : 0.45),
                   child: image,
                 ),
               Padding(
@@ -239,8 +332,48 @@ class CheerAdBannerCard extends StatelessWidget {
                 ),
                 child: text,
               ),
+              // 예시 사진 안에도 뱃지가 찍혀 있지만 페이드·크롭에 묻혀 잘 안 보인다.
+              // 광고 자리라는 표시는 항상 읽혀야 하므로 앱이 따로 얹는다.
+              Positioned(
+                top: 8 * scale,
+                right: 8 * scale,
+                child: AdBadge(scale: scale),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 광고 자리임을 알리는 둥근 'AD' 뱃지. 배너·스플래시·팝업 세 자리에 모두 붙는다.
+///
+/// 스토어 심사(App Store 3.2.2 / Play 광고 정책)가 광고임을 알아볼 수 있게 표시하도록
+/// 요구한다. 콘텐츠를 가리지 않게 작게 두되, 사진 위에 올라가도 읽히도록 반투명 검정
+/// 배경을 깐다.
+class AdBadge extends StatelessWidget {
+  const AdBadge({super.key, required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6 * scale, vertical: 2 * scale),
+      decoration: BoxDecoration(
+        color: AppColors.narAdBadgeBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        'AD',
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          fontSize: 9 * scale,
+          height: 1.2,
+          letterSpacing: 0.3 * scale,
+          color: AppColors.narAdBadgeText,
         ),
       ),
     );
