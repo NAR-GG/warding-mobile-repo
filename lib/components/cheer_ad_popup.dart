@@ -41,7 +41,7 @@ Future<void> maybeShowCheerAdPopup(BuildContext context) async {
 /// 따로 두지 않는다.
 ///
 /// 가이드 팝업이 쓰는 공용 [showNarPopup] 은 안쪽 여백 24 에 어두운 버튼이라 광고가
-/// 작아 보인다. 광고는 이미지를 가장자리까지 채우고 하단에 흰 버튼 바를 두는 전용
+/// 작아 보인다. 광고는 이미지를 가장자리까지 채우고 하단에 어두운 버튼 바를 두는 전용
 /// 레이아웃([_AdPopupDialog])으로 띄운다(공용 팝업·가이드 팝업은 건드리지 않는다).
 Future<void> _showCheerAdPopup(BuildContext context) {
   final l = AppLocalizations.of(context)!;
@@ -66,7 +66,7 @@ Future<void> _showCheerAdPopup(BuildContext context) {
   );
 }
 
-/// 광고 팝업 틀. 위는 광고 이미지(여백 없음), 아래는 흰 버튼 바 — 왼쪽 '오늘 하루
+/// 광고 팝업 틀. 위는 광고 이미지(여백 없음), 아래는 어두운 버튼 바 — 왼쪽 '오늘 하루
 /// 보지 않기', 오른쪽 '닫기' 를 가는 세로선으로 나눈다.
 class _AdPopupDialog extends StatelessWidget {
   const _AdPopupDialog({
@@ -89,9 +89,9 @@ class _AdPopupDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = TextStyle(
       fontFamily: 'Pretendard',
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
       fontSize: 15 * scale,
-      color: AppColors.narDark800,
+      color: AppColors.narText,
     );
     Widget button(String text, VoidCallback onTap) => Expanded(
       child: InkWell(
@@ -124,14 +124,14 @@ class _AdPopupDialog extends StatelessWidget {
                 image,
                 Container(
                   height: 56 * scale,
-                  color: AppColors.narText,
+                  color: AppColors.narDark500,
                   child: Row(
                     children: [
                       button(dismissLabel, onDismissToday),
                       Container(
                         width: 1,
                         height: 24 * scale,
-                        color: AppColors.narDark500,
+                        color: AppColors.narLine,
                       ),
                       button(closeLabel, onClose),
                     ],
