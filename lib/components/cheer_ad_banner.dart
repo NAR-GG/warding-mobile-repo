@@ -266,7 +266,17 @@ class CheerAdBannerCard extends StatelessWidget {
             maxHeight: double.infinity,
             child: SizedBox(
               width: area.maxWidth * slot.zoom,
-              child: Image.asset(slot.asset, fit: BoxFit.fitWidth),
+              child: slot == CheerAdSlot.splash
+                  // 에셋 오른쪽 끝에 폰 베젤의 어두운 테두리가 남아 있어 세로선처럼
+                  // 보인다. 왼쪽을 기준으로 살짝 키워 오른쪽 끝을 바깥 ClipRect 밖으로
+                  // 밀어낸다. (OverflowBox 가 폭을 영역에 꽉 채워 zoom 이 먹지 않아
+                  // Align.widthFactor 로는 자를 수 없다.)
+                  ? Transform.scale(
+                      scale: 1.05,
+                      alignment: Alignment.centerLeft,
+                      child: Image.asset(slot.asset, fit: BoxFit.fitWidth),
+                    )
+                  : Image.asset(slot.asset, fit: BoxFit.fitWidth),
             ),
           ),
         ),
