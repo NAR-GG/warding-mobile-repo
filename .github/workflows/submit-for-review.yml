@@ -45,7 +45,7 @@ jobs:
   submit-ios:
     if: inputs.platform == 'ios' || inputs.platform == 'both'
     # 러너 이미지 고정 이유는 release-deploy.yml 의 build-ios 주석 참고.
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
