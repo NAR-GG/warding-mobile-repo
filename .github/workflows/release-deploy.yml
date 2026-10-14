@@ -1,0 +1,493 @@
+name: 릴리즈 빌드·스토어 제출
+
+# release/<pubspec 의 version> 태그를 push 하면 e2e → 빌드 → 스토어 업로드 → 심사
+# 제출까지 돈다. 설계·결정 배경은 intent/release-build-automation/spec.md 참고.
+#
+# 빌드는 반드시 shorebird release 로 한다. flutter build ipa / appbundle 은 Shorebird
+# 업데이터가 안 들어가서, 그 빌드를 설치한 유저가 코드 푸시 패치를 영원히 못 받는다
+# (1.0.3 iOS 가 이 실수로 나갔다). 이 워크플로우에 그 명령을 넣지 않는 것으로 막는다.
+on:
+  push:
+    tags: ['release/*']
+
+# 같은 태그로 두 번 돌면 스토어에 중복 업로드가 되므로 뒤엣것을 취소하지 않고
+# 앞엣것이 끝나기를 기다린다 (cancel-in-progress: false).
+concurrency:
+  group: release-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.44.0'
+
+jobs:
+  # ── [1] 태그 ↔ pubspec 버전 일치 + 단위/위젯 테스트 ────────────────────────
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 태그 버전과 pubspec 버전이 같은지 확인
+        id: version
+        run: |
+          set -euo pipefail
+          # 태그는 release/1.0.33+78 — 앞의 'release/' 를 떼면 pubspec 의 version 과
+          # 글자까지 같아야 한다 (CLAUDE.md 태그 규칙).
+          TAG_VERSION="${GITHUB_REF_NAME#release/}"
+          PUBSPEC_VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
+          echo "태그: $TAG_VERSION / pubspec: $PUBSPEC_VERSION"
+          if [ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]; then
+            echo "::error::태그 버전($TAG_VERSION)과 pubspec version($PUBSPEC_VERSION)이 다르다. 태그를 지우고 pubspec 과 같은 이름으로 다시 찍어라."
+            exit 1
+          fi
+          echo "version=$PUBSPEC_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: annotated 태그인지 확인
+        run: |
+          set -euo pipefail
+          # lightweight 태그는 자기 날짜가 없어 커밋 날짜로 대체되는데, 알고 싶은 건
+          # 빌드 시각이다 (CLAUDE.md: -a 필수). shorebird 의 created_at 과 대조하려면
+          # annotated 여야 한다.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          TYPE=$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")
+          if [ "$TYPE" != "tag" ]; then
+            echo "::error::$GITHUB_REF_NAME 이 lightweight 태그다. 'git tag -a' 로 다시 찍어라."
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  # ── [2] e2e 게이트 — 통과해야 빌드로 넘어간다 ──────────────────────────────
+  # 기존 e2e-release-check.yml 을 그대로 호출한다(workflow_call). "릴리즈 직전 e2e
+  # 수동 실행" 규칙을 사람의 기억이 아니라 파이프라인이 강제한다.
+  e2e:
+    needs: verify
+    uses: ./.github/workflows/e2e-release-check.yml
+    secrets:
+      DISCORD_PR_WEBHOOK_URL: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+
+  # ── [3-a] iOS: shorebird release → TestFlight ─────────────────────────────
+  build-ios:
+    needs: e2e
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      - name: 배포 인증서 키체인에 설치
+        env:
+          CERT_P12: ${{ secrets.IOS_DIST_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # 러너 전용 임시 키체인 — 러너가 폐기되면 같이 사라진다.
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+
+          echo -n "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          # codesign 이 매번 암호를 묻지 않게 한다 (헤드리스라 물으면 그대로 멈춘다).
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychain -d user -s "$KEYCHAIN" login.keychain
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+          COUNT=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -c 'Distribution' || true)
+          if [ "$COUNT" -lt 1 ]; then
+            echo "::error::배포 인증서가 키체인에 안 들어갔다. IOS_DIST_CERT_P12 / PASSWORD 를 확인하라."
+            security find-identity -v -p codesigning "$KEYCHAIN"
+            exit 1
+          fi
+
+      - name: App Store Connect API 키 배치
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          set -euo pipefail
+          # altool/xcodebuild 가 이 경로에서 키를 찾는다.
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$ASC_KEY_P8" | base64 --decode \
+            > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: 프로비저닝 프로파일 설치
+        env:
+          PROFILE_RUNNER: ${{ secrets.IOS_PROFILE_RUNNER }}
+          PROFILE_WIDGET: ${{ secrets.IOS_PROFILE_WIDGET }}
+        run: |
+          set -euo pipefail
+          # 프로파일이 2개다 — 앱 본체(com.nar.wardingapp)와 위젯 익스텐션
+          # (com.nar.wardingapp.WardingScheduleWidget). 하나라도 빠지면 아카이브에서
+          # 실패한다. RunnerTests 는 아카이브에 안 들어가 프로파일이 필요 없다.
+          DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$DIR"
+          echo -n "$PROFILE_RUNNER" | base64 --decode > "$DIR/runner.mobileprovision"
+          echo -n "$PROFILE_WIDGET" | base64 --decode > "$DIR/widget.mobileprovision"
+          for f in runner widget; do
+            if [ ! -s "$DIR/$f.mobileprovision" ]; then
+              echo "::error::$f 프로파일이 비어 있다. Secret 을 확인하라."
+              exit 1
+            fi
+          done
+
+      - name: Secrets.xcconfig 복원 (네이버 Client Secret)
+        env:
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
+          # Release.xcconfig 의 '#include?' 는 파일이 없어도 조용히 넘어가서
+          # NidClientSecret 이 빈 값으로 빌드된다 — 1.0.14+21 때 네이버 로그인만
+          # 침묵 실패한 사고의 원인이다. 그 뒤 프로젝트에 Release 면 빌드를
+          # 실패시키는 가드 스크립트가 들어갔으므로, 여기서 복원하지 않으면
+          # 아카이브 단계에서 그 가드에 걸려 멈춘다.
+          if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
+            echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다. 등록하지 않으면 Release 아카이브가 실패한다."
+            exit 1
+          fi
+          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > ios/Flutter/Secrets.xcconfig
+
+      - run: flutter pub get
+
+      - name: shorebird release ios
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        run: |
+          set -euo pipefail
+          # --export-options-plist 로 Manual 서명 설정을 넘긴다. 프로젝트의
+          # CODE_SIGN_STYLE=Automatic 은 로컬 Xcode 개발용으로 그대로 두고,
+          # CI 아카이브만 이 plist 로 수동 서명한다.
+          #
+          # 이 플래그는 shorebird 가 직접 받는 것이라 '--' 앞에 둔다. '--' 뒤는
+          # shorebird 가 모르는 flutter build 플래그를 넘기는 자리다.
+          shorebird release ios \
+            --export-options-plist=ios/ExportOptions-ci.plist \
+            2>&1 | tee /tmp/ios-build.log
+
+      - name: TestFlight 업로드
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          IPA=$(find build/ios/ipa -name '*.ipa' -maxdepth 1 | head -1)
+          if [ -z "$IPA" ]; then
+            echo "::error::ipa 를 못 찾았다. 빌드 로그를 확인하라."
+            ls -R build/ios/ipa || true
+            exit 1
+          fi
+          echo "업로드: $IPA"
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
+            2>&1 | tee /tmp/ios-upload.log
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-log
+          path: |
+            /tmp/ios-build.log
+            /tmp/ios-upload.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ── [3-b] Android: shorebird release → Play 내부테스트 ────────────────────
+  build-android:
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      - name: 릴리즈 서명 키 복원
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # build.gradle.kts 는 key.properties 가 없으면 조용히 debug 서명으로
+          # 떨어진다 — 그 상태로 빌드하면 스토어가 거부하는 aab 가 나오므로
+          # 복원 직후 두 파일을 확인하고 없으면 즉시 실패시킨다.
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/warding-release.jks
+          # heredoc 대신 printf 를 쓴다 — YAML 블록 안에서 heredoc 을 쓰면 들여쓰기가
+          # 그대로 파일 내용에 들어가 'storePassword=' 앞에 공백이 붙고, 닫는 EOF 도
+          # 0번 칼럼이 아니어서 heredoc 이 끝나지 않는다.
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=warding-release.jks\n' \
+            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          for f in android/warding-release.jks android/key.properties; do
+            if [ ! -s "$f" ]; then
+              echo "::error::$f 복원 실패 — debug 서명으로 빌드될 수 있어 중단한다."
+              exit 1
+            fi
+          done
+
+      - name: naver_secrets.xml 복원
+        env:
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # android/app/src/main/res/values/naver_secrets.xml 도 .gitignore 라 CI 에
+          # 없다. iOS 와 달리 Android 쪽에는 빈 값을 막는 가드가 없어, 없으면 리소스
+          # 참조가 깨져 빌드가 실패하거나 네이버 로그인만 조용히 안 되는 aab 가 나온다.
+          if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
+            echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다."
+            exit 1
+          fi
+          # heredoc 을 쓰지 않는 이유는 위 서명 키 복원 스텝의 주석과 같다.
+          printf '%s\n<resources>\n    <string name="naver_client_secret">%s</string>\n</resources>\n' \
+            '<?xml version="1.0" encoding="utf-8"?>' "$NAVER_CLIENT_SECRET" \
+            > android/app/src/main/res/values/naver_secrets.xml
+
+      - run: flutter pub get
+
+      - name: shorebird release android
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        run: |
+          set -euo pipefail
+          shorebird release android 2>&1 | tee /tmp/android-build.log
+
+      - name: aab 가 release 서명인지 확인
+        run: |
+          set -euo pipefail
+          AAB=$(find build/app/outputs/bundle/release -name '*.aab' | head -1)
+          if [ -z "$AAB" ]; then
+            echo "::error::aab 를 못 찾았다."
+            exit 1
+          fi
+          # debug 키로 서명됐으면 Play 가 거부한다 — 업로드 전에 걸러낸다.
+          if unzip -p "$AAB" META-INF/\*.RSA 2>/dev/null | keytool -printcert 2>/dev/null | grep -qi 'CN=Android Debug'; then
+            echo "::error::aab 가 debug 키로 서명됐다. key.properties 복원을 확인하라."
+            exit 1
+          fi
+          echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
+
+      - name: Play 내부테스트 업로드
+        # @v1 태그는 2019년에 멈춰 있어 버전을 고정한다.
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.warding.app
+          releaseFiles: ${{ env.AAB_PATH }}
+          track: internal
+          status: completed
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-log
+          path: /tmp/android-build.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ── [4] 심사 제출 ─────────────────────────────────────────────────────────
+  submit:
+    needs: [verify, build-ios, build-android]
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: App Store 심사 제출
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          # 메타데이터·스크린샷은 App Store Connect 에 이미 올라가 있는 것을 쓴다
+          # (코드로 관리하는 건 이 작업 범위 밖 — spec 의 Out of scope 참고).
+          MARKETING_VERSION="${VERSION%%+*}"   # 1.0.33+78 → 1.0.33
+          BUILD_NUMBER="${VERSION##*+}"        # 1.0.33+78 → 78
+
+          # API 키는 JSON 파일로 넘긴다. 'fastlane run app_store_connect_api_key' 를
+          # 따로 부르고 그다음 deliver 를 부르면 두 프로세스가 달라 인증이 이어지지
+          # 않는다 — deliver 가 직접 읽는 --api_key_path 를 쓴다.
+          # key 는 .p8 '내용' 을 그대로 넣는다(파일 경로가 아니다).
+          P8_CONTENT=$(echo -n "$ASC_KEY_P8" | base64 --decode)
+          jq -n --arg kid "$ASC_KEY_ID" --arg iss "$ASC_ISSUER_ID" --arg key "$P8_CONTENT" \
+            '{key_id:$kid, issuer_id:$iss, key:$key, in_house:false}' > "$RUNNER_TEMP/asc_key.json"
+
+          gem install --no-document fastlane
+
+          # 업로드 직후 빌드는 'PROCESSING' 상태라 바로 제출할 수 없다. 처리가 끝날
+          # 때까지 폴링한다 (최대 45분 — Apple 쪽 처리 시간은 들쭉날쭉하다).
+          # app_store_build_number 는 처리가 끝난 빌드만 보이므로, 우리가 올린
+          # 빌드 번호가 보일 때까지 기다리는 것으로 'PROCESSING 끝'을 판정한다.
+          DEADLINE=$(( $(date +%s) + 45 * 60 ))
+          PROCESSED=false
+          until [ "$(date +%s)" -ge "$DEADLINE" ]; do
+            LATEST=$(fastlane run app_store_build_number \
+              api_key_path:"$RUNNER_TEMP/asc_key.json" \
+              app_identifier:com.nar.wardingapp \
+              version:"$MARKETING_VERSION" \
+              live:false 2>/dev/null \
+              | grep -oE 'Result: *[0-9]+' | grep -oE '[0-9]+' | tail -1 || true)
+            if [ "${LATEST:-0}" -ge "$BUILD_NUMBER" ] 2>/dev/null; then
+              echo "빌드 $BUILD_NUMBER 처리 완료"
+              PROCESSED=true
+              break
+            fi
+            echo "빌드 처리 대기 중 (ASC 최신: ${LATEST:-없음} / 기다리는 중: $BUILD_NUMBER)"
+            sleep 60
+          done
+          if [ "$PROCESSED" != "true" ]; then
+            # 기다리다 끝났는데 그냥 제출로 넘어가면 "처리 중인 빌드" 라 애매하게
+            # 실패한다. 여기서 명확히 끊어 로그에 원인을 남긴다.
+            echo "::error::45분을 기다렸지만 빌드 $BUILD_NUMBER 가 App Store Connect 에서 처리 완료되지 않았다. ASC 에서 상태를 확인하고 제출 잡만 다시 실행하라."
+            exit 1
+          fi
+
+          echo "제출: $MARKETING_VERSION ($BUILD_NUMBER)"
+          # 'deliver submit_build' 가 이미 올라간 빌드를 심사에 올리는 공식 경로다.
+          # 'deliver submit_for_review' 는 서브커맨드가 아니라 플래그 이름이어서
+          # 그렇게 부르면 동작하지 않는다.
+          fastlane deliver submit_build \
+            --api_key_path "$RUNNER_TEMP/asc_key.json" \
+            --app_identifier com.nar.wardingapp \
+            --app_version "$MARKETING_VERSION" \
+            --build_number "$BUILD_NUMBER" \
+            --skip_binary_upload true \
+            --skip_metadata true \
+            --skip_screenshots true \
+            --submit_for_review true \
+            --automatic_release false \
+            --precheck_include_in_app_purchases false \
+            --force true \
+            2>&1 | tee /tmp/ios-submit.log
+          rm -f "$RUNNER_TEMP/asc_key.json"
+
+      - name: Play production 단계적 출시 (10%)
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          # 내부테스트에 올라간 빌드를 production 으로 승격한다. 한 번에 100% 가
+          # 아니라 10% 로 올려, 문제가 보이면 롤아웃을 멈출 수 있게 한다.
+          #
+          # rollout 이 0 과 1 사이면 supply 가 릴리즈 상태를 inProgress 로 덮어쓰므로
+          # track_promote_release_status 를 같이 주지 않는다 (같이 줘도 무시된다).
+          # version_code 는 반드시 준다 — 내부테스트 트랙에 릴리즈가 2개 이상이면
+          # "use :version_code to filter the release to promote" 로 실패한다.
+          BUILD_NUMBER="${VERSION##*+}"
+          echo -n "$PLAY_JSON" > /tmp/play.json
+          gem install --no-document fastlane
+          fastlane run upload_to_play_store \
+            package_name:com.warding.app \
+            json_key:/tmp/play.json \
+            track:internal \
+            track_promote_to:production \
+            rollout:0.1 \
+            version_code:"$BUILD_NUMBER" \
+            skip_upload_aab:true \
+            skip_upload_metadata:true \
+            skip_upload_images:true \
+            skip_upload_screenshots:true \
+            2>&1 | tee /tmp/android-submit.log
+          rm -f /tmp/play.json
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: submit-log
+          path: |
+            /tmp/ios-submit.log
+            /tmp/android-submit.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ── [5] 결과 알림 ─────────────────────────────────────────────────────────
+  notify:
+    needs: [verify, e2e, build-ios, build-android, submit]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord 알림
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          R_VERIFY: ${{ needs.verify.result }}
+          R_E2E: ${{ needs.e2e.result }}
+          R_IOS: ${{ needs.build-ios.result }}
+          R_ANDROID: ${{ needs.build-android.result }}
+          R_SUBMIT: ${{ needs.submit.result }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "🔴" ;;
+              cancelled) echo "⚪" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❔" ;;
+            esac
+          }
+          # cancelled 를 실패와 구분한다 — 사람이 일부러 멈춘 것까지 빨간 "실패" 로
+          # 나가면 아무도 안 깨뜨렸는데 릴리즈가 막힌 것처럼 보인다
+          # (e2e-release-check.yml 과 같은 판단).
+          if [ "$R_SUBMIT" = "success" ]; then
+            TITLE="🚀 릴리즈 제출 완료 — $VERSION"
+            COLOR=3066993
+          elif [ "$R_VERIFY" = "cancelled" ] || [ "$R_E2E" = "cancelled" ] \
+            || [ "$R_IOS" = "cancelled" ] || [ "$R_ANDROID" = "cancelled" ] \
+            || [ "$R_SUBMIT" = "cancelled" ]; then
+            TITLE="⚪ 릴리즈 취소됨 — $VERSION"
+            COLOR=9807270
+          else
+            TITLE="🔴 릴리즈 실패 — $VERSION"
+            COLOR=15158332
+          fi
+          DESC=$(printf '%s 검증 · %s e2e · %s iOS · %s Android · %s 제출\n\n[실행 로그](%s)' \
+            "$(icon "$R_VERIFY")" "$(icon "$R_E2E")" "$(icon "$R_IOS")" \
+            "$(icon "$R_ANDROID")" "$(icon "$R_SUBMIT")" "$RUN_URL")
+          jq -n --arg t "$TITLE" --arg d "$DESC" --argjson c "$COLOR" \
+            '{embeds:[{title:$t,description:$d,color:$c}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
