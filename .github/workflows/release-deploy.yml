@@ -104,11 +104,16 @@ jobs:
   # ── [3-a] iOS: shorebird release → TestFlight ─────────────────────────────
   build-ios:
     needs: e2e
-    # macos-latest 를 쓰지 않고 고정한다. 러너 이미지가 바뀌면서 .p12 import 가
-    # 깨져 "No valid code signing certificates were found" 가 나는 사례가
-    # 보고됐는데(actions/runner-images#13884), 하필 Flutter + shorebird release ios
-    # 환경이었다. 서명이 걸린 잡이라 이미지 변경을 우리가 통제한다.
-    runs-on: macos-15
+    # 러너 이미지를 고정한다. 바뀌면서 .p12 import 가 깨져 "No valid code signing
+    # certificates were found" 가 나는 사례가 보고됐는데(actions/runner-images#13884),
+    # 하필 Flutter + shorebird release ios 환경이었다.
+    #
+    # macos-26 을 쓰는 이유: macos-15 는 Xcode 16 이고, 그 셰이더 컴파일러가
+    # liquid_glass_renderer 패키지의 .frag 를 거부한다
+    # ("loop index initializer must be a constant expression"). 로컬에서 성공하던
+    # 빌드가 CI 에서만 죽어서 확인해 보니 로컬은 Xcode 26 이었다. 실제로 나간
+    # 릴리즈(1.0.33+79, +80)와 같은 툴체인으로 맞춘다.
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -411,7 +416,13 @@ jobs:
             exit 0
           fi
           echo "범위: $PREV .. $GITHUB_REF_NAME"
-          LOG=$(git log "$PREV".."$GITHUB_REF_NAME" --no-merges --pretty=format:'%s%n%b' | head -c 6000)
+          # 'git log | head -c' 를 쓰지 않는다. head 가 먼저 끝나면 git log 가
+          # SIGPIPE 로 죽고, set -o pipefail 때문에 스텝 전체가 exit 141 로
+          # 실패한다(1.0.33+81 에서 실제로 밟았다 — 커밋 로그가 6000바이트를
+          # 넘으면 항상 터진다). 커밋 수를 git 쪽에서 제한하고, 길이는 셸
+          # 파라미터 확장으로 자른다.
+          LOG=$(git log "$PREV".."$GITHUB_REF_NAME" --no-merges --pretty=format:'%s%n%b' -n 80)
+          LOG="${LOG:0:6000}"
           if [ -z "$LOG" ]; then
             echo "user_facing=skip" >> "$GITHUB_OUTPUT"; exit 0
           fi
