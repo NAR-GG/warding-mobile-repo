@@ -1,0 +1,118 @@
+name: 심사 제출 (Discord 버튼)
+
+# Discord 릴리즈 알림의 [심사 제출] 버튼이 2단계 확인을 거쳐 보내는 요청을 받는다.
+# tools/discord-bridge 가 repository_dispatch(release-submit)로 쏜다.
+#
+# 하는 일은 두 가지다.
+#   1) 패치노트 초안이 함께 왔으면 distribution/ 에 반영하고 main 에 커밋한다.
+#   2) submit-for-review.yml 을 실행한다.
+#
+# 실제 제출 로직을 여기에 복사하지 않고 기존 워크플로우를 호출하는 이유: Actions 탭에서
+# 직접 실행하는 경로가 계속 살아 있어야 한다. Discord 나 Vercel 이 죽어도 릴리즈가
+# 막히면 안 된다.
+#
+# 설계 배경은 intent/discord-release-approval/spec.md 참고.
+
+on:
+  repository_dispatch:
+    types: [release-submit]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  # 같은 앱에 제출을 동시에 두 번 보내지 않는다.
+  group: release-submit
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.DISPATCH_TOKEN }}
+
+      - name: 입력 검증
+        id: check
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          PLATFORM: ${{ github.event.client_payload.platform }}
+        run: |
+          set -euo pipefail
+          # bridge 가 이미 걸렀지만, repository_dispatch 는 토큰만 있으면 누구나 쏠 수
+          # 있는 경로라 여기서도 막는다.
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$'; then
+            echo "::error::버전 형식이 올바르지 않다: $VERSION"
+            exit 1
+          fi
+          case "$PLATFORM" in
+            ios|android|both) ;;
+            *) echo "::error::platform 이 올바르지 않다: $PLATFORM"; exit 1 ;;
+          esac
+          # 태그가 실제로 있는 버전인지 확인한다. 빌드된 적 없는 버전을 심사에
+          # 올리려는 요청을 막는다.
+          git fetch --tags --quiet
+          if ! git rev-parse "refs/tags/release/$VERSION" >/dev/null 2>&1; then
+            echo "::error::release/$VERSION 태그가 없다. 빌드된 적 없는 버전은 제출할 수 없다."
+            exit 1
+          fi
+          echo "검증 통과: $VERSION / $PLATFORM"
+
+      - name: 패치노트를 distribution/ 에 반영
+        id: notes
+        env:
+          NOTES: ${{ github.event.client_payload.releaseNotes }}
+          VERSION: ${{ github.event.client_payload.version }}
+          REQUESTER: ${{ github.event.client_payload.requestedBy }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NOTES:-}" ]; then
+            echo "초안이 없다 — distribution/ 에 있는 내용 그대로 제출한다"
+            exit 0
+          fi
+          # Play 500자 제한. 넘으면 업로드가 거부되므로 커밋하기 전에 막는다.
+          LEN=$(printf '%s' "$NOTES" | wc -m | tr -d ' ')
+          if [ "$LEN" -gt 500 ]; then
+            echo "::error::패치노트가 ${LEN}자로 Play 제한(500자)을 넘는다."
+            exit 1
+          fi
+          printf '%s\n' "$NOTES" > distribution/whatsnew/whatsnew-ko-KR
+          cp distribution/whatsnew/whatsnew-ko-KR distribution/metadata/ko/release_notes.txt
+
+          if git diff --quiet -- distribution/; then
+            echo "변경 없음 — 커밋하지 않는다"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add distribution/
+          git commit -m "docs: $VERSION 패치노트를 반영한다 (Discord 승인: $REQUESTER)"
+          git push origin main
+          echo "distribution/ 에 반영하고 push 했다"
+
+      - name: 심사 제출 워크플로우 실행
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          VERSION: ${{ github.event.client_payload.version }}
+          PLATFORM: ${{ github.event.client_payload.platform }}
+        run: |
+          set -euo pipefail
+          gh workflow run submit-for-review.yml --ref main \
+            -f version="$VERSION" \
+            -f platform="$PLATFORM"
+          echo "submit-for-review.yml 실행 요청 — $VERSION / $PLATFORM"
+
+      - name: 실패 알림
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL || secrets.DISCORD_PR_WEBHOOK_URL }}
+          VERSION: ${{ github.event.client_payload.version }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          jq -n --arg t "🔴 심사 제출 요청 실패 — $VERSION" --arg d "$RUN_URL" --argjson c 15158332 \
+            '{embeds:[{title:$t,description:$d,color:$c}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @- || true

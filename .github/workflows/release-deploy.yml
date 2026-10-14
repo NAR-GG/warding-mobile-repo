@@ -449,6 +449,10 @@ jobs:
           R_ANDROID: ${{ needs.build-android.result }}
           DRAFT_KO: ${{ needs.release-notes.outputs.ko }}
           DRAFT_UF: ${{ needs.release-notes.outputs.user_facing }}
+          # 버튼을 붙이려면 봇으로 보내야 한다(웹훅은 components 를 무시한다).
+          # 둘 중 하나라도 없으면 기존 웹훅으로 버튼 없이 보낸다.
+          BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_RELEASE_CHANNEL_ID }}
         run: |
           set -euo pipefail
           icon() {
@@ -499,14 +503,37 @@ jobs:
             *) FIELD_TITLE=""; FIELD_BODY="" ;;
           esac
 
+          # 업로드가 성공했으면 심사 제출 버튼을 붙인다.
+          #
+          # 버튼을 보내려면 **봇 토큰으로 보내야 한다.** 일반 채널 웹훅은
+          # "Non-application-owned webhooks cannot send interactive components" 라
+          # components 가 그냥 무시된다(Discord 문서). 봇 토큰이 없으면 버튼 없이
+          # 웹훅으로 보내고, 심사 제출은 Actions 탭에서 한다.
+          COMPONENTS='[]'
+          if [ "$R_IOS" = "success" ] || [ "$R_ANDROID" = "success" ]; then
+            COMPONENTS=$(jq -n --arg v "$VERSION" '[{
+              type:1, components:[
+                {type:2, style:3, label:"✅ 심사 제출", custom_id:("rel_submit:"+$v)},
+                {type:2, style:2, label:"취소", custom_id:"rel_cancel"}
+              ]}]')
+          fi
+
           if [ -n "$FIELD_BODY" ]; then
             jq -n --arg t "$TITLE" --arg d "$DESC" --argjson c "$COLOR" \
-                  --arg ft "$FIELD_TITLE" --arg fb "$FIELD_BODY" \
+                  --arg ft "$FIELD_TITLE" --arg fb "$FIELD_BODY" --argjson comp "$COMPONENTS" \
               '{embeds:[{title:$t,description:$d,color:$c},
-                        {title:$ft,description:$fb,color:$c}]}' \
-              | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
+                        {title:$ft,description:$fb,color:$c}], components:$comp}' > /tmp/msg.json
           else
-            jq -n --arg t "$TITLE" --arg d "$DESC" --argjson c "$COLOR" \
-              '{embeds:[{title:$t,description:$d,color:$c}]}' \
+            jq -n --arg t "$TITLE" --arg d "$DESC" --argjson c "$COLOR" --argjson comp "$COMPONENTS" \
+              '{embeds:[{title:$t,description:$d,color:$c}], components:$comp}' > /tmp/msg.json
+          fi
+
+          if [ -n "${BOT_TOKEN:-}" ] && [ -n "${CHANNEL_ID:-}" ] && [ "$COMPONENTS" != "[]" ]; then
+            curl -sf -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+              -H "Authorization: Bot $BOT_TOKEN" \
+              -H "Content-Type: application/json" -d @/tmp/msg.json > /dev/null
+          else
+            # 버튼은 뺀다 — 웹훅으로는 어차피 무시된다.
+            jq 'del(.components)' /tmp/msg.json \
               | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
           fi

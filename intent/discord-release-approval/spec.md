@@ -4,9 +4,9 @@ Intent: 없음 (문제는 명확하고 설계 결정만 필요해 Spec 부터 �
 `intent/loop-engineering-workflow/spec.md` "저장 구조" 표의 세 번째 줄)
 warding-docs: 해당 없음 (개발 쪽 CI 작업이다)
 
-> **구현 상태**: 이 Spec 의 **1단계(AI 패치노트 초안 → Discord 알림)만 구현됐다.**
-> Discord 버튼으로 심사를 제출하는 2단계는 아직 만들지 않았다. 초안을 보고
-> `distribution/` 에 반영한 뒤, 심사 제출은 지금처럼 Actions 탭에서 실행한다.
+> **구현 상태**: 1단계(AI 초안)·2단계(버튼 제출) 모두 구현됐다. 다만
+> **`DISCORD_BOT_TOKEN` 과 `DISCORD_RELEASE_CHANNEL_ID` 가 등록되기 전에는 버튼이
+> 붙지 않는다** — 그때는 기존 웹훅으로 초안만 보내고, 제출은 Actions 탭에서 한다.
 
 ## Summary
 
@@ -85,6 +85,21 @@ Discord 버튼은 Actions 탭보다 훨씬 누르기 쉽다. 그게 목적이지
 
 커밋은 `github-actions[bot]` 이름으로 `main` 에 직접 push 한다. 릴리즈 시점의 기계적인
 변경이라 PR 리뷰를 거칠 이유가 없다.
+
+### 버튼은 봇 토큰으로 보내야 한다
+
+처음에는 기존 채널 웹훅에 `components` 를 실어 보내려 했는데, **Discord 가 무시한다.**
+공식 문서에 이렇게 적혀 있다:
+
+> "Non-application-owned webhooks cannot send interactive components, and the
+> `components` field will be ignored."
+
+지금 쓰는 `DISCORD_PR_WEBHOOK_URL` 은 채널에서 만든 일반 웹훅이라 여기 해당한다. 그래서
+버튼이 붙은 메시지는 **봇 토큰으로 `POST /channels/{id}/messages`** 를 호출해 보낸다
+(`DISCORD_BOT_TOKEN`, `DISCORD_RELEASE_CHANNEL_ID`).
+
+둘 중 하나라도 없으면 **기존 웹훅으로 버튼 없이** 보낸다. 토큰을 등록하기 전에도 알림과
+초안은 그대로 오고, 제출만 Actions 탭에서 하면 된다.
 
 ### custom_id 에 무엇을 싣는가
 
