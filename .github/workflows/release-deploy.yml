@@ -517,6 +517,7 @@ jobs:
             COMPONENTS=$(jq -n --arg v "$VERSION" '[{
               type:1, components:[
                 {type:2, style:3, label:"✅ 심사 제출", custom_id:("rel_submit:"+$v)},
+                {type:2, style:1, label:"✏️ 패치노트 수정", custom_id:("rel_edit:"+$v)},
                 {type:2, style:2, label:"취소", custom_id:"rel_cancel"}
               ]}]')
           fi

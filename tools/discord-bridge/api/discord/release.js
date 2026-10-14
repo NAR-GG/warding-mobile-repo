@@ -57,7 +57,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (interaction.type !== InteractionType.MESSAGE_COMPONENT) {
+  const isComponent = interaction.type === InteractionType.MESSAGE_COMPONENT;
+  const isModal = interaction.type === InteractionType.MODAL_SUBMIT;
+  if (!isComponent && !isModal) {
     sendText(res, 400, 'unhandled interaction type');
     return;
   }
@@ -136,6 +138,85 @@ export default async function handler(req, res) {
           (releaseNotes
             ? '패치노트 초안을 distribution/ 에 반영하고 제출합니다.'
             : 'distribution/ 에 있는 패치노트 그대로 제출합니다.'),
+      },
+    });
+    return;
+  }
+
+  // ── [수정] 패치노트를 Discord 안에서 고친다 ─────────────────────────────
+  // 레포에 PR 을 올렸다 머지하고 돌아올 필요 없이, 초안을 그 자리에서 손본다.
+  // 모달 입력창에 현재 초안을 미리 채워 두고(value), 고친 내용을 그대로 쓴다.
+  if (customId.startsWith('rel_edit:')) {
+    const version = parseVersion(customId.slice('rel_edit:'.length));
+    if (!version) return badVersion();
+
+    const current = extractReleaseNotes(interaction.message) ?? '';
+    sendJson(res, 200, {
+      type: InteractionResponseType.MODAL,
+      data: {
+        // MODAL_SUBMIT 에는 원본 메시지가 딸려 오지 않을 수 있어서, 버전을
+        // custom_id 에 실어 보낸다.
+        custom_id: `rel_notes_modal:${version}`,
+        title: `${version} 패치노트`,
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: 'notes',
+                label: '스토어에 올릴 패치노트',
+                style: 2, // paragraph
+                required: true,
+                // Play 가 500자 제한이라 여기서 먼저 막는다.
+                max_length: 500,
+                value: current,
+              },
+            ],
+          },
+        ],
+      },
+    });
+    return;
+  }
+
+  // 모달에서 고친 패치노트로 제출한다. 모달 자체가 '수정하겠다'는 의사 표시라
+  // 여기서 확인을 한 번 더 받는다(버튼 흐름과 같은 2단계).
+  if (isModal && customId.startsWith('rel_notes_modal:')) {
+    const version = parseVersion(customId.slice('rel_notes_modal:'.length));
+    if (!version) return badVersion();
+
+    const notes = interaction.data?.components?.[0]?.components?.[0]?.value ?? '';
+    if (!notes.trim()) {
+      sendJson(res, 200, {
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: '❌ 패치노트가 비어 있어요.', flags: 64 },
+      });
+      return;
+    }
+
+    const err = await dispatch('release-submit', {
+      version,
+      platform: 'both',
+      releaseNotes: notes,
+      requestedBy: user,
+    }).catch((e) => e);
+
+    if (err) {
+      console.error('[release-bot] dispatch failed', err);
+      sendJson(res, 200, {
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: '❌ 제출 실패 — GitHub 연동 중 오류가 났어요.', flags: 64 },
+      });
+      return;
+    }
+
+    sendJson(res, 200, {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        content:
+          `✅ **${version}** 을 고친 패치노트로 제출했어요. (요청: ${user})\n` +
+          '```\n' + notes.slice(0, 1800) + '\n```',
       },
     });
     return;
