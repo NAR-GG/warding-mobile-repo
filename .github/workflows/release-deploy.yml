@@ -129,6 +129,9 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
 
           echo -n "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          # .p12 는 'openssl pkcs12 -export -legacy' 로 만들어야 한다. OpenSSL 3 의
+          # 기본 암호화(AES-256-CBC + PBKDF2)로 만들면 macOS 의 security 가 못 열고
+          # "MAC verification failed during PKCS12 import" 로 여기서 실패한다.
           security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" \
             -T /usr/bin/codesign -T /usr/bin/security
           # codesign 이 매번 암호를 묻지 않게 한다 (헤드리스라 물으면 그대로 멈춘다).
