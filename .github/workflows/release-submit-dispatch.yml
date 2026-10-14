@@ -20,6 +20,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 concurrency:
   # 같은 앱에 제출을 동시에 두 번 보내지 않는다.
@@ -67,6 +68,7 @@ jobs:
           NOTES: ${{ github.event.client_payload.releaseNotes }}
           VERSION: ${{ github.event.client_payload.version }}
           REQUESTER: ${{ github.event.client_payload.requestedBy }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "${NOTES:-}" ]; then
@@ -86,12 +88,25 @@ jobs:
             echo "변경 없음 — 커밋하지 않는다"
             exit 0
           fi
+
+          # main 에 직접 push 하지 않는다. 'main-pr-only' ruleset 이 PR 을 강제하고
+          # bypass 주체가 없어서 bot 도 막힌다("Changes must be made through a pull
+          # request"). 브랜치를 따서 PR 로 올린다.
+          #
+          # PR 을 자동 머지하지 않는 이유: 심사는 이미 제출되므로 패치노트 PR 이
+          # 늦게 머지돼도 스토어 쪽에는 영향이 없다. 사람이 문구를 한 번 더 보고
+          # 머지하는 편이 안전하다.
+          BRANCH="docs/release-notes-$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add distribution/
           git commit -m "docs: $VERSION 패치노트를 반영한다 (Discord 승인: $REQUESTER)"
-          git push origin main
-          echo "distribution/ 에 반영하고 push 했다"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "docs: $VERSION 패치노트" \
+            --body "$(printf 'Discord 에서 **%s** 님이 승인한 패치노트입니다.\n\n심사 제출은 이미 시작됐고, 이 PR 은 레포에 기록을 남기기 위한 것입니다.\n\n```\n%s\n```\n' "$REQUESTER" "$NOTES")"
+          echo "패치노트 PR 을 올렸다 — $BRANCH"
 
       - name: 심사 제출 워크플로우 실행
         env:

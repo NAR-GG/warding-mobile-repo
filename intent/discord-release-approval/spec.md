@@ -84,8 +84,12 @@ Discord 버튼은 Actions 탭보다 훨씬 누르기 쉽다. 그게 목적이지
 - `distribution/` 을 파일로 관리하기로 한 기존 결정
   ([release-build-automation](../release-build-automation/spec.md) Decisions)과 어긋나지 않는다.
 
-커밋은 `github-actions[bot]` 이름으로 `main` 에 직접 push 한다. 릴리즈 시점의 기계적인
-변경이라 PR 리뷰를 거칠 이유가 없다.
+**`main` 에 직접 push 하지 않고 PR 로 올린다.** 레포에 `main-pr-only` ruleset 이 걸려
+있어 PR 을 강제하고 bypass 주체가 없다 — bot 도 막힌다
+("Changes must be made through a pull request"). 실제로 직접 push 를 시도해 보고 확인했다.
+
+PR 을 자동 머지하지는 않는다. 심사 제출은 이미 시작된 뒤라 패치노트 PR 이 늦게 머지돼도
+스토어 쪽에는 영향이 없고, 사람이 문구를 한 번 더 보고 머지하는 편이 안전하다.
 
 ### 버튼은 봇 토큰으로 보내야 한다
 
@@ -200,5 +204,6 @@ GitHub Actions 에는 outputStyle 이 닿지 않는다).
   수정 후 메시지를 갱신해야 하는데, webhook 으로 보낸 메시지를 bridge 가 수정할 권한이
   있는지 확인하지 못했다.
 - ~~`main` 브랜치 보호 규칙이 있으면 bot 의 직접 push 가 막힐 수 있다.~~
-  → **해결됨**: `main` 에 보호 규칙이 없어 bot push 가 가능하다. 나중에 보호 규칙을
-  켜게 되면 이 흐름을 다시 봐야 한다.
+  → **해결됨**: 막힌다. 구형 branch-protection API 로는 "없음" 으로 보였지만 실제로는
+  `main-pr-only` **ruleset** 이 걸려 있다(`/rulesets` 로 확인). 그래서 패치노트를 PR 로
+  올리도록 고쳤다.
