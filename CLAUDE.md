@@ -88,6 +88,14 @@ lib/
 
 ## 릴리즈 / 배포 (Shorebird)
 
+> **자동화가 준비돼 있지만 아직 켜지지 않았다.** `release/*` 태그를 밀면 검증 → e2e →
+> 빌드 → TestFlight·Play 내부테스트 업로드까지 도는 `release-deploy.yml`과, 버튼으로
+> 심사에 올리는 `submit-for-review.yml`이 있다. 다만 **Apple·Google Secrets가 아직
+> 등록되지 않아 돌지 않는다** (iOS 배포 인증서·프로파일은 새로 발급해야 한다 —
+> 지금 맥의 것은 Cloud Managed라 내보낼 수 없다). 등록 전까지는 아래 수동 절차가
+> 유효하다. 준비 작업과 첫 적용 순서는 `intent/release-build-automation/plan.md` 참고.
+> 자동화를 실제로 한 번 돌려 검증한 뒤 이 문서의 절차를 갱신한다.
+
 **스토어 제출용 빌드는 반드시 `shorebird release`로 뽑는다. `flutter build ipa`/`flutter build appbundle` 금지.**
 일반 빌드에는 Shorebird 업데이터가 안 들어가서, 그 빌드를 설치한 유저는 코드 푸시 패치를 영원히 못 받는다
 (1.0.3 iOS가 이 실수로 나가서 다음 스토어 릴리즈 전까지 패치 불가였음).
