@@ -2,7 +2,7 @@
 
 ## Context
 
-- Intent: 없음 (Spec 부터 시작했다)
+- Intent: [intent.md](./intent.md)
 - Spec: [spec.md](./spec.md)
 
 ## Changes
@@ -11,6 +11,7 @@
 |---|---|
 | `.github/workflows/release-deploy.yml` | 신규. `release/*` 태그 push → 검증 → e2e → 빌드(iOS·Android 병렬) → TestFlight·Play 내부테스트 업로드 → Discord 알림. **심사 제출은 사람이 한다** |
 | `.github/workflows/e2e-release-check.yml` | `workflow_call` 트리거 추가. 기존 `workflow_dispatch` 수동 실행과 에스컬레이션 동작은 그대로 유지한다 |
+| `.github/workflows/submit-for-review.yml` | 신규. 버튼으로 실행하는 심사 제출 (버전·플랫폼·롤아웃 비율을 입력받는다). 릴리즈 파이프라인과 분리한 이유는 spec 의 Decisions 참고 |
 | `ios/ExportOptions-ci.plist` | 신규. CI 아카이브 전용 수동 서명 설정 (프로파일 2개: 앱 본체·위젯 익스텐션) |
 | `intent/release-build-automation/spec.md` | 신규. 설계·결정 배경 |
 
@@ -30,7 +31,8 @@
 
 ### iOS
 1. **App Store Connect API 키** (ASC → 사용자 및 액세스 → 통합 → 앱 스토어 커넥트 API)
-   - TestFlight 업로드만 하므로 `App Manager` 까지는 필요 없다. 업로드 권한이면 된다.
+   - `submit-for-review.yml` 이 심사 제출까지 하므로 **`App Manager` 이상**이 필요하다.
+     업로드만 할 거면 더 낮아도 되지만, 두 워크플로우가 같은 키를 쓴다.
    - `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (.p8 파일을 base64)
    - **.p8 은 한 번만 내려받을 수 있다.** 잃으면 키를 새로 만들어야 한다.
 2. **배포 인증서** (Apple Distribution) — ⚠️ **지금 이 맥에는 없다. 새로 만들어야 한다.**
@@ -105,7 +107,10 @@
 1. Secrets 를 전부 등록한다.
 2. **버전을 올리지 않은 상태로** 태그를 하나 찍어 `verify` 잡까지만 통과하는지 본다
    (버전 불일치로 일부러 실패시켜, 검증 스텝이 실제로 막는지 확인한다).
-3. 실제 릴리즈 버전으로 태그를 찍어 끝까지 돌린다. 첫 회는 Actions 로그를 지켜보고,
-   `submit` 잡 전에 멈춰야 하면 워크플로우를 취소한다.
+3. 실제 릴리즈 버전으로 태그를 찍어 끝까지 돌린다. 첫 회는 Actions 로그를 지켜본다.
+   릴리즈 파이프라인은 업로드에서 끝나므로 심사로 새어 나갈 위험이 없다.
+3-1. TestFlight 에 올라온 빌드를 직접 확인한 뒤, `submit-for-review.yml` 을
+   **iOS 만** 골라 한 번 돌려 본다. Android production 승격은 되돌리기 어려우므로
+   iOS 쪽이 먼저 검증된 뒤에 쓴다.
 4. 잘 돌면 CLAUDE.md 의 릴리즈 절차를 갱신한다 — "태그를 찍으면 TestFlight·내부테스트
    까지 자동, 심사 제출은 콘솔에서 수동". 자동화가 검증되기 전에는 고치지 않는다.

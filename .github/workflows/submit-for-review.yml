@@ -1,0 +1,235 @@
+name: 심사 제출 (수동)
+
+# 이미 TestFlight·Play 내부테스트에 올라간 빌드를 심사/프로덕션에 올린다.
+# release-deploy.yml 이 업로드까지 끝낸 뒤, 사람이 TestFlight 에서 확인하고
+# 이 워크플로우를 Actions 탭에서 눌러 실행한다.
+#
+# 릴리즈 파이프라인에 넣지 않고 따로 뺀 이유:
+#   1) 심사 제출에는 CI 가 재시도로 넘을 수 없는 블로커가 있다. 같은 앱의 다른
+#      빌드가 이미 심사 중이면 Apple 이 제출을 거부한다(fastlane#12551). 이걸
+#      릴리즈 파이프라인에 묶으면 빌드·업로드는 멀쩡히 끝났는데 파이프라인
+#      전체가 빨간불이 된다.
+#   2) 심사 제출은 되돌리기 어려운 일방향 동작이다. 태그를 미는 것과는 다른
+#      무게의 결정이라 발동 시점을 사람이 따로 고르는 게 맞다.
+#   3) Apple 공식 레퍼런스 워크플로우와 Shorebird 공식 fastlane 가이드가 모두
+#      TestFlight 에서 멈춘다. 업계 표준이 "업로드는 자동, 제출은 수동" 이다.
+#
+# 설계 배경은 intent/release-build-automation/spec.md 참고.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '제출할 버전 (pubspec 형식 그대로, 예: 1.0.33+80)'
+        required: true
+      platform:
+        description: '제출할 플랫폼'
+        required: true
+        default: 'ios'
+        type: choice
+        options: [ios, android, both]
+      android_rollout:
+        description: 'Android production 단계적 출시 비율 (0.1 = 10%)'
+        required: false
+        default: '0.1'
+
+permissions:
+  contents: read
+
+concurrency:
+  # 같은 앱에 제출을 동시에 두 번 보내지 않는다.
+  group: submit-for-review
+  cancel-in-progress: false
+
+jobs:
+  submit-ios:
+    if: inputs.platform == 'ios' || inputs.platform == 'both'
+    # 러너 이미지 고정 이유는 release-deploy.yml 의 build-ios 주석 참고.
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: App Store 심사 제출
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          # 입력은 사람이 손으로 넣는 값이라 형식을 먼저 막는다.
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$'; then
+            echo "::error::버전 형식이 올바르지 않다: $VERSION (예: 1.0.33+80)"
+            exit 1
+          fi
+          MARKETING_VERSION="${VERSION%%+*}"   # 1.0.33+80 → 1.0.33
+          BUILD_NUMBER="${VERSION##*+}"        # 1.0.33+80 → 80
+
+          # API 키는 JSON 파일로 넘긴다. 'fastlane run app_store_connect_api_key' 를
+          # 따로 부르고 그다음 deliver 를 부르면 두 프로세스가 달라 인증이 이어지지
+          # 않는다 — deliver 가 직접 읽는 --api_key_path 를 쓴다.
+          # key 는 .p8 '내용' 을 그대로 넣는다(파일 경로가 아니다).
+          P8_CONTENT=$(echo -n "$ASC_KEY_P8" | base64 --decode)
+          jq -n --arg kid "$ASC_KEY_ID" --arg iss "$ASC_ISSUER_ID" --arg key "$P8_CONTENT" \
+            '{key_id:$kid, issuer_id:$iss, key:$key, in_house:false}' > "$RUNNER_TEMP/asc_key.json"
+
+          gem install --no-document fastlane
+
+          # 업로드 직후 빌드는 'PROCESSING' 상태라 바로 제출할 수 없다. 처리가 끝날
+          # 때까지 폴링한다 (최대 45분 — Apple 쪽 처리 시간은 들쭉날쭉하다).
+          # app_store_build_number 는 처리가 끝난 빌드만 보이므로, 우리가 올린
+          # 빌드 번호가 보일 때까지 기다리는 것으로 'PROCESSING 끝'을 판정한다.
+          DEADLINE=$(( $(date +%s) + 45 * 60 ))
+          PROCESSED=false
+          until [ "$(date +%s)" -ge "$DEADLINE" ]; do
+            LATEST=$(fastlane run app_store_build_number \
+              api_key_path:"$RUNNER_TEMP/asc_key.json" \
+              app_identifier:com.nar.wardingapp \
+              version:"$MARKETING_VERSION" \
+              live:false 2>/dev/null \
+              | grep -oE 'Result: *[0-9]+' | grep -oE '[0-9]+' | tail -1 || true)
+            if [ "${LATEST:-0}" -ge "$BUILD_NUMBER" ] 2>/dev/null; then
+              echo "빌드 $BUILD_NUMBER 처리 완료"
+              PROCESSED=true
+              break
+            fi
+            echo "빌드 처리 대기 중 (ASC 최신: ${LATEST:-없음} / 기다리는 중: $BUILD_NUMBER)"
+            sleep 60
+          done
+          if [ "$PROCESSED" != "true" ]; then
+            echo "::error::45분을 기다렸지만 빌드 $BUILD_NUMBER 가 App Store Connect 에서 처리 완료되지 않았다. ASC 에서 상태를 확인하고 다시 실행하라."
+            exit 1
+          fi
+
+          echo "제출: $MARKETING_VERSION ($BUILD_NUMBER)"
+          # 'deliver submit_build' 가 이미 올라간 빌드를 심사에 올리는 공식 경로다.
+          # 'deliver submit_for_review' 는 서브커맨드가 아니라 플래그 이름이어서
+          # 그렇게 부르면 동작하지 않는다.
+          #
+          # 메타데이터·스크린샷은 App Store Connect 에 이미 올라가 있는 것을 쓴다
+          # (코드로 관리하는 건 범위 밖 — spec 의 Out of scope 참고).
+          fastlane deliver submit_build \
+            --api_key_path "$RUNNER_TEMP/asc_key.json" \
+            --app_identifier com.nar.wardingapp \
+            --app_version "$MARKETING_VERSION" \
+            --build_number "$BUILD_NUMBER" \
+            --skip_binary_upload true \
+            --skip_metadata true \
+            --skip_screenshots true \
+            --submit_for_review true \
+            --automatic_release false \
+            --precheck_include_in_app_purchases false \
+            --force true \
+            2>&1 | tee /tmp/ios-submit.log
+          rm -f "$RUNNER_TEMP/asc_key.json"
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-submit-log
+          path: /tmp/ios-submit.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  submit-android:
+    if: inputs.platform == 'android' || inputs.platform == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Play production 단계적 출시
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VERSION: ${{ inputs.version }}
+          ROLLOUT: ${{ inputs.android_rollout }}
+        run: |
+          set -euo pipefail
+
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$'; then
+            echo "::error::버전 형식이 올바르지 않다: $VERSION (예: 1.0.33+80)"
+            exit 1
+          fi
+          # rollout 은 0 초과 1 이하여야 한다. 범위를 벗어나면 supply 가 거부한다.
+          if ! awk -v r="$ROLLOUT" 'BEGIN{exit !(r>0 && r<=1)}'; then
+            echo "::error::rollout 은 0 초과 1 이하여야 한다: $ROLLOUT"
+            exit 1
+          fi
+          BUILD_NUMBER="${VERSION##*+}"
+
+          echo -n "$PLAY_JSON" > "$RUNNER_TEMP/play.json"
+          gem install --no-document fastlane
+
+          # 내부테스트에 올라간 빌드를 production 으로 승격한다.
+          #
+          # rollout 이 0 과 1 사이면 supply 가 릴리즈 상태를 inProgress 로 덮어쓰므로
+          # track_promote_release_status 를 같이 주지 않는다 (같이 줘도 무시된다).
+          # version_code 는 반드시 준다 — 내부테스트 트랙에 릴리즈가 2개 이상이면
+          # "use :version_code to filter the release to promote" 로 실패한다.
+          echo "승격: build $BUILD_NUMBER → production ${ROLLOUT}"
+          fastlane run upload_to_play_store \
+            package_name:com.warding.app \
+            json_key:"$RUNNER_TEMP/play.json" \
+            track:internal \
+            track_promote_to:production \
+            rollout:"$ROLLOUT" \
+            version_code:"$BUILD_NUMBER" \
+            skip_upload_aab:true \
+            skip_upload_metadata:true \
+            skip_upload_images:true \
+            skip_upload_screenshots:true \
+            2>&1 | tee /tmp/android-submit.log
+          rm -f "$RUNNER_TEMP/play.json"
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-submit-log
+          path: /tmp/android-submit.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  notify:
+    needs: [submit-ios, submit-android]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord 알림
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          VERSION: ${{ inputs.version }}
+          PLATFORM: ${{ inputs.platform }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          R_IOS: ${{ needs.submit-ios.result }}
+          R_ANDROID: ${{ needs.submit-android.result }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "🔴" ;;
+              cancelled) echo "⚪" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❔" ;;
+            esac
+          }
+          # 건너뛴 플랫폼(skipped)은 실패가 아니다 — 한쪽만 제출하는 게 정상 사용이다.
+          if [ "$R_IOS" = "failure" ] || [ "$R_ANDROID" = "failure" ]; then
+            TITLE="🔴 심사 제출 실패 — $VERSION"
+            COLOR=15158332
+          elif [ "$R_IOS" = "cancelled" ] || [ "$R_ANDROID" = "cancelled" ]; then
+            TITLE="⚪ 심사 제출 취소됨 — $VERSION"
+            COLOR=9807270
+          else
+            TITLE="📮 심사 제출 완료 — $VERSION"
+            COLOR=3066993
+          fi
+          DESC=$(printf '%s iOS · %s Android (%s)\n\n[실행 로그](%s)' \
+            "$(icon "$R_IOS")" "$(icon "$R_ANDROID")" "$PLATFORM" "$RUN_URL")
+          jq -n --arg t "$TITLE" --arg d "$DESC" --argjson c "$COLOR" \
+            '{embeds:[{title:$t,description:$d,color:$c}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-

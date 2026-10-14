@@ -1,7 +1,6 @@
 # Spec: 릴리즈 빌드·스토어 제출 자동화
 
-Intent: 없음 (문제는 명확하고 설계 결정만 필요해 Spec부터 시작한다 —
-`intent/loop-engineering-workflow/spec.md` "저장 구조" 표의 세 번째 줄)
+Intent: [intent.md](./intent.md)
 warding-docs: 해당 없음 (화면 기능이 아니라 개발 쪽 CI 작업이다)
 
 ## Summary
@@ -28,8 +27,9 @@ warding-docs: 해당 없음 (화면 기능이 아니라 개발 쪽 CI 작업이�
 4. 빌드는 **반드시 `shorebird release`** 로 한다. `flutter build ipa` / `flutter build appbundle`
    은 쓰지 않는다. 워크플로우에 그 명령이 들어가지 않는 것으로 구조적으로 보장한다.
 5. iOS 는 TestFlight 에, Android 는 Play 내부 테스트 트랙에 업로드한다.
-6. **심사 제출은 자동화하지 않는다.** 업로드까지가 파이프라인의 끝이고, 심사에 올리는
-   것과 Play production 승격은 사람이 콘솔에서 한다.
+6. **심사 제출은 릴리즈 파이프라인에서 분리한다.** 릴리즈 파이프라인은 업로드에서 끝나고,
+   심사 제출·Play production 승격은 **버튼으로 실행하는 별도 워크플로우**
+   (`submit-for-review.yml`)가 맡는다. 발동 시점을 사람이 고른다.
 7. 파이프라인의 각 단계 결과를 Discord 로 알린다 (기존 두 워크플로우와 같은 웹훅).
 8. 실패하면 어느 단계에서 깨졌는지 로그를 아티팩트로 남긴다.
 
@@ -47,9 +47,13 @@ release/1.0.34+79 태그 push
 [3] build-ios (macos)  ─┐  shorebird release ios   → TestFlight 업로드
     build-android(ubuntu)┘  shorebird release android → Play 내부테스트 업로드
    ↓
-[4] notify             — Discord 결과 알림 (여기까지가 자동)
+[4] notify             — Discord 결과 알림 (릴리즈 파이프라인은 여기서 끝)
    ↓
-[사람] App Store 심사 제출 / Play production 승격
+[사람] TestFlight 에서 확인 → 괜찮으면 아래를 버튼으로 실행
+   ↓
+submit-for-review.yml (workflow_dispatch)
+   submit-ios     — 빌드 처리 대기 → deliver submit_build
+   submit-android — 내부테스트 → production 승격 (단계적 출시)
 ```
 
 `[3]` 의 두 잡은 서로 의존이 없어 병렬로 돈다. `[4]` 는 둘 다 성공해야 돈다.
@@ -163,8 +167,9 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
   조건으로 쓴다. 지금 손으로 찍는 태그가 그대로 트리거가 되고, shorebird 가 커밋을
   남기지 않아 생기던 "이 릴리즈가 어느 코드였나" 역추적 문제도 같이 해결된다.
   `main` push 트리거는 쓰지 않는다 — 커밋마다 스토어 빌드가 나가면 안 된다.
-- **심사 제출은 자동화하지 않고 TestFlight·내부테스트에서 멈춘다.** 처음에는 제출까지
-  자동화하려 했지만, 다른 프로젝트들이 어떻게 하는지 조사해 보고 바꿨다.
+- **심사 제출을 릴리즈 파이프라인에서 떼어내 별도 수동 워크플로우로 뺀다.** 처음에는
+  릴리즈 파이프라인 안에서 제출까지 하려 했지만, 다른 프로젝트들이 어떻게 하는지 조사해
+  보고 바꿨다.
   - **Apple 공식 레퍼런스 워크플로우**(`Apple-Actions/Example-macOS`)와 **Shorebird 공식
     fastlane 가이드**가 모두 TestFlight 에서 멈춘다. 표준 패턴이 `submit_for_review: false` 다.
   - `deliver submit_build` 에는 **CI 가 재시도로 넘을 수 없는 블로커**가 있다. 다른 빌드가
@@ -172,6 +177,11 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
     보고돼 있다(fastlane#21477).
   - 심사 제출은 되돌리기 어려운 일방향 동작이라, CLAUDE.md 가 릴리즈를 "태그를 찍고
     사람이 확인하는 의도적 행위" 로 다루는 것과도 결이 맞는다.
+  - **다만 제출 자체를 손으로 하라는 뜻은 아니다.** 블로커에 걸렸을 때 릴리즈 파이프라인
+    전체가 빨간불이 되는 것이 문제이지, 제출 작업을 기계가 하는 것은 그대로 이득이다.
+    그래서 `submit-for-review.yml` 로 분리해 **발동 시점만 사람이 고르게** 했다.
+    한국 Flutter 사례(velog, tksuns12)도 "TestFlight·내부테스트까지 자동, 그 뒤는 수동
+    승격" 으로 같은 구조다.
 - **Shorebird 공식 액션(`shorebirdtech/shorebird-release@v1`)을 쓴다.** 직접
   `run: shorebird release` 하지 않는다. Shorebird 가 릴리즈를 CI 에서 돌리는 것을 공식
   권장하고 전용 액션을 제공한다.
@@ -196,14 +206,15 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
   다루지 않는다. 릴리즈 빌드 자동화와 독립적으로 뒤에 붙일 수 있다.
 - **릴리즈 브랜치 전략 변경.** 구버전 릴리즈에 패치를 낼 때 릴리즈별 브랜치가 필요해질
   수 있지만, 지금 구버전 패치는 드물다. 실제로 필요해질 때 태그에서 브랜치를 딴다.
-- **심사 제출 자동화.** 위 Decisions 참고. 나중에 하게 되면 별도 수동 워크플로우
-  (`workflow_dispatch`)로 두는 쪽이 낫다 — 릴리즈 파이프라인에 묶으면 심사 중 블로커에
-  파이프라인 전체가 걸린다.
-- **Play production 승격·단계적 출시.** 내부테스트까지만 올린다. 자동화하게 되면
-  `userFraction` 은 `status: inProgress` 와 함께 줘야 먹는다는 점에 주의한다
-  (r0adkll/upload-google-play#200).
+- **심사 제출을 릴리즈 파이프라인 안에서 자동 실행하는 것.** 제출 자체는
+  `submit-for-review.yml` 로 자동화했지만, 태그 push 로 자동 발동시키지는 않는다.
+  위 Decisions 참고.
 - **스토어 메타데이터·스크린샷 코드 관리.** 설명·스크린샷을 코드로 관리하는 것
-  (fastlane deliver 의 metadata 디렉터리)은 별도 작업이다.
+  (fastlane deliver 의 metadata 디렉터리)은 별도 작업이다. 지금은 콘솔에 이미 올라가
+  있는 메타데이터로 제출한다.
+- **단계적 출시 자동 승격.** `submit-for-review.yml` 이 production 에 올리는 것까지는
+  하지만, 10% → 50% → 100% 로 비율을 올리는 것은 콘솔에서 사람이 한다. 크래시·ANR
+  지표를 보고 판단할 일이라 자동화 대상이 아니다.
 - **빌드 번호 자동 증가.** 위 Decisions 참고.
 
 ## Open questions
