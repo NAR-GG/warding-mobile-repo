@@ -53,3 +53,20 @@ test('extractReleaseNotes: embed 가 없어도 터지지 않는다', () => {
   assert.equal(extractReleaseNotes({}), null);
   assert.equal(extractReleaseNotes({ embeds: [] }), null);
 });
+
+// ── 패치노트 수정 모달 ─────────────────────────────────────────────────────
+import { readFileSync } from 'node:fs';
+
+test('모달 custom_id 에서 버전을 되찾을 수 있다', () => {
+  // MODAL_SUBMIT 에는 원본 메시지가 안 올 수 있어 버전을 custom_id 에 싣는다.
+  const id = 'rel_notes_modal:1.0.33+81';
+  assert.equal(parseVersion(id.slice('rel_notes_modal:'.length)), '1.0.33+81');
+});
+
+test('모달 입력 길이 제한이 Play 제한(500자)과 맞는다', () => {
+  // 워크플로우도 500자를 검사하지만, 모달에서 먼저 막아야 사용자가 덜 헤맨다.
+  const src = readFileSync(new URL('./release.js', import.meta.url), 'utf8');
+  const m = src.match(/max_length:\s*(\d+)/);
+  assert.ok(m, 'max_length 가 있어야 한다');
+  assert.equal(Number(m[1]), 500);
+});
