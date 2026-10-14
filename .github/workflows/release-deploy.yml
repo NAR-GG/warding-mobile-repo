@@ -33,10 +33,16 @@ permissions:
 env:
   # verify 잡(analyze·test)에서만 쓴다. ci-flutter-test.yml 과 같은 버전으로 맞춰
   # PR 에서 통과한 테스트가 릴리즈 때도 같은 조건에서 돌게 한다.
-  #
-  # 빌드 잡은 이 값을 쓰지 않는다 — shorebird 가 자기 Flutter 리비전으로 빌드한다
-  # (1.0.33+79 는 shorebird 의 3.44.6 으로 빌드됐다).
   FLUTTER_VERSION: '3.44.0'
+
+  # 빌드 잡이 shorebird 에 넘기는 Flutter 버전. 위 값과 **다르다** —
+  # shorebird 는 자기가 관리하는 Flutter 리비전으로 빌드하고, 그 목록에 있는
+  # 버전만 받는다.
+  #
+  # 'latest' 로 두지 않는 이유: Shorebird 가 기본 버전을 올리면 빌드가 조용히
+  # 다른 Flutter 로 넘어간다. 지금까지 나간 릴리즈(+74 ~ +80)가 전부 3.44.6 이라
+  # 같은 값으로 고정한다. 올릴 때는 로컬에서 먼저 빌드해 보고 바꾼다.
+  SHOREBIRD_FLUTTER_VERSION: '3.44.6'
 
 jobs:
   # ── [1] 태그 ↔ pubspec 버전 일치 + 단위/위젯 테스트 ────────────────────────
@@ -205,6 +211,7 @@ jobs:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
         with:
           platform: ios
+          flutter-version: ${{ env.SHOREBIRD_FLUTTER_VERSION }}
           args: '--export-options-plist=ios/ExportOptions-ci.plist'
 
       - name: TestFlight 업로드
@@ -306,6 +313,7 @@ jobs:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
         with:
           platform: android
+          flutter-version: ${{ env.SHOREBIRD_FLUTTER_VERSION }}
 
       - name: aab 가 release 서명인지 확인
         run: |

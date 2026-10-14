@@ -148,6 +148,14 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
 `FLUTTER_VERSION` 은 `verify` 잡(analyze·test)에서만 쓴다. `ci-flutter-test.yml` 과 같은
 값으로 맞춰, PR 에서 통과한 테스트가 릴리즈 때도 같은 조건에서 돌게 한다.
 
+**빌드 잡에는 별도 값(`SHOREBIRD_FLUTTER_VERSION`)을 쓴다.** `shorebird-release` 액션은
+`flutter-version` 이 **필수 입력**이고 항상 `--flutter-version` 으로 넘긴다. 빈 값을 주면
+`Version  not found` 로 빌드가 바로 죽는다(1.0.33+81 첫 시도에서 실제로 밟았다).
+
+값은 **`3.44.6` 로 고정**한다. `latest` 로 두면 Shorebird 가 기본 버전을 올릴 때 빌드가
+조용히 다른 Flutter 로 넘어간다. 지금까지 나간 릴리즈(+74 ~ +80)가 전부 3.44.6 이라 같은
+값을 쓴다. 올릴 때는 로컬에서 먼저 빌드해 보고 바꾼다.
+
 ### 버전 관리
 
 `pubspec.yaml` 의 `version` 이 단일 출처다. 워크플로우는 버전을 **고치지 않고 검증만** 한다.
