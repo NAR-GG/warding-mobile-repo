@@ -31,7 +31,27 @@ jobs:
         with:
           flutter-version: '3.44.0'
           channel: 'stable'
+          # SDK 를 매번 내려받지 않는다 (~1분 단축).
+          cache: true
 
+      # pub 패키지와 CocoaPods 를 캐시한다. 둘 다 받아오는 데만 몇 분씩 걸리는데
+      # pubspec.lock / Podfile.lock 이 그대로면 내용이 같다.
+      - name: pub 캐시
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: CocoaPods 캐시
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
+
+      # 시뮬레이터 부팅(약 2분)을 앞에서 시작해 두고, 그동안 pub get 과 빌드가
+      # 돌게 한다. bootstatus 로 기다리는 건 테스트 직전으로 미룬다.
       - name: iOS 시뮬레이터 부팅
         run: |
           set -euo pipefail
@@ -45,10 +65,15 @@ jobs:
             exit 1
           fi
           echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          # 부팅만 걸어 두고 완료는 기다리지 않는다 — 아래 pub get 이 도는 동안
+          # 백그라운드로 부팅된다.
           xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID" -b
 
       - run: flutter pub get
+
+      - name: 시뮬레이터 부팅 완료 대기
+        run: xcrun simctl bootstatus "$DEVICE_ID" -b
+
       - name: e2e 실행
         run: flutter test integration_test/ -d "$DEVICE_ID" 2>&1 | tee /tmp/e2e.log
 
