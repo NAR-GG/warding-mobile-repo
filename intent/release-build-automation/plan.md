@@ -9,7 +9,7 @@
 
 | 파일 | 내용 |
 |---|---|
-| `.github/workflows/release-deploy.yml` | 신규. `release/*` 태그 push → 검증 → e2e → 빌드(iOS·Android 병렬) → 스토어 업로드 → 심사 제출 → Discord 알림 |
+| `.github/workflows/release-deploy.yml` | 신규. `release/*` 태그 push → 검증 → e2e → 빌드(iOS·Android 병렬) → TestFlight·Play 내부테스트 업로드 → Discord 알림. **심사 제출은 사람이 한다** |
 | `.github/workflows/e2e-release-check.yml` | `workflow_call` 트리거 추가. 기존 `workflow_dispatch` 수동 실행과 에스컬레이션 동작은 그대로 유지한다 |
 | `ios/ExportOptions-ci.plist` | 신규. CI 아카이브 전용 수동 서명 설정 (프로파일 2개: 앱 본체·위젯 익스텐션) |
 | `intent/release-build-automation/spec.md` | 신규. 설계·결정 배경 |
@@ -30,7 +30,7 @@
 
 ### iOS
 1. **App Store Connect API 키** (ASC → 사용자 및 액세스 → 통합 → 앱 스토어 커넥트 API)
-   - 역할은 `App Manager` 이상이어야 심사 제출까지 된다.
+   - TestFlight 업로드만 하므로 `App Manager` 까지는 필요 없다. 업로드 권한이면 된다.
    - `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (.p8 파일을 base64)
    - **.p8 은 한 번만 내려받을 수 있다.** 잃으면 키를 새로 만들어야 한다.
 2. **배포 인증서** (Apple Distribution) — ⚠️ **지금 이 맥에는 없다. 새로 만들어야 한다.**
@@ -107,5 +107,5 @@
    (버전 불일치로 일부러 실패시켜, 검증 스텝이 실제로 막는지 확인한다).
 3. 실제 릴리즈 버전으로 태그를 찍어 끝까지 돌린다. 첫 회는 Actions 로그를 지켜보고,
    `submit` 잡 전에 멈춰야 하면 워크플로우를 취소한다.
-4. 잘 돌면 CLAUDE.md 의 릴리즈 절차를 "태그를 찍으면 자동" 으로 갱신한다.
-   (지금은 수동 절차가 적혀 있으므로, 자동화가 검증되기 전에는 고치지 않는다.)
+4. 잘 돌면 CLAUDE.md 의 릴리즈 절차를 갱신한다 — "태그를 찍으면 TestFlight·내부테스트
+   까지 자동, 심사 제출은 콘솔에서 수동". 자동화가 검증되기 전에는 고치지 않는다.

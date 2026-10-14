@@ -15,8 +15,9 @@ warding-docs: 해당 없음 (화면 기능이 아니라 개발 쪽 CI 작업이�
 `flutter build ipa` 로 나가서, 그 빌드를 설치한 유저는 다음 스토어 릴리즈까지 코드 푸시
 패치를 받을 수 없었다. 사람이 매번 올바른 명령을 고르는 구조라 같은 실수가 다시 날 수 있다.
 
-`release/<version>` 태그를 밀면 e2e → 빌드 → 스토어 업로드 → 심사 제출까지 한 번에
-도는 워크플로우를 추가한다. 사람은 태그를 찍는 결정만 하고, 그 뒤의 손 작업은 기계가 한다.
+`release/<version>` 태그를 밀면 e2e → 빌드 → TestFlight·Play 내부테스트 업로드까지
+한 번에 도는 워크플로우를 추가한다. 사람은 태그를 찍는 결정과 **심사에 올리는 결정**만
+하고, 그 사이의 손 작업은 기계가 한다.
 
 ## Requirements
 
@@ -27,8 +28,8 @@ warding-docs: 해당 없음 (화면 기능이 아니라 개발 쪽 CI 작업이�
 4. 빌드는 **반드시 `shorebird release`** 로 한다. `flutter build ipa` / `flutter build appbundle`
    은 쓰지 않는다. 워크플로우에 그 명령이 들어가지 않는 것으로 구조적으로 보장한다.
 5. iOS 는 TestFlight 에, Android 는 Play 내부 테스트 트랙에 업로드한다.
-6. 업로드가 끝나면 심사 제출까지 한다 — iOS 는 App Store 심사 제출, Android 는
-   production 트랙 단계적 출시로 올린다.
+6. **심사 제출은 자동화하지 않는다.** 업로드까지가 파이프라인의 끝이고, 심사에 올리는
+   것과 Play production 승격은 사람이 콘솔에서 한다.
 7. 파이프라인의 각 단계 결과를 Discord 로 알린다 (기존 두 워크플로우와 같은 웹훅).
 8. 실패하면 어느 단계에서 깨졌는지 로그를 아티팩트로 남긴다.
 
@@ -46,9 +47,9 @@ release/1.0.34+79 태그 push
 [3] build-ios (macos)  ─┐  shorebird release ios   → TestFlight 업로드
     build-android(ubuntu)┘  shorebird release android → Play 내부테스트 업로드
    ↓
-[4] submit   (ubuntu)  — iOS 심사 제출 / Play production 롤아웃
+[4] notify             — Discord 결과 알림 (여기까지가 자동)
    ↓
-[5] notify             — Discord 결과 알림
+[사람] App Store 심사 제출 / Play production 승격
 ```
 
 `[3]` 의 두 잡은 서로 의존이 없어 병렬로 돈다. `[4]` 는 둘 다 성공해야 돈다.
@@ -144,7 +145,7 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
 | 이름 | 용도 |
 |---|---|
 | `SHOREBIRD_TOKEN` | `shorebird release` 인증 (`shorebird login:ci` 로 발급) |
-| `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` | App Store Connect API 키 — 업로드·심사 제출·서명 자원 |
+| `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` | App Store Connect API 키 — TestFlight 업로드 |
 | `IOS_DIST_CERT_P12` / `IOS_DIST_CERT_PASSWORD` | 배포 인증서 |
 | `ANDROID_KEYSTORE_BASE64` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` | Android 릴리즈 서명 |
 | `IOS_PROFILE_RUNNER` / `IOS_PROFILE_WIDGET` | 프로비저닝 프로파일 2개 (앱 본체·위젯 익스텐션) |
@@ -162,9 +163,22 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
   조건으로 쓴다. 지금 손으로 찍는 태그가 그대로 트리거가 되고, shorebird 가 커밋을
   남기지 않아 생기던 "이 릴리즈가 어느 코드였나" 역추적 문제도 같이 해결된다.
   `main` push 트리거는 쓰지 않는다 — 커밋마다 스토어 빌드가 나가면 안 된다.
-- **심사 제출까지 자동화한다.** 업로드까지만 하고 멈추는 안보다 손 작업이 더 줄어든다.
-  대신 되돌리기가 어려워지므로, Android 는 production 트랙에 **단계적 출시(10%)**로
-  올려 문제가 보이면 롤아웃을 멈출 수 있게 한다.
+- **심사 제출은 자동화하지 않고 TestFlight·내부테스트에서 멈춘다.** 처음에는 제출까지
+  자동화하려 했지만, 다른 프로젝트들이 어떻게 하는지 조사해 보고 바꿨다.
+  - **Apple 공식 레퍼런스 워크플로우**(`Apple-Actions/Example-macOS`)와 **Shorebird 공식
+    fastlane 가이드**가 모두 TestFlight 에서 멈춘다. 표준 패턴이 `submit_for_review: false` 다.
+  - `deliver submit_build` 에는 **CI 가 재시도로 넘을 수 없는 블로커**가 있다. 다른 빌드가
+    이미 심사 중이면 제출이 거부된다(fastlane#12551). 빌드 번호를 잘못 고르는 버그도
+    보고돼 있다(fastlane#21477).
+  - 심사 제출은 되돌리기 어려운 일방향 동작이라, CLAUDE.md 가 릴리즈를 "태그를 찍고
+    사람이 확인하는 의도적 행위" 로 다루는 것과도 결이 맞는다.
+- **Shorebird 공식 액션(`shorebirdtech/shorebird-release@v1`)을 쓴다.** 직접
+  `run: shorebird release` 하지 않는다. Shorebird 가 릴리즈를 CI 에서 돌리는 것을 공식
+  권장하고 전용 액션을 제공한다.
+- **macOS 러너 이미지를 고정한다(`macos-15`).** 러너 이미지 업데이트가 .p12 import 를
+  깨뜨려 "No valid code signing certificates were found" 가 나는 사례가 보고됐는데
+  (actions/runner-images#13884), 하필 Flutter + `shorebird release ios` 환경이었다.
+  서명이 걸린 잡이라 이미지 변경을 우리가 통제한다.
 - **iOS 서명은 ASC API 키 + Manual 서명으로 한다.** `fastlane match` 는 인증서 전용
   private 레포를 하나 더 만들어 관리해야 하는데, 지금은 개발자가 혼자라 그 레포가
   주는 "팀 간 서명 공유" 이득이 없다. 팀이 늘면 그때 match 로 옮긴다.
@@ -182,15 +196,21 @@ heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePa
   다루지 않는다. 릴리즈 빌드 자동화와 독립적으로 뒤에 붙일 수 있다.
 - **릴리즈 브랜치 전략 변경.** 구버전 릴리즈에 패치를 낼 때 릴리즈별 브랜치가 필요해질
   수 있지만, 지금 구버전 패치는 드물다. 실제로 필요해질 때 태그에서 브랜치를 딴다.
-- **스토어 메타데이터·스크린샷 코드 관리.** 심사 제출은 **이미 올라가 있는 메타데이터**로
-  제출한다. 설명·스크린샷을 코드로 관리하는 것(fastlane deliver 의 metadata 디렉터리)은
-  별도 작업이다.
+- **심사 제출 자동화.** 위 Decisions 참고. 나중에 하게 되면 별도 수동 워크플로우
+  (`workflow_dispatch`)로 두는 쪽이 낫다 — 릴리즈 파이프라인에 묶으면 심사 중 블로커에
+  파이프라인 전체가 걸린다.
+- **Play production 승격·단계적 출시.** 내부테스트까지만 올린다. 자동화하게 되면
+  `userFraction` 은 `status: inProgress` 와 함께 줘야 먹는다는 점에 주의한다
+  (r0adkll/upload-google-play#200).
+- **스토어 메타데이터·스크린샷 코드 관리.** 설명·스크린샷을 코드로 관리하는 것
+  (fastlane deliver 의 metadata 디렉터리)은 별도 작업이다.
 - **빌드 번호 자동 증가.** 위 Decisions 참고.
 
 ## Open questions
 
-- **Play production 단계적 출시 비율을 10% 로 두는 게 맞는지.** 지금 DAU 규모에서 10%가
-  의미 있는 표본인지 판단할 데이터가 없다. `mixpanel-daily-dau.yml` 집계를 보고 정한다.
+- **나중에 Play production 승격을 자동화한다면 단계적 출시 비율을 얼마로 둘지.** 업계
+  통념은 1~10% 에서 시작하는 것이다. 지금 DAU 가 400~600 대라 10% 면 40~60 명인데,
+  이 표본으로 이상을 잡아낼 수 있을지는 `mixpanel-daily-dau.yml` 집계를 더 보고 정한다.
 - **릴리즈 실패 시 에스컬레이션을 붙일지.** 기존 두 워크플로우는 실패 시 Anthropic API 로
   문서 초안을 만든다. 릴리즈 실패는 대부분 서명·자격 문제라 문서보다 알림이 적합해
   이번에는 Discord 알림만 넣었다. 운영해 보고 판단한다.
