@@ -108,15 +108,21 @@ jobs:
           # 'deliver submit_for_review' 는 서브커맨드가 아니라 플래그 이름이어서
           # 그렇게 부르면 동작하지 않는다.
           #
-          # 메타데이터·스크린샷은 App Store Connect 에 이미 올라가 있는 것을 쓴다
-          # (코드로 관리하는 건 범위 밖 — spec 의 Out of scope 참고).
+          # 릴리스 노트("새로운 기능")만 레포의 distribution/metadata 에서 올리고,
+          # 설명·키워드·스크린샷 등 나머지 메타데이터는 ASC 에 올라가 있는 것을 그대로
+          # 둔다. deliver 는 metadata 디렉터리에 있는 파일만 덮어쓰므로,
+          # release_notes.txt 만 두면 나머지는 건드리지 않는다.
+          #
+          # --skip_metadata 를 켜면 릴리스 노트도 같이 막혀서 "새로운 기능" 칸이 빈 채로
+          # 심사에 올라간다. 그래서 끄고 metadata_path 를 준다.
           fastlane deliver submit_build \
             --api_key_path "$RUNNER_TEMP/asc_key.json" \
             --app_identifier com.nar.wardingapp \
             --app_version "$MARKETING_VERSION" \
             --build_number "$BUILD_NUMBER" \
+            --metadata_path distribution/metadata \
             --skip_binary_upload true \
-            --skip_metadata true \
+            --skip_metadata false \
             --skip_screenshots true \
             --submit_for_review true \
             --automatic_release false \
@@ -169,6 +175,11 @@ jobs:
           # track_promote_release_status 를 같이 주지 않는다 (같이 줘도 무시된다).
           # version_code 는 반드시 준다 — 내부테스트 트랙에 릴리즈가 2개 이상이면
           # "use :version_code to filter the release to promote" 로 실패한다.
+          #
+          # skip_upload_metadata 가 true 인데도 릴리스 노트가 붙는 이유: 승격은 내부
+          # 테스트에 이미 올라간 릴리즈를 그대로 production 으로 옮기는 것이라,
+          # release-deploy.yml 이 업로드할 때 넣은 노트(distribution/whatsnew)가 같이
+          # 따라간다. 여기서 또 올리면 덮어쓸 뿐이라 건드리지 않는다.
           echo "승격: build $BUILD_NUMBER → production ${ROLLOUT}"
           fastlane run upload_to_play_store \
             package_name:com.warding.app \
@@ -200,7 +211,8 @@ jobs:
     steps:
       - name: Discord 알림
         env:
-          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          # 릴리즈 전용 채널 (없으면 기존 PR 채널로 폴백).
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL || secrets.DISCORD_PR_WEBHOOK_URL }}
           VERSION: ${{ inputs.version }}
           PLATFORM: ${{ inputs.platform }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

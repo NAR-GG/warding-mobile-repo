@@ -13,6 +13,7 @@
 | `.github/workflows/e2e-release-check.yml` | `workflow_call` 트리거 추가. 기존 `workflow_dispatch` 수동 실행과 에스컬레이션 동작은 그대로 유지한다 |
 | `.github/workflows/submit-for-review.yml` | 신규. 버튼으로 실행하는 심사 제출 (버전·플랫폼·롤아웃 비율을 입력받는다). 릴리즈 파이프라인과 분리한 이유는 spec 의 Decisions 참고 |
 | `ios/ExportOptions-ci.plist` | 신규. CI 아카이브 전용 수동 서명 설정 (프로파일 2개: 앱 본체·위젯 익스텐션) |
+| `distribution/` | 신규. 스토어 릴리스 노트를 레포에서 관리한다 (Play `whatsnew/`, App Store `metadata/`). 규칙은 `distribution/README.md` |
 | `intent/release-build-automation/spec.md` | 신규. 설계·결정 배경 |
 
 프로젝트의 `CODE_SIGN_STYLE = Automatic` 은 **건드리지 않는다.** 로컬 Xcode 개발 흐름을
@@ -68,6 +69,8 @@
   Play Console 에서 그 계정에 "앱 릴리즈 관리" 권한을 줘야 한다.
 
 ### 공통
+- `DISCORD_RELEASE_WEBHOOK_URL` — 릴리즈 알림 전용 채널 웹훅. **없어도 동작한다**
+  (기존 `DISCORD_PR_WEBHOOK_URL` 로 폴백). PR 알림과 섞이는 게 싫으면 등록한다.
 - `NAVER_CLIENT_SECRET` — 로컬 `ios/Flutter/Secrets.xcconfig` 의 값과 같게.
   (양 플랫폼의 gitignore 된 시크릿 파일을 CI 가 이 값으로 복원한다.)
 

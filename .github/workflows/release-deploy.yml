@@ -326,6 +326,23 @@ jobs:
       # status: inProgress 와 함께 줘야 먹는다. status 를 draft/completed 로 두고
       # userFraction 만 주면 Play API 가 무시해서 콘솔에 1% 로 뜬다
       # (r0adkll/upload-google-play#200, #143).
+      - name: 릴리스 노트 길이 확인
+        run: |
+          set -euo pipefail
+          # Play 는 500자를 넘으면 업로드를 거부한다. 빌드까지 다 끝난 뒤 업로드에서
+          # 막히면 아까우니 여기서 먼저 센다.
+          FAIL=0
+          for f in distribution/whatsnew/whatsnew-*; do
+            [ -e "$f" ] || continue
+            LEN=$(wc -m < "$f" | tr -d ' ')
+            echo "  $(basename "$f"): ${LEN}자"
+            if [ "$LEN" -gt 500 ]; then
+              echo "::error::$(basename "$f") 가 ${LEN}자로 Play 제한(500자)을 넘는다."
+              FAIL=1
+            fi
+          done
+          [ "$FAIL" -eq 0 ]
+
       - name: Play 내부테스트 업로드
         # @v1 태그는 2019년에 멈춰 있어 버전을 고정한다.
         uses: r0adkll/upload-google-play@v1.1.5
@@ -335,6 +352,9 @@ jobs:
           releaseFiles: ${{ env.AAB_PATH }}
           track: internal
           status: completed
+          # 릴리스 노트. 이 디렉터리의 whatsnew-<locale> 파일을 언어별로 올린다.
+          # 없으면 Play 에 "변경사항 없음" 으로 올라가 콘솔에서 손으로 적어야 한다.
+          whatsNewDirectory: distribution/whatsnew
 
       - name: 빌드 로그 업로드
         if: failure()
@@ -353,7 +373,9 @@ jobs:
     steps:
       - name: Discord 알림
         env:
-          WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
+          # 릴리즈 전용 채널로 보낸다. 아직 등록 전이면 기존 PR 채널로 떨어뜨려
+          # 알림이 통째로 사라지지 않게 한다.
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL || secrets.DISCORD_PR_WEBHOOK_URL }}
           VERSION: ${{ needs.verify.outputs.version }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           R_VERIFY: ${{ needs.verify.result }}
