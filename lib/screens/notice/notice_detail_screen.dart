@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/bottom_action_bar.dart';
+import '../../components/common_button.dart';
 import '../../components/nar_detail_header.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/notice.dart';
@@ -111,12 +112,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      // 와딩 브랜드 그라데이션으로 채워 주 행동 버튼임을 드러낸다.
+                      // 경기 일정 필터 시트의 '조회' 와 같은 그라데이션 버튼.
                       child: BottomActionBar(
                         label: widget.actionLabel!,
                         scale: scale,
-                        gradient: AppColors.narBg,
-                        textColor: AppColors.narText,
+                        variant: CommonButtonVariant.primary,
                         onTap: () => launchUrl(
                           Uri.parse(notice.actionUrl!),
                           mode: LaunchMode.externalApplication,

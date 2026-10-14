@@ -99,7 +99,7 @@ class CheerAdScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // 광고 안내와 같은 하단 버튼(색은 이 화면의 밝은 회색 그대로).
+                  // 경기리스트 설정의 '완료' 와 같은 솔리드 밝은 버튼.
                   Positioned(
                     left: 0,
                     right: 0,
