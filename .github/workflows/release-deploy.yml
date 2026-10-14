@@ -26,6 +26,11 @@ permissions:
   contents: read
 
 env:
+  # verify 잡(analyze·test)에서만 쓴다. ci-flutter-test.yml 과 같은 버전으로 맞춰
+  # PR 에서 통과한 테스트가 릴리즈 때도 같은 조건에서 돌게 한다.
+  #
+  # 빌드 잡은 이 값을 쓰지 않는다 — shorebird 가 자기 Flutter 리비전으로 빌드한다
+  # (1.0.33+79 는 shorebird 의 3.44.6 으로 빌드됐다).
   FLUTTER_VERSION: '3.44.0'
 
 jobs:
@@ -97,11 +102,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-
+      # Flutter 를 따로 설치하지 않는다. shorebird 가 자기 Flutter 리비전을 들고
+      # 와서 빌드하기 때문이다 — 실제로 1.0.33+79 는 shorebird 의 3.44.6 으로
+      # 빌드됐다. 여기서 3.44.0 을 깔아 두면 '깔려는 있지만 빌드에는 안 쓰이는'
+      # 버전이 생겨 혼란스럽다. 테스트를 도는 verify 잡은 그대로 flutter-action 을 쓴다.
       - uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
@@ -183,8 +187,6 @@ jobs:
           fi
           printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > ios/Flutter/Secrets.xcconfig
 
-      - run: flutter pub get
-
       # Shorebird 공식 액션을 쓴다 (직접 'run: shorebird release' 하지 않는다).
       # --export-options-plist 로 Manual 서명 설정을 넘기는 건 Shorebird 문서가
       # 권하는 CI 방식이다 — 자동 서명은 "CI 환경에서 잘 동작하지 않는다"고
@@ -236,11 +238,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-
+      # Flutter 를 따로 설치하지 않는 이유는 build-ios 쪽 주석 참고.
       - uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
@@ -293,8 +291,6 @@ jobs:
           printf '%s\n<resources>\n    <string name="naver_client_secret">%s</string>\n</resources>\n' \
             '<?xml version="1.0" encoding="utf-8"?>' "$NAVER_CLIENT_SECRET" \
             > android/app/src/main/res/values/naver_secrets.xml
-
-      - run: flutter pub get
 
       - name: shorebird release android
         uses: shorebirdtech/shorebird-release@v1

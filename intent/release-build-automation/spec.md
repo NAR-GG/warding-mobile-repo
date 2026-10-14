@@ -137,6 +137,17 @@ Android 쪽에는 그런 가드가 없다. 없으면 리소스 참조가 깨져 
 heredoc 을 쓰면 들여쓰기가 그대로 파일 내용에 들어가 `storePassword=` 앞에 공백이 붙고,
 닫는 `EOF` 도 0번 칼럼이 아니어서 heredoc 이 끝나지 않는다. `printf` 로 쓴다.
 
+### Flutter 버전은 누가 정하는가
+
+**빌드 잡에 Flutter 를 따로 설치하지 않는다.** `shorebird` 가 자기 Flutter 리비전을
+들고 와서 빌드하기 때문이다 — 1.0.33+79 를 실제로 뽑아 보니 shorebird 의 **3.44.6** 으로
+빌드됐다(`Building iOS app with Flutter 3.44.6`). 빌드 잡에서 `flutter-action` 으로
+3.44.0 을 깔아 두면 "깔려는 있지만 빌드에는 안 쓰이는" 버전이 생겨 혼란스럽고, 두 버전이
+어긋난 것을 못 보고 지나치게 된다.
+
+`FLUTTER_VERSION` 은 `verify` 잡(analyze·test)에서만 쓴다. `ci-flutter-test.yml` 과 같은
+값으로 맞춰, PR 에서 통과한 테스트가 릴리즈 때도 같은 조건에서 돌게 한다.
+
 ### 버전 관리
 
 `pubspec.yaml` 의 `version` 이 단일 출처다. 워크플로우는 버전을 **고치지 않고 검증만** 한다.
