@@ -68,6 +68,16 @@ release/1.0.34+79 태그 push
 `PROVISIONING_PROFILE_SPECIFIER` 가 비어 있다. 자동 서명은 Xcode 가 Apple 계정에
 로그인한 상태를 전제하므로 **헤드리스 CI 에서 돌지 않는다.**
 
+**1.0.33+79 를 실제로 뽑아 보고 확인한 것:** 그 빌드는
+`Cloud Managed Apple Distribution` 인증서로 서명됐다(`build/ios/ipa/DistributionSummary.plist`).
+Xcode 가 그때그때 Apple 에서 받아 쓰는 방식이라 **개인 키가 로컬에 없어 .p12 로 내보낼 수
+없다.** 실제로 이 맥의 키체인에는 `Apple Development` 하나뿐이고 배포 인증서가 없으며,
+`~/Library/MobileDevice/Provisioning Profiles` 도 비어 있다.
+
+따라서 CI 용 배포 인증서와 프로파일은 **포털에서 새로 발급해야 한다**(기존 것을 내보내는
+게 아니다). 로컬 Xcode 빌드는 지금처럼 클라우드 자동 서명을 계속 쓰면 되고, 둘은 공존한다.
+발급 절차는 `plan.md` 의 "사람이 직접 해야 하는 선행 작업" 에 적었다.
+
 App Store Connect API 키(.p8)로 배포 인증서와 프로비저닝 프로파일을 CI 에서 받아 쓰고,
 **Release 구성만** Manual 서명으로 바꾼다. Debug/Profile 구성은 Automatic 그대로 둬서
 로컬 Xcode 개발 흐름에 영향이 없게 한다.

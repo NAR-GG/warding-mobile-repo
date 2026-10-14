@@ -251,13 +251,21 @@ jobs:
           # build.gradle.kts 는 key.properties 가 없으면 조용히 debug 서명으로
           # 떨어진다 — 그 상태로 빌드하면 스토어가 거부하는 aab 가 나오므로
           # 복원 직후 두 파일을 확인하고 없으면 즉시 실패시킨다.
-          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/warding-release.jks
+          #
+          # 파일명이 upload-keystore.jks 인 이유: 레포에 jks 가 2개
+          # (upload-keystore.jks, warding-release.jks) 있는데 실제 스토어로 나가는
+          # 빌드는 upload-keystore.jks + alias 'upload' 로 서명된다. 1.0.33+79 를
+          # 직접 뽑아 aab 서명을 확인해(CN=Changha.Jeon, OU=NAR.GG) 이쪽이 맞는 것을
+          # 확인했다. 다른 쪽을 쓰면 Play 가 업로드 키 불일치로 거부한다.
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
           # heredoc 대신 printf 를 쓴다 — YAML 블록 안에서 heredoc 을 쓰면 들여쓰기가
           # 그대로 파일 내용에 들어가 'storePassword=' 앞에 공백이 붙고, 닫는 EOF 도
           # 0번 칼럼이 아니어서 heredoc 이 끝나지 않는다.
-          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=warding-release.jks\n' \
+          # storeFile 은 rootProject(=android/) 기준 상대경로다 — 로컬 key.properties
+          # 와 같은 './upload-keystore.jks' 형식을 쓴다.
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=./upload-keystore.jks\n' \
             "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
-          for f in android/warding-release.jks android/key.properties; do
+          for f in android/upload-keystore.jks android/key.properties; do
             if [ ! -s "$f" ]; then
               echo "::error::$f 복원 실패 — debug 서명으로 빌드될 수 있어 중단한다."
               exit 1

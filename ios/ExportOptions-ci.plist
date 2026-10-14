@@ -34,6 +34,20 @@
 	<key>uploadSymbols</key>
 	<true/>
 
+	<!-- 아래 두 키는 1.0.33+79 를 실제로 뽑았을 때 Xcode 가 자동 생성한
+	     ExportOptions.plist(build/ios/ipa/ExportOptions.plist)에 들어 있던 값을
+	     그대로 맞춘 것이다. CI 와 로컬 산출물이 달라지지 않게 한다. -->
+
+	<!-- Xcode 가 빌드 번호를 제멋대로 올리지 못하게 막는다. 버전의 단일 출처는
+	     pubspec.yaml 이고, 워크플로우가 태그와 일치하는지 검증까지 한다. 여기서
+	     Xcode 가 번호를 바꾸면 그 검증이 무의미해진다.
+	     (자동 생성본은 true 였지만 CI 에서는 false 가 맞다.) -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+
+	<key>stripSwiftSymbols</key>
+	<true/>
+
 	<!-- 업로드는 별도 스텝(altool)에서 한다. export 단계에서 같이 올리면
 	     실패 지점을 구분할 수 없다. -->
 	<key>destination</key>

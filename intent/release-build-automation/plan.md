@@ -33,18 +33,34 @@
    - 역할은 `App Manager` 이상이어야 심사 제출까지 된다.
    - `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (.p8 파일을 base64)
    - **.p8 은 한 번만 내려받을 수 있다.** 잃으면 키를 새로 만들어야 한다.
-2. **배포 인증서** (Apple Distribution)
+2. **배포 인증서** (Apple Distribution) — ⚠️ **지금 이 맥에는 없다. 새로 만들어야 한다.**
    - `IOS_DIST_CERT_P12` (.p12 를 base64), `IOS_DIST_CERT_PASSWORD`
+   - **1.0.33+79 릴리즈를 실제로 뽑아 보고 확인한 사실이다.** 그 빌드는
+     `Cloud Managed Apple Distribution` 인증서로 자동 서명됐다. Xcode 가 그때그때
+     Apple 에서 받아 쓰는 방식이라 **개인 키가 로컬에 없고, 따라서 .p12 로 내보낼 수
+     없다.** 키체인을 확인해도 `Apple Development` 하나뿐이고 배포 인증서는 없다
+     (`security find-identity -v -p codesigning`).
+   - 그래서 CI 용으로는 **Apple Developer 포털에서 Apple Distribution 인증서를 새로
+     발급**해야 한다. CSR 을 만들어 올리고 받은 .cer 를 키체인에 넣은 뒤, 개인 키와
+     함께 .p12 로 내보낸다. 이렇게 만든 인증서는 개인 키가 로컬에 있어 내보낼 수 있다.
+   - 로컬 Xcode 빌드는 지금처럼 클라우드 자동 서명을 계속 써도 된다. 둘은 공존한다.
 3. **프로비저닝 프로파일 2개** — App Store 배포용으로 각각 만든다.
    - `IOS_PROFILE_RUNNER` → `com.nar.wardingapp`
    - `IOS_PROFILE_WIDGET` → `com.nar.wardingapp.WardingScheduleWidget`
+   - ⚠️ **이것도 지금 로컬에 하나도 없다** (`~/Library/MobileDevice/Provisioning Profiles`
+     가 비어 있다). 자동 서명이 프로파일을 디스크에 남기지 않고 쓰기 때문이다. 위 2번에서
+     만든 배포 인증서에 묶어 포털에서 새로 만들어야 한다.
    - `ExportOptions-ci.plist` 의 프로파일 **이름**(`Warding App Store` 등)을 포털에
      등록한 실제 이름과 글자까지 맞춰야 한다. 지금 들어간 이름은 가정값이라
      포털에서 확인해 고쳐야 한다.
 
 ### Android
-- `ANDROID_KEYSTORE_BASE64` — `android/warding-release.jks` 를 base64.
-- `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+- `ANDROID_KEYSTORE_BASE64` — **`android/upload-keystore.jks`** 를 base64.
+  ⚠️ 레포에 jks 가 2개(`upload-keystore.jks`, `warding-release.jks`) 있는데, 실제
+  스토어로 나가는 빌드는 **`upload-keystore.jks` + alias `upload`** 로 서명된다.
+  1.0.33+79 를 직접 뽑아 aab 서명을 확인해(`CN=Changha.Jeon, OU=NAR.GG`) 이쪽이 맞는
+  것을 확인했다. 다른 쪽을 넣으면 Play 가 업로드 키 불일치로 거부한다.
+- `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`(= `upload`), `ANDROID_KEY_PASSWORD`
   — 로컬 `android/key.properties` 에 있는 값과 같게.
 - `PLAY_SERVICE_ACCOUNT_JSON` — Google Cloud 서비스 계정 JSON **전문**.
   Play Console 에서 그 계정에 "앱 릴리즈 관리" 권한을 줘야 한다.
