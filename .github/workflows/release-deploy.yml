@@ -189,6 +189,64 @@ jobs:
             fi
           done
 
+      # 아카이브 단계를 수동 서명으로 바꾼다.
+      #
+      # --export-options-plist 는 **export 단계에만** 적용된다. 그 앞의 archive 는
+      # 프로젝트 설정(CODE_SIGN_STYLE = Automatic)을 그대로 따라서, Xcode 계정이
+      # 없는 CI 에서는 이렇게 죽는다:
+      #   Error (Xcode): No Accounts: Add a new account in Accounts settings.
+      #   Error (Xcode): No profiles for 'com.nar.wardingapp' were found
+      #
+      # 그래서 빌드 직전에 Release 구성만 Manual 로 바꾸고 설치해 둔 프로파일 이름을
+      # 박는다. 커밋하지 않고 러너 위에서만 고치므로 로컬 Xcode 개발 흐름은 그대로다.
+      - name: Release 구성을 수동 서명으로 전환
+        run: |
+          set -euo pipefail
+          PBX=ios/Runner.xcodeproj/project.pbxproj
+          python3 - "$PBX" <<'PYEOF'
+          import re, sys
+          path = sys.argv[1]
+          src = open(path).read()
+
+          # Release 구성 블록만 고른다. 각 블록은 'name = Release;' 로 끝난다.
+          def fix_release_blocks(text):
+              out, count = [], 0
+              for block in re.split(r'(?=\t\t[0-9A-F]{24} /\* )', text):
+                  if 'name = Release;' in block and 'PRODUCT_BUNDLE_IDENTIFIER' in block:
+                      bundle = re.search(r'PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);', block)
+                      bid = bundle.group(1).strip('"') if bundle else ''
+                      profile = {
+                          'com.nar.wardingapp': 'Warding App Store',
+                          'com.nar.wardingapp.WardingScheduleWidget': 'Warding Widget App Store',
+                      }.get(bid)
+                      if profile:
+                          block = block.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+                          block = re.sub(r'CODE_SIGN_IDENTITY = "[^"]*";',
+                                         'CODE_SIGN_IDENTITY = "Apple Distribution";', block)
+                          # 위젯 타깃처럼 이 키가 아예 없는 블록도 있다. 있으면 바꾸고
+                          # 없으면 새로 넣는다 — 없으면 Xcode 가 프로파일을 못 찾는다.
+                          spec = f'PROVISIONING_PROFILE_SPECIFIER = "{profile}";'
+                          if 'PROVISIONING_PROFILE_SPECIFIER' in block:
+                              block = re.sub(r'PROVISIONING_PROFILE_SPECIFIER = "[^"]*";', spec, block)
+                          else:
+                              block = block.replace('CODE_SIGN_STYLE = Manual;',
+                                                    f'CODE_SIGN_STYLE = Manual;\n\t\t\t\t{spec}')
+                          count += 1
+                          print(f'  {bid} -> {profile}')
+                  out.append(block)
+              return ''.join(out), count
+
+          src, n = fix_release_blocks(src)
+          if n == 0:
+              print('::error::Release 구성을 하나도 못 고쳤다. project.pbxproj 구조를 확인하라.')
+              sys.exit(1)
+          open(path, 'w').write(src)
+          print(f'  Release 구성 {n}개를 Manual 서명으로 바꿨다')
+          PYEOF
+
+          # 바뀐 내용을 눈으로 확인할 수 있게 남긴다.
+          grep -c 'CODE_SIGN_STYLE = Manual;' "$PBX" | xargs -I{} echo "  Manual 서명 구성: {}개"
+
       - name: Secrets.xcconfig 복원 (네이버 Client Secret)
         env:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}

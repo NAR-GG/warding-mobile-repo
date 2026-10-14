@@ -83,6 +83,20 @@ Xcode 가 그때그때 Apple 에서 받아 쓰는 방식이라 **개인 키가 �
 게 아니다). 로컬 Xcode 빌드는 지금처럼 클라우드 자동 서명을 계속 쓰면 되고, 둘은 공존한다.
 발급 절차는 `plan.md` 의 "사람이 직접 해야 하는 선행 작업" 에 적었다.
 
+**`--export-options-plist` 만으로는 부족하다.** 그 플래그는 **export 단계에만** 적용되고,
+그 앞의 **archive 단계는 프로젝트 설정(`CODE_SIGN_STYLE = Automatic`)을 그대로 따른다.**
+Xcode 계정이 없는 CI 에서는 거기서 죽는다(1.0.33+81 에서 실제로 밟았다):
+
+```
+Error (Xcode): No Accounts: Add a new account in Accounts settings.
+Error (Xcode): No profiles for 'com.nar.wardingapp' were found
+```
+
+그래서 빌드 직전에 **`project.pbxproj` 의 Release 구성만 Manual 서명으로 바꾼다.**
+커밋하지 않고 러너 위에서만 고치므로 로컬 Xcode 개발 흐름은 그대로다. 위젯 타깃은
+`PROVISIONING_PROFILE_SPECIFIER` 키가 아예 없어서 바꾸는 게 아니라 **새로 넣어야**
+한다 — 없으면 Xcode 가 프로파일을 못 찾는다.
+
 App Store Connect API 키(.p8)로 배포 인증서와 프로비저닝 프로파일을 CI 에서 받아 쓰고,
 **Release 구성만** Manual 서명으로 바꾼다. Debug/Profile 구성은 Automatic 그대로 둬서
 로컬 Xcode 개발 흐름에 영향이 없게 한다.
