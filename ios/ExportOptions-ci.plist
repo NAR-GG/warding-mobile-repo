@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  CI 아카이브 전용 export 설정 (release-deploy.yml 이 쓴다).
+
+  프로젝트의 CODE_SIGN_STYLE 은 Automatic 으로 두고(로컬 Xcode 개발 흐름 유지),
+  헤드리스 CI 아카이브만 이 plist 로 수동 서명한다. 자동 서명은 Xcode 가 Apple
+  계정에 로그인한 상태를 전제해서 CI 에서 돌지 않는다.
+
+  provisioningProfiles 에 2개가 필요하다 — 앱 본체와 위젯 익스텐션. 하나라도
+  빠지면 아카이브가 실패한다. 프로파일 '이름'은 Apple Developer 포털에 등록된
+  이름과 글자까지 같아야 한다(파일명이 아니다).
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+
+	<key>teamID</key>
+	<string>3777VX2774</string>
+
+	<key>signingStyle</key>
+	<string>manual</string>
+
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.nar.wardingapp</key>
+		<string>Warding App Store</string>
+		<key>com.nar.wardingapp.WardingScheduleWidget</key>
+		<string>Warding Widget App Store</string>
+	</dict>
+
+	<!-- 심볼은 올린다 — Sentry 가 크래시를 심볼화하는 데 쓴다. -->
+	<key>uploadSymbols</key>
+	<true/>
+
+	<!-- 아래 두 키는 1.0.33+79 를 실제로 뽑았을 때 Xcode 가 자동 생성한
+	     ExportOptions.plist(build/ios/ipa/ExportOptions.plist)에 들어 있던 값을
+	     그대로 맞춘 것이다. CI 와 로컬 산출물이 달라지지 않게 한다. -->
+
+	<!-- Xcode 가 빌드 번호를 제멋대로 올리지 못하게 막는다. 버전의 단일 출처는
+	     pubspec.yaml 이고, 워크플로우가 태그와 일치하는지 검증까지 한다. 여기서
+	     Xcode 가 번호를 바꾸면 그 검증이 무의미해진다.
+	     (자동 생성본은 true 였지만 CI 에서는 false 가 맞다.) -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+
+	<key>stripSwiftSymbols</key>
+	<true/>
+
+	<!-- 업로드는 별도 스텝(altool)에서 한다. export 단계에서 같이 올리면
+	     실패 지점을 구분할 수 없다. -->
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>

@@ -10,6 +10,16 @@ name: 릴리즈 직전 e2e 체크
 # 개념이 없다 — 실패하면 그 자체로 릴리즈를 막는 신호이므로 1회 실패 시 즉시 에스컬레이션한다.
 on:
   workflow_dispatch:
+  # release-deploy.yml 이 릴리즈 파이프라인의 선행 게이트로 호출한다. e2e 정의를
+  # 두 벌로 복사하지 않으려고 트리거만 더했다 — 시나리오가 늘어도 한 곳만 고친다.
+  workflow_call:
+    secrets:
+      DISCORD_PR_WEBHOOK_URL:
+        required: true
+      ANTHROPIC_API_KEY:
+        required: true
+      DISPATCH_TOKEN:
+        required: true
 
 jobs:
   e2e:
