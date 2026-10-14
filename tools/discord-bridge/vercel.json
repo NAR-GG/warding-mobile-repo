@@ -2,6 +2,9 @@
   "functions": {
     "api/discord/interactions.js": {
       "maxDuration": 10
+    },
+    "api/discord/release.js": {
+      "maxDuration": 10
     }
   }
 }

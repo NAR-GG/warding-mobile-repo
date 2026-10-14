@@ -47,6 +47,9 @@
      발급**해야 한다. CSR 을 만들어 올리고 받은 .cer 를 키체인에 넣은 뒤, 개인 키와
      함께 .p12 로 내보낸다. 이렇게 만든 인증서는 개인 키가 로컬에 있어 내보낼 수 있다.
    - 로컬 Xcode 빌드는 지금처럼 클라우드 자동 서명을 계속 써도 된다. 둘은 공존한다.
+   - **`.p12` 는 `openssl pkcs12 -export -legacy` 로 만든다.** OpenSSL 3 기본 암호화로
+     만들면 macOS 의 `security` 가 못 열어 CI 에서 "MAC verification failed" 로 실패한다.
+     실제로 한 번 밟아서 확인했다.
 3. **프로비저닝 프로파일 2개** — App Store 배포용으로 각각 만든다.
    - `IOS_PROFILE_RUNNER` → `com.nar.wardingapp`
    - `IOS_PROFILE_WIDGET` → `com.nar.wardingapp.WardingScheduleWidget`
