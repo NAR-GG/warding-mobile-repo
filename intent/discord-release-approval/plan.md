@@ -11,7 +11,8 @@
 |---|---|
 | `.github/workflows/release-deploy.yml` | `release-notes` 잡 추가(AI 초안) + `notify` 에 버튼 전송 |
 | `.github/workflows/release-submit-dispatch.yml` | 신규. 버튼 요청을 받아 패치노트를 커밋하고 `submit-for-review.yml` 을 실행 |
-| `tools/discord-bridge/api/discord/interactions.js` | `MESSAGE_COMPONENT` 핸들러 추가 (2단계 확인) |
+| `tools/discord-bridge/api/discord/release.js` | 신규. **배포 전용 봇** 엔드포인트 (버튼 2단계 확인) |
+| `tools/discord-bridge/lib/http.js` | 신규. 두 핸들러가 같이 쓰는 HTTP 헬퍼·dispatch |
 | `tools/discord-bridge/api/discord/release.test.js` | 신규. `parseVersion`·`extractReleaseNotes` 테스트 |
 | `distribution/README.md` | 양식과 AI 초안 설명 |
 
@@ -19,11 +20,21 @@
 
 버튼을 쓰려면 Secret 두 개가 필요하다. **없어도 동작한다** — 버튼 없이 초안만 온다.
 
-- `DISCORD_BOT_TOKEN` — Discord Developer Portal → 해당 앱 → Bot → Token.
-  `/intent` 를 처리하는 그 앱을 그대로 쓴다. 봇이 채널에 들어가 있어야 하고
-  "메시지 보내기" 권한이 필요하다.
-- `DISCORD_RELEASE_CHANNEL_ID` — 릴리즈 알림을 받을 채널 ID.
-  Discord 에서 개발자 모드를 켜고 채널 우클릭 → "채널 ID 복사".
+**배포 전용 봇을 새로 만든다.** `/intent` 봇과 섞지 않는다.
+
+1. [Discord Developer Portal](https://discord.com/developers/applications) → **New Application**
+   (이름 예: `Warding Release`)
+2. **Bot** 탭 → **Reset Token** → 토큰 복사 → `DISCORD_BOT_TOKEN`
+3. **General Information** → **Public Key** 복사 → `DISCORD_RELEASE_PUBLIC_KEY`
+4. **General Information** → **Interactions Endpoint URL** 에 아래를 넣고 저장
+   (저장할 때 Discord 가 PING 을 보내 검증한다 — 3번을 먼저 등록해야 통과한다)
+   ```
+   https://<vercel-도메인>/api/discord/release
+   ```
+5. **OAuth2 → URL Generator** 에서 `bot` 스코프 + `Send Messages` 권한으로 초대 링크를
+   만들어 서버에 봇을 넣는다.
+6. 릴리즈 알림을 받을 채널에서 개발자 모드를 켜고 우클릭 → **채널 ID 복사** →
+   `DISCORD_RELEASE_CHANNEL_ID`
 
 ## Verification
 

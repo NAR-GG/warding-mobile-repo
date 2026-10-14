@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseVersion, extractReleaseNotes } from './interactions.js';
+import { parseVersion, extractReleaseNotes } from './release.js';
 
 // custom_id 는 우리가 만든 값이지만, Discord 를 거쳐 돌아오는 외부 입력이다.
 // 그대로 워크플로우에 넘기면 안 되므로 형식을 먼저 막는다.

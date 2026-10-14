@@ -4,9 +4,10 @@ Intent: 없음 (문제는 명확하고 설계 결정만 필요해 Spec 부터 �
 `intent/loop-engineering-workflow/spec.md` "저장 구조" 표의 세 번째 줄)
 warding-docs: 해당 없음 (개발 쪽 CI 작업이다)
 
-> **구현 상태**: 1단계(AI 초안)·2단계(버튼 제출) 모두 구현됐다. 다만
-> **`DISCORD_BOT_TOKEN` 과 `DISCORD_RELEASE_CHANNEL_ID` 가 등록되기 전에는 버튼이
-> 붙지 않는다** — 그때는 기존 웹훅으로 초안만 보내고, 제출은 Actions 탭에서 한다.
+> **구현 상태**: 1단계(AI 초안)·2단계(버튼 제출) 모두 구현됐다. 다만 **배포 전용 봇을
+> 만들고 Secret 3개(`DISCORD_BOT_TOKEN`·`DISCORD_RELEASE_CHANNEL_ID`·
+> `DISCORD_RELEASE_PUBLIC_KEY`)를 등록하기 전에는 버튼이 붙지 않는다** — 그때는 기존
+> 웹훅으로 초안만 오고, 제출은 Actions 탭에서 한다.
 
 ## Summary
 
@@ -165,8 +166,14 @@ GitHub Actions 에는 outputStyle 이 닿지 않는다).
   둘 다 가져간다.
 - **2단계 확인.** 위 "왜 2단계 확인인가" 참고.
 - **권한 제한은 범위 밖.** 위 같은 절 참고.
-- **기존 `discord-bridge` 를 확장한다.** 새 서비스를 만들지 않는다. 이미 Vercel 에 떠
-  있고 서명 검증·dispatch 가 구현돼 있다.
+- **배포 전용 Discord 봇을 따로 둔다.** `/intent` 봇과 앱을 나눈다. 배포가 주 용도가
+  되면서 두 기능이 한 봇에 섞이면 권한·알림 채널이 얽히고, 나중에 `/intent` 를 정리할 때
+  배포 쪽이 영향을 받는다.
+  - **Vercel 프로젝트는 새로 만들지 않는다.** 기존 프로젝트에 엔드포인트
+    (`api/discord/release.js`)만 추가한다. 배포·환경변수·CI 를 두 벌 관리할 이유가 없다.
+  - **엔드포인트는 반드시 나눠야 한다.** Discord 는 앱마다 서명 검증 공개키가 다르다.
+    한 파일에서 두 앱을 검증하면 어느 앱에서 온 요청인지 흐려진다.
+  - 공통 코드(HTTP 헬퍼·`repository_dispatch`)는 `lib/http.js` 로 빼 두 핸들러가 쓴다.
 - **`submit-for-review.yml` 은 그대로 둔다.** 새 워크플로우가 그것을 호출할 뿐이다.
   Actions 탭에서 직접 실행하는 기존 경로도 살아 있어야 한다 — Discord 가 죽어도 릴리즈가
   막히면 안 된다.
