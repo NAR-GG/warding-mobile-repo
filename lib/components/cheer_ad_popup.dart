@@ -114,30 +114,38 @@ class _AdPopupDialog extends StatelessWidget {
       insetPadding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 335 * scale),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16 * scale),
-          child: ColoredBox(
-            color: AppColors.narDark800,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                image,
-                Container(
-                  height: 56 * scale,
-                  color: AppColors.narDark600,
-                  child: Row(
-                    children: [
-                      button(dismissLabel, onDismissToday),
-                      Container(
-                        width: 1,
-                        height: 24 * scale,
-                        color: AppColors.narLine,
-                      ),
-                      button(closeLabel, onClose),
-                    ],
+        // 이미지 위쪽이 어두우면 둥근 모서리가 딤 배경에 묻혀 radius 가 안 먹은 것처럼 보인다 —
+        // 얇은 테두리를 이미지 위에 덧그려 윤곽을 드러낸다.
+        child: Container(
+          foregroundDecoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16 * scale),
+            border: Border.all(color: AppColors.narWhiteBorder15),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16 * scale),
+            child: ColoredBox(
+              color: AppColors.narDark800,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  image,
+                  Container(
+                    height: 56 * scale,
+                    color: AppColors.narDark600,
+                    child: Row(
+                      children: [
+                        button(dismissLabel, onDismissToday),
+                        Container(
+                          width: 1,
+                          height: 24 * scale,
+                          color: AppColors.narLine,
+                        ),
+                        button(closeLabel, onClose),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
