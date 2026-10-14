@@ -88,13 +88,47 @@ lib/
 
 ## 릴리즈 / 배포 (Shorebird)
 
-> **자동화가 준비돼 있지만 아직 켜지지 않았다.** `release/*` 태그를 밀면 검증 → e2e →
-> 빌드 → TestFlight·Play 내부테스트 업로드까지 도는 `release-deploy.yml`과, 버튼으로
-> 심사에 올리는 `submit-for-review.yml`이 있다. 다만 **Apple·Google Secrets가 아직
-> 등록되지 않아 돌지 않는다** (iOS 배포 인증서·프로파일은 새로 발급해야 한다 —
-> 지금 맥의 것은 Cloud Managed라 내보낼 수 없다). 등록 전까지는 아래 수동 절차가
-> 유효하다. 준비 작업과 첫 적용 순서는 `intent/release-build-automation/plan.md` 참고.
-> 자동화를 실제로 한 번 돌려 검증한 뒤 이 문서의 절차를 갱신한다.
+### 자동 배포 (기본 경로)
+
+**`release/<pubspec의 version>` 태그를 밀면 아래가 자동으로 돈다.**
+
+```
+git tag -a release/1.0.33+81 -m "release"
+git push --follow-tags
+```
+
+```
+[1] verify          태그 ↔ pubspec 버전 일치 · annotated 태그 확인 · analyze · test
+[2] e2e             integration_test (실패하면 빌드하지 않는다)
+[3] build-ios ∥ build-android     shorebird release → TestFlight · Play 내부테스트
+[4] release-notes   커밋 로그로 패치노트 초안 생성 (Anthropic API)
+[5] notify          #와딩-릴리즈-배포 채널에 결과 + 버튼
+         ↓
+    사람이 TestFlight에서 확인
+         ↓
+    Discord [✅ 심사 제출] → [네, 제출합니다]   ← 2단계 확인
+         ↓
+    App Store 심사 / Play production 10% 단계적 출시
+```
+
+**심사 제출은 버튼을 누르기 전까지 나가지 않는다.** 태그만 밀면 TestFlight·내부테스트에서
+멈추므로, 실수로 스토어에 공개될 일이 없다. Discord를 못 쓰는 상황이면 Actions 탭의
+**"심사 제출 (수동)"** 워크플로우를 직접 실행해도 된다.
+
+**패치노트는 `distribution/`에서 관리한다.** 릴리즈 전에 고쳐 두거나, 알림에 온 AI 초안을
+**[✏️ 패치노트 수정]** 버튼으로 그 자리에서 손봐 제출할 수 있다. 규칙과 양식은
+[distribution/README.md](./distribution/README.md) 참고.
+
+> 주의: Play는 **태그를 미는 시점**에, iOS는 **심사 제출 시점**에 패치노트를 읽는다.
+> 그래서 Discord에서 고친 내용은 iOS에만 반영되고, Play는 Console에서 고쳐야 한다.
+
+설계 배경은 [intent/release-build-automation/](./intent/release-build-automation/)과
+[intent/discord-release-approval/](./intent/discord-release-approval/)에 있다.
+
+### 수동 배포 (비상 경로)
+
+자동화가 막혔을 때 쓴다. 아래 규칙은 자동 배포에도 그대로 적용되며, 워크플로우가 이미
+이 규칙대로 돌도록 짜여 있다.
 
 **스토어 제출용 빌드는 반드시 `shorebird release`로 뽑는다. `flutter build ipa`/`flutter build appbundle` 금지.**
 일반 빌드에는 Shorebird 업데이터가 안 들어가서, 그 빌드를 설치한 유저는 코드 푸시 패치를 영원히 못 받는다
