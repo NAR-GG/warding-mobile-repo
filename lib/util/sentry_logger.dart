@@ -75,15 +75,26 @@ class SentryLogger {
     // 네트워크 에러는 전송하지 않음
     if (_isNetworkError(error)) return;
 
+    // 메시지에 reason 을 붙인다. 고정 문자열만 보내면 Sentry 목록에
+    // "(No error message)" 로 뜨고 원인이 다른 실패가 한 이슈로 뭉친다
+    // (registerToken 이 231건/117명으로 쌓인 이유다). reason 은 태그에도
+    // 남겨 두어 검색·필터는 그대로 된다.
+    final message = reason == null
+        ? '[$module] [$eventName] failed'
+        : '[$module] [$eventName] failed: $reason';
+
     await Sentry.captureEvent(
       SentryEvent(
         level: SentryLevel.warning,
-        message: SentryMessage('[$module] [$eventName] failed'),
+        message: SentryMessage(message),
         tags: {
           'module': module,
           'eventName': eventName,
           'reason': ?reason,
         },
+        // throwable 을 넘겨야 Sentry 가 스택트레이스를 붙인다. 안 넘기면
+        // 어느 코드에서 났는지 알 수 없다.
+        throwable: error,
         contexts: _toContexts(extra) ?? Contexts(),
       ),
     );
