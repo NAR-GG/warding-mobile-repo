@@ -29,9 +29,12 @@ on:
         type: choice
         options: [ios, android, both]
       android_rollout:
-        description: 'Android production 단계적 출시 비율 (0.1 = 10%)'
+        description: 'Android production 단계적 출시 비율 (1 = 100%, 0.1 = 10%)'
         required: false
-        default: '0.1'
+        default: '1'
+      release_notes:
+        description: '패치노트 (비우면 distribution/ 의 내용을 쓴다)'
+        required: false
 
 permissions:
   contents: read
@@ -152,6 +155,7 @@ jobs:
           PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           VERSION: ${{ inputs.version }}
           ROLLOUT: ${{ inputs.android_rollout }}
+          NOTES: ${{ inputs.release_notes }}
         run: |
           set -euo pipefail
 
@@ -167,6 +171,22 @@ jobs:
           BUILD_NUMBER="${VERSION##*+}"
 
           echo -n "$PLAY_JSON" > "$RUNNER_TEMP/play.json"
+
+          # 패치노트가 넘어왔으면 distribution/ 에 반영해 승격 때 같이 올린다.
+          # 안 그러면 내부테스트 업로드 시점(태그 push)에 있던 옛 노트가 그대로
+          # production 에 따라간다 — AI 가 쓴 내용이 반영될 경로가 없어진다.
+          SKIP_META=true
+          if [ -n "${NOTES:-}" ]; then
+            LEN=$(printf '%s' "$NOTES" | wc -m | tr -d ' ')
+            if [ "$LEN" -gt 500 ]; then
+              echo "::error::패치노트가 ${LEN}자로 Play 제한(500자)을 넘는다."
+              exit 1
+            fi
+            printf '%s\n' "$NOTES" > distribution/whatsnew/whatsnew-ko-KR
+            SKIP_META=false
+            echo "패치노트를 production 에 함께 올린다 (${LEN}자)"
+          fi
+
           gem install --no-document fastlane
 
           # 내부테스트에 올라간 빌드를 production 으로 승격한다.
@@ -176,10 +196,9 @@ jobs:
           # version_code 는 반드시 준다 — 내부테스트 트랙에 릴리즈가 2개 이상이면
           # "use :version_code to filter the release to promote" 로 실패한다.
           #
-          # skip_upload_metadata 가 true 인데도 릴리스 노트가 붙는 이유: 승격은 내부
-          # 테스트에 이미 올라간 릴리즈를 그대로 production 으로 옮기는 것이라,
-          # release-deploy.yml 이 업로드할 때 넣은 노트(distribution/whatsnew)가 같이
-          # 따라간다. 여기서 또 올리면 덮어쓸 뿐이라 건드리지 않는다.
+          # 패치노트가 안 넘어오면 skip_upload_metadata 가 true 다. 그때는 내부테스트에
+          # 올라간 릴리즈의 노트가 그대로 따라간다. 넘어오면 false 로 바꿔 새 내용을
+          # 올린다 — Discord 에서 AI 초안을 고쳐 제출한 경우가 그렇다.
           echo "승격: build $BUILD_NUMBER → production ${ROLLOUT}"
           fastlane run upload_to_play_store \
             package_name:com.warding.app \
@@ -189,7 +208,8 @@ jobs:
             rollout:"$ROLLOUT" \
             version_code:"$BUILD_NUMBER" \
             skip_upload_aab:true \
-            skip_upload_metadata:true \
+            skip_upload_metadata:"$SKIP_META" \
+            metadata_path:distribution/whatsnew \
             skip_upload_images:true \
             skip_upload_screenshots:true \
             2>&1 | tee /tmp/android-submit.log
