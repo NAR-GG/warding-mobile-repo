@@ -56,12 +56,16 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _adTapUnlock = Timer(_adTapUnlockDelay, () {
+      if (mounted) setState(() => _adTapEnabled = true);
+    });
     _bootstrap();
   }
 
   @override
   void dispose() {
     _unlockPoll?.cancel();
+    _adTapUnlock?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -157,6 +161,19 @@ class _SplashScreenState extends State<SplashScreen>
   /// 사용자는 '2초 + API' 를 겪었다. 지금은 이 시간 동안 캘린더를 미리
   /// 받아두므로(=[_prefetchCalendar]) 대기가 실제 로딩과 겹친다.
   static const _minSplashDuration = Duration(milliseconds: 3500);
+
+  /// 스플래시 광고가 탭을 받기 시작하는 시점.
+  ///
+  /// 진입 직후에는 막는다 — 앱을 열자마자 실수로 눌러 외부 브라우저가 열리면
+  /// 앱 진입 자체가 끊긴다. 오탭은 대부분 이 구간에 몰리므로 1초만 막고,
+  /// 나머지 2.5초는 광고주가 산 자리가 제 역할을 하도록 열어 둔다.
+  static const _adTapUnlockDelay = Duration(seconds: 1);
+
+  /// 스플래시 광고가 탭을 받을 수 있는 상태인지.
+  bool _adTapEnabled = false;
+
+  /// [_adTapUnlockDelay] 뒤 광고 탭을 열어 주는 타이머. dispose 에서 끊는다.
+  Timer? _adTapUnlock;
 
   Future<void> _bootstrap() async {
     final String? jwt;
@@ -392,15 +409,17 @@ class _SplashScreenState extends State<SplashScreen>
         children: [
           // 가운데보다 조금 위 — 아래 응원 광고 카드와 사이를 띄운다.
           Align(alignment: const Alignment(0, -0.25), child: _logo()),
-          // 응원 광고 자리 — 스플래시 하단 카드. 눌리지 않는다.
-          // 등록 광고는 이동 주소가 있으면 탭에 반응하므로(RegisteredAdCard),
-          // 여기서는 IgnorePointer 로 막는다 — 시작 3.5초 동안 실수로 눌러
-          // 외부 브라우저가 열리면 앱 진입 자체가 끊긴다.
+          // 응원 광고 자리 — 스플래시 하단 카드.
+          //
+          // 등록 광고는 이동 주소가 있으면 탭에 반응한다(RegisteredAdCard).
+          // 진입 직후 1초는 막고 그 뒤로 연다 — 자세한 이유는
+          // [_adTapUnlockDelay] 주석 참고.
           Positioned(
             left: 20 * scale,
             right: 20 * scale,
             bottom: 24 * scale + MediaQuery.of(context).padding.bottom,
             child: IgnorePointer(
+              ignoring: !_adTapEnabled,
               child: CheerAdSlotView(
                 placement: 'splash',
                 scale: scale,
