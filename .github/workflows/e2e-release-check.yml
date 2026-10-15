@@ -90,8 +90,12 @@ jobs:
       - name: 시뮬레이터 부팅 완료 대기
         run: xcrun simctl bootstatus "$DEVICE_ID" -b
 
+      # --no-pub 을 주는 이유: flutter test 는 기본적으로 실행 전에 pub get 을 한 번
+      # 더 돈다. 위에서 이미 했으므로 순수 낭비다(실측 3분 58초짜리 작업이 두 번
+      # 돌았다). 위 pub get 을 지우지 않고 이쪽을 끄는 건, 그 시간 동안 시뮬레이터가
+      # 백그라운드로 부팅되도록 겹쳐 뒀기 때문이다.
       - name: e2e 실행
-        run: flutter test integration_test/ -d "$DEVICE_ID" 2>&1 | tee /tmp/e2e.log
+        run: flutter test integration_test/ --no-pub -d "$DEVICE_ID" 2>&1 | tee /tmp/e2e.log
 
       # 캐시 저장은 main 에서 도는 수동 실행일 때만 한다. 위 "캐시" 주석 참고.
       - name: pub 캐시 저장
