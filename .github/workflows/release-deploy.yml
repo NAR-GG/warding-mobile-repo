@@ -294,12 +294,16 @@ jobs:
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
             2>&1 | tee /tmp/ios-upload.log
 
+      # 빌드 단계에서 실패하면 ios-upload.log 가 아예 없다. shorebird 로그를
+      # 같이 올려 둬야 원인을 볼 수 있다.
       - name: 실패 로그 업로드
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ios-release-log
-          path: /tmp/ios-upload.log
+          path: |
+            /tmp/ios-upload.log
+            ~/Library/Application Support/shorebird/logs/
           retention-days: 14
           if-no-files-found: ignore
 
@@ -430,16 +434,17 @@ jobs:
           # 없으면 Play 에 "변경사항 없음" 으로 올라가 콘솔에서 손으로 적어야 한다.
           whatsNewDirectory: distribution/whatsnew
 
+      # 실패 원인은 shorebird 로그에 있다. build/app/outputs/ 를 통째로 올리면
+      # aab 까지 딸려가 77MB 가 된다(실제로 그랬다) — 디버깅에 쓸모도 없다.
       - name: 빌드 로그 업로드
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: android-release-log
-          path: build/app/outputs/
+          path: ~/Library/Application Support/shorebird/logs/
           retention-days: 14
           if-no-files-found: ignore
 
-  # ── [5] 결과 알림 ─────────────────────────────────────────────────────────
   # ── [4] 패치노트 초안 ─────────────────────────────────────────────────────
   # 빌드가 성공했을 때만 돈다. 직전 release/* 태그 이후의 커밋 로그를 Anthropic API 로
   # 요약해 스토어용 패치노트 초안을 만든다.
