@@ -113,11 +113,17 @@ jobs:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           VERSION: ${{ github.event.client_payload.version }}
           PLATFORM: ${{ github.event.client_payload.platform }}
+          NOTES: ${{ github.event.client_payload.releaseNotes }}
         run: |
           set -euo pipefail
+          # 패치노트를 같이 넘긴다. Play 는 내부테스트 업로드 시점(태그 push)에
+          # 노트를 읽으므로, 승격 때 다시 올려야 Discord 에서 고친 내용이 반영된다.
+          # iOS 는 distribution/metadata 를 읽는데, 위 스텝이 PR 로만 올리고 머지는
+          # 안 하므로 여기서도 넘겨야 한다.
           gh workflow run submit-for-review.yml --ref main \
             -f version="$VERSION" \
-            -f platform="$PLATFORM"
+            -f platform="$PLATFORM" \
+            -f release_notes="$NOTES"
           echo "submit-for-review.yml 실행 요청 — $VERSION / $PLATFORM"
 
       - name: 실패 알림
