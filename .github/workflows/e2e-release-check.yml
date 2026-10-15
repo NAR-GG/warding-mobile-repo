@@ -31,24 +31,17 @@ jobs:
         with:
           flutter-version: '3.44.0'
           channel: 'stable'
-          # SDK 를 매번 내려받지 않는다 (~1분 단축).
-          cache: true
 
-      # pub 패키지와 CocoaPods 를 캐시한다. 둘 다 받아오는 데만 몇 분씩 걸리는데
-      # pubspec.lock / Podfile.lock 이 그대로면 내용이 같다.
-      - name: pub 캐시
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
-
-      - name: CocoaPods 캐시
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: pods-${{ runner.os }}-
+      # 캐시(Flutter SDK·pub·CocoaPods)를 걷어냈다. 이 워크플로우는 릴리즈 때
+      # **태그 ref**(refs/tags/release/...)에서 돌고, GitHub Actions 캐시는 ref 단위로
+      # 격리된다. 태그는 매번 새로 생기므로 저장한 캐시를 다음 릴리즈가 못 본다 —
+      # 실제로 확인해 보니 캐시가 태그마다 따로 쌓이고 복원은 한 번도 안 됐다.
+      #
+      #   refs/heads/refs/tags/release/1.0.33+82  pub-macOS-...
+      #   refs/heads/refs/tags/release/1.0.33+81  pub-macOS-...
+      #
+      # 복원이 안 되는데 저장만 하니 오히려 느려졌다(pub get 2분 → 4분). 아래
+      # 시뮬레이터 병렬화는 효과가 분명해서(1분 58초 → 9초) 그대로 둔다.
 
       # 시뮬레이터 부팅(약 2분)을 앞에서 시작해 두고, 그동안 pub get 과 빌드가
       # 돌게 한다. bootstatus 로 기다리는 건 테스트 직전으로 미룬다.
