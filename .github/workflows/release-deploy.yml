@@ -469,10 +469,66 @@ jobs:
         id: draft
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
-          # 직전 release/* 태그(현재 태그 제외)를 찾는다.
-          PREV=$(git tag --sort=-creatordate | grep '^release/' | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
+          # 비교 기준은 "직전 태그"가 아니라 **사용자에게 마지막으로 나간 버전**이다.
+          #
+          # 직전 태그를 쓰면 빌드만 하고 스토어에 못 올라간 버전이 기준이 돼서,
+          # 패치노트가 비어 버린다. 실제로 1.0.34+83 에서 그랬다 — 직전 태그가
+          # +82 였는데 그건 TestFlight 업로드에서 막힌 버전이라, 둘 사이에 '버전
+          # 올림' 커밋 하나뿐이었다.
+          #
+          # Play production 트랙에 올라간 versionCode 를 물어본다. 추측이 아니라
+          # 스토어가 알려주는 사실이다. 조회가 실패하면(권한·네트워크) 직전 태그로
+          # 떨어뜨린다 — 초안이 조금 부정확해도 릴리즈를 막을 일은 아니다.
+          BASE_CODE=""
+          if [ -n "${PLAY_JSON:-}" ]; then
+            python3 - <<'PYEOF' > /tmp/base_code.txt 2>/dev/null || true
+          import json,time,base64,urllib.request,urllib.parse,os,subprocess
+          sa=json.loads(os.environ["PLAY_JSON"])
+          def b64(x): return base64.urlsafe_b64encode(x).rstrip(b'=').decode()
+          now=int(time.time())
+          hdr=b64(json.dumps({"alg":"RS256","typ":"JWT"}).encode())
+          cld=b64(json.dumps({"iss":sa["client_email"],
+                              "scope":"https://www.googleapis.com/auth/androidpublisher",
+                              "aud":"https://oauth2.googleapis.com/token",
+                              "iat":now,"exp":now+600}).encode())
+          open("/tmp/k.pem","w").write(sa["private_key"])
+          sig=subprocess.run(["openssl","dgst","-sha256","-sign","/tmp/k.pem"],
+                             input=(hdr+"."+cld).encode(),capture_output=True).stdout
+          sig=base64.urlsafe_b64encode(sig).rstrip(b'=').decode()
+          tok=json.load(urllib.request.urlopen(urllib.request.Request(
+              "https://oauth2.googleapis.com/token",
+              data=urllib.parse.urlencode({
+                  "grant_type":"urn:ietf:params:oauth:grant-type:jwt-bearer",
+                  "assertion":f"{hdr}.{cld}.{sig}"}).encode())))["access_token"]
+          api="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.warding.app/edits"
+          eid=json.load(urllib.request.urlopen(urllib.request.Request(
+              api,data=b"{}",method="POST",
+              headers={"Authorization":"Bearer "+tok,"Content-Type":"application/json"})))["id"]
+          try:
+              tr=json.load(urllib.request.urlopen(urllib.request.Request(
+                  f"{api}/{eid}/tracks/production",headers={"Authorization":"Bearer "+tok})))
+              codes=[int(c) for r in tr.get("releases",[]) for c in r.get("versionCodes",[])]
+              if codes: print(max(codes))
+          finally:
+              urllib.request.urlopen(urllib.request.Request(
+                  f"{api}/{eid}",method="DELETE",headers={"Authorization":"Bearer "+tok}))
+          PYEOF
+            BASE_CODE=$(cat /tmp/base_code.txt 2>/dev/null | tr -d '[:space:]')
+          fi
+
+          PREV=""
+          if [ -n "$BASE_CODE" ]; then
+            # versionCode 로 끝나는 release/* 태그를 찾는다 (예: 80 → release/1.0.33+80).
+            PREV=$(git tag --sort=-creatordate | grep "^release/.*+${BASE_CODE}$" | head -1 || true)
+            [ -n "$PREV" ] && echo "기준: Play production 의 versionCode $BASE_CODE → $PREV"
+          fi
+          if [ -z "$PREV" ]; then
+            echo "::warning::스토어 버전을 못 찾아 직전 태그로 대체한다 (초안이 부정확할 수 있다)"
+            PREV=$(git tag --sort=-creatordate | grep '^release/' | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
+          fi
           if [ -z "$PREV" ]; then
             echo "직전 릴리즈 태그가 없어 초안을 건너뛴다"
             echo "user_facing=skip" >> "$GITHUB_OUTPUT"
