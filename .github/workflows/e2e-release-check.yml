@@ -34,17 +34,33 @@ jobs:
           # SDK 를 매번 내려받지 않는다 (~1분 단축).
           cache: true
 
-      # pub 패키지와 CocoaPods 를 캐시한다. 둘 다 받아오는 데만 몇 분씩 걸리는데
-      # pubspec.lock / Podfile.lock 이 그대로면 내용이 같다.
-      - name: pub 캐시
-        uses: actions/cache@v4
+      # ── 캐시 ──────────────────────────────────────────────────────────────
+      # GitHub Actions 캐시는 **ref 단위로 격리**된다. 릴리즈 때 이 워크플로우는 매번
+      # 새 태그 ref(refs/tags/release/...)에서 돌아서, 태그에서 저장한 캐시는 다음
+      # 릴리즈가 볼 수 없다. 처음 캐시를 붙였을 때 실제로 그랬다 — 태그마다 캐시가
+      # 따로 쌓이기만 하고 복원은 한 번도 안 됐다(복원 스텝이 매번 1초 안에 끝났다).
+      #
+      #   refs/heads/refs/tags/release/1.0.33+82  pub-macOS-...
+      #   refs/heads/refs/tags/release/1.0.33+81  pub-macOS-...
+      #
+      # 예외가 하나 있다: **기본 브랜치(main)에서 저장된 캐시는 모든 ref 가 읽는다.**
+      # 그래서 역할을 나눈다.
+      #   - 수동 실행(workflow_dispatch, main 에서 돈다) → 저장까지 한다
+      #   - 릴리즈(workflow_call, 태그 ref)            → 복원만 한다
+      #
+      # 릴리즈에서 저장까지 하면 태그 ref 에 쓰레기만 쌓이고, 저장 오버헤드로 오히려
+      # 느려진다(pub get 2분 → 4분을 실측했다).
+      #
+      # 캐시를 채우려면 main 에서 이 워크플로우를 한 번 수동 실행하면 된다.
+      - name: pub 캐시 복원
+        uses: actions/cache/restore@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
-      - name: CocoaPods 캐시
-        uses: actions/cache@v4
+      - name: CocoaPods 캐시 복원
+        uses: actions/cache/restore@v4
         with:
           path: ios/Pods
           key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
@@ -74,8 +90,27 @@ jobs:
       - name: 시뮬레이터 부팅 완료 대기
         run: xcrun simctl bootstatus "$DEVICE_ID" -b
 
+      # --no-pub 을 주는 이유: flutter test 는 기본적으로 실행 전에 pub get 을 한 번
+      # 더 돈다. 위에서 이미 했으므로 순수 낭비다(실측 3분 58초짜리 작업이 두 번
+      # 돌았다). 위 pub get 을 지우지 않고 이쪽을 끄는 건, 그 시간 동안 시뮬레이터가
+      # 백그라운드로 부팅되도록 겹쳐 뒀기 때문이다.
       - name: e2e 실행
-        run: flutter test integration_test/ -d "$DEVICE_ID" 2>&1 | tee /tmp/e2e.log
+        run: flutter test integration_test/ --no-pub -d "$DEVICE_ID" 2>&1 | tee /tmp/e2e.log
+
+      # 캐시 저장은 main 에서 도는 수동 실행일 때만 한다. 위 "캐시" 주석 참고.
+      - name: pub 캐시 저장
+        if: always() && github.event_name == 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: CocoaPods 캐시 저장
+        if: always() && github.event_name == 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
 
       - name: 실패 로그 업로드
         if: failure()
