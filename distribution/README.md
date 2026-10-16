@@ -9,9 +9,16 @@ distribution/
 │   ├── whatsnew-ko-KR            (500자 제한)
 │   └── whatsnew-en-US
 └── metadata/                     App Store 용
-    ├── ko/release_notes.txt      (4000자 제한)
-    └── en-US/release_notes.txt
+    ├── ko/
+    │   ├── release_notes.txt     릴리즈마다 고친다 (4000자 제한)
+    │   ├── description.txt       앱 설명 (4000자 제한)
+    │   ├── keywords.txt          검색 키워드 (100자 제한, 쉼표 구분)
+    │   ├── support_url.txt
+    │   └── marketing_url.txt
+    └── en-US/                    같은 구성
 ```
+
+`release_notes.txt` 만 릴리즈마다 바뀐다. 나머지 넷은 앱 소개라 거의 고정이다.
 
 ## 양식
 
@@ -71,6 +78,7 @@ cp distribution/whatsnew/whatsnew-en-US distribution/metadata/en-US/release_note
 |---|---|---|
 | `whatsnew/*` | `release-deploy.yml` → Play 내부테스트 업로드 | 태그 push |
 | `metadata/*/release_notes.txt` | `submit-for-review.yml` → App Store 심사 제출 | 버튼 실행 |
+| `metadata/*/description·keywords·*_url` | 같은 워크플로우가 함께 올린다 | 버튼 실행 |
 
 Play 는 업로드할 때 노트가 붙고, production 승격 때는 그 노트가 그대로 따라간다.
 App Store 는 심사 제출 시점에 "새로운 기능" 칸으로 들어간다.
@@ -78,7 +86,20 @@ App Store 는 심사 제출 시점에 "새로운 기능" 칸으로 들어간다.
 ## 주의
 
 - **Play 500자 제한**은 워크플로우가 업로드 전에 검사해 넘으면 실패시킨다.
-- `metadata/` 에는 **`release_notes.txt` 만 둔다.** `deliver` 는 이 디렉터리에 있는
-  파일만 덮어쓰므로, 설명·키워드 파일을 추가하면 App Store Connect 에 있는 값을
-  덮어쓰게 된다. 지금은 릴리스 노트만 코드로 관리한다.
+- **App Store 설명·키워드도 이제 여기서 관리한다**(2026-10-16부터). 그래서
+  **App Store Connect 에서 고친 설명·키워드는 다음 제출 때 이 파일 내용으로 덮어써진다.**
+  ASC 에서 직접 손보지 말고 여기를 고쳐 PR 로 올린다.
+
+  원래는 `release_notes.txt` 만 두고 나머지는 ASC 에 있는 값을 믿었다. 그 전제가
+  1.0.34+84 에서 깨졌다 — ASC 에 새 버전이 생기면 설명·키워드·지원 URL 이 빈 채로
+  만들어지고(이전 버전에서 복사되지 않는다), `deliver` 는 파일이 없는 필드를 건드리지
+  않으니 빈 값 그대로 심사에 올라가 Apple 이 거부한다.
+
+      appStoreVersions ... is not in valid state.
+        You must provide a value for the attribute 'description'
+
+  사람이 ASC 에서 매번 채우는 것과 파일로 두는 것 중 후자를 골랐다. 자동 제출 경로가
+  사람 손을 타지 않고 끝나는 게 애초에 이 자동화의 목적이다.
+- **언어 폴더마다 다 있어야 한다.** `ko` 만 채우고 `en-US` 를 비우면 영어 쪽에서 같은
+  거부가 난다. Apple 은 등록된 모든 언어에 대해 요구한다.
 - 사용자에게 보이는 글이다. 내부 용어(`BottomActionBar`, 커밋 해시 등)를 쓰지 않는다.
