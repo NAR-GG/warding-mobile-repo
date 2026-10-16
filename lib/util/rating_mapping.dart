@@ -27,6 +27,22 @@ String positionFromRole(String role) {
   }
 }
 
+/// 라인 아이콘·라벨에 쓸 포지션을 정한다.
+///
+/// 호출부가 포지션을 못 채워 보내는 경로가 있다(홈 평점 최신순 —
+/// `/api/mobile/ratings/recent` 응답에 role 이 없어 빈 값으로 들어온다).
+/// 그 경우 평점 상세 응답의 [detailRole] 로 채워 라인 마커가 뜨게 한다.
+/// 둘 다 비어 있으면 빈 문자열이고, 라인 아이콘은 placeholder 로 남는다.
+String resolvePosition({
+  required String fromCaller,
+  required String detailRole,
+}) {
+  final caller = fromCaller.trim();
+  if (caller.isNotEmpty) return caller;
+  final role = detailRole.trim();
+  return role.isEmpty ? '' : positionFromRole(role);
+}
+
 /// 작성 시각 → 상대 시간 표기. 7일 이상은 'YYYY.MM.DD'.
 /// [now] 는 테스트용 주입(미지정 시 DateTime.now()).
 String ratingTimeAgo(DateTime? time, {DateTime? now}) {

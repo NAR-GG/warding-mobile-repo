@@ -137,6 +137,14 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     super.dispose();
   }
 
+  /// 라인 아이콘·라벨에 쓸 포지션. 호출부가 [PlayerRating.position] 을 못 채워
+  /// 보내는 경로(홈 평점 최신순)가 있어 상세 응답의 role 로 폴백한다. 로드 전에는
+  /// 빈 값이라 아이콘이 placeholder 로 보이고, 로드되면 라인 아이콘이 붙는다.
+  String get _position => resolvePosition(
+    fromCaller: widget.player.position,
+    detailRole: _vm.detail?.player.role ?? '',
+  );
+
   /// 헤더의 세트 드롭다운 탭 시 호출. 세트 목록 바텀시트를 띄우고 선택값으로 갱신.
   Future<void> _showSetSheet() async {
     if (widget.sets.isEmpty) return;
@@ -206,7 +214,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       teamName: widget.teamName,
       teamCode: widget.teamCode,
       playerName: widget.player.name,
-      position: widget.player.position,
+      position: _position,
       initialRating: my?.rating ?? 0,
       initialComment: my?.comment,
     );
@@ -316,7 +324,7 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           teamName: widget.teamName,
                           teamCode: widget.teamCode,
                           playerName: widget.player.name,
-                          position: widget.player.position,
+                          position: _position,
                           championName: d?.player.championName ?? '',
                           kda: d?.player.kda ?? '-',
                           playerImageUrl:
