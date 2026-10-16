@@ -31,6 +31,28 @@ void main() {
     });
   });
 
+  group('resolvePosition', () {
+    testWidgets('호출부가 비워 보내면 상세 role 로 채운다 (홈 평점 최신순 진입)', (
+      WidgetTester tester,
+    ) async {
+      await pumpAppStringsHost(tester);
+
+      expect(resolvePosition(fromCaller: '', detailRole: 'MID'), '미드');
+      expect(resolvePosition(fromCaller: '   ', detailRole: 'SUPPORT'), '서폿');
+    });
+
+    testWidgets('호출부 값이 있으면 그대로 쓴다 (경기 상세 진입)', (WidgetTester tester) async {
+      await pumpAppStringsHost(tester);
+
+      expect(resolvePosition(fromCaller: '탑', detailRole: 'MID'), '탑');
+    });
+
+    test('둘 다 없으면 빈 문자열 — 라인 아이콘은 placeholder 로 남는다', () {
+      expect(resolvePosition(fromCaller: '', detailRole: ''), '');
+      expect(resolvePosition(fromCaller: '  ', detailRole: '  '), '');
+    });
+  });
+
   group('ratingTimeAgo', () {
     testWidgets('1분 미만은 방금 전', (WidgetTester tester) async {
       await pumpAppStringsHost(tester);
