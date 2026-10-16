@@ -166,6 +166,15 @@ jobs:
           #
           # --skip_metadata 를 켜면 릴리스 노트도 같이 막혀서 "새로운 기능" 칸이 빈 채로
           # 심사에 올라간다. 그래서 끄고 metadata_path 를 준다.
+          #
+          # automatic_release=true 는 심사 승인 즉시 출시한다. false 였을 때는 승인 후
+          # ASC 에서 '이 버전 출시' 를 사람이 눌러야 했는데, 1.0.34 에서 그걸 모르고
+          # 승인된 채 대기할 뻔했다. Play 쪽은 승격 즉시 나가므로 양 스토어의 출시
+          # 시점을 맞추는 쪽이 운영에 맞다.
+          #
+          # phased_release 는 지정하지 않는다(deliver 기본값 = 끔). iOS 는 단계적 출시
+          # 없이 승인 즉시 전체 사용자에게 나간다. Android 의 android_rollout 과는
+          # 별개이며, 그 입력은 submit-android 잡에서만 쓴다.
           fastlane deliver submit_build \
             --api_key_path "$RUNNER_TEMP/asc_key.json" \
             --app_identifier com.nar.wardingapp \
@@ -176,7 +185,7 @@ jobs:
             --skip_metadata false \
             --skip_screenshots true \
             --submit_for_review true \
-            --automatic_release false \
+            --automatic_release true \
             --precheck_include_in_app_purchases false \
             --force true \
             2>&1 | tee /tmp/ios-submit.log

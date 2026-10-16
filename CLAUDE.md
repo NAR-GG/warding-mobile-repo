@@ -108,8 +108,12 @@ git push --follow-tags
          ↓
     Discord [✅ 심사 제출] → [네, 제출합니다]   ← 2단계 확인
          ↓
-    App Store 심사 / Play production 10% 단계적 출시
+    App Store 심사 → 승인 즉시 자동 출시 / Play production 100% 출시
 ```
+
+> Play 출시 비율은 `android_rollout` 기본값 100%다. 단계적으로 내보내려면 Actions 탭에서
+> **"심사 제출 (수동)"** 에 비율을 지정해 실행한다(예: `0.1`). iOS 는 단계적 출시를 쓰지
+> 않고, 심사 승인 즉시 전체 사용자에게 나간다(`automatic_release true`).
 
 **심사 제출은 버튼을 누르기 전까지 나가지 않는다.** 태그만 밀면 TestFlight·내부테스트에서
 멈추므로, 실수로 스토어에 공개될 일이 없다. Discord를 못 쓰는 상황이면 Actions 탭의
