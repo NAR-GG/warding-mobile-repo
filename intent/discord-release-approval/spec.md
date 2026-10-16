@@ -62,8 +62,16 @@ tools/discord-bridge  (Vercel)
    ↓
 [신규] release-submit.yml
    초안을 distribution/ 에 커밋 & push
-   → submit-for-review.yml 을 workflow_dispatch 로 실행
+   → submit-for-review.yml 을 workflow_call 로 호출
 ```
+
+> 처음에는 `gh workflow run`(Actions API)으로 불렀는데, `DISPATCH_TOKEN` 에
+> Actions: write 가 없어 1.0.34+84 제출이 HTTP 403 으로 막혔다. 워크플로우의
+> `permissions:` 선언은 `GITHUB_TOKEN` 에만 적용되고 PAT 을 명시적으로 넘기면
+> PAT 자신의 스코프가 적용된다 — `actions: write` 를 적어 둬도 소용이 없었다.
+> `workflow_call` 은 같은 런 안에서 잡을 띄워 Actions API 를 타지 않으므로
+> 토큰 권한이 필요 없다. Actions 탭에서 직접 실행하는 비상 경로는
+> `workflow_dispatch` 트리거를 함께 두어 그대로 살려 뒀다.
 
 ### 왜 2단계 확인인가
 

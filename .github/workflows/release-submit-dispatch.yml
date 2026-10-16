@@ -5,11 +5,18 @@ name: 심사 제출 (Discord 버튼)
 #
 # 하는 일은 두 가지다.
 #   1) 패치노트 초안이 함께 왔으면 distribution/ 에 반영하고 main 에 커밋한다.
-#   2) submit-for-review.yml 을 실행한다.
+#   2) submit-for-review.yml 을 호출한다.
 #
-# 실제 제출 로직을 여기에 복사하지 않고 기존 워크플로우를 호출하는 이유: Actions 탭에서
+# 실제 제출 로직을 여기에 복사하지 않고 기존 워크플로우를 쓰는 이유: Actions 탭에서
 # 직접 실행하는 경로가 계속 살아 있어야 한다. Discord 나 Vercel 이 죽어도 릴리즈가
 # 막히면 안 된다.
+#
+# 부르는 방식은 'gh workflow run'(Actions API) 이 아니라 workflow_call 이다.
+# API 를 타려면 DISPATCH_TOKEN 에 Actions: write 가 있어야 하는데 그게 없어서
+# 1.0.34+84 제출이 HTTP 403 으로 막혔다. workflow_call 은 같은 런 안에서 잡을
+# 띄우므로 토큰이 필요 없다. 워크플로우 파일의 permissions 선언은 GITHUB_TOKEN
+# 에만 적용되고, PAT 을 명시적으로 넘기면 PAT 자신의 스코프가 적용된다 —
+# 'actions: write' 가 여기 적혀 있어도 PAT 에 없으면 소용이 없었다.
 #
 # 설계 배경은 intent/discord-release-approval/spec.md 참고.
 
@@ -17,9 +24,9 @@ on:
   repository_dispatch:
     types: [release-submit]
 
+# actions: write 를 뺐다. workflow_call 로 바꿔 Actions API 를 더 이상 치지 않는다.
 permissions:
   contents: write
-  actions: write
   pull-requests: write
 
 concurrency:
@@ -28,7 +35,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  submit:
+  # 검증과 패치노트 반영. 제출 자체는 아래 submit 잡이 맡는다.
+  prepare:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -108,26 +116,36 @@ jobs:
             --body "$(printf 'Discord 에서 **%s** 님이 승인한 패치노트입니다.\n\n심사 제출은 이미 시작됐고, 이 PR 은 레포에 기록을 남기기 위한 것입니다.\n\n```\n%s\n```\n' "$REQUESTER" "$NOTES")"
           echo "패치노트 PR 을 올렸다 — $BRANCH"
 
-      - name: 심사 제출 워크플로우 실행
-        env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
-          VERSION: ${{ github.event.client_payload.version }}
-          PLATFORM: ${{ github.event.client_payload.platform }}
-          NOTES: ${{ github.event.client_payload.releaseNotes }}
-        run: |
-          set -euo pipefail
-          # 패치노트를 같이 넘긴다. Play 는 내부테스트 업로드 시점(태그 push)에
-          # 노트를 읽으므로, 승격 때 다시 올려야 Discord 에서 고친 내용이 반영된다.
-          # iOS 는 distribution/metadata 를 읽는데, 위 스텝이 PR 로만 올리고 머지는
-          # 안 하므로 여기서도 넘겨야 한다.
-          gh workflow run submit-for-review.yml --ref main \
-            -f version="$VERSION" \
-            -f platform="$PLATFORM" \
-            -f release_notes="$NOTES"
-          echo "submit-for-review.yml 실행 요청 — $VERSION / $PLATFORM"
+  # 실제 제출. 패치노트를 같이 넘긴다 — Play 는 내부테스트 업로드 시점(태그 push)에
+  # 노트를 읽으므로 승격 때 다시 올려야 Discord 에서 고친 내용이 반영되고, iOS 는
+  # distribution/metadata 를 읽는데 위 잡이 PR 로만 올리고 머지는 안 하기 때문이다.
+  #
+  # android_rollout 은 넘기지 않는다. 피호출 쪽 기본값 1(100%)을 그대로 쓴다 —
+  # Discord 버튼에는 비율을 고를 자리가 없다. 단계적으로 내보내려면 Actions 탭에서
+  # submit-for-review.yml 을 직접 실행한다.
+  submit:
+    needs: prepare
+    uses: ./.github/workflows/submit-for-review.yml
+    with:
+      version: ${{ github.event.client_payload.version }}
+      platform: ${{ github.event.client_payload.platform }}
+      release_notes: ${{ github.event.client_payload.releaseNotes }}
+    secrets:
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      DISCORD_RELEASE_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
+      DISCORD_PR_WEBHOOK_URL: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}
 
+  # 검증·패치노트 단계가 깨졌을 때만 알린다. 제출 잡 자체의 성패는
+  # submit-for-review.yml 의 notify 잡이 이미 Discord 로 보낸다.
+  notify-prepare-failure:
+    needs: prepare
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
       - name: 실패 알림
-        if: failure()
         env:
           WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL || secrets.DISCORD_PR_WEBHOOK_URL }}
           VERSION: ${{ github.event.client_payload.version }}
