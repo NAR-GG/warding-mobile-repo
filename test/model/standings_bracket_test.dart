@@ -219,4 +219,37 @@ void main() {
     expect(b.swiss[0].toWorldsRow().teamImages, {'WE': 'https://x/we.png'});
     expect(b.swiss[1].teamImages, isEmpty);
   });
+
+  test('swiss status: ACTIVE 는 진행 중, 없으면 advanced 만 본다', () {
+    final b = StandingsBracket.fromJson({
+      'swiss': [
+        {
+          'record': '3-0',
+          'teamCodes': ['T1'],
+          'advanced': true,
+          'status': 'ADVANCED',
+        },
+        {
+          'record': '1-1',
+          'teamCodes': ['GEN'],
+          'advanced': false,
+          'status': 'ACTIVE',
+        },
+        {
+          'record': '0-3',
+          'teamCodes': ['C9'],
+          'advanced': false,
+          'status': 'ELIMINATED',
+        },
+        {
+          'record': '1-2',
+          'teamCodes': ['FLY'],
+          'advanced': false,
+        },
+      ],
+    });
+    final rows = b.toWorldsStandings().bracket;
+    expect(rows.map((r) => r.isActive), [false, true, false, false]);
+    expect(rows[1].status, 'ACTIVE');
+  });
 }

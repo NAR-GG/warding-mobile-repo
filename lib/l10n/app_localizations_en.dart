@@ -83,6 +83,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeStandingsWorldsEliminated => 'Eliminated';
 
   @override
+  String get homeStandingsWorldsActive => 'In progress';
+
+  @override
   String get homeStandingsSeeAllMatches => 'All matches';
 
   @override
