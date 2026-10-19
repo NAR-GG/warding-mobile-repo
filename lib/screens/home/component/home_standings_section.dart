@@ -287,8 +287,11 @@ class _WorldsBracket extends StatelessWidget {
                       // mockup `.bk .tr.adv .rec{color:var(--score-win)}` —
                       // 진출 전적은 레드(승 스코어와 같은 색), 탈락은 흐린 회색.
                       // tabularFigures로 "3-0"/"3-1" 숫자 폭을 맞춘다.
+                      // 진행 중은 아직 갈리지 않았으니 기본 흰색.
                       color: row.advanced
                           ? AppColors.scoreWin
+                          : row.isActive
+                          ? Colors.white
                           : AppColors.narDark200,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
@@ -303,7 +306,7 @@ class _WorldsBracket extends StatelessWidget {
                     children: [
                       for (final code in row.teamCodes)
                         Opacity(
-                          opacity: row.advanced ? 1 : 0.45,
+                          opacity: row.advanced || row.isActive ? 1 : 0.45,
                           child: TeamCodeBadge(
                             teamCode: code,
                             fallbackImageUrl: row.teamImages[code],
@@ -317,6 +320,8 @@ class _WorldsBracket extends StatelessWidget {
                 Text(
                   row.advanced
                       ? l.homeStandingsWorldsAdvanced
+                      : row.isActive
+                      ? l.homeStandingsWorldsActive
                       : l.homeStandingsWorldsEliminated,
                   style: TextStyle(
                     fontFamily: 'Open Sans',

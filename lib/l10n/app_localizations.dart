@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'탈락'**
   String get homeStandingsWorldsEliminated;
 
+  /// No description provided for @homeStandingsWorldsActive.
+  ///
+  /// In ko, this message translates to:
+  /// **'진행 중'**
+  String get homeStandingsWorldsActive;
+
   /// No description provided for @homeStandingsSeeAllMatches.
   ///
   /// In ko, this message translates to:

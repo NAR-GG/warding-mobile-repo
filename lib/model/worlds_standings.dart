@@ -20,6 +20,7 @@ class WorldsBracketRow {
     required this.teamCodes,
     required this.advanced,
     this.teamImages = const {},
+    this.status,
   });
 
   /// "3-0", "2-3" 같은 승-패 표기.
@@ -32,6 +33,12 @@ class WorldsBracketRow {
 
   /// 3승(진출) 또는 3패(탈락) 확정 여부.
   final bool advanced;
+
+  /// 서버 `status`(ADVANCED/ACTIVE/ELIMINATED). 구버전 서버는 null — 그땐 [advanced] 만 본다.
+  final String? status;
+
+  /// 아직 진출·탈락이 갈리지 않은 진행 중 전적(월즈 스위스 0-0~2-2).
+  bool get isActive => status == 'ACTIVE';
 }
 
 /// 토너먼트 한 라운드(8강/4강/결승) 한 묶음.
