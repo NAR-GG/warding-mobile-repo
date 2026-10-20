@@ -343,6 +343,78 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPlayersEmpty => '구독한 선수가 없어요';
 
   @override
+  String get worldsSoloTitle => '월즈 솔랭';
+
+  @override
+  String get worldsSoloTabAll => 'LCK 전체';
+
+  @override
+  String get worldsSoloTabSubscribed => '구독 선수';
+
+  @override
+  String get worldsSoloEmptyRoster => '아직 월즈 솔랭 명단이 없어요';
+
+  @override
+  String get worldsSoloLiveLabel => '월즈 솔랭 중인 LCK 선수';
+
+  @override
+  String get worldsSoloSeeAll => '월즈 솔랭 전체';
+
+  @override
+  String get worldsSoloAll => '전체';
+
+  @override
+  String worldsSoloEntrySub(int count) {
+    return 'LCK 선수 $count명 솔랭 중';
+  }
+
+  @override
+  String worldsSoloLast(String name, String ago) {
+    return '마지막 $name · $ago';
+  }
+
+  @override
+  String worldsSoloSubscribePrompt(String name) {
+    return '$name 구독하면';
+  }
+
+  @override
+  String get worldsSoloSubscribePromptSub => '솔랭 시작할 때 바로 알려드려요';
+
+  @override
+  String get worldsSoloSubscribe => '구독하기';
+
+  @override
+  String get worldsSoloUnsubscribe => '구독 해제';
+
+  @override
+  String worldsSoloSubscribeSemantics(String name) {
+    return '$name 구독';
+  }
+
+  @override
+  String worldsSoloUnsubscribeSemantics(String name) {
+    return '$name 구독 해제';
+  }
+
+  @override
+  String get worldsSoloSheetLive => '솔로 랭크 진행 중';
+
+  @override
+  String get worldsSoloTodayGames => '오늘 솔랭';
+
+  @override
+  String worldsSoloTodayGamesCount(int count) {
+    return '$count판';
+  }
+
+  @override
+  String get worldsSoloTodayRecord => '오늘 전적';
+
+  @override
+  String get worldsSoloSheetHint => '마이페이지에서 언제든 끌 수 있어요';
+
+  @override
   String get matchList => '경기리스트';
 
   @override

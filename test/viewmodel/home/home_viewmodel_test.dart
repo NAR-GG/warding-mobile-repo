@@ -249,6 +249,28 @@ Map<String, dynamic> _video(
 
 const _emptySolo = SoloRankSnapshot(live: [], finished: []);
 
+class _FakeWorlds implements WorldsSoloSource {
+  _FakeWorlds(this.snap);
+  final WorldsSoloSnapshot snap;
+  @override
+  Future<WorldsSoloSnapshot> fetch() async => snap;
+}
+
+PlayerSubscription _rosterPlayer(int id, String name, String team) =>
+    PlayerSubscription(
+      playerId: id,
+      playerName: name,
+      playerImageUrl: '',
+      role: 'MID',
+      teamId: 0,
+      teamCode: team,
+      teamName: team,
+      teamImageUrl: '',
+      subscribed: false,
+      startEnabled: true,
+      endEnabled: false,
+    );
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -270,6 +292,7 @@ void main() {
     int? subscribed,
     ReviewSource reviews = const MockReviewSource(),
     NewsSource news = const MockNewsSource(),
+    WorldsSoloSnapshot worlds = WorldsSoloSnapshot.empty,
   }) {
     if (subscribed != null) {
       // 솔랭 항목은 구독한 선수만 보이므로, 스냅샷에 나온 선수를 먼저 구독
@@ -288,6 +311,7 @@ void main() {
     }
     final vm = HomeViewModel(
       soloRank: _FakeSolo(snap),
+      worlds: _FakeWorlds(worlds),
       reviews: reviews,
       news: news,
     );
@@ -307,6 +331,72 @@ void main() {
   tearDown(() {
     expect(server.unknown, isEmpty, reason: '예상 밖의 API 호출');
     api.setApiClientForTesting(null);
+  });
+
+  group('월즈 솔랭', () {
+    HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
+      name: name,
+      teamCode: 'GEN',
+      champion: '키아나',
+      elapsedSeconds: elapsed,
+      platform: 'NA1',
+    );
+
+    test('명단이 비면 숨긴다 — 대회가 끝나 서버가 보조 계정을 끄면 사라진다', () async {
+      final vm = build();
+      await pumpEventQueue();
+      expect(vm.worldsVisible, isFalse);
+    });
+
+    test('구독한 선수는 위 큰 카드에 나오므로 월즈 카드에서 뺀다', () async {
+      final vm = build(
+        snap: SoloRankSnapshot(live: [live('Faker', 60)], finished: const []),
+        subscribed: 1,
+        worlds: WorldsSoloSnapshot(
+          players: [
+            _rosterPlayer(1, 'Faker', 'T1'),
+            _rosterPlayer(2, 'Canyon', 'GEN'),
+          ],
+          solo: SoloRankSnapshot(
+            live: [live('Faker', 60), live('Canyon', 30)],
+            finished: const [],
+          ),
+        ),
+      );
+      await pumpEventQueue();
+      expect(vm.worldsVisible, isTrue);
+      expect(vm.worldsLiveAll.map((p) => p.name), ['Canyon', 'Faker']);
+      expect(vm.worldsLive.map((p) => p.name), ['Canyon']);
+      expect(vm.worldsLive.single.overseasRegion, 'NA');
+    });
+
+    test('아무도 솔랭 중이 아니면 가장 최근에 끝난 판을 준다', () async {
+      final vm = build(
+        worlds: WorldsSoloSnapshot(
+          players: [_rosterPlayer(1, 'Faker', 'T1')],
+          solo: const SoloRankSnapshot(
+            live: [],
+            finished: [
+              HomeFinishedSoloPlayer(
+                name: 'Ruler',
+                teamCode: 'GEN',
+                won: true,
+                minutesAgo: 50,
+              ),
+              HomeFinishedSoloPlayer(
+                name: 'Faker',
+                teamCode: 'T1',
+                won: false,
+                minutesAgo: 23,
+              ),
+            ],
+          ),
+        ),
+      );
+      await pumpEventQueue();
+      expect(vm.worldsLive, isEmpty);
+      expect(vm.worldsLastFinished?.name, 'Faker');
+    });
   });
 
   group('솔랭 카드', () {
@@ -454,6 +544,31 @@ void main() {
       expect(vm.soloHiddenCount, 0);
     });
 
+    test('로그아웃하면 이전 계정의 구독 선수를 붙들고 있지 않는다', () async {
+      server.subscriptions = [
+        _sub('Faker', 'T1', 'T1'),
+        _sub('Chovy', 'GEN', 'Gen.G'),
+      ];
+      setUpServer(loggedIn: true);
+      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
+      await pumpEventQueue();
+      expect(vm.subscribedTotal, 2);
+
+      // AuthService.signOut 이 하는 일 — 토큰 삭제 + 구독 캐시 비우기.
+      setUpServer();
+      SubscriptionRepository.instance.clearCache();
+      await vm.refreshSubscriptionsOnReturn();
+      expect(vm.subscribedTotal, 0);
+      expect(vm.soloState, SoloCardState.noSubscription);
+    });
+
+    test('비회원이 월즈 카드에서 구독하면 부르지 않고 false — 화면이 로그인으로 보낸다', () async {
+      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
+      await pumpEventQueue();
+      expect(await vm.subscribeWorldsPlayer(194), isFalse);
+      expect(server.requestsTo('player-subscriptions'), isEmpty);
+    });
+
     test('구독 목록 조회가 실패해도 소스의 구독 수로 대신하지 않는다', () async {
       server.subscriptions = null;
       setUpServer(loggedIn: true);
@@ -499,6 +614,7 @@ void main() {
       final vm = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),
+        worlds: const EmptyWorldsSoloSource(),
         reviews: const MockReviewSource(),
         news: const MockNewsSource(),
       );
@@ -516,6 +632,7 @@ void main() {
       final home = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),
+        worlds: const EmptyWorldsSoloSource(),
         reviews: const MockReviewSource(),
         news: const MockNewsSource(),
       );
@@ -1110,6 +1227,7 @@ void main() {
         notices: notices,
         noticePreferences: prefs,
         soloRank: _FakeSolo(_emptySolo),
+        worlds: const EmptyWorldsSoloSource(),
         reviews: const MockReviewSource(),
         news: const MockNewsSource(),
       );
@@ -1142,6 +1260,7 @@ void main() {
       final vm = HomeViewModel(
         schedule: schedule,
         soloRank: _FakeSolo(_emptySolo),
+        worlds: const EmptyWorldsSoloSource(),
         reviews: const MockReviewSource(),
         news: const MockNewsSource(),
       );
@@ -1168,6 +1287,7 @@ void main() {
       setUpServer(loggedIn: true);
       final vm = HomeViewModel(
         soloRank: solo,
+        worlds: const EmptyWorldsSoloSource(),
         reviews: const MockReviewSource(),
         news: const MockNewsSource(),
       );
@@ -1230,6 +1350,7 @@ void main() {
   test('dispose 뒤에 응답이 도착해도 예외 없이 무시한다', () async {
     final vm = HomeViewModel(
       soloRank: _FakeSolo(_emptySolo),
+      worlds: const EmptyWorldsSoloSource(),
       reviews: const MockReviewSource(),
       news: const MockNewsSource(),
     );

@@ -253,12 +253,17 @@ class StandingsBracketMatch {
 
   WorldsMatch toWorldsMatch() {
     final t = scheduledTime?.toLocal();
+    // 진행 중인데 세트 스코어가 오면 두 팀 스코어를 보여주고 시각은 뺀다. 예전엔
+    // 윗줄만 시각이라 아랫줄에 팀B 스코어 숫자 하나만 덩그러니 떴다.
+    final liveScore =
+        _status == WorldsMatchStatus.today &&
+        (teamA.gameWins != null || teamB.gameWins != null);
     return WorldsMatch(
       teamA: teamA.toWorldsTeam(),
       teamB: teamB.toWorldsTeam(),
       status: _status,
-      // 진행 중 카드만 스코어 자리에 시각을 대신 보여준다(월즈 카드 규칙).
-      todayTime: _status == WorldsMatchStatus.today && t != null
+      // 스코어가 없는 진행 중 카드만 스코어 자리에 시각을 대신 보여준다.
+      todayTime: _status == WorldsMatchStatus.today && !liveScore && t != null
           ? '${t.hour.toString().padLeft(2, '0')}:'
                 '${t.minute.toString().padLeft(2, '0')}'
           : null,

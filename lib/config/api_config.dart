@@ -549,6 +549,11 @@ class ApiConfig {
   /// 구독 선수 솔랭 상태 (로그인 필수). `live`·`finished` 두 목록을 준다.
   static String get soloRankUrl => '$apiBaseUrl/mobile/me/solo-rank';
 
+  /// 월즈 솔랭 (로그인 필수). 월즈 부트캠프 계정이 등록된 선수 전체의
+  /// `players`(구독 여부 포함)·`live`·`finished`.
+  static String get worldsSoloRankUrl =>
+      '$apiBaseUrl/mobile/me/solo-rank/worlds';
+
   /// 솔랭 응원 전송 (POST, 로그인 필수). body `{"count": 1..30}`.
   static String soloRankCheerUrl(int playerId) =>
       '$apiBaseUrl/mobile/solo-rank/players/$playerId/cheers';

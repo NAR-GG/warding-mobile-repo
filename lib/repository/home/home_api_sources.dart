@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../config/api_config.dart';
 import '../../model/home_models.dart';
+import '../../model/player_subscription.dart';
 import '../../util/api_client.dart' as http;
 import '../auth/auth_service.dart';
 import 'home_sources.dart';
@@ -46,47 +47,100 @@ class ApiSoloRankSource implements SoloRankSource {
     }
     final data =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-    final now = _now();
-
-    final live = <HomeLiveSoloPlayer>[
-      for (final e in data['live'] as List<dynamic>? ?? const [])
-        _live(e as Map<String, dynamic>, now),
-    ];
-    final finished = <HomeFinishedSoloPlayer>[
-      for (final e in data['finished'] as List<dynamic>? ?? const [])
-        if ((e as Map<String, dynamic>)['win'] is bool) _finished(e, now),
-    ];
-    return SoloRankSnapshot(live: live, finished: finished);
+    return soloSnapshotFromJson(data, _now());
   }
+}
 
-  HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
-    final startedAt = parseServerTime(j['startedAt']);
-    return HomeLiveSoloPlayer(
-      name: j['playerName'] as String? ?? '',
-      teamCode: j['teamCode'] as String? ?? '',
-      champion: j['championName'] as String? ?? '',
-      elapsedSeconds: startedAt == null
-          ? 0
-          : now.difference(startedAt).inSeconds.clamp(0, 1 << 30),
-      playerImageUrl: j['playerImageUrl'] as String?,
-      championImageUrl: j['championImageUrl'] as String?,
-      startedAt: startedAt,
-      playerId: (j['playerId'] as num?)?.toInt(),
-      cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
-      cheerMine: (j['cheerMine'] as num?)?.toInt() ?? 0,
-    );
-  }
+/// `live`·`finished` 두 목록을 [SoloRankSnapshot] 으로 — 구독 솔랭과 월즈 솔랭이
+/// 같은 모양이라 함께 쓴다.
+SoloRankSnapshot soloSnapshotFromJson(Map<String, dynamic> data, DateTime now) {
+  final live = <HomeLiveSoloPlayer>[
+    for (final e in data['live'] as List<dynamic>? ?? const [])
+      _live(e as Map<String, dynamic>, now),
+  ];
+  final finished = <HomeFinishedSoloPlayer>[
+    for (final e in data['finished'] as List<dynamic>? ?? const [])
+      if ((e as Map<String, dynamic>)['win'] is bool) _finished(e, now),
+  ];
+  return SoloRankSnapshot(live: live, finished: finished);
+}
 
-  HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
-    final seconds = (j['durationSeconds'] as num?)?.toInt();
-    return HomeFinishedSoloPlayer(
-      name: j['playerName'] as String? ?? '',
-      teamCode: j['teamCode'] as String? ?? '',
-      won: j['win'] as bool,
-      minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
-      durationMinutes: seconds == null ? null : seconds ~/ 60,
-      playerImageUrl: j['playerImageUrl'] as String?,
-      cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
+  final startedAt = parseServerTime(j['startedAt']);
+  return HomeLiveSoloPlayer(
+    name: j['playerName'] as String? ?? '',
+    teamCode: j['teamCode'] as String? ?? '',
+    champion: j['championName'] as String? ?? '',
+    elapsedSeconds: startedAt == null
+        ? 0
+        : now.difference(startedAt).inSeconds.clamp(0, 1 << 30),
+    playerImageUrl: j['playerImageUrl'] as String?,
+    championImageUrl: j['championImageUrl'] as String?,
+    startedAt: startedAt,
+    playerId: (j['playerId'] as num?)?.toInt(),
+    cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+    cheerMine: (j['cheerMine'] as num?)?.toInt() ?? 0,
+    platform: j['platform'] as String?,
+  );
+}
+
+HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
+  final seconds = (j['durationSeconds'] as num?)?.toInt();
+  return HomeFinishedSoloPlayer(
+    name: j['playerName'] as String? ?? '',
+    teamCode: j['teamCode'] as String? ?? '',
+    won: j['win'] as bool,
+    minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
+    durationMinutes: seconds == null ? null : seconds ~/ 60,
+    playerImageUrl: j['playerImageUrl'] as String?,
+    cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// 월즈 솔랭 (`GET /api/mobile/me/solo-rank/worlds`).
+///
+/// 비회원도 토큰 없이 부른다 — 서버가 전원 미구독으로 준다. 비회원을 막던 옛
+/// 서버(401)면 빈 결과라, 명단이 비어 화면은 월즈 솔랭을 통째로 숨긴다.
+class ApiWorldsSoloSource implements WorldsSoloSource {
+  ApiWorldsSoloSource({AuthService? auth, DateTime Function()? now})
+    : _auth = auth ?? AuthService.instance,
+      _now = now ?? DateTime.now;
+
+  final AuthService _auth;
+  final DateTime Function() _now;
+
+  @override
+  Future<WorldsSoloSnapshot> fetch() async {
+    final token = await _auth.jwt;
+    final url = Uri.parse(ApiConfig.worldsSoloRankUrl);
+    final anonymous = token == null || token.isEmpty;
+    final response = anonymous
+        ? await http.get(url)
+        : await _auth.authorizedRequest(
+            (t) => http.get(url, headers: {'Authorization': 'Bearer $t'}),
+          );
+    if (anonymous && response.statusCode == 401) {
+      return WorldsSoloSnapshot.empty;
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('월즈 솔랭 조회 실패 (${response.statusCode})');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return WorldsSoloSnapshot(
+      players: [
+        for (final e in data['players'] as List<dynamic>? ?? const [])
+          PlayerSubscription.fromJson(e as Map<String, dynamic>),
+      ],
+      solo: soloSnapshotFromJson(data, _now()),
+      today: {
+        for (final e in data['today'] as List<dynamic>? ?? const [])
+          (e as Map<String, dynamic>)['playerId'] as int: WorldsTodayRecord(
+            games: e['games'] as int? ?? 0,
+            wins: e['wins'] as int? ?? 0,
+            losses: e['losses'] as int? ?? 0,
+          ),
+      },
     );
   }
 }

@@ -188,6 +188,14 @@ Map<String, dynamic> shortsJson(String title, {String channel = ''}) => {
 
 const emptySolo = SoloRankSnapshot(live: [], finished: []);
 
+/// 고정된 월즈 솔랭 스냅샷을 돌려주는 소스.
+class FakeWorldsSource implements WorldsSoloSource {
+  FakeWorldsSource(this.snap);
+  final WorldsSoloSnapshot snap;
+  @override
+  Future<WorldsSoloSnapshot> fetch() async => snap;
+}
+
 /// 테스트마다 부르는 준비 — 캐시를 비우고 가짜 서버를 꽂는다.
 HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
   final server = HomeFakeApi();
@@ -213,11 +221,13 @@ Future<HomeViewModel> pumpHomeSection(
   ReviewSource reviews = const MockReviewSource(),
   NewsSource news = const MockNewsSource(),
   CheerSource? cheer,
+  WorldsSoloSnapshot worlds = WorldsSoloSnapshot.empty,
 }) async {
   late HomeViewModel vm;
   await tester.runAsync(() async {
     vm = HomeViewModel(
       soloRank: FakeSoloSource(solo),
+      worlds: FakeWorldsSource(worlds),
       reviews: reviews,
       news: news,
       cheer: cheer,

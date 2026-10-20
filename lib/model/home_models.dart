@@ -13,11 +13,23 @@ class HomeLiveSoloPlayer {
     this.playerId,
     this.cheerTotal = 0,
     this.cheerMine = 0,
+    this.platform,
   });
 
   final String name;
   final String teamCode;
   final String champion;
+
+  /// 이 판을 하는 계정의 플랫폼(KR / NA1 …). 옛 서버라 없으면 null.
+  /// KR 이 아니면 해외 계정(월즈 부트캠프 계정 등)이라 화면에 지역을 붙인다.
+  final String? platform;
+
+  /// 해외 계정으로 하는 판이면 "NA" 같은 짧은 지역 표기, KR·모름이면 null.
+  String? get overseasRegion {
+    final p = platform;
+    if (p == null || p.isEmpty || p.toUpperCase() == 'KR') return null;
+    return p.toUpperCase().replaceAll(RegExp(r'\d+$'), '');
+  }
 
   /// 응원 전송에 쓰는 선수 id. 솔랭 응답이 주면 쓰고, 없으면 홈 뷰모델이 구독
   /// 목록에서 이름으로 찾아 채운다.

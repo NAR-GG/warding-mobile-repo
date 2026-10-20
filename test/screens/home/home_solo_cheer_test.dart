@@ -10,7 +10,9 @@ import 'package:warding/screens/home/component/home_solo_rank_section.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/viewmodel/home/solo_cheer_controller.dart';
 
 import 'home_test_harness.dart';
 
@@ -75,6 +77,41 @@ void main() {
 
     // 효과·식는 타이머가 끝나게 둔다.
     await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('폴링으로 늘어난 합계는 툭 바뀌지 않고 세어 올라간다', (tester) async {
+    final controller = SoloCheerController(source: _FakeCheer());
+    addTearDown(controller.dispose);
+    controller.sync('Faker', total: 1000, mine: 0);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ko'),
+        home: Scaffold(
+          body: SoloCheerCard(
+            hero: const SizedBox(),
+            heroHeight: 100,
+            playerName: 'Faker',
+            controller: controller,
+            scale: 1,
+          ),
+        ),
+      ),
+    );
+    String shown() => tester
+        .widget<Text>(find.byKey(SoloCheerCard.totalKey('Faker')))
+        .data!;
+    expect(shown(), '1,000');
+
+    controller.sync('Faker', total: 1100, mine: 0);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final mid = int.parse(shown().replaceAll(',', ''));
+    expect(mid, inExclusiveRange(1000, 1100));
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(shown(), '1,100');
   });
 
   testWidgets('모션 줄이기 설정이면 +1·불꽃 효과를 그리지 않는다', (tester) async {

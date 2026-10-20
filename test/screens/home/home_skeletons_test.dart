@@ -74,6 +74,7 @@ void main() {
   HomeViewModel build() {
     final vm = HomeViewModel(
       soloRank: _GatedSolo(gate.future),
+      worlds: const EmptyWorldsSoloSource(),
       reviews: _GatedReviews(gate.future, const [
         HomeReviewItem(
           playerName: 'Faker',
@@ -198,6 +199,7 @@ void main() {
     final newsGate = Completer<void>();
     final vm = HomeViewModel(
       soloRank: _GatedSolo(Future.value()),
+      worlds: const EmptyWorldsSoloSource(),
       reviews: _GatedReviews(Future.value(), const []),
       news: _GatedNews(newsGate.future, const []),
     );
