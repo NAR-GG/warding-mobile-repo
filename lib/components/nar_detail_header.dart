@@ -20,7 +20,12 @@ class NarDetailHeader extends StatelessWidget {
     this.backIconAsset = 'assets/icons/back.svg',
     this.scale = 1,
     this.centerTitle = true,
+    this.titleLeading,
   });
+
+  /// 좌측 정렬 제목 앞에 붙는 아이콘(예: 월즈 솔랭의 대회 로고). [centerTitle] 이
+  /// false 일 때만 그린다.
+  final Widget? titleLeading;
 
   /// 타이틀 텍스트.
   final String title;
@@ -115,6 +120,10 @@ class NarDetailHeader extends StatelessWidget {
                       children: [
                         backButton,
                         SizedBox(width: 16 * scale),
+                        if (titleLeading != null) ...[
+                          titleLeading!,
+                          SizedBox(width: 6 * scale),
+                        ],
                         Flexible(
                           child: Text(
                             title,

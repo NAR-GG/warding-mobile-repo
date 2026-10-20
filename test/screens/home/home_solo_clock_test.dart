@@ -42,6 +42,7 @@ void main() {
     final vm = HomeViewModel(
       subscriptions: repo,
       soloRank: _FixedSolo(snapshot),
+      worlds: const EmptyWorldsSoloSource(),
       reviews: const MockReviewSource(),
       news: const MockNewsSource(),
     );

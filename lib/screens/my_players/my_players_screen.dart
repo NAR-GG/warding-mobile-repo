@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/nar_detail_header.dart';
+import '../../components/nar_tab_bar.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
+import '../../repository/home/home_sources.dart';
 import '../../viewmodel/my_players/my_players_viewmodel.dart';
 import 'component/my_player_tile.dart';
+import 'component/worlds_player_sheet.dart';
 
 /// 내 선수(구독 전체) 화면 — 홈 "구독 N명 전체"의 목적지.
 ///
@@ -16,8 +20,17 @@ import 'component/my_player_tile.dart';
 /// 보기 전용이다 — 알림 벨·구독 관리 버튼을 두지 않는다(관리는 마이페이지,
 /// spec 결정). 로딩·에러 UI도 그리지 않는다(spec 상태 표).
 /// 홈에서 push 로 열리므로 뒤로가기(pop)는 홈으로 돌아간다.
+///
+/// [worlds] 면 월즈 솔랭 화면이다 — 같은 묶음·검색·팀 필터에 "LCK 전체 / 구독
+/// 선수" 탭, 줄마다 구독 벨, 줄을 누르면 선수 시트가 붙는다.
 class MyPlayersScreen extends StatefulWidget {
-  const MyPlayersScreen({super.key, @visibleForTesting this.viewModel});
+  const MyPlayersScreen({
+    super.key,
+    @visibleForTesting this.viewModel,
+    this.worlds = false,
+  });
+
+  final bool worlds;
 
   /// 테스트에서 주입하는 뷰모델. 주입하면 화면이 dispose 하지 않는다.
   final MyPlayersViewModel? viewModel;
@@ -27,6 +40,7 @@ class MyPlayersScreen extends StatefulWidget {
 
   /// 선수 줄 key — 이름은 겹칠 수 있어 playerId 로 만든다.
   static Key tileKey(int playerId) => ValueKey('myPlayer-$playerId');
+  static Key bellKey(int playerId) => ValueKey('worldsBell-$playerId');
 
   @override
   State<MyPlayersScreen> createState() => _MyPlayersScreenState();
@@ -34,7 +48,10 @@ class MyPlayersScreen extends StatefulWidget {
 
 class _MyPlayersScreenState extends State<MyPlayersScreen> {
   late final MyPlayersViewModel _viewModel =
-      widget.viewModel ?? MyPlayersViewModel();
+      widget.viewModel ??
+      MyPlayersViewModel(
+        worlds: widget.worlds ? defaultWorldsSoloSource() : null,
+      );
   final TextEditingController _search = TextEditingController();
 
   /// 팀 칩의 "전체" 값. 팀 코드와 겹치지 않는 내부 키.
@@ -69,12 +86,30 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 NarDetailHeader(
-                  title: l.myPlayersTitle,
+                  title: vm.isWorlds ? l.worldsSoloTitle : l.myPlayersTitle,
                   scale: scale,
                   centerTitle: false,
                   backIconAsset: 'assets/icons/chevron-left.svg',
+                  titleLeading: vm.isWorlds
+                      ? Image.asset(
+                          'assets/icons/leagues/worlds.png',
+                          width: 22 * scale,
+                          height: 22 * scale,
+                        )
+                      : null,
                   onBack: () => Navigator.of(context).pop(),
                 ),
+                if (vm.isWorlds)
+                  NarTabBar(
+                    tabs: [
+                      '${l.worldsSoloTabAll} ${vm.subscribedTotal}',
+                      '${l.worldsSoloTabSubscribed} ${vm.subscribedInRoster}',
+                    ],
+                    selectedIndex: vm.subscribedOnly ? 1 : 0,
+                    onChanged: (i) => vm.setSubscribedOnly(i == 1),
+                    scale: scale,
+                  ),
+                if (vm.isWorlds) SizedBox(height: 14 * scale),
                 _SearchField(
                   controller: _search,
                   hint: l.myPlayersSearchHint,
@@ -132,7 +167,14 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
       ),
     );
 
-    if (vm.subscribedTotal == 0) return [message(l.myPlayersEmpty)];
+    if (vm.subscribedTotal == 0) {
+      return [
+        message(vm.isWorlds ? l.worldsSoloEmptyRoster : l.myPlayersEmpty),
+      ];
+    }
+    if (vm.isWorlds && vm.subscribedOnly && vm.subscribedInRoster == 0) {
+      return [message(l.myPlayersEmpty)];
+    }
     if (live.isEmpty && played.isEmpty && quiet.isEmpty) {
       return [message(l.myPlayersNoResult)];
     }
@@ -179,12 +221,32 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
         itemCount: entries.length,
         itemBuilder: (context, i) {
           final entry = entries[i];
+          final vm = _viewModel;
+          final player = entry.player;
           return MyPlayerTile(
-            key: MyPlayersScreen.tileKey(entry.player.playerId),
+            key: MyPlayersScreen.tileKey(player.playerId),
             entry: entry,
             scale: scale,
             isFirst: i == 0,
             isLast: i == entries.length - 1,
+            onTap: vm.isWorlds
+                ? () => showWorldsPlayerSheet(
+                    context,
+                    viewModel: vm,
+                    playerId: player.playerId,
+                    scale: scale,
+                  )
+                : null,
+            trailing: vm.isWorlds
+                ? _BellButton(
+                    key: MyPlayersScreen.bellKey(player.playerId),
+                    subscribed: player.subscribed,
+                    playerName: player.playerName,
+                    scale: scale,
+                    onTap: () =>
+                        vm.setSubscribed(player.playerId, !player.subscribed),
+                  )
+                : null,
           );
         },
       ),
@@ -342,6 +404,60 @@ class _ShowMoreButton extends StatelessWidget {
               color: AppColors.narText2,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 월즈 줄 오른쪽 구독 벨 — 구독 중이면 보라 체크 벨, 아니면 회색 플러스 벨.
+class _BellButton extends StatelessWidget {
+  const _BellButton({
+    super.key,
+    required this.subscribed,
+    required this.playerName,
+    required this.scale,
+    required this.onTap,
+  });
+
+  final bool subscribed;
+  final String playerName;
+  final double scale;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final size = 36 * scale;
+    return Semantics(
+      button: true,
+      label: subscribed
+          ? l.worldsSoloUnsubscribeSemantics(playerName)
+          : l.worldsSoloSubscribeSemantics(playerName),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: subscribed
+                ? AppColors.narChipActive.withValues(alpha: 0.22)
+                : AppColors.narDark500,
+          ),
+          alignment: Alignment.center,
+          child: SvgPicture.asset(
+            subscribed
+                ? 'assets/icons/bell-check.svg'
+                : 'assets/icons/bell-plus.svg',
+            width: 18 * scale,
+            height: 18 * scale,
+            colorFilter: ColorFilter.mode(
+              subscribed ? AppColors.narViolet3 : AppColors.narText2,
+              BlendMode.srcIn,
+            ),
+          ),
         ),
       ),
     );

@@ -348,6 +348,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPlayersEmpty => 'No subscribed players';
 
   @override
+  String get worldsSoloTitle => 'Worlds SoloQ';
+
+  @override
+  String get worldsSoloTabAll => 'All LCK';
+
+  @override
+  String get worldsSoloTabSubscribed => 'Subscribed';
+
+  @override
+  String get worldsSoloEmptyRoster => 'No Worlds players yet';
+
+  @override
+  String get worldsSoloLiveLabel => 'LCK players in Worlds SoloQ';
+
+  @override
+  String get worldsSoloSeeAll => 'All Worlds SoloQ';
+
+  @override
+  String get worldsSoloAll => 'All';
+
+  @override
+  String worldsSoloEntrySub(int count) {
+    return '$count LCK players in SoloQ';
+  }
+
+  @override
+  String worldsSoloLast(String name, String ago) {
+    return 'Last $name · $ago';
+  }
+
+  @override
+  String worldsSoloSubscribePrompt(String name) {
+    return 'Subscribe to $name';
+  }
+
+  @override
+  String get worldsSoloSubscribePromptSub => 'Get notified when they queue up';
+
+  @override
+  String get worldsSoloSubscribe => 'Subscribe';
+
+  @override
+  String get worldsSoloUnsubscribe => 'Unsubscribe';
+
+  @override
+  String worldsSoloSubscribeSemantics(String name) {
+    return 'Subscribe to $name';
+  }
+
+  @override
+  String worldsSoloUnsubscribeSemantics(String name) {
+    return 'Unsubscribe from $name';
+  }
+
+  @override
+  String get worldsSoloSheetHint => 'You can turn this off anytime in My Page';
+
+  @override
   String get matchList => 'Match List';
 
   @override

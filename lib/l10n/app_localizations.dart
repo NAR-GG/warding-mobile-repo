@@ -698,6 +698,102 @@ abstract class AppLocalizations {
   /// **'구독한 선수가 없어요'**
   String get myPlayersEmpty;
 
+  /// No description provided for @worldsSoloTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 솔랭'**
+  String get worldsSoloTitle;
+
+  /// No description provided for @worldsSoloTabAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'LCK 전체'**
+  String get worldsSoloTabAll;
+
+  /// No description provided for @worldsSoloTabSubscribed.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 선수'**
+  String get worldsSoloTabSubscribed;
+
+  /// No description provided for @worldsSoloEmptyRoster.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 월즈 솔랭 명단이 없어요'**
+  String get worldsSoloEmptyRoster;
+
+  /// No description provided for @worldsSoloLiveLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 솔랭 중인 LCK 선수'**
+  String get worldsSoloLiveLabel;
+
+  /// No description provided for @worldsSoloSeeAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 솔랭 전체'**
+  String get worldsSoloSeeAll;
+
+  /// No description provided for @worldsSoloAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get worldsSoloAll;
+
+  /// No description provided for @worldsSoloEntrySub.
+  ///
+  /// In ko, this message translates to:
+  /// **'LCK 선수 {count}명 솔랭 중'**
+  String worldsSoloEntrySub(int count);
+
+  /// No description provided for @worldsSoloLast.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 {name} · {ago}'**
+  String worldsSoloLast(String name, String ago);
+
+  /// No description provided for @worldsSoloSubscribePrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 구독하면'**
+  String worldsSoloSubscribePrompt(String name);
+
+  /// No description provided for @worldsSoloSubscribePromptSub.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭 시작할 때 바로 알려드려요'**
+  String get worldsSoloSubscribePromptSub;
+
+  /// No description provided for @worldsSoloSubscribe.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독하기'**
+  String get worldsSoloSubscribe;
+
+  /// No description provided for @worldsSoloUnsubscribe.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 해제'**
+  String get worldsSoloUnsubscribe;
+
+  /// No description provided for @worldsSoloSubscribeSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 구독'**
+  String worldsSoloSubscribeSemantics(String name);
+
+  /// No description provided for @worldsSoloUnsubscribeSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 구독 해제'**
+  String worldsSoloUnsubscribeSemantics(String name);
+
+  /// No description provided for @worldsSoloSheetHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이페이지에서 언제든 끌 수 있어요'**
+  String get worldsSoloSheetHint;
+
   /// No description provided for @matchList.
   ///
   /// In ko, this message translates to:

@@ -147,6 +147,73 @@ void main() {
     });
   });
 
+  group('ApiWorldsSoloSource', () {
+    setUp(() {
+      FlutterSecureStorage.setMockInitialValues({'jwt': 'token'});
+      AuthService.instance.resetJwtCacheForTesting();
+    });
+
+    test('명단과 솔랭 상태를 함께 읽고, 판의 플랫폼으로 해외 계정을 표시한다', () async {
+      Uri? url;
+      api.setApiClientForTesting(MockClient((request) async {
+        url = request.url;
+        return json({
+          'players': [
+            {
+              'playerId': 194,
+              'playerName': 'Canyon',
+              'playerImageUrl': 'canyon.png',
+              'role': 'JUNGLE',
+              'teamId': 3,
+              'teamCode': 'GEN',
+              'teamName': 'Gen.G',
+              'teamImageUrl': 'gen.png',
+              'subscribed': false,
+              'startEnabled': true,
+              'endEnabled': false,
+            },
+          ],
+          'live': [
+            {
+              'playerId': 194,
+              'playerName': 'Canyon',
+              'teamCode': 'GEN',
+              'championName': '키아나',
+              'startedAt': '2026-09-25T21:18:00+09:00',
+              'platform': 'NA1',
+              'cheerTotal': 0,
+              'cheerMine': 0,
+            },
+          ],
+          'finished': [],
+        });
+      }));
+
+      final snap = await ApiWorldsSoloSource(now: () => now).fetch();
+
+      expect(url?.path, '/api/mobile/me/solo-rank/worlds');
+      expect(snap.players.single.playerName, 'Canyon');
+      expect(snap.players.single.subscribed, isFalse);
+      expect(snap.solo.live.single.elapsedSeconds, 720);
+      expect(snap.solo.live.single.overseasRegion, 'NA');
+    });
+
+    test('비회원이면 부르지 않고 빈 명단 — 월즈 솔랭이 숨겨진다', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      AuthService.instance.resetJwtCacheForTesting();
+      var called = false;
+      api.setApiClientForTesting(MockClient((_) async {
+        called = true;
+        return json({});
+      }));
+
+      final snap = await ApiWorldsSoloSource(now: () => now).fetch();
+
+      expect(called, isFalse);
+      expect(snap.players, isEmpty);
+    });
+  });
+
   group('ApiReviewSource', () {
     test('선수·챔피언·별점·한줄평·작성자·경과 분을 매핑한다(오프셋 없는 KST 시각)', () async {
       Uri? url;

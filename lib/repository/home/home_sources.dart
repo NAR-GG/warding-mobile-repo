@@ -1,4 +1,5 @@
 import '../../model/home_models.dart';
+import '../../model/player_subscription.dart';
 import 'home_api_sources.dart';
 
 /// 솔로 랭크 상태 한 번의 조회 결과.
@@ -12,6 +13,101 @@ class SoloRankSnapshot {
 /// 구독 선수 솔랭 상태 소스.
 abstract class SoloRankSource {
   Future<SoloRankSnapshot> fetch();
+}
+
+/// 월즈 솔랭 한 번의 조회 결과 — 명단(구독 여부 포함)과 그 선수들의 솔랭 상태.
+class WorldsSoloSnapshot {
+  const WorldsSoloSnapshot({required this.players, required this.solo});
+
+  static const WorldsSoloSnapshot empty = WorldsSoloSnapshot(
+    players: [],
+    solo: SoloRankSnapshot(live: [], finished: []),
+  );
+
+  /// 월즈 부트캠프 계정이 등록된 선수 전체. 비면 월즈 솔랭을 통째로 숨긴다 —
+  /// 대회가 끝나 서버가 보조 계정을 끄면 앱 배포 없이 사라진다.
+  final List<PlayerSubscription> players;
+  final SoloRankSnapshot solo;
+}
+
+/// 월즈 솔랭 소스.
+abstract class WorldsSoloSource {
+  Future<WorldsSoloSnapshot> fetch();
+}
+
+/// [HomeViewModel]·월즈 솔랭 화면의 기본 소스.
+WorldsSoloSource defaultWorldsSoloSource({bool mocks = kHomeMocks}) =>
+    mocks ? const MockWorldsSoloSource() : ApiWorldsSoloSource();
+
+/// 빈 월즈 솔랭 소스 — 월즈 솔랭이 화면에 나오지 않는다.
+class EmptyWorldsSoloSource implements WorldsSoloSource {
+  const EmptyWorldsSoloSource();
+
+  @override
+  Future<WorldsSoloSnapshot> fetch() async => WorldsSoloSnapshot.empty;
+}
+
+/// 목업 월즈 솔랭 소스. [kHomeMocks] 가 켜진 빌드의 기본 소스다.
+class MockWorldsSoloSource implements WorldsSoloSource {
+  const MockWorldsSoloSource();
+
+  static PlayerSubscription _player(
+    int id,
+    String name,
+    String team,
+    String role,
+  ) => PlayerSubscription(
+    playerId: id,
+    playerName: name,
+    playerImageUrl: '',
+    role: role,
+    teamId: 0,
+    teamCode: team,
+    teamName: team,
+    teamImageUrl: '',
+    subscribed: false,
+    startEnabled: true,
+    endEnabled: false,
+  );
+
+  @override
+  Future<WorldsSoloSnapshot> fetch() async => WorldsSoloSnapshot(
+    players: [
+      _player(101, 'Canyon', 'GEN', 'JUNGLE'),
+      _player(102, 'ShowMaker', 'DK', 'MID'),
+      _player(103, 'Kanavi', 'HLE', 'JUNGLE'),
+      _player(104, 'Doran', 'T1', 'TOP'),
+    ],
+    solo: const SoloRankSnapshot(
+      live: [
+        HomeLiveSoloPlayer(
+          name: 'Canyon',
+          teamCode: 'GEN',
+          champion: '키아나',
+          elapsedSeconds: 725,
+          playerId: 101,
+          platform: 'NA1',
+        ),
+        HomeLiveSoloPlayer(
+          name: 'ShowMaker',
+          teamCode: 'DK',
+          champion: '아지르',
+          elapsedSeconds: 1868,
+          playerId: 102,
+          platform: 'NA1',
+        ),
+      ],
+      finished: [
+        HomeFinishedSoloPlayer(
+          name: 'Kanavi',
+          teamCode: 'HLE',
+          won: true,
+          minutesAgo: 23,
+          durationMinutes: 29,
+        ),
+      ],
+    ),
+  );
 }
 
 /// 응원 전송 결과 — 서버 기준 이 판 합계와 내가 보낸 수.
@@ -301,11 +397,7 @@ class MockNewsSource implements NewsSource {
   static const List<HomeNewsArticle> articles = [
     HomeNewsArticle(title: 'T1, 플레이오프 진출 확정', office: 'OSEN', minutesAgo: 40),
     HomeNewsArticle(title: '젠지, 정규시즌 1위 마감', office: '스포츠조선', minutesAgo: 120),
-    HomeNewsArticle(
-      title: '한화생명, 로스터 변경 발표',
-      office: '인벤',
-      minutesAgo: 200,
-    ),
+    HomeNewsArticle(title: '한화생명, 로스터 변경 발표', office: '인벤', minutesAgo: 200),
     HomeNewsArticle(
       title: 'LCK 2026 서머 일정 공개',
       office: '데일리e스포츠',

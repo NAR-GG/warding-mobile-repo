@@ -39,18 +39,28 @@ class MyPlayerEntry {
 /// spec 상 로딩·에러 상태는 그리지 않는다. 비회원(JWT 없음)·조회 실패는 구독
 /// 0명으로 보고, 다시 불러오다 실패하면 마지막 값을 유지한다
 /// (솔랭 실패 시 유지 여부는 spec 미결 — 홈과 같이 잠정으로 유지).
+///
+/// [worlds] 를 주면 월즈 솔랭 화면이 된다 — 명단이 구독 선수가 아니라 월즈
+/// 부트캠프 계정이 등록된 선수 전체이고, 탭([subscribedOnly])과 구독 벨
+/// ([setSubscribed])이 생긴다. 분류·필터·접기 규칙은 내 선수와 같다.
 class MyPlayersViewModel extends ChangeNotifier {
   MyPlayersViewModel({
     SubscriptionRepository? subscriptions,
     SoloRankSource? soloRank,
+    WorldsSoloSource? worlds,
   }) : _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        // 기본은 실제 솔랭 API. 목업은 HOME_MOCKS=true 일 때만.
-       _soloRank = soloRank ?? defaultSoloRankSource() {
+       _soloRank = soloRank ?? defaultSoloRankSource(),
+       _worlds = worlds {
     unawaited(refresh());
   }
 
   final SubscriptionRepository _subscriptions;
   final SoloRankSource _soloRank;
+  final WorldsSoloSource? _worlds;
+
+  /// 월즈 솔랭 화면인지.
+  bool get isWorlds => _worlds != null;
 
   /// 소식 없음 묶음이 접혀 있을 때 보이는 선수 수.
   static const int quietVisibleCap = 5;
@@ -79,7 +89,22 @@ class MyPlayersViewModel extends ChangeNotifier {
   /// 두 소스를 병렬로 다시 불러온다. 서로 기다리지 않고, 실패한 쪽은
   /// 마지막 값을 그대로 둔다.
   Future<void> refresh() async {
+    if (_worlds != null) return _loadWorlds(_worlds);
     await Future.wait([_loadSubscriptions(), _loadSolo()]);
+  }
+
+  // 월즈는 명단과 솔랭 상태가 한 응답으로 온다.
+  Future<void> _loadWorlds(WorldsSoloSource source) async {
+    try {
+      final snap = await source.fetch();
+      if (_disposed) return;
+      _players = snap.players;
+      _solo = snap.solo;
+      _classify();
+      _notify();
+    } catch (e) {
+      debugPrint('[WorldsSolo] 월즈 솔랭 조회 실패: $e');
+    }
   }
 
   Future<void> _loadSubscriptions() async {
@@ -157,7 +182,8 @@ class MyPlayersViewModel extends ChangeNotifier {
     // 선수 먼저. 소식 없음: 구독 목록 순서 그대로.
     live.sort((a, b) => SoloRankClassification.compareLive(a.live!, b.live!));
     played.sort(
-      (a, b) => SoloRankClassification.compareFinished(a.finished!, b.finished!),
+      (a, b) =>
+          SoloRankClassification.compareFinished(a.finished!, b.finished!),
     );
 
     _allLive = live;
@@ -166,11 +192,102 @@ class MyPlayersViewModel extends ChangeNotifier {
     _teamCodes = teams;
   }
 
-  /// 구독 선수 수. 비회원·조회 실패는 0명.
+  /// 구독 선수 수. 비회원·조회 실패는 0명. 월즈 화면에서는 명단 전체 수.
   int get subscribedTotal => _players.length;
+
+  /// 월즈 명단 중 내가 구독한 선수 수("구독 선수" 탭).
+  int get subscribedInRoster => _players.where((p) => p.subscribed).length;
+
+  // ---- 월즈: 탭 · 구독 ----
+  bool _subscribedOnly = false;
+
+  /// "구독 선수" 탭이면 true, "LCK 전체" 탭이면 false.
+  bool get subscribedOnly => _subscribedOnly;
+
+  void setSubscribedOnly(bool value) {
+    if (value == _subscribedOnly) return;
+    _subscribedOnly = value;
+    _notify();
+  }
+
+  /// 명단의 한 선수를 구독/해제한다. 화면을 먼저 바꾸고, 실패하면 되돌린다.
+  /// [startEnabled]/[endEnabled] 는 구독할 때의 알림 토글(기본: 시작 ON, 종료 OFF).
+  Future<void> setSubscribed(
+    int playerId,
+    bool subscribed, {
+    bool startEnabled = true,
+    bool endEnabled = false,
+  }) async {
+    final before = _players;
+    _players = [
+      for (final p in _players)
+        if (p.playerId == playerId)
+          p.copyWith(
+            subscribed: subscribed,
+            startEnabled: startEnabled,
+            endEnabled: endEnabled,
+          )
+        else
+          p,
+    ];
+    _classify();
+    _notify();
+    try {
+      if (subscribed) {
+        await _subscriptions.subscribePlayer(playerId);
+        // 서버 기본값(시작 ON·종료 OFF)과 다를 때만 토글을 맞춘다.
+        if (!startEnabled || endEnabled) {
+          await _subscriptions.updatePlayerAlarm(
+            playerId,
+            startEnabled: startEnabled,
+            endEnabled: endEnabled,
+          );
+        }
+      } else {
+        await _subscriptions.unsubscribePlayer(playerId);
+      }
+    } catch (e) {
+      debugPrint('[WorldsSolo] 구독 변경 실패: $e');
+      if (_disposed) return;
+      _players = before;
+      _classify();
+      _notify();
+    }
+  }
 
   /// 구독 선수 소속팀 코드 — 처음 나온 순서대로 한 번씩(팀 필터 칩).
   List<String> get teamCodes => _teamCodes;
+
+  /// 구독 중인 선수의 알림 토글만 바꾼다. 실패하면 되돌린다.
+  Future<void> setAlarms(
+    int playerId, {
+    required bool startEnabled,
+    required bool endEnabled,
+  }) async {
+    final before = _players;
+    _players = [
+      for (final p in _players)
+        if (p.playerId == playerId)
+          p.copyWith(startEnabled: startEnabled, endEnabled: endEnabled)
+        else
+          p,
+    ];
+    _classify();
+    _notify();
+    try {
+      await _subscriptions.updatePlayerAlarm(
+        playerId,
+        startEnabled: startEnabled,
+        endEnabled: endEnabled,
+      );
+    } catch (e) {
+      debugPrint('[WorldsSolo] 알림 토글 변경 실패: $e');
+      if (_disposed) return;
+      _players = before;
+      _classify();
+      _notify();
+    }
+  }
 
   // ---- 필터 ----
   String _query = '';
@@ -198,10 +315,12 @@ class MyPlayersViewModel extends ChangeNotifier {
   List<MyPlayerEntry> _filter(List<MyPlayerEntry> list) {
     final q = _query.trim().toLowerCase();
     final team = _teamCode;
-    if (q.isEmpty && team == null) return list;
+    final subscribedOnly = _subscribedOnly;
+    if (q.isEmpty && team == null && !subscribedOnly) return list;
     return [
       for (final e in list)
-        if ((team == null || e.player.teamCode == team) &&
+        if ((!subscribedOnly || e.player.subscribed) &&
+            (team == null || e.player.teamCode == team) &&
             (q.isEmpty || e.player.playerName.toLowerCase().contains(q)))
           e,
     ];

@@ -174,6 +174,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await _viewModel.refreshSoloOnReturn();
   }
 
+  /// 월즈 솔랭 화면. 거기서 구독을 바꿀 수 있어 돌아오면 구독 목록까지 다시 부른다.
+  Future<void> _openWorlds() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const MyPlayersScreen(worlds: true),
+      ),
+    );
+    await _viewModel.refreshSubscriptionsOnReturn();
+  }
+
   /// 마이구독 탭으로 전환한다. 벨이 여기로 온다(비회원은 그 화면이 로그인
   /// 안내를 띄운다).
   ///
@@ -273,6 +283,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               scale: scale,
                               onOpenMyPlayers: _openMyPlayers,
                               onSubscribe: _openSubscriptionSettings,
+                              onOpenWorlds: _openWorlds,
                             ),
                             // 오늘 경기가 없으면 섹션이 통째로 사라지는데
                             // (HomeTodayMatchesSection), 앞뒤 SizedBox 는 그대로

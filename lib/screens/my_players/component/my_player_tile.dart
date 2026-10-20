@@ -10,7 +10,8 @@ import '../../../viewmodel/my_players/my_players_viewmodel.dart';
 
 /// 내 선수 목록 한 줄 — 얼굴(+팀 배지) · 이름 · 팀·포지션 · 오늘 상태.
 ///
-/// 보기 전용이라 누를 곳이 없다(구독 관리는 마이페이지). 한 묶음의 줄들이
+/// 내 선수 화면에서는 보기 전용이다(구독 관리는 마이페이지). 월즈 솔랭 화면은
+/// [onTap](선수 시트)과 [trailing](구독 벨)을 넘긴다. 한 묶음의 줄들이
 /// 한 장의 카드처럼 보이도록 [isFirst]/[isLast] 로 위아래 모서리만 둥글린다 —
 /// 묶음 전체를 한 위젯으로 감싸면 100명을 지연 생성할 수 없어서다.
 class MyPlayerTile extends StatelessWidget {
@@ -20,12 +21,18 @@ class MyPlayerTile extends StatelessWidget {
     required this.scale,
     required this.isFirst,
     required this.isLast,
+    this.onTap,
+    this.trailing,
   });
 
   final MyPlayerEntry entry;
   final double scale;
   final bool isFirst;
   final bool isLast;
+  final VoidCallback? onTap;
+
+  /// 줄 오른쪽 끝에 붙는 위젯(월즈: 구독 벨). 없으면 아무것도 두지 않는다.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -50,56 +57,65 @@ class MyPlayerTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!isFirst) Container(height: 1, color: AppColors.narLine),
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 13 * scale,
-              vertical: 11 * scale,
-            ),
-            child: Row(
-              children: [
-                _Avatar(
-                  name: player.playerName,
-                  imageUrl: player.playerImageUrl,
-                  teamCode: player.teamCode,
-                  scale: scale,
-                ),
-                SizedBox(width: 11 * scale),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: player.playerName,
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16 * scale,
-                                color: AppColors.narTextTertiary,
-                              ),
-                            ),
-                            if (sub.isNotEmpty)
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                13 * scale,
+                11 * scale,
+                (trailing == null ? 13 : 10) * scale,
+                11 * scale,
+              ),
+              child: Row(
+                children: [
+                  MyPlayerAvatar(
+                    name: player.playerName,
+                    imageUrl: player.playerImageUrl,
+                    teamCode: player.teamCode,
+                    scale: scale,
+                  ),
+                  SizedBox(width: 11 * scale),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text.rich(
+                          TextSpan(
+                            children: [
                               TextSpan(
-                                text: '  $sub',
+                                text: player.playerName,
                                 style: TextStyle(
-                                  fontFamily: 'Open Sans',
-                                  fontSize: 13 * scale,
-                                  color: AppColors.narText2,
+                                  fontFamily: 'Pretendard',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16 * scale,
+                                  color: AppColors.narTextTertiary,
                                 ),
                               ),
-                          ],
+                              if (sub.isNotEmpty)
+                                TextSpan(
+                                  text: '  $sub',
+                                  style: TextStyle(
+                                    fontFamily: 'Open Sans',
+                                    fontSize: 13 * scale,
+                                    color: AppColors.narText2,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 2 * scale),
-                      _StatusLine(entry: entry, scale: scale),
-                    ],
+                        SizedBox(height: 2 * scale),
+                        MyPlayerStatusLine(entry: entry, scale: scale),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  if (trailing != null) ...[
+                    SizedBox(width: 8 * scale),
+                    trailing!,
+                  ],
+                ],
+              ),
             ),
           ),
         ],
@@ -110,8 +126,12 @@ class MyPlayerTile extends StatelessWidget {
 
 /// 오늘 상태 한 줄. 솔랭 중은 솔랭 톤 점 + "챔피언 · 경과", 오늘 경기함은
 /// "N분 전 · 승/패", 소식 없음은 흐린 "오늘 솔랭 없음".
-class _StatusLine extends StatelessWidget {
-  const _StatusLine({required this.entry, required this.scale});
+class MyPlayerStatusLine extends StatelessWidget {
+  const MyPlayerStatusLine({
+    super.key,
+    required this.entry,
+    required this.scale,
+  });
 
   final MyPlayerEntry entry;
   final double scale;
@@ -148,6 +168,10 @@ class _StatusLine extends StatelessWidget {
                 style: style(AppColors.narSoloText),
               ),
             ),
+            if (live.overseasRegion != null) ...[
+              SizedBox(width: 6 * scale),
+              RegionChip(region: live.overseasRegion!, scale: scale),
+            ],
           ],
         );
       case MyPlayerStatus.playedToday:
@@ -171,12 +195,14 @@ class _StatusLine extends StatelessWidget {
 }
 
 /// 얼굴 사진(없으면 이니셜 원) + 오른쪽 아래 팀 코드 배지.
-class _Avatar extends StatelessWidget {
-  const _Avatar({
+class MyPlayerAvatar extends StatelessWidget {
+  const MyPlayerAvatar({
+    super.key,
     required this.name,
     required this.imageUrl,
     required this.teamCode,
     required this.scale,
+    this.diameter = 40,
   });
 
   final String name;
@@ -184,9 +210,12 @@ class _Avatar extends StatelessWidget {
   final String teamCode;
   final double scale;
 
+  /// 얼굴 지름(스케일 전). 목록은 40, 월즈 선수 시트는 56.
+  final double diameter;
+
   @override
   Widget build(BuildContext context) {
-    final size = 40 * scale;
+    final size = diameter * scale;
     final url = resolveImageUrl(imageUrl);
     final initials = Center(
       child: Text(
@@ -231,7 +260,10 @@ class _Avatar extends StatelessWidget {
             Positioned(
               right: -3 * scale,
               bottom: -3 * scale,
-              child: TeamCodeBadge(teamCode: teamCode, size: 18 * scale),
+              child: TeamCodeBadge(
+                teamCode: teamCode,
+                size: (diameter >= 56 ? 22 : 18) * scale,
+              ),
             ),
         ],
       ),
@@ -246,4 +278,33 @@ String _clock(int seconds) {
   final s = (seconds % 60).toString().padLeft(2, '0');
   if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$s';
   return '$m:$s';
+}
+
+/// 해외 계정으로 하는 판 표시 — "NA" 같은 작은 테두리 칩.
+class RegionChip extends StatelessWidget {
+  const RegionChip({super.key, required this.region, required this.scale});
+
+  final String region;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.narLine2),
+        borderRadius: BorderRadius.circular(4 * scale),
+      ),
+      child: Text(
+        region,
+        style: TextStyle(
+          fontFamily: 'Open Sans',
+          fontWeight: FontWeight.w600,
+          fontSize: 10 * scale,
+          height: 1.4,
+          color: AppColors.narText2,
+        ),
+      ),
+    );
+  }
 }

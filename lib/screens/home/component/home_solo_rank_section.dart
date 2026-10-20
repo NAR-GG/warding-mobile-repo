@@ -15,6 +15,7 @@ import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_skeletons.dart';
 import 'home_solo_cheer.dart';
+import 'home_worlds_solo.dart';
 
 /// 구독 선수 솔랭 상태 — spec "상태" 표의 세 갈래를 [HomeViewModel.soloState]
 /// 로 나눠 그린다.
@@ -37,6 +38,7 @@ class HomeSoloRankSection extends StatefulWidget {
     required this.scale,
     this.onOpenMyPlayers,
     this.onSubscribe,
+    this.onOpenWorlds,
   });
 
   final HomeViewModel viewModel;
@@ -47,6 +49,13 @@ class HomeSoloRankSection extends StatefulWidget {
 
   /// 빈 카드의 "선수 구독하기".
   final VoidCallback? onSubscribe;
+
+  /// 월즈 블록(진입 줄·작은 카드·한 줄·전체) — 월즈 솔랭 화면으로.
+  final VoidCallback? onOpenWorlds;
+
+  static Key worldsHeroKey(String name) => ValueKey('homeWorldsHero-$name');
+  static Key worldsSubscribeKey(String name) =>
+      ValueKey('homeWorldsSubscribe-$name');
 
   static const Key emptyCardKey = ValueKey('homeSoloEmpty');
   static const Key quietKey = ValueKey('homeSoloQuiet');
@@ -67,6 +76,10 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     viewportFraction: 0.92,
     initialPage: widget.viewModel.soloSwipeIndex,
   );
+
+  // 구독 0명일 때 빈 카드 자리를 채우는 월즈 카드 스와이프.
+  final PageController _worldsPages = PageController(viewportFraction: 0.92);
+  int _worldsIndex = 0;
 
   // 큰 카드의 경과 시간을 매초 다시 그린다(기기 시계 카운트업 — spec에서
   // 미뤄뒀던 항목). ViewModel 은 API 응답이 올 때만 갱신되므로, 그 사이는
@@ -110,7 +123,12 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
   /// (`HomeViewModel.soloState` 참고) 카운트업할 카드가 없는데도 매초 돌았다.
   /// 경과 시간이 올라가는 건 진행 중(`soloLive`) 카드뿐이라 그걸 본다.
   void _syncClock({bool foreground = true}) {
-    final needsClock = foreground && widget.viewModel.soloLive.isNotEmpty;
+    final vm = widget.viewModel;
+    // 월즈 카드(큰 카드·작은 카드)도 경과 시간이 올라간다.
+    final needsClock =
+        foreground &&
+        (vm.soloLive.isNotEmpty ||
+            (vm.worldsVisible && vm.worldsLive.isNotEmpty));
     if (needsClock == (_clockTimer != null)) return;
     if (!needsClock) {
       _clockTimer?.cancel();
@@ -128,6 +146,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     _clockTimer?.cancel();
     _tick.dispose();
     _pages.dispose();
+    _worldsPages.dispose();
     super.dispose();
   }
 
@@ -157,21 +176,181 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
           HomeFinishedSoloSkeleton(scale: scale),
         ],
       ),
-      SoloCardState.noSubscription => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-        child: _EmptyCard(scale: scale, onSubscribe: widget.onSubscribe),
-      ),
-      SoloCardState.noneActive => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-        child: _QuietRow(
-          faces: vm.subscribedFaces,
-          subscribedTotal: vm.subscribedTotal,
-          scale: scale,
-          onTap: widget.onOpenMyPlayers,
-        ),
+      SoloCardState.noSubscription =>
+        vm.worldsVisible && vm.worldsLive.isNotEmpty
+            ? _buildWorldsHeroes(context)
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+                    child: _EmptyCard(
+                      scale: scale,
+                      onSubscribe: widget.onSubscribe,
+                    ),
+                  ),
+                  ..._worldsBelow(),
+                ],
+              ),
+      SoloCardState.noneActive => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+            child: _QuietRow(
+              faces: vm.subscribedFaces,
+              subscribedTotal: vm.subscribedTotal,
+              scale: scale,
+              onTap: widget.onOpenMyPlayers,
+            ),
+          ),
+          ..._worldsBelow(),
+        ],
       ),
       SoloCardState.active => _buildActive(context),
     };
+  }
+
+  /// 구독 카드 아래에 붙는 월즈 블록. 명단이 비면(대회 전·후) 아무것도 없다.
+  ///
+  /// 구독 선수가 솔랭 중이면 진입 줄 하나만 — 위쪽은 내 선수 자리다. 구독
+  /// 선수가 쉬는 동안엔 솔랭 중인 월즈 선수를 작은 카드로 채우고, 월즈 선수도
+  /// 모두 쉬면 마지막 솔랭만 한 줄로 접는다.
+  List<Widget> _worldsBelow() {
+    final vm = widget.viewModel;
+    final scale = widget.scale;
+    if (!vm.worldsVisible) return const [];
+    final pad = EdgeInsets.fromLTRB(20 * scale, 12 * scale, 20 * scale, 0);
+
+    if (vm.soloLive.isNotEmpty) {
+      final all = vm.worldsLiveAll;
+      return [
+        Padding(
+          padding: pad,
+          child: all.isNotEmpty
+              ? HomeWorldsEntryRow(
+                  live: all,
+                  scale: scale,
+                  onTap: widget.onOpenWorlds,
+                )
+              : HomeWorldsLine(
+                  last: vm.worldsLastFinished,
+                  scale: scale,
+                  onTap: widget.onOpenWorlds,
+                ),
+        ),
+      ];
+    }
+
+    final live = vm.worldsLive;
+    if (live.isEmpty) {
+      return [
+        Padding(
+          padding: EdgeInsets.fromLTRB(20 * scale, 10 * scale, 20 * scale, 0),
+          child: HomeWorldsLine(
+            last: vm.worldsLastFinished,
+            scale: scale,
+            onTap: widget.onOpenWorlds,
+          ),
+        ),
+      ];
+    }
+    return [
+      Padding(
+        padding: EdgeInsets.fromLTRB(20 * scale, 20 * scale, 20 * scale, 0),
+        child: HomeWorldsLabel(
+          count: live.length,
+          scale: scale,
+          onSeeAll: widget.onOpenWorlds,
+        ),
+      ),
+      SizedBox(height: 10 * scale),
+      HomeWorldsMiniCards(
+        live: live,
+        secondsOf: _liveElapsedSeconds,
+        tick: _tick,
+        scale: scale,
+        onSubscribe: vm.subscribeWorldsPlayer,
+        onOpen: widget.onOpenWorlds,
+      ),
+    ];
+  }
+
+  /// 구독 0명 — 빈 카드 대신 솔랭 중인 월즈 선수를 큰 카드로. 응원 영역 자리에
+  /// "구독하면 알려드려요 + 구독하기" 를 둔다.
+  Widget _buildWorldsHeroes(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final vm = widget.viewModel;
+    final scale = widget.scale;
+    final live = vm.worldsLive;
+    final index = _worldsIndex < live.length ? _worldsIndex : 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(20 * scale, 0, 20 * scale, 10 * scale),
+          child: HomeWorldsLabel(count: live.length, scale: scale),
+        ),
+        SizedBox(
+          height: (196 + SoloCheerCard.barHeight) * scale,
+          child: PageView.builder(
+            controller: _worldsPages,
+            onPageChanged: (i) => setState(() => _worldsIndex = i),
+            itemCount: live.length,
+            itemBuilder: (context, i) {
+              final player = live[i];
+              final radius = BorderRadius.circular(14 * scale);
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5 * scale),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(borderRadius: radius),
+                  foregroundDecoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(color: AppColors.narLine),
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 196 * scale,
+                        child: _HeroCard(
+                          key: HomeSoloRankSection.worldsHeroKey(player.name),
+                          player: player,
+                          secondsOf: () => _liveElapsedSeconds(player),
+                          tick: _tick,
+                          scale: scale,
+                          embedded: true,
+                        ),
+                      ),
+                      _WorldsSubscribeBar(
+                        player: player,
+                        scale: scale,
+                        onSubscribe: player.playerId == null
+                            ? null
+                            : () => vm.subscribeWorldsPlayer(player.playerId!),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        if (live.length > 1) ...[
+          SizedBox(height: 10 * scale),
+          _SwipeDots(count: live.length, index: index, scale: scale),
+        ],
+        Padding(
+          padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 0),
+          child: _SeeAllButton(
+            label: l.worldsSoloSeeAll,
+            scale: scale,
+            onTap: widget.onOpenWorlds,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildActive(BuildContext context) {
@@ -241,7 +420,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
               scale: scale,
             ),
           ],
-        ] else
+        ] else ...[
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
             child: _QuietRow(
@@ -251,6 +430,8 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
               onTap: widget.onOpenMyPlayers,
             ),
           ),
+          ..._worldsBelow(),
+        ],
         if (done.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 0),
@@ -299,6 +480,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
             onTap: widget.onOpenMyPlayers,
           ),
         ),
+        if (live.isNotEmpty) ..._worldsBelow(),
       ],
     );
   }
@@ -611,7 +793,7 @@ class _FaceStack extends StatelessWidget {
           for (final (i, p) in faces.indexed)
             Positioned(
               left: _step * i * scale,
-              child: _Face(
+              child: HomeSoloFace(
                 name: p.playerName,
                 url: resolveImageUrl(p.playerImageUrl),
                 size: size,
@@ -621,7 +803,7 @@ class _FaceStack extends StatelessWidget {
           if (extra > 0)
             Positioned(
               left: _step * faces.length * scale,
-              child: _Face(
+              child: HomeSoloFace(
                 name: '+$extra',
                 url: null,
                 size: size,
@@ -634,8 +816,9 @@ class _FaceStack extends StatelessWidget {
   }
 }
 
-class _Face extends StatelessWidget {
-  const _Face({
+class HomeSoloFace extends StatelessWidget {
+  const HomeSoloFace({
+    super.key,
     required this.name,
     required this.url,
     required this.size,
@@ -951,6 +1134,98 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
+/// 월즈 큰 카드 아래 — 응원 영역 자리에 "{name} 구독하면 / 솔랭 시작할 때 바로
+/// 알려드려요" 와 그라데이션 "구독하기" 버튼.
+class _WorldsSubscribeBar extends StatelessWidget {
+  const _WorldsSubscribeBar({
+    required this.player,
+    required this.scale,
+    this.onSubscribe,
+  });
+
+  final HomeLiveSoloPlayer player;
+  final double scale;
+  final VoidCallback? onSubscribe;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final radius = BorderRadius.circular(10 * scale);
+    return Container(
+      height: SoloCheerCard.barHeight * scale,
+      padding: EdgeInsets.only(left: 15 * scale, right: 12 * scale),
+      decoration: const BoxDecoration(
+        color: AppColors.narBgTertiary,
+        border: Border(top: BorderSide(color: AppColors.narDark500)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l.worldsSoloSubscribePrompt(player.name),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14 * scale,
+                    color: AppColors.narTextTertiary,
+                  ),
+                ),
+                SizedBox(height: 3 * scale),
+                Text(
+                  l.worldsSoloSubscribePromptSub,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12 * scale,
+                    color: AppColors.narText2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 10 * scale),
+          Material(
+            color: Colors.transparent,
+            child: Ink(
+              height: 44 * scale,
+              decoration: BoxDecoration(
+                gradient: AppColors.narBg,
+                borderRadius: radius,
+              ),
+              child: InkWell(
+                key: HomeSoloRankSection.worldsSubscribeKey(player.name),
+                borderRadius: radius,
+                onTap: onSubscribe,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                  child: Center(
+                    child: Text(
+                      l.worldsSoloSubscribe,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15 * scale,
+                        color: AppColors.narText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 스와이프 위치 점. 5개까지만 그리고 넘치면 "+N".
 class _SwipeDots extends StatelessWidget {
   const _SwipeDots({
@@ -1022,7 +1297,7 @@ class _FinishedChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _Face(
+          HomeSoloFace(
             name: player.name,
             url: resolveImageUrl(player.playerImageUrl),
             size: 32 * scale,
