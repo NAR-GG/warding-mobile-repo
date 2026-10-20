@@ -49,7 +49,7 @@ class SoloCheerCard extends StatefulWidget {
 }
 
 class _SoloCheerCardState extends State<SoloCheerCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const double _baseHeat = 0.2;
 
   double _heat = _baseHeat;
@@ -63,15 +63,70 @@ class _SoloCheerCardState extends State<SoloCheerCard>
     duration: const Duration(milliseconds: 180),
   );
 
+  // 합계 표시. 내 탭은 바로 올리고, 폴링(5초)으로 들어온 다른 사람 응원은
+  // 툭 바뀌지 않게 이전 값에서 새 값까지 한 번 세어 올린다.
+  late final AnimationController _count = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+    value: 1,
+  );
+  late int _countFrom = widget.controller.totalOf(widget.playerName);
+  late int _countTo = _countFrom;
+  bool _tapping = false;
+
+  int get _shownTotal =>
+      (_countFrom +
+              (_countTo - _countFrom) *
+                  Curves.easeOutCubic.transform(_count.value))
+          .round();
+
+  void _onCheerChanged() {
+    final total = widget.controller.totalOf(widget.playerName);
+    if (total == _countTo) return;
+    if (_tapping || MediaQuery.disableAnimationsOf(context)) {
+      _countFrom = _countTo = total;
+      _count.value = 1;
+      return;
+    }
+    _countFrom = _shownTotal;
+    _countTo = total;
+    _count.forward(from: 0);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onCheerChanged);
+  }
+
+  @override
+  void didUpdateWidget(SoloCheerCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onCheerChanged);
+      widget.controller.addListener(_onCheerChanged);
+    }
+    // 다른 선수 카드로 재사용되면 세어 올리지 않고 그 선수 값으로 맞춘다.
+    if (oldWidget.controller != widget.controller ||
+        oldWidget.playerName != widget.playerName) {
+      _countFrom = _countTo = widget.controller.totalOf(widget.playerName);
+      _count.value = 1;
+    }
+  }
+
   @override
   void dispose() {
+    widget.controller.removeListener(_onCheerChanged);
     _coolTimer?.cancel();
     _bump.dispose();
+    _count.dispose();
     super.dispose();
   }
 
   void _onTap() {
+    _tapping = true;
     widget.controller.tap(widget.playerName);
+    _tapping = false;
     setState(() => _heat = math.min(1, _heat + 0.07));
     _coolTimer ??= Timer.periodic(const Duration(milliseconds: 400), (_) {
       if (!mounted) return;
@@ -192,17 +247,20 @@ class _SoloCheerCardState extends State<SoloCheerCard>
                         ),
                       ]).animate(_bump),
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        formatCheerCount(widget.controller.totalOf(name)),
-                        key: SoloCheerCard.totalKey(name),
-                        style: TextStyle(
-                          fontFamily: 'Open Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 26 * scale,
-                          height: 1.15,
-                          letterSpacing: -0.26 * scale,
-                          color: AppColors.narText,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                      child: AnimatedBuilder(
+                        animation: _count,
+                        builder: (context, _) => Text(
+                          formatCheerCount(_shownTotal),
+                          key: SoloCheerCard.totalKey(name),
+                          style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 26 * scale,
+                            height: 1.15,
+                            letterSpacing: -0.26 * scale,
+                            color: AppColors.narText,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ),
