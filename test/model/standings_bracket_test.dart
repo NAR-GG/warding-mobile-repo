@@ -159,6 +159,34 @@ void main() {
     expect(m.todayTime, '$hh:$mm');
   });
 
+  test('진행 중에 세트 스코어가 오면 시각을 빼고 두 팀 스코어를 쓴다', () {
+    final r = StandingsResult.fromJson({
+      'league': 'WORLDS',
+      'reason': 'BRACKET_ONLY',
+      'groups': [],
+      'bracket': {
+        'rounds': [
+          {
+            'name': '8강',
+            'matches': [
+              {
+                'status': 'live',
+                'scheduledTime': '2026-10-08T16:30:00+09:00',
+                'teamA': {'teamCode': 'T1'},
+                'teamB': {'teamCode': 'GEN', 'gameWins': 1},
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    final m = r.bracket!.toWorldsStandings().knockout.first.matches.first;
+    expect(m.status, WorldsMatchStatus.today);
+    expect(m.todayTime, isNull);
+    expect(m.teamB.gameWins, 1);
+  });
+
   test('모르는 status·빈 bracket 도 터지지 않는다', () {
     final r = StandingsResult.fromJson({
       'league': 'X',

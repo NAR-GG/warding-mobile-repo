@@ -538,9 +538,14 @@ class _WorldsMatchNode extends StatelessWidget {
             team: match.teamA,
             scale: scale,
             todayTime: isToday ? match.todayTime : null,
+            live: isToday && match.todayTime == null,
           ),
           Container(height: 1, color: AppColors.narLine),
-          _WorldsMatchTeamRow(team: match.teamB, scale: scale),
+          _WorldsMatchTeamRow(
+            team: match.teamB,
+            scale: scale,
+            live: isToday && match.todayTime == null,
+          ),
         ],
       ),
     );
@@ -582,10 +587,14 @@ class _WorldsMatchTeamRow extends StatelessWidget {
     required this.team,
     required this.scale,
     this.todayTime,
+    this.live = false,
   });
 
   final WorldsMatchTeam team;
   final double scale;
+
+  /// 진행 중이고 세트 스코어가 있는 매치 — 두 팀 스코어를 주황으로(없는 쪽은 0).
+  final bool live;
 
   /// 아직 안 끝난 "오늘 경기"의 시각 — 세트 스코어 자리에 작게 대신 보여준다
   /// (노드를 다른 매치와 같은 높이로 유지하려고 별도 줄을 안 둔다).
@@ -627,6 +636,16 @@ class _WorldsMatchTeamRow extends StatelessWidget {
                 fontFamily: 'Open Sans',
                 fontWeight: FontWeight.w600,
                 fontSize: 11 * scale,
+                color: AppColors.liveSideBorder,
+              ),
+            )
+          else if (live)
+            Text(
+              '${team.gameWins ?? 0}',
+              style: TextStyle(
+                fontFamily: 'Open Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 14 * scale,
                 color: AppColors.liveSideBorder,
               ),
             )
