@@ -403,6 +403,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get worldsSoloSheetLive => 'Solo queue in progress';
+
+  @override
+  String get worldsSoloTodayGames => 'Solo games today';
+
+  @override
+  String worldsSoloTodayGamesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get worldsSoloTodayRecord => 'Today\'s record';
+
+  @override
   String get worldsSoloSheetHint => 'You can turn this off anytime in My Page';
 
   @override

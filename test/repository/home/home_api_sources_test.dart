@@ -186,6 +186,9 @@ void main() {
             },
           ],
           'finished': [],
+          'today': [
+            {'playerId': 194, 'games': 3, 'wins': 2, 'losses': 0},
+          ],
         });
       }));
 
@@ -196,6 +199,8 @@ void main() {
       expect(snap.players.single.subscribed, isFalse);
       expect(snap.solo.live.single.elapsedSeconds, 720);
       expect(snap.solo.live.single.overseasRegion, 'NA');
+      expect(snap.today[194]?.games, 3);
+      expect(snap.today[194]?.wins, 2);
     });
 
     test('비회원이면 부르지 않고 빈 명단 — 월즈 솔랭이 숨겨진다', () async {

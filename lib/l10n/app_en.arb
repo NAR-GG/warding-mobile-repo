@@ -176,6 +176,11 @@
   "worldsSoloUnsubscribe": "Unsubscribe",
   "worldsSoloSubscribeSemantics": "Subscribe to {name}",
   "worldsSoloUnsubscribeSemantics": "Unsubscribe from {name}",
+  "worldsSoloSheetLive": "Solo queue in progress",
+  "worldsSoloTodayGames": "Solo games today",
+  "worldsSoloTodayGamesCount": "{count, plural, =1{1 game} other{{count} games}}",
+  "@worldsSoloTodayGamesCount": {"placeholders": {"count": {"type": "int"}}},
+  "worldsSoloTodayRecord": "Today's record",
   "worldsSoloSheetHint": "You can turn this off anytime in My Page",
 
   "matchList": "Match List",

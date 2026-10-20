@@ -130,6 +130,14 @@ class ApiWorldsSoloSource implements WorldsSoloSource {
           PlayerSubscription.fromJson(e as Map<String, dynamic>),
       ],
       solo: soloSnapshotFromJson(data, _now()),
+      today: {
+        for (final e in data['today'] as List<dynamic>? ?? const [])
+          (e as Map<String, dynamic>)['playerId'] as int: WorldsTodayRecord(
+            games: e['games'] as int? ?? 0,
+            wins: e['wins'] as int? ?? 0,
+            losses: e['losses'] as int? ?? 0,
+          ),
+      },
     );
   }
 }

@@ -788,6 +788,30 @@ abstract class AppLocalizations {
   /// **'{name} 구독 해제'**
   String worldsSoloUnsubscribeSemantics(String name);
 
+  /// No description provided for @worldsSoloSheetLive.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔로 랭크 진행 중'**
+  String get worldsSoloSheetLive;
+
+  /// No description provided for @worldsSoloTodayGames.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 솔랭'**
+  String get worldsSoloTodayGames;
+
+  /// No description provided for @worldsSoloTodayGamesCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}판'**
+  String worldsSoloTodayGamesCount(int count);
+
+  /// No description provided for @worldsSoloTodayRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 전적'**
+  String get worldsSoloTodayRecord;
+
   /// No description provided for @worldsSoloSheetHint.
   ///
   /// In ko, this message translates to:

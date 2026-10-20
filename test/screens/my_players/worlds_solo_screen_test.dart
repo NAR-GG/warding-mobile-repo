@@ -41,6 +41,13 @@ void main() {
     when(() => repo.subscribePlayer(any())).thenAnswer(
       (inv) async => _player(inv.positionalArguments.first as int, ''),
     );
+    when(
+      () => repo.updatePlayerAlarm(
+        any(),
+        startEnabled: any(named: 'startEnabled'),
+        endEnabled: any(named: 'endEnabled'),
+      ),
+    ).thenAnswer((_) async {});
     late MyPlayersViewModel vm;
     await tester.runAsync(() async {
       vm = MyPlayersViewModel(
@@ -63,6 +70,7 @@ void main() {
               ],
               finished: [],
             ),
+            today: const {2: WorldsTodayRecord(games: 3, wins: 2, losses: 0)},
           ),
         ),
       );
@@ -103,12 +111,20 @@ void main() {
     expect(find.byKey(MyPlayersScreen.tileKey(1)), findsOneWidget);
   });
 
-  testWidgets('벨을 누르면 바로 구독한다', (tester) async {
+  testWidgets('벨을 누르면 바로 바꾸지 않고 선수 시트를 띄우고, 시트에서 구독한다', (tester) async {
     final vm = await buildVm(tester);
     await pumpScreen(tester, vm);
 
     await tester.tap(find.byKey(MyPlayersScreen.bellKey(2)));
+    // 진행 중 배너의 점이 계속 깜빡여 settle 되지 않는다 — 시트 등장만 기다린다.
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(WorldsPlayerSheet), findsOneWidget);
+    verifyNever(() => repo.subscribePlayer(any()));
+
+    await tester.tap(find.byKey(WorldsPlayerSheet.subscribeKey));
+    await tester.pumpAndSettle();
 
     verify(() => repo.subscribePlayer(2)).called(1);
     expect(find.text('구독 선수 2'), findsOneWidget);
@@ -119,9 +135,16 @@ void main() {
     await pumpScreen(tester, vm);
 
     await tester.tap(find.byKey(MyPlayersScreen.tileKey(2)));
-    await tester.pumpAndSettle();
+    // 진행 중 배너의 점이 계속 깜빡여 settle 되지 않는다 — 시트 등장만 기다린다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(WorldsPlayerSheet), findsOneWidget);
+    // 진행 중 배너와 오늘 전적
+    expect(find.text('솔로 랭크 진행 중'), findsOneWidget);
+    expect(find.text('12:05'), findsOneWidget);
+    expect(find.text('3판'), findsOneWidget);
+    expect(find.text('2승 0패', findRichText: true), findsOneWidget);
     expect(find.text('솔랭 시작 알림'), findsOneWidget);
     expect(find.text('솔랭 종료 알림'), findsOneWidget);
 

@@ -243,8 +243,13 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
                     subscribed: player.subscribed,
                     playerName: player.playerName,
                     scale: scale,
-                    onTap: () =>
-                        vm.setSubscribed(player.playerId, !player.subscribed),
+                    // 바로 바꾸지 않고 선수 시트를 띄운다 — 알림 토글을 고른 뒤 시트에서 적용.
+                    onTap: () => showWorldsPlayerSheet(
+                      context,
+                      viewModel: vm,
+                      playerId: player.playerId,
+                      scale: scale,
+                    ),
                   )
                 : null,
           );

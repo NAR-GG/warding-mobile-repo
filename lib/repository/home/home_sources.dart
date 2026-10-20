@@ -17,7 +17,11 @@ abstract class SoloRankSource {
 
 /// 월즈 솔랭 한 번의 조회 결과 — 명단(구독 여부 포함)과 그 선수들의 솔랭 상태.
 class WorldsSoloSnapshot {
-  const WorldsSoloSnapshot({required this.players, required this.solo});
+  const WorldsSoloSnapshot({
+    required this.players,
+    required this.solo,
+    this.today = const {},
+  });
 
   static const WorldsSoloSnapshot empty = WorldsSoloSnapshot(
     players: [],
@@ -28,6 +32,22 @@ class WorldsSoloSnapshot {
   /// 대회가 끝나 서버가 보조 계정을 끄면 앱 배포 없이 사라진다.
   final List<PlayerSubscription> players;
   final SoloRankSnapshot solo;
+
+  /// 선수별 오늘 전적(playerId → 전적). 서버가 최근 24시간으로 센다. 옛 서버면 비어 있다.
+  final Map<int, WorldsTodayRecord> today;
+}
+
+/// 월즈 선수 한 명의 오늘 전적. [games] 는 지금 하는 판을 포함한다.
+class WorldsTodayRecord {
+  const WorldsTodayRecord({
+    required this.games,
+    required this.wins,
+    required this.losses,
+  });
+
+  final int games;
+  final int wins;
+  final int losses;
 }
 
 /// 월즈 솔랭 소스.

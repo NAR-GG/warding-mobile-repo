@@ -114,21 +114,22 @@ void main() {
   test('구독은 화면을 먼저 바꾸고, 기본값과 다른 토글만 따로 보낸다', () async {
     final vm = await build();
 
+    // 월즈 기본값은 시작·종료 둘 다 ON — 서버 기본값(종료 OFF)과 달라 토글을 보낸다.
     await vm.setSubscribed(2, true);
     expect(vm.subscribedInRoster, 2);
     verify(() => repo.subscribePlayer(2)).called(1);
+    verify(
+      () => repo.updatePlayerAlarm(2, startEnabled: true, endEnabled: true),
+    ).called(1);
+
+    await vm.setSubscribed(3, true, endEnabled: false);
     verifyNever(
       () => repo.updatePlayerAlarm(
-        any(),
+        3,
         startEnabled: any(named: 'startEnabled'),
         endEnabled: any(named: 'endEnabled'),
       ),
     );
-
-    await vm.setSubscribed(3, true, endEnabled: true);
-    verify(
-      () => repo.updatePlayerAlarm(3, startEnabled: true, endEnabled: true),
-    ).called(1);
   });
 
   test('구독 요청이 실패하면 되돌린다', () async {

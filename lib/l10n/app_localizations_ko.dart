@@ -398,6 +398,20 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get worldsSoloSheetLive => '솔로 랭크 진행 중';
+
+  @override
+  String get worldsSoloTodayGames => '오늘 솔랭';
+
+  @override
+  String worldsSoloTodayGamesCount(int count) {
+    return '$count판';
+  }
+
+  @override
+  String get worldsSoloTodayRecord => '오늘 전적';
+
+  @override
   String get worldsSoloSheetHint => '마이페이지에서 언제든 끌 수 있어요';
 
   @override

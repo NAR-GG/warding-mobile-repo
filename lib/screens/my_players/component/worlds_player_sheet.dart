@@ -1,9 +1,14 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_bottom_sheet.dart';
+import '../../../components/nar_live_dot.dart';
 import '../../../components/nar_toggle.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../model/home_models.dart';
+import '../../../repository/home/home_sources.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../util/rating_mapping.dart';
 import '../../../viewmodel/my_players/my_players_viewmodel.dart';
 import 'my_player_tile.dart';
@@ -47,9 +52,9 @@ class WorldsPlayerSheet extends StatefulWidget {
 }
 
 class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
-  // 구독 전 미리 고른 토글. 서버 기본값과 같다(시작 ON·종료 OFF).
+  // 구독 전 미리 고른 토글. 월즈는 시작·종료 둘 다 ON 으로 시작한다(서버 기본값은 종료 OFF).
   bool _start = true;
-  bool _end = false;
+  bool _end = true;
 
   MyPlayerEntry? _entry() {
     final vm = widget.viewModel;
@@ -71,6 +76,8 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
         final entry = _entry();
         if (entry == null) return const SizedBox.shrink();
         final player = entry.player;
+        final live = entry.live;
+        final record = vm.todayRecord(player.playerId);
         final subscribed = player.subscribed;
         final start = subscribed ? player.startEnabled : _start;
         final end = subscribed ? player.endEnabled : _end;
@@ -136,13 +143,24 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
                             ),
                           ),
                         ],
-                        SizedBox(height: 6 * scale),
-                        MyPlayerStatusLine(entry: entry, scale: scale),
+                        // 진행 중이면 아래 배너가 같은 내용을 크게 보여준다.
+                        if (live == null) ...[
+                          SizedBox(height: 6 * scale),
+                          MyPlayerStatusLine(entry: entry, scale: scale),
+                        ],
                       ],
                     ),
                   ),
                 ],
               ),
+              if (live != null) ...[
+                SizedBox(height: 16 * scale),
+                _LiveBanner(live: live, scale: scale),
+              ],
+              if (record != null) ...[
+                SizedBox(height: 12 * scale),
+                _TodayStats(record: record, scale: scale),
+              ],
               SizedBox(height: 18 * scale),
               Container(
                 decoration: BoxDecoration(
@@ -204,6 +222,244 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 진행 중인 판 — 챔피언 스플래시 위에 "솔로 랭크 진행 중", 경과 시간·챔피언·지역.
+class _LiveBanner extends StatelessWidget {
+  const _LiveBanner({required this.live, required this.scale});
+
+  final HomeLiveSoloPlayer live;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    // 홈 라이브 카드와 같은 순서 — 가로형 스플래시, 없으면 서버 이미지.
+    final fromServer = resolveImageUrl(live.championImageUrl);
+    final splashUrl =
+        championSplashUrl(live.champion) ??
+        ((fromServer != null && fromServer.isNotEmpty) ? fromServer : null);
+    final region = live.overseasRegion;
+
+    return Container(
+      height: 104 * scale,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.narSoloHeroBg,
+        borderRadius: BorderRadius.circular(12 * scale),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (splashUrl != null)
+            CachedNetworkImage(
+              imageUrl: splashUrl,
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, -0.3),
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            ),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: AppColors.narPlayedChampOverlay,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              14 * scale,
+              12 * scale,
+              14 * scale,
+              12 * scale,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 24 * scale,
+                  padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.narSoloTint,
+                    borderRadius: BorderRadius.circular(12 * scale),
+                    border: Border.all(color: AppColors.narSoloLine),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      NarLiveDot(
+                        scale: scale,
+                        size: 6,
+                        color: AppColors.narSoloDot,
+                      ),
+                      SizedBox(width: 6 * scale),
+                      Text(
+                        l.worldsSoloSheetLive,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13 * scale,
+                          color: AppColors.narSoloText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _clock(live.elapsedSeconds),
+                      style: TextStyle(
+                        fontFamily: 'Open Sans',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 24 * scale,
+                        height: 1.1,
+                        color: AppColors.narText,
+                      ),
+                    ),
+                    if (live.champion.isNotEmpty) ...[
+                      SizedBox(width: 10 * scale),
+                      Flexible(
+                        child: Text(
+                          live.champion,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15 * scale,
+                            color: AppColors.narText,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (region != null) ...[
+                      SizedBox(width: 8 * scale),
+                      RegionChip(region: region, scale: scale),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _clock(int seconds) {
+  final m = (seconds ~/ 60).toString();
+  final s = (seconds % 60).toString().padLeft(2, '0');
+  return '$m:$s';
+}
+
+/// "오늘 솔랭 N판 · 오늘 전적 N승 N패" 두 칸.
+class _TodayStats extends StatelessWidget {
+  const _TodayStats({required this.record, required this.scale});
+
+  final WorldsTodayRecord record;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    TextStyle value(Color color) => TextStyle(
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w700,
+      fontSize: 20 * scale,
+      color: color,
+    );
+    TextStyle unit = TextStyle(
+      fontFamily: 'Pretendard',
+      fontWeight: FontWeight.w600,
+      fontSize: 15 * scale,
+      color: AppColors.narText,
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatBox(
+            label: l.worldsSoloTodayGames,
+            scale: scale,
+            value: Text(
+              l.worldsSoloTodayGamesCount(record.games),
+              style: value(AppColors.narText),
+            ),
+          ),
+        ),
+        SizedBox(width: 10 * scale),
+        Expanded(
+          child: _StatBox(
+            label: l.worldsSoloTodayRecord,
+            scale: scale,
+            value: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${record.wins}',
+                    style: value(AppColors.scoreWin),
+                  ),
+                  TextSpan(text: l.homeSoloWin, style: unit),
+                  TextSpan(text: ' '),
+                  TextSpan(
+                    text: '${record.losses}',
+                    style: value(AppColors.narText),
+                  ),
+                  TextSpan(text: l.homeSoloLoss, style: unit),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.scale,
+  });
+
+  final String label;
+  final Widget value;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        14 * scale,
+        12 * scale,
+        14 * scale,
+        12 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.narBgTertiary,
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: AppColors.narLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13 * scale,
+              color: AppColors.narText2,
+            ),
+          ),
+          SizedBox(height: 6 * scale),
+          value,
+        ],
+      ),
     );
   }
 }

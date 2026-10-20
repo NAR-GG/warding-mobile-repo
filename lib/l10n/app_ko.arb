@@ -181,6 +181,11 @@
   "@worldsSoloSubscribeSemantics": {"placeholders": {"name": {"type": "String"}}},
   "worldsSoloUnsubscribeSemantics": "{name} 구독 해제",
   "@worldsSoloUnsubscribeSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "worldsSoloSheetLive": "솔로 랭크 진행 중",
+  "worldsSoloTodayGames": "오늘 솔랭",
+  "worldsSoloTodayGamesCount": "{count}판",
+  "@worldsSoloTodayGamesCount": {"placeholders": {"count": {"type": "int"}}},
+  "worldsSoloTodayRecord": "오늘 전적",
   "worldsSoloSheetHint": "마이페이지에서 언제든 끌 수 있어요",
 
   "matchList": "경기리스트",
