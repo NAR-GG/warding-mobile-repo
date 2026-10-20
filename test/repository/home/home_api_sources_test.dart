@@ -203,18 +203,46 @@ void main() {
       expect(snap.today[194]?.wins, 2);
     });
 
-    test('비회원이면 부르지 않고 빈 명단 — 월즈 솔랭이 숨겨진다', () async {
+    test('비회원도 토큰 없이 불러 명단을 받는다', () async {
       FlutterSecureStorage.setMockInitialValues({});
       AuthService.instance.resetJwtCacheForTesting();
-      var called = false;
-      api.setApiClientForTesting(MockClient((_) async {
-        called = true;
-        return json({});
+      String? auth;
+      api.setApiClientForTesting(MockClient((request) async {
+        auth = request.headers['Authorization'];
+        return json({
+          'players': [
+            {
+              'playerId': 194,
+              'playerName': 'Canyon',
+              'role': 'JUNGLE',
+              'teamId': 3,
+              'teamCode': 'GEN',
+              'teamName': 'Gen.G',
+              'subscribed': false,
+              'startEnabled': true,
+              'endEnabled': false,
+            },
+          ],
+          'live': [],
+          'finished': [],
+        });
       }));
 
       final snap = await ApiWorldsSoloSource(now: () => now).fetch();
 
-      expect(called, isFalse);
+      expect(auth, isNull);
+      expect(snap.players.single.playerName, 'Canyon');
+    });
+
+    test('비회원을 막는 옛 서버(401)면 빈 명단 — 월즈 솔랭이 숨겨진다', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      AuthService.instance.resetJwtCacheForTesting();
+      api.setApiClientForTesting(
+        MockClient((_) async => http.Response('{}', 401)),
+      );
+
+      final snap = await ApiWorldsSoloSource(now: () => now).fetch();
+
       expect(snap.players, isEmpty);
     });
   });

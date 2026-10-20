@@ -97,10 +97,10 @@ HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
   );
 }
 
-/// 월즈 솔랭 (`GET /api/mobile/me/solo-rank/worlds`, 로그인 필수).
+/// 월즈 솔랭 (`GET /api/mobile/me/solo-rank/worlds`).
 ///
-/// 토큰이 없는 비회원은 조회하지 않고 빈 결과를 준다 — 명단이 비면 화면은 월즈
-/// 솔랭을 통째로 숨긴다.
+/// 비회원도 토큰 없이 부른다 — 서버가 전원 미구독으로 준다. 비회원을 막던 옛
+/// 서버(401)면 빈 결과라, 명단이 비어 화면은 월즈 솔랭을 통째로 숨긴다.
 class ApiWorldsSoloSource implements WorldsSoloSource {
   ApiWorldsSoloSource({AuthService? auth, DateTime Function()? now})
     : _auth = auth ?? AuthService.instance,
@@ -112,13 +112,16 @@ class ApiWorldsSoloSource implements WorldsSoloSource {
   @override
   Future<WorldsSoloSnapshot> fetch() async {
     final token = await _auth.jwt;
-    if (token == null || token.isEmpty) return WorldsSoloSnapshot.empty;
-    final response = await _auth.authorizedRequest(
-      (t) => http.get(
-        Uri.parse(ApiConfig.worldsSoloRankUrl),
-        headers: {'Authorization': 'Bearer $t'},
-      ),
-    );
+    final url = Uri.parse(ApiConfig.worldsSoloRankUrl);
+    final anonymous = token == null || token.isEmpty;
+    final response = anonymous
+        ? await http.get(url)
+        : await _auth.authorizedRequest(
+            (t) => http.get(url, headers: {'Authorization': 'Bearer $t'}),
+          );
+    if (anonymous && response.statusCode == 401) {
+      return WorldsSoloSnapshot.empty;
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('월즈 솔랭 조회 실패 (${response.statusCode})');
     }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/model/home_models.dart';
 import 'package:warding/model/player_subscription.dart';
+import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/repository/home/home_sources.dart';
 import 'package:warding/screens/my_players/component/worlds_player_sheet.dart';
 import 'package:warding/screens/my_players/my_players_screen.dart';
@@ -37,6 +39,9 @@ void main() {
   late MockSubscriptionRepository repo;
 
   Future<MyPlayersViewModel> buildVm(WidgetTester tester) async {
+    // 로그인 상태 — 시트의 구독 버튼은 비회원이면 로그인으로 보낸다.
+    FlutterSecureStorage.setMockInitialValues({'jwt': 'test-jwt'});
+    AuthService.instance.resetJwtCacheForTesting();
     repo = MockSubscriptionRepository();
     when(() => repo.subscribePlayer(any())).thenAnswer(
       (inv) async => _player(inv.positionalArguments.first as int, ''),

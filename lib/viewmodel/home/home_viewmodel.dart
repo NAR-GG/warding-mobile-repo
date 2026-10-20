@@ -469,15 +469,18 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// 홈 월즈 카드의 구독 버튼. 구독 목록·두 솔랭 상태를 다시 불러와 카드가
-  /// 월즈 카드에서 위 구독 카드로 옮겨 간다.
-  Future<void> subscribeWorldsPlayer(int playerId) async {
+  /// 월즈 카드에서 위 구독 카드로 옮겨 간다. 비회원이면 구독하지 않고 false —
+  /// 화면이 로그인으로 보낸다.
+  Future<bool> subscribeWorldsPlayer(int playerId) async {
+    if (await _signedOut()) return false;
     try {
       await _subscriptions.subscribePlayer(playerId);
     } catch (e) {
       debugPrint('[Home] 월즈 선수 구독 실패: $e');
-      return;
+      return true;
     }
     await refreshSubscriptionsOnReturn();
+    return true;
   }
 
   Future<void> _loadSolo() async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -6,11 +8,13 @@ import '../../../components/nar_live_dot.dart';
 import '../../../components/nar_toggle.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
+import '../../../repository/auth/auth_service.dart';
 import '../../../repository/home/home_sources.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../util/rating_mapping.dart';
 import '../../../viewmodel/my_players/my_players_viewmodel.dart';
+import '../../login/login_screen.dart';
 import 'my_player_tile.dart';
 
 /// 월즈 솔랭에서 선수를 눌렀을 때 — 지금 상태와 솔랭 알림 토글, 구독/해제.
@@ -198,14 +202,27 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
                     : l.worldsSoloSubscribe,
                 filled: !subscribed,
                 scale: scale,
-                onTap: () {
-                  vm.setSubscribed(
-                    player.playerId,
-                    !subscribed,
-                    startEnabled: start,
-                    endEnabled: end,
+                onTap: () async {
+                  final navigator = Navigator.of(context)..pop();
+                  // 비회원이면 구독 대신 로그인으로 보낸다.
+                  if (!await _loggedIn()) {
+                    unawaited(
+                      navigator.push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  unawaited(
+                    vm.setSubscribed(
+                      player.playerId,
+                      !subscribed,
+                      startEnabled: start,
+                      endEnabled: end,
+                    ),
                   );
-                  Navigator.of(context).pop();
                 },
               ),
               SizedBox(height: 10 * scale),
@@ -223,6 +240,14 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
         );
       },
     );
+  }
+}
+
+Future<bool> _loggedIn() async {
+  try {
+    return await AuthService.instance.jwt != null;
+  } catch (_) {
+    return true; // Keychain 을 못 읽은 건 로그아웃이 아니다.
   }
 }
 

@@ -13,6 +13,7 @@ import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../login/login_screen.dart';
 import 'home_skeletons.dart';
 import 'home_solo_cheer.dart';
 import 'home_worlds_solo.dart';
@@ -159,6 +160,15 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     return seconds > player.elapsedSeconds ? seconds : player.elapsedSeconds;
   }
 
+  /// 월즈 카드 구독 — 비회원이면 로그인 화면으로 보낸다.
+  Future<void> _subscribeWorlds(int playerId) async {
+    final done = await widget.viewModel.subscribeWorldsPlayer(playerId);
+    if (done || !mounted) return;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = widget.viewModel;
@@ -270,7 +280,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         secondsOf: _liveElapsedSeconds,
         tick: _tick,
         scale: scale,
-        onSubscribe: vm.subscribeWorldsPlayer,
+        onSubscribe: _subscribeWorlds,
         onOpen: widget.onOpenWorlds,
       ),
     ];
@@ -328,7 +338,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                         scale: scale,
                         onSubscribe: player.playerId == null
                             ? null
-                            : () => vm.subscribeWorldsPlayer(player.playerId!),
+                            : () => _subscribeWorlds(player.playerId!),
                       ),
                     ],
                   ),
