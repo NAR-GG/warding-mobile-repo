@@ -20,6 +20,7 @@ import '../../screens/login/login_screen.dart';
 import '../../util/analytics.dart';
 import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
+import '../subscription/subscription_repository.dart';
 
 class AuthResult {
   const AuthResult({required this.jwt, required this.isOnboarded});
@@ -686,6 +687,7 @@ class AuthService {
     await _storage.delete(key: _jwtKey);
     _setCachedJwt(null);
     await _storage.delete(key: _refreshKey);
+    SubscriptionRepository.instance.clearCache();
     SentryLogger.clearUser();
     Analytics.reset();
   }

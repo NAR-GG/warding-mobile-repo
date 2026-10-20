@@ -317,7 +317,22 @@ class HomeViewModel extends ChangeNotifier {
       debugPrint('[Home] 구독 선수 조회 실패(비회원 포함): $e');
       if (_disposed || gen != _subscriptionsGen) return;
       _subscriptionsFirstLoadPending = false;
+      // 로그아웃했으면 이전 계정의 구독 선수를 붙들고 있지 않는다(그 밖의
+      // 실패는 마지막 값을 유지한다).
+      if (_subscribedPlayers != null && await _signedOut()) {
+        if (_disposed || gen != _subscriptionsGen) return;
+        _subscribedPlayers = null;
+        _recomputeSolo();
+      }
       _notify();
+    }
+  }
+
+  Future<bool> _signedOut() async {
+    try {
+      return await _auth.jwt == null;
+    } catch (_) {
+      return false; // Keychain 을 못 읽은 건 로그아웃이 아니다.
     }
   }
 

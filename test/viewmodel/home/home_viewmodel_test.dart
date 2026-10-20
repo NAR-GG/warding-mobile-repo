@@ -544,6 +544,24 @@ void main() {
       expect(vm.soloHiddenCount, 0);
     });
 
+    test('로그아웃하면 이전 계정의 구독 선수를 붙들고 있지 않는다', () async {
+      server.subscriptions = [
+        _sub('Faker', 'T1', 'T1'),
+        _sub('Chovy', 'GEN', 'Gen.G'),
+      ];
+      setUpServer(loggedIn: true);
+      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
+      await pumpEventQueue();
+      expect(vm.subscribedTotal, 2);
+
+      // AuthService.signOut 이 하는 일 — 토큰 삭제 + 구독 캐시 비우기.
+      setUpServer();
+      SubscriptionRepository.instance.clearCache();
+      await vm.refreshSubscriptionsOnReturn();
+      expect(vm.subscribedTotal, 0);
+      expect(vm.soloState, SoloCardState.noSubscription);
+    });
+
     test('구독 목록 조회가 실패해도 소스의 구독 수로 대신하지 않는다', () async {
       server.subscriptions = null;
       setUpServer(loggedIn: true);

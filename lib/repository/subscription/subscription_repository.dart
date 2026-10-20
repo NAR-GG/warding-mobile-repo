@@ -38,13 +38,17 @@ class SubscriptionRepository {
 
   void _invalidateSubscribedPlayersCache() => _subscribedCache = null;
 
-  /// 테스트 전용 — 싱글턴 인스턴스에 남은 캐시를 지워 테스트 간 상태가
-  /// 새지 않게 한다. [AuthService.resetJwtCacheForTesting] 와 같은 용도.
-  @visibleForTesting
-  void resetCacheForTesting() {
+  /// 로그아웃 때 부른다 — 안 지우면 TTL 동안 이전 계정의 구독 목록이 그대로
+  /// 나가고, 홈은 그 값을 붙들고 있다.
+  void clearCache() {
     _subscribedCache = null;
     _subscribedInFlight = null;
   }
+
+  /// 테스트 전용 — 싱글턴 인스턴스에 남은 캐시를 지워 테스트 간 상태가
+  /// 새지 않게 한다. [AuthService.resetJwtCacheForTesting] 와 같은 용도.
+  @visibleForTesting
+  void resetCacheForTesting() => clearCache();
 
   /// 내 구독 선수 목록을 조회한다.
   Future<List<PlayerSubscription>> fetchSubscribedPlayers() {
