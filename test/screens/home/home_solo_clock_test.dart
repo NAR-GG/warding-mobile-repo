@@ -78,7 +78,8 @@ void main() {
     );
 
     expect(vm.soloLive, hasLength(1));
-    expect(find.text('2:00'), findsOneWidget);
+    // 경과는 실제 시계로 센다 — 테스트를 여럿 같이 돌려 느려지면 1~2초 밀린다.
+    expect(find.textContaining(RegExp(r'^2:0[0-3]$')), findsOneWidget);
 
     // 매초 틱이 돌아도 화면이 깨지지 않는다(텍스트만 갱신된다).
     await tester.pump(const Duration(seconds: 1));
