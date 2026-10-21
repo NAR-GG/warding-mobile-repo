@@ -101,6 +101,11 @@ jobs:
   # 지금은 빌드가 verify 만 기다리고 e2e 와 나란히 돈다. 테스트 안 된 빌드가
   # 스토어로 가는 것은 **업로드 스텝 앞의 게이트**가 막는다 — 빌드가 먼저
   # 끝나면 거기서 e2e 를 기다리고, 실패했으면 업로드하지 않고 죽는다.
+  #
+  # 대신 받아들인 것: e2e 가 실패해도 `shorebird release` 는 이미 돌아서
+  # Shorebird 서버에 그 버전의 릴리즈가 등록돼 있다. 스토어로는 안 가지만
+  # 같은 버전으로 다시 돌리면 충돌하므로, **e2e 실패 뒤 재시도는 빌드 번호를
+  # 올려서** 한다. 과금은 패치 설치 수 기준이라 등록 자체는 비용이 없다.
   e2e:
     needs: verify
     uses: ./.github/workflows/e2e-release-check.yml
@@ -324,16 +329,23 @@ jobs:
           DEADLINE=$(( $(date +%s) + 2400 ))
           while :; do
             # 재사용 워크플로우의 잡 이름은 "<호출한 잡 id> / <원래 잡 id>" 다.
+            # 잡이 없으면 `[] | first` 가 null 이라 보간 결과가 "null:" 이 된다.
+            # 그대로 두면 아래 '진행 중' 분기로 빠져 40분을 기다리다 죽는데,
+            # 로그에는 원인이 안 남는다. // 로 빈 문자열로 떨어뜨린다.
             STATE=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" \
-              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first | "\(.status):\(.conclusion // "")"' \
+              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first
+                    | if . == null then "" else "\(.status):\(.conclusion // "")" end' \
               2>/dev/null || echo "")
             case "$STATE" in
               completed:success) echo "e2e 통과 — 업로드를 계속한다"; break ;;
               completed:*)
                 echo "::error::e2e 가 통과하지 않았다($STATE). 업로드하지 않는다."
                 exit 1 ;;
-              "") echo "::warning::e2e 잡을 못 찾았다. 5초 뒤 다시 본다" ;;
-              *) echo "e2e 진행 중($STATE) — 15초 뒤 다시 본다" ;;
+              "")
+                # 잡 이름이 바뀌었거나 API 조회가 실패한 것이다. 둘 다 재시도로
+                # 풀릴 수 있지만, 이름이 바뀐 경우는 영원히 못 찾으니 로그를 남긴다.
+                echo "::warning::e2e 잡('e2e / e2e')을 못 찾았다. 잡 이름이 바뀌었는지 확인하라" ;;
+              *) echo "e2e 진행 중($STATE)" ;;
             esac
             if [ "$(date +%s)" -ge "$DEADLINE" ]; then
               echo "::error::e2e 결과를 기다리다 시간이 초과됐다. 업로드하지 않는다."
@@ -520,16 +532,23 @@ jobs:
           DEADLINE=$(( $(date +%s) + 2400 ))
           while :; do
             # 재사용 워크플로우의 잡 이름은 "<호출한 잡 id> / <원래 잡 id>" 다.
+            # 잡이 없으면 `[] | first` 가 null 이라 보간 결과가 "null:" 이 된다.
+            # 그대로 두면 아래 '진행 중' 분기로 빠져 40분을 기다리다 죽는데,
+            # 로그에는 원인이 안 남는다. // 로 빈 문자열로 떨어뜨린다.
             STATE=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" \
-              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first | "\(.status):\(.conclusion // "")"' \
+              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first
+                    | if . == null then "" else "\(.status):\(.conclusion // "")" end' \
               2>/dev/null || echo "")
             case "$STATE" in
               completed:success) echo "e2e 통과 — 업로드를 계속한다"; break ;;
               completed:*)
                 echo "::error::e2e 가 통과하지 않았다($STATE). 업로드하지 않는다."
                 exit 1 ;;
-              "") echo "::warning::e2e 잡을 못 찾았다. 5초 뒤 다시 본다" ;;
-              *) echo "e2e 진행 중($STATE) — 15초 뒤 다시 본다" ;;
+              "")
+                # 잡 이름이 바뀌었거나 API 조회가 실패한 것이다. 둘 다 재시도로
+                # 풀릴 수 있지만, 이름이 바뀐 경우는 영원히 못 찾으니 로그를 남긴다.
+                echo "::warning::e2e 잡('e2e / e2e')을 못 찾았다. 잡 이름이 바뀌었는지 확인하라" ;;
+              *) echo "e2e 진행 중($STATE)" ;;
             esac
             if [ "$(date +%s)" -ge "$DEADLINE" ]; then
               echo "::error::e2e 결과를 기다리다 시간이 초과됐다. 업로드하지 않는다."
