@@ -355,7 +355,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get worldsSoloEmptyRoster => '아직 월즈 솔랭 명단이 없어요';
 
   @override
-  String get worldsSoloLiveLabel => '월즈 솔랭 중인 LCK 선수';
+  String get worldsSoloLiveLabel => '월즈 솔랭 중인 선수';
 
   @override
   String get worldsSoloSeeAll => '월즈 솔랭 전체';
@@ -365,7 +365,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String worldsSoloEntrySub(int count) {
-    return 'LCK 선수 $count명 솔랭 중';
+    return '선수 $count명 솔랭 중';
   }
 
   @override

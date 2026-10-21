@@ -181,6 +181,7 @@ void main() {
               'championName': '키아나',
               'startedAt': '2026-09-25T21:18:00+09:00',
               'platform': 'NA1',
+              'teamImageUrl': 'https://img/gen.png',
               'cheerTotal': 0,
               'cheerMine': 0,
             },
@@ -199,6 +200,7 @@ void main() {
       expect(snap.players.single.subscribed, isFalse);
       expect(snap.solo.live.single.elapsedSeconds, 720);
       expect(snap.solo.live.single.overseasRegion, 'NA');
+      expect(snap.solo.live.single.teamImageUrl, 'https://img/gen.png');
       expect(snap.today[194]?.games, 3);
       expect(snap.today[194]?.wins, 2);
     });

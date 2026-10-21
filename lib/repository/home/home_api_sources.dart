@@ -81,6 +81,7 @@ HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
     cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
     cheerMine: (j['cheerMine'] as num?)?.toInt() ?? 0,
     platform: j['platform'] as String?,
+    teamImageUrl: j['teamImageUrl'] as String?,
   );
 }
 

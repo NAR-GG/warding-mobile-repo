@@ -725,7 +725,7 @@ abstract class AppLocalizations {
   /// No description provided for @worldsSoloLiveLabel.
   ///
   /// In ko, this message translates to:
-  /// **'월즈 솔랭 중인 LCK 선수'**
+  /// **'월즈 솔랭 중인 선수'**
   String get worldsSoloLiveLabel;
 
   /// No description provided for @worldsSoloSeeAll.
@@ -743,7 +743,7 @@ abstract class AppLocalizations {
   /// No description provided for @worldsSoloEntrySub.
   ///
   /// In ko, this message translates to:
-  /// **'LCK 선수 {count}명 솔랭 중'**
+  /// **'선수 {count}명 솔랭 중'**
   String worldsSoloEntrySub(int count);
 
   /// No description provided for @worldsSoloLast.

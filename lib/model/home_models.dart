@@ -14,11 +14,15 @@ class HomeLiveSoloPlayer {
     this.cheerTotal = 0,
     this.cheerMine = 0,
     this.platform,
+    this.teamImageUrl,
   });
 
   final String name;
   final String teamCode;
   final String champion;
+
+  /// 응답이 준 팀 로고. 로고 사전(LCK 팀만)에 없는 해외 팀일 때만 쓴다. 옛 서버면 null.
+  final String? teamImageUrl;
 
   /// 이 판을 하는 계정의 플랫폼(KR / NA1 …). 옛 서버라 없으면 null.
   /// KR 이 아니면 해외 계정(월즈 부트캠프 계정 등)이라 화면에 지역을 붙인다.

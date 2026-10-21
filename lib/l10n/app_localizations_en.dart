@@ -360,7 +360,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get worldsSoloEmptyRoster => 'No Worlds players yet';
 
   @override
-  String get worldsSoloLiveLabel => 'LCK players in Worlds SoloQ';
+  String get worldsSoloLiveLabel => 'Players in Worlds SoloQ';
 
   @override
   String get worldsSoloSeeAll => 'All Worlds SoloQ';
@@ -370,7 +370,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String worldsSoloEntrySub(int count) {
-    return '$count LCK players in SoloQ';
+    return '$count players in SoloQ';
   }
 
   @override
