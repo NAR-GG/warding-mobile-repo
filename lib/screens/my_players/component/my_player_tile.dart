@@ -79,6 +79,7 @@ class MyPlayerTile extends StatelessWidget {
                     name: player.playerName,
                     imageUrl: player.playerImageUrl,
                     teamCode: player.teamCode,
+                    teamImageUrl: player.teamImageUrl,
                     scale: scale,
                   ),
                   SizedBox(width: 11 * scale),
@@ -236,12 +237,16 @@ class MyPlayerAvatar extends StatelessWidget {
     required this.imageUrl,
     required this.teamCode,
     required this.scale,
+    this.teamImageUrl,
     this.diameter = 40,
   });
 
   final String name;
   final String imageUrl;
   final String teamCode;
+
+  /// 응답이 준 팀 로고. 로고 사전(LCK 팀만)에 없는 해외 팀일 때만 쓴다.
+  final String? teamImageUrl;
   final double scale;
 
   /// 얼굴 지름(스케일 전). 목록은 40, 월즈 선수 시트는 56.
@@ -297,6 +302,7 @@ class MyPlayerAvatar extends StatelessWidget {
               child: TeamCodeBadge(
                 teamCode: teamCode,
                 size: (diameter >= 56 ? 22 : 18) * scale,
+                fallbackImageUrl: teamImageUrl,
               ),
             ),
         ],

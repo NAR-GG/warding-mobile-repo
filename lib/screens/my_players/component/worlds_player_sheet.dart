@@ -139,6 +139,7 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
                     name: player.playerName,
                     imageUrl: player.playerImageUrl,
                     teamCode: player.teamCode,
+                    teamImageUrl: player.teamImageUrl,
                     scale: scale,
                     diameter: 56,
                   ),

@@ -132,7 +132,7 @@ void main() {
 
     expect(find.byKey(HomeSoloRankSection.heroKey('Faker')), findsOneWidget);
     expect(find.byKey(HomeWorldsEntryRow.rowKey), findsOneWidget);
-    expect(find.text('LCK 선수 2명 솔랭 중'), findsOneWidget);
+    expect(find.text('선수 2명 솔랭 중'), findsOneWidget);
     expect(find.byType(HomeWorldsMiniCards), findsNothing);
   });
 

@@ -161,7 +161,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
   }
 }
 
-/// "월즈 솔랭 중인 LCK 선수 N명" 라벨 줄. [onSeeAll] 이 있으면 오른쪽에 "전체 >".
+/// "월즈 솔랭 중인 선수 N명" 라벨 줄. [onSeeAll] 이 있으면 오른쪽에 "전체 >".
 class HomeWorldsLabel extends StatelessWidget {
   const HomeWorldsLabel({
     super.key,
@@ -372,6 +372,7 @@ class _MiniCard extends StatelessWidget {
                         TeamCodeBadge(
                           teamCode: player.teamCode,
                           size: 18 * scale,
+                          fallbackImageUrl: player.teamImageUrl,
                         ),
                         if (region != null) ...[
                           SizedBox(width: 4 * scale),

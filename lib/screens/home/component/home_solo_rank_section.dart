@@ -1039,6 +1039,7 @@ class _HeroCard extends StatelessWidget {
                       TeamCodeBadge(
                         teamCode: player.teamCode,
                         size: 20 * scale,
+                        fallbackImageUrl: player.teamImageUrl,
                       ),
                       SizedBox(width: 6 * scale),
                       Text(
