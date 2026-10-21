@@ -6,9 +6,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../components/nar_chip_multi_select.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_tab_bar.dart';
+import '../../components/team_logo.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
 import '../../repository/home/home_sources.dart';
+import '../../util/league_icon.dart';
 import '../../viewmodel/my_players/my_players_viewmodel.dart';
 import 'component/my_player_tile.dart';
 import 'component/worlds_player_sheet.dart';
@@ -57,7 +59,7 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
       );
   final TextEditingController _search = TextEditingController();
 
-  /// 팀 칩의 "전체" 값. 팀 코드와 겹치지 않는 내부 키.
+  /// 리그·팀 칩의 "전체" 값. 리그·팀 코드와 겹치지 않는 내부 키.
   static const String _allTeams = '__all__';
 
   /// 초당 올라가는 틱. 진행 중인 판의 경과 시간만 이걸 구독해 다시 그린다 —
@@ -109,6 +111,9 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
   void _onTeamSelected(String value) =>
       _viewModel.setTeamCode(value == _allTeams ? null : value);
 
+  void _onLeagueSelected(String value) =>
+      _viewModel.setLeagueCode(value == _allTeams ? null : value);
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -157,13 +162,41 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
                   scale: scale,
                   onChanged: vm.setQuery,
                 ),
+                // 월즈: 리그 줄 → 고른 리그의 팀 줄. 두 줄은 위아래 패딩을 줄여 붙인다.
+                if (vm.isWorlds && vm.leagueCodes.length > 1)
+                  NarChipMultiSelect.single(
+                    options: [_allTeams, ...vm.leagueCodes],
+                    selected: vm.leagueCode ?? _allTeams,
+                    labelBuilder: (v) =>
+                        v == _allTeams ? l.myPlayersTeamAll : v,
+                    leadingBuilder: (v) =>
+                        v == _allTeams ? null : leagueIconWidget(v),
+                    onSelected: _onLeagueSelected,
+                    horizontalPadding: 20,
+                    verticalPadding: 8,
+                    scale: scale,
+                  ),
                 if (vm.teamCodes.isNotEmpty)
                   NarChipMultiSelect.single(
                     options: [_allTeams, ...vm.teamCodes],
                     selected: vm.teamCode ?? _allTeams,
-                    labelBuilder: (v) =>
-                        v == _allTeams ? l.myPlayersTeamAll : v,
+                    labelBuilder: (v) => v == _allTeams
+                        ? (vm.isWorlds
+                              ? l.worldsSoloTeamAll
+                              : l.myPlayersTeamAll)
+                        : v,
+                    leadingBuilder: vm.isWorlds
+                        ? (v) => v == _allTeams
+                              ? null
+                              : TeamLogo(
+                                  teamCode: v,
+                                  size: 16 * scale,
+                                  fallbackImageUrl: vm.teamLogoUrl(v),
+                                )
+                        : null,
                     onSelected: _onTeamSelected,
+                    horizontalPadding: vm.isWorlds ? 20 : 16,
+                    verticalPadding: vm.isWorlds ? 2 : 10,
                     scale: scale,
                   ),
                 Expanded(
@@ -222,9 +255,20 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
 
     return [
       // 비어 버린 묶음은 제목째 뺀다 — 검색·필터로 좁혔을 때 빈 제목만 남지 않게.
-      if (live.isNotEmpty) ..._group(l.myPlayersGroupLive, null, live, scale),
+      if (live.isNotEmpty)
+        ..._group(
+          l.myPlayersGroupLive,
+          l.myPlayersGroupCount(live.length),
+          live,
+          scale,
+        ),
       if (played.isNotEmpty)
-        ..._group(l.myPlayersGroupPlayedToday, null, played, scale),
+        ..._group(
+          l.myPlayersGroupPlayedToday,
+          l.myPlayersGroupCount(played.length),
+          played,
+          scale,
+        ),
       if (quiet.isNotEmpty) ...[
         ..._group(
           l.myPlayersGroupQuiet,

@@ -105,7 +105,7 @@ void main() {
     await pumpScreen(tester, vm);
 
     expect(find.text('월즈 솔랭'), findsOneWidget);
-    expect(find.text('전체 선수 2'), findsOneWidget);
+    expect(find.text('전체 2'), findsOneWidget);
     expect(find.text('구독 선수 1'), findsOneWidget);
     expect(find.text('NA'), findsOneWidget);
     expect(find.byKey(MyPlayersScreen.tileKey(2)), findsOneWidget);

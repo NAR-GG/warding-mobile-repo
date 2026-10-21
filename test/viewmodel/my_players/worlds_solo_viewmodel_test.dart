@@ -145,4 +145,30 @@ void main() {
       reason: 'Canyon 구독이 실패했으니 벨은 다시 꺼져 있어야 한다',
     );
   });
+
+  test('리그를 고르면 그 리그 팀·선수만 남고, 팀 필터는 풀린다', () async {
+    final vm = MyPlayersViewModel(
+      subscriptions: repo,
+      worlds: _FakeWorlds(
+        WorldsSoloSnapshot(
+          players: [
+            _player(1, 'Faker', 'T1'),
+            _player(2, 'Bin', 'BLG'),
+            _player(3, 'Caps', 'G2'),
+            _player(4, 'Knight', 'BLG'),
+          ],
+          solo: const SoloRankSnapshot(live: [], finished: []),
+        ),
+      ),
+    );
+    await vm.refresh();
+    addTearDown(vm.dispose);
+
+    expect(vm.leagueCodes, ['LCK', 'LPL', 'LEC']);
+    vm.setTeamCode('T1');
+    vm.setLeagueCode('LPL');
+    expect(vm.teamCode, isNull);
+    expect(vm.teamCodes, ['BLG']);
+    expect(names(vm.quiet), ['Bin', 'Knight']);
+  });
 }

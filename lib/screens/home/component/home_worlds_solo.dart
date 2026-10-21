@@ -25,6 +25,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
   const HomeWorldsEntryRow({
     super.key,
     required this.live,
+    required this.teamCount,
     required this.scale,
     this.onTap,
   });
@@ -33,6 +34,9 @@ class HomeWorldsEntryRow extends StatelessWidget {
   static const int _maxFaces = 3;
 
   final List<HomeLiveSoloPlayer> live;
+
+  /// 월즈 명단의 팀 수("16팀 선수 8명 솔랭 중").
+  final int teamCount;
   final double scale;
   final VoidCallback? onTap;
 
@@ -135,7 +139,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
                   ),
                   SizedBox(height: 5 * scale),
                   Text(
-                    l.worldsSoloEntrySub(live.length),
+                    l.worldsSoloEntrySub(teamCount, live.length),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

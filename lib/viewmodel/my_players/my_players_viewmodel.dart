@@ -8,6 +8,39 @@ import '../../repository/home/home_sources.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../home/solo_rank_rules.dart';
 
+/// 월즈 출전 팀 → 소속 리그(리그 칩). 리그 칩 순서도 이 맵 순서를 따른다.
+/// 서버 응답에 리그가 없고, DB 의 팀별 경기 리그는 국제전·컵 대회가 섞여 못 쓴다.
+// ponytail: 월즈 한정 고정 맵. 다른 대회로 넓히면 서버가 팀 리그를 내려주게 바꾼다.
+const Map<String, String> worldsTeamLeague = {
+  'T1': 'LCK',
+  'GEN': 'LCK',
+  'HLE': 'LCK',
+  'DK': 'LCK',
+  'KT': 'LCK',
+  'BLG': 'LPL',
+  'TES': 'LPL',
+  'AL': 'LPL',
+  'IG': 'LPL',
+  'JDG': 'LPL',
+  'WBG': 'LPL',
+  'G2': 'LEC',
+  'MKOI': 'LEC',
+  'FNC': 'LEC',
+  'KC': 'LEC',
+  'FLY': 'LCS',
+  '100T': 'LCS',
+  'TL': 'LCS',
+  'TLAW': 'LCS',
+  'LYON': 'LCS',
+  'C9': 'LCS',
+  'CFO': 'LCP',
+  'PSG': 'LCP',
+  'TSW': 'LCP',
+  'GAM': 'LCP',
+  'VKS': 'CBLOL',
+  'LOUD': 'CBLOL',
+};
+
 /// 내 선수 화면의 상태 묶음 (spec: 솔랭 중 / 오늘 경기함 / 소식 없음).
 enum MyPlayerStatus { liveSolo, playedToday, quiet }
 
@@ -90,6 +123,7 @@ class MyPlayersViewModel extends ChangeNotifier {
   List<MyPlayerEntry> _allPlayed = const [];
   List<MyPlayerEntry> _allQuiet = const [];
   List<String> _teamCodes = const [];
+  Map<String, String> _teamLogos = const {};
 
   /// 두 소스를 병렬로 다시 불러온다. 서로 기다리지 않고, 실패한 쪽은
   /// 마지막 값을 그대로 둔다.
@@ -151,10 +185,11 @@ class MyPlayersViewModel extends ChangeNotifier {
     final played = <MyPlayerEntry>[];
     final quiet = <MyPlayerEntry>[];
     final teams = <String>[];
-    final seenTeams = <String>{};
+    final logos = <String, String>{};
     for (final player in _players) {
-      if (player.teamCode.isNotEmpty && seenTeams.add(player.teamCode)) {
+      if (player.teamCode.isNotEmpty && !logos.containsKey(player.teamCode)) {
         teams.add(player.teamCode);
+        logos[player.teamCode] = player.teamImageUrl;
       }
       final key = SoloRankClassification.soloKey(player.playerName);
       final l = liveByName[key];
@@ -196,6 +231,7 @@ class MyPlayersViewModel extends ChangeNotifier {
     _allPlayed = played;
     _allQuiet = quiet;
     _teamCodes = teams;
+    _teamLogos = logos;
   }
 
   /// 구독 선수 수. 비회원·조회 실패는 0명. 월즈 화면에서는 명단 전체 수.
@@ -262,7 +298,30 @@ class MyPlayersViewModel extends ChangeNotifier {
   }
 
   /// 구독 선수 소속팀 코드 — 처음 나온 순서대로 한 번씩(팀 필터 칩).
-  List<String> get teamCodes => _teamCodes;
+  /// 리그를 골랐으면 그 리그 팀만.
+  List<String> get teamCodes {
+    final league = _leagueCode;
+    if (league == null) return _teamCodes;
+    return [
+      for (final t in _teamCodes)
+        if (worldsTeamLeague[t] == league) t,
+    ];
+  }
+
+  /// 팀 칩 로고 URL(응답 값). 없으면 null — 칩이 팀 코드 사전으로 찾는다.
+  String? teamLogoUrl(String teamCode) {
+    final url = _teamLogos[teamCode];
+    return url == null || url.isEmpty ? null : url;
+  }
+
+  /// 명단에 있는 리그 — [worldsTeamLeague] 순서(리그 필터 칩). 맵에 없는 팀은 빠진다.
+  List<String> get leagueCodes {
+    final present = {for (final t in _teamCodes) worldsTeamLeague[t]};
+    return [
+      for (final l in worldsTeamLeague.values.toSet())
+        if (present.contains(l)) l,
+    ];
+  }
 
   /// 구독 중인 선수의 알림 토글만 바꾼다. 실패하면 되돌린다.
   Future<void> setAlarms(
@@ -318,14 +377,31 @@ class MyPlayersViewModel extends ChangeNotifier {
     _notify();
   }
 
+  String? _leagueCode;
+
+  /// 리그 필터(월즈). null 이면 전체.
+  String? get leagueCode => _leagueCode;
+
+  /// 리그를 바꾸면 팀 필터는 풀린다 — 다른 리그 팀이 걸린 채 빈 목록이 되지 않게.
+  void setLeagueCode(String? code) {
+    if (code == _leagueCode) return;
+    _leagueCode = code;
+    _teamCode = null;
+    _notify();
+  }
+
   List<MyPlayerEntry> _filter(List<MyPlayerEntry> list) {
     final q = _query.trim().toLowerCase();
     final team = _teamCode;
+    final league = _leagueCode;
     final subscribedOnly = _subscribedOnly;
-    if (q.isEmpty && team == null && !subscribedOnly) return list;
+    if (q.isEmpty && team == null && league == null && !subscribedOnly) {
+      return list;
+    }
     return [
       for (final e in list)
         if ((!subscribedOnly || e.player.subscribed) &&
+            (league == null || worldsTeamLeague[e.player.teamCode] == league) &&
             (team == null || e.player.teamCode == team) &&
             (q.isEmpty || e.player.playerName.toLowerCase().contains(q)))
           e,

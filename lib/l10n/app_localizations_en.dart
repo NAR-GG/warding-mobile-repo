@@ -351,7 +351,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get worldsSoloTitle => 'Worlds SoloQ';
 
   @override
-  String get worldsSoloTabAll => 'All players';
+  String get worldsSoloTabAll => 'All';
 
   @override
   String get worldsSoloTabSubscribed => 'Subscribed';
@@ -369,9 +369,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get worldsSoloAll => 'All';
 
   @override
-  String worldsSoloEntrySub(int count) {
-    return '$count players in SoloQ';
+  String worldsSoloEntrySub(int teams, int count) {
+    return '$count players from $teams teams in SoloQ';
   }
+
+  @override
+  String get worldsSoloTeamAll => 'All teams';
 
   @override
   String worldsSoloLast(String name, String ago) {

@@ -33,6 +33,7 @@ class NarChip extends StatelessWidget {
     required this.selected,
     this.onTap,
     this.scale = 1,
+    this.leading,
   }) : _variant = _ChipVariant.toggle,
        badge = null,
        trailing = NarChipTrailing.chevron,
@@ -48,7 +49,8 @@ class NarChip extends StatelessWidget {
        _variant = _ChipVariant.dropdown,
        badge = null,
        trailing = NarChipTrailing.chevron,
-       onRemove = null;
+       onRemove = null,
+       leading = null;
 
   /// circle-x 트레일링 아이콘이 붙은 활성 필터칩. 탭하면 필터 해제.
   const NarChip.filter({
@@ -60,7 +62,8 @@ class NarChip extends StatelessWidget {
        _variant = _ChipVariant.filter,
        badge = null,
        trailing = NarChipTrailing.chevron,
-       onRemove = null;
+       onRemove = null,
+       leading = null;
 
   /// 점선 테두리의 비활성 칩. 토글 칩과 같은 높이·패딩이며 탭을 받지 않는다.
   const NarChip.disabled({super.key, required this.label, this.scale = 1})
@@ -69,7 +72,8 @@ class NarChip extends StatelessWidget {
       _variant = _ChipVariant.disabled,
       badge = null,
       trailing = NarChipTrailing.chevron,
-      onRemove = null;
+      onRemove = null,
+      leading = null;
 
   /// 보라 테두리 활성 칩. 라벨 + (옵션)[badge] + [trailing] 아이콘.
   ///
@@ -84,7 +88,8 @@ class NarChip extends StatelessWidget {
     this.onRemove,
     this.scale = 1,
   }) : selected = false,
-       _variant = _ChipVariant.active;
+       _variant = _ChipVariant.active,
+       leading = null;
 
   final String label;
   final bool selected;
@@ -99,6 +104,9 @@ class NarChip extends StatelessWidget {
 
   /// 활성 칩에서 [NarChipTrailing.remove] 의 circle-x 탭 콜백.
   final VoidCallback? onRemove;
+
+  /// 토글 칩의 라벨 앞 아이콘(리그·팀 로고 등). 16px 상자에 넣어 그린다.
+  final Widget? leading;
 
   /// 칩 형태.
   final _ChipVariant _variant;
@@ -161,6 +169,10 @@ class NarChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (leading != null) ...[
+              SizedBox.square(dimension: 16 * scale, child: leading),
+              SizedBox(width: 6 * scale),
+            ],
             Text(
               label,
               style: TextStyle(
