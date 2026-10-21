@@ -1,6 +1,7 @@
-■ SoloQ timers now tick in real time!
-  - On Worlds SoloQ and My Players, the clock on an ongoing game counts up every second.
-  - The same clock keeps running when you open a player's details.
+■ Filter Worlds SoloQ by league and team!
+  - Pick a league like LCK, LPL or LEC to see only its teams and players.
+  - Team chips now show logos and follow league standings order.
+  - "Playing now" and "Last SoloQ game" sections show player counts.
 
-■ The Worlds SoloQ roster is easier to read!
-  - Renamed the "All LCK" tab to "All players".
+■ Overseas team logos now show correctly!
+  - Players from overseas Worlds teams now show their own team logo.
