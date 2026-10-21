@@ -1,6 +1,11 @@
 name: Mixpanel DAU 일일 요약
 
-# 매일 아침 어제 하루의 활성 사용자(DAU)를 Mixpanel 에서 읽어 Discord 로 보낸다.
+# 매일 아침 어제 하루의 사용 지표를 Mixpanel 에서 읽어 Discord 로 보낸다.
+# DAU·재방문 구성, 화면 TOP 5, 로그인·온보딩 퍼널, 참여, 이탈 신호를 담는다.
+#
+# 집계·렌더링은 같은 폴더의 `mixpanel-dau-summary.jq`(원시 → 지표)와
+# `mixpanel-dau-embed.jq`(지표 → Discord embed) 가 맡는다. 지표를 바꾸려면
+# 그 두 파일을 고치면 되고, 아래 셸은 조회·오류 처리만 담당한다.
 #
 # 왜 Export API 인가: 무료 플랜에서 **조회(Query) API 가 전부 막혀 있다.**
 # 실측(2026-10-07)으로 `query/insights`·`query/segmentation`·`query/events/names`
@@ -35,6 +40,9 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
+      # 집계·렌더링 jq 스크립트를 레포에서 읽어 쓴다.
+      - uses: actions/checkout@v4
+
       - name: DAU 조회 후 Discord 전송
         env:
           MP_USER: ${{ secrets.MIXPANEL_SERVICE_ACCOUNT }}
@@ -99,25 +107,49 @@ jobs:
             exit 1
           fi
 
-          # DAU = 그날 이벤트를 보낸 고유 distinct_id 수.
+          # 받아 둔 원시 이벤트를 요약 지표로 접는다.
           #
-          # 빈 응답(그날 이벤트 0건)도 200 이라 그대로 0 이 나온다 — 이건
-          # 오류가 아니라 사실이므로 그대로 보고한다. Insights 로 하던 때와
-          # 달리 "리포트 기간이 안 덮어서 0" 인 경우가 없어 구분이 필요 없다.
-          count_uniques() {
-            jq -rs 'map(.properties.distinct_id // empty) | unique | length' "$1" 2>/dev/null || echo 0
+          # 이 export 한 번에 `page_view` 의 `location_page`, 클릭 이벤트의
+          # 식별자, 퍼널 단계까지 전부 들어 있다. 추가 API 호출 없이 같은
+          # 파일을 다시 읽으므로 레이트 리밋(시간당 60회)을 더 쓰지 않는다.
+          #
+          # 빈 응답(그날 이벤트 0건)도 200 이라 모든 수치가 0 으로 나온다 —
+          # 이건 오류가 아니라 사실이므로 그대로 보고한다. Insights 로 하던
+          # 때와 달리 "리포트 기간이 안 덮어서 0" 인 경우가 없다.
+          # 실패를 삼키지 않는다. 옛 코드는 `2>/dev/null || echo 0` 으로 0 을
+          # 내보냈는데, 그 관용구를 집계 전체에 그대로 쓰면 jq 스크립트를
+          # 잘못 고친 날 **"DAU 0, 퍼널 전부 0" 이 정상 알림처럼** 나간다.
+          # 지표가 늘어난 만큼 조용한 0 이 더 위험해서, 여기서는 멈추고
+          # 아래 실패 경로가 Discord 로 알리게 한다.
+          summarize() {
+            if ! jq -sf .github/workflows/mixpanel-dau-summary.jq "$1" > "$2"; then
+              echo "::error::집계 실패 — mixpanel-dau-summary.jq 를 확인한다 ($1)"
+              jq -n --arg t "⚠️ DAU 요약 실패 (집계 오류)" \
+                    --arg d "원시 이벤트는 받았지만 집계 단계에서 깨졌다. mixpanel-dau-summary.jq 를 확인한다." \
+                    '{embeds:[{title:$t,description:$d,color:15158332}]}' \
+                | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @- || true
+              exit 1
+            fi
           }
-          DAU=$(count_uniques /tmp/mp.jsonl)
-          EVENTS=$(grep -c . /tmp/mp.jsonl 2>/dev/null || echo 0)
+          summarize /tmp/mp.jsonl /tmp/cur.json
+          DAU=$(jq -r '.dau' /tmp/cur.json)
+          EVENTS=$(jq -r '.events_total' /tmp/cur.json)
 
-          # 전일은 증감 표시에만 쓴다. 실패해도 전체를 죽이지 않는다 —
+          # 전일은 증감·신규 판별에만 쓴다. 실패해도 전체를 죽이지 않는다 —
           # 오늘 숫자는 이미 손에 있는데 어제 때문에 알림을 통째로 거르면
           # 아깝다.
           PREV_HTTP=$(fetch_day "$PREV" /tmp/mp_prev.jsonl)
           if [ "$PREV_HTTP" = "200" ]; then
-            DAU_PREV=$(count_uniques /tmp/mp_prev.jsonl)
+            # 전일 집계만 깨진 경우는 오늘 알림을 죽이지 않는다 — 조회 실패와
+            # 같은 취급으로 증감·구성만 비운다(그래서 summarize 를 안 쓴다).
+            if jq -sf .github/workflows/mixpanel-dau-summary.jq /tmp/mp_prev.jsonl > /tmp/prev.json; then
+              DAU_PREV=$(jq -r '.dau' /tmp/prev.json)
+            else
+              echo "::warning::전일 집계 실패 — 증감·구성 생략"
+              DAU_PREV=""
+            fi
           else
-            echo "전일 조회 실패(HTTP $PREV_HTTP) — 증감 생략"
+            echo "전일 조회 실패(HTTP $PREV_HTTP) — 증감·신규 생략"
             DAU_PREV=""
           fi
 
@@ -134,29 +166,47 @@ jobs:
             DELTA_TEXT="전일 조회 실패"
           fi
 
-          # 표본이 작으면 증감률이 쉽게 출렁인다(3→5명이 +66.7%). 숫자를
-          # 오해하지 않도록 꼬리말을 붙인다. Mixpanel 은 1.0.32+71 부터
-          # 들어가서, 그 이전 버전 사용자는 애초에 집계되지 않는다.
+          # 재방문 / 그 외.
+          #
+          # "그 외" 를 신규 설치라고 부르지 않는 이유: 손에 있는 건 이틀치뿐이라
+          # 어제 안 보인 사용자가 첫 설치인지 그제 이후 돌아온 복귀 사용자인지
+          # 구분할 수 없다. 실제보다 신규가 많아 보이는 오해를 막으려고 이름을
+          # 사실에 맞춘다. 진짜 신규는 `$ae_first_open` 이 필요하고, 그건 날짜
+          # 범위를 더 넓게 받아야 한다.
+          if [ -n "$DAU_PREV" ]; then
+            MIX=$(jq -n --slurpfile c /tmp/cur.json --slurpfile p /tmp/prev.json \
+              '($c[0].users) as $cu | ($p[0].users) as $pu
+               | {ret: (($cu - ($cu - $pu)) | length), oth: (($cu - $pu) | length)}')
+            RET=$(printf '%s' "$MIX" | jq -r '.ret')
+            OTH=$(printf '%s' "$MIX" | jq -r '.oth')
+            MIX_TEXT="재방문 $RET / 그 외 $OTH"
+          else
+            MIX_TEXT="전일 조회 실패"
+          fi
+
+          # 사용자당 이벤트 수. 원시 "이벤트 수" 는 DAU 없이는 해석이 안 된다
+          # (318건이 많은지 적은지는 몇 명이 만들었냐에 달렸다).
+          if [ "$DAU" -gt 0 ] 2>/dev/null; then
+            PER_USER=$(awk -v e="$EVENTS" -v d="$DAU" 'BEGIN{printf "%.1f", e/d}')
+            MIX_TEXT="$MIX_TEXT"$'\n'"사용자당 ${PER_USER}건"
+          fi
+
+          # 표본이 작으면 증감률과 퍼널 전환율이 쉽게 출렁인다(3→5명이
+          # +66.7%, 퍼널은 한 명이 50%p 를 움직인다). 숫자를 오해하지 않도록
+          # 꼬리말을 붙인다. Mixpanel 은 1.0.32+71 부터 들어가서, 그 이전
+          # 버전 사용자는 애초에 집계되지 않는다.
           if [ "$DAU" -lt 30 ] 2>/dev/null; then
-            FOOTER="표본이 작아 증감률이 크게 흔들린다 · 1.0.32+71 이상만 집계"
+            FOOTER="표본이 작아 증감률·전환율이 크게 흔들린다 · 1.0.32+71 이상만 집계"
           else
             FOOTER="1.0.32+71 이상만 집계"
           fi
 
-          jq -n \
-            --arg t "📊 DAU $TARGET" \
-            --arg dau "$DAU" \
+          jq -n --slurpfile c /tmp/cur.json \
+            --arg date "$TARGET" \
             --arg delta "$DELTA_TEXT" \
-            --arg ev "$EVENTS" \
+            --arg mix "$MIX_TEXT" \
             --arg f "$FOOTER" \
-            '{embeds:[{
-               title: $t,
-               color: 3447003,
-               fields: [
-                 {name: "활성 사용자", value: $dau, inline: true},
-                 {name: "전일 대비", value: $delta, inline: true},
-                 {name: "이벤트 수", value: $ev, inline: true}
-               ],
-               footer: {text: $f}
-             }]}' \
+            '{date: $date, cur: $c[0], pages_top: ($c[0].pages[0:5]),
+              delta_text: $delta, mix_text: $mix, footer: $f}' \
+            | jq -f .github/workflows/mixpanel-dau-embed.jq \
             | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
