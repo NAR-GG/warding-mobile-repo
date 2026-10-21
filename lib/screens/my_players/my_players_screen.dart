@@ -169,8 +169,20 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
                     selected: vm.leagueCode ?? _allTeams,
                     labelBuilder: (v) =>
                         v == _allTeams ? l.myPlayersTeamAll : v,
-                    leadingBuilder: (v) =>
-                        v == _allTeams ? null : leagueIconWidget(v),
+                    // 리그 아이콘은 원본 색이 어두워 칩 글자색으로 칠한다(시안).
+                    leadingBuilder: (v) {
+                      final icon = v == _allTeams ? null : leagueIconWidget(v);
+                      if (icon == null) return null;
+                      return ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          v == vm.leagueCode
+                              ? AppColors.narText
+                              : AppColors.narText2,
+                          BlendMode.srcIn,
+                        ),
+                        child: icon,
+                      );
+                    },
                     onSelected: _onLeagueSelected,
                     horizontalPadding: 20,
                     verticalPadding: 8,
