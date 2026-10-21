@@ -9,6 +9,8 @@ import '../repository/auth/auth_service.dart';
 import '../screens/login/login_screen.dart';
 import '../styles/app_colors.dart';
 import 'nar_button.dart';
+import '../util/analytics_events.dart';
+import '../util/analytics_route_observer.dart';
 
 /// 비회원(JWT 없음) 진입 시 [child]를 블러 처리하고, 가운데에
 /// '로그인 후 사용 가능' 버튼을 띄운다. 버튼을 누르면 로그인 화면으로 이동한다.
@@ -64,9 +66,15 @@ class _GuestLockOverlayState extends State<GuestLockOverlay>
   }
 
   Future<void> _goToLogin() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+    AnalyticsRouteObserver.instance.attachNext({
+      AnalyticsProp.entryPoint: AnalyticsEntryPoint.guestLock,
+    });
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.login),
+        builder: (_) => const LoginScreen(),
+      ),
+    );
     // 뒤로가기로 돌아왔을 수 있으니 로그인 여부를 다시 확인한다.
     _checkGuest();
   }

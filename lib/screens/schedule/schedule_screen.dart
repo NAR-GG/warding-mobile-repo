@@ -5,15 +5,9 @@ import '../../components/app_bottom_sheet.dart';
 import '../../components/load_error.dart';
 import '../../l10n/app_localizations.dart';
 import '../../styles/app_colors.dart';
-import '../../util/tab_route.dart';
 import '../../viewmodel/schedule/filter_viewmodel.dart';
 import '../../viewmodel/schedule/schedule_viewmodel.dart';
-import '../community/community_screen.dart';
-import '../home/home_screen.dart';
 import '../match_day/match_day_screen.dart';
-import '../match_list/match_list_screen.dart';
-import '../mypage/mypage_screen.dart';
-import '../subscription/subscription_screen.dart';
 import 'component/calendar_month_label.dart';
 import 'component/filter_sheet.dart';
 import '../../util/home_widget_service.dart';
@@ -21,6 +15,8 @@ import 'component/month_picker_sheet.dart';
 import 'component/schedule_calendar.dart';
 import 'component/schedule_calendar_skeleton.dart';
 import 'component/schedule_header.dart';
+import '../../util/nav_tab_navigation.dart';
+import '../../util/analytics_events.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
 class ScheduleScreen extends StatefulWidget {
@@ -286,11 +282,13 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     _viewModel.displayMonth = date;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => MatchDayScreen(
-          date: date,
-          leagues: _viewModel.filterLeagues,
-          teamIds: _viewModel.filterTeamIds,
-        ),
+        settings: const RouteSettings(name: AnalyticsPage.matchDay),
+        builder:
+            (_) => MatchDayScreen(
+              date: date,
+              leagues: _viewModel.filterLeagues,
+              teamIds: _viewModel.filterTeamIds,
+            ),
       ),
     );
   }
@@ -334,21 +332,8 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   /// 하단 네비 탭 선택. '경기일정'을 제외한 탭이면 해당 화면으로 전환한다.
-  void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.home) {
-      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
-    } else if (tab == AppNavTab.list) {
-      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
-    } else if (tab == AppNavTab.community) {
-      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
-    } else if (tab == AppNavTab.subscription) {
-      Navigator.of(
-        context,
-      ).pushReplacement(tabRoute(const SubscriptionScreen()));
-    } else if (tab == AppNavTab.mypage) {
-      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
-    }
-  }
+  void _onTabSelected(AppNavTab tab) =>
+      handleNavTabSelected(context, AppNavTab.schedule, tab);
 
   @override
   Widget build(BuildContext context) {
@@ -386,10 +371,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       // 프레임에 같은 진행률로 움직인다.
                       monthLabelWidget: ValueListenableBuilder(
                         valueListenable: _calendarProgress,
-                        builder: (context, progress, _) => CalendarMonthLabel(
-                          progress: progress,
-                          scale: scale,
-                        ),
+                        builder:
+                            (context, progress, _) => CalendarMonthLabel(
+                              progress: progress,
+                              scale: scale,
+                            ),
                       ),
                       onMonthTap: _openMonthPicker,
                       onFilterTap: _openFilter,

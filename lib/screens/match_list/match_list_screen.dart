@@ -16,18 +16,14 @@ import '../../styles/app_colors.dart';
 import '../../util/league_icon.dart';
 import '../../util/match_status.dart';
 import '../../util/match_title_l10n.dart';
-import '../../util/tab_route.dart';
 import '../../util/match_detail_router.dart';
 import '../../viewmodel/match_list/match_list_viewmodel.dart';
-import '../community/community_screen.dart';
-import '../home/home_screen.dart';
-import '../mypage/mypage_screen.dart';
-import '../schedule/schedule_screen.dart';
-import '../subscription/subscription_screen.dart';
 import 'component/match_card.dart';
 import 'component/match_card_skeleton.dart';
 import 'component/match_date_header.dart';
 import 'component/match_league_header.dart';
+import '../../util/nav_tab_navigation.dart';
+import '../../util/analytics_events.dart';
 
 /// 경기 리스트 페이지. 하단 네비 '경기리스트' 탭에 해당한다.
 class MatchListScreen extends StatefulWidget {
@@ -150,9 +146,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
     final today = DateTime(now.year, now.month, now.day);
     // 과거→미래로 담겼으면 뒤에서부터 훑어야 '오늘 이하 중 가장 늦은 날'을
     // 먼저 만난다(최신→과거면 앞에서부터가 그렇다).
-    final ordered = _viewModel.scheduleAscending
-        ? schedule.reversed.toList()
-        : schedule;
+    final ordered =
+        _viewModel.scheduleAscending ? schedule.reversed.toList() : schedule;
     for (final day in ordered) {
       final d = DateTime(day.date.year, day.date.month, day.date.day);
       if (!d.isAfter(today)) return day.date;
@@ -276,9 +271,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
     // 안 보이면 한 화면씩 더 내려 반드시 아래로 나아가게 한다.
     final estimated = offset.clamp(0.0, max);
     final stuck = (position.pixels - estimated).abs() < 1;
-    final next = stuck
-        ? (position.pixels + position.viewportDimension * 0.8).clamp(0.0, max)
-        : estimated;
+    final next =
+        stuck
+            ? (position.pixels + position.viewportDimension * 0.8).clamp(
+              0.0,
+              max,
+            )
+            : estimated;
     _scrollController.jumpTo(next);
     // 다음 프레임에 다시 시도(렌더 확장으로 max 가 늘어나 점점 아래로 접근).
     WidgetsBinding.instance.addPostFrameCallback(
@@ -287,21 +286,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
   }
 
   /// 하단 네비 탭 선택. '경기리스트'를 제외한 탭이면 해당 화면으로 전환한다.
-  void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.home) {
-      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
-    } else if (tab == AppNavTab.schedule) {
-      Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
-    } else if (tab == AppNavTab.community) {
-      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
-    } else if (tab == AppNavTab.subscription) {
-      Navigator.of(
-        context,
-      ).pushReplacement(tabRoute(const SubscriptionScreen()));
-    } else if (tab == AppNavTab.mypage) {
-      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
-    }
-  }
+  void _onTabSelected(AppNavTab tab) =>
+      handleNavTabSelected(context, AppNavTab.matchList, tab);
 
   /// 정렬 옵션 선택 바텀시트.
   /// '맨 위로' — 지금 목록의 최상단으로 올린다.
@@ -352,6 +338,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       matchId: m.matchId,
       match: m,
       context: context,
+      fromPage: AnalyticsPage.matchList,
     );
     if (!mounted || !_sortBarCollapsed) return;
     // 방향 판정 기준점도 지금 위치로 옮긴다 — 그대로 두면 상세를 보는 동안
@@ -384,13 +371,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   order,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontWeight: order == current
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+                    fontWeight:
+                        order == current ? FontWeight.w600 : FontWeight.w400,
                     fontSize: 16 * scale,
-                    color: order == current
-                        ? AppColors.narText
-                        : AppColors.narText2,
+                    color:
+                        order == current
+                            ? AppColors.narText
+                            : AppColors.narText2,
                   ),
                 ),
               ),
@@ -432,9 +419,10 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 그만큼 오프셋을 더해 주면 화면에 보이는 내용은 그대로 남는다.
   Future<void> _loadPreviousKeepingOffset() async {
     if (!_viewModel.hasPrev || _viewModel.loadingPrevious) return;
-    final before = _scrollController.hasClients
-        ? _scrollController.position.maxScrollExtent
-        : 0.0;
+    final before =
+        _scrollController.hasClients
+            ? _scrollController.position.maxScrollExtent
+            : 0.0;
 
     await _viewModel.loadPreviousMatches();
 
@@ -530,11 +518,12 @@ class _MatchListScreenState extends State<MatchListScreen> {
                       // 내용 폭을 그대로 쓰게 두고 제목이 양보하게 한다.
                       ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => NarSpoilerToggle(
-                          value: _viewModel.spoilerPreventionEnabled,
-                          onChanged: _onSpoilerToggleChanged,
-                          scale: scale,
-                        ),
+                        builder:
+                            (context, _) => NarSpoilerToggle(
+                              value: _viewModel.spoilerPreventionEnabled,
+                              onChanged: _onSpoilerToggleChanged,
+                              scale: scale,
+                            ),
                       ),
                     ],
                   ),
@@ -542,125 +531,135 @@ class _MatchListScreenState extends State<MatchListScreen> {
                 SizedBox(height: 14 * scale),
                 ListenableBuilder(
                   listenable: _viewModel,
-                  builder: (context, _) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: LabeledField(
-                                label: l.season,
-                                scale: scale,
-                                child: SearchSelectBox(
-                                  options: _viewModel.seasons,
-                                  value: _viewModel.selectedSeason,
-                                  onChanged: _viewModel.selectSeason,
-                                  sheetTitle: l.season,
-                                  scale: scale,
-                                ),
-                              ),
+                  builder:
+                      (context, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20 * scale,
                             ),
-                            SizedBox(width: 10 * scale),
-                            Expanded(
-                              child: LabeledField(
-                                label: l.league,
-                                scale: scale,
-                                child: SearchSelectBox(
-                                  options: _viewModel.leagues,
-                                  value: _viewModel.selectedLeague,
-                                  onChanged: _viewModel.selectLeague,
-                                  sheetTitle: l.league,
-                                  hint: _viewModel.loadingLeagues
-                                      ? l.loading
-                                      : l.select,
-                                  labelBuilder: (v) =>
-                                      v == MatchListViewModel.allLeagueLabel
-                                      ? l.all
-                                      : v,
-                                  leadingBuilder: leagueIconWidget,
-                                  scale: scale,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // 시즌·리그 행 아래 간격 + 구분선.
-                      // 구분선은 각 블록이 '자기 아래'만 그린다. 그래야 리그 '전체'로
-                      // 팀 셀렉터가 숨어도 정렬 행 위 선이 그대로 남는다.
-                      SizedBox(height: 12 * scale),
-                      const Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: AppColors.narLine,
-                      ),
-                      // 리그 '전체'(ALL)는 팀 스코프가 없어 팀 목록이 '전체'뿐이므로
-                      // 팀 멀티셀렉트 필터를 숨긴다.
-                      if (_viewModel.selectedLeague !=
-                          MatchListViewModel.allLeagueLabel) ...[
-                        Container(
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: AppColors.narLine,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          child: NarChipMultiSelect(
-                            options: _viewModel.teams,
-                            selectedValues: _viewModel.selectedTeams,
-                            onChanged: _viewModel.updateSelectedTeams,
-                            // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
-                            pinned: const {MatchListViewModel.allTeamsLabel},
-                            labelBuilder: (v) =>
-                                v == MatchListViewModel.allTeamsLabel
-                                ? l.all
-                                : v,
-                            scale: scale,
-                          ),
-                        ),
-                      ],
-                      // 정렬(최근순/오래된순) — 팀 멀티 셀렉터 아래, 오른쪽 정렬.
-                      // 필터가 많아 목록 영역이 좁으므로, 목록을 내리는 동안에는
-                      // 위로 말려 들어가고 다시 올리면 펼쳐진다.
-                      ClipRect(
-                        child: AnimatedAlign(
-                          alignment: Alignment.bottomCenter,
-                          heightFactor: _sortBarCollapsed ? 0 : 1,
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOutCubic,
-                          child: AnimatedOpacity(
-                            opacity: _sortBarCollapsed ? 0 : 1,
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                vertical: 11 * scale,
-                                horizontal: 16 * scale,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  SizedBox(
-                                    width: 110 * scale,
-                                    child: NarDropdown(
-                                      value: _viewModel.sortOrder,
-                                      onTap: _showSortSheet,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: LabeledField(
+                                    label: l.season,
+                                    scale: scale,
+                                    child: SearchSelectBox(
+                                      options: _viewModel.seasons,
+                                      value: _viewModel.selectedSeason,
+                                      onChanged: _viewModel.selectSeason,
+                                      sheetTitle: l.season,
                                       scale: scale,
                                     ),
                                   ),
-                                ],
+                                ),
+                                SizedBox(width: 10 * scale),
+                                Expanded(
+                                  child: LabeledField(
+                                    label: l.league,
+                                    scale: scale,
+                                    child: SearchSelectBox(
+                                      options: _viewModel.leagues,
+                                      value: _viewModel.selectedLeague,
+                                      onChanged: _viewModel.selectLeague,
+                                      sheetTitle: l.league,
+                                      hint:
+                                          _viewModel.loadingLeagues
+                                              ? l.loading
+                                              : l.select,
+                                      labelBuilder:
+                                          (v) =>
+                                              v ==
+                                                      MatchListViewModel
+                                                          .allLeagueLabel
+                                                  ? l.all
+                                                  : v,
+                                      leadingBuilder: leagueIconWidget,
+                                      scale: scale,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // 시즌·리그 행 아래 간격 + 구분선.
+                          // 구분선은 각 블록이 '자기 아래'만 그린다. 그래야 리그 '전체'로
+                          // 팀 셀렉터가 숨어도 정렬 행 위 선이 그대로 남는다.
+                          SizedBox(height: 12 * scale),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: AppColors.narLine,
+                          ),
+                          // 리그 '전체'(ALL)는 팀 스코프가 없어 팀 목록이 '전체'뿐이므로
+                          // 팀 멀티셀렉트 필터를 숨긴다.
+                          if (_viewModel.selectedLeague !=
+                              MatchListViewModel.allLeagueLabel) ...[
+                            Container(
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: AppColors.narLine,
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: NarChipMultiSelect(
+                                options: _viewModel.teams,
+                                selectedValues: _viewModel.selectedTeams,
+                                onChanged: _viewModel.updateSelectedTeams,
+                                // '전체'는 정렬에서 빼고 항상 맨 앞에 고정(마이구독과 동일).
+                                pinned: const {
+                                  MatchListViewModel.allTeamsLabel,
+                                },
+                                labelBuilder:
+                                    (v) =>
+                                        v == MatchListViewModel.allTeamsLabel
+                                            ? l.all
+                                            : v,
+                                scale: scale,
+                              ),
+                            ),
+                          ],
+                          // 정렬(최근순/오래된순) — 팀 멀티 셀렉터 아래, 오른쪽 정렬.
+                          // 필터가 많아 목록 영역이 좁으므로, 목록을 내리는 동안에는
+                          // 위로 말려 들어가고 다시 올리면 펼쳐진다.
+                          ClipRect(
+                            child: AnimatedAlign(
+                              alignment: Alignment.bottomCenter,
+                              heightFactor: _sortBarCollapsed ? 0 : 1,
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOutCubic,
+                              child: AnimatedOpacity(
+                                opacity: _sortBarCollapsed ? 0 : 1,
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOut,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 11 * scale,
+                                    horizontal: 16 * scale,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      SizedBox(
+                                        width: 110 * scale,
+                                        child: NarDropdown(
+                                          value: _viewModel.sortOrder,
+                                          onTap: _showSortSheet,
+                                          scale: scale,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
                 ),
                 Expanded(
                   child: ListenableBuilder(
@@ -673,12 +672,13 @@ class _MatchListScreenState extends State<MatchListScreen> {
             // 하단 네비(bottom 26 + 높이 72) 위로 띄운다.
             ListenableBuilder(
               listenable: _viewModel,
-              builder: (context, _) => ScrollToTopButton(
-                scrollController: _scrollController,
-                scale: scale,
-                bottom: 110,
-                onPressed: _scrollToTop,
-              ),
+              builder:
+                  (context, _) => ScrollToTopButton(
+                    scrollController: _scrollController,
+                    scale: scale,
+                    bottom: 110,
+                    onPressed: _scrollToTop,
+                  ),
             ),
             Positioned(
               left: 0,
@@ -687,7 +687,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
               // 정렬 행 접힘과 같은 스크롤 방향 판정을 재사용한다 —
               // 한 번의 스와이프에 둘이 함께 반응해야 어색하지 않다.
               child: AppBottomNav(
-                currentTab: AppNavTab.list,
+                currentTab: AppNavTab.matchList,
                 onTabSelected: _onTabSelected,
                 compact: _sortBarCollapsed,
               ),
@@ -716,8 +716,9 @@ class _MatchListScreenState extends State<MatchListScreen> {
           padding: EdgeInsets.only(bottom: 120 * scale),
           itemCount: 5,
           // 첫 장은 실제 카드와 같이 위 구분선을 끈다(날짜 헤더 아래 첫 카드 규칙).
-          itemBuilder: (_, index) =>
-              MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
+          itemBuilder:
+              (_, index) =>
+                  MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
         );
       }
       return Center(
@@ -754,8 +755,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
           // 자동 스크롤 대상 헤더에 GlobalKey 를 달아 정확히 맞춘다.
           final key =
               (_targetDate != null && _isSameDate(item.date, _targetDate!))
-              ? _todayHeaderKey
-              : null;
+                  ? _todayHeaderKey
+                  : null;
           return KeyedSubtree(
             key: key,
             child: Padding(
@@ -785,8 +786,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
           key: ValueKey('match-${m.matchId}'),
           matchId: m.matchId,
           spoilerRevealed: _revealedMatchIds.contains(m.matchId),
-          onSpoilerReveal: () =>
-              setState(() => _revealedMatchIds.add(m.matchId)),
+          onSpoilerReveal:
+              () => setState(() => _revealedMatchIds.add(m.matchId)),
           showTopBorder: showTopBorder,
           time: m.scheduledTime,
           label: _localizeMatchTitle(context, m.matchTitle),
@@ -799,15 +800,16 @@ class _MatchListScreenState extends State<MatchListScreen> {
           homeScore: m.teamA.score,
           awayScore: m.teamB.score,
           isLive: _isLive(m.matchStatus),
-          liveSetLabel: _isLive(m.matchStatus)
-              ? AppLocalizations.of(context)!.setInProgress(
-                  liveSetNumber(
-                    homeScore: m.teamA.score,
-                    awayScore: m.teamB.score,
-                    setsPlayed: m.sets.length,
-                  ),
-                )
-              : null,
+          liveSetLabel:
+              _isLive(m.matchStatus)
+                  ? AppLocalizations.of(context)!.setInProgress(
+                    liveSetNumber(
+                      homeScore: m.teamA.score,
+                      awayScore: m.teamB.score,
+                      setsPlayed: m.sets.length,
+                    ),
+                  )
+                  : null,
           leagueInfo: m.leagueInfo,
           spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
           onTap: () => _openMatchDetail(m),

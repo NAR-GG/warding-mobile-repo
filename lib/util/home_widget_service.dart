@@ -24,6 +24,7 @@ import '../util/match_detail_router.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
 import '../config/secure_storage.dart';
+import 'analytics_events.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
 ///
@@ -93,9 +94,8 @@ class HomeWidgetService {
           // ALL이면 상세 API도 league=ALL 하나로 호출한다. KESPA 플레이-인 등
           // LCK/LEC/LPL/LTA/LCP 어디에도 속하지 않는 리그의 경기가 있어서,
           // 주요 리그만 개별 호출하면 그런 경기의 시간 정보를 못 가져온다.
-          final leaguesForDetail = leagues.contains('ALL')
-              ? const ['ALL']
-              : leagues;
+          final leaguesForDetail =
+              leagues.contains('ALL') ? const ['ALL'] : leagues;
           try {
             final allMatches = <ScheduleMatch>[];
             // 리그별 조회는 서로 의존하지 않는다. 순서대로 기다리면 선택한
@@ -104,17 +104,21 @@ class HomeWidgetService {
             final perLeague = await Future.wait([
               for (final league in leaguesForDetail)
                 ScheduleRepository.instance
-                    .fetchMatchesByDate(now, leagues: [league],
-                        teamIds: teamIds.isNotEmpty ? teamIds : null)
+                    .fetchMatchesByDate(
+                      now,
+                      leagues: [league],
+                      teamIds: teamIds.isNotEmpty ? teamIds : null,
+                    )
                     .catchError((_) => <ScheduleMatch>[]),
             ]);
             for (final matches in perLeague) {
               allMatches.addAll(matches);
             }
             // 캘린더에 있는 경기만 필터링 (캘린더 필터와 동기화)
-            final filtered = allMatches
-                .where((m) => calendarMatchIds.contains(m.matchId))
-                .toList();
+            final filtered =
+                allMatches
+                    .where((m) => calendarMatchIds.contains(m.matchId))
+                    .toList();
 
             if (filtered.isNotEmpty) {
               await _saveTodayDetailed(now, filtered);
@@ -214,17 +218,19 @@ class HomeWidgetService {
     final now = DateTime.now();
     try {
       // ALL이면 상세 API도 league=ALL 하나로 호출한다 (updateCalendar와 동일한 이유).
-      final leaguesForDetail = leagues.contains('ALL')
-          ? const ['ALL']
-          : leagues;
+      final leaguesForDetail =
+          leagues.contains('ALL') ? const ['ALL'] : leagues;
       // 리그별 조회는 서로 의존하지 않으므로 함께 띄운다(위 경로와 동일).
       // 개별 리그 실패는 빈 목록으로 접는다.
       final matches = <ScheduleMatch>[];
       final perLeague = await Future.wait([
         for (final league in leaguesForDetail)
           ScheduleRepository.instance
-              .fetchMatchesByDate(now, leagues: [league],
-                  teamIds: teamIds.isNotEmpty ? teamIds : null)
+              .fetchMatchesByDate(
+                now,
+                leagues: [league],
+                teamIds: teamIds.isNotEmpty ? teamIds : null,
+              )
               .catchError((_) => <ScheduleMatch>[]),
       ]);
       for (final result in perLeague) {
@@ -232,7 +238,8 @@ class HomeWidgetService {
       }
 
       final todayJson = <String, dynamic>{
-        'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+        'date':
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
         'weekday': now.weekday,
         'matches': [
           for (final m in matches)
@@ -263,7 +270,8 @@ class HomeWidgetService {
     List<ScheduleMatch> matches,
   ) async {
     final todayJson = <String, dynamic>{
-      'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+      'date':
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
       'weekday': now.weekday,
       'matches': [
         for (final m in matches)
@@ -283,7 +291,9 @@ class HomeWidgetService {
     );
     debugPrint('[HomeWidget] 오늘 경기 상세: ${matches.length}개');
     for (final m in matches) {
-      debugPrint('[HomeWidget]   ${m.teamA.teamCode} VS ${m.teamB.teamCode} time="${m.scheduledTime}" status="${m.matchStatus}"');
+      debugPrint(
+        '[HomeWidget]   ${m.teamA.teamCode} VS ${m.teamB.teamCode} time="${m.scheduledTime}" status="${m.matchStatus}"',
+      );
     }
   }
 
@@ -293,7 +303,8 @@ class HomeWidgetService {
     List<CalendarMatchBrief> todayMatches,
   ) async {
     final todayJson = <String, dynamic>{
-      'date': '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+      'date':
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
       'weekday': now.weekday,
       'matches': [
         for (final m in todayMatches)
@@ -378,18 +389,9 @@ class HomeWidgetService {
 
       // home_widget은 앱 그룹 UserDefaults만 지원하므로
       // 이미지 URL을 문자열로 저장하고 Swift에서 다운로드하게 한다.
-      await HomeWidget.saveWidgetData<String>(
-        'team_image_url',
-        imageUrl,
-      );
-      await HomeWidget.saveWidgetData<String>(
-        'team_name',
-        team.name,
-      );
-      await HomeWidget.saveWidgetData<String>(
-        'team_code',
-        team.code,
-      );
+      await HomeWidget.saveWidgetData<String>('team_image_url', imageUrl);
+      await HomeWidget.saveWidgetData<String>('team_name', team.name);
+      await HomeWidget.saveWidgetData<String>('team_code', team.code);
       // 응원팀 ID 도 남긴다 — iOS 위젯이 앱 없이 조회할 때 팀 필터가 켜져
       // 있으면(`team_selected`) 이 값을 쓴다. 온보딩 직후처럼 캘린더 갱신이
       // 아직 안 돈 상태에서도 팀을 알 수 있어야 한다.
@@ -397,10 +399,7 @@ class HomeWidgetService {
       // `widget_team_ids`(실제 적용 필터)와는 다른 키다. 응원팀을 정해 둔 것과
       // 팀 필터를 켠 것은 별개라, 여기서 적용 필터까지 건드리면 필터를 켠 적
       // 없는 사용자에게 팀 경기만 보여주게 된다.
-      await HomeWidget.saveWidgetData<int>(
-        'preferred_team_id',
-        team.id,
-      );
+      await HomeWidget.saveWidgetData<int>('preferred_team_id', team.id);
 
       // 위젯 갱신 트리거 (잠금화면 포함)
       await HomeWidget.updateWidget(
@@ -450,8 +449,9 @@ class HomeWidgetService {
   /// (`WidgetActionReceiver` 주석 참고).
   static Future<void> consumePendingAction() async {
     try {
-      final action =
-          await HomeWidget.getWidgetData<String>('pending_widget_action');
+      final action = await HomeWidget.getWidgetData<String>(
+        'pending_widget_action',
+      );
       if (action == null || action.isEmpty) return;
       await HomeWidget.saveWidgetData<String>('pending_widget_action', '');
       if (action == 'filter') {
@@ -496,7 +496,10 @@ class HomeWidgetService {
   static bool _justPassedSplash = false;
 
   /// 위젯 URL 파싱 후 경기일정 화면으로 이동
-  static void _handleWidgetUrl(String urlStr, {bool skipDuplicateCheck = false}) {
+  static void _handleWidgetUrl(
+    String urlStr, {
+    bool skipDuplicateCheck = false,
+  }) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
     // 콜드 스타트에서는 스플래시가 첫 화면으로 교체를 마칠 때까지 보류한다.
     //
@@ -541,8 +544,8 @@ class HomeWidgetService {
     // 떠 있는 상태에서 같은 URL 이 또 오는 건 사용자가 위젯 버튼을 다시 누른
     // 것이므로 막으면 안 된다.
     final at = _lastHandledAt;
-    final isColdStartWindow = at != null &&
-        DateTime.now().difference(at) < _duplicateWindow;
+    final isColdStartWindow =
+        at != null && DateTime.now().difference(at) < _duplicateWindow;
     if (!skipDuplicateCheck &&
         _justPassedSplash &&
         _lastHandledUrl == urlStr &&
@@ -598,6 +601,7 @@ class HomeWidgetService {
     }
 
     final route = MaterialPageRoute(
+      settings: const RouteSettings(name: AnalyticsPage.schedule),
       builder: (_) => ScheduleScreen(initialMonth: targetMonth),
     );
 
@@ -633,6 +637,7 @@ class HomeWidgetService {
       matchId: matchId,
       tabIndex: tabIndex,
       setNumber: set,
+      entryPoint: AnalyticsEntryPoint.widget,
     );
   }
 
@@ -645,8 +650,9 @@ class HomeWidgetService {
     bool teamSelected = false;
 
     try {
-      final saved = await FilterPreferenceRepository.instance
-          .load(FilterPreferenceRepository.scheduleKey);
+      final saved = await FilterPreferenceRepository.instance.load(
+        FilterPreferenceRepository.scheduleKey,
+      );
       final json = saved.json;
       if (json != null) {
         leagues = (json['leagues'] as List?)?.cast<String>() ?? ['ALL'];
@@ -705,10 +711,7 @@ class HomeWidgetService {
       final hasFilter =
           !(leagues.length == 1 && leagues.first == 'ALL') ||
           teamIds.isNotEmpty;
-      await updateFilterState(
-        hasFilter: hasFilter,
-        teamSelected: teamSelected,
-      );
+      await updateFilterState(hasFilter: hasFilter, teamSelected: teamSelected);
     } catch (e) {
       debugPrint('[HomeWidget] 필터 상태 갱신 실패: $e');
     }
@@ -724,7 +727,8 @@ class HomeWidgetService {
     // 캘린더 시작 요일 로컬 설정을 위젯에도 동기화한다 (재설치 등으로
     // 공유 저장소와 로컬 저장소가 어긋나는 경우 대비 — 앱 시작마다 맞춘다).
     try {
-      final weekStart = await CalendarWeekStartPreferenceRepository.instance.load();
+      final weekStart =
+          await CalendarWeekStartPreferenceRepository.instance.load();
       await updateWeekStart(weekStart);
     } catch (e) {
       debugPrint('[HomeWidget] 캘린더 시작 요일 동기화 실패: $e');
@@ -756,8 +760,7 @@ class HomeWidgetService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      debugPrint(
-          '[HomeWidget] 회원 조회 실패 (${response.statusCode}) — 이번 갱신 건너뜀');
+      debugPrint('[HomeWidget] 회원 조회 실패 (${response.statusCode}) — 이번 갱신 건너뜀');
       return null;
     }
     return UserProfile.fromJson(
@@ -839,8 +842,9 @@ class HomeWidgetService {
     List<String> savedLeagues = const ['ALL'];
     List<int> savedTeamIds = const [];
     try {
-      final saved = await FilterPreferenceRepository.instance
-          .load(FilterPreferenceRepository.scheduleKey);
+      final saved = await FilterPreferenceRepository.instance.load(
+        FilterPreferenceRepository.scheduleKey,
+      );
       final json = saved.json;
       if (json != null) {
         savedLeagues =
@@ -861,9 +865,10 @@ class HomeWidgetService {
     // (`savedTeamIds`) 토글을 꺼도 필터가 그대로 걸려 있었다.
     final team = await _loadPreferredTeamForWidget();
     if (team != null) {
-      teamIds = teamSelected
-          ? {...teamIds, team.id}.toList()
-          : teamIds.where((id) => id != team.id).toList();
+      teamIds =
+          teamSelected
+              ? {...teamIds, team.id}.toList()
+              : teamIds.where((id) => id != team.id).toList();
     }
 
     // 저장된 필터를 그대로 보낸다. 예전엔 'ALL' 을 'LCK' 로 바꿔 보냈는데,
@@ -891,12 +896,14 @@ class HomeWidgetService {
   static Future<void> _handleMonthShift(int delta) async {
     final current = await _currentDisplayedMonth();
     final target = DateTime(current.year, current.month + delta);
-    final hasFilter = await HomeWidget.getWidgetData<bool>(
+    final hasFilter =
+        await HomeWidget.getWidgetData<bool>(
           'has_filter',
           defaultValue: false,
         ) ??
         false;
-    final teamSelected = await HomeWidget.getWidgetData<bool>(
+    final teamSelected =
+        await HomeWidget.getWidgetData<bool>(
           'team_selected',
           defaultValue: false,
         ) ??
@@ -909,12 +916,14 @@ class HomeWidgetService {
   }
 
   static Future<void> _handleFilterToggle() async {
-    final hasFilter = await HomeWidget.getWidgetData<bool>(
+    final hasFilter =
+        await HomeWidget.getWidgetData<bool>(
           'has_filter',
           defaultValue: false,
         ) ??
         false;
-    final teamSelected = await HomeWidget.getWidgetData<bool>(
+    final teamSelected =
+        await HomeWidget.getWidgetData<bool>(
           'team_selected',
           defaultValue: false,
         ) ??
@@ -928,12 +937,14 @@ class HomeWidgetService {
   }
 
   static Future<void> _handleTeamToggle() async {
-    final hasFilter = await HomeWidget.getWidgetData<bool>(
+    final hasFilter =
+        await HomeWidget.getWidgetData<bool>(
           'has_filter',
           defaultValue: false,
         ) ??
         false;
-    final teamSelected = await HomeWidget.getWidgetData<bool>(
+    final teamSelected =
+        await HomeWidget.getWidgetData<bool>(
           'team_selected',
           defaultValue: false,
         ) ??
@@ -952,12 +963,14 @@ class HomeWidgetService {
   /// (`WidgetMonthShiftReceiver`) 이 조회를 요청한다. 여기서 월을 다시 계산하면
   /// 두 번 옮겨지므로, 저장된 값을 그대로 쓴다.
   static Future<void> _handleMonthFetch() async {
-    final hasFilter = await HomeWidget.getWidgetData<bool>(
+    final hasFilter =
+        await HomeWidget.getWidgetData<bool>(
           'has_filter',
           defaultValue: false,
         ) ??
         false;
-    final teamSelected = await HomeWidget.getWidgetData<bool>(
+    final teamSelected =
+        await HomeWidget.getWidgetData<bool>(
           'team_selected',
           defaultValue: false,
         ) ??

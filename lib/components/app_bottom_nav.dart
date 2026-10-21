@@ -5,7 +5,23 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 import '../styles/app_colors.dart';
 
-enum AppNavTab { home, schedule, list, community, subscription, mypage }
+/// 하단 네비 탭. 이름은 믹스패널 `tab_name`·`location_page` 값으로 그대로
+/// 쓰이므로(`AppNavTab.matchList` → `match_list`) 설계 문서의 값과 어긋나지
+/// 않게 유지한다.
+enum AppNavTab {
+  home,
+  schedule,
+  matchList,
+  community,
+  subscription,
+  mypage;
+
+  /// 믹스패널 전송용 값. enum 이름을 snake_case 로 바꾼다.
+  String get analyticsValue => name.replaceAllMapped(
+    RegExp(r'[A-Z]'),
+    (m) => '_${m.group(0)!.toLowerCase()}',
+  );
+}
 
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
@@ -36,7 +52,7 @@ class AppBottomNav extends StatelessWidget {
   static const List<({String icon, AppNavTab tab})> _items = [
     (icon: 'assets/icons/home.svg', tab: AppNavTab.home),
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
-    (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.list),
+    (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.matchList),
     (icon: 'assets/icons/message-circle-heart.svg', tab: AppNavTab.community),
     // (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
@@ -71,7 +87,7 @@ class AppBottomNav extends StatelessWidget {
     final labels = {
       AppNavTab.home: l.navHome,
       AppNavTab.schedule: l.navSchedule,
-      AppNavTab.list: l.navMatchList,
+      AppNavTab.matchList: l.navMatchList,
       AppNavTab.community: l.navCommunity,
       AppNavTab.subscription: l.navSubscription,
       AppNavTab.mypage: l.navMyPage,
@@ -288,9 +304,10 @@ class BottomNavShrinkController extends ChangeNotifier {
 
     // 맨 위(=목록 시작)에서는 항상 원래 크기로 둔다. 오버스크롤 튕김으로
     // 작아지는 걸 막는다. reverse 목록에서는 offset 최대치가 목록 시작이다.
-    final atTop = reversed
-        ? n.metrics.pixels >= n.metrics.maxScrollExtent - 1
-        : n.metrics.pixels <= n.metrics.minScrollExtent + 1;
+    final atTop =
+        reversed
+            ? n.metrics.pixels >= n.metrics.maxScrollExtent - 1
+            : n.metrics.pixels <= n.metrics.minScrollExtent + 1;
     if (atTop) {
       _accumulated = 0;
       _set(false);

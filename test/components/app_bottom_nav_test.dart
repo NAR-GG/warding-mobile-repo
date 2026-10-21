@@ -109,6 +109,6 @@ class _NavProbe extends StatelessWidget {
   Widget build(BuildContext context) => OverflowBox(
     maxWidth: 400,
     maxHeight: 100,
-    child: AppBottomNav(currentTab: AppNavTab.list, onTabSelected: (_) {}),
+    child: AppBottomNav(currentTab: AppNavTab.matchList, onTabSelected: (_) {}),
   );
 }

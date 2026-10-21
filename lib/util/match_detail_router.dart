@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../config/app_globals.dart';
 import '../model/schedule_match.dart';
 import '../screens/match_detail/match_detail_screen.dart';
+import 'analytics.dart';
+import 'analytics_events.dart';
+import 'analytics_route_observer.dart';
 
 /// 경기 상세로 들어가는 유일한 창구.
 ///
@@ -42,17 +45,35 @@ class MatchDetailRouter {
   ///
   /// 반환 Future 는 상세가 닫힐 때 완료된다 — 목록 화면이 복귀 시점을 알 수
   /// 있도록. 기존 화면을 재사용한 경우엔 곧바로 완료된다(닫힌 게 아니므로).
+  /// [entryPoint] 는 `page_view(match_detail)` 에 실린다. 푸시·위젯처럼 앱
+  /// 외부에서 들어온 진입은 `prev_page` 만으로 알 수 없어서(앱이 떠 있는
+  /// 상태로 푸시를 누르면 prev_page 가 직전 화면이 된다) 따로 받는다.
+  ///
+  /// [fromPage] 가 있으면 `match_card_click` 을 함께 찍는다 — 목록에서 카드를
+  /// 눌러 들어온 경우다. 딥링크·푸시는 카드 클릭이 아니므로 비워 둔다.
   static Future<void> open({
     required String matchId,
     int tabIndex = 0,
     int? setNumber,
     ScheduleMatch? match,
     BuildContext? context,
+    String entryPoint = AnalyticsEntryPoint.inApp,
+    String? fromPage,
+    int? cardPosition,
   }) {
     if (matchId.isEmpty) return Future<void>.value();
-    final nav = context != null
-        ? Navigator.maybeOf(context)
-        : navigatorKey.currentState;
+
+    if (fromPage != null) {
+      Analytics.track(AnalyticsEvent.matchCardClick, {
+        AnalyticsProp.locationPage: fromPage,
+        AnalyticsProp.matchId: matchId,
+        if (cardPosition case final int p) AnalyticsProp.position: p,
+      });
+    }
+    final nav =
+        context != null
+            ? Navigator.maybeOf(context)
+            : navigatorKey.currentState;
     if (nav == null) return Future<void>.value();
 
     final existing = _findOpenDetail(nav);
@@ -63,6 +84,17 @@ class MatchDetailRouter {
         // 같은 경기 — 그 화면까지 되돌아가서 탭·세트만 갈아끼운다.
         nav.popUntil((route) => route == existing.key);
         state.applyDeepLink(tabIndex: tabIndex, setNumber: setNumber);
+        // 라우트가 바뀌지 않아 AnalyticsRouteObserver 에 콜백이 오지 않는다.
+        // 사용자는 상세를 본 것이고, 라이브 경기를 푸시로 연달아 여는 것이
+        // 주 동선이라 여기서 직접 찍는다(설계 문서 7번).
+        Analytics.track(AnalyticsEvent.pageView, {
+          AnalyticsProp.locationPage: AnalyticsPage.matchDetail,
+          AnalyticsProp.prevPage:
+              AnalyticsRouteObserver.instance.currentPage ?? AnalyticsPage.none,
+          AnalyticsProp.matchId: matchId,
+          AnalyticsProp.entryPoint: entryPoint,
+          AnalyticsProp.locationSection: _sectionOfTab(tabIndex),
+        });
         debugPrint(
           '[MatchDetailRouter] 기존 상세 재사용: $matchId '
           '(tab=$tabIndex, set=$setNumber)',
@@ -77,6 +109,7 @@ class MatchDetailRouter {
         nav.pop();
       } else {
         // 교체되면 옛 라우트의 completed 가 완료돼 _open 에서 스스로 빠진다.
+        _attachPageViewProps(matchId, tabIndex, entryPoint);
         return nav.pushReplacement(
           _buildRoute(
             matchId: matchId,
@@ -91,6 +124,7 @@ class MatchDetailRouter {
     debugPrint(
       '[MatchDetailRouter] 상세 push: $matchId (tab=$tabIndex, set=$setNumber)',
     );
+    _attachPageViewProps(matchId, tabIndex, entryPoint);
     return nav.push(
       _buildRoute(
         matchId: matchId,
@@ -100,6 +134,27 @@ class MatchDetailRouter {
       ),
     );
   }
+
+  /// observer 가 쏠 `page_view(match_detail)` 에 이 화면만 아는 맥락을 붙인다.
+  static void _attachPageViewProps(
+    String matchId,
+    int tabIndex,
+    String entryPoint,
+  ) {
+    AnalyticsRouteObserver.instance.attachNext({
+      AnalyticsProp.matchId: matchId,
+      AnalyticsProp.entryPoint: entryPoint,
+      AnalyticsProp.locationSection: _sectionOfTab(tabIndex),
+    });
+  }
+
+  /// 진입 탭 → `location_section`. 카드 클릭은 0(경기 데이터), 푸시는
+  /// 1(라이브 이벤트), 홈 위젯은 `?tab` 에 따라 1 또는 2 로 들어온다.
+  static String _sectionOfTab(int tabIndex) => switch (tabIndex) {
+    1 => AnalyticsSection.liveEvent,
+    2 => AnalyticsSection.playerRating,
+    _ => AnalyticsSection.matchData,
+  };
 
   /// 지금 스택에 떠 있는 상세를 찾는다. 없으면 null.
   ///
@@ -136,13 +191,15 @@ class MatchDetailRouter {
     final key = GlobalKey<MatchDetailScreenState>();
     late final MaterialPageRoute<void> route;
     route = MaterialPageRoute<void>(
-      builder: (_) => MatchDetailScreen(
-        key: key,
-        matchId: matchId,
-        match: match,
-        initialTabIndex: tabIndex,
-        initialSet: setNumber,
-      ),
+      settings: const RouteSettings(name: AnalyticsPage.matchDetail),
+      builder:
+          (_) => MatchDetailScreen(
+            key: key,
+            matchId: matchId,
+            match: match,
+            initialTabIndex: tabIndex,
+            initialSet: setNumber,
+          ),
     );
     _open[route] = key;
     route.completed.whenComplete(() => _open.remove(route));

@@ -11,6 +11,7 @@ import '../../../util/match_status.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import 'home_section_header.dart';
 import 'home_skeletons.dart';
+import '../../../util/analytics_events.dart';
 
 /// 오늘 경기 — 가로 스트립. LIVE 경기가 앞으로 온다.
 ///
@@ -62,8 +63,8 @@ class HomeTodayMatchesSection extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 20 * scale),
               itemCount: matches.length,
               separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
-              itemBuilder: (context, i) =>
-                  _MatchCard(match: matches[i], scale: scale),
+              itemBuilder:
+                  (context, i) => _MatchCard(match: matches[i], scale: scale),
             ),
           ),
       ],
@@ -99,6 +100,7 @@ class _MatchCard extends StatelessWidget {
       matchId: match.matchId,
       match: match,
       context: context,
+      fromPage: AnalyticsPage.home,
     );
   }
 
@@ -209,11 +211,12 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final label = live
-        ? 'LIVE'
-        : done
-        ? l.homeMatchStatusDone
-        : time;
+    final label =
+        live
+            ? 'LIVE'
+            : done
+            ? l.homeMatchStatusDone
+            : time;
     return Container(
       height: 22 * scale,
       padding: EdgeInsets.symmetric(horizontal: 8 * scale),
@@ -239,11 +242,12 @@ class _StatusBadge extends StatelessWidget {
               fontWeight: live ? FontWeight.w500 : FontWeight.w600,
               fontSize: 12 * scale,
               height: 1,
-              color: live
-                  ? AppColors.liveAccent
-                  : done
-                  ? AppColors.narText2
-                  : AppColors.narTextTertiary,
+              color:
+                  live
+                      ? AppColors.liveAccent
+                      : done
+                      ? AppColors.narText2
+                      : AppColors.narTextTertiary,
             ),
           ),
         ],

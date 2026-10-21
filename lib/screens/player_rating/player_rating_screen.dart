@@ -22,6 +22,8 @@ import 'component/rating_comment_sheet.dart';
 import 'component/rating_distribution_section.dart';
 import 'component/subscribed_rating_banner.dart';
 import '../../config/secure_storage.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics.dart';
 
 /// 선수 평점 상세 페이지.
 ///
@@ -168,13 +170,15 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                   setLabel,
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    fontWeight: setLabel == _currentSet
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+                    fontWeight:
+                        setLabel == _currentSet
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                     fontSize: 16 * scale,
-                    color: setLabel == _currentSet
-                        ? AppColors.narText
-                        : AppColors.narText2,
+                    color:
+                        setLabel == _currentSet
+                            ? AppColors.narText
+                            : AppColors.narText2,
                   ),
                 ),
               ),
@@ -202,9 +206,12 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
     }
     if (!mounted) return;
     if (token == null || token.isEmpty) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AnalyticsPage.login),
+          builder: (_) => const LoginScreen(),
+        ),
+      );
       return;
     }
     // 내 평점이 이미 있으면(수정) 기존 값을 채워 연다.
@@ -219,8 +226,22 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
       initialComment: my?.comment,
     );
     if (result == null) return;
+    // 별점 UI 는 0.5 단위지만 저장은 반올림한 정수다(3.5 → 4). 서버 저장값과
+    // 일치시키려고 전송도 정수로 보낸다(설계 문서 26번).
+    final score = result.rating.round();
     try {
-      await _vm.saveMyRating(result.rating.round(), result.comment);
+      await _vm.saveMyRating(score, result.comment);
+      // 성공 후에 찍는다 — saveMyRating 은 실패 시 rethrow 하므로 결과를
+      // 알 수 있다. 신규 작성과 수정은 PUT 하나로 처리돼 구분하지 않는다.
+      Analytics.track(AnalyticsEvent.reviewSubmitButtonClick, {
+        AnalyticsProp.locationPage: AnalyticsPage.playerRating,
+        AnalyticsProp.playerId: widget.playerId,
+        AnalyticsProp.ratingScore: score,
+        AnalyticsProp.setNo: widget.currentSetNumber,
+        // 빈 코멘트는 null 로 저장되므로 키를 보내지 않는다.
+        if (result.comment.isNotEmpty)
+          AnalyticsProp.commentLength: result.comment.length,
+      });
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -329,8 +350,8 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                           kda: d?.player.kda ?? '-',
                           playerImageUrl:
                               (d?.player.playerImageUrl.isNotEmpty ?? false)
-                              ? d!.player.playerImageUrl
-                              : widget.player.playerImageUrl,
+                                  ? d!.player.playerImageUrl
+                                  : widget.player.playerImageUrl,
                           scale: scale,
                         ),
                         SizedBox(height: 16 * scale),
@@ -368,9 +389,10 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                             teamName: widget.teamName,
                             teamCode: widget.teamCode,
                             playerName: widget.player.name,
-                            onRate: (d?.rateable ?? false)
-                                ? _openRatingSheet
-                                : null,
+                            onRate:
+                                (d?.rateable ?? false)
+                                    ? _openRatingSheet
+                                    : null,
                             scale: scale,
                           )
                         else
@@ -381,9 +403,10 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
                             child: NarButton(
                               variant: NarButtonVariant.set1,
                               label: l.leaveRating,
-                              onPressed: (d?.rateable ?? false)
-                                  ? _openRatingSheet
-                                  : null,
+                              onPressed:
+                                  (d?.rateable ?? false)
+                                      ? _openRatingSheet
+                                      : null,
                               scale: scale,
                             ),
                           ),

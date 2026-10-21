@@ -35,6 +35,8 @@ import 'component/player_filter_chip.dart';
 import 'component/player_select_sheet.dart';
 import 'component/subscription_date_sheet.dart';
 import 'subscription_settings_screen.dart';
+import '../../util/analytics.dart';
+import '../../util/analytics_events.dart';
 
 /// 마이 구독 페이지. 하단 네비 '마이 구독' 탭에 해당한다.
 class SubscriptionScreen extends StatefulWidget {
@@ -115,8 +117,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 실패하면 빈 목록을 유지한다(가짜 placeholder 노출 방지).
   Future<void> _loadPlayers() async {
     try {
-      final players = await SubscriptionRepository.instance
-          .fetchSubscribedPlayers();
+      final players =
+          await SubscriptionRepository.instance.fetchSubscribedPlayers();
       if (!mounted) return;
       setState(() => _players = players.map((p) => p.playerName).toList());
     } catch (e) {
@@ -159,8 +161,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
-
-
   /// 이벤트 타입 필터 내부 키 상수.
   static const String _keyAll = 'ALL';
   static const String _keySetStart = 'SET_START';
@@ -193,10 +193,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   Set<MemberNotificationType> get _typeFilters {
     if (!identical(_typeFilterSource, _selectedTypes)) {
       _typeFilterSource = _selectedTypes;
-      _typeFilterCache = _selectedTypes
-          .map(_chipToType)
-          .whereType<MemberNotificationType>()
-          .toSet();
+      _typeFilterCache =
+          _selectedTypes
+              .map(_chipToType)
+              .whereType<MemberNotificationType>()
+              .toSet();
     }
     return _typeFilterCache;
   }
@@ -219,7 +220,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     }
     return false;
   }
-
 
   /// 알림 탭 — 읽음 처리 후 딥링크 이동.
   /// 솔랭은 OP.GG 링크로 이동하므로 카드 탭은 읽음만, 팀 이벤트는 경기 상세로.
@@ -252,6 +252,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       match: match,
       tabIndex: 1,
       context: context,
+      fromPage: AnalyticsPage.subscription,
     );
   }
 
@@ -419,9 +420,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     // 제자리 remove 가 아니라 새 Set 을 만든다 — [_typeFilters] 캐시가 참조
     // 비교로 갱신을 감지하므로, 같은 인스턴스를 고쳐 넘기면 선택이 바뀐 걸
     // 알아채지 못한다.
-    _selectedTypes = hasFilter
-        ? _selectedTypes.where((t) => t != _keyAll).toSet()
-        : {_keyAll};
+    _selectedTypes =
+        hasFilter
+            ? _selectedTypes.where((t) => t != _keyAll).toSet()
+            : {_keyAll};
   }
 
   /// 이벤트 타입 필터 토글. _keyAll 을 고르면 세트 타입·선수 필터를 모두 비운다.
@@ -476,9 +478,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 날짜 칩 탭 → 캘린더 바텀시트. 고른 날짜의 헤더 위치로 스크롤한다.
   Future<void> _openDatePicker() async {
     final items = _feedViewModel.notifications.where(_matchesFilter).toList();
-    final initialMonth = items.isNotEmpty
-        ? items.first.createdAt
-        : DateTime.now();
+    final initialMonth =
+        items.isNotEmpty ? items.first.createdAt : DateTime.now();
     final picked = await showAppBottomSheet<DateTime>(
       context: context,
       child: SubscriptionDateSheet(
@@ -551,17 +552,26 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void _measureItem(int index, double height) => _layout.measure(index, height);
 
   /// 하단 네비 탭 선택. '마이 구독'을 제외한 탭이면 해당 화면으로 전환한다.
+  ///
+  /// 다른 탭 화면과 달리 [handleNavTabSelected] 를 쓰지 않는다 — 전환 전에
+  /// 읽음 처리를 끝내야 하므로([_leaveTo]) 전환 자체를 여기서 들고 있다.
+  /// 그래서 `bottom_nav_tab_click` 도 여기서 직접 찍는다.
   void _onTabSelected(AppNavTab tab) {
+    Analytics.track(AnalyticsEvent.bottomNavTabClick, {
+      AnalyticsProp.locationPage: AnalyticsPage.subscription,
+      AnalyticsProp.locationSection: AnalyticsSection.navigationBottom,
+      AnalyticsProp.tabName: tab.analyticsValue,
+    });
     if (tab == AppNavTab.home) {
-      _leaveTo(const HomeScreen());
+      _leaveTo(const HomeScreen(), AnalyticsPage.home);
     } else if (tab == AppNavTab.schedule) {
-      _leaveTo(const ScheduleScreen());
-    } else if (tab == AppNavTab.list) {
-      _leaveTo(const MatchListScreen());
+      _leaveTo(const ScheduleScreen(), AnalyticsPage.schedule);
+    } else if (tab == AppNavTab.matchList) {
+      _leaveTo(const MatchListScreen(), AnalyticsPage.matchList);
     } else if (tab == AppNavTab.community) {
-      _leaveTo(const CommunityScreen());
+      _leaveTo(const CommunityScreen(), AnalyticsPage.community);
     } else if (tab == AppNavTab.mypage) {
-      _leaveTo(const MypageScreen());
+      _leaveTo(const MypageScreen(), AnalyticsPage.mypage);
     }
   }
 
@@ -575,13 +585,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 읽음 처리는 실패해도 예외를 던지지 않으므로 전환이 막히지 않는다. 다만
   /// 응답이 느리면 그만큼 전환이 밀리므로 2초에서 끊고 넘어간다 — 배지가
   /// 한 박자 늦게 사라지는 편이 탭이 먹통으로 느껴지는 것보다 낫다.
-  Future<void> _leaveTo(Widget next) async {
+  Future<void> _leaveTo(Widget next, String page) async {
     await _feedViewModel.markAllReadOnExit().timeout(
       const Duration(seconds: 2),
       onTimeout: () {},
     );
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(tabRoute(next));
+    Navigator.of(context).pushReplacement(tabRoute(next, name: page));
   }
 
   @override
@@ -617,6 +627,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       onSettingsTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
+                            settings: const RouteSettings(
+                              name: AnalyticsPage.subscriptionSettings,
+                            ),
                             builder: (_) => const SubscriptionSettingsScreen(),
                           ),
                         );
@@ -626,23 +639,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     // '허용 안 함'을 눌러 권한이 없는 동안 계속 노출된다.
                     ListenableBuilder(
                       listenable: _feedViewModel,
-                      builder: (context, _) =>
-                          _feedViewModel.notificationPermissionGranted
-                          ? const SizedBox.shrink()
-                          : Padding(
-                              padding: EdgeInsets.only(top: 14 * scale),
-                              child: NarBanner(
-                                scale: scale,
-                                onTap: _feedViewModel
-                                    .requestNotificationPermission,
-                                icon: SvgPicture.asset(
-                                  'assets/icons/bell.svg',
-                                  width: 24 * scale,
-                                  height: 24 * scale,
-                                ),
-                                text: l.enableNotificationPermission,
-                              ),
-                            ),
+                      builder:
+                          (context, _) =>
+                              _feedViewModel.notificationPermissionGranted
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                    padding: EdgeInsets.only(top: 14 * scale),
+                                    child: NarBanner(
+                                      scale: scale,
+                                      onTap:
+                                          _feedViewModel
+                                              .requestNotificationPermission,
+                                      icon: SvgPicture.asset(
+                                        'assets/icons/bell.svg',
+                                        width: 24 * scale,
+                                        height: 24 * scale,
+                                      ),
+                                      text: l.enableNotificationPermission,
+                                    ),
+                                  ),
                     ),
                     SizedBox(height: 14 * scale), // 헤더 ↔ 필터 간격
                     NarChipMultiSelect(
@@ -659,10 +674,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             selected: _selectedPlayers,
                             scale: scale,
                             onTap: _openPlayerSelect,
-                            onClear: () => setState(() {
-                              _selectedPlayers = {};
-                              _syncAll();
-                            }),
+                            onClear:
+                                () => setState(() {
+                                  _selectedPlayers = {};
+                                  _syncAll();
+                                }),
                           ),
                           // 선택되면(보라 활성) 앞으로 정렬에 참여.
                           selected: _selectedPlayers.isNotEmpty,
@@ -690,8 +706,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             return ListView.builder(
                               padding: EdgeInsets.only(bottom: 120 * scale),
                               itemCount: 6,
-                              itemBuilder: (_, _) =>
-                                  NotificationCardSkeleton(scale: scale),
+                              itemBuilder:
+                                  (_, _) =>
+                                      NotificationCardSkeleton(scale: scale),
                             );
                           }
                           if (vm.error != null && vm.notifications.isEmpty) {
@@ -703,43 +720,47 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           final trailing = vm.isLoadingMore ? 2 : 0;
                           return AppRefreshIndicator(
                             onRefresh: vm.load,
-                            child: items.isEmpty
-                                ? ListView(
-                                    // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
-                                    physics: AppRefreshIndicator.physics,
-                                    children: [
-                                      SizedBox(height: 120 * scale),
-                                      _centerMessage(l.noNotifications, scale),
-                                    ],
-                                  )
-                                // 화면에 보이는 만큼만 만든다. 날짜 점프는
-                                // 헤더의 인덱스를 찾아 그 앞까지의 높이로
-                                // 직접 이동하므로([_scrollToDate]), 목록
-                                // 전체를 미리 layout 할 이유가 없다.
-                                : ListView.builder(
-                                    controller: _scrollController,
-                                    physics: AppRefreshIndicator.physics,
-                                    padding: EdgeInsets.only(
-                                      bottom: 120 * scale,
-                                    ),
-                                    itemCount: items.length + trailing,
-                                    itemBuilder: (context, index) {
-                                      if (index >= items.length) {
-                                        return NotificationCardSkeleton(
-                                          scale: scale,
-                                        );
-                                      }
-                                      return _MeasuredFeedItem(
-                                        index: index,
-                                        onMeasured: _measureItem,
-                                        child: _buildFeedItem(
-                                          items[index],
+                            child:
+                                items.isEmpty
+                                    ? ListView(
+                                      // 당겨서 새로고침이 동작하도록 스크롤 가능하게.
+                                      physics: AppRefreshIndicator.physics,
+                                      children: [
+                                        SizedBox(height: 120 * scale),
+                                        _centerMessage(
+                                          l.noNotifications,
                                           scale,
-                                          l,
                                         ),
-                                      );
-                                    },
-                                  ),
+                                      ],
+                                    )
+                                    // 화면에 보이는 만큼만 만든다. 날짜 점프는
+                                    // 헤더의 인덱스를 찾아 그 앞까지의 높이로
+                                    // 직접 이동하므로([_scrollToDate]), 목록
+                                    // 전체를 미리 layout 할 이유가 없다.
+                                    : ListView.builder(
+                                      controller: _scrollController,
+                                      physics: AppRefreshIndicator.physics,
+                                      padding: EdgeInsets.only(
+                                        bottom: 120 * scale,
+                                      ),
+                                      itemCount: items.length + trailing,
+                                      itemBuilder: (context, index) {
+                                        if (index >= items.length) {
+                                          return NotificationCardSkeleton(
+                                            scale: scale,
+                                          );
+                                        }
+                                        return _MeasuredFeedItem(
+                                          index: index,
+                                          onMeasured: _measureItem,
+                                          child: _buildFeedItem(
+                                            items[index],
+                                            scale,
+                                            l,
+                                          ),
+                                        );
+                                      },
+                                    ),
                           );
                         },
                       ),
@@ -760,11 +781,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               bottom: 26,
               child: ListenableBuilder(
                 listenable: _navShrink,
-                builder: (context, _) => AppBottomNav(
-                  currentTab: AppNavTab.subscription,
-                  onTabSelected: _onTabSelected,
-                  compact: _navShrink.compact,
-                ),
+                builder:
+                    (context, _) => AppBottomNav(
+                      currentTab: AppNavTab.subscription,
+                      onTabSelected: _onTabSelected,
+                      compact: _navShrink.compact,
+                    ),
               ),
             ),
           ],
