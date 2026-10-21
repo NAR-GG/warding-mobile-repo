@@ -21,6 +21,7 @@ class WorldsSoloSnapshot {
     required this.players,
     required this.solo,
     this.today = const {},
+    this.teamLeagues = const {},
   });
 
   static const WorldsSoloSnapshot empty = WorldsSoloSnapshot(
@@ -35,6 +36,10 @@ class WorldsSoloSnapshot {
 
   /// 선수별 오늘 전적(playerId → 전적). 서버가 최근 24시간으로 센다. 옛 서버면 비어 있다.
   final Map<int, WorldsTodayRecord> today;
+
+  /// 팀 코드 → 리그 코드(리그·팀 필터 칩). 순서가 곧 칩 순서다 — 서버가 리그 순,
+  /// 리그 안에서는 시드(리그 순위) 순으로 준다. 옛 서버면 비어 있다(리그 칩 없음).
+  final Map<String, String> teamLeagues;
 }
 
 /// 월즈 선수 한 명의 오늘 전적. [games] 는 지금 하는 판을 포함한다.

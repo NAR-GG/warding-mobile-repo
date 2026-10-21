@@ -146,7 +146,7 @@ void main() {
     );
   });
 
-  test('리그를 고르면 그 리그 팀·선수만 남고, 팀 필터는 풀린다', () async {
+  test('서버가 준 리그·시드 순으로 칩을 만들고, 리그를 고르면 팀 필터는 풀린다', () async {
     final vm = MyPlayersViewModel(
       subscriptions: repo,
       worlds: _FakeWorlds(
@@ -160,6 +160,14 @@ void main() {
             _player(6, 'Shanks', 'AL'),
           ],
           solo: const SoloRankSnapshot(live: [], finished: []),
+          teamLeagues: const {
+            'GEN': 'LCK',
+            'T1': 'LCK',
+            'AL': 'LPL',
+            'BLG': 'LPL',
+            'G2': 'LEC',
+            'LOS': 'CBLOL',
+          },
         ),
       ),
     );

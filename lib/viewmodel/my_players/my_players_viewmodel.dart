@@ -8,32 +8,6 @@ import '../../repository/home/home_sources.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../home/solo_rank_rules.dart';
 
-/// 월즈 2026 출전 팀 → 소속 리그. 리그 칩은 이 맵의 리그 순서(LCK → LPL →
-/// LEC → LCS → LCP → CBLOL), 팀 칩은 맵 순서 = 리그 안에서는 월즈 시드(리그 순위)
-/// 순이다. 서버 응답에 리그·시드가 없어 앱이 들고 있다.
-// ponytail: 월즈 한정 고정 맵. 맵에 없는 팀은 리그 칩에 안 잡히고 팀 칩 맨 뒤로 간다.
-// 다음 대회에도 쓰면 서버가 팀 리그·순위를 내려주게 바꾼다.
-const Map<String, String> worldsTeamLeague = {
-  'GEN': 'LCK',
-  'HLE': 'LCK',
-  'T1': 'LCK',
-  'DK': 'LCK',
-  'AL': 'LPL',
-  'BLG': 'LPL',
-  'TES': 'LPL',
-  'IG': 'LPL',
-  'G2': 'LEC',
-  'MKOI': 'LEC',
-  'KC': 'LEC',
-  'TLAW': 'LCS',
-  'LYON': 'LCS',
-  'C9': 'LCS',
-  'TSW': 'LCP',
-  'CFO': 'LCP',
-  'MVK': 'LCP',
-  'LOS': 'CBLOL',
-};
-
 /// 내 선수 화면의 상태 묶음 (spec: 솔랭 중 / 오늘 경기함 / 소식 없음).
 enum MyPlayerStatus { liveSolo, playedToday, quiet }
 
@@ -90,6 +64,9 @@ class MyPlayersViewModel extends ChangeNotifier {
 
   Map<int, WorldsTodayRecord> _today = const {};
 
+  /// 팀 → 리그(서버가 준 칩 순서). 내 선수 화면·옛 서버면 비어 있다.
+  Map<String, String> _teamLeagues = const {};
+
   /// 월즈 선수의 오늘 전적. 오늘 한 판도 없거나 옛 서버면 null.
   WorldsTodayRecord? todayRecord(int playerId) => _today[playerId];
 
@@ -133,6 +110,7 @@ class MyPlayersViewModel extends ChangeNotifier {
       _players = snap.players;
       _solo = snap.solo;
       _today = snap.today;
+      _teamLeagues = snap.teamLeagues;
       _classify();
       _notify();
     } catch (e) {
@@ -223,10 +201,10 @@ class MyPlayersViewModel extends ChangeNotifier {
     _allLive = live;
     _allPlayed = played;
     _allQuiet = quiet;
-    // 월즈: 리그 순 → 리그 안 시드 순. 맵에 없는 팀은 뒤에 처음 나온 순서대로.
-    // 내 선수 화면은 처음 나온 순서 그대로.
-    if (isWorlds) {
-      final seed = worldsTeamLeague.keys.toList();
+    // 서버가 준 순서(리그 순 → 리그 안 시드 순). 없는 팀은 뒤에 처음 나온 순서대로.
+    // 내 선수 화면은 [_teamLeagues] 가 비어 처음 나온 순서 그대로.
+    if (_teamLeagues.isNotEmpty) {
+      final seed = _teamLeagues.keys.toList();
       int rank(String t) {
         final i = seed.indexOf(t);
         return i < 0 ? seed.length : i;
@@ -301,14 +279,14 @@ class MyPlayersViewModel extends ChangeNotifier {
     }
   }
 
-  /// 소속팀 코드 한 번씩(팀 필터 칩). 월즈는 [worldsTeamLeague] 순서, 아니면 처음 나온 순서.
+  /// 소속팀 코드 한 번씩(팀 필터 칩). 월즈는 서버가 준 순서, 아니면 처음 나온 순서.
   /// 리그를 골랐으면 그 리그 팀만.
   List<String> get teamCodes {
     final league = _leagueCode;
     if (league == null) return _teamCodes;
     return [
       for (final t in _teamCodes)
-        if (worldsTeamLeague[t] == league) t,
+        if (_teamLeagues[t] == league) t,
     ];
   }
 
@@ -318,11 +296,11 @@ class MyPlayersViewModel extends ChangeNotifier {
     return url == null || url.isEmpty ? null : url;
   }
 
-  /// 명단에 있는 리그 — [worldsTeamLeague] 순서(리그 필터 칩). 맵에 없는 팀은 빠진다.
+  /// 명단에 있는 리그 — 서버가 준 순서(리그 필터 칩). 서버 목록에 없는 팀은 빠진다.
   List<String> get leagueCodes {
-    final present = {for (final t in _teamCodes) worldsTeamLeague[t]};
+    final present = {for (final t in _teamCodes) _teamLeagues[t]};
     return [
-      for (final l in worldsTeamLeague.values.toSet())
+      for (final l in _teamLeagues.values.toSet())
         if (present.contains(l)) l,
     ];
   }
@@ -405,7 +383,7 @@ class MyPlayersViewModel extends ChangeNotifier {
     return [
       for (final e in list)
         if ((!subscribedOnly || e.player.subscribed) &&
-            (league == null || worldsTeamLeague[e.player.teamCode] == league) &&
+            (league == null || _teamLeagues[e.player.teamCode] == league) &&
             (team == null || e.player.teamCode == team) &&
             (q.isEmpty || e.player.playerName.toLowerCase().contains(q)))
           e,

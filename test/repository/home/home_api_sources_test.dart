@@ -190,6 +190,10 @@ void main() {
           'today': [
             {'playerId': 194, 'games': 3, 'wins': 2, 'losses': 0},
           ],
+          'leagues': [
+            {'code': 'LCK', 'teamCodes': ['GEN', 'HLE']},
+            {'code': 'LPL', 'teamCodes': ['AL']},
+          ],
         });
       }));
 
@@ -203,6 +207,9 @@ void main() {
       expect(snap.solo.live.single.teamImageUrl, 'https://img/gen.png');
       expect(snap.today[194]?.games, 3);
       expect(snap.today[194]?.wins, 2);
+      // 순서가 곧 칩 순서다.
+      expect(snap.teamLeagues, {'GEN': 'LCK', 'HLE': 'LCK', 'AL': 'LPL'});
+      expect(snap.teamLeagues.keys, ['GEN', 'HLE', 'AL']);
     });
 
     test('비회원도 토큰 없이 불러 명단을 받는다', () async {

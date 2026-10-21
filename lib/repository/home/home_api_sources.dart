@@ -142,6 +142,13 @@ class ApiWorldsSoloSource implements WorldsSoloSource {
             losses: e['losses'] as int? ?? 0,
           ),
       },
+      teamLeagues: {
+        for (final l in data['leagues'] as List<dynamic>? ?? const [])
+          for (final t
+              in (l as Map<String, dynamic>)['teamCodes'] as List<dynamic>? ??
+                  const [])
+            t as String: l['code'] as String,
+      },
     );
   }
 }
