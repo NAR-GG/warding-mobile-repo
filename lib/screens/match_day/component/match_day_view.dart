@@ -123,7 +123,15 @@ class MatchDayView extends StatelessWidget {
 
     if (!groupByLeague) {
       for (var i = 0; i < matches.length; i++) {
-        items.add(_buildCard(context, matches[i], showTopBorder: i > 0, l: l));
+        items.add(
+          _buildCard(
+            context,
+            matches[i],
+            showTopBorder: i > 0,
+            l: l,
+            position: i + 1,
+          ),
+        );
       }
       return items;
     }
@@ -132,11 +140,20 @@ class MatchDayView extends StatelessWidget {
     for (final m in matches) {
       (byLeague[m.leagueInfo] ??= []).add(m);
     }
+    // position 은 리그 그룹과 무관하게 화면에 보이는 전체 순번이다 —
+    // 클릭이 목록 위쪽에 몰리는지 보려는 값이라 그룹마다 1 로 돌아가면 안 된다.
+    var position = 0;
     for (final entry in byLeague.entries) {
       items.add(MatchLeagueHeader(leagueName: entry.key, scale: scale));
       for (var i = 0; i < entry.value.length; i++) {
         items.add(
-          _buildCard(context, entry.value[i], showTopBorder: i > 0, l: l),
+          _buildCard(
+            context,
+            entry.value[i],
+            showTopBorder: i > 0,
+            l: l,
+            position: ++position,
+          ),
         );
       }
     }
@@ -148,6 +165,7 @@ class MatchDayView extends StatelessWidget {
     BuildContext context,
     ScheduleMatch m, {
     required bool showTopBorder,
+    required int position,
     required AppLocalizations l,
   }) {
     return MatchCard(
@@ -187,6 +205,7 @@ class MatchDayView extends StatelessWidget {
             match: m,
             context: context,
             fromPage: AnalyticsPage.matchDay,
+            cardPosition: position,
           ),
       scale: scale,
     );

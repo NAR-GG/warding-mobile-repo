@@ -19,7 +19,6 @@ import '../community/post_detail_screen.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
-import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
 import '../player_rating/player_rating_screen.dart';
 import '../schedule/schedule_screen.dart';

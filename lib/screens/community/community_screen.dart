@@ -160,10 +160,11 @@ class _CommunityScreenState extends State<CommunityScreen>
     await _vm.load(null, refresh: true);
   }
 
-  Future<void> _openPost(CommunityRemotePost post) async {
+  Future<void> _openPost(CommunityRemotePost post, int position) async {
     Analytics.track(AnalyticsEvent.postCardClick, {
       AnalyticsProp.locationPage: AnalyticsPage.community,
       AnalyticsProp.postId: post.id,
+      AnalyticsProp.position: position,
     });
     final result = await Navigator.of(context).push<PostDetailResult>(
       MaterialPageRoute<PostDetailResult>(
@@ -321,7 +322,7 @@ class _BoardList extends StatefulWidget {
   final CommunityBoardState state;
   final double scale;
   final VoidCallback onLoadMore;
-  final ValueChanged<CommunityRemotePost> onTap;
+  final void Function(CommunityRemotePost post, int index) onTap;
 
   @override
   State<_BoardList> createState() => _BoardListState();
@@ -371,7 +372,7 @@ class _BoardListState extends State<_BoardList> {
         return PostListItem(
           post: posts[i],
           scale: scale,
-          onTap: () => widget.onTap(posts[i]),
+          onTap: () => widget.onTap(posts[i], i + 1),
         );
       },
     );

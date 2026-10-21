@@ -344,7 +344,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
   /// 상세는 pushReplacement 가 아니라 push 라 돌아와도 이 화면의 State 가
   /// 그대로 살아 있다. 접힌 채로 나갔다면 정렬 행이 숨은 상태로 되돌아오는데,
   /// 목록을 다시 보는 시점이니 펼친 상태로 맞춰 준다.
-  Future<void> _openMatchDetail(ScheduleMatch m) async {
+  Future<void> _openMatchDetail(ScheduleMatch m, int position) async {
     // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
     // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
     await MatchDetailRouter.open(
@@ -352,6 +352,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       match: m,
       context: context,
       fromPage: AnalyticsPage.matchList,
+      cardPosition: position,
     );
     if (!mounted || !_sortBarCollapsed) return;
     // 방향 판정 기준점도 지금 위치로 옮긴다 — 그대로 두면 상세를 보는 동안
@@ -787,7 +788,8 @@ class _MatchListScreenState extends State<MatchListScreen> {
         if (item is _LeagueHeaderItem) {
           return MatchLeagueHeader(leagueName: item.leagueName, scale: scale);
         }
-        final m = (item as _CardItem).match;
+        final card = item as _CardItem;
+        final m = card.match;
         // 날짜 헤더·리그 헤더 바로 아래(=화면상 첫 카드)면 위 구분선을 끈다.
         final neighborIndex = index - 1;
         final showTopBorder =
@@ -825,7 +827,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
                   : null,
           leagueInfo: m.leagueInfo,
           spoilerPreventionEnabled: _viewModel.spoilerPreventionEnabled,
-          onTap: () => _openMatchDetail(m),
+          onTap: () => _openMatchDetail(m, card.position),
           scale: scale,
         );
       },
@@ -874,13 +876,14 @@ class _MatchListScreenState extends State<MatchListScreen> {
       return cached;
     }
     final out = <_ListItem>[];
+    var cardPosition = 0;
     for (var i = 0; i < schedule.length; i++) {
       final day = schedule[i];
       if (_adBefore(i)) out.add(_AdItem(day.date));
       out.add(_HeaderItem(day.date));
       if (!groupByLeague) {
         for (final m in day.matches) {
-          out.add(_CardItem(m));
+          out.add(_CardItem(m, ++cardPosition));
         }
         continue;
       }
@@ -891,7 +894,7 @@ class _MatchListScreenState extends State<MatchListScreen> {
       for (final entry in byLeague.entries) {
         out.add(_LeagueHeaderItem(entry.key));
         for (final m in entry.value) {
-          out.add(_CardItem(m));
+          out.add(_CardItem(m, ++cardPosition));
         }
       }
     }
@@ -956,6 +959,10 @@ class _AdItem extends _ListItem {
 }
 
 class _CardItem extends _ListItem {
-  const _CardItem(this.match);
+  const _CardItem(this.match, this.position);
   final ScheduleMatch match;
+
+  /// 화면에 보이는 전체 카드 순번(1부터). 날짜·리그 그룹과 무관하게 센다 —
+  /// 클릭이 목록 위쪽에 몰리는지 보려는 값이라 그룹마다 1 로 돌아가면 안 된다.
+  final int position;
 }
