@@ -17,6 +17,7 @@ import 'component/schedule_calendar_skeleton.dart';
 import 'component/schedule_header.dart';
 import '../../util/nav_tab_navigation.dart';
 import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기일정' 탭에 해당한다.
 class ScheduleScreen extends StatefulWidget {
@@ -76,6 +77,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsRouteObserver.instance.setProvider(
+      AnalyticsPage.schedule,
+      () => {AnalyticsProp.month: AnalyticsFormat.month(_viewModel.displayMonth)},
+    );
     WidgetsBinding.instance.addObserver(this);
     // 떠 있는 동안에는 위젯의 필터 요청을 이 화면이 받는다.
     _activeScheduleScreen = this;
@@ -129,6 +134,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   @override
   void dispose() {
+    AnalyticsRouteObserver.instance.removeProvider(AnalyticsPage.schedule);
     WidgetsBinding.instance.removeObserver(this);
     // 내가 등록해 둔 것일 때만 지운다 — 화면이 교체되는 중이면 새 화면이
     // 이미 자기 것으로 덮어썼을 수 있다.

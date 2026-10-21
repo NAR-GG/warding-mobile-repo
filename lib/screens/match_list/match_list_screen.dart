@@ -24,6 +24,7 @@ import 'component/match_date_header.dart';
 import 'component/match_league_header.dart';
 import '../../util/nav_tab_navigation.dart';
 import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 
 /// 경기 리스트 페이지. 하단 네비 '경기리스트' 탭에 해당한다.
 class MatchListScreen extends StatefulWidget {
@@ -82,12 +83,24 @@ class _MatchListScreenState extends State<MatchListScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsRouteObserver.instance.setProvider(
+      AnalyticsPage.matchList,
+      () => {
+        AnalyticsProp.sortOrder: AnalyticsFormat.sortOrder(
+          _viewModel.sortOrders.indexOf(_viewModel.sortOrder),
+        ),
+        AnalyticsProp.spoilerPrevention: _viewModel.spoilerPreventionEnabled
+            ? AnalyticsValue.on
+            : AnalyticsValue.off,
+      },
+    );
     _scrollController.addListener(_onScroll);
     _viewModel.addListener(_maybeInitialScroll);
   }
 
   @override
   void dispose() {
+    AnalyticsRouteObserver.instance.removeProvider(AnalyticsPage.matchList);
     _viewModel.removeListener(_maybeInitialScroll);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();

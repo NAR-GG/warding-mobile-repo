@@ -55,6 +55,23 @@ class AnalyticsRouteObserver extends NavigatorObserver {
   /// 맞춘다. 세션 만료처럼 직전 화면이 사라지는 경로에서 쓴다.
   void overridePrevPage(String? page) => _currentPage = page;
 
+  /// 화면별 `page_view` 추가 프로퍼티 공급자.
+  ///
+  /// `month`·`sort_order`·`login_status` 처럼 **그 화면의 현재 상태**를
+  /// 실어야 하는 값이 있다. 진입 때 한 번 넣는 [attachNext] 로는 부족하다 —
+  /// 하위 화면에서 복귀할 때도 `page_view` 가 발생하고(설계 문서 2·3·5번),
+  /// 그때는 진입 당시 값이 아니라 **지금 값**을 읽어야 한다.
+  ///
+  /// 화면이 `initState` 에서 등록하고 `dispose` 에서 [removeProvider] 한다.
+  final Map<String, Map<String, dynamic> Function()> _providers = {};
+
+  /// [page] 의 `page_view` 에 실을 프로퍼티 공급자를 등록한다.
+  void setProvider(String page, Map<String, dynamic> Function() provider) {
+    _providers[page] = provider;
+  }
+
+  void removeProvider(String page) => _providers.remove(page);
+
   /// `MaterialApp.home` 으로 띄운 첫 화면은 라우트 이름이 `/` 다. 이 앱의
   /// 첫 화면은 스플래시이므로 그 값으로 바꿔 준다.
   String? _normalize(String? name) => name == '/' ? AnalyticsPage.splash : name;
@@ -84,9 +101,19 @@ class AnalyticsRouteObserver extends NavigatorObserver {
     final extra = _pendingProps;
     _pendingProps = null;
 
+    // 공급자는 복귀 시에도 지금 상태를 읽어 준다. attachNext 로 넘어온 값이
+    // 더 구체적이므로(그 이동만의 맥락) 뒤에 둬서 덮어쓰게 한다.
+    Map<String, dynamic> fromProvider = const {};
+    try {
+      fromProvider = _providers[page]?.call() ?? const {};
+    } catch (e) {
+      debugPrint('[Analytics] $page 프로퍼티 공급 실패: $e');
+    }
+
     Analytics.track(AnalyticsEvent.pageView, {
       AnalyticsProp.locationPage: page,
       AnalyticsProp.prevPage: _currentPage ?? AnalyticsPage.none,
+      ...fromProvider,
       ...?extra,
     });
     _currentPage = page;

@@ -24,6 +24,8 @@ import '../styles/app_colors.dart';
 import '../util/home_widget_service.dart';
 import 'login/login_screen.dart';
 import 'home/home_screen.dart';
+import '../util/analytics_events.dart';
+import '../util/analytics_route_observer.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -299,7 +301,20 @@ class _SplashScreenState extends State<SplashScreen>
     // 이미 로그인된 상태면 앱 시작 시에도 FCM 토큰을 갱신·등록한다.
     if (jwt != null) unawaited(FcmService.instance.registerToken());
     final destination = jwt == null ? const LoginScreen() : const HomeScreen();
-    final route = MaterialPageRoute(builder: (_) => destination);
+    // 스플래시에서 바로 오는 진입이라 prev_page 는 splash 가 된다. 로그인
+    // 화면은 사용자가 로그인하러 온 게 아니라 앱을 켠 것이므로 세션 만료·
+    // 게스트 차단과 가려 둔다(설계 문서 11번).
+    if (jwt == null) {
+      AnalyticsRouteObserver.instance.attachNext({
+        AnalyticsProp.entryPoint: AnalyticsEntryPoint.appStart,
+      });
+    }
+    final route = MaterialPageRoute(
+      builder: (_) => destination,
+      settings: RouteSettings(
+        name: jwt == null ? AnalyticsPage.login : AnalyticsPage.home,
+      ),
+    );
     Navigator.of(context).pushReplacement(route);
     // 보류해 둔 딥링크는 위 pushReplacement 가 실제로 반영된 뒤에 소비한다.
     //

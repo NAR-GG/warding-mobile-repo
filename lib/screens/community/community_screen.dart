@@ -20,6 +20,7 @@ import 'post_write_screen.dart';
 import '../../util/nav_tab_navigation.dart';
 import '../../util/analytics.dart';
 import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 
 /// 커뮤니티 — 단일 전체 게시판.
 ///
@@ -54,6 +55,14 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsRouteObserver.instance.setProvider(
+      AnalyticsPage.community,
+      () => {
+        AnalyticsProp.loginStatus: _vm.loggedIn
+            ? AnalyticsValue.loggedIn
+            : AnalyticsValue.guest,
+      },
+    );
     WidgetsBinding.instance.addObserver(this);
     _vm.init();
     _refreshUnreadCount();
@@ -65,6 +74,9 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   @override
   void dispose() {
+    AnalyticsRouteObserver.instance.removeProvider(
+      AnalyticsPage.community,
+    );
     feedRefreshTick.removeListener(_refreshUnreadCount);
     WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();

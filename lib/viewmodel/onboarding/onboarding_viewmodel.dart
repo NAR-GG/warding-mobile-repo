@@ -36,7 +36,34 @@ class OnboardingViewModel extends ChangeNotifier {
        _authService = authService ?? AuthService.instance {
     loadLeagues();
     loadTeams();
+    _loadLoginStatus();
     _trackSectionView();
+  }
+
+  /// 회원/비회원 여부. `login_status` 로 실린다.
+  ///
+  /// 온보딩 진입 경로는 둘 다 `prev_page=login` 이라(로그인 성공, 비회원
+  /// 시작) 이 값이 회원 온보딩과 비회원 온보딩을 가르는 유일한 구분자다.
+  /// JWT 조회가 비동기라 진입 직후 몇 프레임은 null 이고, 그때는 키를
+  /// 보내지 않는다(설계 문서 14번).
+  bool? _loggedIn;
+
+  /// `login_status` 전송 값. 아직 모르면 null.
+  String? get loginStatusValue => switch (_loggedIn) {
+    true => AnalyticsValue.loggedIn,
+    false => AnalyticsValue.guest,
+    null => null,
+  };
+
+  /// 트래킹용 값이라 실패가 온보딩을 막아선 안 된다 — 못 읽으면 키를
+  /// 보내지 않고 넘어간다([Analytics] 가 예외를 삼키는 것과 같은 방침).
+  Future<void> _loadLoginStatus() async {
+    try {
+      final jwt = await _authService.jwt;
+      _loggedIn = jwt != null && jwt.isNotEmpty;
+    } catch (e) {
+      debugPrint('[Onboarding] login_status 확인 실패: $e');
+    }
   }
 
   /// `section_view` 를 이미 쏜 단계. 뒤로 돌아온 재노출은 찍지 않는다 —
