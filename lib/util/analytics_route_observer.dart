@@ -89,9 +89,24 @@ class AnalyticsRouteObserver extends NavigatorObserver {
 
   /// 하위 화면이 닫혀 이전 화면이 다시 최상단이 될 때. 홈·경기일정·경기리스트
   /// ·커뮤니티는 하위 화면을 `push` 로 열어 스택에 남으므로 이 경로로 복귀한다.
+  ///
+  /// **닫힌 라우트가 화면일 때만** 복귀로 본다. 바텀시트·다이얼로그
+  /// (`showAppBottomSheet`·`showDialog` 등)도 같은 Navigator 에 쌓이는데,
+  /// 그것들을 닫을 때까지 복귀로 치면 시트를 여닫을 때마다
+  /// `page_view(location_page=X, prev_page=X)` 자기 루프가 쌓인다 — 이 앱은
+  /// 정렬·필터·세트·평점 시트를 자주 쓰므로 수가 크게 부푼다.
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (!_isPageRoute(route)) return;
     if (previousRoute != null) _track(previousRoute);
+  }
+
+  /// 화면 라우트인지. 이름이 붙어 있으면 화면으로 보고, 없으면 시트·다이얼로그
+  /// 처럼 화면이 아닌 라우트로 취급한다([analyticsRoute]·[tabRoute] 만 이름을
+  /// 붙이므로 이 구분이 성립한다).
+  bool _isPageRoute(Route<dynamic> route) {
+    final name = route.settings.name;
+    return name != null && name.isNotEmpty;
   }
 
   void _track(Route<dynamic> route) {

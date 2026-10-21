@@ -64,7 +64,11 @@ class HomeTodayMatchesSection extends StatelessWidget {
               itemCount: matches.length,
               separatorBuilder: (_, _) => SizedBox(width: 10 * scale),
               itemBuilder:
-                  (context, i) => _MatchCard(match: matches[i], scale: scale),
+                  (context, i) => _MatchCard(
+                    match: matches[i],
+                    position: i + 1,
+                    scale: scale,
+                  ),
             ),
           ),
       ],
@@ -84,7 +88,15 @@ String _todayLabel(BuildContext context, DateTime now) =>
 /// LIVE 카드는 어두운 배경에 일반 카드와 같은 옅은 테두리(narLine)를 두르고,
 /// 왼쪽만 3px 강조선(liveSideBorder)으로 덧대 눈에 띄게 한다.
 class _MatchCard extends StatelessWidget {
-  const _MatchCard({required this.match, required this.scale});
+  const _MatchCard({
+    required this.match,
+    required this.position,
+    required this.scale,
+  });
+
+  /// 가로 목록에서 몇 번째 카드인지(1부터). match_list·match_day 와 같은
+  /// 기준으로 집계하려고 함께 보낸다.
+  final int position;
 
   final ScheduleMatch match;
   final double scale;
@@ -101,6 +113,7 @@ class _MatchCard extends StatelessWidget {
       match: match,
       context: context,
       fromPage: AnalyticsPage.home,
+      cardPosition: position,
     );
   }
 

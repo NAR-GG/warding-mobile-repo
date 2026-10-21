@@ -237,7 +237,10 @@ class _PlayerRatingScreenState extends State<PlayerRatingScreen> {
         AnalyticsProp.locationPage: AnalyticsPage.playerRating,
         AnalyticsProp.playerId: widget.playerId,
         AnalyticsProp.ratingScore: score,
-        AnalyticsProp.setNo: widget.currentSetNumber,
+        // 진입 시점 값(widget.currentSetNumber)이 아니라 **지금 선택된** 세트다.
+        // 세트를 바꾼 뒤 저장하면 저장은 바뀐 세트로 가는데 이벤트만 옛 번호가
+        // 실려 둘이 어긋난다.
+        AnalyticsProp.setNo: _vm.currentSet,
         // 빈 코멘트는 null 로 저장되므로 키를 보내지 않는다.
         if (result.comment.isNotEmpty)
           AnalyticsProp.commentLength: result.comment.length,

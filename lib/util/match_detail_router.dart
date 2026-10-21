@@ -63,6 +63,13 @@ class MatchDetailRouter {
   }) {
     if (matchId.isEmpty) return Future<void>.value();
 
+    final nav = context != null
+        ? Navigator.maybeOf(context)
+        : navigatorKey.currentState;
+    if (nav == null) return Future<void>.value();
+
+    // Navigator 를 찾은 뒤에 찍는다 — 못 찾으면 상세가 열리지 않으므로,
+    // 그때까지 포함하면 열리지도 않은 클릭이 집계된다.
     if (fromPage != null) {
       Analytics.track(AnalyticsEvent.matchCardClick, {
         AnalyticsProp.locationPage: fromPage,
@@ -70,31 +77,36 @@ class MatchDetailRouter {
         if (cardPosition case final int p) AnalyticsProp.position: p,
       });
     }
-    final nav =
-        context != null
-            ? Navigator.maybeOf(context)
-            : navigatorKey.currentState;
-    if (nav == null) return Future<void>.value();
 
     final existing = _findOpenDetail(nav);
 
     if (existing != null) {
       final state = existing.value.currentState!;
       if (state.matchId == matchId) {
+        // 상세가 이미 최상단이면 pop 할 게 없어 observer 에 콜백이 오지
+        // 않는다. 그때만 직접 찍는다 — 상세 위에 다른 화면(선수 평점 등)이
+        // 있으면 아래 popUntil 이 didPop 을 일으켜 observer 가 잡으므로,
+        // 여기서도 찍으면 page_view 가 두 번 들어간다.
+        final alreadyTop = existing.key.isCurrent;
+        if (!alreadyTop) {
+          _attachPageViewProps(matchId, tabIndex, entryPoint);
+        }
         // 같은 경기 — 그 화면까지 되돌아가서 탭·세트만 갈아끼운다.
         nav.popUntil((route) => route == existing.key);
         state.applyDeepLink(tabIndex: tabIndex, setNumber: setNumber);
-        // 라우트가 바뀌지 않아 AnalyticsRouteObserver 에 콜백이 오지 않는다.
         // 사용자는 상세를 본 것이고, 라이브 경기를 푸시로 연달아 여는 것이
-        // 주 동선이라 여기서 직접 찍는다(설계 문서 7번).
-        Analytics.track(AnalyticsEvent.pageView, {
-          AnalyticsProp.locationPage: AnalyticsPage.matchDetail,
-          AnalyticsProp.prevPage:
-              AnalyticsRouteObserver.instance.currentPage ?? AnalyticsPage.none,
-          AnalyticsProp.matchId: matchId,
-          AnalyticsProp.entryPoint: entryPoint,
-          AnalyticsProp.locationSection: _sectionOfTab(tabIndex),
-        });
+        // 주 동선이라 재사용도 진입으로 센다(설계 문서 7번).
+        if (alreadyTop) {
+          Analytics.track(AnalyticsEvent.pageView, {
+            AnalyticsProp.locationPage: AnalyticsPage.matchDetail,
+            AnalyticsProp.prevPage:
+                AnalyticsRouteObserver.instance.currentPage ??
+                AnalyticsPage.none,
+            AnalyticsProp.matchId: matchId,
+            AnalyticsProp.entryPoint: entryPoint,
+            AnalyticsProp.locationSection: _sectionOfTab(tabIndex),
+          });
+        }
         debugPrint(
           '[MatchDetailRouter] 기존 상세 재사용: $matchId '
           '(tab=$tabIndex, set=$setNumber)',

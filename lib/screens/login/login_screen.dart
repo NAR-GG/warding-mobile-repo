@@ -69,10 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
         result,
       );
       if (!mounted) return;
+      // 라우트에 이름을 붙여야 observer 가 이 이동을 잡는다. 이름이 없으면
+      // 로그인 성공 후의 page_view 가 아예 안 찍혀서, 위 주석대로 전환율을
+      // `prev_page=login` 인 page_view 로 역산할 수 없다.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder:
-              (_) => onboarded ? const HomeScreen() : const OnboardingScreen(),
+        analyticsRoute(
+          onboarded ? AnalyticsPage.home : AnalyticsPage.onboarding,
+          (_) => onboarded ? const HomeScreen() : const OnboardingScreen(),
         ),
         (route) => false,
       );
