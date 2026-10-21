@@ -175,6 +175,13 @@ jobs:
           # phased_release 는 지정하지 않는다(deliver 기본값 = 끔). iOS 는 단계적 출시
           # 없이 승인 즉시 전체 사용자에게 나간다. Android 의 android_rollout 과는
           # 별개이며, 그 입력은 submit-android 잡에서만 쓴다.
+          #
+          # 실패를 바로 받지 않는다(|| true). 같은 버전이 **이미 심사에 올라가 있을**
+          # 때도 deliver 가 실패하는데, 그건 고칠 것이 없는 상태라 잡을 빨갛게 만들
+          # 이유가 없다. Discord 버튼이 두 번 발사되면(실제로 11초 간격으로 두 번
+          # 돈 적이 있다) 뒤엣것이 이 경로를 탄다. concurrency 는
+          # cancel-in-progress: false 라 중복을 막지 않고 순서대로 돌릴 뿐이다.
+          set +e
           fastlane deliver submit_build \
             --api_key_path "$RUNNER_TEMP/asc_key.json" \
             --app_identifier com.nar.wardingapp \
@@ -189,7 +196,21 @@ jobs:
             --precheck_include_in_app_purchases false \
             --force true \
             2>&1 | tee /tmp/ios-submit.log
+          STATUS=${PIPESTATUS[0]}
+          set -e
           rm -f "$RUNNER_TEMP/asc_key.json"
+
+          if [ "$STATUS" -eq 0 ]; then
+            echo "심사 제출 완료"
+            exit 0
+          fi
+          # deliver 가 이 상태를 로그로 알려 준다 — ASC 를 따로 조회하지 않는다.
+          if grep -qiE 'is in (Waiting For Review|In Review|Pending Developer Release)' /tmp/ios-submit.log; then
+            echo "::warning::$MARKETING_VERSION 은 이미 심사에 올라가 있다. 중복 제출이라 건너뛴다."
+            exit 0
+          fi
+          echo "::error::심사 제출이 실패했다. 위 로그를 확인하라."
+          exit "$STATUS"
 
       - name: 실패 로그 업로드
         if: failure()
