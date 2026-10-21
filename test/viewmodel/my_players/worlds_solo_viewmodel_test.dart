@@ -156,6 +156,8 @@ void main() {
             _player(2, 'Bin', 'BLG'),
             _player(3, 'Caps', 'G2'),
             _player(4, 'Knight', 'BLG'),
+            _player(5, 'Chovy', 'GEN'),
+            _player(6, 'Shanks', 'AL'),
           ],
           solo: const SoloRankSnapshot(live: [], finished: []),
         ),
@@ -165,10 +167,12 @@ void main() {
     addTearDown(vm.dispose);
 
     expect(vm.leagueCodes, ['LCK', 'LPL', 'LEC']);
+    // 리그 순 → 리그 안 시드 순.
+    expect(vm.teamCodes, ['GEN', 'T1', 'AL', 'BLG', 'G2']);
     vm.setTeamCode('T1');
     vm.setLeagueCode('LPL');
     expect(vm.teamCode, isNull);
-    expect(vm.teamCodes, ['BLG']);
-    expect(names(vm.quiet), ['Bin', 'Knight']);
+    expect(vm.teamCodes, ['AL', 'BLG']);
+    expect(names(vm.quiet), ['Bin', 'Knight', 'Shanks']);
   });
 }

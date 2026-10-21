@@ -8,37 +8,30 @@ import '../../repository/home/home_sources.dart';
 import '../../repository/subscription/subscription_repository.dart';
 import '../home/solo_rank_rules.dart';
 
-/// 월즈 출전 팀 → 소속 리그(리그 칩). 리그 칩 순서도 이 맵 순서를 따른다.
-/// 서버 응답에 리그가 없고, DB 의 팀별 경기 리그는 국제전·컵 대회가 섞여 못 쓴다.
-// ponytail: 월즈 한정 고정 맵. 다른 대회로 넓히면 서버가 팀 리그를 내려주게 바꾼다.
+/// 월즈 2026 출전 팀 → 소속 리그. 리그 칩은 이 맵의 리그 순서(LCK → LPL →
+/// LEC → LCS → LCP → CBLOL), 팀 칩은 맵 순서 = 리그 안에서는 월즈 시드(리그 순위)
+/// 순이다. 서버 응답에 리그·시드가 없어 앱이 들고 있다.
+// ponytail: 월즈 한정 고정 맵. 맵에 없는 팀은 리그 칩에 안 잡히고 팀 칩 맨 뒤로 간다.
+// 다음 대회에도 쓰면 서버가 팀 리그·순위를 내려주게 바꾼다.
 const Map<String, String> worldsTeamLeague = {
-  'T1': 'LCK',
   'GEN': 'LCK',
   'HLE': 'LCK',
+  'T1': 'LCK',
   'DK': 'LCK',
-  'KT': 'LCK',
+  'AL': 'LPL',
   'BLG': 'LPL',
   'TES': 'LPL',
-  'AL': 'LPL',
   'IG': 'LPL',
-  'JDG': 'LPL',
-  'WBG': 'LPL',
   'G2': 'LEC',
   'MKOI': 'LEC',
-  'FNC': 'LEC',
   'KC': 'LEC',
-  'FLY': 'LCS',
-  '100T': 'LCS',
-  'TL': 'LCS',
   'TLAW': 'LCS',
   'LYON': 'LCS',
   'C9': 'LCS',
-  'CFO': 'LCP',
-  'PSG': 'LCP',
   'TSW': 'LCP',
-  'GAM': 'LCP',
-  'VKS': 'CBLOL',
-  'LOUD': 'CBLOL',
+  'CFO': 'LCP',
+  'MVK': 'LCP',
+  'LOS': 'CBLOL',
 };
 
 /// 내 선수 화면의 상태 묶음 (spec: 솔랭 중 / 오늘 경기함 / 소식 없음).
@@ -230,6 +223,17 @@ class MyPlayersViewModel extends ChangeNotifier {
     _allLive = live;
     _allPlayed = played;
     _allQuiet = quiet;
+    // 월즈: 리그 순 → 리그 안 시드 순. 맵에 없는 팀은 뒤에 처음 나온 순서대로.
+    // 내 선수 화면은 처음 나온 순서 그대로.
+    if (isWorlds) {
+      final seed = worldsTeamLeague.keys.toList();
+      int rank(String t) {
+        final i = seed.indexOf(t);
+        return i < 0 ? seed.length : i;
+      }
+
+      teams.sort((a, b) => rank(a).compareTo(rank(b)));
+    }
     _teamCodes = teams;
     _teamLogos = logos;
   }
@@ -297,7 +301,7 @@ class MyPlayersViewModel extends ChangeNotifier {
     }
   }
 
-  /// 구독 선수 소속팀 코드 — 처음 나온 순서대로 한 번씩(팀 필터 칩).
+  /// 소속팀 코드 한 번씩(팀 필터 칩). 월즈는 [worldsTeamLeague] 순서, 아니면 처음 나온 순서.
   /// 리그를 골랐으면 그 리그 팀만.
   List<String> get teamCodes {
     final league = _leagueCode;
