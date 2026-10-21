@@ -351,7 +351,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get worldsSoloTitle => 'Worlds SoloQ';
 
   @override
-  String get worldsSoloTabAll => 'All LCK';
+  String get worldsSoloTabAll => 'All players';
 
   @override
   String get worldsSoloTabSubscribed => 'Subscribed';

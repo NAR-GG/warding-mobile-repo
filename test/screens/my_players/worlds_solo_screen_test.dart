@@ -105,7 +105,7 @@ void main() {
     await pumpScreen(tester, vm);
 
     expect(find.text('월즈 솔랭'), findsOneWidget);
-    expect(find.text('LCK 전체 2'), findsOneWidget);
+    expect(find.text('전체 선수 2'), findsOneWidget);
     expect(find.text('구독 선수 1'), findsOneWidget);
     expect(find.text('NA'), findsOneWidget);
     expect(find.byKey(MyPlayersScreen.tileKey(2)), findsOneWidget);
@@ -158,5 +158,59 @@ void main() {
 
     verify(() => repo.subscribePlayer(2)).called(1);
     expect(find.byType(WorldsPlayerSheet), findsNothing);
+  });
+
+  testWidgets('startedAt 이 있으면 목록이 기기 시계로 경과를 다시 센다', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({'jwt': 'test-jwt'});
+    AuthService.instance.resetJwtCacheForTesting();
+    repo = MockSubscriptionRepository();
+    late MyPlayersViewModel vm;
+    await tester.runAsync(() async {
+      vm = MyPlayersViewModel(
+        subscriptions: repo,
+        worlds: _FakeWorlds(
+          WorldsSoloSnapshot(
+            players: [_player(1, 'Chovy', subscribed: true)],
+            solo: SoloRankSnapshot(
+              live: [
+                HomeLiveSoloPlayer(
+                  name: 'Chovy',
+                  teamCode: 'GEN',
+                  champion: '아리',
+                  // 서버 스냅샷(10분)은 조회 시점 값이라 이미 낡았다.
+                  // 시작 시각이 20분 전이므로 화면은 20분대를 보여야 한다.
+                  elapsedSeconds: 600,
+                  startedAt: DateTime.now().subtract(
+                    const Duration(minutes: 20),
+                  ),
+                ),
+              ],
+              finished: const [],
+            ),
+            today: const {},
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ko'),
+        home: MyPlayersScreen(viewModel: vm, worlds: true),
+      ),
+    );
+    await tester.pump();
+
+    // 스냅샷(10:00)이 아니라 시작 시각 기준(20:00대)으로 센다.
+    expect(find.textContaining('20:0'), findsOneWidget);
+    expect(find.textContaining('10:0'), findsNothing);
+
+    // 틱이 돌아도 화면이 깨지지 않는다(실제 시간은 테스트에서 흐르지 않으므로
+    // 값 증가 자체는 live_elapsed_test 가 검증한다).
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining('20:0'), findsOneWidget);
   });
 }

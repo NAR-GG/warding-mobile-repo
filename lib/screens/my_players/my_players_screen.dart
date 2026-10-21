@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -46,7 +48,8 @@ class MyPlayersScreen extends StatefulWidget {
   State<MyPlayersScreen> createState() => _MyPlayersScreenState();
 }
 
-class _MyPlayersScreenState extends State<MyPlayersScreen> {
+class _MyPlayersScreenState extends State<MyPlayersScreen>
+    with WidgetsBindingObserver {
   late final MyPlayersViewModel _viewModel =
       widget.viewModel ??
       MyPlayersViewModel(
@@ -57,8 +60,46 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
   /// 팀 칩의 "전체" 값. 팀 코드와 겹치지 않는 내부 키.
   static const String _allTeams = '__all__';
 
+  /// 초당 올라가는 틱. 진행 중인 판의 경과 시간만 이걸 구독해 다시 그린다 —
+  /// 목록 전체를 매초 재구성하지 않는다(홈 솔랭 카드와 같은 방식).
+  final ValueNotifier<int> _tick = ValueNotifier<int>(0);
+  Timer? _clockTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _viewModel.addListener(_syncClock);
+    _syncClock();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 화면이 안 보이는 동안 초당 리빌드를 돌릴 이유가 없다.
+    _syncClock(foreground: state == AppLifecycleState.resumed);
+  }
+
+  /// 카운트업할 판이 있을 때만 타이머를 돌린다. 목록이 갱신돼 진행 중인
+  /// 선수가 생기거나 사라지면 따라 켜고 끈다.
+  void _syncClock({bool foreground = true}) {
+    final needsClock = foreground && _viewModel.liveSolo.isNotEmpty;
+    if (needsClock == (_clockTimer != null)) return;
+    if (!needsClock) {
+      _clockTimer?.cancel();
+      _clockTimer = null;
+      return;
+    }
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) _tick.value++;
+    });
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _clockTimer?.cancel();
+    _viewModel.removeListener(_syncClock);
+    _tick.dispose();
     _search.dispose();
     if (widget.viewModel == null) _viewModel.dispose();
     super.dispose();
@@ -229,6 +270,7 @@ class _MyPlayersScreenState extends State<MyPlayersScreen> {
             scale: scale,
             isFirst: i == 0,
             isLast: i == entries.length - 1,
+            tick: _tick,
             onTap: vm.isWorlds
                 ? () => showWorldsPlayerSheet(
                     context,

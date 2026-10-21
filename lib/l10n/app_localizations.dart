@@ -707,7 +707,7 @@ abstract class AppLocalizations {
   /// No description provided for @worldsSoloTabAll.
   ///
   /// In ko, this message translates to:
-  /// **'LCK 전체'**
+  /// **'전체 선수'**
   String get worldsSoloTabAll;
 
   /// No description provided for @worldsSoloTabSubscribed.

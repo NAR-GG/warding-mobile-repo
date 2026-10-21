@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/app_bottom_sheet.dart';
@@ -12,6 +13,7 @@ import '../../../repository/auth/auth_service.dart';
 import '../../../repository/home/home_sources.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
+import '../../../util/live_elapsed.dart';
 import '../../../util/rating_mapping.dart';
 import '../../../viewmodel/my_players/my_players_viewmodel.dart';
 import '../../login/login_screen.dart';
@@ -59,6 +61,27 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
   // 구독 전 미리 고른 토글. 월즈는 시작·종료 둘 다 ON 으로 시작한다(서버 기본값은 종료 OFF).
   bool _start = true;
   bool _end = true;
+
+  /// 진행 중인 판의 경과 시간을 매초 올리는 틱. 바뀌는 건 배너의 시간
+  /// 텍스트 하나라 시트 전체를 다시 그리지 않는다.
+  final ValueNotifier<int> _tick = ValueNotifier<int>(0);
+  Timer? _clockTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 시트는 진행 중인 판을 보여줄 때만 열려 있는 동안 돌면 된다.
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) _tick.value++;
+    });
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    _tick.dispose();
+    super.dispose();
+  }
 
   MyPlayerEntry? _entry() {
     final vm = widget.viewModel;
@@ -159,7 +182,7 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
               ),
               if (live != null) ...[
                 SizedBox(height: 16 * scale),
-                _LiveBanner(live: live, scale: scale),
+                _LiveBanner(live: live, scale: scale, tick: _tick),
               ],
               if (record != null) ...[
                 SizedBox(height: 12 * scale),
@@ -253,7 +276,13 @@ Future<bool> _loggedIn() async {
 
 /// 진행 중인 판 — 챔피언 스플래시 위에 "솔로 랭크 진행 중", 경과 시간·챔피언·지역.
 class _LiveBanner extends StatelessWidget {
-  const _LiveBanner({required this.live, required this.scale});
+  const _LiveBanner({
+    required this.live,
+    required this.scale,
+    required this.tick,
+  });
+
+  final ValueListenable<int> tick;
 
   final HomeLiveSoloPlayer live;
   final double scale;
@@ -334,8 +363,9 @@ class _LiveBanner extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      _clock(live.elapsedSeconds),
+                    _ElapsedClock(
+                      live: live,
+                      tick: tick,
                       style: TextStyle(
                         fontFamily: 'Open Sans',
                         fontWeight: FontWeight.w700,
@@ -375,10 +405,32 @@ class _LiveBanner extends StatelessWidget {
   }
 }
 
-String _clock(int seconds) {
-  final m = (seconds ~/ 60).toString();
-  final s = (seconds % 60).toString().padLeft(2, '0');
-  return '$m:$s';
+/// 진행 중인 판의 경과 시간. 서버의 `elapsedSeconds` 는 조회 시점
+/// 스냅샷이라 `startedAt` 으로 매초 다시 계산한다.
+class _ElapsedClock extends StatelessWidget {
+  const _ElapsedClock({
+    required this.live,
+    required this.tick,
+    required this.style,
+  });
+
+  final HomeLiveSoloPlayer live;
+  final ValueListenable<int> tick;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<int>(
+    valueListenable: tick,
+    builder: (_, _, _) => Text(
+      formatElapsed(
+        liveElapsedSeconds(
+          snapshotSeconds: live.elapsedSeconds,
+          startedAt: live.startedAt,
+        ),
+      ),
+      style: style,
+    ),
+  );
 }
 
 /// "오늘 솔랭 N판 · 오늘 전적 N승 N패" 두 칸.
