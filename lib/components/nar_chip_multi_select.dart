@@ -26,11 +26,13 @@ class NarChipMultiSelect extends StatelessWidget {
     required this.selectedValues,
     required this.onChanged,
     this.labelBuilder,
+    this.leadingBuilder,
     this.pinned = const {},
     this.trailing = const [],
     this.reorderSelected = true,
     this.disabledOptions = const {},
     this.horizontalPadding = 16,
+    this.verticalPadding = 10,
     this.gap = 8,
     this.scale = 1,
   }) : _onPick = null;
@@ -44,8 +46,10 @@ class NarChipMultiSelect extends StatelessWidget {
     required String selected,
     required ValueChanged<String> onSelected,
     this.labelBuilder,
+    this.leadingBuilder,
     this.disabledOptions = const {},
     this.horizontalPadding = 16,
+    this.verticalPadding = 10,
     this.gap = 8,
     this.scale = 1,
   }) : selectedValues = {selected},
@@ -64,6 +68,9 @@ class NarChipMultiSelect extends StatelessWidget {
   /// 내부 키 값을 표시 라벨로 변환하는 함수. null 이면 값 자체를 라벨로 쓴다.
   final String Function(String value)? labelBuilder;
 
+  /// 옵션 라벨 앞 아이콘(리그·팀 로고). null 을 돌려주면 아이콘 없이 그린다.
+  final Widget? Function(String value)? leadingBuilder;
+
   /// 정렬에서 제외하고 항상 맨 앞에 원래 순서로 고정할 옵션들.
   final Set<String> pinned;
 
@@ -78,6 +85,9 @@ class NarChipMultiSelect extends StatelessWidget {
 
   /// 스크롤 영역 좌우 패딩(기본 16). 섹션 헤더와 칩 줄을 맞출 때 조절한다.
   final double horizontalPadding;
+
+  /// 스크롤 영역 위아래 패딩(기본 10). 칩 줄을 겹쳐 쌓을 때 줄인다.
+  final double verticalPadding;
 
   /// 칩 사이 간격(기본 8).
   final double gap;
@@ -111,6 +121,7 @@ class NarChipMultiSelect extends StatelessWidget {
       selected: selectedValues.contains(value),
       onTap: () => _toggle(value),
       scale: scale,
+      leading: leadingBuilder?.call(value),
     );
   }
 
@@ -140,7 +151,7 @@ class NarChipMultiSelect extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(
           horizontal: horizontalPadding * scale,
-          vertical: 10 * scale,
+          vertical: verticalPadding * scale,
         ),
         child: Row(
           children: [

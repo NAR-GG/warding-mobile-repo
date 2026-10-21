@@ -346,7 +346,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get worldsSoloTitle => '월즈 솔랭';
 
   @override
-  String get worldsSoloTabAll => '전체 선수';
+  String get worldsSoloTabAll => '전체';
 
   @override
   String get worldsSoloTabSubscribed => '구독 선수';
@@ -364,9 +364,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get worldsSoloAll => '전체';
 
   @override
-  String worldsSoloEntrySub(int count) {
-    return '선수 $count명 솔랭 중';
+  String worldsSoloEntrySub(int teams, int count) {
+    return '$teams팀 선수 $count명 솔랭 중';
   }
+
+  @override
+  String get worldsSoloTeamAll => '전체 팀';
 
   @override
   String worldsSoloLast(String name, String ago) {

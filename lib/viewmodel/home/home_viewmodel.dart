@@ -440,6 +440,12 @@ class HomeViewModel extends ChangeNotifier {
   /// 월즈 솔랭을 보여줄지 — 서버 명단이 비면(대회 전·후) 통째로 숨긴다.
   bool get worldsVisible => _worldsSnapshot?.players.isNotEmpty ?? false;
 
+  /// 월즈 명단의 팀 수(진입 줄 "N팀 선수 …"). 팀 없는 선수는 세지 않는다.
+  int get worldsTeamCount => {
+    for (final p in _worldsSnapshot?.players ?? const <PlayerSubscription>[])
+      if (p.teamCode.isNotEmpty) p.teamCode,
+  }.length;
+
   SoloRankClassification get _worldsSolo =>
       SoloRankClassification.of(_worldsSnapshot?.solo);
 

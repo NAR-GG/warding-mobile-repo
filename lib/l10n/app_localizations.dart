@@ -707,7 +707,7 @@ abstract class AppLocalizations {
   /// No description provided for @worldsSoloTabAll.
   ///
   /// In ko, this message translates to:
-  /// **'전체 선수'**
+  /// **'전체'**
   String get worldsSoloTabAll;
 
   /// No description provided for @worldsSoloTabSubscribed.
@@ -743,8 +743,14 @@ abstract class AppLocalizations {
   /// No description provided for @worldsSoloEntrySub.
   ///
   /// In ko, this message translates to:
-  /// **'선수 {count}명 솔랭 중'**
-  String worldsSoloEntrySub(int count);
+  /// **'{teams}팀 선수 {count}명 솔랭 중'**
+  String worldsSoloEntrySub(int teams, int count);
+
+  /// No description provided for @worldsSoloTeamAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 팀'**
+  String get worldsSoloTeamAll;
 
   /// No description provided for @worldsSoloLast.
   ///

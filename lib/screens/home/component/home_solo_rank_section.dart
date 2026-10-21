@@ -240,6 +240,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
           child: all.isNotEmpty
               ? HomeWorldsEntryRow(
                   live: all,
+                  teamCount: vm.worldsTeamCount,
                   scale: scale,
                   onTap: widget.onOpenWorlds,
                 )
