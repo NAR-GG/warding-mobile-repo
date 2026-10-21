@@ -1,6 +1,6 @@
-■ The ad screens look better!
-  - The cheer ad popup now fills the image edge to edge, with a cleaner button area at the bottom.
-  - Removed the black line on the ad card at the bottom of the splash screen and replaced the sample images.
+■ SoloQ timers now tick in real time!
+  - On Worlds SoloQ and My Players, the clock on an ongoing game counts up every second.
+  - The same clock keeps running when you open a player's details.
 
-■ Buttons now match the rest of the app!
-  - The bottom buttons on the cheer ad and ad guide screens now use the same size and shape as buttons elsewhere.
+■ The Worlds SoloQ roster is easier to read!
+  - Renamed the "All LCK" tab to "All players".
