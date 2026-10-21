@@ -99,10 +99,11 @@ git push --follow-tags
 
 ```
 [1] verify          태그 ↔ pubspec 버전 일치 · annotated 태그 확인 · analyze · test
-[2] e2e             integration_test (실패하면 빌드하지 않는다)
-[3] build-ios ∥ build-android     shorebird release → TestFlight · Play 내부테스트
-[4] release-notes   커밋 로그로 패치노트 초안 생성 (Anthropic API)
-[5] notify          #와딩-릴리즈-배포 채널에 결과 + 버튼
+[2] e2e ∥ build-ios ∥ build-android     e2e 와 빌드가 동시에 돈다 (약 22분)
+                    빌드는 shorebird release 까지 하고, **업로드 직전에 e2e 결과를 본다**
+                    e2e 가 실패하면 업로드하지 않고 멈춘다
+[3] release-notes   커밋 로그로 패치노트 초안 생성 (Anthropic API)
+[4] notify          #와딩-릴리즈-배포 채널에 결과 + 버튼
          ↓
     사람이 TestFlight에서 확인
          ↓
@@ -116,8 +117,13 @@ git push --follow-tags
 > 않고, 심사 승인 즉시 전체 사용자에게 나간다(`automatic_release true`).
 
 **심사 제출은 버튼을 누르기 전까지 나가지 않는다.** 태그만 밀면 TestFlight·내부테스트에서
-멈추므로, 실수로 스토어에 공개될 일이 없다. Discord를 못 쓰는 상황이면 Actions 탭의
+멈추므로, 실수로 스토어에 공개될 일이 없다.
+
+Discord를 못 쓰는 상황이면 Actions 탭의
 **"심사 제출 (수동)"** 워크플로우를 직접 실행해도 된다.
+
+> e2e 가 실패해 멈췄다면 **빌드 번호를 올려서 다시 밀어야 한다.** 업로드는 막혔지만
+> `shorebird release` 는 이미 돌아서 그 버전이 Shorebird 에 등록돼 있다.
 
 **패치노트는 `distribution/`에서 관리한다.** 릴리즈 전에 고쳐 두거나, 알림에 온 AI 초안을
 **[✏️ 패치노트 수정]** 버튼으로 그 자리에서 손봐 제출할 수 있다. 규칙과 양식은

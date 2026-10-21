@@ -1,7 +1,7 @@
 name: 릴리즈 빌드·스토어 제출
 
-# release/<pubspec 의 version> 태그를 push 하면 e2e → 빌드 → TestFlight·Play
-# 내부테스트 업로드까지 돈다. 설계·결정 배경은
+# release/<pubspec 의 version> 태그를 push 하면 빌드 → TestFlight·Play 내부테스트
+# 업로드까지 돈다. e2e 는 빌드와 병렬로 돌고, 업로드 직전에 결과를 확인한다. 설계·결정 배경은
 # intent/release-build-automation/spec.md 참고.
 #
 # 심사 제출은 이 파이프라인에 넣지 않고 submit-for-review.yml 로 분리했다. 제출에는
@@ -90,9 +90,22 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
-  # ── [2] e2e 게이트 — 통과해야 빌드로 넘어간다 ──────────────────────────────
+  # ── [2] e2e — 빌드와 **동시에** 돌고, 스토어 업로드 앞에서 결과를 본다 ─────
   # 기존 e2e-release-check.yml 을 그대로 호출한다(workflow_call). "릴리즈 직전 e2e
   # 수동 실행" 규칙을 사람의 기억이 아니라 파이프라인이 강제한다.
+  #
+  # 예전에는 빌드가 `needs: e2e` 로 이 잡을 기다렸다. e2e 는 macOS 러너에서
+  # 시뮬레이터를 띄워 19분쯤 걸리는데, 그 19분 동안 빌드는 아무것도 하지 않고
+  # 전체가 36분이 됐다(3 + 19 + 14).
+  #
+  # 지금은 빌드가 verify 만 기다리고 e2e 와 나란히 돈다. 테스트 안 된 빌드가
+  # 스토어로 가는 것은 **업로드 스텝 앞의 게이트**가 막는다 — 빌드가 먼저
+  # 끝나면 거기서 e2e 를 기다리고, 실패했으면 업로드하지 않고 죽는다.
+  #
+  # 대신 받아들인 것: e2e 가 실패해도 `shorebird release` 는 이미 돌아서
+  # Shorebird 서버에 그 버전의 릴리즈가 등록돼 있다. 스토어로는 안 가지만
+  # 같은 버전으로 다시 돌리면 충돌하므로, **e2e 실패 뒤 재시도는 빌드 번호를
+  # 올려서** 한다. 과금은 패치 설치 수 기준이라 등록 자체는 비용이 없다.
   e2e:
     needs: verify
     uses: ./.github/workflows/e2e-release-check.yml
@@ -103,7 +116,7 @@ jobs:
 
   # ── [3-a] iOS: shorebird release → TestFlight ─────────────────────────────
   build-ios:
-    needs: e2e
+    needs: verify
     # 러너 이미지를 고정한다. 바뀌면서 .p12 import 가 깨져 "No valid code signing
     # certificates were found" 가 나는 사례가 보고됐는데(actions/runner-images#13884),
     # 하필 Flutter + shorebird release ios 환경이었다.
@@ -299,6 +312,48 @@ jobs:
           dart run sentry_dart_plugin || echo "::warning::Sentry 심볼 업로드 실패"
           rm -f sentry.properties
 
+      # 스토어로 보내기 전에 e2e 결과를 본다.
+      #
+      # 빌드는 e2e 와 병렬로 돌므로 이 시점에 e2e 가 아직 진행 중일 수 있다.
+      # GitHub Actions 는 잡 중간에 다른 잡을 기다릴 수 없어서, 이 런의 잡
+      # 목록을 직접 폴링한다(`actions: read` 권한을 이미 받아 뒀다).
+      #
+      # e2e 가 실패·취소면 업로드하지 않고 이 잡을 실패시킨다. 테스트 안 된
+      # 빌드가 TestFlight·Play 로 가는 일은 없다 — 버린 것은 러너 시간뿐이다.
+      - name: e2e 통과 확인
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # 최대 40분. e2e 가 19분쯤 걸리므로 넉넉히 두고, 넘으면 멈춘 것으로 본다.
+          DEADLINE=$(( $(date +%s) + 2400 ))
+          while :; do
+            # 재사용 워크플로우의 잡 이름은 "<호출한 잡 id> / <원래 잡 id>" 다.
+            # 잡이 없으면 `[] | first` 가 null 이라 보간 결과가 "null:" 이 된다.
+            # 그대로 두면 아래 '진행 중' 분기로 빠져 40분을 기다리다 죽는데,
+            # 로그에는 원인이 안 남는다. // 로 빈 문자열로 떨어뜨린다.
+            STATE=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" \
+              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first
+                    | if . == null then "" else "\(.status):\(.conclusion // "")" end' \
+              2>/dev/null || echo "")
+            case "$STATE" in
+              completed:success) echo "e2e 통과 — 업로드를 계속한다"; break ;;
+              completed:*)
+                echo "::error::e2e 가 통과하지 않았다($STATE). 업로드하지 않는다."
+                exit 1 ;;
+              "")
+                # 잡 이름이 바뀌었거나 API 조회가 실패한 것이다. 둘 다 재시도로
+                # 풀릴 수 있지만, 이름이 바뀐 경우는 영원히 못 찾으니 로그를 남긴다.
+                echo "::warning::e2e 잡('e2e / e2e')을 못 찾았다. 잡 이름이 바뀌었는지 확인하라" ;;
+              *) echo "e2e 진행 중($STATE)" ;;
+            esac
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "::error::e2e 결과를 기다리다 시간이 초과됐다. 업로드하지 않는다."
+              exit 1
+            fi
+            sleep 15
+          done
+
       - name: TestFlight 업로드
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -331,7 +386,7 @@ jobs:
 
   # ── [3-b] Android: shorebird release → Play 내부테스트 ────────────────────
   build-android:
-    needs: e2e
+    needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -459,6 +514,48 @@ jobs:
             fi
           done
           [ "$FAIL" -eq 0 ]
+
+      # 스토어로 보내기 전에 e2e 결과를 본다.
+      #
+      # 빌드는 e2e 와 병렬로 돌므로 이 시점에 e2e 가 아직 진행 중일 수 있다.
+      # GitHub Actions 는 잡 중간에 다른 잡을 기다릴 수 없어서, 이 런의 잡
+      # 목록을 직접 폴링한다(`actions: read` 권한을 이미 받아 뒀다).
+      #
+      # e2e 가 실패·취소면 업로드하지 않고 이 잡을 실패시킨다. 테스트 안 된
+      # 빌드가 TestFlight·Play 로 가는 일은 없다 — 버린 것은 러너 시간뿐이다.
+      - name: e2e 통과 확인
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # 최대 40분. e2e 가 19분쯤 걸리므로 넉넉히 두고, 넘으면 멈춘 것으로 본다.
+          DEADLINE=$(( $(date +%s) + 2400 ))
+          while :; do
+            # 재사용 워크플로우의 잡 이름은 "<호출한 잡 id> / <원래 잡 id>" 다.
+            # 잡이 없으면 `[] | first` 가 null 이라 보간 결과가 "null:" 이 된다.
+            # 그대로 두면 아래 '진행 중' 분기로 빠져 40분을 기다리다 죽는데,
+            # 로그에는 원인이 안 남는다. // 로 빈 문자열로 떨어뜨린다.
+            STATE=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs?per_page=100" \
+              --jq '[.jobs[] | select(.name == "e2e / e2e")] | first
+                    | if . == null then "" else "\(.status):\(.conclusion // "")" end' \
+              2>/dev/null || echo "")
+            case "$STATE" in
+              completed:success) echo "e2e 통과 — 업로드를 계속한다"; break ;;
+              completed:*)
+                echo "::error::e2e 가 통과하지 않았다($STATE). 업로드하지 않는다."
+                exit 1 ;;
+              "")
+                # 잡 이름이 바뀌었거나 API 조회가 실패한 것이다. 둘 다 재시도로
+                # 풀릴 수 있지만, 이름이 바뀐 경우는 영원히 못 찾으니 로그를 남긴다.
+                echo "::warning::e2e 잡('e2e / e2e')을 못 찾았다. 잡 이름이 바뀌었는지 확인하라" ;;
+              *) echo "e2e 진행 중($STATE)" ;;
+            esac
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "::error::e2e 결과를 기다리다 시간이 초과됐다. 업로드하지 않는다."
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Play 내부테스트 업로드
         # @v1 태그는 2019년에 멈춰 있어 버전을 고정한다.
