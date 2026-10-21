@@ -25,18 +25,19 @@ class NotificationStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Center(
-      child: viewModel.notificationDone
-          ? _buildDoneMessage(context)
-          : Padding(
-              padding: EdgeInsets.symmetric(horizontal: 45 * scale),
-              child: NotificationPermissionBox(
-                scale: scale,
-                mainTitle: l.notificationQuestion,
-                subTitle: l.notificationConsentMessage,
-                onDeny: viewModel.markNotificationDone,
-                onAllow: viewModel.requestNotificationPermission,
+      child:
+          viewModel.notificationDone
+              ? _buildDoneMessage(context)
+              : Padding(
+                padding: EdgeInsets.symmetric(horizontal: 45 * scale),
+                child: NotificationPermissionBox(
+                  scale: scale,
+                  mainTitle: l.notificationQuestion,
+                  subTitle: l.notificationConsentMessage,
+                  onDeny: viewModel.denyNotification,
+                  onAllow: viewModel.requestNotificationPermission,
+                ),
               ),
-            ),
     );
   }
 

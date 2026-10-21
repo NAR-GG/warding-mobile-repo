@@ -13,16 +13,12 @@ import '../../config/api_config.dart';
 import '../../config/app_language.dart';
 import '../../styles/app_colors.dart';
 import '../../util/app_image.dart';
-import '../../util/tab_route.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
 import 'component/language_setting_sheet.dart';
 import 'component/mypage_card_section.dart';
 import 'component/quiet_hours_section.dart';
 import '../account_setting/account_setting_screen.dart';
 import '../calendar_setting/calendar_setting_screen.dart';
-import '../community/community_screen.dart';
-import '../home/home_screen.dart';
-import '../match_list/match_list_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
 import '../my_community_activity/my_community_activity_screen.dart';
 import '../my_review/my_review_screen.dart';
@@ -30,8 +26,8 @@ import '../my_subscription_setting/my_subscription_setting_screen.dart';
 import '../notice/ad_guide_screen.dart';
 import '../notice/notice_screen.dart';
 import '../profile_edit/profile_edit_screen.dart';
-import '../schedule/schedule_screen.dart';
-import '../subscription/subscription_screen.dart';
+import '../../util/nav_tab_navigation.dart';
+import '../../util/analytics_events.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.
 class MypageScreen extends StatefulWidget {
@@ -58,7 +54,10 @@ class _MypageScreenState extends State<MypageScreen> {
   /// 수정 화면이 `true` 로 pop 하면 회원 정보(닉네임·응원팀)를 새로고침한다.
   Future<void> _goToProfileEdit() async {
     final updated = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(builder: (_) => const ProfileEditScreen()),
+      MaterialPageRoute<bool>(
+        settings: const RouteSettings(name: AnalyticsPage.profileEdit),
+        builder: (_) => const ProfileEditScreen(),
+      ),
     );
     if (updated == true) {
       await _viewModel.load();
@@ -79,21 +78,8 @@ class _MypageScreenState extends State<MypageScreen> {
 
   /// 하단 네비 탭 선택. 다른 탭이면 해당 화면으로 전환한다.
   /// '마이페이지'는 현재 화면이라 별도 처리하지 않는다.
-  void _onTabSelected(BuildContext context, AppNavTab tab) {
-    if (tab == AppNavTab.home) {
-      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
-    } else if (tab == AppNavTab.schedule) {
-      Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
-    } else if (tab == AppNavTab.list) {
-      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
-    } else if (tab == AppNavTab.community) {
-      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
-    } else if (tab == AppNavTab.subscription) {
-      Navigator.of(
-        context,
-      ).pushReplacement(tabRoute(const SubscriptionScreen()));
-    }
-  }
+  void _onTabSelected(BuildContext context, AppNavTab tab) =>
+      handleNavTabSelected(context, AppNavTab.mypage, tab);
 
   @override
   Widget build(BuildContext context) {
@@ -132,113 +118,143 @@ class _MypageScreenState extends State<MypageScreen> {
                       SizedBox(height: 4 * scale),
                       ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => _MypageProfile(
-                          scale: scale,
-                          onEditTap: _goToProfileEdit,
-                          nickname: _viewModel.nickname,
-                          email: _viewModel.email,
-                          favoriteTeam: _viewModel.favoriteTeam,
-                          profileImageUrl: _viewModel.profileImageUrl,
-                        ),
+                        builder:
+                            (context, _) => _MypageProfile(
+                              scale: scale,
+                              onEditTap: _goToProfileEdit,
+                              nickname: _viewModel.nickname,
+                              email: _viewModel.email,
+                              favoriteTeam: _viewModel.favoriteTeam,
+                              profileImageUrl: _viewModel.profileImageUrl,
+                            ),
                       ),
                       // 응원팀 자동 설정 안내 배너 — 사용자가 한 번 누를 때까지
                       // 마이페이지에 들어올 때마다 계속 노출한다.
                       // 누르면 '봤음'이 저장돼 그 뒤로는 뜨지 않는다.
                       ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => _viewModel.showTeamBanner
-                            ? NarBanner(
-                                scale: scale,
-                                onTap: _onTeamBannerTap,
-                                icon: SvgPicture.asset(
-                                  'assets/icons/heart.svg',
-                                  width: 24 * scale,
-                                  height: 24 * scale,
-                                ),
-                                text: AppLocalizations.of(
-                                  context,
-                                )!.teamAutoSetBanner,
-                              )
-                            : const SizedBox.shrink(),
+                        builder:
+                            (context, _) =>
+                                _viewModel.showTeamBanner
+                                    ? NarBanner(
+                                      scale: scale,
+                                      onTap: _onTeamBannerTap,
+                                      icon: SvgPicture.asset(
+                                        'assets/icons/heart.svg',
+                                        width: 24 * scale,
+                                        height: 24 * scale,
+                                      ),
+                                      text:
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.teamAutoSetBanner,
+                                    )
+                                    : const SizedBox.shrink(),
                       ),
                       SizedBox(height: 11 * scale),
                       // 내 활동 — 리뷰/평점 등 사용자 활동 진입점.
                       // 행을 늘리려면 items 에 MypageCardItem 만 추가하면 된다.
                       ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => MypageCardSection(
-                          scale: scale,
-                          label: AppLocalizations.of(context)!.myActivity,
-                          items: [
-                            MypageCardItem(
-                              title: AppLocalizations.of(
-                                context,
-                              )!.myReviewRating,
-                              count: _viewModel.reviewCount,
-                              onTap: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const MyReviewScreen(),
-                                  ),
-                                );
-                                // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
-                                await _viewModel.load();
-                              },
-                            ),
-                            // 커뮤니티 내 활동 3종 — 같은 화면을 열고 초기
-                            // 탭만 다르게 준다(화면을 셋으로 나누지 않는다).
-                            // 커서 페이지네이션이라 총 건수가 없어 count 는
-                            // 넘기지 않는다.
-                            MypageCardItem(
-                              title: AppLocalizations.of(
-                                context,
-                              )!.myCommunityPosts,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const MyCommunityActivityScreen(
-                                          initialTab:
-                                              MyCommunityActivityTab.posts,
+                        builder:
+                            (context, _) => MypageCardSection(
+                              scale: scale,
+                              label: AppLocalizations.of(context)!.myActivity,
+                              items: [
+                                MypageCardItem(
+                                  title:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.myReviewRating,
+                                  count: _viewModel.reviewCount,
+                                  onTap: () async {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        settings: const RouteSettings(
+                                          name: AnalyticsPage.myReview,
                                         ),
-                                  ),
-                                );
-                              },
-                            ),
-                            MypageCardItem(
-                              title: AppLocalizations.of(
-                                context,
-                              )!.myCommunityComments,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const MyCommunityActivityScreen(
-                                          initialTab:
-                                              MyCommunityActivityTab.comments,
+                                        builder: (_) => const MyReviewScreen(),
+                                      ),
+                                    );
+                                    // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
+                                    await _viewModel.load();
+                                  },
+                                ),
+                                // 커뮤니티 내 활동 3종 — 같은 화면을 열고 초기
+                                // 탭만 다르게 준다(화면을 셋으로 나누지 않는다).
+                                // 커서 페이지네이션이라 총 건수가 없어 count 는
+                                // 넘기지 않는다.
+                                MypageCardItem(
+                                  title:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.myCommunityPosts,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        settings: const RouteSettings(
+                                          name:
+                                              AnalyticsPage.myCommunityActivity,
                                         ),
-                                  ),
-                                );
-                              },
-                            ),
-                            MypageCardItem(
-                              title: AppLocalizations.of(
-                                context,
-                              )!.communityScrap,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const MyCommunityActivityScreen(
-                                          initialTab:
-                                              MyCommunityActivityTab.scraps,
+                                        builder:
+                                            (_) =>
+                                                const MyCommunityActivityScreen(
+                                                  initialTab:
+                                                      MyCommunityActivityTab
+                                                          .posts,
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                MypageCardItem(
+                                  title:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.myCommunityComments,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        settings: const RouteSettings(
+                                          name:
+                                              AnalyticsPage.myCommunityActivity,
                                         ),
-                                  ),
-                                );
-                              },
+                                        builder:
+                                            (_) =>
+                                                const MyCommunityActivityScreen(
+                                                  initialTab:
+                                                      MyCommunityActivityTab
+                                                          .comments,
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                MypageCardItem(
+                                  title:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.communityScrap,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        settings: const RouteSettings(
+                                          name:
+                                              AnalyticsPage.myCommunityActivity,
+                                        ),
+                                        builder:
+                                            (_) =>
+                                                const MyCommunityActivityScreen(
+                                                  initialTab:
+                                                      MyCommunityActivityTab
+                                                          .scraps,
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
                       ),
                       SizedBox(height: 16 * scale),
                       // 화면 설정 — 화면별 표시 설정 진입점.
@@ -253,34 +269,46 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      const MySubscriptionSettingScreen(),
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.mySubscriptionSetting,
+                                  ),
+                                  builder:
+                                      (_) =>
+                                          const MySubscriptionSettingScreen(),
                                 ),
                               );
                             },
                           ),
                           MypageCardItem(
-                            title: AppLocalizations.of(
-                              context,
-                            )!.screenSettingMatchList,
+                            title:
+                                AppLocalizations.of(
+                                  context,
+                                )!.screenSettingMatchList,
                             leadingIcon: 'assets/icons/layout-list.svg',
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      const MatchListSettingScreen(),
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.matchListSetting,
+                                  ),
+                                  builder:
+                                      (_) => const MatchListSettingScreen(),
                                 ),
                               );
                             },
                           ),
                           MypageCardItem(
-                            title: AppLocalizations.of(
-                              context,
-                            )!.screenSettingCalendar,
+                            title:
+                                AppLocalizations.of(
+                                  context,
+                                )!.screenSettingCalendar,
                             leadingIcon: 'assets/icons/calendar-event.svg',
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.calendarSetting,
+                                  ),
                                   builder: (_) => const CalendarSettingScreen(),
                                 ),
                               );
@@ -303,6 +331,9 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.notice,
+                                  ),
                                   builder: (_) => const NoticeScreen(),
                                 ),
                               );
@@ -315,12 +346,12 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () => openGuideScreen(context),
                           ),
                           MypageCardItem(
-                            title: AppLocalizations.of(
-                              context,
-                            )!.customerService,
-                            onTap: () => _launchUrl(
-                              'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
-                            ),
+                            title:
+                                AppLocalizations.of(context)!.customerService,
+                            onTap:
+                                () => _launchUrl(
+                                  'https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform',
+                                ),
                           ),
                           // 광고 신청 안내 — 본문은 백오피스 공지(slug=ad-guide).
                           MypageCardItem(
@@ -328,6 +359,9 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.adGuide,
+                                  ),
                                   builder: (_) => const AdGuideScreen(),
                                 ),
                               );
@@ -338,6 +372,9 @@ class _MypageScreenState extends State<MypageScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
+                                  settings: const RouteSettings(
+                                    name: AnalyticsPage.accountSetting,
+                                  ),
                                   builder: (_) => const AccountSettingScreen(),
                                 ),
                               );
@@ -356,9 +393,10 @@ class _MypageScreenState extends State<MypageScreen> {
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.narWebsite,
-                            description: AppLocalizations.of(
-                              context,
-                            )!.narWebsiteDescription,
+                            description:
+                                AppLocalizations.of(
+                                  context,
+                                )!.narWebsiteDescription,
                             onTap: () => _launchUrl('https://nar.kr/'),
                           ),
                         ],
@@ -366,17 +404,18 @@ class _MypageScreenState extends State<MypageScreen> {
                       SizedBox(height: 16 * scale),
                       ListenableBuilder(
                         listenable: _viewModel,
-                        builder: (context, _) => _AppInfoRow(
-                          versionStatus: AppLocalizations.of(
-                            context,
-                          )!.latestVersion,
-                          versionLabel: _viewModel.appVersion.isNotEmpty
-                              ? AppLocalizations.of(
-                                  context,
-                                )!.currentVersion(_viewModel.appVersion)
-                              : '',
-                          scale: scale,
-                        ),
+                        builder:
+                            (context, _) => _AppInfoRow(
+                              versionStatus:
+                                  AppLocalizations.of(context)!.latestVersion,
+                              versionLabel:
+                                  _viewModel.appVersion.isNotEmpty
+                                      ? AppLocalizations.of(
+                                        context,
+                                      )!.currentVersion(_viewModel.appVersion)
+                                      : '',
+                              scale: scale,
+                            ),
                       ),
                       // 하단 네비에 가리지 않도록 여백.
                       SizedBox(height: 166 * scale),
@@ -391,11 +430,12 @@ class _MypageScreenState extends State<MypageScreen> {
               bottom: 26,
               child: ListenableBuilder(
                 listenable: _navShrink,
-                builder: (context, _) => AppBottomNav(
-                  currentTab: AppNavTab.mypage,
-                  onTabSelected: (tab) => _onTabSelected(context, tab),
-                  compact: _navShrink.compact,
-                ),
+                builder:
+                    (context, _) => AppBottomNav(
+                      currentTab: AppNavTab.mypage,
+                      onTabSelected: (tab) => _onTabSelected(context, tab),
+                      compact: _navShrink.compact,
+                    ),
               ),
             ),
           ],
@@ -590,16 +630,17 @@ class _ProfileImage extends StatelessWidget {
     final resolvedUrl = resolveImageUrl(url);
     final hasUrl = resolvedUrl != null && resolvedUrl.isNotEmpty;
     return ClipOval(
-      child: hasUrl
-          ? CachedNetworkImage(
-              imageUrl: resolvedUrl,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              fadeInDuration: const Duration(milliseconds: 150),
-              errorWidget: (_, _, _) => fallback,
-            )
-          : fallback,
+      child:
+          hasUrl
+              ? CachedNetworkImage(
+                imageUrl: resolvedUrl,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                fadeInDuration: const Duration(milliseconds: 150),
+                errorWidget: (_, _, _) => fallback,
+              )
+              : fallback,
     );
   }
 }

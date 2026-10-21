@@ -12,6 +12,7 @@ import '../../match_list/component/match_card.dart';
 import '../../match_list/component/match_card_skeleton.dart';
 import '../../match_list/component/match_date_header.dart';
 import '../../match_list/component/match_league_header.dart';
+import '../../../util/analytics_events.dart';
 
 /// 특정 날짜 하나의 경기 리스트 본문(날짜 헤더 + 카드 리스트 + 로딩/빈 상태).
 ///
@@ -51,8 +52,9 @@ class MatchDayView extends StatelessWidget {
         padding: EdgeInsets.only(bottom: 24 * scale),
         itemCount: 4,
         // 첫 장은 실제 카드와 같이 위 구분선을 끈다(날짜 헤더 아래 첫 카드 규칙).
-        itemBuilder: (_, index) =>
-            MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
+        itemBuilder:
+            (_, index) =>
+                MatchCardSkeleton(scale: scale, showTopBorder: index != 0),
       );
     }
 
@@ -121,7 +123,15 @@ class MatchDayView extends StatelessWidget {
 
     if (!groupByLeague) {
       for (var i = 0; i < matches.length; i++) {
-        items.add(_buildCard(context, matches[i], showTopBorder: i > 0, l: l));
+        items.add(
+          _buildCard(
+            context,
+            matches[i],
+            showTopBorder: i > 0,
+            l: l,
+            position: i + 1,
+          ),
+        );
       }
       return items;
     }
@@ -130,11 +140,20 @@ class MatchDayView extends StatelessWidget {
     for (final m in matches) {
       (byLeague[m.leagueInfo] ??= []).add(m);
     }
+    // position 은 리그 그룹과 무관하게 화면에 보이는 전체 순번이다 —
+    // 클릭이 목록 위쪽에 몰리는지 보려는 값이라 그룹마다 1 로 돌아가면 안 된다.
+    var position = 0;
     for (final entry in byLeague.entries) {
       items.add(MatchLeagueHeader(leagueName: entry.key, scale: scale));
       for (var i = 0; i < entry.value.length; i++) {
         items.add(
-          _buildCard(context, entry.value[i], showTopBorder: i > 0, l: l),
+          _buildCard(
+            context,
+            entry.value[i],
+            showTopBorder: i > 0,
+            l: l,
+            position: ++position,
+          ),
         );
       }
     }
@@ -146,6 +165,7 @@ class MatchDayView extends StatelessWidget {
     BuildContext context,
     ScheduleMatch m, {
     required bool showTopBorder,
+    required int position,
     required AppLocalizations l,
   }) {
     return MatchCard(
@@ -163,26 +183,30 @@ class MatchDayView extends StatelessWidget {
       homeScore: m.teamA.score,
       awayScore: m.teamB.score,
       isLive: _isLive(m.matchStatus),
-      liveSetLabel: _isLive(m.matchStatus)
-          ? l.setInProgress(
-              liveSetNumber(
-                homeScore: m.teamA.score,
-                awayScore: m.teamB.score,
-                setsPlayed: m.sets.length,
-              ),
-            )
-          : null,
+      liveSetLabel:
+          _isLive(m.matchStatus)
+              ? l.setInProgress(
+                liveSetNumber(
+                  homeScore: m.teamA.score,
+                  awayScore: m.teamB.score,
+                  setsPlayed: m.sets.length,
+                ),
+              )
+              : null,
       leagueInfo: m.leagueInfo,
       spoilerPreventionEnabled: spoilerPreventionEnabled,
       spoilerRevealed: revealedMatchIds.contains(m.matchId),
       onSpoilerReveal: () => onSpoilerReveal(m.matchId),
       // 딥링크(라이브 위젯·푸시)와 같은 창구를 쓴다 — 직접 push 하면 그쪽에서
       // 열린 상세를 못 찾아 같은 경기가 두 장 쌓인다.
-      onTap: () => MatchDetailRouter.open(
-        matchId: m.matchId,
-        match: m,
-        context: context,
-      ),
+      onTap:
+          () => MatchDetailRouter.open(
+            matchId: m.matchId,
+            match: m,
+            context: context,
+            fromPage: AnalyticsPage.matchDay,
+            cardPosition: position,
+          ),
       scale: scale,
     );
   }

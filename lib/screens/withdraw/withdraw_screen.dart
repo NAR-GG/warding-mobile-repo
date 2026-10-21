@@ -10,6 +10,8 @@ import '../../styles/app_colors.dart';
 import '../../viewmodel/mypage/mypage_viewmodel.dart';
 import '../login/login_screen.dart';
 import '../mypage/component/mypage_card_section.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics.dart';
 
 /// 회원 탈퇴 화면. 계정 설정의 '회원탈퇴' 진입점.
 ///
@@ -48,6 +50,15 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   /// 탈퇴 실행 — 안내를 이미 화면에서 했으므로 별도 확인 없이 즉시 탈퇴한다.
   Future<void> _withdraw() async {
     if (_isWithdrawing) return;
+
+    // **await 전에** 찍는다. `withdraw()` 는 내부에서 `signOut()` 을 거쳐
+    // `Analytics.reset()` 을 부르므로(auth_service), await 뒤에 찍으면 식별이
+    // 끊긴 새 익명 ID 에 붙어 "누가 탈퇴했는지"를 알 수 없게 된다. 탈퇴
+    // 분석의 목적이 바로 그것이라 순서가 핵심이다(설계 문서 10번).
+    Analytics.track(AnalyticsEvent.withdrawButtonClick, {
+      AnalyticsProp.locationPage: AnalyticsPage.withdraw,
+    });
+
     setState(() => _isWithdrawing = true);
     final l = AppLocalizations.of(context)!;
     try {
@@ -62,7 +73,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
     }
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.login),
+        builder: (_) => const LoginScreen(),
+      ),
       (route) => false,
     );
   }
@@ -94,21 +108,22 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   children: [
                     ListenableBuilder(
                       listenable: _viewModel,
-                      builder: (context, _) => Text(
-                        l.withdrawHeadline(
-                          _viewModel.nickname.isEmpty
-                              ? l.nicknamePlaceholder
-                              : _viewModel.nickname,
-                        ),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18 * scale,
-                          height: 1.45,
-                          letterSpacing: 0.21 * scale,
-                          color: AppColors.narText,
-                        ),
-                      ),
+                      builder:
+                          (context, _) => Text(
+                            l.withdrawHeadline(
+                              _viewModel.nickname.isEmpty
+                                  ? l.nicknamePlaceholder
+                                  : _viewModel.nickname,
+                            ),
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18 * scale,
+                              height: 1.45,
+                              letterSpacing: 0.21 * scale,
+                              color: AppColors.narText,
+                            ),
+                          ),
                     ),
                     SizedBox(height: 9 * scale),
                     _WarningRow(text: l.withdrawWarningData, scale: scale),

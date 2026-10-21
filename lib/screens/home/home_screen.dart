@@ -19,7 +19,6 @@ import '../community/post_detail_screen.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
-import '../mypage/mypage_screen.dart';
 import '../notice/notice_detail_screen.dart';
 import '../player_rating/player_rating_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -32,6 +31,8 @@ import 'component/home_review_section.dart';
 import 'component/home_solo_rank_section.dart';
 import 'component/home_standings_section.dart';
 import 'component/home_today_matches_section.dart';
+import '../../util/analytics_events.dart';
+import '../../util/nav_tab_navigation.dart';
 
 /// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠 ·
 /// 평점 한줄평 6개 섹션 + 하단 네비 '홈' 탭에 해당한다.
@@ -52,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _openNotice(Notice notice) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.noticeDetail),
         builder: (_) =>
             NoticeDetailScreen(notice: notice, showListButton: true),
       ),
@@ -104,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openPost(CommunityRemotePost post) async {
     final result = await Navigator.of(context).push<PostDetailResult>(
       MaterialPageRoute<PostDetailResult>(
+        settings: const RouteSettings(name: AnalyticsPage.postDetail),
         builder: (_) => PostDetailScreen(postId: post.id),
       ),
     );
@@ -132,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         : BadgeSide.blue;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.playerRating),
         builder: (_) => PlayerRatingScreen(
           player: PlayerRating(
             name: review.playerName,
@@ -170,7 +174,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openMyPlayers() async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const MyPlayersScreen()));
+    ).push(MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.myPlayers),builder: (_) => const MyPlayersScreen()));
     await _viewModel.refreshSoloOnReturn();
   }
 
@@ -178,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openWorlds() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.myPlayers),
         builder: (_) => const MyPlayersScreen(worlds: true),
       ),
     );
@@ -205,6 +211,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openSubscriptionSettings() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.subscriptionSettings),
         builder: (_) => const SubscriptionSettingsScreen(),
       ),
     );
@@ -212,21 +219,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   /// 하단 네비 탭 선택. '홈'을 제외한 탭이면 해당 화면으로 전환한다.
-  void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.schedule) {
-      Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
-    } else if (tab == AppNavTab.list) {
-      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
-    } else if (tab == AppNavTab.community) {
-      Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
-    } else if (tab == AppNavTab.subscription) {
-      Navigator.of(
-        context,
-      ).pushReplacement(tabRoute(const SubscriptionScreen()));
-    } else if (tab == AppNavTab.mypage) {
-      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
-    }
-  }
+  void _onTabSelected(AppNavTab tab) =>
+      handleNavTabSelected(context, AppNavTab.home, tab);
 
   @override
   Widget build(BuildContext context) {

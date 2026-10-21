@@ -8,21 +8,19 @@ import '../../l10n/app_localizations.dart';
 import '../../model/community_remote_post.dart';
 import '../../repository/notification/member_notification_repository.dart';
 import '../../styles/app_colors.dart';
-import '../../util/tab_route.dart';
 import '../../viewmodel/community/community_list_viewmodel.dart';
-import '../home/home_screen.dart';
 import '../login/login_screen.dart';
-import '../match_list/match_list_screen.dart';
-import '../mypage/mypage_screen.dart';
 import '../notification/notification_screen.dart';
-import '../schedule/schedule_screen.dart';
-import '../subscription/subscription_screen.dart';
 import 'community_search_screen.dart';
 import 'component/post_list_item.dart';
 import 'component/post_list_item_skeleton.dart';
 import 'component/write_lock_bar.dart';
 import 'post_detail_screen.dart';
 import 'post_write_screen.dart';
+import '../../util/nav_tab_navigation.dart';
+import '../../util/analytics.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 
 /// 커뮤니티 — 단일 전체 게시판.
 ///
@@ -57,6 +55,14 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   void initState() {
     super.initState();
+    AnalyticsRouteObserver.instance.setProvider(
+      AnalyticsPage.community,
+      () => {
+        AnalyticsProp.loginStatus: _vm.loggedIn
+            ? AnalyticsValue.loggedIn
+            : AnalyticsValue.guest,
+      },
+    );
     WidgetsBinding.instance.addObserver(this);
     _vm.init();
     _refreshUnreadCount();
@@ -68,6 +74,9 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   @override
   void dispose() {
+    AnalyticsRouteObserver.instance.removeProvider(
+      AnalyticsPage.community,
+    );
     feedRefreshTick.removeListener(_refreshUnreadCount);
     WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();
@@ -93,7 +102,10 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   Future<void> _openSearch() async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const CommunitySearchScreen()),
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.communitySearch),
+        builder: (_) => const CommunitySearchScreen(),
+      ),
     );
     if (!mounted) return;
     // 검색 결과에서 글을 지웠을 수 있어 목록을 다시 받는다.
@@ -101,36 +113,29 @@ class _CommunityScreenState extends State<CommunityScreen>
   }
 
   Future<void> _openNotificationInbox() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const NotificationScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.notification),
+        builder: (_) => const NotificationScreen(),
+      ),
+    );
     // 알림함에서 읽고 돌아오면 배지를 다시 센다.
     _refreshUnreadCount();
   }
 
-  void _onTabSelected(AppNavTab tab) {
-    if (tab == AppNavTab.home) {
-      Navigator.of(context).pushReplacement(tabRoute(const HomeScreen()));
-    } else if (tab == AppNavTab.schedule) {
-      Navigator.of(context).pushReplacement(tabRoute(const ScheduleScreen()));
-    } else if (tab == AppNavTab.list) {
-      Navigator.of(context).pushReplacement(tabRoute(const MatchListScreen()));
-    } else if (tab == AppNavTab.subscription) {
-      Navigator.of(
-        context,
-      ).pushReplacement(tabRoute(const SubscriptionScreen()));
-    } else if (tab == AppNavTab.mypage) {
-      Navigator.of(context).pushReplacement(tabRoute(const MypageScreen()));
-    }
-  }
+  void _onTabSelected(AppNavTab tab) =>
+      handleNavTabSelected(context, AppNavTab.community, tab);
 
   /// 남은 작성 간격(초). 게시판은 하나뿐이라 전체 게시판 기준이다.
   int get _cooldown => _vm.writeCooldownSeconds(null);
 
   Future<void> _openLogin() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.login),
+        builder: (_) => const LoginScreen(),
+      ),
+    );
     await _vm.loadSession();
     if (!mounted) return;
     // 로그인하면 서버가 내려주는 쓰기 권한이 달라진다. 배지도 이제 셀 수 있다.
@@ -145,17 +150,25 @@ class _CommunityScreenState extends State<CommunityScreen>
     }
     final createdId = await Navigator.of(context).push<int>(
       MaterialPageRoute<int>(
-        builder: (_) =>
-            PostWriteScreen(boardTeamId: null, tester: _vm.isTester(null)),
+        settings: const RouteSettings(name: AnalyticsPage.postWrite),
+        builder:
+            (_) =>
+                PostWriteScreen(boardTeamId: null, tester: _vm.isTester(null)),
       ),
     );
     if (createdId == null || !mounted) return;
     await _vm.load(null, refresh: true);
   }
 
-  Future<void> _openPost(CommunityRemotePost post) async {
+  Future<void> _openPost(CommunityRemotePost post, int position) async {
+    Analytics.track(AnalyticsEvent.postCardClick, {
+      AnalyticsProp.locationPage: AnalyticsPage.community,
+      AnalyticsProp.postId: post.id,
+      AnalyticsProp.position: position,
+    });
     final result = await Navigator.of(context).push<PostDetailResult>(
       MaterialPageRoute<PostDetailResult>(
+        settings: const RouteSettings(name: AnalyticsPage.postDetail),
         builder: (_) => PostDetailScreen(postId: post.id),
       ),
     );
@@ -178,68 +191,71 @@ class _CommunityScreenState extends State<CommunityScreen>
       body: SafeArea(
         child: ListenableBuilder(
           listenable: _vm,
-          builder: (context, _) => Stack(
-            children: [
-              NotificationListener<ScrollNotification>(
-                onNotification: _navShrink.handleNotification,
-                child: Column(
-                  children: [
-                    _Header(
-                      title: l.communityTitle,
-                      scale: scale,
-                      unreadCount: _unreadCount,
-                      onBellTap: _openNotificationInbox,
-                      onSearchTap: _openSearch,
+          builder:
+              (context, _) => Stack(
+                children: [
+                  NotificationListener<ScrollNotification>(
+                    onNotification: _navShrink.handleNotification,
+                    child: Column(
+                      children: [
+                        _Header(
+                          title: l.communityTitle,
+                          scale: scale,
+                          unreadCount: _unreadCount,
+                          onBellTap: _openNotificationInbox,
+                          onSearchTap: _openSearch,
+                        ),
+                        Expanded(child: _board(scale)),
+                      ],
                     ),
-                    Expanded(child: _board(scale)),
-                  ],
-                ),
+                  ),
+                  if (_vm.canWrite(null))
+                    Positioned(
+                      right: 20 * scale,
+                      // 하단 네비(bottom 26 + 높이 72)와 넉넉히 띄운다. 바짝
+                      // 붙이면 네비의 유리 효과가 FAB 그라데이션을 굴절시켜
+                      // 마지막 탭이 보라색으로 물들어 활성 탭처럼 보인다.
+                      bottom: 128 * scale,
+                      child: _WriteFab(
+                        // 작성 간격이 남았으면 남은 초를 버튼에 띄우고 잠근다.
+                        // 다 쓰고 등록에서 429 를 받는 것보다 낫다.
+                        label:
+                            _cooldown > 0
+                                ? l.communityWriteCooldown(_cooldown)
+                                : l.communityWrite,
+                        scale: scale,
+                        onTap: _cooldown > 0 ? null : _openWrite,
+                      ),
+                    )
+                  else if (!_vm.loggedIn)
+                    Positioned(
+                      left: 16 * scale,
+                      right: 16 * scale,
+                      bottom: 122 * scale,
+                      child: WriteLockBar(
+                        title: l.communityGuestWrite,
+                        body: null,
+                        actionLabel: l.loginRequired,
+                        scale: scale,
+                        onAction: _openLogin,
+                      ),
+                    ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 26,
+                    child: ListenableBuilder(
+                      listenable: _navShrink,
+                      builder:
+                          (context, _) => AppBottomNav(
+                            currentTab: AppNavTab.community,
+                            onTabSelected: _onTabSelected,
+                            compact: _navShrink.compact,
+                          ),
+                    ),
+                  ),
+                ],
               ),
-              if (_vm.canWrite(null))
-                Positioned(
-                  right: 20 * scale,
-                  // 하단 네비(bottom 26 + 높이 72)와 넉넉히 띄운다. 바짝
-                  // 붙이면 네비의 유리 효과가 FAB 그라데이션을 굴절시켜
-                  // 마지막 탭이 보라색으로 물들어 활성 탭처럼 보인다.
-                  bottom: 128 * scale,
-                  child: _WriteFab(
-                    // 작성 간격이 남았으면 남은 초를 버튼에 띄우고 잠근다.
-                    // 다 쓰고 등록에서 429 를 받는 것보다 낫다.
-                    label: _cooldown > 0
-                        ? l.communityWriteCooldown(_cooldown)
-                        : l.communityWrite,
-                    scale: scale,
-                    onTap: _cooldown > 0 ? null : _openWrite,
-                  ),
-                )
-              else if (!_vm.loggedIn)
-                Positioned(
-                  left: 16 * scale,
-                  right: 16 * scale,
-                  bottom: 122 * scale,
-                  child: WriteLockBar(
-                    title: l.communityGuestWrite,
-                    body: null,
-                    actionLabel: l.loginRequired,
-                    scale: scale,
-                    onAction: _openLogin,
-                  ),
-                ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 26,
-                child: ListenableBuilder(
-                  listenable: _navShrink,
-                  builder: (context, _) => AppBottomNav(
-                    currentTab: AppNavTab.community,
-                    onTabSelected: _onTabSelected,
-                    compact: _navShrink.compact,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -274,21 +290,22 @@ class _CommunityScreenState extends State<CommunityScreen>
 
     return AppRefreshIndicator(
       onRefresh: () => _vm.load(null, refresh: true),
-      child: state.posts.isEmpty
-          // 빈 목록에서도 당길 수 있어야 하므로 스크롤 가능한 리스트로 감싼다.
-          ? ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                SizedBox(height: 120 * scale),
-                _Empty(message: l.communityEmpty, scale: scale),
-              ],
-            )
-          : _BoardList(
-              state: state,
-              scale: scale,
-              onLoadMore: () => _vm.loadMore(null),
-              onTap: _openPost,
-            ),
+      child:
+          state.posts.isEmpty
+              // 빈 목록에서도 당길 수 있어야 하므로 스크롤 가능한 리스트로 감싼다.
+              ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: 120 * scale),
+                  _Empty(message: l.communityEmpty, scale: scale),
+                ],
+              )
+              : _BoardList(
+                state: state,
+                scale: scale,
+                onLoadMore: () => _vm.loadMore(null),
+                onTap: _openPost,
+              ),
     );
   }
 }
@@ -305,7 +322,7 @@ class _BoardList extends StatefulWidget {
   final CommunityBoardState state;
   final double scale;
   final VoidCallback onLoadMore;
-  final ValueChanged<CommunityRemotePost> onTap;
+  final void Function(CommunityRemotePost post, int index) onTap;
 
   @override
   State<_BoardList> createState() => _BoardListState();
@@ -340,9 +357,8 @@ class _BoardListState extends State<_BoardList> {
     // 계속 이어지는 느낌을 준다(스피너 하나만 있으면 목록이 뚝 끊긴 것처럼
     // 보인다).
     const loadMoreSkeletonCount = 3;
-    final loadingMoreCount = widget.state.loadingMore
-        ? loadMoreSkeletonCount
-        : 0;
+    final loadingMoreCount =
+        widget.state.loadingMore ? loadMoreSkeletonCount : 0;
 
     return ListView.builder(
       controller: _controller,
@@ -356,7 +372,7 @@ class _BoardListState extends State<_BoardList> {
         return PostListItem(
           post: posts[i],
           scale: scale,
-          onTap: () => widget.onTap(posts[i]),
+          onTap: () => widget.onTap(posts[i], i + 1),
         );
       },
     );

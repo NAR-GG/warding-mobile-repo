@@ -22,6 +22,7 @@ import 'repository/notification/solo_rank_notification_store.dart';
 import 'screens/splash_screen.dart';
 import 'styles/app_colors.dart';
 import 'util/analytics.dart';
+import 'util/analytics_route_observer.dart';
 import 'util/api_client.dart' show loadAppVersion;
 import 'util/champion_image.dart';
 import 'util/home_widget_service.dart';
@@ -62,9 +63,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// 셋이 서로 순서 의존이 있어(핸들러 등록·initMessaging 모두 Firebase 초기화가
 /// 먼저 끝나야 함) 하나로 묶어, [main] 에서 다른 무관한 초기화와 병렬로 돌린다.
 Future<void> _initFirebaseMessaging() async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   // 포그라운드 알림 표시·알림 탭 핸들링을 준비한다 (토큰 등록은 로그인 후).
   await FcmService.instance.initMessaging();
@@ -127,7 +126,8 @@ Future<void> main() async {
         (options) {
           options.dsn = const String.fromEnvironment(
             'SENTRY_DSN',
-            defaultValue: 'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
+            defaultValue:
+                'https://47b58c932607203cb2906e7410cfc3de@o4511782525534208.ingest.us.sentry.io/4511782542245889',
           );
           options.environment = const String.fromEnvironment(
             'APP_ENV',
@@ -211,16 +211,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return ListenableBuilder(
       listenable: AppLanguage.instance,
       builder: (context, _) {
-        final locale = AppLanguage.instance.isKo
-            ? const Locale('ko')
-            : const Locale('en');
+        final locale =
+            AppLanguage.instance.isKo ? const Locale('ko') : const Locale('en');
         return MaterialApp(
           title: 'Warding',
           navigatorKey: navigatorKey,
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          navigatorObservers: [SentryNavigatorObserver()],
+          navigatorObservers: [
+            SentryNavigatorObserver(),
+            AnalyticsRouteObserver.instance,
+          ],
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             scaffoldBackgroundColor: AppColors.narDark800,
@@ -236,10 +238,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           // 알 수 없는 라우트는 그냥 첫 화면으로 보낸다 — 딥링크 자체는
           // FcmService.consumePendingDeepLink / HomeWidgetService 가
           // 스플래시 이후에 따로 처리하므로 여기서 잃는 것은 없다.
-          onUnknownRoute: (settings) => MaterialPageRoute<void>(
-            settings: settings,
-            builder: (_) => const SplashScreen(),
-          ),
+          onUnknownRoute:
+              (settings) => MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => const SplashScreen(),
+              ),
         );
       },
     );

@@ -12,6 +12,8 @@ import 'step/league_step.dart';
 import 'step/notification_step.dart';
 import 'step/player_step.dart';
 import 'step/team_step.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 
 /// 디자인 시안 기준 화면 너비.
 const double _designWidth = 375;
@@ -42,11 +44,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       repository: OnboardingRepository.instance,
       onFinish: _finish,
     );
+    AnalyticsRouteObserver.instance.setProvider(AnalyticsPage.onboarding, () {
+      // JWT 조회가 비동기라 진입 직후 몇 프레임은 null 이고, 그때는 키를
+      // 보내지 않는다(값 없으면 미전송 규칙).
+      return {AnalyticsProp.loginStatus: ?_viewModel.loginStatusValue};
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    AnalyticsRouteObserver.instance.removeProvider(AnalyticsPage.onboarding);
     _viewModel.dispose();
     super.dispose();
   }

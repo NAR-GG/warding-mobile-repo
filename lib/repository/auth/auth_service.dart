@@ -20,6 +20,8 @@ import '../../screens/login/login_screen.dart';
 import '../../util/analytics.dart';
 import '../../util/sentry_logger.dart';
 import '../device/device_repository.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics_route_observer.dart';
 import '../subscription/subscription_repository.dart';
 
 class AuthResult {
@@ -41,14 +43,10 @@ class RefreshResult {
   const RefreshResult.success(String this.token) : tokenInvalid = false;
 
   /// 리프레시 토큰 무효/만료를 서버가 401 로 확정 — 재로그인만이 답이다.
-  const RefreshResult.invalid()
-      : token = null,
-        tokenInvalid = true;
+  const RefreshResult.invalid() : token = null, tokenInvalid = true;
 
   /// 일시 장애 — 토큰은 아직 살아 있을 수 있으므로 로그아웃하면 안 된다.
-  const RefreshResult.transient()
-      : token = null,
-        tokenInvalid = false;
+  const RefreshResult.transient() : token = null, tokenInvalid = false;
 
   final String? token;
   final bool tokenInvalid;
@@ -59,7 +57,8 @@ class NicknameConflictException implements Exception {
   const NicknameConflictException();
 
   @override
-  String toString() => appStrings?.duplicateNickname ?? 'This nickname is already in use';
+  String toString() =>
+      appStrings?.duplicateNickname ?? 'This nickname is already in use';
 }
 
 class AuthService {
@@ -310,9 +309,7 @@ class AuthService {
           'response': {'status': response.statusCode},
         },
       );
-      throw Exception(
-        '백엔드 로그인 실패 (${response.statusCode}): ${response.body}',
-      );
+      throw Exception('백엔드 로그인 실패 (${response.statusCode}): ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -420,9 +417,13 @@ class AuthService {
     });
     // 실패는 호출부가 각자 받는다. 여기서 한 번 더 받아 두지 않으면 대기 중인
     // 리스너가 없을 때 '처리되지 않은 예외'로 올라온다.
-    unawaited(request.whenComplete(() {
-      if (identical(_meInFlight, request)) _meInFlight = null;
-    }).then<void>((_) {}, onError: (_) {}));
+    unawaited(
+      request
+          .whenComplete(() {
+            if (identical(_meInFlight, request)) _meInFlight = null;
+          })
+          .then<void>((_) {}, onError: (_) {}),
+    );
     _meInFlight = request;
     return request;
   }
@@ -545,8 +546,10 @@ class AuthService {
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         // 5xx·429 등 서버 사정 — 토큰이 무효라는 증거가 아니다.
-        debugPrint('[Auth] 토큰 재발급 일시 실패 (${response.statusCode}): '
-            '${response.body}');
+        debugPrint(
+          '[Auth] 토큰 재발급 일시 실패 (${response.statusCode}): '
+          '${response.body}',
+        );
         return const RefreshResult.transient();
       }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -619,8 +622,18 @@ class AuthService {
       await _storage.delete(key: _jwtKey);
       _setCachedJwt(null);
       await _storage.delete(key: _refreshKey);
+      // 스택을 비워 직전 라우트가 사라지므로 observer 가 prev_page 를 알 수
+      // 없다. 사용자가 로그인하러 온 게 아니라 토큰이 끊겨 튕긴 것이라,
+      // entry_point 로 일반 로그인 진입과 갈라 준다(설계 문서 11번).
+      AnalyticsRouteObserver.instance.overridePrevPage(null);
+      AnalyticsRouteObserver.instance.attachNext({
+        AnalyticsProp.entryPoint: AnalyticsEntryPoint.sessionExpired,
+      });
       navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AnalyticsPage.login),
+          builder: (_) => const LoginScreen(),
+        ),
         (route) => false,
       );
     } finally {

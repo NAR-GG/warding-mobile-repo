@@ -37,6 +37,8 @@ import 'component/match_detail_team_rating_section.dart';
 import 'component/match_detail_team_summary_section.dart';
 import 'component/match_detail_toc.dart';
 import 'component/match_detail_refresh_pill.dart';
+import '../../util/analytics_route_observer.dart';
+import '../../util/analytics_events.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {
@@ -232,6 +234,12 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
   @override
   void initState() {
     super.initState();
+    // 경기 전 진입은 데이터가 가려진 빈 화면(locked_empty)을 보게 되므로,
+    // 그 비율을 모르면 체류가 짧은 이유를 오해한다(설계 문서 7번).
+    AnalyticsRouteObserver.instance.setProvider(
+      AnalyticsPage.matchDetail,
+      () => {AnalyticsProp.matchState: _matchStateValue},
+    );
     WidgetsBinding.instance.addObserver(this);
     // 세트 라벨·목록은 뷰모델 상태에서 파생되므로(스코어/선수평점 탭은
     // ListenableBuilder 밖) 뷰모델 변경 시 화면을 다시 그린다.
@@ -290,6 +298,9 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
 
   @override
   void dispose() {
+    AnalyticsRouteObserver.instance.removeProvider(
+      AnalyticsPage.matchDetail,
+    );
     WidgetsBinding.instance.removeObserver(this);
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
@@ -337,6 +348,15 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
 
   /// 라이브 판정은 경기리스트·경기 일정과 같은 공용 유틸을 쓴다.
   bool _isLiveStatus(String status) => isLiveMatchStatus(status);
+
+  /// `match_state` 전송 값. 지금 세트 기준으로 본다.
+  String get _matchStateValue {
+    if (_viewModel.isCurrentSetLive) return AnalyticsValue.matchLive;
+    if (_viewModel.currentSetStatus == MatchGameStatus.scheduled) {
+      return AnalyticsValue.matchBefore;
+    }
+    return AnalyticsValue.matchFinished;
+  }
 
   /// matchStatus 가 경기 종료를 의미하는지. 'completed'/'ended'/'종료' 등 포함이면 true.
   bool _isCompletedStatus(String status) {

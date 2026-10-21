@@ -14,6 +14,9 @@ import 'component/login_consent_notice.dart';
 import '../home/home_screen.dart';
 import 'component/easy_login_divider.dart';
 import 'component/social_login_button.dart';
+import '../../util/analytics_events.dart';
+import '../../util/analytics.dart';
+import '../../util/analytics_route_observer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,8 +28,31 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
+  /// 비회원으로 시작 — 온보딩으로 보낸다.
+  ///
+  /// 소셜 로그인과 달리 `push` 라서 로그인 화면이 스택에 남는다. 온보딩 첫
+  /// 단계에서 뒤로가기를 누르면 여기로 돌아온다(설계 문서 13번).
+  void _startAsGuest() {
+    Analytics.track(AnalyticsEvent.guestStartButtonClick, {
+      AnalyticsProp.locationPage: AnalyticsPage.login,
+    });
+    Navigator.of(context).push(
+      analyticsRoute(AnalyticsPage.onboarding, (_) => const OnboardingScreen()),
+    );
+  }
+
   Future<void> _signIn(String registrationId) async {
     if (_isLoading) return;
+
+    // 버튼을 누른 사실만 남긴다. 성공·취소·실패는 구분하지 않는다 — 취소는
+    // AuthCancelledException 으로 조용히 끝나고 실패는 스낵바만 뜬다.
+    // 전환율은 `prev_page=login` 인 page_view(home/onboarding) 수와 나눠서
+    // 역산한다(설계 문서 12번). 이 이벤트는 identify 전에 찍혀 익명 ID 에
+    // 붙고, 로그인 성공 시 Mixpanel 이 회원 ID 와 병합해 퍼널이 이어진다.
+    Analytics.track(AnalyticsEvent.loginButtonClick, {
+      AnalyticsProp.locationPage: AnalyticsPage.login,
+      AnalyticsProp.loginMethod: registrationId,
+    });
 
     setState(() => _isLoading = true);
     try {
@@ -43,10 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
         result,
       );
       if (!mounted) return;
+      // 라우트에 이름을 붙여야 observer 가 이 이동을 잡는다. 이름이 없으면
+      // 로그인 성공 후의 page_view 가 아예 안 찍혀서, 위 주석대로 전환율을
+      // `prev_page=login` 인 page_view 로 역산할 수 없다.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) =>
-              onboarded ? const HomeScreen() : const OnboardingScreen(),
+        analyticsRoute(
+          onboarded ? AnalyticsPage.home : AnalyticsPage.onboarding,
+          (_) => onboarded ? const HomeScreen() : const OnboardingScreen(),
         ),
         (route) => false,
       );
@@ -134,13 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const OnboardingScreen(),
-                        ),
-                      ),
+                onPressed: _isLoading ? null : _startAsGuest,
                 child: Text(
                   l.guestStart,
                   style: const TextStyle(

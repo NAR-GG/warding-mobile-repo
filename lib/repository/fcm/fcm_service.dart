@@ -15,6 +15,7 @@ import '../device/device_repository.dart';
 import '../notification/live_match_notification_store.dart';
 import '../notification/solo_rank_notification_store.dart';
 import 'fcm_notification_types.dart';
+import '../../util/analytics_events.dart';
 
 /// FCM(푸시) 초기화·토큰 등록·메시지 핸들링을 담당한다.
 ///
@@ -46,13 +47,13 @@ class FcmService {
   /// 오면 Android 가 알림을 아예 띄우지 못한다.
   static const AndroidNotificationChannel _quietChannel =
       AndroidNotificationChannel(
-    'warding_quiet',
-    '알림 잠자기',
-    description: '잠자기 시간대에 소리 없이 받는 알림',
-    importance: Importance.low,
-    playSound: false,
-    enableVibration: false,
-  );
+        'warding_quiet',
+        '알림 잠자기',
+        description: '잠자기 시간대에 소리 없이 받는 알림',
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+      );
 
   /// 서버가 기대하는 플랫폼 문자열.
   String get _platform => Platform.isIOS ? 'IOS' : 'ANDROID';
@@ -69,7 +70,9 @@ class FcmService {
 
     // 1) 로컬 알림(포그라운드 표시용) 초기화.
     // 상태바 아이콘은 흰색 단색 드로어블이어야 함(컬러 런처 아이콘은 네모로 뭉개짐).
-    const androidInit = AndroidInitializationSettings('@drawable/ic_stat_warding');
+    const androidInit = AndroidInitializationSettings(
+      '@drawable/ic_stat_warding',
+    );
     // request*Permission 을 꺼서 초기화 시점에 시스템 알림 팝업이 자동으로
     // 뜨지 않게 한다. 권한 요청은 온보딩 알림 단계에서만 트리거한다.
     const iosInit = DarwinInitializationSettings(
@@ -78,13 +81,19 @@ class FcmService {
       requestSoundPermission: false,
     );
     await _localNotifications.initialize(
-      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(
+        android: androidInit,
+        iOS: iosInit,
+      ),
       onDidReceiveNotificationResponse: (response) {
         _handlePayload(response.payload);
       },
     );
-    final android = _localNotifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android =
+        _localNotifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     await android?.createNotificationChannel(_channel);
     await android?.createNotificationChannel(_quietChannel);
 
@@ -282,18 +291,25 @@ class FcmService {
     debugPrint('[FCM] 알림 탭 → type=$type');
     // 탭한 알림이 피드에 빠짐없이 들어가도록 저장(중복은 무시됨).
     // Keychain 접근 실패(-25308 등)만 무시 — 피드 한 건 누락일 뿐.
-    SoloRankNotificationStore.instance.addFromFcmData(data).catchError(
+    SoloRankNotificationStore.instance
+        .addFromFcmData(data)
+        .catchError(
           (Object e) => debugPrint('[FCM] 탭 알림 저장 실패: $e'),
           test: (e) => e is PlatformException,
         );
-    LiveMatchNotificationStore.instance.addFromFcmData(data).catchError(
+    LiveMatchNotificationStore.instance
+        .addFromFcmData(data)
+        .catchError(
           (Object e) => debugPrint('[FCM] 탭 알림 저장 실패: $e'),
           test: (e) => e is PlatformException,
         );
 
     if (type == FcmNotificationType.playerSoloRankStarted) {
       navigatorKey.currentState?.push(
-        MaterialPageRoute<void>(builder: (_) => const SubscriptionScreen()),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AnalyticsPage.subscription),
+          builder: (_) => const SubscriptionScreen(),
+        ),
       );
       return;
     }
@@ -306,7 +322,10 @@ class FcmService {
         return;
       }
       navigatorKey.currentState?.push(
-        MaterialPageRoute<void>(builder: (_) => PostDetailScreen(postId: postId)),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AnalyticsPage.postDetail),
+          builder: (_) => PostDetailScreen(postId: postId),
+        ),
       );
       return;
     }
@@ -327,6 +346,7 @@ class FcmService {
         matchId: matchId,
         tabIndex: 1,
         setNumber: setNumber,
+        entryPoint: AnalyticsEntryPoint.push,
       );
       return;
     }

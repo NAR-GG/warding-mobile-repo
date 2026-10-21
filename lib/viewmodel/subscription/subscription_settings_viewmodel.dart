@@ -5,6 +5,8 @@ import '../../l10n/app_strings.dart';
 import '../../model/player_subscription.dart';
 import '../../model/team_notification_subscription.dart';
 import '../../repository/subscription/subscription_repository.dart';
+import '../../util/analytics.dart';
+import '../../util/analytics_events.dart';
 
 /// 구독 설정 화면 선수 목록 정렬 모드.
 enum PlayerSortMode {
@@ -21,7 +23,7 @@ enum PlayerSortMode {
 /// 팀은 `notification-subscriptions`, 선수는 `player-subscriptions` API 를 쓴다.
 class SubscriptionSettingsViewModel extends ChangeNotifier {
   SubscriptionSettingsViewModel({SubscriptionRepository? repository})
-      : _repo = repository ?? SubscriptionRepository.instance {
+    : _repo = repository ?? SubscriptionRepository.instance {
     load();
   }
 
@@ -130,18 +132,19 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     final available = _repo
         .searchAvailablePlayers(query: _query, page: 0, size: _pageSize)
         .then((v) {
-      _availablePlayers = _sortPlayers(v.content);
-      _availPage = v.page;
-      _availTotalPages = v.totalPages;
-      _availTotalElements = v.totalElements;
-      _loadingAvailablePlayers = false;
-      _notify();
-    });
+          _availablePlayers = _sortPlayers(v.content);
+          _availPage = v.page;
+          _availTotalPages = v.totalPages;
+          _availTotalElements = v.totalElements;
+          _loadingAvailablePlayers = false;
+          _notify();
+        });
 
     try {
       await Future.wait([subscribed, teams, available]);
     } catch (e, st) {
-      _error = appStrings?.subscriptionLoadFailed ?? 'Failed to load subscriptions';
+      _error =
+          appStrings?.subscriptionLoadFailed ?? 'Failed to load subscriptions';
       debugPrint('[Subscription] load 에러: $e\n$st');
     } finally {
       _isLoading = false;
@@ -155,7 +158,10 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     _query = query;
     try {
       final v = await _repo.searchAvailablePlayers(
-          query: query, page: 0, size: _pageSize);
+        query: query,
+        page: 0,
+        size: _pageSize,
+      );
       _availablePlayers = _sortPlayers(v.content);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
@@ -200,6 +206,16 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
         await _repo.subscribePlayer(playerId);
       }
       _applyPlayerToggle(playerId, !subscribed);
+      // API 성공 후에 찍는다 — 실패는 아래 catch 에서 조용히 삼켜지고
+      // 상태도 안 바뀌므로, 클릭 시점에 찍으면 구독되지 않은 것이 성공으로
+      // 집계된다. is_on 은 토글 **후** 값이다(설계 문서 25번).
+      Analytics.track(AnalyticsEvent.subscribeButtonClick, {
+        AnalyticsProp.locationPage: AnalyticsPage.subscriptionSettings,
+        AnalyticsProp.locationSection: AnalyticsSection.allList,
+        AnalyticsProp.targetType: AnalyticsValue.player,
+        AnalyticsProp.playerId: playerId,
+        AnalyticsProp.isOn: !subscribed,
+      });
       _notify();
     } catch (e) {
       debugPrint('[Subscription] togglePlayer 에러: $e');
@@ -218,6 +234,13 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
         for (final t in _availableTeams)
           t.teamId == teamId ? t.copyWith(subscribed: !subscribed) : t,
       ];
+      Analytics.track(AnalyticsEvent.subscribeButtonClick, {
+        AnalyticsProp.locationPage: AnalyticsPage.subscriptionSettings,
+        AnalyticsProp.locationSection: AnalyticsSection.allList,
+        AnalyticsProp.targetType: AnalyticsValue.team,
+        AnalyticsProp.teamId: teamId,
+        AnalyticsProp.isOn: !subscribed,
+      });
       _notify();
     } catch (e) {
       debugPrint('[Subscription] toggleTeam 에러: $e');
