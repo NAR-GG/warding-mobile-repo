@@ -623,16 +623,33 @@ jobs:
             echo "::warning::패치노트 초안 생성 실패 — 직접 작성해야 한다"
             echo "user_facing=error" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          jq -r '[.content[]|select(.type=="text")|.text]|join("")' /tmp/res.json > /tmp/draft.json
-          KO=$(jq -r '.ko // ""' /tmp/draft.json 2>/dev/null || echo "")
-          UF=$(jq -r '.user_facing // false' /tmp/draft.json 2>/dev/null || echo "false")
+          jq -r '[.content[]|select(.type=="text")|.text]|join("")' /tmp/res.json > /tmp/raw.txt
+
+          # 모델 출력에서 JSON 객체만 끄집어낸다. 코드펜스나 앞뒤 설명문이
+          # 붙어 오면 jq 가 파싱에 실패하는데, 그 실패를 삼키면
+          # user_facing=false 로 떨어져 "체감 변경 없음" 으로 오인된다.
+          # 첫 '{' 부터 마지막 '}' 까지만 남겨 그 바깥을 떨어낸다.
+          sed -n '/{/,$p' /tmp/raw.txt | sed -e '$!b' -e 's/[^}]*$//' > /tmp/draft.json
+          if ! jq -e . /tmp/draft.json > /dev/null 2>&1; then
+            echo "::warning::패치노트 초안 응답을 JSON 으로 못 읽었다 — 직접 작성해야 한다"
+            echo "--- 모델 응답 (앞 500자) ---"; head -c 500 /tmp/raw.txt
+            echo "user_facing=error" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          KO=$(jq -r '.ko // ""' /tmp/draft.json)
+          UF=$(jq -r '.user_facing // false' /tmp/draft.json)
+          # 초안이 비었는데 true 면 알림에 빈 패치노트가 붙는다. "체감 변경
+          # 없음" 과는 다른 상태라 error 로 보낸다.
+          if [ "$UF" = "true" ] && [ -z "${KO//[[:space:]]/}" ]; then
+            echo "::warning::user_facing 은 true 인데 초안이 비었다 — 직접 작성해야 한다"
+            echo "user_facing=error" >> "$GITHUB_OUTPUT"; exit 0
+          fi
           {
             echo "user_facing=$UF"
             echo "ko<<DRAFT_EOF"
             echo "$KO"
             echo "DRAFT_EOF"
           } >> "$GITHUB_OUTPUT"
-          echo "--- 초안 ---"; echo "$KO"
+          echo "--- 초안 (user_facing=$UF) ---"; echo "$KO"
 
   # ── [5] 결과 알림 ─────────────────────────────────────────────────────────
   notify:
@@ -701,8 +718,9 @@ jobs:
               FIELD_BODY="이번 릴리즈에는 사용자가 체감할 변경이 없어 보인다. 지난 노트를 유지하거나 직접 작성하세요."
               ;;
             error)
-              FIELD_TITLE="📝 패치노트"
-              FIELD_BODY="초안 생성에 실패했다. distribution/ 을 직접 작성하세요."
+              FIELD_TITLE="📝 패치노트 — 초안 실패"
+              # 초안 실패는 "변경이 없다" 가 아니라 "아직 모른다" 다.
+              FIELD_BODY="초안을 만들지 못했다. 변경이 없다는 뜻은 아니므로 커밋 로그를 보고 distribution/ 을 직접 작성하세요. 원인은 실행 로그의 release-notes 잡에 있다."
               ;;
             *) FIELD_TITLE=""; FIELD_BODY="" ;;
           esac

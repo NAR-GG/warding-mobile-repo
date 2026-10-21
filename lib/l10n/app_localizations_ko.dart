@@ -346,7 +346,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get worldsSoloTitle => '월즈 솔랭';
 
   @override
-  String get worldsSoloTabAll => 'LCK 전체';
+  String get worldsSoloTabAll => '전체 선수';
 
   @override
   String get worldsSoloTabSubscribed => '구독 선수';

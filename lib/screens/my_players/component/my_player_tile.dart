@@ -1,5 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../../../util/live_elapsed.dart';
 
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
@@ -23,12 +26,16 @@ class MyPlayerTile extends StatelessWidget {
     required this.isLast,
     this.onTap,
     this.trailing,
+    this.tick,
   });
 
   final MyPlayerEntry entry;
   final double scale;
   final bool isFirst;
   final bool isLast;
+
+  /// 초당 틱. 진행 중인 판의 경과 시간을 매초 올리려면 넘긴다.
+  final ValueListenable<int>? tick;
   final VoidCallback? onTap;
 
   /// 줄 오른쪽 끝에 붙는 위젯(월즈: 구독 벨). 없으면 아무것도 두지 않는다.
@@ -106,7 +113,11 @@ class MyPlayerTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 2 * scale),
-                        MyPlayerStatusLine(entry: entry, scale: scale),
+                        MyPlayerStatusLine(
+                          entry: entry,
+                          scale: scale,
+                          tick: tick,
+                        ),
                       ],
                     ),
                   ),
@@ -131,10 +142,15 @@ class MyPlayerStatusLine extends StatelessWidget {
     super.key,
     required this.entry,
     required this.scale,
+    this.tick,
   });
 
   final MyPlayerEntry entry;
   final double scale;
+
+  /// 초당 올라가는 틱. 주면 진행 중인 판의 경과 시간이 매초 갱신된다.
+  /// 서버의 `elapsedSeconds` 는 조회 시점 스냅샷이라 그대로 두면 멈춰 보인다.
+  final ValueListenable<int>? tick;
 
   @override
   Widget build(BuildContext context) {
@@ -145,10 +161,16 @@ class MyPlayerStatusLine extends StatelessWidget {
     switch (entry.status) {
       case MyPlayerStatus.liveSolo:
         final live = entry.live!;
-        final text = [
+        String statusText() => [
           if (live.champion.isNotEmpty) live.champion,
-          _clock(live.elapsedSeconds),
+          formatElapsed(
+            liveElapsedSeconds(
+              snapshotSeconds: live.elapsedSeconds,
+              startedAt: live.startedAt,
+            ),
+          ),
         ].join(' · ');
+        final listenable = tick;
         return Row(
           children: [
             Container(
@@ -161,12 +183,24 @@ class MyPlayerStatusLine extends StatelessWidget {
             ),
             SizedBox(width: 4 * scale),
             Flexible(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: style(AppColors.narSoloText),
-              ),
+              // 매초 바뀌는 건 이 텍스트 하나라, 타일 전체를 다시 그리지 않고
+              // 여기만 틱을 구독한다(홈 솔랭 카드와 같은 방식).
+              child: listenable == null
+                  ? Text(
+                      statusText(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: style(AppColors.narSoloText),
+                    )
+                  : ValueListenableBuilder<int>(
+                      valueListenable: listenable,
+                      builder: (_, _, _) => Text(
+                        statusText(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: style(AppColors.narSoloText),
+                      ),
+                    ),
             ),
             if (live.overseasRegion != null) ...[
               SizedBox(width: 6 * scale),
@@ -269,15 +303,6 @@ class MyPlayerAvatar extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 경과 시간 "m:ss". 1시간이 넘으면 "h:mm:ss" (홈 솔랭 카드와 같은 표기).
-String _clock(int seconds) {
-  final h = seconds ~/ 3600;
-  final m = (seconds % 3600) ~/ 60;
-  final s = (seconds % 60).toString().padLeft(2, '0');
-  if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$s';
-  return '$m:$s';
 }
 
 /// 해외 계정으로 하는 판 표시 — "NA" 같은 작은 테두리 칩.
