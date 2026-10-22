@@ -40,7 +40,7 @@ void main() {
         }
         final block = source.substring(match.end, i);
         if (!block.contains('PlayerRatingScreen')) continue;
-        if (block.contains('settings:')) continue;
+        // 일시 제거(검증용)
         final line = source.substring(0, match.start).split('\n').length;
         offenders.add('${file.path}:$line');
       }
