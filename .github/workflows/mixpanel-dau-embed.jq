@@ -34,11 +34,32 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
              + " / 포기 \($c.funnel.onboarding_skip)\(pct($c.funnel.onboarding_skip; $c.funnel.onboarding_users))"),
      inline: false},
 
+    {name: "온보딩 단계 도달",
+     value: (($c.onboarding_steps | map("\(.key) \(.n)") | join(" → "))
+             + (if ($c.onboarding_skip_by_step | length) > 0
+                then "\n포기: \($c.onboarding_skip_by_step | lines)" else "" end)
+             # notification 단계는 권한이 이미 허용된 사용자를 통과시켜
+             # section_view 가 안 찍힌다(설계 21번). 숫자만 보면 그 구간
+             # 이탈이 과대평가되므로 매번 같이 적는다.
+             + "\n※ notification 은 권한 기허용 사용자가 빠져 실제보다 작다"),
+     inline: false},
+
     {name: "참여",
      value: ("경기 카드 \($c.engagement.match_card)"
              + " · 글 카드 \($c.engagement.post_card)"
              + " · 평점 \($c.engagement.review_submit)"
              + " · 구독 \($c.engagement.subscribe)"),
+     inline: false},
+
+    {name: "이탈 화면 TOP 5",
+     value: ($s.exit_top | lines),
+     inline: false},
+
+    {name: "앱 버전",
+     value: (($s.versions_top | lines)
+             + (if ($c.no_version // 0) > 0
+                then "\n버전 미상 \($c.no_version)명(super property 이전 빌드)"
+                else "" end)),
      inline: false}
   ]
 

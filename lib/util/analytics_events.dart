@@ -45,6 +45,10 @@ class AnalyticsProp {
   static const String locationPage = 'location_page';
   static const String locationSection = 'location_section';
 
+  /// 앱 버전(`1.0.36+86`). super property 로 등록해 모든 이벤트에 자동으로
+  /// 붙는다([Analytics.init]) — 호출부에서 직접 실을 필요가 없다.
+  static const String appVersion = 'app_version';
+
   // page 단위
   static const String prevPage = 'prev_page';
 

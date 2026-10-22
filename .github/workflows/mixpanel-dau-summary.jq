@@ -73,6 +73,57 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
     withdraw: (ev("withdraw_button_click") | uniq_users | length)
   },
 
+  # 앱 버전 분포. `app_version` 은 super property 라 모든 이벤트에 붙는다
+  # (자동 이벤트에도). 그래서 `ours` 가 아니라 전체에서 센다 — 계측이 안
+  # 들어간 구버전은 자동 이벤트만 보내므로, ours 로 세면 그 버전이 아예
+  # 안 보여서 "구버전이 얼마나 남았나" 를 못 본다.
+  #
+  # 사용자 수로 센다(이벤트 수로 세면 헤비 유저 한 명이 버전 분포를 왜곡한다).
+  versions: (map(select(.properties.app_version != null))
+             | group_by(.properties.app_version)
+             | map({key: .[0].properties.app_version,
+                    n: (map(.properties.distinct_id // empty) | unique | length)})
+             | sort_by(-.n, .key)),
+
+  # `app_version` 이 아예 없는 사용자 수. super property 를 심기 전 빌드다
+  # (= 계측 미도달 구버전). 이 값이 DAU 의 대부분이면 다른 지표가 0 인 게
+  # 집계 버그가 아니라 사실이라는 뜻이다 — 2026-10-20 에 실제로 겪었다.
+  no_version: (map(select(.properties.app_version == null)) | uniq_users | length),
+
+  # 이탈 화면: 그 사용자의 **마지막** page_view 가 어느 화면이었나.
+  # 하루 경계로 자르는 근사치다(자정 넘겨 계속 쓴 세션은 그날 마지막 화면이
+  # 이탈로 잡힌다). 그래도 "어디서 앱을 덮는가" 의 신호로는 쓸 만하다.
+  exit_pages: (ev("page_view")
+               | map(select(.properties.location_page != null))
+               | group_by(.properties.distinct_id)
+               | map(sort_by(.properties.time) | last.properties.location_page)
+               | group_by(.) | map({key: .[0], n: length})
+               | sort_by(-.n, .key)),
+
+  # 온보딩 단계별 도달 사용자 수. `section_view` 의 location_section 이
+  # league/team/player/notification 이다.
+  #
+  # 주의: 권한이 이미 허용된 사용자는 notification 단계가 화면을 그리지 않고
+  # 통과해 `section_view` 가 안 찍힌다(설계 21번, OnboardingViewModel 주석).
+  # 그래서 notification 도달 수는 **실제보다 작게** 나오고, player →
+  # notification 구간 이탈률은 과대평가된다. 이 왜곡은 보정할 방법이 없어
+  # (통과한 사용자를 식별할 이벤트가 없다) 숫자를 그대로 두고 알림에
+  # 주석을 달아 둔다.
+  # 단계 이름을 `$step` 으로 묶어 쓴다. `select(... == .)` 로 쓰면 그 `.` 이
+  # 단계 이름이 아니라 **순회 중인 이벤트**를 가리켜 전부 0 이 된다.
+  onboarding_steps: ((ev("section_view")
+                      | map(select(.properties.location_page == "onboarding"))) as $sv
+    | ["league", "team", "player", "notification"]
+    | map(. as $step
+          | {key: $step,
+             n: ($sv
+                 | map(select(.properties.location_section == $step))
+                 | uniq_users | length)})),
+
+  # 단계별 포기(skip). `step` 이 "어느 단계에서 포기했는지" 다(설계 24번).
+  onboarding_skip_by_step: (count_by(select(.event == "skip_button_click")
+                                     | .properties.step)),
+
   # 전일 대비 신규/재방문을 가르는 데만 쓴다. 호출부가 두 날짜의 이 배열을
   # 차집합한다.
   users: uniq_users

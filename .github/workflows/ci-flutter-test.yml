@@ -8,6 +8,15 @@ permissions:
   contents: read
 
 jobs:
+  # DAU 알림 집계(jq) 회귀 테스트. Flutter SDK 가 필요 없어 별도 잡으로 두면
+  # 몇 초에 끝난다. jq 는 스코프·타입 오류를 조용히 빈 결과로 삼켜서, 기대값을
+  # 박아 두지 않으면 집계가 전부 0 이 돼도 알림이 정상처럼 나간다.
+  dau-aggregation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: .github/workflows/mixpanel-dau-summary-test.sh
+
   test:
     runs-on: ubuntu-latest
     steps:
