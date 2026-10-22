@@ -40,7 +40,10 @@ void main() {
         }
         final block = source.substring(match.end, i);
         if (!block.contains('PlayerRatingScreen')) continue;
-        if (block.contains('settings:')) continue;
+        // `settings:` 가 있는지만 보면 부족하다 — `RouteSettings()` 처럼 이름
+        // 없는 설정도 통과해 버리는데, observer 는 그것도 시트로 보고 무시한다.
+        // 실제 이름이 박혀 있는지까지 본다.
+        if (block.contains('AnalyticsPage.playerRating')) continue;
         final line = source.substring(0, match.start).split('\n').length;
         offenders.add('${file.path}:$line');
       }
