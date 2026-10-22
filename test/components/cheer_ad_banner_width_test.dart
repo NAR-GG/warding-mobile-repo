@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
+import 'package:warding/repository/ad/ad_repository.dart';
 
 /// 응원 광고 배너의 좌우 여백. 홈은 기본값 16 을 쓰고, 경기 리스트·경기 상세는
 /// 0 을 넘겨 폭을 꽉 채운다.
+///
+/// 광고 자리는 응답을 기다리는 동안 빈 자리(AdLoadingSlot)였다가 모집 배너가 된다. 둘의
+/// 크기가 같아야 자리가 출렁이지 않으므로, 상태와 상관없이 자리 전체([_slot])를 잰다.
+/// (광고 조회 Future 는 싱글턴 캐시라 앞 테스트의 fake async 존에 묶여 이후 테스트에선
+/// 끝나지 않는다 — 그래서 모집 배너가 그려졌는지에 기대지 않는다.)
+final _slot = find.byType(FutureBuilder<Ad?>);
+
 Widget _host(Widget child) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -23,10 +31,9 @@ void main() {
     await tester.pumpWidget(
       _host(const CheerAdBanner(placement: 'home', scale: 1)),
     );
-    // 등록 광고 조회가 끝나야(테스트에선 실패 → 모집 배너) 카드가 그려진다.
     await tester.pumpAndSettle();
 
-    final card = tester.getSize(find.byType(CheerAdBannerCard));
+    final card = tester.getSize(_slot);
     expect(card.width, 375 - 32);
   });
 
@@ -46,7 +53,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final card = tester.getSize(find.byType(CheerAdBannerCard));
+    final card = tester.getSize(_slot);
     expect(card.width, 375);
   });
 
@@ -62,7 +69,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(CheerAdBannerCard)).width, 375 - 40);
+    expect(tester.getSize(_slot).width, 375 - 40);
 
     await tester.pumpWidget(
       _host(
@@ -74,7 +81,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(CheerAdBannerCard)).width, 375 - 16);
+    expect(tester.getSize(_slot).width, 375 - 16);
   });
 
   testWidgets('세 자리(배너·스플래시·팝업) 모두에 AD 뱃지가 붙는다', (tester) async {
@@ -106,7 +113,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final card = tester.getSize(find.byType(CheerAdBannerCard));
+    final card = tester.getSize(_slot);
     expect(card.width / card.height, closeTo(960 / 300, 0.01));
   });
 }

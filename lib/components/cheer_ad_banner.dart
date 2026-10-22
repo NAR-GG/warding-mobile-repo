@@ -52,6 +52,9 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
       child: FutureBuilder<Ad?>(
         future: _ad,
         builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const AdLoadingSlot(slot: CheerAdSlot.banner);
+          }
           final ad = snapshot.data;
           if (ad == null) {
             return GestureDetector(
@@ -159,6 +162,9 @@ class _CheerAdSlotViewState extends State<CheerAdSlotView> {
     return FutureBuilder<Ad?>(
       future: _ad,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return AdLoadingSlot(slot: widget.slot);
+        }
         final ad = snapshot.data;
         if (ad == null) {
           return CheerAdBannerCard(scale: widget.scale, slot: widget.slot);
@@ -167,6 +173,19 @@ class _CheerAdSlotViewState extends State<CheerAdSlotView> {
       },
     );
   }
+}
+
+/// 광고 응답을 기다리는 동안의 빈 자리. 모집 배너를 먼저 그리면 등록 광고가 있을 때
+/// 모집 배너 → 광고로 바뀌는 게 보인다(스플래시는 진입할 때마다). 높이만 잡아 두고
+/// 응답이 오면 둘 중 하나를 한 번만 그린다.
+class AdLoadingSlot extends StatelessWidget {
+  const AdLoadingSlot({super.key, required this.slot});
+
+  final CheerAdSlot slot;
+
+  @override
+  Widget build(BuildContext context) =>
+      AspectRatio(aspectRatio: slot.aspectRatio);
 }
 
 /// 응원 광고가 들어가는 자리. 비율은 백오피스 광고 안내의 이미지 규격과 같고,
