@@ -100,7 +100,45 @@ check "versions" "[]" "$(printf '%s' "$E" | jq -c '.versions')"
 # 단계는 항상 4칸을 유지해야 알림 렌더가 깨지지 않는다
 check "onboarding_steps 길이" "4" "$(printf '%s' "$E" | jq -c '.onboarding_steps | length')"
 
-echo "[3] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
+echo "[3] 버전 이중 집계 방지 (사용자당 대표 버전 1개)"
+# u1: 자동 이벤트(버전 없음) + 우리 이벤트(버전 있음) 섞임 → no_version 에
+#     들어가면 안 된다.
+# u2: 같은 날 업데이트 → 두 버전에 중복으로 들어가면 안 된다(마지막 버전만).
+# u3: 자동 이벤트만 → no_version.
+cat > "$FIX/mixed.jsonl" <<'EOF'
+{"event":"$ae_session","properties":{"distinct_id":"u1","time":1}}
+{"event":"page_view","properties":{"distinct_id":"u1","time":2,"location_page":"home","app_version":"1.0.36+86"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":3,"location_page":"home","app_version":"1.0.35+85"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":4,"location_page":"home","app_version":"1.0.36+86"}}
+{"event":"$ae_session","properties":{"distinct_id":"u3","time":5}}
+EOF
+M=$(jq -sf "$JQ_FILE" "$FIX/mixed.jsonl")
+m() { printf '%s' "$M" | jq -c "$1"; }
+check "dau" "3" "$(m '.dau')"
+# u1·u2 둘 다 마지막 버전이 1.0.36+86
+check "versions (대표 버전 1개씩)" '[{"key":"1.0.36+86","n":2}]' "$(m '.versions')"
+check "no_version (u3 만)" "1" "$(m '.no_version')"
+# 해석의 전제: 합이 DAU 와 같아야 한다
+check "versions 합 + no_version == dau" "3" \
+  "$(m '((.versions | map(.n) | add // 0) + .no_version)')"
+
+echo "[4] 단계별 포기는 고유 사용자 수"
+# u1 이 team 에서 두 번 포기해도 1 명이어야 funnel.onboarding_skip 과 맞는다.
+cat > "$FIX/skip.jsonl" <<'EOF'
+{"event":"skip_button_click","properties":{"distinct_id":"u1","time":1,"location_page":"onboarding","step":"team"}}
+{"event":"skip_button_click","properties":{"distinct_id":"u1","time":2,"location_page":"onboarding","step":"team"}}
+{"event":"skip_button_click","properties":{"distinct_id":"u2","time":3,"location_page":"onboarding","step":"league"}}
+EOF
+K=$(jq -sf "$JQ_FILE" "$FIX/skip.jsonl")
+check "onboarding_skip_by_step (중복 제거)" \
+  '[{"key":"league","n":1},{"key":"team","n":1}]' \
+  "$(printf '%s' "$K" | jq -c '.onboarding_skip_by_step')"
+# 단계별 합과 전체 포기 수가 같은 단위여야 한다
+check "단계별 합 == funnel.onboarding_skip" "2" \
+  "$(printf '%s' "$K" | jq -c '.onboarding_skip_by_step | map(.n) | add')"
+check "funnel.onboarding_skip" "2" "$(printf '%s' "$K" | jq -c '.funnel.onboarding_skip')"
+
+echo "[5] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
 printf '{"event":"$ae_session","properties":{"distinct_id":"x1","time":1}}\n' > "$FIX/auto.jsonl"
 A=$(jq -sf "$JQ_FILE" "$FIX/auto.jsonl")
 check "dau (앱은 켰다)" "1" "$(printf '%s' "$A" | jq -c '.dau')"

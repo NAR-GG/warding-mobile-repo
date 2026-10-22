@@ -79,16 +79,34 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
   # 안 보여서 "구버전이 얼마나 남았나" 를 못 본다.
   #
   # 사용자 수로 센다(이벤트 수로 세면 헤비 유저 한 명이 버전 분포를 왜곡한다).
-  versions: (map(select(.properties.app_version != null))
-             | group_by(.properties.app_version)
-             | map({key: .[0].properties.app_version,
-                    n: (map(.properties.distinct_id // empty) | unique | length)})
+  #
+  # **사용자당 대표 버전 하나**만 센다. 그냥 이벤트를 버전으로 묶으면 한 명이
+  # 여러 칸에 중복으로 들어가, 버전 분포 합이 DAU 를 넘어선다 —
+  #   · 자동 이벤트(버전 없음) + 우리 이벤트(버전 있음)가 섞인 사용자는
+  #     `versions` 와 `no_version` **양쪽**에 잡힌다
+  #   · 같은 날 앱을 업데이트하면 두 버전에 모두 잡힌다
+  # 그러면 "구버전이 얼마나 남았나" 를 읽을 수 없는데, 그게 이 지표를 넣은
+  # 이유 자체다. 대표값은 **그날 마지막으로 본 버전**으로 한다(업데이트한
+  # 사용자는 새 버전 쪽에 세는 게 롤아웃 추적에 맞다).
+  versions: ((map(select(.properties.distinct_id != null))
+              | group_by(.properties.distinct_id)
+              | map(map(select(.properties.app_version != null))
+                    | if length == 0 then empty
+                      else (sort_by(.properties.time) | last.properties.app_version)
+                      end))
+             | group_by(.) | map({key: .[0], n: length})
              | sort_by(-.n, .key)),
 
-  # `app_version` 이 아예 없는 사용자 수. super property 를 심기 전 빌드다
-  # (= 계측 미도달 구버전). 이 값이 DAU 의 대부분이면 다른 지표가 0 인 게
-  # 집계 버그가 아니라 사실이라는 뜻이다 — 2026-10-20 에 실제로 겪었다.
-  no_version: (map(select(.properties.app_version == null)) | uniq_users | length),
+  # 모든 이벤트에 `app_version` 이 없는 사용자 수. super property 를 심기 전
+  # 빌드다(= 계측 미도달 구버전). 이 값이 DAU 의 대부분이면 다른 지표가 0 인
+  # 게 집계 버그가 아니라 사실이라는 뜻이다 — 2026-10-20 에 실제로 겪었다.
+  #
+  # 버전이 **하나라도** 있으면 위 `versions` 쪽에만 센다. 그래서
+  # `versions` 합 + `no_version` = DAU 가 성립한다(해석의 전제).
+  no_version: (map(select(.properties.distinct_id != null))
+               | group_by(.properties.distinct_id)
+               | map(select(all(.[]; .properties.app_version == null)))
+               | length),
 
   # 이탈 화면: 그 사용자의 **마지막** page_view 가 어느 화면이었나.
   # 하루 경계로 자르는 근사치다(자정 넘겨 계속 쓴 세션은 그날 마지막 화면이
@@ -121,8 +139,15 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
                  | uniq_users | length)})),
 
   # 단계별 포기(skip). `step` 이 "어느 단계에서 포기했는지" 다(설계 24번).
-  onboarding_skip_by_step: (count_by(select(.event == "skip_button_click")
-                                     | .properties.step)),
+  #
+  # 여기도 **고유 사용자 수**다. 이벤트 수로 세면 한 명이 같은 날 team 에서
+  # 두 번 포기했을 때 2 로 보이는데, 같은 알림의 `funnel.onboarding_skip` 은
+  # 1 이라 두 숫자가 어긋난다. 단위를 맞춰 둬야 나란히 읽을 수 있다.
+  onboarding_skip_by_step: (ev("skip_button_click")
+                            | map(select(.properties.step != null))
+                            | group_by(.properties.step)
+                            | map({key: .[0].properties.step, n: (. | uniq_users | length)})
+                            | sort_by(-.n, .key)),
 
   # 전일 대비 신규/재방문을 가르는 데만 쓴다. 호출부가 두 날짜의 이 배열을
   # 차집합한다.
