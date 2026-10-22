@@ -43,6 +43,15 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
     login_users: page_users("login"),
     login_click: (ev("login_button_click") | uniq_users | length),
     guest_click: (ev("guest_start_button_click") | uniq_users | length),
+
+    # 로그인·비회원을 **둘 다** 누른 사용자. 두 버튼이 같은 화면에 있어
+    # 배타적이지 않다(로그인에 실패하거나 되돌아 나와 비회원으로 시작하는
+    # 경로가 있다). 이 값을 같이 보여주지 않으면 두 비율의 합이 100% 를
+    # 넘는 게 집계 오류처럼 보인다 — 2026-10-21 자 알림이 100%/23% 로 나왔다.
+    login_and_guest: ([(ev("login_button_click") | uniq_users),
+                       (ev("guest_start_button_click") | uniq_users)]
+                      | .[0] - (.[0] - .[1]) | length),
+
     onboarding_users: page_users("onboarding"),
 
     # `step=notification` 인 next_button_click 이 온보딩 완료 지표다.

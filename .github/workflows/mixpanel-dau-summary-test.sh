@@ -138,7 +138,28 @@ check "단계별 합 == funnel.onboarding_skip" "2" \
   "$(printf '%s' "$K" | jq -c '.onboarding_skip_by_step | map(.n) | add')"
 check "funnel.onboarding_skip" "2" "$(printf '%s' "$K" | jq -c '.funnel.onboarding_skip')"
 
-echo "[5] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
+echo "[5] 로그인·비회원을 둘 다 누른 사용자"
+# 2026-10-21 자 알림이 "로그인 100% / 비회원 23%" 로 나와 합이 123% 였다.
+# 집계 오류가 아니라 두 버튼이 같은 화면에 있어 겹친 것이다 — 겹친 수를
+# 따로 세서 알림에 적는다.
+cat > "$FIX/both.jsonl" <<'EOF'
+{"event":"page_view","properties":{"distinct_id":"u1","time":1,"location_page":"login"}}
+{"event":"login_button_click","properties":{"distinct_id":"u1","time":2,"location_page":"login"}}
+{"event":"guest_start_button_click","properties":{"distinct_id":"u1","time":3,"location_page":"login"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":4,"location_page":"login"}}
+{"event":"login_button_click","properties":{"distinct_id":"u2","time":5,"location_page":"login"}}
+EOF
+B=$(jq -sf "$JQ_FILE" "$FIX/both.jsonl")
+b() { printf '%s' "$B" | jq -c "$1"; }
+check "login_users" "2" "$(b '.funnel.login_users')"
+check "login_click" "2" "$(b '.funnel.login_click')"
+check "guest_click" "1" "$(b '.funnel.guest_click')"
+check "login_and_guest (u1 만)" "1" "$(b '.funnel.login_and_guest')"
+# 겹침이 없으면 0 이어야 한다(허위 경고 방지)
+check "겹침 없으면 0" "0" \
+  "$(jq -sf "$JQ_FILE" "$FIX/skip.jsonl" | jq -c '.funnel.login_and_guest')"
+
+echo "[6] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
 printf '{"event":"$ae_session","properties":{"distinct_id":"x1","time":1}}\n' > "$FIX/auto.jsonl"
 A=$(jq -sf "$JQ_FILE" "$FIX/auto.jsonl")
 check "dau (앱은 켰다)" "1" "$(printf '%s' "$A" | jq -c '.dau')"
