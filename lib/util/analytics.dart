@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -53,8 +55,16 @@ class Analytics {
         ),
       );
       await _registerAppVersion();
-      // 비회원도 실험 대상이다. 로그인하면 `identify` 뒤에 다시 부른다.
-      await loadFlags();
+      // 비회원도 실험 대상이라 여기서 한 번 받는다(로그인하면 `identify` 뒤에
+      // 다시 받는다). **단 기다리지 않는다** — `main.dart` 가 `init()` 을
+      // `Future.wait([...]).timeout(8초)` 안에서 await 한 뒤 `runApp` 을
+      // 부르므로, 여기서 네트워크를 기다리면 **느린 회선에서 첫 화면이 그만큼
+      // 늦게 뜬다**(timeout 은 상한만 정하고 지연을 없애지 못한다).
+      //
+      // 플래그를 못 받은 사이 화면이 읽으면 [flag] 가 fallback(= 현재 운영값)
+      // 을 주므로 안전하다. 그게 fallback 을 현재 운영값으로 두라는 규칙의
+      // 이유다.
+      unawaited(loadFlags());
     } catch (e) {
       debugPrint('[Analytics] 초기화 실패: $e');
     }
@@ -202,7 +212,13 @@ class Analytics {
       // 타입 불일치로 버리면 실험이 조용히 안 걸리므로 숫자만 변환해 준다.
       if (value is num) {
         if (T == double) return value.toDouble() as T;
-        if (T == int) return value.toInt() as T;
+        // 정수로 **정확히** 표현되는 값만 변환한다. `199.9` 를 `toInt()` 로
+        // 깎으면 `199` — 콘솔에도 없고 fallback 도 아닌 제3의 값이 조용히
+        // 화면에 나간다. 잘못 설정된 플래그는 fallback 으로 보내 눈에 띄게 한다.
+        if (T == int && value is int) return value as T;
+        if (T == int && value == value.roundToDouble()) {
+          return value.toInt() as T;
+        }
       }
       debugPrint(
         '[Analytics] 플래그 $name 타입 불일치: ${value.runtimeType} ≠ $T — fallback 사용',
@@ -234,7 +250,11 @@ class Analytics {
   /// "가격 변형 B 를 본 사용자의 온보딩 완료율").
   ///
   /// 실험이 아닌 플래그(단순 스위치)는 `experimentId` 가 없어 등록하지 않는다 —
-  /// 쓸데없이 super property 가 쌓이면 모든 이벤트가 무거워진다.
+  /// 쓸데없이 super property 가 쌓이면 모든 이벤트가 무거워진다. 배정이
+  /// 없어지면(실험 종료·타겟팅 제외) **이전 태그를 지운다**: super property 는
+  /// 앱을 닫아도 남고 [identify] 도 지우지 않아서, 그냥 두면 실험에서 빠진
+  /// 사용자의 이벤트에 옛 실험군이 계속 실려 세그먼트가 오염된다.
+  /// ([reset] 은 super property 를 전부 지우므로 이 문제와 무관하다.)
   ///
   /// 변형을 읽은 뒤 한 번 부른다:
   /// ```dart
@@ -250,7 +270,10 @@ class Analytics {
         MixpanelFlagVariant(key: name, value: null),
       );
       // 실험에 묶이지 않은 플래그거나 fallback 이면 실험군이 아니다.
-      if (variant.experimentId == null) return;
+      if (variant.experimentId == null) {
+        await mp.unregisterSuperProperty('experiment_$name');
+        return;
+      }
       await mp.registerSuperProperties({'experiment_$name': variant.key});
     } catch (e) {
       debugPrint('[Analytics] 실험 태깅 $name 실패: $e');

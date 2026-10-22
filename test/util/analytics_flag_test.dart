@@ -33,6 +33,15 @@ void main() {
     await expectLater(Analytics.tagExperiment('any'), completes);
   });
 
+  test('init 이 플래그 조회를 기다리지 않는다', () async {
+    // `main.dart` 가 init() 을 `Future.wait([...]).timeout(8초)` 안에서 await 한
+    // 뒤 runApp 을 부른다. init 안에서 네트워크를 기다리면 느린 회선에서 첫
+    // 화면이 그만큼 늦게 뜬다(timeout 은 상한만 정하고 지연을 없애지 못한다).
+    // 테스트 환경에서는 토큰 분기로 즉시 리턴하므로, 적어도 "오래 매달리지
+    // 않는다"를 고정해 둔다.
+    await expectLater(Analytics.init().timeout(const Duration(seconds: 2)), completes);
+  });
+
   test('fallback 타입이 그대로 보존된다', () async {
     // 제네릭이 호출부 타입을 그대로 돌려줘야 한다 — `dynamic` 이 새어 나오면
     // 호출부에서 런타임에 터진다.
