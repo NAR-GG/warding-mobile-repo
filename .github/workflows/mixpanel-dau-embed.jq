@@ -29,6 +29,10 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
      value: ("login 진입 \($c.funnel.login_users)명"
              + " → 로그인 \($c.funnel.login_click)\(pct($c.funnel.login_click; $c.funnel.login_users))"
              + " / 비회원 \($c.funnel.guest_click)\(pct($c.funnel.guest_click; $c.funnel.login_users))"
+             # 두 버튼이 같은 화면에 있어 배타적이지 않다. 겹친 사람을 적어
+             # 두지 않으면 합이 100% 를 넘는 것이 집계 오류처럼 보인다.
+             + (if ($c.funnel.login_and_guest // 0) > 0
+                then " (둘 다 누른 \($c.funnel.login_and_guest)명 중복)" else "" end)
              + "\n온보딩 진입 \($c.funnel.onboarding_users)명"
              + " → 완료 \($c.funnel.onboarding_done)\(pct($c.funnel.onboarding_done; $c.funnel.onboarding_users))"
              + " / 포기 \($c.funnel.onboarding_skip)\(pct($c.funnel.onboarding_skip; $c.funnel.onboarding_users))"),
@@ -56,10 +60,16 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
      inline: false},
 
     {name: "앱 버전",
-     value: (($s.versions_top | lines)
-             + (if ($c.no_version // 0) > 0
-                then "\n버전 미상 \($c.no_version)명(super property 이전 빌드)"
-                else "" end)),
+     # 아무도 버전을 안 보내면 "없음" 이 아니라 **왜** 없는지를 적는다.
+     # "없음" 은 집계가 깨진 것처럼 읽히는데, 실제로는 `app_version` 을 심은
+     # 빌드가 아직 사용자에게 안 나간 상태다(2026-10-21 에 겪었다).
+     value: (if ($s.versions_top | length) == 0
+             then "아직 집계 안 됨 — `app_version` 을 심은 빌드가 사용자에게 도달하기 전이다"
+                  + (if ($c.no_version // 0) > 0 then " (버전 미상 \($c.no_version)명)" else "" end)
+             else ($s.versions_top | lines)
+                  + (if ($c.no_version // 0) > 0
+                     then "\n버전 미상 \($c.no_version)명(구버전)" else "" end)
+             end),
      inline: false}
   ]
 
@@ -72,5 +82,8 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
                  + "탈퇴 \($c.risk.withdraw)건"),
          inline: false}]
      else [] end)),
-  footer: {text: $s.footer}
+  # Discord 는 빈 문자열 footer 를 400 으로 거부한다. 경고가 없는 날
+  # (표본 충분 + 전원 버전 확인)에는 호출부가 빈 값을 넘기므로 여기서 막는다.
+  footer: {text: (if ($s.footer | length) > 0 then $s.footer
+                  else "Mixpanel 원시 이벤트 집계" end)}
 }]}
