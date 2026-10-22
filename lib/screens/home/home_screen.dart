@@ -183,7 +183,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openWorlds() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        settings: const RouteSettings(name: AnalyticsPage.myPlayers),
+        // 내 선수와 **다른 이름**이다. 같은 화면 코드를 쓰지만 사용자에게는
+        // 다른 화면이고, 같은 이름이면 `page_view` 가 합쳐져 월즈 솔랭 진입을
+        // 따로 볼 수 없다.
+        settings: const RouteSettings(name: AnalyticsPage.worldsSolo),
         builder: (_) => const MyPlayersScreen(worlds: true),
       ),
     );

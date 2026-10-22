@@ -76,6 +76,13 @@ class AnalyticsProp {
   static const String permissionResult = 'permission_result';
   static const String isOn = 'is_on';
   static const String targetType = 'target_type';
+
+  /// 월즈 솔랭 선수 시트의 알림 토글. 솔랭 **시작** 알림을 받을지.
+  /// 구독할 때만 싣는다(해제에는 의미가 없다).
+  static const String alarmStart = 'alarm_start';
+
+  /// 같은 시트의 솔랭 **종료** 알림 토글.
+  static const String alarmEnd = 'alarm_end';
   static const String ratingScore = 'rating_score';
   static const String commentLength = 'comment_length';
   static const String setNo = 'set_no';
@@ -106,6 +113,11 @@ class AnalyticsPage {
   static const String notification = 'notification';
   static const String mypage = 'mypage';
   static const String myPlayers = 'my_players';
+
+  /// 월즈 솔랭. `MyPlayersScreen(worlds: true)` 로 같은 화면 코드를 쓰지만
+  /// **다른 화면으로 센다** — 원래 둘이 같은 라우트 이름(`my_players`)을 써서
+  /// `page_view` 가 합쳐졌고, 월즈 솔랭 진입을 따로 볼 수 없었다.
+  static const String worldsSolo = 'worlds_solo';
   static const String notice = 'notice';
   static const String noticeDetail = 'notice_detail';
   static const String playerRating = 'player_rating';

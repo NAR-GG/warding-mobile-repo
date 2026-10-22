@@ -71,7 +71,15 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
     match_card: (ev("match_card_click") | length),
     post_card: (ev("post_card_click") | length),
     review_submit: (ev("review_submit_button_click") | length),
-    subscribe: (ev("subscribe_button_click") | length)
+    subscribe: (ev("subscribe_button_click") | length),
+
+    # 월즈 솔랭에서 켠 알림 신청만 따로 센다. 전체 `subscribe` 에 묶어 두면
+    # 구독 설정 화면 수치에 섞여 이 화면의 신호가 안 보인다.
+    # `is_on == true` 만 — 해제는 신청이 아니다.
+    worlds_subscribe: (ev("subscribe_button_click")
+                       | map(select(.properties.location_page == "worlds_solo"
+                                    and .properties.is_on == true))
+                       | length)
   },
 
   risk: {

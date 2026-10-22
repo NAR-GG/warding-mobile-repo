@@ -159,7 +159,23 @@ check "login_and_guest (u1 만)" "1" "$(b '.funnel.login_and_guest')"
 check "겹침 없으면 0" "0" \
   "$(jq -sf "$JQ_FILE" "$FIX/skip.jsonl" | jq -c '.funnel.login_and_guest')"
 
-echo "[6] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
+echo "[6] 월즈 솔랭 알림 신청"
+# worlds_solo 화면의 구독 ON 만 센다. 해제(is_on=false)와 다른 화면의 구독은
+# 빠져야 한다 — 섞이면 이 화면의 신호를 못 본다.
+cat > "$FIX/worlds.jsonl" <<'EOF'
+{"event":"page_view","properties":{"distinct_id":"u1","time":1,"location_page":"worlds_solo","prev_page":"home"}}
+{"event":"subscribe_button_click","properties":{"distinct_id":"u1","time":2,"location_page":"worlds_solo","target_type":"player","player_id":7,"is_on":true,"alarm_start":true,"alarm_end":false}}
+{"event":"subscribe_button_click","properties":{"distinct_id":"u1","time":3,"location_page":"worlds_solo","target_type":"player","player_id":8,"is_on":false}}
+{"event":"subscribe_button_click","properties":{"distinct_id":"u2","time":4,"location_page":"subscription_settings","target_type":"player","player_id":9,"is_on":true}}
+EOF
+W=$(jq -sf "$JQ_FILE" "$FIX/worlds.jsonl")
+w() { printf '%s' "$W" | jq -c "$1"; }
+check "subscribe (전체 3건)" "3" "$(w '.engagement.subscribe')"
+check "worlds_subscribe (ON 1건만)" "1" "$(w '.engagement.worlds_subscribe')"
+# 월즈 솔랭이 내 선수와 다른 화면으로 집계돼야 한다
+check "worlds_solo 화면이 따로 잡힌다" '[{"key":"worlds_solo","n":1}]' "$(w '.pages')"
+
+echo "[7] 자동 이벤트만 있는 하루 (계측 미도달 구버전)"
 printf '{"event":"$ae_session","properties":{"distinct_id":"x1","time":1}}\n' > "$FIX/auto.jsonl"
 A=$(jq -sf "$JQ_FILE" "$FIX/auto.jsonl")
 check "dau (앱은 켰다)" "1" "$(printf '%s' "$A" | jq -c '.dau')"

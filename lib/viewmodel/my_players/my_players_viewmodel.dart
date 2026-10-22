@@ -6,6 +6,8 @@ import '../../model/home_models.dart';
 import '../../model/player_subscription.dart';
 import '../../repository/home/home_sources.dart';
 import '../../repository/subscription/subscription_repository.dart';
+import '../../util/analytics.dart';
+import '../../util/analytics_events.dart';
 import '../home/solo_rank_rules.dart';
 
 /// 월즈 출전 팀 → 소속 리그(리그 칩). 리그 칩 순서도 이 맵 순서를 따른다.
@@ -288,6 +290,21 @@ class MyPlayersViewModel extends ChangeNotifier {
       } else {
         await _subscriptions.unsubscribePlayer(playerId);
       }
+      // API 성공 **후**에 찍는다 — 실패는 아래 catch 에서 조용히 삼켜지고
+      // 상태도 되돌려지므로, 클릭 시점에 찍으면 구독되지 않은 것이 성공으로
+      // 집계된다(구독 설정 화면과 같은 규칙, 설계 문서 25번).
+      //
+      // `is_on` 은 토글 **후** 값이다. 알림 토글(시작/종료)은 이 화면만의
+      // 값이라 함께 싣는다 — 사용자가 어떤 알림을 원하는지가 여기서만 보인다.
+      // 해제할 때는 토글이 의미가 없어 싣지 않는다.
+      Analytics.track(AnalyticsEvent.subscribeButtonClick, {
+        AnalyticsProp.locationPage: AnalyticsPage.worldsSolo,
+        AnalyticsProp.targetType: AnalyticsValue.player,
+        AnalyticsProp.playerId: playerId,
+        AnalyticsProp.isOn: subscribed,
+        if (subscribed) AnalyticsProp.alarmStart: startEnabled,
+        if (subscribed) AnalyticsProp.alarmEnd: endEnabled,
+      });
     } catch (e) {
       debugPrint('[WorldsSolo] 구독 변경 실패: $e');
       if (_disposed) return;

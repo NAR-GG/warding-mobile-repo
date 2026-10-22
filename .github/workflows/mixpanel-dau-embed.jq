@@ -52,7 +52,9 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
      value: ("경기 카드 \($c.engagement.match_card)"
              + " · 글 카드 \($c.engagement.post_card)"
              + " · 평점 \($c.engagement.review_submit)"
-             + " · 구독 \($c.engagement.subscribe)"),
+             + " · 구독 \($c.engagement.subscribe)"
+             + (if ($c.engagement.worlds_subscribe // 0) > 0
+                then " (월즈 솔랭 알림 \($c.engagement.worlds_subscribe))" else "" end)),
      inline: false},
 
     {name: "이탈 화면 TOP 5",
