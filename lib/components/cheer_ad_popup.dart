@@ -175,6 +175,9 @@ class _PopupAdCardState extends State<_PopupAdCard> {
     return FutureBuilder<Ad?>(
       future: _ad,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const AdLoadingSlot(slot: CheerAdSlot.popup);
+        }
         final ad = snapshot.data;
         if (ad != null) {
           // 등록 광고는 자기 이동 주소를 갖는다(RegisteredAdCard 가 탭을 처리).
