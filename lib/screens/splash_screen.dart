@@ -15,6 +15,7 @@ import '../config/app_globals.dart';
 import '../config/app_language.dart';
 import '../config/secure_storage.dart';
 import '../l10n/app_localizations.dart';
+import '../repository/ad/ad_repository.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
 import '../repository/notice/notice_repository.dart';
@@ -61,6 +62,13 @@ class _SplashScreenState extends State<SplashScreen>
     _adTapUnlock = Timer(_adTapUnlockDelay, () {
       if (mounted) setState(() => _adTapEnabled = true);
     });
+    // 광고 이미지를 스플래시가 떠 있는 동안 미리 받아 둔다. 홈 진입 직후 팝업·
+    // 배너가 회색 자리에서 광고로 바뀌는 게 보이던 문제 때문이다.
+    //
+    // 'splash' 도 함께 받아 두지만 이번 진입에는 거의 못 쓴다 — 스플래시가 1~2초
+    // 뒤 사라져서 이미지가 제때 도착하지 않는다. 다음 실행을 위한 적립이다
+    // (그때는 CheerAdSlotView 가 첫 프레임부터 광고를 그린다).
+    AdRepository.instance.warmUp(const ['splash', 'popup', 'home']);
     _bootstrap();
   }
 
