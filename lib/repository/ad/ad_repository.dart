@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/painting.dart'
     show ImageConfiguration, ImageInfo, ImageStreamListener;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/api_config.dart';
 import '../../util/api_client.dart' as http;
@@ -46,13 +47,58 @@ class AdRepository {
   /// 이미지까지 준비가 끝난 광고. [readyFor] 가 기다림 없이 답하려고 들고 있는다.
   final Map<String, Ad> _ready = {};
 
+  /// 지난 실행에서 이미지까지 받아 둔 광고를 적어 두는 칸. 값은 [Ad] 한 건의 JSON.
+  static const _restoreKey = 'ad_ready_splash';
+
   /// 지금 **당장** 그릴 수 있는 광고. 응답과 이미지가 모두 캐시에 있을 때만
   /// 돌려주고, 아니면 `null` — 기다리지 않는다.
   ///
   /// 스플래시가 첫 프레임에 쓴다. 스플래시는 1~2초만 떠 있어서 중간에 그림을
   /// 바꾸면 그게 전부 눈에 띈다. 그래서 '받아 놓은 게 있으면 광고, 없으면 모집
-  /// 배너' 를 처음에 정하고 끝까지 안 바꾼다(캐시가 빈 첫 실행은 모집 배너).
+  /// 배너' 를 처음에 정하고 끝까지 안 바꾼다.
+  ///
+  /// 앱을 켤 때마다 비어 있지 않도록 [restoreSplash] 가 첫 프레임 전에 채운다 —
+  /// `_ready` 는 메모리에만 있어서, 복원이 없으면 콜드스타트에서 **항상** null 이고
+  /// 스플래시 광고가 영원히 안 뜬다.
   Ad? readyFor(String placement) => _ready[placement];
+
+  /// 지난 실행에서 받아 둔 스플래시 광고를 `_ready` 에 되살린다. **첫 프레임 전에**
+  /// (`main` 의 초기화 묶음에서) 불러야 [CheerAdSlotView] 가 그 값을 쓸 수 있다.
+  ///
+  /// 이미지가 아직 디스크 캐시에 있는지는 여기서 확인하지 않는다 — 확인하려면
+  /// 비동기 조회가 한 번 더 들어가 첫 프레임을 늦추고, 캐시가 비었어도
+  /// [CachedNetworkImage] 가 받아오는 동안 회색 자리만 잠깐 보일 뿐이다
+  /// (스플래시는 탭도 안 되는 자리라 피해가 작다).
+  Future<void> restoreSplash() async {
+    try {
+      final raw = (await SharedPreferences.getInstance()).getString(
+        _restoreKey,
+      );
+      if (raw == null) return;
+      final ad = Ad.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      // 이미 이번 실행에서 받아 둔 게 있으면 그게 더 최신이다.
+      _ready.putIfAbsent(ad.placement, () => ad);
+    } catch (e) {
+      debugPrint('[AdRepository] 스플래시 광고 복원 실패: $e');
+    }
+  }
+
+  /// 다음 실행의 첫 프레임에 쓰도록 스플래시 광고를 적어 둔다. 실패는 삼킨다 —
+  /// 적어 두지 못하면 다음 실행이 모집 배너로 가는 것뿐이다.
+  Future<void> _rememberSplash(Ad ad) async {
+    try {
+      await (await SharedPreferences.getInstance()).setString(
+        _restoreKey,
+        jsonEncode({
+          'placement': ad.placement,
+          'imageUrl': ad.imageUrl,
+          'linkUrl': ad.linkUrl,
+        }),
+      );
+    } catch (e) {
+      debugPrint('[AdRepository] 스플래시 광고 저장 실패: $e');
+    }
+  }
 
   /// 이미지까지 준비된 광고. 응답만 와 있고 이미지가 아직이면 기다린다 —
   /// 먼저 돌려주면 회색 자리(+AD 뱃지)가 보였다가 광고로 바뀌는 게 눈에 띈다.
@@ -63,8 +109,15 @@ class AdRepository {
     if (ad == null) return null;
     final ok = await _warmImage(ad);
     if (!ok) return null;
-    _ready[placement] = ad;
+    await _markReady(placement, ad);
     return ad;
+  }
+
+  /// 이미지까지 준비됐다고 기록한다. 스플래시 자리는 다음 실행의 첫 프레임에
+  /// 쓰도록 기기에도 적어 둔다.
+  Future<void> _markReady(String placement, Ad ad) async {
+    _ready[placement] = ad;
+    if (placement == 'splash') await _rememberSplash(ad);
   }
 
   /// 응답만 본다(이미지는 안 기다린다). 미리 받아 둘 자리를 고를 때 쓴다.
@@ -83,7 +136,7 @@ class AdRepository {
     for (final placement in placements) {
       _adFor(placement).then((ad) async {
         if (ad == null) return;
-        if (await _warmImage(ad)) _ready[placement] = ad;
+        if (await _warmImage(ad)) await _markReady(placement, ad);
       });
     }
   }

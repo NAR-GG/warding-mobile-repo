@@ -66,8 +66,9 @@ class _SplashScreenState extends State<SplashScreen>
     // 배너가 회색 자리에서 광고로 바뀌는 게 보이던 문제 때문이다.
     //
     // 'splash' 도 함께 받아 두지만 이번 진입에는 거의 못 쓴다 — 스플래시가 1~2초
-    // 뒤 사라져서 이미지가 제때 도착하지 않는다. 다음 실행을 위한 적립이다
-    // (그때는 CheerAdSlotView 가 첫 프레임부터 광고를 그린다).
+    // 뒤 사라져서 이미지가 제때 도착하지 않는다. 다음 실행을 위한 적립이고,
+    // 기기에 적어 둬서(_rememberSplash) main 의 restoreSplash 가 되살린다.
+    // 그때는 CheerAdSlotView 가 첫 프레임부터 광고를 그린다.
     AdRepository.instance.warmUp(const ['splash', 'popup', 'home']);
     _bootstrap();
   }
