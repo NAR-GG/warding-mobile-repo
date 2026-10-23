@@ -172,12 +172,12 @@ class _PopupAdCardState extends State<_PopupAdCard> {
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
+    // 기다리는 동안 모집 배너를 그려 둔다 — 빈 자리를 두지 않는다. 광고는 이미지
+    // 해석까지 끝난 뒤에만 들어와서(AdRepository.forPlacement) 교체가 한 번으로
+    // 끝나고, 팝업은 닫을 때까지 떠 있으니 늦게 도착한 광고도 제 역할을 한다.
     return FutureBuilder<Ad?>(
       future: _ad,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const AdLoadingSlot(slot: CheerAdSlot.popup);
-        }
         final ad = snapshot.data;
         if (ad != null) {
           // 등록 광고는 자기 이동 주소를 갖는다(RegisteredAdCard 가 탭을 처리).

@@ -1,0 +1,48 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:warding/repository/ad/ad_repository.dart';
+
+/// 스플래시 광고는 **첫 프레임에 한 번** `readyFor` 를 읽고 끝까지 안 바꾼다.
+/// 그 값을 들고 있는 `_ready` 는 메모리에만 있어서, 복원이 없으면 앱을 켤 때마다
+/// 비어 있고 스플래시 광고가 **영원히** 안 뜬다(#408 리뷰에서 잡힌 버그).
+/// 그래서 지난 실행에서 적어 둔 광고를 `restoreSplash` 가 되살리는지 값으로 박아 둔다.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const key = 'ad_ready_splash';
+
+  test('적어 둔 스플래시 광고를 첫 프레임 전에 되살린다', () async {
+    SharedPreferences.setMockInitialValues({
+      key: jsonEncode({
+        'placement': 'splash',
+        'imageUrl': 'https://cdn.example.com/a.png',
+        'linkUrl': 'https://example.com',
+      }),
+    });
+
+    await AdRepository.instance.restoreSplash();
+
+    final ad = AdRepository.instance.readyFor('splash');
+    expect(ad, isNotNull, reason: '복원이 안 되면 스플래시 광고가 영원히 안 뜬다');
+    expect(ad!.imageUrl, 'https://cdn.example.com/a.png');
+    expect(ad.linkUrl, 'https://example.com');
+  });
+
+  test('적어 둔 게 없으면 null — 모집 배너로 간다', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    await AdRepository.instance.restoreSplash();
+
+    // 앞 테스트가 싱글턴에 남긴 값과 섞이지 않게 다른 자리를 본다.
+    expect(AdRepository.instance.readyFor('popup'), isNull);
+  });
+
+  test('깨진 JSON 이 적혀 있어도 터지지 않는다', () async {
+    SharedPreferences.setMockInitialValues({key: '{이건 JSON 이 아니다'});
+
+    // 예외가 밖으로 새면 main 의 Future.wait 가 깨져 첫 화면이 늦어진다.
+    await expectLater(AdRepository.instance.restoreSplash(), completes);
+  });
+}
