@@ -297,7 +297,10 @@ class _GameRow extends StatelessWidget {
                     ],
                     Flexible(
                       child: Text(
-                        '${game.opponentLabel}  ${game.stage}',
+                        [
+                          game.opponentLabel,
+                          game.stage,
+                        ].where((t) => t.isNotEmpty).join('  '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: playerText(

@@ -66,6 +66,30 @@ void main() {
     expect(g.opponentLabel, 'LOS Grandes');
   });
 
+  test('prod 실측 — stage null·UTC(Z) 시각도 읽는다', () {
+    final g = PlayerWorldsGame.fromJson({
+      'playedAt': '2026-10-23T23:21:10Z',
+      'win': true,
+      'stage': null,
+      'opponentTeamCode': null,
+      'opponentTeamName': 'Løs',
+      'opponentTeamImageUrl': null,
+      'rating': null,
+    });
+    expect(g.stage, '');
+    expect(g.opponentLabel, 'Løs');
+    expect(g.playedAt, DateTime.utc(2026, 10, 23, 23, 21, 10));
+    final m = PlayerNextMatch.fromJson({
+      'matchId': '1',
+      'scheduledAt': '2026-10-24T23:00:00Z',
+      'bestOf': 1,
+    });
+    expect(
+      m.scheduledAt!.isAtSameMomentAs(DateTime.utc(2026, 10, 24, 23)),
+      isTrue,
+    );
+  });
+
   test('D-day 는 달력 날짜로 센다', () {
     final now = DateTime(2026, 10, 25, 23, 50);
     expect(daysUntil(DateTime(2026, 10, 26, 0, 10), now), 1);

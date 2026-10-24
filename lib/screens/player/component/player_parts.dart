@@ -9,10 +9,10 @@ import '../../../util/champion_name_map.dart';
 
 /// 선수 페이지 공용 조각 — 카드 틀·섹션 제목·챔피언 아이콘·승패 줄.
 
-/// "2.4만" / "24K". 딜량처럼 큰 수를 짧게.
-String compactNumber(BuildContext context, int n) => NumberFormat.compact(
+/// "2.1만" / "21K". 딜량처럼 큰 수를 짧게 — 유효숫자 2자리.
+String compactNumber(BuildContext context, int n) => (NumberFormat.compact(
   locale: Localizations.localeOf(context).toString(),
-).format(n);
+)..significantDigits = 2).format(n);
 
 /// 소수 첫째 자리. 정수면 "6.0" 처럼 그대로 둔다(시안).
 String oneDecimal(double v) => v.toStringAsFixed(1);
