@@ -280,7 +280,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
           if (_vm.tab == PlayerTab.worlds)
             PlayerWorldsTab(viewModel: _vm, scale: scale)
           else
-            PlayerSoloTab(viewModel: _vm, scale: scale),
+            PlayerSoloTab(
+              viewModel: _vm,
+              scale: scale,
+              onOpenPlayer: (id) =>
+                  PlayerScreen.open(context, id, cheers: _vm.cheers),
+            ),
         ],
       ),
     );

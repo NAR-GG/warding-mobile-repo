@@ -42,6 +42,22 @@ void main() {
     );
     await tester.pump();
     expect(find.byType(PlayerSoloTab), findsOneWidget);
+    // 솔랭에서 만난 선수 — 다음 경기 상대 팀(HLE)이면 태그가 붙는다.
+    await tester.ensureVisible(find.byKey(PlayerSoloTab.metKey(223)));
+    expect(
+      find.descendant(
+        of: find.byKey(PlayerSoloTab.metKey(223)),
+        matching: find.text('다음 상대'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(PlayerSoloTab.metKey(2)),
+        matching: find.text('다음 상대'),
+      ),
+      findsNothing,
+    );
     await tester.ensureVisible(find.byKey(PlayerSoloTab.moreKey));
     await tester.tap(find.byKey(PlayerSoloTab.moreKey));
     await tester.pump();

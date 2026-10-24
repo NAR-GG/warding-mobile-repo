@@ -4,23 +4,31 @@ import '../../../components/nar_live_dot.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/player_detail.dart';
 import '../../../styles/app_colors.dart';
+import '../../../util/app_image.dart';
 import '../../../util/rating_mapping.dart' show ratingTimeAgo;
 import '../../../viewmodel/player/player_viewmodel.dart';
 import '../../home/component/home_solo_cheer.dart' show formatCheerCount;
+import '../../home/component/home_solo_rank_section.dart' show HomeSoloFace;
 import 'player_parts.dart';
 
-/// 솔랭 탭 — 계정 칩·최근 20판 요약·모스트 챔피언·최근 솔랭.
+/// 솔랭 탭 — 계정 칩·최근 20판 요약·모스트 챔피언·솔랭에서 만난 선수·최근 솔랭.
 ///
-/// "솔랭에서 만난 선수" 는 백엔드가 참가자 데이터를 쌓기 전까지 그리지 않는다(2차).
+/// "솔랭에서 만난 선수" 는 비어 있으면(옛 서버 포함) 섹션째 숨긴다.
 class PlayerSoloTab extends StatelessWidget {
   const PlayerSoloTab({
     super.key,
     required this.viewModel,
     required this.scale,
+    this.onOpenPlayer,
   });
 
   final PlayerViewModel viewModel;
   final double scale;
+
+  /// 만난 선수 카드 — 그 선수의 선수 페이지로.
+  final void Function(int playerId)? onOpenPlayer;
+
+  static Key metKey(int playerId) => ValueKey('playerMet-$playerId');
 
   static const Key emptyKey = ValueKey('playerSoloEmpty');
   static const Key moreKey = ValueKey('playerSoloMore');
@@ -89,6 +97,40 @@ class PlayerSoloTab extends StatelessWidget {
                       scale: scale,
                     ),
                 ],
+              ),
+            ),
+          ],
+          if (solo.metPlayers.isNotEmpty) ...[
+            PlayerSectionTitle(
+              title: l.playerMetTitle,
+              sub: l.playerSoloRecent7d,
+              scale: scale,
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              // 카드 높이를 가장 긴 카드에 맞춘다(같은 편·상대 줄 유무로 달라진다).
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final m in solo.metPlayers) ...[
+                      _MetCard(
+                        key: metKey(m.playerId),
+                        met: m,
+                        nextOpponent:
+                            m.teamCode != null &&
+                            m.teamCode ==
+                                viewModel.detail?.nextMatch?.opponent.teamCode,
+                        onTap: onOpenPlayer == null
+                            ? null
+                            : () => onOpenPlayer!(m.playerId),
+                        scale: scale,
+                      ),
+                      SizedBox(width: 8 * scale),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -497,6 +539,156 @@ class _SoloGameRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 솔랭에서 만난 선수 카드(⑧-1) — 이름·팀(+다음 상대), 같은 편·상대 전적, 마지막으로 만난 때.
+class _MetCard extends StatelessWidget {
+  const _MetCard({
+    super.key,
+    required this.met,
+    required this.nextOpponent,
+    required this.scale,
+    this.onTap,
+  });
+
+  final PlayerMet met;
+  final bool nextOpponent;
+  final double scale;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final m = met;
+    final sub = playerText(scale, size: 11, color: AppColors.narText2);
+    const win = TextStyle(
+      color: AppColors.scoreWin,
+      fontWeight: FontWeight.w600,
+    );
+
+    // "상대 3판 · 1승 2패" — 시안처럼 0패는 생략한다.
+    Widget record(String label, int games, int wins, int losses) => Padding(
+      padding: EdgeInsets.only(top: 3 * scale),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '$label  ${l.playerSoloGames('$games')} · '),
+            TextSpan(text: l.playerWins(wins), style: win),
+            if (losses > 0) TextSpan(text: ' ${l.playerLosses(losses)}'),
+          ],
+        ),
+        style: sub,
+      ),
+    );
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 158 * scale,
+        padding: EdgeInsets.all(12 * scale),
+        decoration: BoxDecoration(
+          color: AppColors.narBgTertiary,
+          borderRadius: BorderRadius.circular(12 * scale),
+          border: Border.all(color: AppColors.narLine),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                HomeSoloFace(
+                  name: m.playerName,
+                  url: resolveImageUrl(m.playerImageUrl),
+                  size: 34 * scale,
+                  scale: scale,
+                ),
+                SizedBox(width: 8 * scale),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        m.playerName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: playerText(
+                          scale,
+                          size: 14,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (m.teamCode != null)
+                            Flexible(
+                              child: Text(
+                                m.teamCode!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: sub,
+                              ),
+                            ),
+                          if (nextOpponent) ...[
+                            SizedBox(width: 4 * scale),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 4 * scale,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.narRedOpacity25,
+                                borderRadius: BorderRadius.circular(3 * scale),
+                              ),
+                              child: Text(
+                                l.playerMetNextOpponent,
+                                style: playerText(
+                                  scale,
+                                  size: 10,
+                                  weight: FontWeight.w700,
+                                  color: AppColors.narTextRed,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8 * scale),
+            if (m.sameTeamGames > 0)
+              record(
+                l.playerMetSameTeam,
+                m.sameTeamGames,
+                m.sameTeamWins,
+                m.sameTeamGames - m.sameTeamWins,
+              ),
+            if (m.opponentGames > 0)
+              record(
+                l.playerMetOpponent,
+                m.opponentGames,
+                m.opponentWins,
+                m.opponentLosses,
+              ),
+            if (m.lastMetAt != null)
+              Padding(
+                padding: EdgeInsets.only(top: 6 * scale),
+                child: Text(
+                  l.playerMetLast(ratingTimeAgo(m.lastMetAt)),
+                  style: playerText(
+                    scale,
+                    size: 10.5,
+                    color: AppColors.narDark200,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

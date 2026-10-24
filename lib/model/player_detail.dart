@@ -486,6 +486,7 @@ class PlayerSoloRank {
     required this.recent,
     required this.champions,
     required this.games,
+    this.metPlayers = const [],
   });
 
   factory PlayerSoloRank.fromJson(Map<String, dynamic> j) => PlayerSoloRank(
@@ -526,6 +527,7 @@ class PlayerSoloRank {
           cheerTotal: _int(e['cheerTotal']),
         ),
     ],
+    metPlayers: [for (final e in _list(j['metPlayers'])) PlayerMet.fromJson(e)],
   );
 
   final List<PlayerSoloAccount> accounts;
@@ -534,6 +536,54 @@ class PlayerSoloRank {
 
   /// 최근 20판, 최신순.
   final List<PlayerSoloGame> games;
+
+  /// 최근 7일 솔랭에서 만난 프로 선수(함께한 판 많은 순, 최대 10명). 옛 서버면 빈 목록.
+  final List<PlayerMet> metPlayers;
+}
+
+/// 솔랭에서 만난 선수 한 명. 승패는 **이 페이지 선수** 기준이다.
+class PlayerMet {
+  const PlayerMet({
+    required this.playerId,
+    required this.playerName,
+    required this.sameTeamGames,
+    required this.sameTeamWins,
+    required this.opponentGames,
+    required this.opponentWins,
+    required this.opponentLosses,
+    this.playerImageUrl,
+    this.teamCode,
+    this.teamImageUrl,
+    this.lastMetAt,
+  });
+
+  factory PlayerMet.fromJson(Map<String, dynamic> j) => PlayerMet(
+    playerId: _int(j['playerId']),
+    playerName: j['playerName'] as String? ?? '',
+    playerImageUrl: j['playerImageUrl'] as String?,
+    teamCode: j['teamCode'] as String?,
+    teamImageUrl: j['teamImageUrl'] as String?,
+    sameTeamGames: _int(j['sameTeamGames']),
+    sameTeamWins: _int(j['sameTeamWins']),
+    opponentGames: _int(j['opponentGames']),
+    opponentWins: _int(j['opponentWins']),
+    opponentLosses: _int(j['opponentLosses']),
+    lastMetAt: parseServerTime(j['lastMetAt']),
+  );
+
+  final int playerId;
+  final String playerName;
+  final String? playerImageUrl;
+
+  /// null 가능(소속 없는 선수 등).
+  final String? teamCode;
+  final String? teamImageUrl;
+  final int sameTeamGames;
+  final int sameTeamWins;
+  final int opponentGames;
+  final int opponentWins;
+  final int opponentLosses;
+  final DateTime? lastMetAt;
 }
 
 class PlayerSoloAccount {

@@ -277,6 +277,34 @@ class MockPlayerSource implements PlayerSource {
             'kda': k,
           },
       ],
+      'metPlayers': [
+        {
+          'playerId': 223,
+          'playerName': 'Zeka',
+          'playerImageUrl': '',
+          'teamCode': 'HLE', // 목업 다음 경기 상대 — "다음 상대" 태그
+          'teamImageUrl': '',
+          'sameTeamGames': 0,
+          'sameTeamWins': 0,
+          'opponentGames': 2,
+          'opponentWins': 2,
+          'opponentLosses': 0,
+          'lastMetAt': _iso(now.subtract(const Duration(days: 3))),
+        },
+        {
+          'playerId': 2,
+          'playerName': 'Chovy',
+          'playerImageUrl': '',
+          'teamCode': null,
+          'teamImageUrl': null,
+          'sameTeamGames': 1,
+          'sameTeamWins': 1,
+          'opponentGames': 3,
+          'opponentWins': 1,
+          'opponentLosses': 2,
+          'lastMetAt': _iso(now.subtract(const Duration(hours: 2))),
+        },
+      ],
       'games': [
         for (var i = 0; i < 20; i++)
           {

@@ -2278,4 +2278,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get worldsSoloOpenPlayer => 'Player page';
+
+  @override
+  String get playerMetTitle => 'Met in solo queue';
+
+  @override
+  String get playerMetNextOpponent => 'Next opponent';
+
+  @override
+  String get playerMetSameTeam => 'Teammate';
+
+  @override
+  String get playerMetOpponent => 'Opponent';
+
+  @override
+  String playerWins(int count) {
+    return '${count}W';
+  }
+
+  @override
+  String playerLosses(int count) {
+    return '${count}L';
+  }
+
+  @override
+  String playerMetLast(String ago) {
+    return 'Last $ago';
+  }
 }

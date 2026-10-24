@@ -901,5 +901,21 @@
   "@playerUnsubscribeSemantics": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "worldsSoloOpenPlayer": "Player page"
+  "worldsSoloOpenPlayer": "Player page",
+  "playerMetTitle": "Met in solo queue",
+  "playerMetNextOpponent": "Next opponent",
+  "playerMetSameTeam": "Teammate",
+  "playerMetOpponent": "Opponent",
+  "playerWins": "{count}W",
+  "@playerWins": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerLosses": "{count}L",
+  "@playerLosses": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerMetLast": "Last {ago}",
+  "@playerMetLast": {
+    "placeholders": { "ago": { "type": "String" } }
+  }
 }

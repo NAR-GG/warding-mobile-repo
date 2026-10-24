@@ -96,4 +96,26 @@ void main() {
     expect(daysUntil(DateTime(2026, 10, 25, 22), now), 0);
     expect(daysUntil(DateTime(2026, 10, 24, 22), now), isNull);
   });
+
+  test('솔랭에서 만난 선수 — 없으면 빈 목록, 팀은 null 가능', () {
+    expect(PlayerSoloRank.fromJson({}).metPlayers, isEmpty);
+    final m = PlayerSoloRank.fromJson({
+      'metPlayers': [
+        {
+          'playerId': 223,
+          'playerName': 'Zeka',
+          'teamCode': null,
+          'sameTeamGames': 1,
+          'sameTeamWins': 1,
+          'opponentGames': 2,
+          'opponentWins': 2,
+          'opponentLosses': 0,
+          'lastMetAt': '2026-10-24T01:42:33+09:00',
+        },
+      ],
+    }).metPlayers.single;
+    expect(m.teamCode, isNull);
+    expect(m.opponentWins, 2);
+    expect(m.lastMetAt, DateTime.utc(2026, 10, 23, 16, 42, 33));
+  });
 }

@@ -1078,5 +1078,21 @@
   "@playerUnsubscribeSemantics": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "worldsSoloOpenPlayer": "선수 페이지"
+  "worldsSoloOpenPlayer": "선수 페이지",
+  "playerMetTitle": "솔랭에서 만난 선수",
+  "playerMetNextOpponent": "다음 상대",
+  "playerMetSameTeam": "같은 편",
+  "playerMetOpponent": "상대",
+  "playerWins": "{count}승",
+  "@playerWins": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerLosses": "{count}패",
+  "@playerLosses": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerMetLast": "마지막 {ago}",
+  "@playerMetLast": {
+    "placeholders": { "ago": { "type": "String" } }
+  }
 }

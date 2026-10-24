@@ -4129,6 +4129,48 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'선수 페이지'**
   String get worldsSoloOpenPlayer;
+
+  /// No description provided for @playerMetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭에서 만난 선수'**
+  String get playerMetTitle;
+
+  /// No description provided for @playerMetNextOpponent.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음 상대'**
+  String get playerMetNextOpponent;
+
+  /// No description provided for @playerMetSameTeam.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 편'**
+  String get playerMetSameTeam;
+
+  /// No description provided for @playerMetOpponent.
+  ///
+  /// In ko, this message translates to:
+  /// **'상대'**
+  String get playerMetOpponent;
+
+  /// No description provided for @playerWins.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}승'**
+  String playerWins(int count);
+
+  /// No description provided for @playerLosses.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}패'**
+  String playerLosses(int count);
+
+  /// No description provided for @playerMetLast.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 {ago}'**
+  String playerMetLast(String ago);
 }
 
 class _AppLocalizationsDelegate

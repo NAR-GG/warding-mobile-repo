@@ -2225,4 +2225,31 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get worldsSoloOpenPlayer => '선수 페이지';
+
+  @override
+  String get playerMetTitle => '솔랭에서 만난 선수';
+
+  @override
+  String get playerMetNextOpponent => '다음 상대';
+
+  @override
+  String get playerMetSameTeam => '같은 편';
+
+  @override
+  String get playerMetOpponent => '상대';
+
+  @override
+  String playerWins(int count) {
+    return '$count승';
+  }
+
+  @override
+  String playerLosses(int count) {
+    return '$count패';
+  }
+
+  @override
+  String playerMetLast(String ago) {
+    return '마지막 $ago';
+  }
 }
