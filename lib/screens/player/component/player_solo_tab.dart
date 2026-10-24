@@ -1,0 +1,503 @@
+import 'package:flutter/material.dart';
+
+import '../../../components/nar_live_dot.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../model/player_detail.dart';
+import '../../../styles/app_colors.dart';
+import '../../../util/rating_mapping.dart' show ratingTimeAgo;
+import '../../../viewmodel/player/player_viewmodel.dart';
+import '../../home/component/home_solo_cheer.dart' show formatCheerCount;
+import 'player_parts.dart';
+
+/// 솔랭 탭 — 계정 칩·최근 20판 요약·모스트 챔피언·최근 솔랭.
+///
+/// "솔랭에서 만난 선수" 는 백엔드가 참가자 데이터를 쌓기 전까지 그리지 않는다(2차).
+class PlayerSoloTab extends StatelessWidget {
+  const PlayerSoloTab({
+    super.key,
+    required this.viewModel,
+    required this.scale,
+  });
+
+  final PlayerViewModel viewModel;
+  final double scale;
+
+  static const Key emptyKey = ValueKey('playerSoloEmpty');
+  static const Key moreKey = ValueKey('playerSoloMore');
+  static const int _gamesPreview = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final solo = viewModel.solo;
+    final recent = solo?.recent;
+    final games = solo?.games ?? const <PlayerSoloGame>[];
+    final shown = viewModel.soloGamesExpanded
+        ? games
+        : games.take(_gamesPreview).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (solo != null && solo.accounts.isNotEmpty) ...[
+          SizedBox(height: 16 * scale),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(
+              children: [
+                for (final a in solo.accounts) ...[
+                  _AccountChip(account: a, scale: scale),
+                  SizedBox(width: 8 * scale),
+                ],
+              ],
+            ),
+          ),
+        ],
+        if (recent == null || recent.games == 0)
+          Padding(
+            key: emptyKey,
+            padding: EdgeInsets.symmetric(vertical: 48 * scale),
+            child: Center(
+              child: Text(
+                l.playerSoloEmpty,
+                style: playerText(scale, size: 13, color: AppColors.narText2),
+              ),
+            ),
+          )
+        else ...[
+          PlayerSectionTitle(
+            title: l.playerSoloRecent(recent.games),
+            sub: l.playerSoloRecent7d,
+            scale: scale,
+          ),
+          _RecentCard(recent: recent, scale: scale),
+          if (solo!.champions.isNotEmpty) ...[
+            PlayerSectionTitle(
+              title: l.playerSoloMost,
+              sub: l.playerSoloRecent(recent.games),
+              scale: scale,
+            ),
+            PlayerCard(
+              scale: scale,
+              child: Column(
+                children: [
+                  for (var i = 0; i < solo.champions.length; i++)
+                    _MostRow(
+                      champion: solo.champions[i],
+                      first: i == 0,
+                      scale: scale,
+                    ),
+                ],
+              ),
+            ),
+          ],
+          if (games.isNotEmpty) ...[
+            PlayerSectionTitle(title: l.playerSoloGamesTitle, scale: scale),
+            PlayerCard(
+              scale: scale,
+              child: Column(
+                children: [
+                  for (var i = 0; i < shown.length; i++)
+                    _SoloGameRow(game: shown[i], first: i == 0, scale: scale),
+                ],
+              ),
+            ),
+            if (!viewModel.soloGamesExpanded && games.length > _gamesPreview)
+              PlayerMoreButton(
+                key: moreKey,
+                label: l.playerSoloMore(games.length - _gamesPreview),
+                scale: scale,
+                onTap: viewModel.expandSoloGames,
+              ),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _AccountChip extends StatelessWidget {
+  const _AccountChip({required this.account, required this.scale});
+
+  final PlayerSoloAccount account;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final tier = account.tier;
+    return Container(
+      height: 30 * scale,
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15 * scale),
+        border: Border.all(color: AppColors.narLine),
+      ),
+      child: Row(
+        children: [
+          if (account.live) ...[
+            NarLiveDot(scale: scale, size: 6, color: AppColors.narSoloDot),
+            SizedBox(width: 5 * scale),
+          ],
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(3 * scale),
+              border: Border.all(color: AppColors.narLine2),
+            ),
+            child: Text(
+              account.region,
+              style: playerText(scale, size: 9, color: AppColors.narText2),
+            ),
+          ),
+          SizedBox(width: 6 * scale),
+          Text(
+            account.riotId,
+            style: playerText(scale, size: 12, color: AppColors.narGray400),
+          ),
+          // 티어는 크롤링 값이라 없을 수 있다 — 없으면 생략.
+          if (tier != null && tier.isNotEmpty) ...[
+            SizedBox(width: 6 * scale),
+            Text(
+              tier,
+              style: playerText(
+                scale,
+                size: 12,
+                weight: FontWeight.w700,
+                color: AppColors.narGuideAccent,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentCard extends StatelessWidget {
+  const _RecentCard({required this.recent, required this.scale});
+
+  final PlayerSoloRecent recent;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final label = playerText(scale, size: 11, color: AppColors.narText2);
+    final big = playerText(
+      scale,
+      size: 18,
+      weight: FontWeight.w700,
+      family: 'Open Sans',
+    );
+    final sub = playerText(scale, size: 11, color: AppColors.narText2);
+    final winRate = recent.games == 0
+        ? 0
+        : (recent.wins * 100 / recent.games).round();
+
+    Widget col(String title, Widget value, Widget foot) => Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: label),
+          SizedBox(height: 4 * scale),
+          value,
+          SizedBox(height: 2 * scale),
+          foot,
+        ],
+      ),
+    );
+
+    return PlayerCard(
+      scale: scale,
+      padding: EdgeInsets.all(16 * scale),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              col(
+                l.playerSoloRecord,
+                Text(l.playerWinLoss(recent.wins, recent.losses), style: big),
+                Text(
+                  l.playerSoloWinRate(winRate),
+                  style: sub.copyWith(color: AppColors.scoreWin),
+                ),
+              ),
+              col(
+                l.playerSoloAvgKda,
+                Text(oneDecimal(recent.kda), style: big),
+                Text(
+                  '${oneDecimal(recent.avgKills)} / ${oneDecimal(recent.avgDeaths)} / ${oneDecimal(recent.avgAssists)}',
+                  style: sub,
+                ),
+              ),
+              col(
+                l.playerSoloPerDay,
+                Text(
+                  l.playerSoloGames(oneDecimal(recent.gamesPerDay)),
+                  style: big,
+                ),
+                Text(
+                  l.playerSoloAvgDuration(recent.avgDurationSeconds ~/ 60),
+                  style: sub,
+                ),
+              ),
+            ],
+          ),
+          if (recent.results.isNotEmpty) ...[
+            SizedBox(height: 14 * scale),
+            SizedBox(
+              height: 26 * scale,
+              child: Row(
+                children: [
+                  for (var i = 0; i < recent.results.length; i++) ...[
+                    if (i > 0) SizedBox(width: 3 * scale),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: recent.results[i]
+                              ? AppColors.scoreWin
+                              : AppColors.narDark400,
+                          borderRadius: BorderRadius.circular(2 * scale),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(height: 6 * scale),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.playerSoloOldest(recent.results.length),
+                  style: playerText(
+                    scale,
+                    size: 10,
+                    color: AppColors.narDark300,
+                  ),
+                ),
+                Text(
+                  l.playerSoloLatest,
+                  style: playerText(
+                    scale,
+                    size: 10,
+                    color: AppColors.narDark300,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MostRow extends StatelessWidget {
+  const _MostRow({
+    required this.champion,
+    required this.first,
+    required this.scale,
+  });
+
+  final PlayerSoloChampion champion;
+  final bool first;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final c = champion;
+    final rate = c.games == 0 ? 0.0 : c.wins / c.games;
+    return Container(
+      decoration: BoxDecoration(
+        border: first
+            ? null
+            : const Border(top: BorderSide(color: AppColors.narLine)),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: 14 * scale,
+        vertical: 10 * scale,
+      ),
+      child: Row(
+        children: [
+          ChampionIcon(
+            name: c.championName,
+            url: c.championImageUrl,
+            size: 34,
+            scale: scale,
+          ),
+          SizedBox(width: 12 * scale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: c.championName),
+                      TextSpan(
+                        text: ' ${l.playerSoloGames('${c.games}')}',
+                        style: playerText(
+                          scale,
+                          size: 11,
+                          color: AppColors.narText2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: playerText(scale, size: 14, weight: FontWeight.w600),
+                ),
+                SizedBox(height: 6 * scale),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2 * scale),
+                  child: LinearProgressIndicator(
+                    value: rate,
+                    minHeight: 4 * scale,
+                    backgroundColor: AppColors.narDark500,
+                    color: rate > 0.5
+                        ? AppColors.scoreWin
+                        : AppColors.narDark200,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 70 * scale,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${(rate * 100).round()}%',
+                  style: playerText(
+                    scale,
+                    size: 14,
+                    weight: FontWeight.w700,
+                    color: rate > 0.5 ? AppColors.scoreWin : AppColors.narText2,
+                    family: 'Open Sans',
+                  ),
+                ),
+                Text(
+                  'KDA ${oneDecimal(c.kda)}',
+                  style: playerText(scale, size: 11, color: AppColors.narText2),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoloGameRow extends StatelessWidget {
+  const _SoloGameRow({
+    required this.game,
+    required this.first,
+    required this.scale,
+  });
+
+  final PlayerSoloGame game;
+  final bool first;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final g = game;
+    return PlayerResultRow(
+      win: g.win,
+      divider: !first,
+      scale: scale,
+      child: Row(
+        children: [
+          ChampionIcon(
+            name: g.championName,
+            url: g.championImageUrl,
+            size: 34,
+            scale: scale,
+          ),
+          SizedBox(width: 10 * scale),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: g.win ? l.playerWin : l.playerLoss,
+                        style: TextStyle(
+                          color: g.win
+                              ? AppColors.scoreWin
+                              : AppColors.narText2,
+                        ),
+                      ),
+                      TextSpan(
+                        text:
+                            ' · ${g.championName} · ${l.homeSoloDuration(g.durationSeconds ~/ 60)}',
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: playerText(scale, size: 13, weight: FontWeight.w600),
+                ),
+                SizedBox(height: 3 * scale),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      kdaSpan(g.kills, g.deaths, g.assists),
+                      TextSpan(
+                        text:
+                            '  KDA ${oneDecimal(gameKda(g.kills, g.deaths, g.assists))}',
+                        style: const TextStyle(color: AppColors.narText2),
+                      ),
+                    ],
+                  ),
+                  style: playerText(scale, size: 12),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                ratingTimeAgo(g.endedAt),
+                style: playerText(scale, size: 11, color: AppColors.narText2),
+              ),
+              if (g.cheerTotal > 0)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 12 * scale,
+                      color: AppColors.narGuideAccent,
+                    ),
+                    SizedBox(width: 2 * scale),
+                    Text(
+                      formatCheerCount(g.cheerTotal),
+                      style: playerText(
+                        scale,
+                        size: 12,
+                        weight: FontWeight.w700,
+                        color: AppColors.narGuideAccent,
+                        family: 'Open Sans',
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

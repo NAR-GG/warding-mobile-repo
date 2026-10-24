@@ -19,6 +19,7 @@ import '../community/post_detail_screen.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
 import '../match_list/match_list_screen.dart';
 import '../my_players/my_players_screen.dart';
+import '../player/player_screen.dart';
 import '../notice/notice_detail_screen.dart';
 import '../player_rating/player_rating_screen.dart';
 import '../schedule/schedule_screen.dart';
@@ -172,10 +173,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// 홈으로 돌아온다(spec 사용자 흐름 3). 그 사이 선수가 솔랭을 시작·종료했을
   /// 수 있어 돌아오면 홈 솔랭 상태를 다시 불러온다(알림함과 같은 방식).
   Future<void> _openMyPlayers() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(
-        settings: const RouteSettings(name: AnalyticsPage.myPlayers),builder: (_) => const MyPlayersScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.myPlayers),
+        builder: (_) => const MyPlayersScreen(),
+      ),
+    );
     await _viewModel.refreshSoloOnReturn();
   }
 
@@ -190,6 +193,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         builder: (_) => const MyPlayersScreen(worlds: true),
       ),
     );
+    await _viewModel.refreshSubscriptionsOnReturn();
+  }
+
+  /// 선수 페이지. 홈 응원 컨트롤러를 넘겨 응원 수를 맞추고, 거기서 구독을
+  /// 바꿀 수 있어 돌아오면 구독 목록을 다시 부른다.
+  Future<void> _openPlayer(int playerId) async {
+    await PlayerScreen.open(context, playerId, cheers: _viewModel.cheers);
     await _viewModel.refreshSubscriptionsOnReturn();
   }
 
@@ -281,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               onOpenMyPlayers: _openMyPlayers,
                               onSubscribe: _openSubscriptionSettings,
                               onOpenWorlds: _openWorlds,
+                              onOpenPlayer: _openPlayer,
                             ),
                             // 오늘 경기가 없으면 섹션이 통째로 사라지는데
                             // (HomeTodayMatchesSection), 앞뒤 SizedBox 는 그대로

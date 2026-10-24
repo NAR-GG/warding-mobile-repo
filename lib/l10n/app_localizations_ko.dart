@@ -1237,7 +1237,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get domesticPlayerNote => 'LCK 국내 팀 기준입니다. (중복 가능)';
 
   @override
-  String get playerLoadFailed => '선수 목록을 불러오지 못했어요';
+  String get playerLoadFailed => '선수 정보를 불러오지 못했어요';
 
   @override
   String get noPlayerInfo => '선수 정보가 없어요';
@@ -2014,4 +2014,215 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get advertiserBannerBody => '개인배너 / 팀홍보 / 자유후원';
+
+  @override
+  String playerNextMatch(String stage) {
+    return '다음 경기 · $stage';
+  }
+
+  @override
+  String get playerNextMatchNoStage => '다음 경기';
+
+  @override
+  String playerDday(int days) {
+    return 'D-$days';
+  }
+
+  @override
+  String get playerDdayToday => 'D-DAY';
+
+  @override
+  String playerBestOf(int games, int wins) {
+    return '$games판 $wins선승';
+  }
+
+  @override
+  String get playerSingleGame => '단판';
+
+  @override
+  String playerWinLoss(int wins, int losses) {
+    return '$wins승 $losses패';
+  }
+
+  @override
+  String get playerMatchAlarm => '경기 알림';
+
+  @override
+  String get playerMatchAlarmOn => '알림 켜짐';
+
+  @override
+  String get playerStatSubscribers => '구독자';
+
+  @override
+  String get playerStatCheers7d => '최근 7일 응원';
+
+  @override
+  String get playerStatWorldsRating => '월즈 팬 평점';
+
+  @override
+  String get playerTabWorlds => '월즈';
+
+  @override
+  String get playerTabSolo => '솔랭';
+
+  @override
+  String get playerWorldsRecord => '월즈 성적';
+
+  @override
+  String playerWorldsRecordSub(int games, int wins, int losses) {
+    return '$games경기 · $wins승 $losses패';
+  }
+
+  @override
+  String get playerWorldsPending => '경기 기록 집계 중';
+
+  @override
+  String get playerStatKda => 'KDA';
+
+  @override
+  String get playerStatKp => '킬 관여';
+
+  @override
+  String get playerStatDpm => '분당 딜';
+
+  @override
+  String get playerStatCspm => '분당 CS';
+
+  @override
+  String get playerStatGd15 => '15분 골드 차';
+
+  @override
+  String get playerStatVspm => '분당 시야 점수';
+
+  @override
+  String playerStatRank(String position, int rank) {
+    return '$position $rank위';
+  }
+
+  @override
+  String playerStatAvg(String avg) {
+    return '대회 평균 $avg';
+  }
+
+  @override
+  String get playerWorldsGames => '경기별 기록';
+
+  @override
+  String get playerWin => '승리';
+
+  @override
+  String get playerLoss => '패배';
+
+  @override
+  String playerGameCsDamage(int cs, String damage) {
+    return 'CS $cs · 딜 $damage';
+  }
+
+  @override
+  String get playerFanRating => '팬 평점';
+
+  @override
+  String get playerChampions => '솔랭 vs 월즈 챔피언';
+
+  @override
+  String get playerSortSolo => '솔랭순';
+
+  @override
+  String get playerSortWorlds => '월즈순';
+
+  @override
+  String get playerChampionHeader => '챔피언';
+
+  @override
+  String playerSeeAllCount(int count) {
+    return '전체 $count개 보기';
+  }
+
+  @override
+  String playerRatingSub(int games, String count) {
+    return '월즈 $games경기 · $count명';
+  }
+
+  @override
+  String playerRatingScore(int score) {
+    return '$score점';
+  }
+
+  @override
+  String get playerRatingThreeOrLess => '3점 이하';
+
+  @override
+  String playerSoloRecent(int count) {
+    return '최근 $count판';
+  }
+
+  @override
+  String get playerSoloRecent7d => '최근 7일';
+
+  @override
+  String get playerSoloRecord => '전적';
+
+  @override
+  String playerSoloWinRate(int percent) {
+    return '승률 $percent%';
+  }
+
+  @override
+  String get playerSoloAvgKda => '평균 KDA';
+
+  @override
+  String get playerSoloPerDay => '하루 평균';
+
+  @override
+  String playerSoloGames(String count) {
+    return '$count판';
+  }
+
+  @override
+  String playerSoloAvgDuration(int minutes) {
+    return '한 판 $minutes분';
+  }
+
+  @override
+  String playerSoloOldest(int count) {
+    return '$count판 전';
+  }
+
+  @override
+  String get playerSoloLatest => '최근';
+
+  @override
+  String get playerSoloMost => '모스트 챔피언';
+
+  @override
+  String get playerSoloGamesTitle => '최근 솔랭';
+
+  @override
+  String playerSoloMore(int count) {
+    return '$count판 더 보기';
+  }
+
+  @override
+  String get playerSoloEmpty => '최근 솔랭 기록이 없어요';
+
+  @override
+  String playerLastSolo(String ago) {
+    return '마지막 솔랭 · $ago';
+  }
+
+  @override
+  String get playerNotFound => '선수 정보를 찾을 수 없어요';
+
+  @override
+  String playerSubscribeSemantics(String name) {
+    return '$name 구독';
+  }
+
+  @override
+  String playerUnsubscribeSemantics(String name) {
+    return '$name 구독 해제';
+  }
+
+  @override
+  String get worldsSoloOpenPlayer => '선수 페이지';
 }

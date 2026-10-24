@@ -783,5 +783,123 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "advertiserBannerTitle": "Support Warding",
-  "advertiserBannerBody": "Personal banner / Team promo / Free support"
+  "advertiserBannerBody": "Personal banner / Team promo / Free support",
+  "playerNextMatch": "Next match · {stage}",
+  "@playerNextMatch": {
+    "placeholders": { "stage": { "type": "String" } }
+  },
+  "playerNextMatchNoStage": "Next match",
+  "playerDday": "D-{days}",
+  "@playerDday": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "playerDdayToday": "D-DAY",
+  "playerBestOf": "Bo{games}",
+  "@playerBestOf": {
+    "placeholders": { "games": { "type": "int" }, "wins": { "type": "int" } }
+  },
+  "playerSingleGame": "Bo1",
+  "playerWinLoss": "{wins}W {losses}L",
+  "@playerWinLoss": {
+    "placeholders": { "wins": { "type": "int" }, "losses": { "type": "int" } }
+  },
+  "playerMatchAlarm": "Match alert",
+  "playerMatchAlarmOn": "Alert on",
+  "playerStatSubscribers": "Subscribers",
+  "playerStatCheers7d": "Cheers (7d)",
+  "playerStatWorldsRating": "Worlds fan rating",
+  "playerTabWorlds": "Worlds",
+  "playerTabSolo": "Solo queue",
+  "playerWorldsRecord": "Worlds record",
+  "playerWorldsRecordSub": "{games} games · {wins}W {losses}L",
+  "@playerWorldsRecordSub": {
+    "placeholders": { "games": { "type": "int" }, "wins": { "type": "int" }, "losses": { "type": "int" } }
+  },
+  "playerWorldsPending": "Match stats are being compiled",
+  "playerStatKda": "KDA",
+  "playerStatKp": "Kill participation",
+  "playerStatDpm": "Damage / min",
+  "playerStatCspm": "CS / min",
+  "playerStatGd15": "Gold diff @15",
+  "playerStatVspm": "Vision / min",
+  "playerStatRank": "#{rank} {position}",
+  "@playerStatRank": {
+    "placeholders": { "position": { "type": "String" }, "rank": { "type": "int" } }
+  },
+  "playerStatAvg": "Event avg {avg}",
+  "@playerStatAvg": {
+    "placeholders": { "avg": { "type": "String" } }
+  },
+  "playerWorldsGames": "Games",
+  "playerWin": "Win",
+  "playerLoss": "Loss",
+  "playerGameCsDamage": "CS {cs} · DMG {damage}",
+  "@playerGameCsDamage": {
+    "placeholders": { "cs": { "type": "int" }, "damage": { "type": "String" } }
+  },
+  "playerFanRating": "Fan rating",
+  "playerChampions": "Solo queue vs Worlds champions",
+  "playerSortSolo": "By solo queue",
+  "playerSortWorlds": "By Worlds",
+  "playerChampionHeader": "Champion",
+  "playerSeeAllCount": "See all {count}",
+  "@playerSeeAllCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerRatingSub": "{games} Worlds games · {count} votes",
+  "@playerRatingSub": {
+    "placeholders": { "games": { "type": "int" }, "count": { "type": "String" } }
+  },
+  "playerRatingScore": "{score}★",
+  "@playerRatingScore": {
+    "placeholders": { "score": { "type": "int" } }
+  },
+  "playerRatingThreeOrLess": "3★ or less",
+  "playerSoloRecent": "Last {count} games",
+  "@playerSoloRecent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloRecent7d": "Last 7 days",
+  "playerSoloRecord": "Record",
+  "playerSoloWinRate": "Win rate {percent}%",
+  "@playerSoloWinRate": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "playerSoloAvgKda": "Avg KDA",
+  "playerSoloPerDay": "Per day",
+  "playerSoloGames": "{count} games",
+  "@playerSoloGames": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "playerSoloAvgDuration": "{minutes} min / game",
+  "@playerSoloAvgDuration": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "playerSoloOldest": "{count} games ago",
+  "@playerSoloOldest": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloLatest": "Latest",
+  "playerSoloMost": "Most played",
+  "playerSoloGamesTitle": "Recent solo queue",
+  "playerSoloMore": "{count} more games",
+  "@playerSoloMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloEmpty": "No recent solo queue games",
+  "playerLastSolo": "Last solo queue · {ago}",
+  "@playerLastSolo": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "playerLoadFailed": "Couldn't load player",
+  "playerNotFound": "Player not found",
+  "playerSubscribeSemantics": "Subscribe to {name}",
+  "@playerSubscribeSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "playerUnsubscribeSemantics": "Unsubscribe from {name}",
+  "@playerUnsubscribeSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "worldsSoloOpenPlayer": "Player page"
 }
