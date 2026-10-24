@@ -17,10 +17,17 @@ class PlayerWorldsTab extends StatelessWidget {
     super.key,
     required this.viewModel,
     required this.scale,
+    this.onOpenReview,
   });
 
   final PlayerViewModel viewModel;
   final double scale;
+
+  /// 한줄평 탭 — 그 판 평점 상세로.
+  final ValueChanged<PlayerReview>? onOpenReview;
+
+  static const Key reviewsAllKey = ValueKey('playerReviewsAll');
+  static Key reviewKey(int index) => ValueKey('playerReview-$index');
 
   static const Key pendingKey = ValueKey('playerWorldsPending');
   static const int _championPreview = 5;
@@ -121,7 +128,32 @@ class PlayerWorldsTab extends StatelessWidget {
             sub: l.playerRatingSub(w!.games, formatCheerCount(rating.count)),
             scale: scale,
           ),
-          _RatingCard(rating: rating, scale: scale),
+          _RatingCard(
+            rating: rating,
+            reviews: vm.allReviews ?? rating.reviews,
+            onOpenReview: onOpenReview,
+            scale: scale,
+          ),
+          if (vm.reviewsLoading)
+            Padding(
+              padding: EdgeInsets.only(top: 14 * scale),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.narChipActive,
+                ),
+              ),
+            )
+          else if (vm.allReviews == null
+              ? rating.reviewCount > rating.reviews.length
+              : vm.reviewsHasNext)
+            PlayerMoreButton(
+              key: reviewsAllKey,
+              label: vm.allReviews == null
+                  ? l.playerReviewsAll(rating.reviewCount)
+                  : l.playerReviewsMore,
+              scale: scale,
+              onTap: vm.loadMoreReviews,
+            ),
         ],
       ],
     );
@@ -549,11 +581,20 @@ class _WinLoss extends StatelessWidget {
   }
 }
 
+/// 팬 평점 카드(시안 ⑧ 하단) — 왼쪽 큰 평균, 오른쪽 5점·4점·3점 이하 막대,
+/// 그 아래 한줄평 목록(점수 배지 · 본문 · "vs IG · 스위스 3라운드").
 class _RatingCard extends StatelessWidget {
-  const _RatingCard({required this.rating, required this.scale});
+  const _RatingCard({
+    required this.rating,
+    required this.reviews,
+    required this.scale,
+    this.onOpenReview,
+  });
 
   final PlayerWorldsRating rating;
+  final List<PlayerReview> reviews;
   final double scale;
+  final ValueChanged<PlayerReview>? onOpenReview;
 
   @override
   Widget build(BuildContext context) {
@@ -564,75 +605,86 @@ class _RatingCard extends StatelessWidget {
       (l.playerRatingScore(4), d[4] ?? 0),
       (l.playerRatingThreeOrLess, (d[3] ?? 0) + (d[2] ?? 0) + (d[1] ?? 0)),
     ];
+    final divider = Container(height: 1, color: AppColors.narLine);
     return PlayerCard(
       scale: scale,
-      padding: EdgeInsets.all(16 * scale),
+      padding: EdgeInsets.fromLTRB(
+        16 * scale,
+        14 * scale,
+        16 * scale,
+        4 * scale,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Column(
-                children: [
-                  Text(
-                    oneDecimal(rating.average),
-                    style: playerText(
-                      scale,
-                      size: 34,
-                      weight: FontWeight.w700,
-                      color: AppColors.narGuideAccent,
-                      family: 'Open Sans',
+              SizedBox(
+                width: 64 * scale,
+                child: Column(
+                  children: [
+                    Text(
+                      oneDecimal(rating.average),
+                      style: playerText(
+                        scale,
+                        size: 34,
+                        weight: FontWeight.w800,
+                        color: AppColors.narGuideAccent,
+                        family: 'Open Sans',
+                      ).copyWith(height: 1.05),
                     ),
-                  ),
-                  Text(
-                    '/ 5',
-                    style: playerText(
-                      scale,
-                      size: 12,
-                      color: AppColors.narText2,
+                    Text(
+                      '/ 5',
+                      style: playerText(
+                        scale,
+                        size: 11,
+                        color: AppColors.narText2,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(width: 20 * scale),
+              SizedBox(width: 14 * scale),
               Expanded(
                 child: Column(
                   children: [
                     for (final (label, pct) in bars)
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 3 * scale),
+                        padding: EdgeInsets.symmetric(vertical: 4 * scale),
                         child: Row(
                           children: [
+                            // 시안처럼 폭을 좁게 둬 "3점 이하" 는 두 줄로 접힌다.
                             SizedBox(
-                              width: 50 * scale,
+                              width: 34 * scale,
                               child: Text(
                                 label,
                                 style: playerText(
                                   scale,
-                                  size: 11,
+                                  size: 10.5,
                                   color: AppColors.narText2,
-                                ),
+                                ).copyWith(height: 1.3),
                               ),
                             ),
+                            SizedBox(width: 6 * scale),
                             Expanded(
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(3 * scale),
+                                borderRadius: BorderRadius.circular(2 * scale),
                                 child: LinearProgressIndicator(
                                   value: (pct / 100).clamp(0, 1).toDouble(),
-                                  minHeight: 6 * scale,
+                                  minHeight: 4 * scale,
                                   backgroundColor: AppColors.narDark500,
                                   color: AppColors.narViolet3,
                                 ),
                               ),
                             ),
                             SizedBox(
-                              width: 40 * scale,
+                              width: 38 * scale,
                               child: Text(
                                 '${pct.round()}%',
                                 textAlign: TextAlign.right,
                                 style: playerText(
                                   scale,
-                                  size: 11,
+                                  size: 10.5,
                                   color: AppColors.narText2,
                                 ),
                               ),
@@ -645,65 +697,99 @@ class _RatingCard extends StatelessWidget {
               ),
             ],
           ),
-          for (final r in rating.reviews) ...[
-            Container(
-              height: 1,
-              margin: EdgeInsets.symmetric(vertical: 12 * scale),
-              color: AppColors.narLine,
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 22 * scale,
-                  height: 22 * scale,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.narChipBadgeBg,
-                    borderRadius: BorderRadius.circular(5 * scale),
-                  ),
-                  child: Text(
-                    '${r.rating}',
-                    style: playerText(
-                      scale,
-                      size: 12,
-                      weight: FontWeight.w700,
-                      family: 'Open Sans',
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10 * scale),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        r.comment,
-                        style: playerText(
-                          scale,
-                          size: 13,
-                        ).copyWith(height: 1.4),
-                      ),
-                      SizedBox(height: 3 * scale),
-                      Text(
-                        [
-                          if (r.opponentTeamCode.isNotEmpty)
-                            'vs ${r.opponentTeamCode}',
-                          if (r.stage.isNotEmpty) r.stage,
-                        ].join(' · '),
-                        style: playerText(
-                          scale,
-                          size: 11,
-                          color: AppColors.narDark200,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          SizedBox(height: 10 * scale),
+          for (var i = 0; i < reviews.length; i++) ...[
+            divider,
+            _ReviewRow(
+              key: PlayerWorldsTab.reviewKey(i),
+              review: reviews[i],
+              scale: scale,
+              onTap: onOpenReview == null || !reviews[i].canOpen
+                  ? null
+                  : () => onOpenReview!(reviews[i]),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _ReviewRow extends StatelessWidget {
+  const _ReviewRow({
+    super.key,
+    required this.review,
+    required this.scale,
+    this.onTap,
+  });
+
+  final PlayerReview review;
+  final double scale;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = review;
+    final meta = [
+      if (r.opponentTeamCode.isNotEmpty) 'vs ${r.opponentTeamCode}',
+      if (r.stage.isNotEmpty) r.stage,
+    ].join(' · ');
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 13 * scale),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 33 * scale,
+              height: 21 * scale,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.narChipBadgeBg,
+                borderRadius: BorderRadius.circular(4 * scale),
+              ),
+              child: Text(
+                '${r.rating}',
+                style: playerText(
+                  scale,
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: AppColors.narViolet3,
+                  family: 'Open Sans',
+                ),
+              ),
+            ),
+            SizedBox(width: 11 * scale),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r.comment,
+                    style: playerText(
+                      scale,
+                      size: 14,
+                      weight: FontWeight.w600,
+                    ).copyWith(height: 1.45),
+                  ),
+                  if (meta.isNotEmpty) ...[
+                    SizedBox(height: 4 * scale),
+                    Text(
+                      meta,
+                      style: playerText(
+                        scale,
+                        size: 11,
+                        color: AppColors.narDark200,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

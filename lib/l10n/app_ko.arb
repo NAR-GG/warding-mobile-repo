@@ -1094,5 +1094,13 @@
   "playerMetLast": "마지막 {ago}",
   "@playerMetLast": {
     "placeholders": { "ago": { "type": "String" } }
+  },
+  "matchAlarmOff": "알림 끄기",
+  "matchAlarmUpdated": "경기 알림 설정을 바꿨어요",
+  "matchAlarmUpdateFailed": "알림 설정 변경에 실패했어요. 다시 시도해주세요",
+  "playerReviewsMore": "한줄평 더 보기",
+  "playerReviewsAll": "한줄평 전체 {count}개 보기",
+  "@playerReviewsAll": {
+    "placeholders": { "count": { "type": "int" } }
   }
 }

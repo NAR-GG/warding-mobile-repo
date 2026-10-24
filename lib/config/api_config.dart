@@ -566,6 +566,13 @@ class ApiConfig {
   static String playerWorldsUrl(int playerId) =>
       '$apiBaseUrl/mobile/players/$playerId/worlds';
 
+  /// 선수 페이지 월즈 한줄평 전체(최신순, 페이지).
+  static String playerWorldsReviewsUrl(
+    int playerId, {
+    required int page,
+    int size = 20,
+  }) => '$apiBaseUrl/mobile/players/$playerId/worlds/reviews?page=$page&size=$size';
+
   /// 선수 페이지 솔랭 탭.
   static String playerSoloRankUrl(int playerId) =>
       '$apiBaseUrl/mobile/players/$playerId/solo-rank';

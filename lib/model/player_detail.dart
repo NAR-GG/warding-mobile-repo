@@ -16,6 +16,8 @@ class PlayerDetail {
     required this.teamCode,
     required this.subscribed,
     required this.stats,
+    this.startEnabled = true,
+    this.endEnabled = false,
     this.playerImageUrl,
     this.teamName = '',
     this.teamImageUrl,
@@ -37,6 +39,8 @@ class PlayerDetail {
       teamName: j['teamName'] as String? ?? '',
       teamImageUrl: j['teamImageUrl'] as String?,
       subscribed: j['subscribed'] as bool? ?? false,
+      startEnabled: j['startEnabled'] as bool? ?? true,
+      endEnabled: j['endEnabled'] as bool? ?? false,
       live: live == null ? null : PlayerLive.fromJson(live),
       lastGame: last == null ? null : PlayerLastGame.fromJson(last),
       nextMatch: next == null ? null : PlayerNextMatch.fromJson(next),
@@ -55,13 +59,21 @@ class PlayerDetail {
   final String? teamImageUrl;
   final bool subscribed;
 
+  /// 솔랭 시작·종료 알림(구독 중일 때 의미). 서버 기본은 시작 ON·종료 OFF.
+  final bool startEnabled;
+  final bool endEnabled;
+
   /// 솔랭 중이 아니면 null — 큰 카드 대신 프로필 줄(⑧-2).
   final PlayerLive? live;
   final PlayerLastGame? lastGame;
   final PlayerNextMatch? nextMatch;
   final PlayerStats stats;
 
-  PlayerDetail copyWith({bool? subscribed}) => PlayerDetail(
+  PlayerDetail copyWith({
+    bool? subscribed,
+    bool? startEnabled,
+    bool? endEnabled,
+  }) => PlayerDetail(
     playerId: playerId,
     playerName: playerName,
     playerImageUrl: playerImageUrl,
@@ -70,6 +82,8 @@ class PlayerDetail {
     teamName: teamName,
     teamImageUrl: teamImageUrl,
     subscribed: subscribed ?? this.subscribed,
+    startEnabled: startEnabled ?? this.startEnabled,
+    endEnabled: endEnabled ?? this.endEnabled,
     live: live,
     lastGame: lastGame,
     nextMatch: nextMatch,
@@ -443,13 +457,7 @@ class PlayerWorldsRating {
             _int(e['rating']): _double(e['percentage']) ?? 0,
         },
         reviews: [
-          for (final e in _list(j['reviews']))
-            PlayerReview(
-              rating: _int(e['rating']),
-              comment: e['comment'] as String? ?? '',
-              opponentTeamCode: e['opponentTeamCode'] as String? ?? '',
-              stage: e['stage'] as String? ?? '',
-            ),
+          for (final e in _list(j['reviews'])) PlayerReview.fromJson(e),
         ],
         reviewCount: _int(j['reviewCount']),
       );
@@ -471,12 +479,59 @@ class PlayerReview {
     required this.comment,
     required this.opponentTeamCode,
     required this.stage,
+    this.ratingId,
+    this.gameId,
+    this.participantId,
+    this.teamSide,
   });
+
+  factory PlayerReview.fromJson(Map<String, dynamic> e) => PlayerReview(
+    ratingId: (e['ratingId'] as num?)?.toInt(),
+    gameId: e['gameId']?.toString(),
+    participantId: (e['participantId'] as num?)?.toInt(),
+    teamSide: e['teamSide'] as String?,
+    rating: _int(e['rating']),
+    comment: e['comment'] as String? ?? '',
+    opponentTeamCode: e['opponentTeamCode'] as String? ?? '',
+    stage: e['stage'] as String? ?? '',
+  );
 
   final int rating;
   final String comment;
   final String opponentTeamCode;
   final String stage;
+
+  /// 그 판 평점 상세(PlayerRatingScreen)로 가는 키. 옛 서버면 null — 탭해도 반응 없다.
+  final int? ratingId;
+
+  /// 라이브 게임 id·참가자 id.
+  final String? gameId;
+  final int? participantId;
+
+  /// "Blue" / "Red".
+  final String? teamSide;
+
+  bool get canOpen =>
+      gameId != null && gameId!.isNotEmpty && participantId != null;
+}
+
+/// 한줄평 한 페이지 (`GET /api/mobile/players/{id}/worlds/reviews`).
+class PlayerReviewPage {
+  const PlayerReviewPage({
+    required this.reviews,
+    required this.totalCount,
+    required this.hasNext,
+  });
+
+  factory PlayerReviewPage.fromJson(Map<String, dynamic> j) => PlayerReviewPage(
+    reviews: [for (final e in _list(j['reviews'])) PlayerReview.fromJson(e)],
+    totalCount: _int(j['totalCount']),
+    hasNext: j['hasNext'] as bool? ?? false,
+  );
+
+  final List<PlayerReview> reviews;
+  final int totalCount;
+  final bool hasNext;
 }
 
 /// 솔랭 탭 (`GET /api/mobile/players/{playerId}/solo-rank`).

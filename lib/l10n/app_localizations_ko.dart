@@ -2252,4 +2252,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String playerMetLast(String ago) {
     return '마지막 $ago';
   }
+
+  @override
+  String get matchAlarmOff => '알림 끄기';
+
+  @override
+  String get matchAlarmUpdated => '경기 알림 설정을 바꿨어요';
+
+  @override
+  String get matchAlarmUpdateFailed => '알림 설정 변경에 실패했어요. 다시 시도해주세요';
+
+  @override
+  String get playerReviewsMore => '한줄평 더 보기';
+
+  @override
+  String playerReviewsAll(int count) {
+    return '한줄평 전체 $count개 보기';
+  }
 }

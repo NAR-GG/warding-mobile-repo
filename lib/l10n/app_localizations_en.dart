@@ -2305,4 +2305,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String playerMetLast(String ago) {
     return 'Last $ago';
   }
+
+  @override
+  String get matchAlarmOff => 'Turn off alerts';
+
+  @override
+  String get matchAlarmUpdated => 'Match alert settings updated';
+
+  @override
+  String get matchAlarmUpdateFailed =>
+      'Couldn\'t update alerts. Please try again';
+
+  @override
+  String get playerReviewsMore => 'More reviews';
+
+  @override
+  String playerReviewsAll(int count) {
+    return 'See all $count reviews';
+  }
 }

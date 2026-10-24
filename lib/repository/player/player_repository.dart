@@ -12,6 +12,12 @@ abstract class PlayerSource {
   Future<PlayerDetail> fetchDetail(int playerId);
   Future<PlayerWorlds> fetchWorlds(int playerId);
   Future<PlayerSoloRank> fetchSoloRank(int playerId);
+
+  /// 월즈 한줄평 전체 — 최신순, [page] 는 0부터.
+  Future<PlayerReviewPage> fetchWorldsReviews(
+    int playerId, {
+    required int page,
+  });
 }
 
 /// 없는 선수(404).
@@ -56,6 +62,14 @@ class ApiPlayerSource implements PlayerSource {
   @override
   Future<PlayerWorlds> fetchWorlds(int playerId) async =>
       PlayerWorlds.fromJson(await _get(ApiConfig.playerWorldsUrl(playerId)));
+
+  @override
+  Future<PlayerReviewPage> fetchWorldsReviews(
+    int playerId, {
+    required int page,
+  }) async => PlayerReviewPage.fromJson(
+    await _get(ApiConfig.playerWorldsReviewsUrl(playerId, page: page)),
+  );
 
   @override
   Future<PlayerSoloRank> fetchSoloRank(int playerId) async =>

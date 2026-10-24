@@ -4,6 +4,7 @@ import 'package:warding/repository/home/home_sources.dart';
 import 'package:warding/repository/player/player_mock_source.dart';
 import 'package:warding/screens/player/component/player_next_match_card.dart';
 import 'package:warding/viewmodel/home/solo_cheer_controller.dart';
+import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
 import 'package:warding/viewmodel/player/player_viewmodel.dart';
 
 PlayerViewModel _vm(int id, {SoloCheerController? cheers}) => PlayerViewModel(
@@ -47,11 +48,38 @@ void main() {
     vm.dispose();
   });
 
-  test('비회원 구독 토글은 false — 화면이 로그인으로 보낸다', () async {
+  test('구독 시트 엔트리 — 상세의 구독·알림 토글과 솔랭 상태를 옮긴다', () async {
+    final live = _vm(1);
+    await live.load();
+    final e = live.sheetEntry(1)!;
+    expect(e.player.subscribed, isTrue);
+    expect(e.player.startEnabled, isTrue);
+    expect(e.status, MyPlayerStatus.liveSolo);
+    expect(live.sheetEntry(999), isNull);
+    live.dispose();
+
+    final resting = _vm(103);
+    await resting.load();
+    expect(resting.sheetEntry(103)!.player.subscribed, isFalse);
+    expect(resting.sheetEntry(103)!.status, isNot(MyPlayerStatus.liveSolo));
+    resting.dispose();
+  });
+
+  test('한줄평 전체 — 0페이지로 펼치고 다음 페이지를 붙인다', () async {
     final vm = _vm(1);
     await vm.load();
-    expect(await vm.toggleSubscribed(), isFalse);
-    expect(vm.detail!.subscribed, isTrue);
+    expect(vm.allReviews, isNull);
+    await vm.loadMoreReviews();
+    expect(vm.allReviews, hasLength(20));
+    expect(vm.reviewsHasNext, isTrue);
+    await vm.loadMoreReviews();
+    await vm.loadMoreReviews();
+    expect(vm.allReviews, hasLength(45));
+    expect(vm.reviewsHasNext, isFalse);
+    expect(vm.allReviews!.first.canOpen, isTrue);
+    // 새로고침하면 미리보기로 돌아간다.
+    await vm.load();
+    expect(vm.allReviews, isNull);
     vm.dispose();
   });
 

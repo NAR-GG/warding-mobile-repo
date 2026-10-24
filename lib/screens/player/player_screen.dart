@@ -6,12 +6,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_refresh_indicator.dart';
 import '../../components/load_error.dart';
+import '../../components/nar_badge.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../components/team_code_badge.dart';
 import '../../l10n/app_localizations.dart';
 import '../../model/player_detail.dart';
-import '../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../styles/app_colors.dart';
 import '../../util/analytics_events.dart';
 import '../../util/app_image.dart';
@@ -21,6 +21,10 @@ import '../../viewmodel/player/player_viewmodel.dart';
 import '../home/component/home_solo_cheer.dart';
 import '../home/component/home_solo_rank_section.dart';
 import '../login/login_screen.dart';
+import '../match_detail/component/match_detail_team_rating_section.dart'
+    show PlayerRating;
+import '../my_players/component/worlds_player_sheet.dart';
+import '../player_rating/player_rating_screen.dart';
 import '../match_list/component/match_alarm_sheet.dart';
 import 'component/player_next_match_card.dart';
 import 'component/player_parts.dart';
@@ -95,74 +99,66 @@ class _PlayerScreenState extends State<PlayerScreen> {
     context,
   ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
 
-  Future<void> _toggleSubscribe() async {
-    if (!await _vm.toggleSubscribed() && mounted) await _toLogin();
-  }
+  /// 상단 벨 — 월즈 솔랭 벨과 같은 선수 구독 시트(구독·해제·알림 토글).
+  void _openSubscribeSheet(double scale) => showWorldsPlayerSheet(
+    context,
+    viewModel: _vm,
+    playerId: widget.playerId,
+    scale: scale,
+  );
 
-  void _snack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.narDark600,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-  }
-
-  /// 경기 알림 벨 — 경기 카드의 벨과 같은 흐름(켜져 있으면 해제, 아니면 시트).
+  /// 경기 알림 — 경기 카드 벨과 같은 흐름(신청·변경·끄기 모두 시트에서).
   Future<void> _onMatchAlarm(PlayerNextMatch match) async {
-    final l = AppLocalizations.of(context)!;
     if (!await _vm.isLoggedIn()) {
       if (mounted) await _toLogin();
       return;
     }
     if (!mounted) return;
-    if (_vm.matchAlarmOn) {
-      final ok = await _vm.unsubscribeMatch();
-      _snack(ok ? l.matchAlarmRemoved : l.matchAlarmRemoveFailed);
-      return;
-    }
-    final result = await showMatchAlarmSheet(
-      context: context,
+    final after = await runMatchAlarmFlow(
+      context,
+      matchId: match.matchId,
+      subscribed: _vm.matchAlarmOn,
       homeName: match.team.teamName,
       homeLogoUrl: match.team.teamImageUrl,
+      homeCode: match.team.teamCode,
       awayName: match.opponent.teamName,
       awayLogoUrl: match.opponent.teamImageUrl,
+      awayCode: match.opponent.teamCode,
+      repository: _vm.matchSubscriptions,
     );
-    if (result == null) return;
-    final ok = await _vm.subscribeMatch(
-      (id) => _vm.matchSubscriptions.subscribeMatch(
-        id,
-        setStartEnabled: result.setStart,
-        setEndEnabled: result.setEnd,
-        liveEventEnabled: result.liveEvent,
-        killEnabled: result.kill,
-        baronEnabled: result.baron,
-        dragonEnabled: result.dragon,
-        towerEnabled: result.tower,
-        inhibitorEnabled: result.inhibitor,
+    if (after != null) _vm.setMatchAlarmOn(after);
+  }
+
+  /// 한줄평 → 그 판 평점 상세(홈 한줄평과 같은 방식).
+  void _openReview(PlayerReview review) {
+    final d = _vm.detail;
+    final gameId = review.gameId;
+    final participantId = review.participantId;
+    if (d == null || gameId == null || participantId == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AnalyticsPage.playerRating),
+        builder: (_) => PlayerRatingScreen(
+          player: PlayerRating(
+            name: d.playerName,
+            position: '',
+            rating: review.rating.toDouble(),
+            raterCount: 0,
+            participantId: participantId,
+            playerId: d.playerId,
+          ),
+          teamName: d.teamCode,
+          teamCode: d.teamCode,
+          side: review.teamSide?.toUpperCase() == 'RED'
+              ? BadgeSide.red
+              : BadgeSide.blue,
+          gameId: gameId,
+          participantId: participantId,
+          playerId: d.playerId,
+          highlightRatingId: review.ratingId,
+        ),
       ),
     );
-    _snack(ok ? l.matchAlarmRegistered : l.matchAlarmRegisterFailed);
-    if (ok) {
-      // 세트 시작 때 Live Activity 카드가 쓸 로고를 미리 받아 둔다(경기 카드와 같음).
-      unawaited(
-        liveActivityLogoPrefetcher.prefetch([
-          LogoTarget(
-            code: match.team.teamCode,
-            imageUrl: match.team.teamImageUrl ?? '',
-          ),
-          LogoTarget(
-            code: match.opponent.teamCode,
-            imageUrl: match.opponent.teamImageUrl ?? '',
-          ),
-        ]),
-      );
-    }
   }
 
   @override
@@ -194,7 +190,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           subscribed: d.subscribed,
                           name: d.playerName,
                           scale: scale,
-                          onTap: _toggleSubscribe,
+                          onTap: () => _openSubscribeSheet(scale),
                         ),
                 ),
                 Expanded(child: _body(l, d, scale)),
@@ -278,7 +274,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
             scale: scale,
           ),
           if (_vm.tab == PlayerTab.worlds)
-            PlayerWorldsTab(viewModel: _vm, scale: scale)
+            PlayerWorldsTab(
+              viewModel: _vm,
+              scale: scale,
+              onOpenReview: _openReview,
+            )
           else
             PlayerSoloTab(
               viewModel: _vm,

@@ -917,5 +917,13 @@
   "playerMetLast": "Last {ago}",
   "@playerMetLast": {
     "placeholders": { "ago": { "type": "String" } }
+  },
+  "matchAlarmOff": "Turn off alerts",
+  "matchAlarmUpdated": "Match alert settings updated",
+  "matchAlarmUpdateFailed": "Couldn't update alerts. Please try again",
+  "playerReviewsMore": "More reviews",
+  "playerReviewsAll": "See all {count} reviews",
+  "@playerReviewsAll": {
+    "placeholders": { "count": { "type": "int" } }
   }
 }

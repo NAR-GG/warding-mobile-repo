@@ -34,8 +34,21 @@ void main() {
     expect(find.byKey(PlayerScreen.liveKey), findsOneWidget);
     expect(find.text('단판'), findsOneWidget);
     expect(find.textContaining('월즈 성적'), findsOneWidget);
-    expect(find.text('LOS Grandes  스위스'), findsOneWidget);
+    expect(find.text('LOS Grandes  스위스 1라운드'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    // 한줄평: 미리보기 3개 → "한줄평 전체 N개 보기" 로 20개.
+    expect(find.byKey(PlayerWorldsTab.reviewKey(2)), findsOneWidget);
+    expect(find.byKey(PlayerWorldsTab.reviewKey(3)), findsNothing);
+    await tester.ensureVisible(find.byKey(PlayerWorldsTab.reviewsAllKey));
+    expect(find.text('한줄평 전체 412개 보기'), findsOneWidget);
+    await tester.tap(find.byKey(PlayerWorldsTab.reviewsAllKey));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(PlayerWorldsTab.reviewKey(19)), findsOneWidget);
+    expect(find.text('한줄평 더 보기'), findsOneWidget);
+    await tester.drag(find.byType(ListView).first, const Offset(0, 20000));
+    await tester.pump();
 
     await tester.tap(
       find.descendant(of: find.byType(NarTabBar), matching: find.text('솔랭')),

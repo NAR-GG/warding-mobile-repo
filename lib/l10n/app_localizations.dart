@@ -4171,6 +4171,36 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'마지막 {ago}'**
   String playerMetLast(String ago);
+
+  /// No description provided for @matchAlarmOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 끄기'**
+  String get matchAlarmOff;
+
+  /// No description provided for @matchAlarmUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 알림 설정을 바꿨어요'**
+  String get matchAlarmUpdated;
+
+  /// No description provided for @matchAlarmUpdateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 설정 변경에 실패했어요. 다시 시도해주세요'**
+  String get matchAlarmUpdateFailed;
+
+  /// No description provided for @playerReviewsMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄평 더 보기'**
+  String get playerReviewsMore;
+
+  /// No description provided for @playerReviewsAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄평 전체 {count}개 보기'**
+  String playerReviewsAll(int count);
 }
 
 class _AppLocalizationsDelegate

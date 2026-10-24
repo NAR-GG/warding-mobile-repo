@@ -39,7 +39,11 @@ class MockPlayerSource implements PlayerSource {
       'teamCode': team,
       'teamName': team,
       'teamImageUrl': '',
-      'subscribed': playerId == 1,
+      // 홈 목업의 "구독 선수 솔랭 중"·끝난 경기 선수는 구독 중이어야 앞뒤가 맞는다.
+      // 월즈 목업(101~)은 미구독(MockWorldsSoloSource 와 같다).
+      'subscribed': playerId < 100,
+      'startEnabled': true,
+      'endEnabled': false,
       'live': _liveIds.contains(playerId)
           ? {
               'championName': '아리',
@@ -137,6 +141,10 @@ class MockPlayerSource implements PlayerSource {
       'worldsLosses': wl,
     };
     Map<String, Object> review(int r, String c, String opp, String stage) => {
+      'ratingId': 9000 + r * 7 + c.length,
+      'gameId': '117030752644841640',
+      'participantId': 3,
+      'teamSide': 'Blue',
       'rating': r,
       'comment': c,
       'opponentTeamCode': opp,
@@ -161,7 +169,7 @@ class MockPlayerSource implements PlayerSource {
               game(
                 19901,
                 true,
-                '스위스',
+                '스위스 3라운드',
                 'IG',
                 '탈리야',
                 [4, 1, 11],
@@ -172,7 +180,7 @@ class MockPlayerSource implements PlayerSource {
               game(
                 19900,
                 false,
-                '스위스',
+                '스위스 2라운드',
                 'G2',
                 '사일러스',
                 [2, 3, 5],
@@ -183,7 +191,7 @@ class MockPlayerSource implements PlayerSource {
               game(
                 19899,
                 true,
-                '스위스',
+                '스위스 1라운드',
                 'LOS',
                 '아지르',
                 [6, 0, 8],
@@ -215,12 +223,47 @@ class MockPlayerSource implements PlayerSource {
                 {'rating': 1, 'count': 40, 'percentage': 1.0},
               ],
               'reviews': [
-                review(5, '탈리야 벽으로 바텀 다이브 끊은 장면이 오늘 경기 하이라이트', 'IG', '스위스'),
-                review(4, '라인전은 무난했는데 드래곤 한타 각을 먼저 본 게 컸다', 'IG', '스위스'),
-                review(5, '바론 앞 시야 싸움에서 먼저 와드 지운 게 승부처', 'IG', '스위스'),
+                review(
+                  5,
+                  '탈리야 벽으로 바텀 다이브 끊은 장면이 오늘 경기 하이라이트',
+                  'IG',
+                  '스위스 3라운드',
+                ),
+                review(4, '라인전은 무난했는데 드래곤 한타 각을 먼저 본 게 컸다', 'IG', '스위스 3라운드'),
+                review(5, '바론 앞 시야 싸움에서 먼저 와드 지운 게 승부처', 'IG', '스위스 3라운드'),
               ],
               'reviewCount': 412,
             },
+    });
+  }
+
+  /// 한줄평 45개를 20개씩.
+  @override
+  Future<PlayerReviewPage> fetchWorldsReviews(
+    int playerId, {
+    required int page,
+  }) async {
+    const total = 45;
+    const size = 20;
+    final from = page * size;
+    final to = (from + size).clamp(0, total);
+    return PlayerReviewPage.fromJson({
+      'reviews': [
+        for (var i = from; i < to; i++)
+          {
+            'ratingId': 9100 + i,
+            'gameId': '117030752644841640',
+            'participantId': 3,
+            'teamSide': i.isEven ? 'Blue' : 'Red',
+            'rating': 5 - i % 3,
+            'comment': '목업 한줄평 ${i + 1}번 — 한타 각이 좋았다',
+            'opponentTeamCode': i.isEven ? 'IG' : 'G2',
+            'stage': '스위스 ${3 - i % 3}라운드',
+            'createdAt': '2026-10-24T23:00:00+09:00',
+          },
+      ],
+      'totalCount': total,
+      'hasNext': to < total,
     });
   }
 

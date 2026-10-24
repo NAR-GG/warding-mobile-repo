@@ -65,6 +65,29 @@ class MyPlayerEntry {
   final HomeFinishedSoloPlayer? finished;
 }
 
+/// 선수 구독 시트([WorldsPlayerSheet])가 읽고 쓰는 것. 월즈 솔랭과 선수
+/// 페이지가 구현한다 — 같은 시트·같은 흐름으로 구독/해제·알림 토글을 한다.
+abstract interface class PlayerSheetSource implements Listenable {
+  /// 시트에 그릴 선수와 지금 솔랭 상태. 모르면 null(시트가 비어 보인다).
+  MyPlayerEntry? sheetEntry(int playerId);
+
+  /// 오늘 전적. 없으면 null.
+  WorldsTodayRecord? todayRecord(int playerId);
+
+  Future<void> setSubscribed(
+    int playerId,
+    bool subscribed, {
+    bool startEnabled = true,
+    bool endEnabled = true,
+  });
+
+  Future<void> setAlarms(
+    int playerId, {
+    required bool startEnabled,
+    required bool endEnabled,
+  });
+}
+
 /// 내 선수(구독 전체) 화면 상태. 보기 전용이다 — 구독 관리·알림 설정은
 /// 마이페이지에서 한다(spec 결정).
 ///
@@ -78,7 +101,7 @@ class MyPlayerEntry {
 /// [worlds] 를 주면 월즈 솔랭 화면이 된다 — 명단이 구독 선수가 아니라 월즈
 /// 부트캠프 계정이 등록된 선수 전체이고, 탭([subscribedOnly])과 구독 벨
 /// ([setSubscribed])이 생긴다. 분류·필터·접기 규칙은 내 선수와 같다.
-class MyPlayersViewModel extends ChangeNotifier {
+class MyPlayersViewModel extends ChangeNotifier implements PlayerSheetSource {
   MyPlayersViewModel({
     SubscriptionRepository? subscriptions,
     SoloRankSource? soloRank,
@@ -100,7 +123,16 @@ class MyPlayersViewModel extends ChangeNotifier {
   Map<int, WorldsTodayRecord> _today = const {};
 
   /// 월즈 선수의 오늘 전적. 오늘 한 판도 없거나 옛 서버면 null.
+  @override
   WorldsTodayRecord? todayRecord(int playerId) => _today[playerId];
+
+  @override
+  MyPlayerEntry? sheetEntry(int playerId) {
+    for (final e in [...liveSolo, ...playedToday, ...quiet]) {
+      if (e.player.playerId == playerId) return e;
+    }
+    return null;
+  }
 
   /// 소식 없음 묶음이 접혀 있을 때 보이는 선수 수.
   static const int quietVisibleCap = 5;
@@ -256,6 +288,7 @@ class MyPlayersViewModel extends ChangeNotifier {
 
   /// 명단의 한 선수를 구독/해제한다. 화면을 먼저 바꾸고, 실패하면 되돌린다.
   /// [startEnabled]/[endEnabled] 는 구독할 때의 알림 토글(기본: 둘 다 ON).
+  @override
   Future<void> setSubscribed(
     int playerId,
     bool subscribed, {
@@ -341,6 +374,7 @@ class MyPlayersViewModel extends ChangeNotifier {
   }
 
   /// 구독 중인 선수의 알림 토글만 바꾼다. 실패하면 되돌린다.
+  @override
   Future<void> setAlarms(
     int playerId, {
     required bool startEnabled,
