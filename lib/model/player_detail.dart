@@ -655,6 +655,31 @@ class PlayerSoloAccount {
   /// 크롤링 값이라 null 일 수 있다 — 그때는 티어 텍스트를 생략한다.
   final String? tier;
   final bool live;
+
+  /// 크롤러(TrackingThePros)가 주는 티어 표기 → (문장 키, 약어). 약어(Ch, GM)로도 온다.
+  static const _crestTiers = {
+    'iron': ('iron', 'I'),
+    'bronze': ('bronze', 'B'),
+    'silver': ('silver', 'S'),
+    'gold': ('gold', 'G'),
+    'platinum': ('platinum', 'P'),
+    'emerald': ('emerald', 'E'),
+    'diamond': ('diamond', 'D'),
+    'master': ('master', 'M'),
+    'grandmaster': ('grandmaster', 'GM'),
+    'gm': ('grandmaster', 'GM'),
+    'challenger': ('challenger', 'C'),
+    'ch': ('challenger', 'C'),
+  };
+
+  /// [tier] 첫 단어가 아는 티어면 (문장 키, 약어로 바꾼 표기) 로 나눈다.
+  /// 'Master 1,213LP' → ('master', 'M 1,213LP'). 모르는 티어면 null — 원문을 그대로 쓴다.
+  (String, String)? get tierCrest {
+    final parts = (tier ?? '').trim().split(RegExp(r'\s+'));
+    final hit = _crestTiers[parts.first.toLowerCase()];
+    if (hit == null) return null;
+    return (hit.$1, [hit.$2, ...parts.skip(1)].join(' '));
+  }
 }
 
 class PlayerSoloRecent {

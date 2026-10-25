@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nar_live_dot.dart';
@@ -168,6 +169,13 @@ class _AccountChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tier = account.tier;
+    final crest = account.tierCrest;
+    final tierStyle = playerText(
+      scale,
+      size: 12,
+      weight: FontWeight.w700,
+      color: AppColors.narGuideAccent,
+    );
     return Container(
       height: 30 * scale,
       padding: EdgeInsets.symmetric(horizontal: 10 * scale),
@@ -200,15 +208,19 @@ class _AccountChip extends StatelessWidget {
           // 티어는 크롤링 값이라 없을 수 있다 — 없으면 생략.
           if (tier != null && tier.isNotEmpty) ...[
             SizedBox(width: 6 * scale),
-            Text(
-              tier,
-              style: playerText(
-                scale,
-                size: 12,
-                weight: FontWeight.w700,
-                color: AppColors.narGuideAccent,
+            if (crest != null) ...[
+              CachedNetworkImage(
+                imageUrl: rankedCrestUrl(crest.$1),
+                width: 18 * scale,
+                height: 18 * scale,
+                fadeInDuration: Duration.zero,
+                // 약어가 같이 붙어 있어 아이콘을 못 받아도 티어는 읽힌다.
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
-            ),
+              SizedBox(width: 3 * scale),
+              Text(crest.$2, style: tierStyle),
+            ] else
+              Text(tier, style: tierStyle),
           ],
         ],
       ),
