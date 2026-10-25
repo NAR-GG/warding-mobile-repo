@@ -118,10 +118,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
       context,
       matchId: match.matchId,
       subscribed: _vm.matchAlarmOn,
-      homeName: match.team.teamName,
+      homeName: match.team.teamCode.isNotEmpty
+          ? match.team.teamCode
+          : match.team.teamName,
       homeLogoUrl: match.team.teamImageUrl,
       homeCode: match.team.teamCode,
-      awayName: match.opponent.teamName,
+      awayName: match.opponent.teamCode.isNotEmpty
+          ? match.opponent.teamCode
+          : match.opponent.teamName,
       awayLogoUrl: match.opponent.teamImageUrl,
       awayCode: match.opponent.teamCode,
       repository: _vm.matchSubscriptions,
