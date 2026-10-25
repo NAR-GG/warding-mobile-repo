@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
@@ -278,6 +279,8 @@ class _GameRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final rating = game.rating;
+    final playedAt = game.playedAt?.toLocal();
+    final locale = Localizations.localeOf(context).toString();
     final hasLogo =
         game.opponentTeamCode.isNotEmpty ||
         (game.opponentTeamImageUrl?.isNotEmpty ?? false);
@@ -343,6 +346,15 @@ class _GameRow extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (playedAt != null)
+                      Text(
+                        '  ${DateFormat.MMMd(locale).format(playedAt)}',
+                        style: playerText(
+                          scale,
+                          size: 11,
+                          color: AppColors.narText2,
+                        ),
+                      ),
                   ],
                 ),
                 SizedBox(height: 3 * scale),
