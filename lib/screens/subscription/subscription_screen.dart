@@ -156,9 +156,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 푸시 수신 신호로 피드를 다시 읽는다.
   void _reloadFeed() => _feedViewModel.load();
 
-  /// OP.GG 등 외부 URL을 기본 브라우저로 연다.
+  /// OP.GG 링크를 앱 안 브라우저(iOS SFSafariViewController / Android Custom Tabs)로 연다.
+  /// 인앱으로 못 열면 외부 브라우저로 폴백한다.
   Future<void> _launchUrl(String url) async {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final uri = Uri.parse(url);
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
+    } catch (_) {}
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   /// 이벤트 타입 필터 내부 키 상수.
