@@ -653,16 +653,21 @@ class _RatingCard extends StatelessWidget {
                         padding: EdgeInsets.symmetric(vertical: 4 * scale),
                         child: Row(
                           children: [
-                            // 시안처럼 폭을 좁게 둬 "3점 이하" 는 두 줄로 접힌다.
+                            // "3점 이하" 도 한 줄로 둔다. 영어 등 긴 라벨은 줄여서 맞춘다.
                             SizedBox(
-                              width: 34 * scale,
-                              child: Text(
-                                label,
-                                style: playerText(
-                                  scale,
-                                  size: 10.5,
-                                  color: AppColors.narText2,
-                                ).copyWith(height: 1.3),
+                              width: 44 * scale,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  style: playerText(
+                                    scale,
+                                    size: 10.5,
+                                    color: AppColors.narText2,
+                                  ).copyWith(height: 1.3),
+                                ),
                               ),
                             ),
                             SizedBox(width: 6 * scale),

@@ -408,10 +408,12 @@ class _Header extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _TeamBadge(
-                      name: homeName,
-                      logoUrl: homeLogoUrl,
-                      scale: scale,
+                    Flexible(
+                      child: _TeamBadge(
+                        name: homeName,
+                        logoUrl: homeLogoUrl,
+                        scale: scale,
+                      ),
                     ),
                     SizedBox(width: 12 * scale),
                     Text(
@@ -426,10 +428,12 @@ class _Header extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 12 * scale),
-                    _TeamBadge(
-                      name: awayName,
-                      logoUrl: awayLogoUrl,
-                      scale: scale,
+                    Flexible(
+                      child: _TeamBadge(
+                        name: awayName,
+                        logoUrl: awayLogoUrl,
+                        scale: scale,
+                      ),
                     ),
                   ],
                 ),
@@ -498,15 +502,19 @@ class _TeamBadge extends StatelessWidget {
               )
             : placeholder,
         SizedBox(width: 8 * scale),
-        Text(
-          name,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-            fontSize: 16 * scale,
-            height: 19 / 16,
-            letterSpacing: 0.21 * scale,
-            color: AppColors.narText,
+        Flexible(
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+              fontSize: 16 * scale,
+              height: 19 / 16,
+              letterSpacing: 0.21 * scale,
+              color: AppColors.narText,
+            ),
           ),
         ),
       ],
