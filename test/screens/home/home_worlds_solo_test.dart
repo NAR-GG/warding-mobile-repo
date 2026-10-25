@@ -90,6 +90,24 @@ void main() {
     expect(find.text('NA'), findsOneWidget);
   });
 
+  testWidgets('월즈 작은 카드를 누르면 그 선수 페이지로 간다', (tester) async {
+    final server = setUpHomeApi(loggedIn: true);
+    server.subscriptions = [subscriptionJson('Chovy', 'GEN')];
+    int? openedPlayer;
+    await pumpHomeSection(
+      tester,
+      worlds: worldsLive,
+      section: (vm) => HomeSoloRankSection(
+        viewModel: vm,
+        scale: 1,
+        onOpenPlayer: (id) => openedPlayer = id,
+      ),
+    );
+
+    await tester.tap(find.byKey(HomeWorldsMiniCards.cardKey('Canyon')));
+    expect(openedPlayer, 2);
+  });
+
   testWidgets('월즈 선수도 모두 쉬는 중 — 마지막 솔랭 한 줄로 접는다', (tester) async {
     final server = setUpHomeApi(loggedIn: true);
     server.subscriptions = [subscriptionJson('Ruler', 'GEN')];
