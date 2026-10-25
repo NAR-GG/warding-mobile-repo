@@ -80,15 +80,28 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (mounted && _vm.detail?.live != null) _tick.value++;
   });
 
+  // 백그라운드에서는 폴링을 멈추고, 돌아오면 바로 한 번 갱신한다(홈과 같은 방식).
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onHide: _vm.stopLivePolling,
+    onShow: () {
+      _vm.startLivePolling();
+      unawaited(_vm.refreshLive());
+    },
+  );
+
   @override
   void initState() {
     super.initState();
     _clock;
+    _lifecycle;
     unawaited(_vm.load());
+    _vm.startLivePolling();
   }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
+    _vm.stopLivePolling();
     _clock.cancel();
     _tick.dispose();
     if (widget.viewModel == null) _vm.dispose();

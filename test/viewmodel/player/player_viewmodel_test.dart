@@ -30,6 +30,16 @@ void main() {
     cheers.dispose();
   });
 
+  test('실시간 갱신(폴링)은 상세를 다시 읽어 응원 수를 합친다', () async {
+    final cheers = SoloCheerController(source: MockCheerSource());
+    final vm = _vm(1, cheers: cheers);
+    await vm.refreshLive();
+    expect(vm.detail!.live, isNotNull);
+    expect(cheers.totalOf('Faker'), 1284);
+    vm.dispose();
+    cheers.dispose();
+  });
+
   test('경기 기록이 아직 없으면 월즈 경기 목록이 빈다(집계 중)', () async {
     final vm = _vm(2);
     await vm.load();
