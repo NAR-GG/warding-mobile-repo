@@ -205,20 +205,22 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     return list;
   }
 
-  /// 그 챔피언을 마지막으로 한 시각 — 솔랭 판(endedAt)과 월즈 경기(playedAt) 중
-  /// 가장 최근. 챔피언 표가 이 두 목록의 합집합이라 서버 값 없이 구한다. 없으면 null.
-  DateTime? championLastPlayed(String championName) {
+  /// 그 챔피언을 [source] 에서 마지막으로 한 시각 — 솔랭은 판 종료(endedAt),
+  /// 월즈는 경기 시각(playedAt). 챔피언 표가 이 두 목록의 합집합이라 서버 값 없이
+  /// 구한다. 그 쪽에서 안 했으면 null.
+  DateTime? championLastPlayed(String championName, PlayerChampionSort source) {
+    final times = source == PlayerChampionSort.solo
+        ? [
+            for (final g in solo?.games ?? const <PlayerSoloGame>[])
+              if (g.championName == championName) g.endedAt,
+          ]
+        : [
+            for (final g in worlds?.matches ?? const <PlayerWorldsGame>[])
+              if (g.championName == championName) g.playedAt,
+          ];
     DateTime? latest;
-    void take(String name, DateTime? at) {
-      if (name != championName || at == null) return;
-      if (latest == null || at.isAfter(latest!)) latest = at;
-    }
-
-    for (final g in solo?.games ?? const <PlayerSoloGame>[]) {
-      take(g.championName, g.endedAt);
-    }
-    for (final g in worlds?.matches ?? const <PlayerWorldsGame>[]) {
-      take(g.championName, g.playedAt);
+    for (final t in times) {
+      if (t != null && (latest == null || t.isAfter(latest))) latest = t;
     }
     return latest;
   }

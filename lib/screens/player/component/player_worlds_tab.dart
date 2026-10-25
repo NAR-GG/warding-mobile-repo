@@ -114,7 +114,14 @@ class PlayerWorldsTab extends StatelessWidget {
                 for (final c in shownChampions)
                   _ChampionRow(
                     champion: c,
-                    lastPlayed: vm.championLastPlayed(c.championName),
+                    soloLastPlayed: vm.championLastPlayed(
+                      c.championName,
+                      PlayerChampionSort.solo,
+                    ),
+                    worldsLastPlayed: vm.championLastPlayed(
+                      c.championName,
+                      PlayerChampionSort.worlds,
+                    ),
                     scale: scale,
                   ),
               ],
@@ -474,19 +481,23 @@ class _SortChip extends StatelessWidget {
 class _ChampionRow extends StatelessWidget {
   const _ChampionRow({
     required this.champion,
-    required this.lastPlayed,
+    required this.soloLastPlayed,
+    required this.worldsLastPlayed,
     required this.scale,
   }) : _header = null;
 
   const _ChampionRow.header(AppLocalizations l, this.scale)
     : champion = null,
-      lastPlayed = null,
+      soloLastPlayed = null,
+      worldsLastPlayed = null,
       _header = l;
 
   final PlayerChampionRecord? champion;
 
-  /// 마지막으로 한 시각 — 이름 아래 "2시간 전" 으로 보인다. 없으면 생략.
-  final DateTime? lastPlayed;
+  /// 솔랭·월즈 각각 마지막으로 한 시각 — 그 열의 승패 아래 "2시간 전" 으로
+  /// 보여 어느 쪽 기록인지 헷갈리지 않는다. 없으면 생략.
+  final DateTime? soloLastPlayed;
+  final DateTime? worldsLastPlayed;
   final AppLocalizations? _header;
   final double scale;
 
@@ -521,31 +532,15 @@ class _ChampionRow extends StatelessWidget {
                       ),
                       SizedBox(width: 10 * scale),
                       Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              c.championName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: playerText(
-                                scale,
-                                size: 13,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                            if (lastPlayed != null)
-                              Text(
-                                ratingTimeAgo(lastPlayed!.toLocal()),
-                                maxLines: 1,
-                                style: playerText(
-                                  scale,
-                                  size: 10.5,
-                                  color: AppColors.narText2,
-                                ),
-                              ),
-                          ],
+                        child: Text(
+                          c.championName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: playerText(
+                            scale,
+                            size: 13,
+                            weight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -557,9 +552,10 @@ class _ChampionRow extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: h != null
                   ? Text(h.playerTabSolo, style: small)
-                  : _WinLoss(
+                  : _WinLossWithDate(
                       wins: c!.soloWins,
                       losses: c.soloLosses,
+                      lastPlayed: soloLastPlayed,
                       scale: scale,
                     ),
             ),
@@ -570,15 +566,50 @@ class _ChampionRow extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: h != null
                   ? Text(h.playerTabWorlds, style: small)
-                  : _WinLoss(
+                  : _WinLossWithDate(
                       wins: c!.worldsWins,
                       losses: c.worldsLosses,
+                      lastPlayed: worldsLastPlayed,
                       scale: scale,
                     ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 승패 아래 그 열의 마지막 플레이 시각. 시각이 없으면 승패만.
+class _WinLossWithDate extends StatelessWidget {
+  const _WinLossWithDate({
+    required this.wins,
+    required this.losses,
+    required this.lastPlayed,
+    required this.scale,
+  });
+
+  final int wins;
+  final int losses;
+  final DateTime? lastPlayed;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final at = lastPlayed;
+    final winLoss = _WinLoss(wins: wins, losses: losses, scale: scale);
+    if (at == null) return winLoss;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        winLoss,
+        Text(
+          ratingTimeAgo(at.toLocal()),
+          maxLines: 1,
+          style: playerText(scale, size: 10.5, color: AppColors.narText2),
+        ),
+      ],
     );
   }
 }

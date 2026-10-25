@@ -40,18 +40,26 @@ void main() {
     cheers.dispose();
   });
 
-  test('챔피언 최근 플레이는 솔랭·월즈 판 중 가장 최근 시각', () async {
+  test('챔피언 최근 플레이는 솔랭·월즈 각각 그쪽 판의 가장 최근 시각', () async {
     final vm = _vm(1);
     await vm.load();
     final name = vm.solo!.games.first.championName;
-    final times = [
+    final solo = [
       for (final g in vm.solo!.games)
         if (g.championName == name) g.endedAt,
-      for (final g in vm.worlds!.matches)
-        if (g.championName == name) g.playedAt,
     ].whereType<DateTime>().toList()..sort();
-    expect(vm.championLastPlayed(name), times.last);
-    expect(vm.championLastPlayed('없는 챔피언'), isNull);
+    expect(vm.championLastPlayed(name, PlayerChampionSort.solo), solo.last);
+
+    final worldsGame = vm.worlds!.matches.first;
+    final worlds = [
+      for (final g in vm.worlds!.matches)
+        if (g.championName == worldsGame.championName) g.playedAt,
+    ].whereType<DateTime>().toList()..sort();
+    expect(
+      vm.championLastPlayed(worldsGame.championName, PlayerChampionSort.worlds),
+      worlds.last,
+    );
+    expect(vm.championLastPlayed('없는 챔피언', PlayerChampionSort.solo), isNull);
     vm.dispose();
   });
 
