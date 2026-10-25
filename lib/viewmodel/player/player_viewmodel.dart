@@ -110,18 +110,51 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
       debugPrint('[Player] 솔랭 탭 조회 실패: $e');
     }
     loading = false;
-    final d = detail;
-    final live = d?.live;
-    if (d != null && live != null) {
-      cheers.sync(
-        cheerKey,
-        total: live.cheerTotal,
-        mine: live.cheerMine,
-        playerId: d.playerId,
-      );
-    }
+    _syncCheers();
     _notify();
     unawaited(_loadMatchAlarm());
+  }
+
+  void _syncCheers() {
+    final d = detail;
+    final live = d?.live;
+    if (d == null || live == null) return;
+    cheers.sync(
+      cheerKey,
+      total: live.cheerTotal,
+      mine: live.cheerMine,
+      playerId: d.playerId,
+    );
+  }
+
+  Timer? _livePollTimer;
+  bool _livePollInFlight = false;
+
+  /// 홈 솔랭 카드와 같은 5초 폴링 — 다른 팬 응원 수와 진행 중 여부를 갱신한다.
+  /// 상세만 다시 부른다(월즈·솔랭 탭은 판이 끝나야 바뀐다). 화면이 보일 때만 돌린다.
+  void startLivePolling() {
+    _livePollTimer?.cancel();
+    _livePollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => refreshLive(),
+    );
+  }
+
+  void stopLivePolling() => _livePollTimer?.cancel();
+
+  /// 상세를 다시 읽어 큰 카드(진행 중·응원 수)를 갱신한다. 실패하면 그대로 둔다.
+  Future<void> refreshLive() async {
+    if (_livePollInFlight || _disposed) return;
+    _livePollInFlight = true;
+    try {
+      detail = await _source.fetchDetail(playerId);
+      _syncCheers();
+      _notify();
+    } catch (e) {
+      debugPrint('[Player] 실시간 갱신 실패: $e');
+    } finally {
+      _livePollInFlight = false;
+    }
   }
 
   Future<void> _loadMatchAlarm() async {
@@ -343,6 +376,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
   @override
   void dispose() {
     _disposed = true;
+    _livePollTimer?.cancel();
     if (_ownsCheers) {
       unawaited(cheers.flushAll());
       cheers.dispose();
