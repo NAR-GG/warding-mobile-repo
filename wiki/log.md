@@ -1,5 +1,8 @@
 # Bundle Update Log
 
+## 2026-10-25 (6)
+* **선수 페이지 "솔랭 vs 월즈 챔피언" 표에 최근 플레이 시각**: 챔피언 이름 아래 `2시간 전`·`1일 전`(최근 솔랭 행과 같은 `ratingTimeAgo`). 서버 응답(`champions`)에는 날짜가 없지만 표가 솔랭 최근 20판 + 월즈 경기의 합집합이라, 이미 받은 `solo.games[].endedAt`·`worlds.matches[].playedAt` 중 가장 최근으로 구한다(`PlayerViewModel.championLastPlayed`). "최근순" 정렬은 넣지 않았다 — 솔랭순(판수)이 이미 최근 많이 한 챔피언을 위로 올린다.
+
 ## 2026-10-25 (5)
 * **홈 "월즈 솔랭 중인 선수" 작은 카드**: 카드를 누르면 월즈 솔랭 화면 대신 그 **선수 페이지**로 간다(선수 id 가 없을 때만 월즈 솔랭 화면). 벨은 **바로 구독하지 않고** 선수 페이지 벨과 같은 **선수 구독 시트**(`showWorldsPlayerSheet`)를 띄워 솔랭 시작·종료 알림을 고르게 한다. 시트 데이터는 그 선수의 `PlayerViewModel` 을 잠깐 만들어 읽고, 닫으면 홈 구독 목록을 다시 읽는다. 구독 0명일 때 큰 월즈 카드의 "구독하기"도 같은 시트로 간다. 바로 구독하던 `HomeViewModel.subscribeWorldsPlayer` 는 지웠다.
 

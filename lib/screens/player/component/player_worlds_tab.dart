@@ -112,7 +112,11 @@ class PlayerWorldsTab extends StatelessWidget {
               children: [
                 _ChampionRow.header(l, scale),
                 for (final c in shownChampions)
-                  _ChampionRow(champion: c, scale: scale),
+                  _ChampionRow(
+                    champion: c,
+                    lastPlayed: vm.championLastPlayed(c.championName),
+                    scale: scale,
+                  ),
               ],
             ),
           ),
@@ -468,14 +472,21 @@ class _SortChip extends StatelessWidget {
 }
 
 class _ChampionRow extends StatelessWidget {
-  const _ChampionRow({required this.champion, required this.scale})
-    : _header = null;
+  const _ChampionRow({
+    required this.champion,
+    required this.lastPlayed,
+    required this.scale,
+  }) : _header = null;
 
   const _ChampionRow.header(AppLocalizations l, this.scale)
     : champion = null,
+      lastPlayed = null,
       _header = l;
 
   final PlayerChampionRecord? champion;
+
+  /// 마지막으로 한 시각 — 이름 아래 "2시간 전" 으로 보인다. 없으면 생략.
+  final DateTime? lastPlayed;
   final AppLocalizations? _header;
   final double scale;
 
@@ -510,15 +521,31 @@ class _ChampionRow extends StatelessWidget {
                       ),
                       SizedBox(width: 10 * scale),
                       Flexible(
-                        child: Text(
-                          c.championName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: playerText(
-                            scale,
-                            size: 13,
-                            weight: FontWeight.w600,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              c.championName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: playerText(
+                                scale,
+                                size: 13,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                            if (lastPlayed != null)
+                              Text(
+                                ratingTimeAgo(lastPlayed!.toLocal()),
+                                maxLines: 1,
+                                style: playerText(
+                                  scale,
+                                  size: 10.5,
+                                  color: AppColors.narText2,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],

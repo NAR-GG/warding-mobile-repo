@@ -205,6 +205,24 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     return list;
   }
 
+  /// 그 챔피언을 마지막으로 한 시각 — 솔랭 판(endedAt)과 월즈 경기(playedAt) 중
+  /// 가장 최근. 챔피언 표가 이 두 목록의 합집합이라 서버 값 없이 구한다. 없으면 null.
+  DateTime? championLastPlayed(String championName) {
+    DateTime? latest;
+    void take(String name, DateTime? at) {
+      if (name != championName || at == null) return;
+      if (latest == null || at.isAfter(latest!)) latest = at;
+    }
+
+    for (final g in solo?.games ?? const <PlayerSoloGame>[]) {
+      take(g.championName, g.endedAt);
+    }
+    for (final g in worlds?.matches ?? const <PlayerWorldsGame>[]) {
+      take(g.championName, g.playedAt);
+    }
+    return latest;
+  }
+
   /// 비회원 여부 — 경기 알림 벨이 시트를 띄우기 전에 확인한다.
   Future<bool> isLoggedIn() => _isLoggedIn();
 
