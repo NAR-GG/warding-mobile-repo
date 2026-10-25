@@ -34,7 +34,11 @@ void main() {
     expect(find.byKey(PlayerScreen.liveKey), findsOneWidget);
     expect(find.text('단판'), findsOneWidget);
     expect(find.textContaining('월즈 성적'), findsOneWidget);
-    expect(find.text('LOS Grandes  스위스 1라운드'), findsOneWidget);
+    // 경기 날짜가 같은 줄 끝에 붙는다.
+    expect(
+      find.textContaining('LOS Grandes  스위스 1라운드  ', findRichText: true),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     // 한줄평: 미리보기 3개 → "한줄평 전체 N개 보기" 로 20개.

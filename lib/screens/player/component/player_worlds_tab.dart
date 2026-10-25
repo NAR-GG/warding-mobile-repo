@@ -330,12 +330,27 @@ class _GameRow extends StatelessWidget {
                       ),
                       SizedBox(width: 3 * scale),
                     ],
+                    // 날짜도 같은 줄에 두되, 좁으면 함께 말줄임된다.
                     Flexible(
-                      child: Text(
-                        [
-                          game.opponentLabel,
-                          game.stage,
-                        ].where((t) => t.isNotEmpty).join('  '),
+                      child: Text.rich(
+                        TextSpan(
+                          text: [
+                            game.opponentLabel,
+                            game.stage,
+                          ].where((t) => t.isNotEmpty).join('  '),
+                          children: [
+                            if (playedAt != null)
+                              TextSpan(
+                                text:
+                                    '  ${DateFormat.MMMd(locale).format(playedAt)}',
+                                style: playerText(
+                                  scale,
+                                  size: 11,
+                                  color: AppColors.narText2,
+                                ),
+                              ),
+                          ],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: playerText(
@@ -346,15 +361,6 @@ class _GameRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (playedAt != null)
-                      Text(
-                        '  ${DateFormat.MMMd(locale).format(playedAt)}',
-                        style: playerText(
-                          scale,
-                          size: 11,
-                          color: AppColors.narText2,
-                        ),
-                      ),
                   ],
                 ),
                 SizedBox(height: 3 * scale),
