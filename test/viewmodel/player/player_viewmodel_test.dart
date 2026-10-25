@@ -40,6 +40,29 @@ void main() {
     cheers.dispose();
   });
 
+  test('챔피언 최근 플레이는 솔랭·월즈 각각 그쪽 판의 가장 최근 시각', () async {
+    final vm = _vm(1);
+    await vm.load();
+    final name = vm.solo!.games.first.championName;
+    final solo = [
+      for (final g in vm.solo!.games)
+        if (g.championName == name) g.endedAt,
+    ].whereType<DateTime>().toList()..sort();
+    expect(vm.championLastPlayed(name, PlayerChampionSort.solo), solo.last);
+
+    final worldsGame = vm.worlds!.matches.first;
+    final worlds = [
+      for (final g in vm.worlds!.matches)
+        if (g.championName == worldsGame.championName) g.playedAt,
+    ].whereType<DateTime>().toList()..sort();
+    expect(
+      vm.championLastPlayed(worldsGame.championName, PlayerChampionSort.worlds),
+      worlds.last,
+    );
+    expect(vm.championLastPlayed('없는 챔피언', PlayerChampionSort.solo), isNull);
+    vm.dispose();
+  });
+
   test('경기 기록이 아직 없으면 월즈 경기 목록이 빈다(집계 중)', () async {
     final vm = _vm(2);
     await vm.load();
