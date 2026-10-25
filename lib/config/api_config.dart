@@ -72,6 +72,7 @@ class ApiConfig {
     if (teamIds != null && teamIds.isNotEmpty) {
       query.write(_repeatedParam('teamId', teamIds));
     }
+    query.write(_utcOffsetParam);
     return '$apiBaseUrl/mobile/schedules/calendar?$query';
   }
 
@@ -133,8 +134,16 @@ class ApiConfig {
     if (teamIds != null && teamIds.isNotEmpty) {
       query.write(_repeatedParam('teamId', teamIds));
     }
+    query.write(_utcOffsetParam);
     return '$apiBaseUrl/mobile/schedules?$query';
   }
+
+  /// 기기 시간대의 UTC 오프셋(분). 일정 API 는 이 기준으로 날짜를 묶고 시각을
+  /// 내려준다(없으면 KST). 해외 사용자가 경기 시각을 현지 시간으로 보게 한다.
+  /// ponytail: 요청 시점 오프셋 하나만 보낸다 — 한 달 안에 서머타임이 바뀌면 경계 경기
+  /// 하나가 1시간 어긋날 수 있다. 문제 되면 IANA 시간대 이름(네이티브 플러그인)으로 바꾼다.
+  static String get _utcOffsetParam =>
+      '&utcOffset=${DateTime.now().timeZoneOffset.inMinutes}';
 
   /// [key] 를 반복하는 쿼리 파라미터 조각을 만든다. 예: `&league=LCK&league=LEC`.
   static String _repeatedParam(String key, List<Object> values) {
@@ -148,7 +157,7 @@ class ApiConfig {
   /// 모바일 경기 리스트 커서 페이지 조회 (인증 불필요).
   /// 단일 요청으로 최신 날짜부터 [size] 개씩 받는다. [cursor] 는 첫 페이지에서 생략.
   ///
-  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜(KST 00:00) 이후 경기만, 과거→미래
+  /// [from] (`yyyy-MM-dd`) 을 주면 그 날짜(기기 시간대 00:00) 이후 경기만, 과거→미래
   /// 오름차순으로 받는다. [cursor] 와 함께 주면 같은 오름차순 축에서 이어받는다.
   ///
   /// [around] (`yyyy-MM-dd`) 를 주면 그 날짜를 기준으로 과거 절반 + 미래 절반을
@@ -183,6 +192,7 @@ class ApiConfig {
     if (before != null && before.isNotEmpty) {
       query.write('&before=${Uri.encodeQueryComponent(before)}');
     }
+    query.write(_utcOffsetParam);
     return '$apiBaseUrl/mobile/matches?$query';
   }
 

@@ -77,6 +77,16 @@ void main() {
     });
   });
 
+  test('일정 API 3종은 기기 시간대 UTC 오프셋(분)을 보낸다', () {
+    final offset = 'utcOffset=${DateTime.now().timeZoneOffset.inMinutes}';
+    expect(ApiConfig.mobileSchedulesUrl(date: '2026-10-25'), contains(offset));
+    expect(
+      ApiConfig.mobileScheduleCalendarUrl(month: '2026-10'),
+      contains(offset),
+    );
+    expect(ApiConfig.matchesUrl(league: 'LCK'), contains(offset));
+  });
+
   group('noticeViewUrl', () {
     test('공지 id 로 조회수 증가 경로를 만든다', () {
       expect(ApiConfig.noticeViewUrl(7), endsWith('/notices/7/view'));
