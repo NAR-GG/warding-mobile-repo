@@ -121,3 +121,7 @@ String? championSplashUrl(String championName) {
   return 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/'
       '${key}_0.jpg';
 }
+
+/// 랭크 티어 미니 문장 이미지 (Community Dragon). [tierKey] 는 소문자 티어명('master').
+String rankedCrestUrl(String tierKey) =>
+    'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/$tierKey.png';
