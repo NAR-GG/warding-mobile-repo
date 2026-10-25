@@ -13,6 +13,8 @@ import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../viewmodel/player/player_viewmodel.dart';
+import '../../my_players/component/worlds_player_sheet.dart';
 import '../../login/login_screen.dart';
 import 'home_skeletons.dart';
 import 'home_solo_cheer.dart';
@@ -171,13 +173,34 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     return () => open(playerId);
   }
 
-  /// 월즈 카드 구독 — 비회원이면 로그인 화면으로 보낸다.
+  /// 월즈 카드 구독 벨 — 바로 구독하지 않고 선수 구독 시트(선수 페이지 벨과
+  /// 같은 시트)를 띄워 알림 종류를 고르게 한다. 비회원이면 로그인 화면으로 보낸다.
   Future<void> _subscribeWorlds(int playerId) async {
-    final done = await widget.viewModel.subscribeWorldsPlayer(playerId);
-    if (done || !mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+    final sheet = PlayerViewModel(
+      playerId: playerId,
+      cheers: widget.viewModel.cheers,
+    );
+    try {
+      if (!await sheet.isLoggedIn()) {
+        if (!mounted) return;
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+        return;
+      }
+      // 시트는 선수 상세(구독·알림 상태)를 읽어 그린다.
+      await sheet.load();
+      if (!mounted || sheet.detail == null) return;
+      await showWorldsPlayerSheet(
+        context,
+        viewModel: sheet,
+        playerId: playerId,
+        scale: widget.scale,
+      );
+      await widget.viewModel.refreshSubscriptionsOnReturn();
+    } finally {
+      sheet.dispose();
+    }
   }
 
   @override
@@ -294,6 +317,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         scale: scale,
         onSubscribe: _subscribeWorlds,
         onOpen: widget.onOpenWorlds,
+        onOpenPlayer: widget.onOpenPlayer,
       ),
     ];
   }

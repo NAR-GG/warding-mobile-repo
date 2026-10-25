@@ -562,13 +562,6 @@ void main() {
       expect(vm.soloState, SoloCardState.noSubscription);
     });
 
-    test('비회원이 월즈 카드에서 구독하면 부르지 않고 false — 화면이 로그인으로 보낸다', () async {
-      final vm = build(snap: const SoloRankSnapshot(live: [], finished: []));
-      await pumpEventQueue();
-      expect(await vm.subscribeWorldsPlayer(194), isFalse);
-      expect(server.requestsTo('player-subscriptions'), isEmpty);
-    });
-
     test('구독 목록 조회가 실패해도 소스의 구독 수로 대신하지 않는다', () async {
       server.subscriptions = null;
       setUpServer(loggedIn: true);

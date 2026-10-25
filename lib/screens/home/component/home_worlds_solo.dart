@@ -244,7 +244,7 @@ class HomeWorldsLabel extends StatelessWidget {
 }
 
 /// 월즈 선수 작은 카드 가로 줄 — 구독 선수가 모두 쉬는 동안 홈 위쪽을 채운다.
-/// 카드마다 구독 벨이 있어 바로 구독한다.
+/// 카드를 누르면 선수 페이지, 벨을 누르면 선수 구독 시트가 열린다.
 class HomeWorldsMiniCards extends StatelessWidget {
   const HomeWorldsMiniCards({
     super.key,
@@ -254,6 +254,7 @@ class HomeWorldsMiniCards extends StatelessWidget {
     required this.scale,
     this.onSubscribe,
     this.onOpen,
+    this.onOpenPlayer,
   });
 
   static Key cardKey(String name) => ValueKey('homeWorldsMini-$name');
@@ -264,7 +265,12 @@ class HomeWorldsMiniCards extends StatelessWidget {
   final ValueListenable<int> tick;
   final double scale;
   final ValueChanged<int>? onSubscribe;
+
+  /// 선수 id 가 없는 카드를 눌렀을 때(월즈 솔랭 화면으로).
   final VoidCallback? onOpen;
+
+  /// 선수 id 가 있는 카드를 눌렀을 때(선수 페이지로).
+  final ValueChanged<int>? onOpenPlayer;
 
   static const double cardWidth = 148;
   static const double height = 104 + 64;
@@ -286,6 +292,7 @@ class HomeWorldsMiniCards extends StatelessWidget {
           scale: scale,
           onSubscribe: onSubscribe,
           onOpen: onOpen,
+          onOpenPlayer: onOpenPlayer,
         ),
       ),
     );
@@ -301,6 +308,7 @@ class _MiniCard extends StatelessWidget {
     required this.scale,
     this.onSubscribe,
     this.onOpen,
+    this.onOpenPlayer,
   });
 
   final HomeLiveSoloPlayer player;
@@ -309,6 +317,7 @@ class _MiniCard extends StatelessWidget {
   final double scale;
   final ValueChanged<int>? onSubscribe;
   final VoidCallback? onOpen;
+  final ValueChanged<int>? onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -318,9 +327,10 @@ class _MiniCard extends StatelessWidget {
     final region = player.overseasRegion;
     final id = player.playerId;
 
+    final openPlayer = onOpenPlayer;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onOpen,
+      onTap: id != null && openPlayer != null ? () => openPlayer(id) : onOpen,
       child: Container(
         width: HomeWorldsMiniCards.cardWidth * scale,
         clipBehavior: Clip.antiAlias,
