@@ -1275,7 +1275,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Based on LCK domestic teams. (Multiple selection)';
 
   @override
-  String get playerLoadFailed => 'Failed to load players';
+  String get playerLoadFailed => 'Couldn\'t load player';
 
   @override
   String get noPlayerInfo => 'No player info available';
@@ -2067,4 +2067,260 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get advertiserBannerBody =>
       'Personal banner / Team promo / Free support';
+
+  @override
+  String playerNextMatch(String stage) {
+    return 'Next match · $stage';
+  }
+
+  @override
+  String get playerNextMatchNoStage => 'Next match';
+
+  @override
+  String playerDday(int days) {
+    return 'D-$days';
+  }
+
+  @override
+  String get playerDdayToday => 'D-DAY';
+
+  @override
+  String playerBestOf(int games, int wins) {
+    return 'Bo$games';
+  }
+
+  @override
+  String get playerSingleGame => 'Bo1';
+
+  @override
+  String playerWinLoss(int wins, int losses) {
+    return '${wins}W ${losses}L';
+  }
+
+  @override
+  String get playerMatchAlarm => 'Match alert';
+
+  @override
+  String get playerMatchAlarmOn => 'Alert on';
+
+  @override
+  String get playerStatSubscribers => 'Subscribers';
+
+  @override
+  String get playerStatCheers7d => 'Cheers (7d)';
+
+  @override
+  String get playerStatWorldsRating => 'Worlds fan rating';
+
+  @override
+  String get playerTabWorlds => 'Worlds';
+
+  @override
+  String get playerTabSolo => 'Solo queue';
+
+  @override
+  String get playerWorldsRecord => 'Worlds record';
+
+  @override
+  String playerWorldsRecordSub(int games, int wins, int losses) {
+    return '$games games · ${wins}W ${losses}L';
+  }
+
+  @override
+  String get playerWorldsPending => 'Match stats are being compiled';
+
+  @override
+  String get playerStatKda => 'KDA';
+
+  @override
+  String get playerStatKp => 'Kill participation';
+
+  @override
+  String get playerStatDpm => 'Damage / min';
+
+  @override
+  String get playerStatCspm => 'CS / min';
+
+  @override
+  String get playerStatGd15 => 'Gold diff @15';
+
+  @override
+  String get playerStatVspm => 'Vision / min';
+
+  @override
+  String playerStatRank(String position, int rank) {
+    return '#$rank $position';
+  }
+
+  @override
+  String playerStatAvg(String avg) {
+    return 'Event avg $avg';
+  }
+
+  @override
+  String get playerWorldsGames => 'Games';
+
+  @override
+  String get playerWin => 'Win';
+
+  @override
+  String get playerLoss => 'Loss';
+
+  @override
+  String playerGameCsDamage(int cs, String damage) {
+    return 'CS $cs · DMG $damage';
+  }
+
+  @override
+  String get playerFanRating => 'Fan rating';
+
+  @override
+  String get playerChampions => 'Solo queue vs Worlds champions';
+
+  @override
+  String get playerSortSolo => 'By solo queue';
+
+  @override
+  String get playerSortWorlds => 'By Worlds';
+
+  @override
+  String get playerChampionHeader => 'Champion';
+
+  @override
+  String playerSeeAllCount(int count) {
+    return 'See all $count';
+  }
+
+  @override
+  String playerRatingSub(int games, String count) {
+    return '$games Worlds games · $count votes';
+  }
+
+  @override
+  String playerRatingScore(int score) {
+    return '$score★';
+  }
+
+  @override
+  String get playerRatingThreeOrLess => '3★ or less';
+
+  @override
+  String playerSoloRecent(int count) {
+    return 'Last $count games';
+  }
+
+  @override
+  String get playerSoloRecent7d => 'Last 7 days';
+
+  @override
+  String get playerSoloRecord => 'Record';
+
+  @override
+  String playerSoloWinRate(int percent) {
+    return 'Win rate $percent%';
+  }
+
+  @override
+  String get playerSoloAvgKda => 'Avg KDA';
+
+  @override
+  String get playerSoloPerDay => 'Per day';
+
+  @override
+  String playerSoloGames(String count) {
+    return '$count games';
+  }
+
+  @override
+  String playerSoloAvgDuration(int minutes) {
+    return '$minutes min / game';
+  }
+
+  @override
+  String playerSoloOldest(int count) {
+    return '$count games ago';
+  }
+
+  @override
+  String get playerSoloLatest => 'Latest';
+
+  @override
+  String get playerSoloMost => 'Most played';
+
+  @override
+  String get playerSoloGamesTitle => 'Recent solo queue';
+
+  @override
+  String playerSoloMore(int count) {
+    return '$count more games';
+  }
+
+  @override
+  String get playerSoloEmpty => 'No recent solo queue games';
+
+  @override
+  String playerLastSolo(String ago) {
+    return 'Last solo queue · $ago';
+  }
+
+  @override
+  String get playerNotFound => 'Player not found';
+
+  @override
+  String playerSubscribeSemantics(String name) {
+    return 'Subscribe to $name';
+  }
+
+  @override
+  String playerUnsubscribeSemantics(String name) {
+    return 'Unsubscribe from $name';
+  }
+
+  @override
+  String get worldsSoloOpenPlayer => 'Player page';
+
+  @override
+  String get playerMetTitle => 'Met in solo queue';
+
+  @override
+  String get playerMetNextOpponent => 'Next opponent';
+
+  @override
+  String get playerMetSameTeam => 'Teammate';
+
+  @override
+  String get playerMetOpponent => 'Opponent';
+
+  @override
+  String playerWins(int count) {
+    return '${count}W';
+  }
+
+  @override
+  String playerLosses(int count) {
+    return '${count}L';
+  }
+
+  @override
+  String playerMetLast(String ago) {
+    return 'Last $ago';
+  }
+
+  @override
+  String get matchAlarmOff => 'Turn off alerts';
+
+  @override
+  String get matchAlarmUpdated => 'Match alert settings updated';
+
+  @override
+  String get matchAlarmUpdateFailed =>
+      'Couldn\'t update alerts. Please try again';
+
+  @override
+  String get playerReviewsMore => 'More reviews';
+
+  @override
+  String playerReviewsAll(int count) {
+    return 'See all $count reviews';
+  }
 }

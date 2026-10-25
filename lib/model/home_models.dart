@@ -73,11 +73,15 @@ class HomeFinishedSoloPlayer {
     this.durationMinutes,
     this.playerImageUrl,
     this.cheerTotal = 0,
+    this.playerId,
   });
 
   final String name;
   final String teamCode;
   final bool won;
+
+  /// 선수 페이지 진입용 id. 옛 서버·목업이면 null 이고 칩을 눌러도 반응 없다.
+  final int? playerId;
 
   /// 그 판의 응원 합계(서버 값). 0 이면 칩에 그리지 않는다.
   final int cheerTotal;

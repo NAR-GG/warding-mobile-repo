@@ -558,6 +558,25 @@ class ApiConfig {
   static String soloRankCheerUrl(int playerId) =>
       '$apiBaseUrl/mobile/solo-rank/players/$playerId/cheers';
 
+  /// 선수 페이지 헤더·다음 경기·지표 (비로그인 가능, 로그인 시 개인화 필드).
+  static String playerUrl(int playerId) =>
+      '$apiBaseUrl/mobile/players/$playerId';
+
+  /// 선수 페이지 월즈 탭.
+  static String playerWorldsUrl(int playerId) =>
+      '$apiBaseUrl/mobile/players/$playerId/worlds';
+
+  /// 선수 페이지 월즈 한줄평 전체(최신순, 페이지).
+  static String playerWorldsReviewsUrl(
+    int playerId, {
+    required int page,
+    int size = 20,
+  }) => '$apiBaseUrl/mobile/players/$playerId/worlds/reviews?page=$page&size=$size';
+
+  /// 선수 페이지 솔랭 탭.
+  static String playerSoloRankUrl(int playerId) =>
+      '$apiBaseUrl/mobile/players/$playerId/solo-rank';
+
   /// 홈 뉴스 최신 TOP 5 (인증 불필요). nar.kr 웹과 같은 API.
   static String get homeNewsUrl => '$apiBaseUrl/home/news';
 

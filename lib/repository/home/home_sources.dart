@@ -124,6 +124,7 @@ class MockWorldsSoloSource implements WorldsSoloSource {
           won: true,
           minutesAgo: 23,
           durationMinutes: 29,
+          playerId: 103,
         ),
       ],
     ),
@@ -259,6 +260,7 @@ class MockSoloRankSource implements SoloRankSource {
       minutesAgo: 12,
       durationMinutes: 32,
       cheerTotal: 871,
+      playerId: 11,
     ),
     HomeFinishedSoloPlayer(
       name: 'Ruler',
@@ -266,6 +268,7 @@ class MockSoloRankSource implements SoloRankSource {
       won: false,
       minutesAgo: 40,
       durationMinutes: 28,
+      playerId: 12,
     ),
     HomeFinishedSoloPlayer(
       name: 'Canyon',

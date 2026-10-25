@@ -9,7 +9,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/nar_badge.dart';
 import '../../../components/nar_live_badge.dart';
 import '../../../repository/auth/auth_service.dart';
-import '../../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../../repository/match/match_subscription_repository.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -224,8 +223,8 @@ class MatchCard extends StatelessWidget {
 
 /// 헤더 좌측 알림 벨. 미구독이면 bell-plus, 구독 중이면 bell-check.
 ///
-/// 탭하면: 구독 중이면 즉시 구독 해제, 미구독이면 [showMatchAlarmSheet] 로
-/// 알림 설정 시트를 띄우고 '확인'으로 닫히면 구독을 등록한다.
+/// 탭하면 [runMatchAlarmFlow] — 미구독이면 알림 설정 시트 → 확인으로 구독,
+/// 구독 중이면 현재 설정으로 시트를 열어 변경하거나 "알림 끄기"로 해제한다.
 /// 비회원(JWT 없음)이 탭하면 로그인 화면으로 보낸다(평점 남기기와 동일 패턴).
 class _AlarmBell extends StatefulWidget {
   const _AlarmBell({
@@ -275,29 +274,6 @@ class _AlarmBellState extends State<_AlarmBell> {
     }
   }
 
-  void _showFeedback(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-              color: AppColors.narText,
-            ),
-          ),
-          backgroundColor: AppColors.narDark600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-  }
-
   Future<void> _handleTap() async {
     // 경기 알림은 회원 기반(서버도 로그인 필수) — 비회원은 로그인 화면으로 보낸다.
     final String? jwt;
@@ -317,55 +293,20 @@ class _AlarmBellState extends State<_AlarmBell> {
       return;
     }
 
-    final l = AppLocalizations.of(context)!;
-    if (_subscribed) {
-      setState(() => _subscribed = false);
-      try {
-        await _repo.unsubscribeMatch(widget.matchId);
-        _showFeedback(l.matchAlarmRemoved);
-      } catch (_) {
-        if (mounted) setState(() => _subscribed = true);
-        _showFeedback(l.matchAlarmRemoveFailed);
-      }
-      return;
-    }
-
-    final result = await showMatchAlarmSheet(
-      context: context,
+    // 신청·변경·끄기 모두 시트에서 확인받는다(바로 끄지 않는다).
+    final after = await runMatchAlarmFlow(
+      context,
+      matchId: widget.matchId,
+      subscribed: _subscribed,
       homeName: widget.homeName,
       homeLogoUrl: widget.homeLogoUrl,
+      homeCode: widget.homeCode,
       awayName: widget.awayName,
       awayLogoUrl: widget.awayLogoUrl,
+      awayCode: widget.awayCode,
+      repository: _repo,
     );
-    if (result == null) return;
-
-    setState(() => _subscribed = true);
-    try {
-      await _repo.subscribeMatch(
-        widget.matchId,
-        setStartEnabled: result.setStart,
-        setEndEnabled: result.setEnd,
-        liveEventEnabled: result.liveEvent,
-        killEnabled: result.kill,
-        baronEnabled: result.baron,
-        dragonEnabled: result.dragon,
-        towerEnabled: result.tower,
-        inhibitorEnabled: result.inhibitor,
-      );
-      _showFeedback(l.matchAlarmRegistered);
-
-      // 이 경기는 서버가 세트 시작에 맞춰 카드를 만든다. 그때 앱은 안 떠
-      // 있으므로 지금 양 팀 로고를 미리 저장해 둔다.
-      unawaited(
-        liveActivityLogoPrefetcher.prefetch([
-          LogoTarget(code: widget.homeCode, imageUrl: widget.homeLogoUrl ?? ''),
-          LogoTarget(code: widget.awayCode, imageUrl: widget.awayLogoUrl ?? ''),
-        ]),
-      );
-    } catch (_) {
-      if (mounted) setState(() => _subscribed = false);
-      _showFeedback(l.matchAlarmRegisterFailed);
-    }
+    if (after != null && mounted) setState(() => _subscribed = after);
   }
 
   @override

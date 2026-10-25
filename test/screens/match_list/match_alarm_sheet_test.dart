@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:warding/components/nar_toggle.dart';
 import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/repository/match/match_subscription_repository.dart';
 import 'package:warding/screens/match_list/component/match_alarm_sheet.dart';
 import 'package:warding/screens/match_list/component/match_card.dart';
 
@@ -16,9 +20,7 @@ void main() {
     AuthService.instance.resetJwtCacheForTesting();
   });
 
-  testWidgets('경기 카드의 벨 아이콘을 탭하면 경기 알림 설정 시트가 뜬다', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('경기 카드의 벨 아이콘을 탭하면 경기 알림 설정 시트가 뜬다', (WidgetTester tester) async {
     // 카드는 문구를 로케일에서 읽고, 폭이 좁으면 가로로 넘친다.
     await tester.pumpWidget(
       wrapWithL10n(
@@ -207,4 +209,67 @@ void main() {
     expect(result.dragon, isFalse);
     expect(result.kill, isTrue);
   });
+
+  // ── 구독 중인 경기: 바로 끄지 않고 시트에서 "알림 끄기" ─────────────────
+
+  testWidgets('구독 중이면 시트에 "알림 끄기" — 누르면 해제, 열기만 해선 안 끈다', (tester) async {
+    final repo = _MockMatchRepo();
+    when(() => repo.matchSubscriptionStatus('m1')).thenThrow(Exception('x'));
+    when(() => repo.unsubscribeMatch('m1')).thenAnswer((_) async {});
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      wrapWithL10n(
+        Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+        size: const Size(390, 844),
+      ),
+    );
+
+    bool? after;
+    final flow = runMatchAlarmFlow(
+      ctx,
+      matchId: 'm1',
+      subscribed: true,
+      homeName: 'T1',
+      awayName: 'GEN',
+      repository: repo,
+    ).then((v) => after = v);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(MatchAlarmSheet.offKey), findsOneWidget);
+    verifyNever(() => repo.unsubscribeMatch(any()));
+
+    await tester.tap(find.byKey(MatchAlarmSheet.offKey));
+    await tester.pumpAndSettle();
+    await flow;
+
+    verify(() => repo.unsubscribeMatch('m1')).called(1);
+    expect(after, isFalse);
+  });
+
+  testWidgets('미구독 시트엔 "알림 끄기" 가 없다', (tester) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      wrapWithL10n(
+        Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+        size: const Size(390, 844),
+      ),
+    );
+    unawaited(
+      showMatchAlarmSheet(context: ctx, homeName: 'T1', awayName: 'GEN'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(MatchAlarmSheet.offKey), findsNothing);
+  });
 }
+
+class _MockMatchRepo extends Mock implements MatchSubscriptionRepository {}

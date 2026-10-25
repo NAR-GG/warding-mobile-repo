@@ -960,5 +960,147 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "advertiserBannerTitle": "와딩 후원하기",
-  "advertiserBannerBody": "개인배너 / 팀홍보 / 자유후원"
+  "advertiserBannerBody": "개인배너 / 팀홍보 / 자유후원",
+  "playerNextMatch": "다음 경기 · {stage}",
+  "@playerNextMatch": {
+    "placeholders": { "stage": { "type": "String" } }
+  },
+  "playerNextMatchNoStage": "다음 경기",
+  "playerDday": "D-{days}",
+  "@playerDday": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "playerDdayToday": "D-DAY",
+  "playerBestOf": "{games}판 {wins}선승",
+  "@playerBestOf": {
+    "placeholders": { "games": { "type": "int" }, "wins": { "type": "int" } }
+  },
+  "playerSingleGame": "단판",
+  "playerWinLoss": "{wins}승 {losses}패",
+  "@playerWinLoss": {
+    "placeholders": { "wins": { "type": "int" }, "losses": { "type": "int" } }
+  },
+  "playerMatchAlarm": "경기 알림",
+  "playerMatchAlarmOn": "알림 켜짐",
+  "playerStatSubscribers": "구독자",
+  "playerStatCheers7d": "최근 7일 응원",
+  "playerStatWorldsRating": "월즈 팬 평점",
+  "playerTabWorlds": "월즈",
+  "playerTabSolo": "솔랭",
+  "playerWorldsRecord": "월즈 성적",
+  "playerWorldsRecordSub": "{games}경기 · {wins}승 {losses}패",
+  "@playerWorldsRecordSub": {
+    "placeholders": { "games": { "type": "int" }, "wins": { "type": "int" }, "losses": { "type": "int" } }
+  },
+  "playerWorldsPending": "경기 기록 집계 중",
+  "playerStatKda": "KDA",
+  "playerStatKp": "킬 관여",
+  "playerStatDpm": "분당 딜",
+  "playerStatCspm": "분당 CS",
+  "playerStatGd15": "15분 골드 차",
+  "playerStatVspm": "분당 시야 점수",
+  "playerStatRank": "{position} {rank}위",
+  "@playerStatRank": {
+    "placeholders": { "position": { "type": "String" }, "rank": { "type": "int" } }
+  },
+  "playerStatAvg": "대회 평균 {avg}",
+  "@playerStatAvg": {
+    "placeholders": { "avg": { "type": "String" } }
+  },
+  "playerWorldsGames": "경기별 기록",
+  "playerWin": "승리",
+  "playerLoss": "패배",
+  "playerGameCsDamage": "CS {cs} · 딜 {damage}",
+  "@playerGameCsDamage": {
+    "placeholders": { "cs": { "type": "int" }, "damage": { "type": "String" } }
+  },
+  "playerFanRating": "팬 평점",
+  "playerChampions": "솔랭 vs 월즈 챔피언",
+  "playerSortSolo": "솔랭순",
+  "playerSortWorlds": "월즈순",
+  "playerChampionHeader": "챔피언",
+  "playerSeeAllCount": "전체 {count}개 보기",
+  "@playerSeeAllCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerRatingSub": "월즈 {games}경기 · {count}명",
+  "@playerRatingSub": {
+    "placeholders": { "games": { "type": "int" }, "count": { "type": "String" } }
+  },
+  "playerRatingScore": "{score}점",
+  "@playerRatingScore": {
+    "placeholders": { "score": { "type": "int" } }
+  },
+  "playerRatingThreeOrLess": "3점 이하",
+  "playerSoloRecent": "최근 {count}판",
+  "@playerSoloRecent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloRecent7d": "최근 7일",
+  "playerSoloRecord": "전적",
+  "playerSoloWinRate": "승률 {percent}%",
+  "@playerSoloWinRate": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "playerSoloAvgKda": "평균 KDA",
+  "playerSoloPerDay": "하루 평균",
+  "playerSoloGames": "{count}판",
+  "@playerSoloGames": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "playerSoloAvgDuration": "한 판 {minutes}분",
+  "@playerSoloAvgDuration": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "playerSoloOldest": "{count}판 전",
+  "@playerSoloOldest": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloLatest": "최근",
+  "playerSoloMost": "모스트 챔피언",
+  "playerSoloGamesTitle": "최근 솔랭",
+  "playerSoloMore": "{count}판 더 보기",
+  "@playerSoloMore": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerSoloEmpty": "최근 솔랭 기록이 없어요",
+  "playerLastSolo": "마지막 솔랭 · {ago}",
+  "@playerLastSolo": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "playerLoadFailed": "선수 정보를 불러오지 못했어요",
+  "playerNotFound": "선수 정보를 찾을 수 없어요",
+  "playerSubscribeSemantics": "{name} 구독",
+  "@playerSubscribeSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "playerUnsubscribeSemantics": "{name} 구독 해제",
+  "@playerUnsubscribeSemantics": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "worldsSoloOpenPlayer": "선수 페이지",
+  "playerMetTitle": "솔랭에서 만난 선수",
+  "playerMetNextOpponent": "다음 상대",
+  "playerMetSameTeam": "같은 편",
+  "playerMetOpponent": "상대",
+  "playerWins": "{count}승",
+  "@playerWins": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerLosses": "{count}패",
+  "@playerLosses": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "playerMetLast": "마지막 {ago}",
+  "@playerMetLast": {
+    "placeholders": { "ago": { "type": "String" } }
+  },
+  "matchAlarmOff": "알림 끄기",
+  "matchAlarmUpdated": "경기 알림 설정을 바꿨어요",
+  "matchAlarmUpdateFailed": "알림 설정 변경에 실패했어요. 다시 시도해주세요",
+  "playerReviewsMore": "한줄평 더 보기",
+  "playerReviewsAll": "한줄평 전체 {count}개 보기",
+  "@playerReviewsAll": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

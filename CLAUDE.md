@@ -274,6 +274,8 @@ PR을 만들거나 본문을 고칠 때는 **항상 먼저 `.github/pull_request
 - 쇼츠 앱 내 재생: 홈 카드 탭 → 전체화면 세로 피드(`screens/shorts/`, 유튜브 IFrame 임베드·항상 무음). 네이티브 WebView라 스토어 릴리스 필요, Android·실기기 미확인
 - 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/repository/home/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
+- 선수 페이지(`screens/player/`): 홈 솔랭 카드·끝난 경기 칩·월즈 솔랭 타일에서 진입. 화면은 `HOME_MOCKS` 목업으로 완성, 백엔드 `GET /api/mobile/players/{id}`(+`/worlds`, `/solo-rank`) 배포 후 실 API 확인 필요
+
 ### 다음 작업
 - 솔랭·평점·뉴스 백엔드 연동(홈 소스 구현체 교체)
 - 경기 페이지

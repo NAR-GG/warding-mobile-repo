@@ -118,6 +118,9 @@ class AnalyticsPage {
   /// **다른 화면으로 센다** — 원래 둘이 같은 라우트 이름(`my_players`)을 써서
   /// `page_view` 가 합쳐졌고, 월즈 솔랭 진입을 따로 볼 수 없었다.
   static const String worldsSolo = 'worlds_solo';
+
+  /// 선수 페이지 — 홈 솔랭 카드·끝난 경기 칩·월즈 솔랭 타일에서 들어온다.
+  static const String playerDetail = 'player_detail';
   static const String notice = 'notice';
   static const String noticeDetail = 'notice_detail';
   static const String playerRating = 'player_rating';

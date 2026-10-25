@@ -95,6 +95,7 @@ HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
     durationMinutes: seconds == null ? null : seconds ~/ 60,
     playerImageUrl: j['playerImageUrl'] as String?,
     cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+    playerId: (j['playerId'] as num?)?.toInt(),
   );
 }
 
