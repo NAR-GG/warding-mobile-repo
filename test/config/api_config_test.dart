@@ -77,7 +77,7 @@ void main() {
     });
   });
 
-  test('일정 API 3종은 기기 시간대 UTC 오프셋(분)을 보낸다', () {
+  test('일정 API(목록 3종·단건)는 기기 시간대 UTC 오프셋(분)을 보낸다', () {
     final offset = 'utcOffset=${DateTime.now().timeZoneOffset.inMinutes}';
     expect(ApiConfig.mobileSchedulesUrl(date: '2026-10-25'), contains(offset));
     expect(
@@ -85,6 +85,7 @@ void main() {
       contains(offset),
     );
     expect(ApiConfig.matchesUrl(league: 'LCK'), contains(offset));
+    expect(ApiConfig.matchUrl('m1'), endsWith('/mobile/matches/m1?$offset'));
   });
 
   group('noticeViewUrl', () {
