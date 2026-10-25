@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
@@ -278,6 +279,8 @@ class _GameRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final rating = game.rating;
+    final playedAt = game.playedAt?.toLocal();
+    final locale = Localizations.localeOf(context).toString();
     final hasLogo =
         game.opponentTeamCode.isNotEmpty ||
         (game.opponentTeamImageUrl?.isNotEmpty ?? false);
@@ -327,12 +330,27 @@ class _GameRow extends StatelessWidget {
                       ),
                       SizedBox(width: 3 * scale),
                     ],
+                    // 날짜도 같은 줄에 두되, 좁으면 함께 말줄임된다.
                     Flexible(
-                      child: Text(
-                        [
-                          game.opponentLabel,
-                          game.stage,
-                        ].where((t) => t.isNotEmpty).join('  '),
+                      child: Text.rich(
+                        TextSpan(
+                          text: [
+                            game.opponentLabel,
+                            game.stage,
+                          ].where((t) => t.isNotEmpty).join('  '),
+                          children: [
+                            if (playedAt != null)
+                              TextSpan(
+                                text:
+                                    '  ${DateFormat.MMMd(locale).format(playedAt)}',
+                                style: playerText(
+                                  scale,
+                                  size: 11,
+                                  color: AppColors.narText2,
+                                ),
+                              ),
+                          ],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: playerText(
