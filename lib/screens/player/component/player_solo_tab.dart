@@ -214,9 +214,8 @@ class _AccountChip extends StatelessWidget {
                 width: 18 * scale,
                 height: 18 * scale,
                 fadeInDuration: Duration.zero,
-                // 아이콘을 못 받으면 티어 이름을 글자로 대신 보인다.
-                errorWidget: (_, _, _) =>
-                    Text(tier.split(' ').first, style: tierStyle),
+                // 약어가 같이 붙어 있어 아이콘을 못 받아도 티어는 읽힌다.
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
               SizedBox(width: 3 * scale),
               Text(crest.$2, style: tierStyle),
