@@ -1,8 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warding/repository/ad/ad_repository.dart';
+import 'package:warding/util/api_client.dart' show setApiClientForTesting;
 
 /// 스플래시 광고는 **첫 프레임에 한 번** `readyFor` 를 읽고 끝까지 안 바꾼다.
 /// 그 값을 들고 있는 `_ready` 는 메모리에만 있어서, 복원이 없으면 앱을 켤 때마다
@@ -44,5 +47,81 @@ void main() {
 
     // 예외가 밖으로 새면 main 의 Future.wait 가 깨져 첫 화면이 늦어진다.
     await expectLater(AdRepository.instance.restoreSplash(), completes);
+  });
+
+  group('집행이 끝난 스플래시 광고', () {
+    tearDown(() {
+      setApiClientForTesting(null);
+      AdRepository.instance.resetForTest();
+    });
+
+    test('응답에 splash 가 없으면 적어 둔 것도 지운다', () async {
+      SharedPreferences.setMockInitialValues({
+        key: jsonEncode({
+          'placement': 'splash',
+          'imageUrl': 'https://cdn.example.com/old.png',
+          'linkUrl': null,
+        }),
+      });
+      AdRepository.instance.resetForTest();
+      // 서버가 광고를 더 이상 안 내려준다(집행 종료).
+      setApiClientForTesting(
+        MockClient((_) async => http.Response('[]', 200)),
+      );
+
+      AdRepository.instance.warmUp(const ['splash']);
+      // warmUp 은 기다리지 않으므로 응답·삭제가 끝날 틈을 준다.
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(
+        AdRepository.instance.readyFor('splash'),
+        isNull,
+        reason: '집행이 끝났는데 메모리에 남으면 이번 실행에 그대로 뜬다',
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString(key),
+        isNull,
+        reason: '기기에 남으면 다음 실행에서 되살아난다',
+      );
+    });
+
+    test('응답에 splash 가 있으면 적어 둔 것을 지우지 않는다', () async {
+      SharedPreferences.setMockInitialValues({
+        key: jsonEncode({
+          'placement': 'splash',
+          'imageUrl': 'https://cdn.example.com/keep.png',
+          'linkUrl': null,
+        }),
+      });
+      AdRepository.instance.resetForTest();
+      setApiClientForTesting(
+        MockClient(
+          (_) async => http.Response(
+            jsonEncode([
+              {
+                'placement': 'splash',
+                'imageUrl': 'https://cdn.example.com/keep.png',
+                'linkUrl': null,
+              },
+            ]),
+            200,
+          ),
+        ),
+      );
+
+      // 이미지 받기(warmUp)를 타지 않도록 응답만 보는 경로로 확인한다.
+      await AdRepository.instance.restoreSplash();
+      expect(AdRepository.instance.readyFor('splash'), isNotNull);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString(key),
+        isNotNull,
+        reason: '집행 중인 광고를 지우면 다음 실행이 모집 배너로 샌다',
+      );
+    });
   });
 }
