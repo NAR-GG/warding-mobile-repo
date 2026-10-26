@@ -305,12 +305,16 @@ class _RecentCard extends StatelessWidget {
             SizedBox(height: 14 * scale),
             SizedBox(
               height: 26 * scale,
+              // 승은 가득(26), 패는 절반(13)으로 낮춰 아래에 붙인다 — 색만으로
+              // 구분하던 것보다 연승·연패 흐름이 한눈에 읽힌다.
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   for (var i = 0; i < recent.results.length; i++) ...[
                     if (i > 0) SizedBox(width: 3 * scale),
                     Expanded(
                       child: Container(
+                        height: (recent.results[i] ? 26 : 13) * scale,
                         decoration: BoxDecoration(
                           color: recent.results[i]
                               ? AppColors.scoreWin
