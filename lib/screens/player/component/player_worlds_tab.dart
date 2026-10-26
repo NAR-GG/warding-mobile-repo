@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../components/nar_card.dart';
+import '../../../components/nar_chip_multi_select.dart';
+import '../../../components/nar_more_button.dart';
+import '../../../components/nar_star_rating.dart';
 import '../../../components/team_code_badge.dart';
+import '../../../components/win_loss_text.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/player_detail.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/rating_mapping.dart';
 import '../../../viewmodel/player/player_viewmodel.dart';
 import '../../home/component/home_solo_cheer.dart' show formatCheerCount;
+import '../../player_rating/component/rating_distribution_section.dart';
 import 'player_parts.dart';
 
 /// 월즈 탭 — 성적 지표·경기별 기록·솔랭 vs 월즈 챔피언·팬 평점.
@@ -31,7 +37,15 @@ class PlayerWorldsTab extends StatelessWidget {
   static Key reviewKey(int index) => ValueKey('playerReview-$index');
 
   static const Key pendingKey = ValueKey('playerWorldsPending');
+
+  /// 경기별 기록 "N판 더 보기" 버튼의 키.
+  static const Key gamesMoreKey = ValueKey('playerWorldsGamesMore');
+
   static const int _championPreview = 5;
+  static const int _gamesPreview = 5;
+
+  /// 한줄평 처음 보이는 개수. 그 뒤로는 바닥에 닿을 때마다 서버에서 이어 받는다.
+  static const int reviewsPreview = 6;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +57,16 @@ class PlayerWorldsTab extends StatelessWidget {
         ? champions
         : champions.take(_championPreview).toList();
     final rating = w?.rating;
+    final games = w?.matches ?? const <PlayerWorldsGame>[];
+    final shownGames = vm.worldsGamesExpanded
+        ? games
+        : games.take(_gamesPreview).toList();
+    // 한줄평은 처음 6개만 보이고, 바닥에 닿으면 서버에서 20개씩 이어 받는다.
+    final shownReviews =
+        vm.allReviews ??
+        (rating?.reviews ?? const <PlayerReview>[])
+            .take(reviewsPreview)
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,7 +79,7 @@ class PlayerWorldsTab extends StatelessWidget {
           scale: scale,
         ),
         if (w == null || w.matches.isEmpty)
-          PlayerCard(
+          NarCard(
             key: pendingKey,
             scale: scale,
             child: SizedBox(
@@ -76,37 +100,43 @@ class PlayerWorldsTab extends StatelessWidget {
               scale: scale,
             ),
           PlayerSectionTitle(title: l.playerWorldsGames, scale: scale),
-          PlayerCard(
+          NarCard(
             scale: scale,
             child: Column(
               children: [
-                for (var i = 0; i < w.matches.length; i++)
-                  _GameRow(game: w.matches[i], first: i == 0, scale: scale),
+                for (var i = 0; i < shownGames.length; i++)
+                  _GameRow(game: shownGames[i], first: i == 0, scale: scale),
               ],
             ),
           ),
+          if (!vm.worldsGamesExpanded && w.matches.length > _gamesPreview)
+            NarMoreButton(
+              key: gamesMoreKey,
+              label: l.playerSoloMore(w.matches.length - _gamesPreview),
+              scale: scale,
+              onTap: vm.expandWorldsGames,
+            ),
         ],
         if (champions.isNotEmpty) ...[
           PlayerSectionTitle(title: l.playerChampions, scale: scale),
-          Row(
-            children: [
-              _SortChip(
-                label: l.playerSortSolo,
-                selected: vm.championSort == PlayerChampionSort.solo,
-                onTap: () => vm.setChampionSort(PlayerChampionSort.solo),
-                scale: scale,
-              ),
-              SizedBox(width: 6 * scale),
-              _SortChip(
-                label: l.playerSortWorlds,
-                selected: vm.championSort == PlayerChampionSort.worlds,
-                onTap: () => vm.setChampionSort(PlayerChampionSort.worlds),
-                scale: scale,
-              ),
-            ],
+          // 정렬 기준은 홈 리그 칩·내 선수 팀 칩과 같은 공용 칩 줄이다.
+          // 카드와 좌우를 맞추려고 가로 패딩 0, 위아래는 섹션 제목이 이미
+          // 띄워 둬서 아래쪽만 10 준다.
+          NarChipMultiSelect.single(
+            options: [for (final s in PlayerChampionSort.values) s.name],
+            selected: vm.championSort.name,
+            onSelected: (v) => vm.setChampionSort(
+              PlayerChampionSort.values.firstWhere((s) => s.name == v),
+            ),
+            labelBuilder: (v) => v == PlayerChampionSort.solo.name
+                ? l.playerSortSolo
+                : l.playerSortWorlds,
+            horizontalPadding: 0,
+            verticalPadding: 0,
+            scale: scale,
           ),
           SizedBox(height: 10 * scale),
-          PlayerCard(
+          NarCard(
             scale: scale,
             child: Column(
               children: [
@@ -128,7 +158,7 @@ class PlayerWorldsTab extends StatelessWidget {
             ),
           ),
           if (!vm.championsExpanded && champions.length > _championPreview)
-            PlayerMoreButton(
+            NarMoreButton(
               label: l.playerSeeAllCount(champions.length),
               scale: scale,
               onTap: vm.expandChampions,
@@ -136,35 +166,36 @@ class PlayerWorldsTab extends StatelessWidget {
         ],
         if (rating != null) ...[
           PlayerSectionTitle(
-            title: l.playerFanRating,
+            title: l.playerWorldsRating,
             sub: l.playerRatingSub(w!.games, formatCheerCount(rating.count)),
             scale: scale,
           ),
           _RatingCard(
             rating: rating,
-            reviews: vm.allReviews ?? rating.reviews,
+            reviews: shownReviews,
             onOpenReview: onOpenReview,
             scale: scale,
           ),
-          if (vm.reviewsLoading)
+          // 한줄평은 버튼 없이 바닥까지 내리면 이어 받는다(화면이 스크롤을
+          // 감시한다). 여기서는 더 받을 게 남았다는 표시만 둔다 — 자리를 비워
+          // 두면 리스트가 바닥에 딱 맞아 더 내릴 수 없어 다음 장을 못 받는다.
+          if (vm.reviewsLoading ||
+              (vm.allReviews == null
+                  ? rating.reviewCount > shownReviews.length
+                  : vm.reviewsHasNext))
             Padding(
-              padding: EdgeInsets.only(top: 14 * scale),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.narChipActive,
+              key: reviewsAllKey,
+              padding: EdgeInsets.only(top: 16 * scale, bottom: 8 * scale),
+              child: Center(
+                child: SizedBox(
+                  width: 20 * scale,
+                  height: 20 * scale,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2 * scale,
+                    color: AppColors.narChipActive,
+                  ),
                 ),
               ),
-            )
-          else if (vm.allReviews == null
-              ? rating.reviewCount > rating.reviews.length
-              : vm.reviewsHasNext)
-            PlayerMoreButton(
-              key: reviewsAllKey,
-              label: vm.allReviews == null
-                  ? l.playerReviewsAll(rating.reviewCount)
-                  : l.playerReviewsMore,
-              scale: scale,
-              onTap: vm.loadMoreReviews,
             ),
         ],
       ],
@@ -208,7 +239,7 @@ class _StatGrid extends StatelessWidget {
       for (var i = 0; i < stats.length; i += 3)
         stats.sublist(i, i + 3 > stats.length ? stats.length : i + 3),
     ];
-    return PlayerCard(
+    return NarCard(
       scale: scale,
       padding: EdgeInsets.fromLTRB(16 * scale, 14 * scale, 16 * scale, 0),
       child: Column(
@@ -433,51 +464,6 @@ class _GameRow extends StatelessWidget {
   }
 }
 
-class _SortChip extends StatelessWidget {
-  const _SortChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.scale,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 30 * scale,
-        padding: EdgeInsets.symmetric(horizontal: 12 * scale),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.narChipSelectedBg
-              : AppColors.narBgTertiary,
-          borderRadius: BorderRadius.circular(15 * scale),
-          border: Border.all(
-            color: selected ? AppColors.narChipActive : AppColors.narLine,
-          ),
-        ),
-        child: Text(
-          label,
-          style: playerText(
-            scale,
-            size: 12,
-            weight: FontWeight.w600,
-            color: selected ? AppColors.narText : AppColors.narText2,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _ChampionRow extends StatelessWidget {
   const _ChampionRow({
     required this.champion,
@@ -597,7 +583,17 @@ class _WinLossWithDate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final at = lastPlayed;
-    final winLoss = _WinLoss(wins: wins, losses: losses, scale: scale);
+    final winLoss = WinLossText(
+      wins: wins,
+      losses: losses,
+      style: playerText(
+        scale,
+        size: 12,
+        weight: FontWeight.w600,
+        color: AppColors.narText2,
+      ),
+      emptyStyle: playerText(scale, size: 12, color: AppColors.narDark300),
+    );
     if (at == null) return winLoss;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -610,49 +606,6 @@ class _WinLossWithDate extends StatelessWidget {
           style: playerText(scale, size: 10.5, color: AppColors.narText2),
         ),
       ],
-    );
-  }
-}
-
-/// "5승 2패" — 승 빨강, 패 회색. 0판이면 "—".
-class _WinLoss extends StatelessWidget {
-  const _WinLoss({
-    required this.wins,
-    required this.losses,
-    required this.scale,
-  });
-
-  final int wins;
-  final int losses;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    if (wins + losses == 0) {
-      return Text(
-        '—',
-        style: playerText(scale, size: 12, color: AppColors.narDark300),
-      );
-    }
-    final text = l.playerWinLoss(wins, losses);
-    final split = text.indexOf(' ');
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: split < 0 ? text : text.substring(0, split),
-            style: const TextStyle(color: AppColors.scoreWin),
-          ),
-          if (split >= 0) TextSpan(text: text.substring(split)),
-        ],
-      ),
-      style: playerText(
-        scale,
-        size: 12,
-        weight: FontWeight.w600,
-        color: AppColors.narText2,
-      ),
     );
   }
 }
@@ -674,113 +627,27 @@ class _RatingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
     final d = rating.distribution;
-    final bars = [
-      (l.playerRatingScore(5), d[5] ?? 0),
-      (l.playerRatingScore(4), d[4] ?? 0),
-      (l.playerRatingThreeOrLess, (d[3] ?? 0) + (d[2] ?? 0) + (d[1] ?? 0)),
-    ];
-    final divider = Container(height: 1, color: AppColors.narLine);
-    return PlayerCard(
+    return NarCard(
       scale: scale,
-      padding: EdgeInsets.fromLTRB(
-        16 * scale,
-        14 * scale,
-        16 * scale,
-        4 * scale,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 64 * scale,
-                child: Column(
-                  children: [
-                    Text(
-                      oneDecimal(rating.average),
-                      style: playerText(
-                        scale,
-                        size: 34,
-                        weight: FontWeight.w800,
-                        color: AppColors.narGuideAccent,
-                        family: 'Open Sans',
-                      ).copyWith(height: 1.05),
-                    ),
-                    Text(
-                      '/ 5',
-                      style: playerText(
-                        scale,
-                        size: 11,
-                        color: AppColors.narText2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 14 * scale),
-              Expanded(
-                child: Column(
-                  children: [
-                    for (final (label, pct) in bars)
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4 * scale),
-                        child: Row(
-                          children: [
-                            // "3점 이하" 도 한 줄로 둔다. 영어 등 긴 라벨은 줄여서 맞춘다.
-                            SizedBox(
-                              width: 44 * scale,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  label,
-                                  maxLines: 1,
-                                  style: playerText(
-                                    scale,
-                                    size: 10.5,
-                                    color: AppColors.narText2,
-                                  ).copyWith(height: 1.3),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 6 * scale),
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(2 * scale),
-                                child: LinearProgressIndicator(
-                                  value: (pct / 100).clamp(0, 1).toDouble(),
-                                  minHeight: 4 * scale,
-                                  backgroundColor: AppColors.narDark500,
-                                  color: AppColors.narViolet3,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 38 * scale,
-                              child: Text(
-                                '${pct.round()}%',
-                                textAlign: TextAlign.right,
-                                style: playerText(
-                                  scale,
-                                  size: 10.5,
-                                  color: AppColors.narText2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+          // 평균·별점·점수별 분포는 선수 평점 상세와 같은 공용 섹션을 쓴다.
+          RatingDistributionSection(
+            rating: rating.average,
+            raterCount: rating.count,
+            distribution: [
+              for (var score = 5; score >= 1; score--) (d[score] ?? 0).round(),
             ],
+            // 카드 안이라 시안(패딩 20)보다 좁게. 바는 남는 폭을 전부 쓴다.
+            padding: EdgeInsets.all(16 * scale),
+            // 별점과 분포가 붙어 보여 시안(14)보다 2 넓혔다.
+            gap: 16,
+            scale: scale,
           ),
-          SizedBox(height: 10 * scale),
           for (var i = 0; i < reviews.length; i++) ...[
-            divider,
+            Container(height: 1, color: AppColors.narLine),
             _ReviewRow(
               key: PlayerWorldsTab.reviewKey(i),
               review: reviews[i],
@@ -815,60 +682,42 @@ class _ReviewRow extends StatelessWidget {
       if (r.opponentTeamCode.isNotEmpty) 'vs ${r.opponentTeamCode}',
       if (r.stage.isNotEmpty) r.stage,
     ].join(' · ');
+    // 선수 평점 상세의 코멘트 카드와 같은 구성(별점 → 본문)이다. 그 화면은
+    // 작성자·시간을 머리에 두는데, 이 API 는 작성자를 안 내려주고 대신 어느
+    // 경기인지(vs IG · 스위스 3라운드)를 주므로 그 자리에 경기 정보를 둔다.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 13 * scale),
-        child: Row(
+        padding: EdgeInsets.symmetric(
+          horizontal: 16 * scale,
+          vertical: 16 * scale,
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 33 * scale,
-              height: 21 * scale,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.narChipBadgeBg,
-                borderRadius: BorderRadius.circular(4 * scale),
-              ),
-              child: Text(
-                '${r.rating}',
-                style: playerText(
-                  scale,
-                  size: 12,
-                  weight: FontWeight.w700,
-                  color: AppColors.narViolet3,
-                  family: 'Open Sans',
-                ),
-              ),
-            ),
-            SizedBox(width: 11 * scale),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            Row(
+              children: [
+                NarStarRating(rating: r.rating.toDouble(), scale: scale),
+                const Spacer(),
+                if (meta.isNotEmpty)
                   Text(
-                    r.comment,
+                    meta,
                     style: playerText(
                       scale,
-                      size: 14,
-                      weight: FontWeight.w600,
-                    ).copyWith(height: 1.45),
-                  ),
-                  if (meta.isNotEmpty) ...[
-                    SizedBox(height: 4 * scale),
-                    Text(
-                      meta,
-                      style: playerText(
-                        scale,
-                        size: 11,
-                        color: AppColors.narDark200,
-                      ),
+                      size: 11,
+                      color: AppColors.narText2,
                     ),
-                  ],
-                ],
-              ),
+                  ),
+              ],
             ),
+            if (r.comment.isNotEmpty) ...[
+              SizedBox(height: 8 * scale),
+              Text(
+                r.comment,
+                style: playerText(scale, size: 14).copyWith(height: 1.45),
+              ),
+            ],
           ],
         ),
       ),

@@ -1,7 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../components/nar_card.dart';
 import '../../../components/nar_live_dot.dart';
+import '../../../components/nar_more_button.dart';
+import '../../../components/nar_progress_bar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/player_detail.dart';
 import '../../../styles/app_colors.dart';
@@ -10,6 +12,7 @@ import '../../../util/rating_mapping.dart' show ratingTimeAgo;
 import '../../../viewmodel/player/player_viewmodel.dart';
 import '../../home/component/home_solo_cheer.dart' show formatCheerCount;
 import '../../home/component/home_solo_rank_section.dart' show HomeSoloFace;
+import '../../my_players/component/my_player_tile.dart' show RegionChip;
 import 'player_parts.dart';
 
 /// 솔랭 탭 — 계정 칩·최근 20판 요약·모스트 챔피언·솔랭에서 만난 선수·최근 솔랭.
@@ -32,6 +35,7 @@ class PlayerSoloTab extends StatelessWidget {
   static Key metKey(int playerId) => ValueKey('playerMet-$playerId');
 
   static const Key emptyKey = ValueKey('playerSoloEmpty');
+
   static const Key moreKey = ValueKey('playerSoloMore');
   static const int _gamesPreview = 5;
 
@@ -87,7 +91,7 @@ class PlayerSoloTab extends StatelessWidget {
               sub: l.playerSoloRecent(recent.games),
               scale: scale,
             ),
-            PlayerCard(
+            NarCard(
               scale: scale,
               child: Column(
                 children: [
@@ -137,7 +141,7 @@ class PlayerSoloTab extends StatelessWidget {
           ],
           if (games.isNotEmpty) ...[
             PlayerSectionTitle(title: l.playerSoloGamesTitle, scale: scale),
-            PlayerCard(
+            NarCard(
               scale: scale,
               child: Column(
                 children: [
@@ -147,7 +151,7 @@ class PlayerSoloTab extends StatelessWidget {
               ),
             ),
             if (!viewModel.soloGamesExpanded && games.length > _gamesPreview)
-              PlayerMoreButton(
+              NarMoreButton(
                 key: moreKey,
                 label: l.playerSoloMore(games.length - _gamesPreview),
                 scale: scale,
@@ -189,17 +193,8 @@ class _AccountChip extends StatelessWidget {
             NarLiveDot(scale: scale, size: 6, color: AppColors.narSoloDot),
             SizedBox(width: 5 * scale),
           ],
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 4 * scale),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(3 * scale),
-              border: Border.all(color: AppColors.narLine2),
-            ),
-            child: Text(
-              account.region,
-              style: playerText(scale, size: 9, color: AppColors.narText2),
-            ),
-          ),
+          // 지역 칩은 홈 월즈 솔랭·내 선수와 같은 공용 칩을 쓴다.
+          RegionChip(region: account.region, scale: scale),
           SizedBox(width: 6 * scale),
           Text(
             account.riotId,
@@ -209,13 +204,19 @@ class _AccountChip extends StatelessWidget {
           if (tier != null && tier.isNotEmpty) ...[
             SizedBox(width: 6 * scale),
             if (crest != null) ...[
-              CachedNetworkImage(
-                imageUrl: rankedCrestUrl(crest.$1),
-                width: 18 * scale,
-                height: 18 * scale,
-                fadeInDuration: Duration.zero,
-                // 약어가 같이 붙어 있어 아이콘을 못 받아도 티어는 읽힌다.
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              // 티어 엠블럼은 앱에 넣은 디자인 에셋이다(칩 높이 30 안에 18).
+              // 엠블럼 위쪽에 투명 여백이 있어 가운데 정렬하면 글자보다 떠 보인다
+              // — 2px 내려 옆 티어 글자와 눈높이를 맞춘다.
+              Padding(
+                padding: EdgeInsets.only(top: 2 * scale),
+                child: Image.asset(
+                  rankedCrestAsset(crest.$1),
+                  width: 18 * scale,
+                  height: 18 * scale,
+                  fit: BoxFit.contain,
+                  // 약어가 같이 붙어 있어 이미지가 없어도 티어는 읽힌다.
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
               ),
               SizedBox(width: 3 * scale),
               Text(crest.$2, style: tierStyle),
@@ -262,7 +263,7 @@ class _RecentCard extends StatelessWidget {
       ),
     );
 
-    return PlayerCard(
+    return NarCard(
       scale: scale,
       padding: EdgeInsets.all(16 * scale),
       child: Column(
@@ -407,16 +408,10 @@ class _MostRow extends StatelessWidget {
                   style: playerText(scale, size: 14, weight: FontWeight.w600),
                 ),
                 SizedBox(height: 6 * scale),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2 * scale),
-                  child: LinearProgressIndicator(
-                    value: rate,
-                    minHeight: 4 * scale,
-                    backgroundColor: AppColors.narDark500,
-                    color: rate > 0.5
-                        ? AppColors.scoreWin
-                        : AppColors.narDark200,
-                  ),
+                NarProgressBar(
+                  value: rate,
+                  color: rate > 0.5 ? AppColors.scoreWin : AppColors.narDark200,
+                  scale: scale,
                 ),
               ],
             ),

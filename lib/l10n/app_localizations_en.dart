@@ -2175,6 +2175,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playerFanRating => 'Fan rating';
 
   @override
+  String get playerWorldsRating => 'Worlds rating';
+
+  @override
   String get playerChampions => 'Solo queue vs Worlds champions';
 
   @override

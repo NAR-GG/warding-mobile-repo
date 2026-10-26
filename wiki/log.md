@@ -1,5 +1,29 @@
 # Bundle Update Log
 
+## 2026-10-26
+* **선수 페이지를 공용 컴포넌트로 다시 짰다**: 화면마다 같은 모양을 따로 짜 두던 것을 `lib/components/` 로 모았다.
+  * 챔피언 표의 솔랭순/월즈순 정렬 칩(`_SortChip`) → `NarChipMultiSelect.single`. 홈 리그 칩·내 선수 팀 칩과 같은 칩이 됐다(높이 34 pill). 처음엔 예전 크기(30)를 지키려고 `NarChipSize.compact` 를 더했다가, "다른 화면 칩과 똑같이 보이는 것"이 목적이라 되돌렸다 — 호출부가 하나뿐인 variant 는 남기지 않는다.
+  * 팬 평점 → 선수 평점 상세의 `RatingDistributionSection` 을 그대로 쓴다(평균 32px + `NarStarRating` + "총 N명 참여" + 5→1 노랑 분포 바). 한줄평도 보라 숫자 배지 대신 `NarStarRating` 을 쓴다. 분포 섹션은 고정 폭(116/204/150)이라 카드 안에서 넘쳐서, 좌측은 `ConstrainedBox(maxWidth)` 우측·트랙은 `Expanded` 로 바꾸고 `padding` 파라미터를 더했다(기본값은 시안 20 그대로라 선수 평점 화면은 안 바뀐다).
+  * `_SubscribeBell` → 새 `SubscribeBell`. 내 선수 화면에 거의 같은 코드가 있는데 아이콘 18/20, 배경 narDark500/600 처럼 상수만 어긋나 있었다.
+  * `_StatsRow` → 새 `NarStatBox`/`NarStatRow`. `stretch` 로 두면 높이가 안 정해진 `ListView` 안에서 무한 높이가 돼 `start` 로 둔다.
+  * `_MostRow` 승률 막대 → 새 `NarProgressBar`. 앱에서 `LinearProgressIndicator` 를 쓰던 유일한 두 곳이었고, 나머지 막대는 전부 `FractionallySizedBox` 방식이라 그쪽으로 맞췄다.
+  * `_WinLoss` → 새 `WinLossText`. "N승 M패" 를 4개 화면이 저마다 다르게 칠하고 있었다.
+  * `PlayerCard` 11곳 → 새 `NarCard`, `PlayerSectionTitle` → 새 `NarSectionTitle` 위의 얇은 껍데기, 솔랭 계정 칩의 지역 배지 → 이미 3개 화면이 쓰던 `RegionChip`(radius 3→4, 9px Pretendard→10px Open Sans).
+  * "전체 N개 보기"·"더 보기" 버튼 2곳 → 새 `NarMoreButton`(카드 마지막 줄용 `.inCard` 변형 포함).
+  * 첫 로딩 스피너 → `PlayerSkeleton`(실제 화면과 같은 순서·높이라 데이터가 들어올 때 레이아웃이 안 튄다).
+  * `_StatGrid`·`_GameRow`·`_ChampionRow`·`_RecentCard`·`_MetCard` 등은 앱 어디에도 같은 모양이 없어 그대로 뒀다. 한줄평 평점 배지도 호출부가 하나뿐이라 올리지 않았다 — 호출부가 하나인 공용 컴포넌트는 재사용이 아니라 겉도는 층이다.
+  * 홈 쪽 중복(`HomeSectionHeader`·`HomeListBox`·`_BellButton`·`_TodayStats`)은 이번 범위 밖이라 [공용 컴포넌트](/design/shared-components.md)에 남은 일로 적어 뒀다.
+
+* **선수 페이지 티어 엠블럼을 디자인 에셋으로 바꿨다**: 솔랭 계정 칩의 티어 아이콘을 Community Dragon 미니 문장(원격 URL)에서 앱에 넣은 `assets/images/tiers/*.webp` 11종(아이언~챌린저 + 언랭)으로 교체했다. 네트워크를 안 타서 바로 뜬다. `rankedCrestUrl` → `rankedCrestAsset`(모르는 티어는 `unranked` 로 폴백). 엠블럼 위쪽에 투명 여백이 있어 가운데 정렬하면 옆 글자보다 떠 보여 2px 내렸다.
+* **"팬 평점" 섹션 제목을 "월즈 평점"으로 바꿨다**(`playerWorldsRating` 신규). 경기별 기록 행의 작은 라벨은 한 판 단위라 "팬 평점" 그대로 둔다.
+
+* **선수 페이지 목록 — 데이터 출처에 따라 방식을 갈랐다**:
+  * **한줄평만 무한 스크롤**이다. 서버가 20개씩 주는 페이징(총 412개)이라 "전부 펼치기"가 불가능하다. 처음 6개를 보이고, 바닥 300 안쪽에 닿으면 이어 받는다.
+  * **최근 솔랭·챔피언 표·경기별 기록은 5개 + "더 보기" 버튼**이다. `/solo-rank`·`/worlds` 로 이미 전부 받아 둔 목록이라, 조금씩 여는 것보다 한 번에 펼쳐 보는 게 편하다는 판단. 한때 무한 스크롤·고정 높이 내부 스크롤로 만들었다가 되돌렸다.
+  * 무한 스크롤 구현 중 실제 버그를 하나 잡았다 — **콘텐츠가 화면보다 짧으면 `maxScrollExtent` 가 0이라 스크롤 리스너가 영영 안 불린다**(측정값 `max=0`). 그래서 매 프레임 뒤에 한 번 더 재서, 스크롤 여지가 없는데 더 받을 게 남았으면 바로 다음 장을 당긴다. 고친 뒤 `max=0 → 1366 → 3306` 으로 이어 붙는 걸 확인했다.
+  * 한줄평 끝에는 "더 받을 게 남았다"는 로딩 표시를 둔다. 자리를 비워 두면 리스트가 바닥에 딱 맞아 더 내릴 수 없고, 그러면 다음 장을 못 받는다.
+  * **페이지가 통째로 멈추는 버그를 잡았다.** "스크롤 여지가 없으면 바로 다음 장을 당긴다"를 **빌드마다** 포스트프레임 콜백으로 걸어 둔 게 화근이었다. 한줄평 조회가 실패하면 `allReviews` 가 null 인 채 `reviewsLoading` 이 false 로 돌아와 가드를 둘 다 통과 → 다시 호출 → `notifyListeners` → 리빌드 → 콜백 → … 로 메인 스레드를 잡아먹어 스크롤이 아예 안 됐다(실 API 에서 재현). 두 가지를 고쳤다 — ① 한 번 실패하면 `reviewsFailed` 로 더 시도하지 않는다, ② 확인을 빌드마다가 아니라 VM 알림에 한 프레임당 한 번만 예약한다(`_checkScheduled`). 회귀 테스트 2개를 `player_reviews_scroll_test.dart` 에 남겨 둔다.
+
 ## 2026-10-25 (6)
 * **선수 페이지 "솔랭 vs 월즈 챔피언" 표에 최근 플레이 시각**: 솔랭·월즈 **각 열의 승패 아래**에 그쪽에서 마지막으로 한 시각을 `2시간 전`·`1일 전`(최근 솔랭 행과 같은 `ratingTimeAgo`)으로 둔다. 처음엔 이름 아래 하나만 뒀는데 둘 다 한 챔피언이면 어느 쪽 기준인지 알 수 없어서 열별로 나눴다. 서버 응답(`champions`)에는 날짜가 없지만 표가 솔랭 최근 20판 + 월즈 경기의 합집합이라, 이미 받은 `solo.games[].endedAt`·`worlds.matches[].playedAt` 에서 구한다(`PlayerViewModel.championLastPlayed(name, source)`). "최근순" 정렬은 넣지 않았다 — 솔랭순(판수)이 이미 최근 많이 한 챔피언을 위로 올린다.
 

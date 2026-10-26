@@ -1,11 +1,8 @@
-■ Introducing player pages!
-  - Tap a SoloQ card, a finished match or a Worlds SoloQ card on Home to open the player page.
-  - SoloQ tier shows as a crest icon with LP, and Worlds game records show the match date.
-  - The champion table shows when each champion was last played in SoloQ and at Worlds.
-  - Cheers from other fans update in real time.
+■ Player pages are easier to read!
+  - SoloQ tiers now show crisp tier emblems you can recognise at a glance.
+  - Worlds ratings show a star score and score breakdown, so fan reactions are clear.
+  - Comments keep loading as you scroll down.
+  - A placeholder layout appears while the page loads instead of a blank screen.
 
-■ Match times now follow your local time zone!
-  - Schedules and match details are shown in your device's time zone.
-
-■ op.gg links open inside the app!
-  - op.gg links in SoloQ notifications open without leaving the app.
+■ Lists are easier to expand!
+  - Open recent SoloQ games, champion records and match records with "See more".

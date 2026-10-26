@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../components/nar_card.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/player_detail.dart';
@@ -55,7 +56,7 @@ class PlayerNextMatchCard extends StatelessWidget {
     final days = at == null ? null : daysUntil(at, DateTime.now());
     final stake = match.stakeLabel;
 
-    return PlayerCard(
+    return NarCard(
       scale: scale,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

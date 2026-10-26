@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:warding/components/nar_chip.dart';
 import 'package:warding/components/nar_tab_bar.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/repository/player/player_mock_source.dart';
@@ -41,16 +42,35 @@ void main() {
     );
     expect(tester.takeException(), isNull);
 
-    // 한줄평: 미리보기 3개 → "한줄평 전체 N개 보기" 로 20개.
-    expect(find.byKey(PlayerWorldsTab.reviewKey(2)), findsOneWidget);
-    expect(find.byKey(PlayerWorldsTab.reviewKey(3)), findsNothing);
-    await tester.ensureVisible(find.byKey(PlayerWorldsTab.reviewsAllKey));
-    expect(find.text('한줄평 전체 412개 보기'), findsOneWidget);
-    await tester.tap(find.byKey(PlayerWorldsTab.reviewsAllKey));
-    await tester.pump();
-    await tester.pump();
-    expect(find.byKey(PlayerWorldsTab.reviewKey(19)), findsOneWidget);
-    expect(find.text('한줄평 더 보기'), findsOneWidget);
+    // 한줄평은 "더 보기" 버튼 없이 스크롤로 이어 받는다. 콘텐츠가 화면보다
+    // 짧으면 스크롤 여지가 없으므로 레이아웃 직후 바로 다음 장을 당긴다.
+    expect(
+      find.byKey(PlayerWorldsTab.reviewKey(19)),
+      findsOneWidget,
+      reason: '버튼을 누르지 않아도 다음 장이 붙는다',
+    );
+    for (var i = 0; i < 8; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byKey(PlayerWorldsTab.reviewKey(39)).evaluate().isNotEmpty) {
+        break;
+      }
+    }
+    expect(
+      find.byKey(PlayerWorldsTab.reviewKey(39)),
+      findsOneWidget,
+      reason: '계속 내리면 계속 이어 붙는다',
+    );
+
+    // 정렬 칩은 공용 NarChip 기본 크기(34).
+    final sortChip = find.ancestor(
+      of: find.text('솔랭순'),
+      matching: find.byType(NarChip),
+    );
+    await tester.ensureVisible(sortChip);
+    expect(tester.getSize(sortChip).height, 34);
+
     await tester.drag(find.byType(ListView).first, const Offset(0, 20000));
     await tester.pump();
 
@@ -75,6 +95,7 @@ void main() {
       ),
       findsNothing,
     );
+    // 최근 솔랭은 "더 보기"로 한 번에 전부 편다(이미 받아 둔 목록).
     await tester.ensureVisible(find.byKey(PlayerSoloTab.moreKey));
     await tester.tap(find.byKey(PlayerSoloTab.moreKey));
     await tester.pump();

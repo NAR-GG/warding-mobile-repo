@@ -13,7 +13,7 @@ LCK 등 e스포츠 팬을 위한 Flutter 모바일 앱 `warding`의 지식 번�
 
 # 디자인
 
-* [Design](design/) - 색상 토큰, 반응형 스케일 규칙
+* [Design](design/) - 색상 토큰, 반응형 스케일 규칙, 공용 컴포넌트
 
 # 기능
 

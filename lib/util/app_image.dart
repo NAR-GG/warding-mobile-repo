@@ -122,6 +122,24 @@ String? championSplashUrl(String championName) {
       '${key}_0.jpg';
 }
 
-/// 랭크 티어 미니 문장 이미지 (Community Dragon). [tierKey] 는 소문자 티어명('master').
-String rankedCrestUrl(String tierKey) =>
-    'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/$tierKey.png';
+/// 랭크 티어 엠블럼 에셋 경로. [tierKey] 는 소문자 티어명('master').
+///
+/// 예전에는 Community Dragon 의 미니 문장을 받아 썼는데, 네트워크를 타서 느리고
+/// 가끔 안 떴다. 지금은 디자인 에셋을 앱에 넣어 바로 그린다.
+/// 모르는 티어는 'unranked' 로 떨어뜨린다.
+String rankedCrestAsset(String tierKey) {
+  const known = {
+    'iron',
+    'bronze',
+    'silver',
+    'gold',
+    'platinum',
+    'emerald',
+    'diamond',
+    'master',
+    'grandmaster',
+    'challenger',
+  };
+  final key = known.contains(tierKey) ? tierKey : 'unranked';
+  return 'assets/images/tiers/$key.webp';
+}

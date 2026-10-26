@@ -2122,6 +2122,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get playerFanRating => '팬 평점';
 
   @override
+  String get playerWorldsRating => '월즈 평점';
+
+  @override
   String get playerChampions => '솔랭 vs 월즈 챔피언';
 
   @override

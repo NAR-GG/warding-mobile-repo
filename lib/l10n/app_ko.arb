@@ -1015,6 +1015,7 @@
     "placeholders": { "cs": { "type": "int" }, "damage": { "type": "String" } }
   },
   "playerFanRating": "팬 평점",
+  "playerWorldsRating": "월즈 평점",
   "playerChampions": "솔랭 vs 월즈 챔피언",
   "playerSortSolo": "솔랭순",
   "playerSortWorlds": "월즈순",

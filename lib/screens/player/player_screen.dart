@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../components/app_refresh_indicator.dart';
 import '../../components/load_error.dart';
 import '../../components/nar_badge.dart';
+import '../../components/nar_card.dart';
+import '../../components/nar_stat_box.dart';
+import '../../components/subscribe_bell.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_tab_bar.dart';
 import '../../components/team_code_badge.dart';
@@ -27,6 +29,7 @@ import '../my_players/component/worlds_player_sheet.dart';
 import '../player_rating/player_rating_screen.dart';
 import '../match_list/component/match_alarm_sheet.dart';
 import 'component/player_next_match_card.dart';
+import 'component/player_skeleton.dart';
 import 'component/player_parts.dart';
 import 'component/player_solo_tab.dart';
 import 'component/player_worlds_tab.dart';
@@ -74,6 +77,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
       widget.viewModel ??
       PlayerViewModel(playerId: widget.playerId, cheers: widget.cheers);
 
+  // 한줄평을 바닥 근처에서 이어 받는다(더 보기 버튼 대신).
+  final ScrollController _scroll = ScrollController();
+
   // 큰 카드 경과 시간만 매초 다시 그린다(홈과 같은 방식).
   final ValueNotifier<int> _tick = ValueNotifier<int>(0);
   late final Timer _clock = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -94,6 +100,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.initState();
     _clock;
     _lifecycle;
+    _scroll.addListener(_onScroll);
+    _vm.addListener(_checkScrollable);
     unawaited(_vm.load());
     _vm.startLivePolling();
   }
@@ -101,12 +109,54 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _vm.removeListener(_checkScrollable);
+    _scroll.removeListener(_onScroll);
+    _scroll.dispose();
     _vm.stopLivePolling();
     _clock.cancel();
     _tick.dispose();
     if (widget.viewModel == null) _vm.dispose();
     super.dispose();
   }
+
+  /// 한줄평만 스크롤로 이어 받는다(서버 페이징). 최근 솔랭·챔피언 표는 이미
+  /// 받아 둔 목록이라 "더 보기" 버튼으로 한 번에 편다.
+  /// 중복 호출·끝 도달은 [PlayerViewModel.loadMoreReviews] 가 막는다.
+  void _loadMore() {
+    if (_vm.tab != PlayerTab.worlds) return;
+    unawaited(_vm.loadMoreReviews());
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final p = _scroll.position;
+    if (p.maxScrollExtent - p.pixels < 300) _loadMore();
+  }
+
+  /// 콘텐츠가 화면보다 짧으면 스크롤 자체가 없어 [_onScroll] 이 영영 안 불린다
+  /// (큰 화면·한줄평이 적을 때). 목록이 바뀐 다음 프레임에 한 번만 재서, 아직
+  /// 더 받을 게 남았는데 스크롤 여지가 없으면 바로 다음 장을 당긴다.
+  ///
+  /// 빌드마다 걸면 안 된다 — [_loadMore] 가 `notifyListeners` 를 부르므로
+  /// 리빌드 → 콜백 → 리빌드 루프에 빠져 화면이 멈춘다.
+  void _checkScrollable() {
+    if (_checkScheduled) return;
+    // 더 받을 게 없으면 아예 예약하지 않는다 — 예약해 두면 매 알림마다
+    // 프레임 콜백이 깨어나 낭비된다.
+    if (!_vm.canLoadMoreReviews) return;
+    _checkScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScheduled = false;
+      if (!mounted || !_scroll.hasClients) return;
+      if (_scroll.position.maxScrollExtent > 0) return;
+      _loadMore();
+    });
+  }
+
+  /// 이번 프레임에 이미 확인을 예약했는지. 한 프레임에 알림이 여러 번 와도
+  /// 확인은 한 번만 한다(루프 방지). 더 받을 게 없으면 [_loadMore] 가 즉시
+  /// 돌아오므로 알림도 멈춘다.
+  bool _checkScheduled = false;
 
   Future<void> _toLogin() => Navigator.of(
     context,
@@ -203,9 +253,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   onBack: () => Navigator.of(context).pop(),
                   trailing: d == null
                       ? null
-                      : _SubscribeBell(
+                      : SubscribeBell(
+                          key: PlayerScreen.subscribeKey,
                           subscribed: d.subscribed,
-                          name: d.playerName,
+                          semanticsLabel: d.subscribed
+                              ? l.playerUnsubscribeSemantics(d.playerName)
+                              : l.playerSubscribeSemantics(d.playerName),
                           scale: scale,
                           onTap: () => _openSubscribeSheet(scale),
                         ),
@@ -220,11 +273,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Widget _body(AppLocalizations l, PlayerDetail? d, double scale) {
-    if (_vm.loading && d == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.narChipActive),
-      );
-    }
+    if (_vm.loading && d == null) return PlayerSkeleton(scale: scale);
     if (d == null) {
       return LoadError(
         message: _vm.notFound ? l.playerNotFound : l.playerLoadFailed,
@@ -237,6 +286,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       onRefresh: _vm.load,
       showCompleteSnackBar: false,
       child: ListView(
+        controller: _scroll,
         physics: AppRefreshIndicator.physics,
         padding: EdgeInsets.fromLTRB(
           20 * scale,
@@ -309,57 +359,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 }
 
-class _SubscribeBell extends StatelessWidget {
-  const _SubscribeBell({
-    required this.subscribed,
-    required this.name,
-    required this.scale,
-    required this.onTap,
-  });
-
-  final bool subscribed;
-  final String name;
-  final double scale;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Semantics(
-      button: true,
-      label: subscribed
-          ? l.playerUnsubscribeSemantics(name)
-          : l.playerSubscribeSemantics(name),
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: PlayerScreen.subscribeKey,
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: 36 * scale,
-          height: 36 * scale,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: subscribed ? AppColors.narChipBadgeBg : AppColors.narDark600,
-          ),
-          child: SvgPicture.asset(
-            subscribed
-                ? 'assets/icons/bell-check.svg'
-                : 'assets/icons/bell-plus.svg',
-            width: 20 * scale,
-            height: 20 * scale,
-            colorFilter: ColorFilter.mode(
-              subscribed ? AppColors.narViolet3 : AppColors.narText2,
-              BlendMode.srcIn,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// 쉬는 중(⑧-2) — 팀·포지션, 마지막 솔랭 한 판, 오른쪽 선수 사진.
 class _RestingCard extends StatelessWidget {
   const _RestingCard({required this.detail, required this.scale});
@@ -373,7 +372,7 @@ class _RestingCard extends StatelessWidget {
     final last = detail.lastGame;
     final photo = resolveImageUrl(detail.playerImageUrl);
     final role = detail.role.isEmpty ? null : detail.role.toUpperCase();
-    return PlayerCard(
+    return NarCard(
       key: PlayerScreen.restingKey,
       scale: scale,
       child: SizedBox(
@@ -495,45 +494,23 @@ class _StatsRow extends StatelessWidget {
       weight: FontWeight.w700,
       family: 'Open Sans',
     );
-    Widget box(String label, Widget v) => Expanded(
-      child: PlayerCard(
-        scale: scale,
-        padding: EdgeInsets.fromLTRB(
-          12 * scale,
-          10 * scale,
-          8 * scale,
-          10 * scale,
+    return NarStatRow(
+      scale: scale,
+      boxes: [
+        NarStatBox(
+          label: l.playerStatSubscribers,
+          scale: scale,
+          value: Text(formatCheerCount(stats.subscriberCount), style: value),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: playerText(scale, size: 11, color: AppColors.narText2),
-            ),
-            SizedBox(height: 4 * scale),
-            v,
-          ],
+        NarStatBox(
+          label: l.playerStatCheers7d,
+          scale: scale,
+          value: Text(formatCheerCount(stats.cheers7d), style: value),
         ),
-      ),
-    );
-    return Row(
-      children: [
-        box(
-          l.playerStatSubscribers,
-          Text(formatCheerCount(stats.subscriberCount), style: value),
-        ),
-        SizedBox(width: 8 * scale),
-        box(
-          l.playerStatCheers7d,
-          Text(formatCheerCount(stats.cheers7d), style: value),
-        ),
-        SizedBox(width: 8 * scale),
-        box(
-          l.playerStatWorldsRating,
-          rating == null
+        NarStatBox(
+          label: l.playerStatWorldsRating,
+          scale: scale,
+          value: rating == null
               ? Text('-', style: value)
               : Text.rich(
                   TextSpan(
