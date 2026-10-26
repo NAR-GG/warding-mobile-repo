@@ -1,8 +1,11 @@
+■ Expired ads no longer show up!
+  - Fixed splash ads that kept appearing after a campaign ended.
+
 ■ Player pages are easier to read!
-  - SoloQ tiers now show crisp tier emblems you can recognise at a glance.
-  - Worlds ratings show a star score and score breakdown, so fan reactions are clear.
+  - SoloQ tiers now show crisp emblems you can recognise at a glance.
+  - Worlds ratings show a star score and score breakdown.
   - Comments keep loading as you scroll down.
-  - A placeholder layout appears while the page loads instead of a blank screen.
+  - A placeholder layout appears while the page loads.
 
 ■ Lists are easier to expand!
-  - Open recent SoloQ games, champion records and match records with "See more".
+  - Open recent SoloQ, champion and match records with "See more".
