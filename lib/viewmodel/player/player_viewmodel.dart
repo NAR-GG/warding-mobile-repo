@@ -383,7 +383,15 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
   /// 첫 호출은 0페이지로 펼치고, 그 뒤로는 다음 페이지를 붙인다.
   /// 한 번이라도 실패하면 더 시도하지 않는다. 실패 후에도 계속 부르면
   /// 무한 스크롤이 매 프레임 재시도에 빠져 화면이 멈춘다(옛 서버·네트워크 장애).
+  /// 사용자가 "다시 시도"를 누르면 [retryReviews] 로 푼다.
   bool reviewsFailed = false;
+
+  /// 실패 표시를 지우고 한 번 더 받아 본다.
+  Future<void> retryReviews() {
+    if (reviewsLoading) return Future<void>.value();
+    reviewsFailed = false;
+    return loadMoreReviews();
+  }
 
   /// 한줄평을 더 받을 수 있는 상태인지. 화면이 "스크롤 여지 없음" 보정을
   /// 걸기 전에 먼저 물어, 받을 게 없으면 프레임 콜백조차 예약하지 않는다.

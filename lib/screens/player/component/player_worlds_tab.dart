@@ -179,7 +179,17 @@ class PlayerWorldsTab extends StatelessWidget {
           // 한줄평은 버튼 없이 바닥까지 내리면 이어 받는다(화면이 스크롤을
           // 감시한다). 여기서는 더 받을 게 남았다는 표시만 둔다 — 자리를 비워
           // 두면 리스트가 바닥에 딱 맞아 더 내릴 수 없어 다음 장을 못 받는다.
-          if (vm.reviewsLoading ||
+          //
+          // 실패했으면 스피너를 계속 돌리지 않는다. 자동 재시도는 막아 뒀으니
+          // (무한 루프 방지) 사용자가 직접 다시 시도할 버튼을 준다.
+          if (vm.reviewsFailed)
+            NarMoreButton(
+              key: reviewsAllKey,
+              label: l.retry,
+              scale: scale,
+              onTap: vm.retryReviews,
+            )
+          else if (vm.reviewsLoading ||
               (vm.allReviews == null
                   ? rating.reviewCount > shownReviews.length
                   : vm.reviewsHasNext))
@@ -700,13 +710,20 @@ class _ReviewRow extends StatelessWidget {
               children: [
                 NarStarRating(rating: r.rating.toDouble(), scale: scale),
                 const Spacer(),
+                // 별점은 고정 폭이라, 긴 stage·팀 코드가 오면 이 텍스트가
+                // 줄을 넘긴다. 좁은 화면에서는 말줄임으로 접는다.
                 if (meta.isNotEmpty)
-                  Text(
-                    meta,
-                    style: playerText(
-                      scale,
-                      size: 11,
-                      color: AppColors.narText2,
+                  Flexible(
+                    child: Text(
+                      meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: playerText(
+                        scale,
+                        size: 11,
+                        color: AppColors.narText2,
+                      ),
                     ),
                   ),
               ],

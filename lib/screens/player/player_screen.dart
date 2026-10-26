@@ -127,15 +127,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
     unawaited(_vm.loadMoreReviews());
   }
 
+  /// 바닥까지 남은 거리가 이 값 안쪽이면 다음 장을 당긴다.
+  static const double _loadMoreThreshold = 300;
+
   void _onScroll() {
     if (!_scroll.hasClients) return;
     final p = _scroll.position;
-    if (p.maxScrollExtent - p.pixels < 300) _loadMore();
+    if (p.maxScrollExtent - p.pixels < _loadMoreThreshold) _loadMore();
   }
 
-  /// 콘텐츠가 화면보다 짧으면 스크롤 자체가 없어 [_onScroll] 이 영영 안 불린다
+  /// 콘텐츠가 화면보다 짧거나 바닥에 거의 붙어 있으면 [_onScroll] 이 안 불린다
   /// (큰 화면·한줄평이 적을 때). 목록이 바뀐 다음 프레임에 한 번만 재서, 아직
-  /// 더 받을 게 남았는데 스크롤 여지가 없으면 바로 다음 장을 당긴다.
+  /// 더 받을 게 남았으면 바로 다음 장을 당긴다.
   ///
   /// 빌드마다 걸면 안 된다 — [_loadMore] 가 `notifyListeners` 를 부르므로
   /// 리빌드 → 콜백 → 리빌드 루프에 빠져 화면이 멈춘다.
@@ -148,7 +151,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkScheduled = false;
       if (!mounted || !_scroll.hasClients) return;
-      if (_scroll.position.maxScrollExtent > 0) return;
+      // 스크롤이 아예 없을 때만이 아니라, 이미 바닥 [_loadMoreThreshold] 안쪽에
+      // 들어와 있으면 당긴다 — 그 사이 구간은 사용자가 다시 스크롤하지 않는 한
+      // _onScroll 이 안 불려 다음 장이 영영 안 붙는다.
+      final p = _scroll.position;
+      if (p.maxScrollExtent - p.pixels >= _loadMoreThreshold) return;
       _loadMore();
     });
   }

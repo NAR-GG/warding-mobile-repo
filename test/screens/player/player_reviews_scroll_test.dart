@@ -4,12 +4,17 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/model/player_detail.dart';
 import 'package:warding/repository/player/player_mock_source.dart';
 import 'package:warding/repository/player/player_repository.dart';
+import 'package:warding/screens/player/component/player_worlds_tab.dart';
 import 'package:warding/screens/player/player_screen.dart';
 import 'package:warding/viewmodel/player/player_viewmodel.dart';
 
-/// 한줄평 조회만 항상 실패하는 소스(옛 서버·네트워크 장애 재현).
+/// 한줄평 조회만 실패하는 소스(옛 서버·네트워크 장애 재현).
+/// [failForever] 가 false 면 첫 번째만 실패하고 그 뒤로는 정상 응답한다.
 class _FailingReviews implements PlayerSource {
-  const _FailingReviews();
+  _FailingReviews({this.failForever = true});
+
+  final bool failForever;
+  int calls = 0;
 
   final PlayerSource _ok = const MockPlayerSource();
 
@@ -23,8 +28,11 @@ class _FailingReviews implements PlayerSource {
   Future<PlayerSoloRank> fetchSoloRank(int id) => _ok.fetchSoloRank(id);
 
   @override
-  Future<PlayerReviewPage> fetchWorldsReviews(int id, {int page = 0}) =>
-      Future.error(Exception('boom'));
+  Future<PlayerReviewPage> fetchWorldsReviews(int id, {int page = 0}) {
+    calls++;
+    if (failForever || calls == 1) return Future.error(Exception('boom'));
+    return _ok.fetchWorldsReviews(id, page: page);
+  }
 }
 
 Widget _app(PlayerViewModel vm) => MaterialApp(
@@ -70,7 +78,7 @@ void main() {
     addTearDown(tester.view.reset);
     final vm = PlayerViewModel(
       playerId: 1,
-      source: const _FailingReviews(),
+      source: _FailingReviews(),
       isLoggedIn: () async => false,
     );
     await tester.pumpWidget(_app(vm));
@@ -82,6 +90,39 @@ void main() {
 
     expect(vm.reviewsFailed, isTrue, reason: '한 번 실패하면 더 시도하지 않는다');
     expect(vm.reviewsLoading, isFalse);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    vm.dispose();
+  });
+
+  testWidgets('실패 뒤 "다시 시도"를 누르면 한줄평을 다시 받는다', (tester) async {
+    tester.view.physicalSize = const Size(375, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final vm = PlayerViewModel(
+      playerId: 1,
+      source: _FailingReviews(failForever: false),
+      isLoggedIn: () async => false,
+    );
+    await tester.pumpWidget(_app(vm));
+    await tester.pump();
+    await tester.pump();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(vm.reviewsFailed, isTrue);
+
+    // 실패하면 스피너가 아니라 "다시 시도" 버튼이 보인다.
+    final retry = find.byKey(PlayerWorldsTab.reviewsAllKey);
+    await tester.ensureVisible(retry);
+    expect(find.text('다시 시도'), findsOneWidget);
+
+    await tester.tap(retry);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(vm.reviewsFailed, isFalse);
+    expect(vm.allReviews, isNotNull);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     vm.dispose();
