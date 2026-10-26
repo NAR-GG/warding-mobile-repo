@@ -70,8 +70,12 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
 
   PlayerTab tab = PlayerTab.worlds;
   PlayerChampionSort championSort = PlayerChampionSort.solo;
-  bool championsExpanded = false;
+
+  /// 최근 솔랭·챔피언 표·경기별 기록은 이미 받아 둔 목록이라 "더 보기"로
+  /// 한 번에 전부 편다.
   bool soloGamesExpanded = false;
+  bool championsExpanded = false;
+  bool worldsGamesExpanded = false;
 
   /// 다음 경기 알림 구독 여부.
   bool matchAlarmOn = false;
@@ -84,6 +88,10 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     failed = false;
     allReviews = null;
     reviewsHasNext = false;
+    reviewsFailed = false;
+    soloGamesExpanded = false;
+    championsExpanded = false;
+    worldsGamesExpanded = false;
     notFound = false;
     _notify();
     final detailF = _source.fetchDetail(playerId);
@@ -181,13 +189,18 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     _notify();
   }
 
+  void expandSoloGames() {
+    soloGamesExpanded = true;
+    _notify();
+  }
+
   void expandChampions() {
     championsExpanded = true;
     _notify();
   }
 
-  void expandSoloGames() {
-    soloGamesExpanded = true;
+  void expandWorldsGames() {
+    worldsGamesExpanded = true;
     _notify();
   }
 
@@ -368,9 +381,28 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
   int _reviewsPage = 0;
 
   /// 첫 호출은 0페이지로 펼치고, 그 뒤로는 다음 페이지를 붙인다.
+  /// 한 번이라도 실패하면 더 시도하지 않는다. 실패 후에도 계속 부르면
+  /// 무한 스크롤이 매 프레임 재시도에 빠져 화면이 멈춘다(옛 서버·네트워크 장애).
+  /// 사용자가 "다시 시도"를 누르면 [retryReviews] 로 푼다.
+  bool reviewsFailed = false;
+
+  /// 실패 표시를 지우고 한 번 더 받아 본다.
+  Future<void> retryReviews() {
+    if (reviewsLoading) return Future<void>.value();
+    reviewsFailed = false;
+    return loadMoreReviews();
+  }
+
+  /// 한줄평을 더 받을 수 있는 상태인지. 화면이 "스크롤 여지 없음" 보정을
+  /// 걸기 전에 먼저 물어, 받을 게 없으면 프레임 콜백조차 예약하지 않는다.
+  bool get canLoadMoreReviews {
+    if (reviewsLoading || reviewsFailed) return false;
+    if (allReviews != null && !reviewsHasNext) return false;
+    return true;
+  }
+
   Future<void> loadMoreReviews() async {
-    if (reviewsLoading) return;
-    if (allReviews != null && !reviewsHasNext) return;
+    if (!canLoadMoreReviews) return;
     reviewsLoading = true;
     _notify();
     try {
@@ -383,6 +415,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
       reviewsHasNext = page.hasNext;
     } catch (e) {
       debugPrint('[Player] 한줄평 조회 실패: $e');
+      reviewsFailed = true;
     } finally {
       reviewsLoading = false;
       _notify();

@@ -3968,6 +3968,12 @@ abstract class AppLocalizations {
   /// **'팬 평점'**
   String get playerFanRating;
 
+  /// No description provided for @playerWorldsRating.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 평점'**
+  String get playerWorldsRating;
+
   /// No description provided for @playerChampions.
   ///
   /// In ko, this message translates to:

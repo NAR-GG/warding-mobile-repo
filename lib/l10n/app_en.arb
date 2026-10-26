@@ -838,6 +838,7 @@
     "placeholders": { "cs": { "type": "int" }, "damage": { "type": "String" } }
   },
   "playerFanRating": "Fan rating",
+  "playerWorldsRating": "Worlds rating",
   "playerChampions": "Solo queue vs Worlds champions",
   "playerSortSolo": "By solo queue",
   "playerSortWorlds": "By Worlds",

@@ -2,12 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../components/nar_card.dart';
+import '../../../components/nar_section_title.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../util/champion_image.dart';
 import '../../../util/champion_name_map.dart';
 
-/// 선수 페이지 공용 조각 — 카드 틀·섹션 제목·챔피언 아이콘·승패 줄.
+/// 선수 페이지 공용 조각 — 숫자 포맷·텍스트 스타일·섹션 제목·챔피언 아이콘·승패 줄.
+/// 카드 틀은 공용 [NarCard] 를 쓴다.
 
 /// "2.1만" / "21K". 딜량처럼 큰 수를 짧게 — 유효숫자 2자리.
 String compactNumber(BuildContext context, int n) => (NumberFormat.compact(
@@ -33,34 +36,8 @@ TextStyle playerText(
   color: color,
 );
 
-class PlayerCard extends StatelessWidget {
-  const PlayerCard({
-    super.key,
-    required this.child,
-    required this.scale,
-    this.padding,
-  });
-
-  final Widget child;
-  final double scale;
-  final EdgeInsetsGeometry? padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: AppColors.narBgTertiary,
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: AppColors.narLine),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// "월즈 성적  3경기 · 2승 1패".
+/// "월즈 성적  3경기 · 2승 1패" — 공용 [NarSectionTitle] 에 선수 페이지 섹션
+/// 간격(위 28 / 아래 12)과 부제 크기(12)만 얹은 것.
 class PlayerSectionTitle extends StatelessWidget {
   const PlayerSectionTitle({
     super.key,
@@ -75,21 +52,12 @@ class PlayerSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return NarSectionTitle(
+      title: title,
+      subtitle: sub,
+      subtitleSize: 12,
+      scale: scale,
       padding: EdgeInsets.only(top: 28 * scale, bottom: 12 * scale),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(text: title),
-            if (sub != null)
-              TextSpan(
-                text: '  $sub',
-                style: playerText(scale, size: 12, color: AppColors.narText2),
-              ),
-          ],
-        ),
-        style: playerText(scale, size: 17, weight: FontWeight.w700),
-      ),
     );
   }
 }
@@ -173,57 +141,6 @@ class PlayerResultRow extends StatelessWidget {
         12 * scale,
       ),
       child: child,
-    );
-  }
-}
-
-/// "전체 8개 보기 ⌄" / "15판 더 보기 ⌄".
-class PlayerMoreButton extends StatelessWidget {
-  const PlayerMoreButton({
-    super.key,
-    required this.label,
-    required this.scale,
-    required this.onTap,
-  });
-
-  final String label;
-  final double scale;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 38 * scale,
-        margin: EdgeInsets.only(top: 10 * scale),
-        decoration: BoxDecoration(
-          color: AppColors.narBgTertiary,
-          borderRadius: BorderRadius.circular(10 * scale),
-          border: Border.all(color: AppColors.narLine),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: playerText(
-                scale,
-                size: 13,
-                weight: FontWeight.w600,
-                color: AppColors.narText2,
-              ),
-            ),
-            SizedBox(width: 3 * scale),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 16 * scale,
-              color: AppColors.narText2,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

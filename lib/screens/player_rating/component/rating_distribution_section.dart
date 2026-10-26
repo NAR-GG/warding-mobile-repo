@@ -16,6 +16,8 @@ class RatingDistributionSection extends StatelessWidget {
     required this.raterCount,
     required this.distribution,
     this.scale = 1,
+    this.padding,
+    this.gap = 14,
   });
 
   /// 평균 평점(0~5)과 참여 인원.
@@ -27,18 +29,23 @@ class RatingDistributionSection extends StatelessWidget {
 
   final double scale;
 
+  /// 바깥 여백. 기본은 시안대로 20 — 카드 안에 넣을 때처럼 좁혀야 하면 준다.
+  final EdgeInsetsGeometry? padding;
+
+  /// 별점 블록과 분포 바 사이 간격(기본 14 — 시안). 폭이 달라져도 일정하다.
+  final double gap;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Padding(
-      padding: EdgeInsets.all(20 * scale),
+      padding: padding ?? EdgeInsets.all(20 * scale),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 좌측: 평균 평점 요약.
-          SizedBox(
-            width: 116 * scale,
+          // 좌측: 평균 평점 요약. 시안 폭 116 을 넘지 않는다.
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 116 * scale),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -70,9 +77,10 @@ class RatingDistributionSection extends StatelessWidget {
               ],
             ),
           ),
-          // 우측: 점수별 분포 바(5→1).
-          SizedBox(
-            width: 204 * scale,
+          // 별점 블록과 분포 사이 간격은 항상 [gap] 으로 일정하게 두고,
+          // 분포는 남는 폭을 전부 쓴다(폭이 좁든 넓든 간격이 안 흔들린다).
+          SizedBox(width: gap * scale),
+          Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,21 +135,22 @@ class _DistributionRow extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8 * scale),
-          // 트랙 바 + 노랑 채움(percent 비율).
-          Container(
-            width: 150 * scale,
-            height: 4 * scale,
-            decoration: BoxDecoration(
-              color: AppColors.narLine2,
-              borderRadius: BorderRadius.circular(5 * scale),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: (percent / 100).clamp(0.0, 1.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.narYellow6,
-                  borderRadius: BorderRadius.circular(5 * scale),
+          // 트랙 바 + 노랑 채움(percent 비율). 남는 폭을 전부 쓴다.
+          Expanded(
+            child: Container(
+              height: 4 * scale,
+              decoration: BoxDecoration(
+                color: AppColors.narLine2,
+                borderRadius: BorderRadius.circular(5 * scale),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (percent / 100).clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.narYellow6,
+                    borderRadius: BorderRadius.circular(5 * scale),
+                  ),
                 ),
               ),
             ),
