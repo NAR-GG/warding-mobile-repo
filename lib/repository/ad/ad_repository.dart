@@ -47,7 +47,7 @@ class AdRepository {
     _warming.clear();
   }
 
-  Future<List<Ad>>? _cache;
+  Future<({List<Ad> ads, bool ok})>? _cache;
   DateTime? _fetchedAt;
 
   /// 이미지 내려받기를 자리별로 한 번만 돌린다. 같은 자리를 두 번 그려도
@@ -147,11 +147,12 @@ class AdRepository {
   /// 스플래시 자리를 물었는데 응답에 없으면 기기에 적어 둔 것도 지운다 —
   /// 집행이 끝난 광고가 다음 실행에서 되살아나지 않게 한다.
   Future<Ad?> _adFor(String placement) async {
-    final ads = await _load();
-    for (final ad in ads) {
+    final result = await _load();
+    for (final ad in result.ads) {
       if (ad.placement == placement) return ad;
     }
-    if (placement == 'splash') await _forgetSplash();
+    // 조회가 실패했으면(네트워크·5xx) 집행이 끝난 건지 알 수 없다 — 그대로 둔다.
+    if (result.ok && placement == 'splash') await _forgetSplash();
     return null;
   }
 
@@ -228,7 +229,7 @@ class AdRepository {
     );
   }
 
-  Future<List<Ad>> _load() {
+  Future<({List<Ad> ads, bool ok})> _load() {
     final at = _fetchedAt;
     if (_cache == null || at == null || DateTime.now().difference(at) > _ttl) {
       _fetchedAt = DateTime.now();
@@ -237,16 +238,24 @@ class AdRepository {
     return _cache!;
   }
 
-  Future<List<Ad>> _fetch() async {
+  /// 광고 목록과 "이 응답을 믿어도 되는지".
+  ///
+  /// 실패를 빈 목록으로 뭉개면 안 된다 — 비행기 모드로 앱을 켠 것과 집행이
+  /// 끝난 것을 구분하지 못해, 멀쩡한 광고를 지워 버린다.
+  Future<({List<Ad> ads, bool ok})> _fetch() async {
     try {
       final response = await http.get(Uri.parse(ApiConfig.adsUrl));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return const [];
+        return (ads: const <Ad>[], ok: false);
       }
       final body = jsonDecode(utf8.decode(response.bodyBytes)) as List;
-      return [for (final e in body) Ad.fromJson(e as Map<String, dynamic>)];
-    } catch (_) {
-      return const [];
+      return (
+        ads: [for (final e in body) Ad.fromJson(e as Map<String, dynamic>)],
+        ok: true,
+      );
+    } catch (e) {
+      debugPrint('[AdRepository] 광고 목록 조회 실패: $e');
+      return (ads: const <Ad>[], ok: false);
     }
   }
 }

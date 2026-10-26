@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -65,9 +66,7 @@ void main() {
       });
       AdRepository.instance.resetForTest();
       // 서버가 광고를 더 이상 안 내려준다(집행 종료).
-      setApiClientForTesting(
-        MockClient((_) async => http.Response('[]', 200)),
-      );
+      setApiClientForTesting(MockClient((_) async => http.Response('[]', 200)));
 
       AdRepository.instance.warmUp(const ['splash']);
       // warmUp 은 기다리지 않으므로 응답·삭제가 끝날 틈을 준다.
@@ -81,11 +80,56 @@ void main() {
         reason: '집행이 끝났는데 메모리에 남으면 이번 실행에 그대로 뜬다',
       );
       final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(key), isNull, reason: '기기에 남으면 다음 실행에서 되살아난다');
+    });
+
+    test('조회가 실패하면 지우지 않는다 — 비행기 모드로 켠 것과 구분한다', () async {
+      SharedPreferences.setMockInitialValues({
+        key: jsonEncode({
+          'placement': 'splash',
+          'imageUrl': 'https://cdn.example.com/live.png',
+          'linkUrl': null,
+        }),
+      });
+      AdRepository.instance.resetForTest();
+      // 네트워크 장애 — 빈 응답과 똑같이 보이면 안 된다.
+      setApiClientForTesting(
+        MockClient((_) async => throw const SocketException('offline')),
+      );
+
+      AdRepository.instance.warmUp(const ['splash']);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      final prefs = await SharedPreferences.getInstance();
       expect(
         prefs.getString(key),
-        isNull,
-        reason: '기기에 남으면 다음 실행에서 되살아난다',
+        isNotNull,
+        reason: '조회 실패를 집행 종료로 오해하면 멀쩡한 광고가 지워진다',
       );
+    });
+
+    test('5xx 응답에도 지우지 않는다', () async {
+      SharedPreferences.setMockInitialValues({
+        key: jsonEncode({
+          'placement': 'splash',
+          'imageUrl': 'https://cdn.example.com/live.png',
+          'linkUrl': null,
+        }),
+      });
+      AdRepository.instance.resetForTest();
+      setApiClientForTesting(
+        MockClient((_) async => http.Response('oops', 500)),
+      );
+
+      AdRepository.instance.warmUp(const ['splash']);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(key), isNotNull);
     });
 
     test('응답에 splash 가 있으면 적어 둔 것을 지우지 않는다', () async {
