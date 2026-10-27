@@ -1,5 +1,7 @@
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 import { slugify } from '../../lib/slugify.js';
+import { respondThenRun } from '../../lib/http.js';
+import { claimOnce, interactionKey } from '../../lib/once.js';
 
 // NOTE: this `config` export is a Next.js-only convention and has no effect on
 // Vercel's plain Node.js functions. Raw-body parsing (required for Discord
@@ -134,29 +136,26 @@ export default async function handler(req, res) {
       return;
     }
 
-    // dispatch를 먼저 완료(또는 실패)시킨 뒤 응답한다 — Vercel의 서버리스 함수는
-    // res.end() 이후 실행 컨텍스트를 바로 종료할 수 있어, 응답을 먼저 보내고
-    // 뒤이어 await하는 fire-and-forget 방식은 GitHub API 호출이 중간에 끊길 수
-    // 있다(실제로 접수 메시지는 뜨는데 repository_dispatch가 전송 안 되는 형태로
-    // 관측됨).
-    const dispatchError = await dispatchIntentRequest({
-      slug,
-      description: fields.description,
-      requestedBy,
-    }).catch((err) => err);
+    // 응답을 먼저 보내고 dispatch 는 waitUntil 에 실어 돌린다.
+    //
+    // 한때 "먼저 await 하고 그다음 응답" 했다. 응답을 먼저 보내면 Vercel 이
+    // res.end() 뒤 컨텍스트를 종료해 GitHub 호출이 끊겼기 때문이다. 그런데 그
+    // 순서는 3초를 넘기는 순간 Discord 재시도를 부르고, 재시도마다 dispatch 가
+    // 한 번씩 더 나간다 — 릴리즈 봇에서 실제로 중복 제출이 났다(2026-10-27).
+    // waitUntil 이 끊김 문제의 정식 해법이라 순서를 되돌렸다. 자세한 경위는
+    // lib/once.js 참고.
+    respondThenRun(res, interaction, { ephemeral: false }, async () => {
+      if (!(await claimOnce(interactionKey(interaction, 'intent_modal')))) {
+        return `ℹ️ \`${slug}\` 접수는 이미 처리됐어요. (중복 요청은 무시합니다)`;
+      }
 
-    if (dispatchError) {
-      console.error('[discord-bridge] dispatch failed', dispatchError);
-      sendJson(res, 200, {
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: `❌ 접수 실패 — GitHub 연동 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.` },
+      await dispatchIntentRequest({
+        slug,
+        description: fields.description,
+        requestedBy,
       });
-      return;
-    }
 
-    sendJson(res, 200, {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: { content: `✅ 접수됨 — \`${slug}\` intent 초안을 생성 중입니다.` },
+      return `✅ 접수됨 — \`${slug}\` intent 초안을 생성 중입니다.`;
     });
     return;
   }
