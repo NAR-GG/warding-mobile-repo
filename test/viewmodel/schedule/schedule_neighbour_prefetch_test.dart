@@ -115,4 +115,72 @@ void main() {
     expect(vm.matchesOfMonth(DateTime(2026, 8)), isNotEmpty);
     expect(vm.matchesOfMonth(DateTime(2026, 9)), isNotEmpty);
   });
+
+  group('isMonthLoaded / isMonthEmpty — 빈 달과 아직 모르는 달을 구분한다', () {
+    test('조회 전에는 loaded 가 아니다', () {
+      final vm = createViewModel(DateTime(2026, 8));
+      // 생성 직후, 아직 응답이 오기 전.
+      expect(vm.isMonthLoaded(DateTime(2026, 8)), isFalse);
+      expect(vm.isMonthEmpty(DateTime(2026, 8)), isFalse);
+    });
+
+    test('경기가 있는 달은 loaded + 비어 있지 않다', () async {
+      final vm = createViewModel(DateTime(2026, 8));
+      await pumpEventQueue();
+
+      expect(vm.isMonthLoaded(DateTime(2026, 8)), isTrue);
+      expect(vm.isMonthEmpty(DateTime(2026, 8)), isFalse);
+    });
+
+    test('경기가 없는 달은 loaded 이면서 비어 있다', () async {
+      // 그 달만 빈 응답을 돌려준다.
+      when(
+        () => repository.fetchCalendar(
+          any(that: isA<DateTime>()),
+          leagues: any(named: 'leagues'),
+          teamIds: any(named: 'teamIds'),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer((invocation) async {
+        final month = invocation.positionalArguments.first as DateTime;
+        if (month.year == 2026 && month.month == 12) return <MatchCalendarDay>[];
+        return [dayOf(month)];
+      });
+
+      final vm = createViewModel(DateTime(2026, 12));
+      await pumpEventQueue();
+
+      // '아직 모름'이 아니라 '받아 봤더니 없음'이어야 한다 — 화면은 이걸로
+      // 목록을 그 자리에 둘지(빈 달) 옮길지(경기 있음)를 가른다.
+      expect(vm.isMonthLoaded(DateTime(2026, 12)), isTrue);
+      expect(vm.isMonthEmpty(DateTime(2026, 12)), isTrue);
+      // 이웃 달은 평소대로 채워진다.
+      expect(vm.isMonthEmpty(DateTime(2027, 1)), isFalse);
+    });
+
+    test('빈 달을 보는 동안에도 이웃 달 판정은 그대로다', () async {
+      // 화면은 `isMonthEmpty(displayMonth)` 로 "목록을 따라갈지"를 가른다.
+      // 빈 달을 보는 중에 이웃 달까지 빈 것으로 오판하면, 거기로 넘어가도
+      // 목록이 멈춘 채 굳는다.
+      when(
+        () => repository.fetchCalendar(
+          any(that: isA<DateTime>()),
+          leagues: any(named: 'leagues'),
+          teamIds: any(named: 'teamIds'),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer((invocation) async {
+        final month = invocation.positionalArguments.first as DateTime;
+        if (month.year == 2026 && month.month == 12) return <MatchCalendarDay>[];
+        return [dayOf(month)];
+      });
+
+      final vm = createViewModel(DateTime(2026, 12));
+      await pumpEventQueue();
+
+      expect(vm.isMonthEmpty(DateTime(2026, 12)), isTrue, reason: '보는 달');
+      expect(vm.isMonthEmpty(DateTime(2026, 11)), isFalse, reason: '이전 달');
+      expect(vm.isMonthEmpty(DateTime(2027, 1)), isFalse, reason: '다음 달');
+    });
+  });
 }

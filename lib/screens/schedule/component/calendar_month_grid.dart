@@ -30,7 +30,16 @@ class CalendarMonthGrid extends StatelessWidget {
     this.selectedDate,
     this.onDateTap,
     this.weekStart = CalendarWeekStart.monday,
+    this.minRowHeightOverride,
   });
+
+  /// 행 높이 하한을 바꾼다(스케일 적용 전). null 이면 [minRowHeight].
+  ///
+  /// 경기일정 화면은 캘린더를 아래 목록과 세로로 나눠 쓰므로 월간을 기본값
+  /// (64)보다 조밀하게 그린다. 하한이 그대로면 부모가 준 높이보다 그리드가
+  /// 커져 세로 스크롤이 켜지고, **그 스크롤뷰가 좌우 스와이프까지 가져가
+  /// 월 이동이 죽는다**.
+  final double? minRowHeightOverride;
 
   final DateTime month;
   final double scale;
@@ -61,8 +70,9 @@ class CalendarMonthGrid extends StatelessWidget {
     required double availableHeight,
     required int weekCount,
     required double scale,
+    double? minHeight,
   }) {
-    final floor = minRowHeight * scale;
+    final floor = (minHeight ?? minRowHeight) * scale;
     if (!availableHeight.isFinite) return floor;
     final fit = availableHeight / weekCount;
     return fit > floor ? fit : floor;
@@ -95,9 +105,14 @@ class CalendarMonthGrid extends StatelessWidget {
           availableHeight: availableHeight,
           weekCount: weekCount,
           scale: scale,
+          minHeight: minRowHeightOverride,
         );
         final totalHeight = rowHeight * weekCount;
-        final needsScroll = totalHeight > availableHeight;
+        // 부모가 딱 맞는 높이를 줬을 때(경기일정 화면은 캘린더를 자기 행
+        // 수만큼만 띄운다) 부동소수 오차로 1px 미만 넘칠 수 있다. 그걸
+        // '넘쳤다'로 보면 세로 스크롤이 켜지는데, 그 스크롤뷰가 좌우
+        // 스와이프 제스처까지 가져가 **월 이동이 죽는다**. 1px 여유를 둔다.
+        final needsScroll = totalHeight > availableHeight + 1;
         final cellWidth = constraints.maxWidth / 7;
 
         final grid = Column(
@@ -124,7 +139,8 @@ class CalendarMonthGrid extends StatelessWidget {
                             child: CalendarDayCell(
                               date: date,
                               matches: dayMatches,
-                              // 경기가 있는 날만 탭 가능(다른 달·빈 날은 matchesOf 가 [] 라 비활성).
+                              // 경기가 있는 날만 탭 가능. 빈 날은 누를 게
+                              // 없으므로(목록에 갈 그룹도 없다) 비활성이다.
                               onTap:
                                   (onDateTap != null && dayMatches.isNotEmpty)
                                   ? () => onDateTap!(date)

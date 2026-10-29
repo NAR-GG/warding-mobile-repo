@@ -598,4 +598,102 @@ void main() {
       verifyNever(() => prefs.save(any(), any()));
     });
   });
+
+  group('setAnchorMonth — 목록 시작 달을 캘린더에 맞춘다', () {
+    test('다른 달로 옮기면 그 달 1일(from)로 다시 조회한다', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      // 이번 달이 아닌 달을 고른다(다음 달이면 항상 '이번 달'과 다르다).
+      final now = DateTime.now();
+      final other = DateTime(now.year, now.month + 1);
+      vm.setAnchorMonth(other);
+      await pumpEventQueue();
+
+      final expected = '${other.year}-'
+          '${other.month.toString().padLeft(2, '0')}-01';
+      verify(() => sched.fetchMatches(
+            around: expected,
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+          )).called(1);
+      expect(vm.anchorMonth, DateTime(other.year, other.month));
+    });
+
+    test('같은 달을 다시 넘기면 재조회하지 않는다', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      final now = DateTime.now();
+      final other = DateTime(now.year, now.month + 1);
+      vm.setAnchorMonth(other);
+      await pumpEventQueue();
+      final version = vm.scheduleVersion;
+
+      // 캘린더 스와이프 중 같은 달이 여러 번 통지될 수 있다.
+      vm.setAnchorMonth(other);
+      vm.setAnchorMonth(DateTime(other.year, other.month, 15));
+      await pumpEventQueue();
+
+      expect(vm.scheduleVersion, version, reason: '같은 달이면 재조회가 없어야 한다');
+    });
+
+    test('첫 통지가 이번 달이면 재조회하지 않는다', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+      final version = vm.scheduleVersion;
+
+      // 화면이 캘린더 VM 을 구독하면 첫 통지가 곧바로 '이번 달'로 들어온다.
+      // 그게 재조회를 부르면 진입 조회와 겹쳐 같은 목록을 두 번 받는다.
+      final now = DateTime.now();
+      vm.setAnchorMonth(DateTime(now.year, now.month));
+      await pumpEventQueue();
+
+      expect(vm.scheduleVersion, version, reason: '진입 직후 중복 조회가 없어야 한다');
+    });
+
+    test('같은 달을 다시 넘기면 재조회하지 않는다 — 스크롤 왕복 방지', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      final now = DateTime.now();
+      final nextMonth = DateTime(now.year, now.month + 1);
+      vm.setAnchorMonth(nextMonth);
+      await pumpEventQueue();
+      final version = vm.scheduleVersion;
+
+      // 화면이 캘린더를 그 달로 옮기면 캘린더 VM 이 다시 통지하고, 그게
+      // 또 setAnchorMonth 로 돌아온다. 같은 달이면 여기서 끊겨야 한다 —
+      // 안 그러면 사용자가 보던 목록이 지워지고 1일부터 다시 받는다.
+      vm.setAnchorMonth(nextMonth);
+      vm.setAnchorMonth(DateTime(nextMonth.year, nextMonth.month, 20));
+      await pumpEventQueue();
+
+      expect(vm.scheduleVersion, version, reason: '같은 달이면 재조회가 없어야 한다');
+    });
+
+    test('이번 달이면 오늘 기준을 그대로 쓴다', () async {
+      final vm =
+          MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
+      await pumpEventQueue();
+
+      final now = DateTime.now();
+      vm.setAnchorMonth(DateTime(now.year, now.month));
+      await pumpEventQueue();
+
+      // 월초가 아니라 '오늘'로 물어봐야 한다 — 월초부터 보여주면 이번 달은
+      // 이미 끝난 경기만 한 화면 가득 찬다.
+      verify(() => sched.fetchMatches(
+            around: dateParam(now),
+            size: any(named: 'size'),
+            league: any(named: 'league'),
+            seasonYear: any(named: 'seasonYear'),
+          )).called(greaterThanOrEqualTo(1));
+    });
+  });
 }

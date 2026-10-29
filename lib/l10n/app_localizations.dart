@@ -986,6 +986,12 @@ abstract class AppLocalizations {
   /// **'클릭시 스코어 확인 가능'**
   String get clickToSeeScore;
 
+  /// No description provided for @spoilerPrevention.
+  ///
+  /// In ko, this message translates to:
+  /// **'스포방지'**
+  String get spoilerPrevention;
+
   /// No description provided for @spoilerPreventionOn.
   ///
   /// In ko, this message translates to:
@@ -1051,6 +1057,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'팀'**
   String get team;
+
+  /// No description provided for @sort.
+  ///
+  /// In ko, this message translates to:
+  /// **'정렬'**
+  String get sort;
 
   /// No description provided for @all.
   ///
