@@ -438,15 +438,6 @@ class MatchListViewState extends State<MatchListView> {
     );
   }
 
-  /// 스포방지 토글. 다시 켤 때는 개별로 풀어 둔 카드도 함께 되돌린다 —
-  /// 사용자가 기대하는 건 '전부 다시 가려짐'이다.
-  void _onSpoilerToggleChanged(bool value) {
-    if (value && _revealedMatchIds.isNotEmpty) {
-      setState(_revealedMatchIds.clear);
-    }
-    _viewModel.setSpoilerPreventionEnabled(value);
-  }
-
   /// 경기 상세로 이동한다.
   ///
   /// 상세는 pushReplacement 가 아니라 push 라 돌아와도 이 뷰의 State 가
@@ -594,7 +585,6 @@ class MatchListViewState extends State<MatchListView> {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 

@@ -87,8 +87,11 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 둘 다 이 VM 을 직접 봐야 한다.
   late final MatchListViewModel _listViewModel = MatchListViewModel();
 
-  /// 캘린더를 주간으로 접었는지. false 면 월간(6주).
-  bool _calendarCollapsed = false;
+  /// 지금 캘린더가 어느 단계인지. 진입 시엔 월간.
+  _CalendarMode _calendarMode = _CalendarMode.month;
+
+  /// 캘린더가 주간으로 접혀 있는지(숨김 포함). 높이·레이아웃 분기에 쓴다.
+  bool get _calendarCollapsed => _calendarMode != _CalendarMode.month;
 
   /// 캘린더 좌우 스와이프 진행률. 캘린더가 매 프레임 갱신하고, 헤더의 월
   /// 라벨이 이걸 구독한다 — 라벨이 그리드와 같은 프레임에 같은 진행률로
@@ -304,9 +307,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       _viewModel.clearSelectedDate();
     }
 
-    // 월간(펼친) 상태에서는 어느 주를 비추는지가 화면에 드러나지 않는다.
-    // 굳이 재빌드할 이유가 없다.
-    if (!_calendarCollapsed) {
+    // 주간 줄이 화면에 없는 동안(월간·숨김)은 어느 주를 비추는지가 드러나지
+    // 않는다. 기준 날짜만 조용히 갱신해 두면, 주간으로 돌아올 때 지금 보고
+    // 있는 주가 그대로 뜬다. 굳이 매 프레임 재빌드할 이유는 없다.
+    if (_calendarMode != _CalendarMode.week) {
       _listAnchorDate = date;
       return;
     }
@@ -344,13 +348,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 다시 그릴 필요가 없을 때다([_followListDate] 참고).
   DateTime? _listAnchorDate;
 
-  /// 캘린더 월간 ↔ 주간 전환.
-  void _toggleCalendar() => _setCollapsed(!_calendarCollapsed);
+  /// 손잡이 화살표로 월간 ↔ 주간을 뒤집는다.
+  ///
+  /// **월간으로 펴는 길은 이 화살표뿐이다.** 스크롤은 접기만(월간→주간→숨김)
+  /// 하고, 되돌릴 때는 주간까지만 올려 준다([_handleListScroll]). 목록을
+  /// 조금 올렸다고 캘린더가 월간으로 벌어지면 보던 자리가 통째로 밀린다.
+  void _toggleCalendar() => _setMode(
+    _calendarMode == _CalendarMode.month
+        ? _CalendarMode.week
+        : _CalendarMode.month,
+  );
 
-  void _setCollapsed(bool value) {
-    if (_calendarCollapsed == value || !mounted) return;
+  void _setMode(_CalendarMode value) {
+    if (_calendarMode == value || !mounted) return;
     setState(() {
-      _calendarCollapsed = value;
+      _calendarMode = value;
       // 접고 펴는 건 주 선택과 무관하다. 핀이 남아 있으면 다시 접었을 때
       // 목록과 무관한 옛 주가 비친다.
       _weekPinnedByUser = false;
@@ -370,6 +382,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// 손떨림 수준의 움직임으로 캘린더가 깜빡이지 않게 한다.
   /// 하단 네비 축소([BottomNavShrinkController])와 같은 문턱을 쓴다.
   static const double _collapseToggleDelta = 12;
+
+  /// 주간에서 **숨김**으로 넘어가는 데 필요한 추가 스크롤 양(px).
+  ///
+  /// 접힘 문턱([_collapseToggleDelta])보다 훨씬 크게 둔다. 두 단계가 같은
+  /// 문턱이면 한 번 쓸어내릴 때 월간 → 주간 → 숨김이 연달아 터져 주간
+  /// 캘린더가 깜빡이고 사라진다. "목록을 더 보려고 한참 내렸다"는 뜻이
+  /// 분명할 때만 캘린더를 비운다.
+  static const double _hideScrollDelta = 160;
 
   /// 목록 스크롤 방향에 따라 캘린더를 접거나 편다.
   ///
@@ -417,7 +437,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     // 맨 위에서는 항상 월간으로 되돌린다. 오버스크롤 튕김으로 접히는 것도 막는다.
     if (n.metrics.pixels <= n.metrics.minScrollExtent + 1) {
       _scrollAccumulated = 0;
-      _setCollapsed(false);
+      _setMode(_CalendarMode.month);
       return false;
     }
 
@@ -428,8 +448,28 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       _scrollAccumulated = down ? delta.abs() : -delta.abs();
     }
 
-    if (_scrollAccumulated < _collapseToggleDelta) return false;
-    _setCollapsed(true);
+    // 내리는 중 — 한 단계씩 접는다. 월간 → 주간 → 숨김.
+    if (_scrollAccumulated >= _collapseToggleDelta) {
+      if (_calendarMode == _CalendarMode.month) {
+        _setMode(_CalendarMode.week);
+        // 다음 단계(숨김)는 **다시 그만큼 더** 내려야 넘어간다. 한 번의
+        // 플링으로 월간에서 숨김까지 날아가면 주간을 볼 틈이 없다.
+        _scrollAccumulated = 0;
+      } else if (_calendarMode == _CalendarMode.week &&
+          _scrollAccumulated >= _hideScrollDelta) {
+        _setMode(_CalendarMode.hidden);
+        _scrollAccumulated = 0;
+      }
+      return false;
+    }
+
+    // 올리는 중 — 숨김에서만 주간으로 되돌린다. 월간까지 펴는 건
+    // 손잡이 화살표의 몫이다([_toggleCalendar]).
+    if (_scrollAccumulated <= -_collapseToggleDelta &&
+        _calendarMode == _CalendarMode.hidden) {
+      _setMode(_CalendarMode.week);
+      _scrollAccumulated = 0;
+    }
     return false;
   }
 
@@ -725,9 +765,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
-    // 떠 있는 하단 네비가 차지하는 높이(72*scale + 바닥 26 + 간격 8).
-    final navFootprint = 72 * scale + 34;
-
     return Scaffold(
       backgroundColor: AppColors.narDark800,
       body: SafeArea(
@@ -799,20 +836,27 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                       duration: const Duration(milliseconds: 240),
                       curve: Curves.easeOutCubic,
                       alignment: Alignment.topCenter,
-                      child: _buildCalendarArea(
-                        context,
-                        matchesOfMonth,
-                        scale,
-                      ),
+                      // 숨김 단계에서는 캘린더 자리를 아예 비운다. 높이가
+                      // 0 으로 줄어드는 것도 AnimatedSize 가 이어 준다.
+                      child: _calendarMode == _CalendarMode.hidden
+                          ? const SizedBox(width: double.infinity)
+                          : _buildCalendarArea(
+                              context,
+                              matchesOfMonth,
+                              scale,
+                            ),
                     );
                   },
                 ),
                 // 캘린더를 끌어올려 접고/내려 펴는 손잡이.
-                _CalendarDragHandle(
-                  scale: scale,
-                  collapsed: _calendarCollapsed,
-                  onToggle: _toggleCalendar,
-                ),
+                // 캘린더가 사라진 동안은 접을 것도 없어 함께 숨긴다 —
+                // 되돌리는 건 목록을 위로 올리는 쪽이다.
+                if (_calendarMode != _CalendarMode.hidden)
+                  _CalendarDragHandle(
+                    scale: scale,
+                    collapsed: _calendarCollapsed,
+                    onToggle: _toggleCalendar,
+                  ),
                 // 아래 경기 리스트 — 남은 공간 전부.
                 //
                 // 목록을 내리면 캘린더가 알아서 주간으로 접혀 목록이 넓어진다
@@ -863,6 +907,22 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 /// 주간이면 ▼(펴기). 탭하거나 세로로 끌어 전환한다. 헤더가 아니라 여기에
 /// 둔 이유: 전환되는 대상(캘린더)의 경계에 붙어 있어야 무엇이 접히는지
 /// 분명하고, 목록을 보려고 아래로 내리는 손 동선과도 맞는다.
+/// 캘린더가 차지하는 단계. 목록을 내릴수록 한 칸씩 줄어든다.
+///
+/// 내릴 때 `month → week → hidden`, 올릴 때는 `hidden → week` 까지만
+/// 되돌린다. 월간으로 펴는 건 손잡이 화살표로만 한다 —
+/// 목록을 조금 올렸다고 6주가 펼쳐지면 보던 자리가 밀려난다.
+enum _CalendarMode {
+  /// 6주 월간 그리드.
+  month,
+
+  /// 1주 주간 줄.
+  week,
+
+  /// 캘린더 없음 — 헤더 바로 아래부터 목록.
+  hidden,
+}
+
 class _CalendarDragHandle extends StatelessWidget {
   const _CalendarDragHandle({
     required this.scale,
