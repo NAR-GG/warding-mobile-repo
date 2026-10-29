@@ -695,6 +695,10 @@ class MatchDetailScreenState extends State<MatchDetailScreen>
         : (_effectiveMatch?.teamB.teamCode ?? '');
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        // 이름이 없으면 observer 가 **시트·다이얼로그로 보고 무시한다** —
+        // `page_view` 가 안 찍히고, 돌아올 때 `didPop` 도 복귀로 안 세서
+        // `prev_page` 가 옛 화면에 머문다.
+        settings: const RouteSettings(name: AnalyticsPage.playerRating),
         builder: (_) => PlayerRatingScreen(
           player: player,
           teamName: teamName,
