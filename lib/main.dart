@@ -13,6 +13,7 @@ import 'config/app_globals.dart';
 import 'config/app_language.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
+import 'repository/ad/ad_repository.dart';
 import 'repository/fcm/fcm_service.dart';
 import 'repository/live_activity/live_activity_logo_prefetcher.dart';
 import 'repository/live_activity/live_activity_service.dart';
@@ -103,6 +104,10 @@ Future<void> main() async {
       // 그냥 동작한다(이 함수는 예외를 던지지 않는다).
       ChampionImage.refreshDdragonVersion(),
       Analytics.init(),
+      // 지난 실행에서 받아 둔 스플래시 광고를 되살린다. **첫 프레임 전에** 끝나야
+      // 스플래시가 그 값을 쓴다(그 자리는 첫 build 에 한 번 정하고 안 바꾼다).
+      // 로컬 저장소 읽기 한 번이라 빠르고, 실패해도 모집 배너로 떨어진다.
+      AdRepository.instance.restoreSplash(),
     ]).timeout(const Duration(seconds: 8));
   } catch (e) {
     debugPrint('[main] 시작 초기화 실패·지연(무시하고 앱은 띄운다): $e');

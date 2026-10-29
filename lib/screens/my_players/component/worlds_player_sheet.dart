@@ -19,13 +19,14 @@ import '../../../viewmodel/my_players/my_players_viewmodel.dart';
 import '../../login/login_screen.dart';
 import 'my_player_tile.dart';
 
-/// 월즈 솔랭에서 선수를 눌렀을 때 — 지금 상태와 솔랭 알림 토글, 구독/해제.
+/// 선수 구독 시트 — 지금 상태와 솔랭 알림 토글, 구독/해제. 월즈 솔랭 벨과
+/// 선수 페이지 벨이 같은 시트를 쓴다([PlayerSheetSource]).
 ///
 /// 구독 전이면 토글은 "구독하면 이렇게 받는다" 는 미리 고르기라 시트 안에서만
 /// 바뀌고 구독할 때 함께 보낸다. 구독 중이면 바로 서버에 반영한다.
 Future<void> showWorldsPlayerSheet(
   BuildContext context, {
-  required MyPlayersViewModel viewModel,
+  required PlayerSheetSource viewModel,
   required int playerId,
   required double scale,
 }) {
@@ -47,7 +48,7 @@ class WorldsPlayerSheet extends StatefulWidget {
     required this.scale,
   });
 
-  final MyPlayersViewModel viewModel;
+  final PlayerSheetSource viewModel;
   final int playerId;
   final double scale;
 
@@ -83,13 +84,7 @@ class _WorldsPlayerSheetState extends State<WorldsPlayerSheet> {
     super.dispose();
   }
 
-  MyPlayerEntry? _entry() {
-    final vm = widget.viewModel;
-    for (final e in [...vm.liveSolo, ...vm.playedToday, ...vm.quiet]) {
-      if (e.player.playerId == widget.playerId) return e;
-    }
-    return null;
-  }
+  MyPlayerEntry? _entry() => widget.viewModel.sheetEntry(widget.playerId);
 
   @override
   Widget build(BuildContext context) {

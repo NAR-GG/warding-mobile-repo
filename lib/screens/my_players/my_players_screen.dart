@@ -13,6 +13,7 @@ import '../../repository/home/home_sources.dart';
 import '../../util/league_icon.dart';
 import '../../viewmodel/my_players/my_players_viewmodel.dart';
 import 'component/my_player_tile.dart';
+import '../player/player_screen.dart';
 import 'component/worlds_player_sheet.dart';
 
 /// 내 선수(구독 전체) 화면 — 홈 "구독 N명 전체"의 목적지.
@@ -327,13 +328,13 @@ class _MyPlayersScreenState extends State<MyPlayersScreen>
             isFirst: i == 0,
             isLast: i == entries.length - 1,
             tick: _tick,
+            // 타일은 선수 페이지로, 벨은 알림 토글 시트로.
             onTap: vm.isWorlds
-                ? () => showWorldsPlayerSheet(
-                    context,
-                    viewModel: vm,
-                    playerId: player.playerId,
-                    scale: scale,
-                  )
+                ? () async {
+                    await PlayerScreen.open(context, player.playerId);
+                    // 선수 페이지에서 구독을 바꿨을 수 있다.
+                    await vm.refresh();
+                  }
                 : null,
             trailing: vm.isWorlds
                 ? _BellButton(

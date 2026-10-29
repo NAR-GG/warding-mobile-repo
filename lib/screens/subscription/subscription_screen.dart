@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -156,9 +157,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   /// 푸시 수신 신호로 피드를 다시 읽는다.
   void _reloadFeed() => _feedViewModel.load();
 
-  /// OP.GG 등 외부 URL을 기본 브라우저로 연다.
+  /// OP.GG 링크를 앱 안 브라우저(iOS SFSafariViewController / Android Custom Tabs)로 연다.
+  /// 시트를 아예 못 띄울 때만 외부 브라우저로 폴백한다.
+  ///
+  /// iOS는 첫 로드가 끝나기 전에 닫으면 false, 로드 에러면 예외를 돌려준다. 둘 다
+  /// 시트가 이미 떠 있던 경우라 폴백하면 닫자마자 Safari가 열리므로 무시한다.
   Future<void> _launchUrl(String url) async {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    } on PlatformException catch (e) {
+      if (e.code == 'no_ui_available') {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
   }
 
   /// 이벤트 타입 필터 내부 키 상수.

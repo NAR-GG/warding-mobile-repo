@@ -49,6 +49,10 @@ class _CheerAdBannerState extends State<CheerAdBanner> {
         widget.horizontalPadding * scale,
         widget.bottomPadding * scale,
       ),
+      // 기다리는 동안 모집 배너를 그려 둔다 — 빈 자리를 두지 않는다. 광고는
+      // 이미지 해석까지 끝난 뒤에만 들어오므로(AdRepository.forPlacement) 교체가
+      // '모집 배너 → 완성된 광고' 한 번으로 끝난다. 스플래시에서 미리 받아 두면
+      // (warmUp) 첫 프레임부터 광고라 교체 자체가 안 보인다.
       child: FutureBuilder<Ad?>(
         future: _ad,
         builder: (context, snapshot) {
@@ -108,7 +112,9 @@ class RegisteredAdCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: ad.imageUrl,
                   fit: BoxFit.cover,
-                  // 로딩·실패 땐 회색 자리만 — 모집 배너로 바꿨다 되돌리면 깜빡여서.
+                  // 여기 오기 전에 AdRepository 가 이미지 해석까지 끝내 두므로
+                  // 보통은 첫 프레임에 그려진다. 캐시가 밀려나 다시 받는 드문
+                  // 경우에만 회색 자리를 쓴다 — 모집 배너로 바꿨다 되돌리면 깜빡여서.
                   placeholder: (_, _) =>
                       const ColoredBox(color: AppColors.narDark500),
                   errorWidget: (_, _, _) =>
@@ -129,9 +135,16 @@ class RegisteredAdCard extends StatelessWidget {
   }
 }
 
-/// 스플래시·팝업 자리. 등록 광고가 있으면 그 이미지를, 없으면 모집 배너를 둔다.
-/// 배너 3곳의 [CheerAdBanner] 와 같은 일을 하되 여백·탭 동작은 호출 쪽에 맡긴다
-/// (스플래시는 눌리지 않고, 팝업은 카드 전체가 신청 화면으로 가는 버튼이다).
+/// 스플래시 자리. **첫 프레임에 정하고 끝까지 바꾸지 않는다** — 이미 받아 둔 광고가
+/// 있으면 그 광고를, 없으면 모집 배너를 그린다. 기다리는 빈 자리가 없다.
+///
+/// 스플래시는 1~2초만 떠 있고 사용자는 부팅을 기다리는 중이다. 이 화면에서 그림이
+/// 바뀌면 전부 눈에 띄므로 조용한 쪽을 택했다. 교체를 허용해도 대개 실패한다 —
+/// 화면이 먼저 사라져서, 늦게 도착한 이미지는 '전환만 보이고 끝나는' 최악이 된다.
+/// 그래서 캐시가 빈 첫 실행은 모집 배너로 보내고, 그 사이 받아 둔 이미지는 다음
+/// 실행의 첫 프레임에 쓴다([AdRepository.warmUp]).
+///
+/// 여백·탭 동작은 호출 쪽에 맡긴다(스플래시는 눌리지 않는다).
 class CheerAdSlotView extends StatefulWidget {
   const CheerAdSlotView({
     super.key,
@@ -140,7 +153,7 @@ class CheerAdSlotView extends StatefulWidget {
     required this.slot,
   });
 
-  /// 백오피스 광고 위치 키: splash | popup.
+  /// 백오피스 광고 위치 키: splash.
   final String placement;
   final double scale;
   final CheerAdSlot slot;
@@ -150,22 +163,16 @@ class CheerAdSlotView extends StatefulWidget {
 }
 
 class _CheerAdSlotViewState extends State<CheerAdSlotView> {
-  late final Future<Ad?> _ad = AdRepository.instance.forPlacement(
-    widget.placement,
-  );
+  /// 진입 시점에 한 번만 읽는다. 이후 도착하는 광고는 이 화면에 반영하지 않는다.
+  late final Ad? _ad = AdRepository.instance.readyFor(widget.placement);
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Ad?>(
-      future: _ad,
-      builder: (context, snapshot) {
-        final ad = snapshot.data;
-        if (ad == null) {
-          return CheerAdBannerCard(scale: widget.scale, slot: widget.slot);
-        }
-        return RegisteredAdCard(ad: ad, scale: widget.scale, slot: widget.slot);
-      },
-    );
+    final ad = _ad;
+    if (ad == null) {
+      return CheerAdBannerCard(scale: widget.scale, slot: widget.slot);
+    }
+    return RegisteredAdCard(ad: ad, scale: widget.scale, slot: widget.slot);
   }
 }
 

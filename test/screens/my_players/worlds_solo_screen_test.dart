@@ -135,11 +135,12 @@ void main() {
     expect(find.text('구독 선수 2'), findsOneWidget);
   });
 
-  testWidgets('줄을 누르면 선수 시트 — 알림 토글과 구독하기', (tester) async {
+  testWidgets('벨을 누르면 선수 시트 — 알림 토글과 구독하기', (tester) async {
     final vm = await buildVm(tester);
     await pumpScreen(tester, vm);
 
-    await tester.tap(find.byKey(MyPlayersScreen.tileKey(2)));
+    // 줄 자체는 선수 페이지로 가고, 벨이 시트를 연다.
+    await tester.tap(find.byKey(MyPlayersScreen.bellKey(2)));
     // 진행 중 배너의 점이 계속 깜빡여 settle 되지 않는다 — 시트 등장만 기다린다.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));

@@ -13,6 +13,8 @@ import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
+import '../../../viewmodel/player/player_viewmodel.dart';
+import '../../my_players/component/worlds_player_sheet.dart';
 import '../../login/login_screen.dart';
 import 'home_skeletons.dart';
 import 'home_solo_cheer.dart';
@@ -40,6 +42,7 @@ class HomeSoloRankSection extends StatefulWidget {
     this.onOpenMyPlayers,
     this.onSubscribe,
     this.onOpenWorlds,
+    this.onOpenPlayer,
   });
 
   final HomeViewModel viewModel;
@@ -53,6 +56,9 @@ class HomeSoloRankSection extends StatefulWidget {
 
   /// 월즈 블록(진입 줄·작은 카드·한 줄·전체) — 월즈 솔랭 화면으로.
   final VoidCallback? onOpenWorlds;
+
+  /// 큰 카드·끝난 경기 칩 — 선수 페이지로. playerId 를 모르는 선수는 반응 없다.
+  final void Function(int playerId)? onOpenPlayer;
 
   static Key worldsHeroKey(String name) => ValueKey('homeWorldsHero-$name');
   static Key worldsSubscribeKey(String name) =>
@@ -160,13 +166,41 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     return seconds > player.elapsedSeconds ? seconds : player.elapsedSeconds;
   }
 
-  /// 월즈 카드 구독 — 비회원이면 로그인 화면으로 보낸다.
+  /// [playerId] 가 있을 때만 선수 페이지로 가는 탭 콜백.
+  VoidCallback? _openPlayer(int? playerId) {
+    final open = widget.onOpenPlayer;
+    if (open == null || playerId == null) return null;
+    return () => open(playerId);
+  }
+
+  /// 월즈 카드 구독 벨 — 바로 구독하지 않고 선수 구독 시트(선수 페이지 벨과
+  /// 같은 시트)를 띄워 알림 종류를 고르게 한다. 비회원이면 로그인 화면으로 보낸다.
   Future<void> _subscribeWorlds(int playerId) async {
-    final done = await widget.viewModel.subscribeWorldsPlayer(playerId);
-    if (done || !mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+    final sheet = PlayerViewModel(
+      playerId: playerId,
+      cheers: widget.viewModel.cheers,
+    );
+    try {
+      if (!await sheet.isLoggedIn()) {
+        if (!mounted) return;
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+        return;
+      }
+      // 시트는 선수 상세(구독·알림 상태)를 읽어 그린다.
+      await sheet.load();
+      if (!mounted || sheet.detail == null) return;
+      await showWorldsPlayerSheet(
+        context,
+        viewModel: sheet,
+        playerId: playerId,
+        scale: widget.scale,
+      );
+      await widget.viewModel.refreshSubscriptionsOnReturn();
+    } finally {
+      sheet.dispose();
+    }
   }
 
   @override
@@ -283,6 +317,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         scale: scale,
         onSubscribe: _subscribeWorlds,
         onOpen: widget.onOpenWorlds,
+        onOpenPlayer: widget.onOpenPlayer,
       ),
     ];
   }
@@ -325,13 +360,17 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                     children: [
                       SizedBox(
                         height: 196 * scale,
-                        child: _HeroCard(
-                          key: HomeSoloRankSection.worldsHeroKey(player.name),
-                          player: player,
-                          secondsOf: () => _liveElapsedSeconds(player),
-                          tick: _tick,
-                          scale: scale,
-                          embedded: true,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _openPlayer(player.playerId),
+                          child: HomeSoloHeroCard(
+                            key: HomeSoloRankSection.worldsHeroKey(player.name),
+                            player: player,
+                            secondsOf: () => _liveElapsedSeconds(player),
+                            tick: _tick,
+                            scale: scale,
+                            embedded: true,
+                          ),
                         ),
                       ),
                       _WorldsSubscribeBar(
@@ -411,13 +450,17 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                   controller: vm.cheers,
                   heroHeight: 196 * scale,
                   scale: scale,
-                  hero: _HeroCard(
-                    key: HomeSoloRankSection.heroKey(live[i].name),
-                    player: live[i],
-                    secondsOf: () => _liveElapsedSeconds(live[i]),
-                    tick: _tick,
-                    scale: scale,
-                    embedded: true,
+                  hero: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openPlayer(live[i].playerId),
+                    child: HomeSoloHeroCard(
+                      key: HomeSoloRankSection.heroKey(live[i].name),
+                      player: live[i],
+                      secondsOf: () => _liveElapsedSeconds(live[i]),
+                      tick: _tick,
+                      scale: scale,
+                      embedded: true,
+                    ),
                   ),
                 ),
               ),
@@ -475,10 +518,14 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
               padding: EdgeInsets.symmetric(horizontal: 20 * scale),
               itemCount: done.length,
               separatorBuilder: (_, _) => SizedBox(width: 8 * scale),
-              itemBuilder: (context, i) => _FinishedChip(
-                key: HomeSoloRankSection.finishedKey(done[i].name),
-                player: done[i],
-                scale: scale,
+              itemBuilder: (context, i) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _openPlayer(done[i].playerId),
+                child: _FinishedChip(
+                  key: HomeSoloRankSection.finishedKey(done[i].name),
+                  player: done[i],
+                  scale: scale,
+                ),
               ),
             ),
           ),
@@ -512,7 +559,7 @@ String _ago(AppLocalizations l, int minutes) =>
 
 /// 첫 구독 조회 중([SoloCardState.loading])에 보여줄 스켈레톤.
 ///
-/// 응답 후 가장 흔히 보이는 [_HeroCard]와 같은 높이(196)·모서리(14)로 맞춰,
+/// 응답 후 가장 흔히 보이는 [HomeSoloHeroCard]와 같은 높이(196)·모서리(14)로 맞춰,
 /// 구독 중인 선수가 있는 사용자가 겪는 레이아웃 튐(CLS)을 없앤다. 구독
 /// 0명으로 끝나 [_EmptyCard](186)나 [_QuietRow]로 바뀌는 경우엔 약간의
 /// 높이 차가 남지만, 셋 모두를 동시에 맞출 수는 없어 가장 흔한 경로를
@@ -885,17 +932,25 @@ class HomeSoloFace extends StatelessWidget {
 }
 
 /// 진행 중인 선수 한 명의 큰 카드. 숫자는 경과 시간 하나뿐이다.
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({
+class HomeSoloHeroCard extends StatelessWidget {
+  const HomeSoloHeroCard({
     super.key,
     required this.player,
     required this.secondsOf,
     required this.tick,
     required this.scale,
     this.embedded = false,
+    this.role,
+    this.showRegion = false,
   });
 
   final HomeLiveSoloPlayer player;
+
+  /// 선수 페이지 — 팀 옆에 포지션("T1 · MID")을 붙인다. 홈은 null.
+  final String? role;
+
+  /// 선수 페이지 — "솔로 랭크 · NA" 처럼 해외 계정 지역을 배지에 붙인다.
+  final bool showRegion;
 
   /// 응원 영역과 한 장으로 묶일 때 true — 모서리·테두리는 바깥 [SoloCheerCard] 가
   /// 그린다.
@@ -1044,7 +1099,7 @@ class _HeroCard extends StatelessWidget {
                       ),
                       SizedBox(width: 6 * scale),
                       Text(
-                        player.teamCode,
+                        [player.teamCode, ?role].join(' · '),
                         style: TextStyle(
                           fontFamily: 'Open Sans',
                           fontWeight: FontWeight.w600,
@@ -1125,7 +1180,10 @@ class _HeroCard extends StatelessWidget {
                         ),
                         SizedBox(width: 6 * scale),
                         Text(
-                          l.homeSoloQueueBadge,
+                          [
+                            l.homeSoloQueueBadge,
+                            if (showRegion) ?player.overseasRegion,
+                          ].join(' · '),
                           style: TextStyle(
                             fontFamily: 'Pretendard',
                             fontWeight: FontWeight.w600,

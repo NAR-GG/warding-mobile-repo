@@ -113,6 +113,50 @@ jobs:
           MARKETING_VERSION="${VERSION%%+*}"   # 1.0.33+80 → 1.0.33
           BUILD_NUMBER="${VERSION##*+}"        # 1.0.33+80 → 80
 
+          # ── 제출 전 확인: 지금 줄에 선 버전에 빌드를 바꿔 끼울 수 있는가 ──────
+          #
+          # 1.0.41 사고를 막는 자리다. 심사 대기(Waiting For Review) 상태인 버전에는
+          # ASC 가 빌드 교체를 거부하는데, deliver 는 **버전 문자열과 패치노트를
+          # 먼저 바꾼 뒤** 빌드를 붙이려 한다. 그래서 거부당하면 "표시만 새 버전,
+          # 바이너리는 옛 빌드" 인 상태가 남고 그대로 심사·출시로 흘러간다.
+          #
+          # 여기서 멈추면 ASC 는 손대지 않은 상태로 남는다. 사람이 ASC 에서 심사를
+          # 취소하거나 끝나기를 기다린 뒤 다시 실행하면 된다.
+          STATE_OUT=$(python3 scripts/asc_version_state.py || true)
+          echo "$STATE_OUT"
+          asc_field() { printf '%s\n' "$STATE_OUT" | grep "^$1=" | head -1 | cut -d= -f2-; }
+
+          if [ "$(asc_field ok)" != "true" ]; then
+            # 조회가 막혔다고 제출을 막지는 않는다 — 네트워크·권한 문제로 릴리즈가
+            # 멈추는 쪽이 더 나쁘다. 대신 제출 뒤 검증이 같은 이유로 못 돌면
+            # 그때는 실패로 처리한다(아래).
+            echo "::warning::ASC 상태를 확인하지 못했다. 제출은 진행하되 끝난 뒤 ASC 에서 빌드 번호를 직접 확인하라."
+          else
+            CUR_VERSION=$(asc_field version)
+            CUR_STATE=$(asc_field state)
+            CUR_BUILD=$(asc_field build)
+            echo "ASC 현재 상태: ${CUR_VERSION:-(없음)} / ${CUR_STATE:-(없음)} / 빌드 ${CUR_BUILD:-(없음)}"
+
+            # 이미 이 버전·이 빌드가 올라가 있으면 진짜 중복 제출이다. 옛 가드가
+            # 잡으려던 경우인데, 이제는 로그 문자열이 아니라 ASC 의 사실로 가린다.
+            #
+            # 중복이 실제로 일어난다. Discord 버튼이 11초 간격으로 두 번 발사된
+            # 적이 있고, concurrency 는 cancel-in-progress: false 라 중복을 막지
+            # 않고 순서대로 돌릴 뿐이라 뒤엣것이 이 경로를 탄다.
+            if [ "$CUR_VERSION" = "$MARKETING_VERSION" ] && [ "$CUR_BUILD" = "$BUILD_NUMBER" ] \
+               && [ "$(asc_field editable)" != "true" ]; then
+              echo "::warning::$VERSION 은 이미 심사에 올라가 있다($CUR_STATE). 중복 제출이라 건너뛴다."
+              exit 0
+            fi
+            # 다른 버전이 심사 줄을 잡고 있으면 빌드를 못 바꿔 끼운다 → 멈춘다.
+            if [ "$(asc_field editable)" != "true" ]; then
+              echo "::error::ASC 의 $CUR_VERSION 이 $CUR_STATE 상태라 빌드를 교체할 수 없다."
+              echo "::error::이대로 제출하면 버전 표시만 $MARKETING_VERSION 으로 바뀌고 바이너리는 빌드 ${CUR_BUILD:-?} 로 남는다 (1.0.41 사고)."
+              echo "::error::ASC 에서 해당 버전의 심사를 취소하거나 끝나기를 기다린 뒤 다시 실행하라."
+              exit 1
+            fi
+          fi
+
           # API 키는 JSON 파일로 넘긴다. 'fastlane run app_store_connect_api_key' 를
           # 따로 부르고 그다음 deliver 를 부르면 두 프로세스가 달라 인증이 이어지지
           # 않는다 — deliver 가 직접 읽는 --api_key_path 를 쓴다.
@@ -176,11 +220,9 @@ jobs:
           # 없이 승인 즉시 전체 사용자에게 나간다. Android 의 android_rollout 과는
           # 별개이며, 그 입력은 submit-android 잡에서만 쓴다.
           #
-          # 실패를 바로 받지 않는다(|| true). 같은 버전이 **이미 심사에 올라가 있을**
-          # 때도 deliver 가 실패하는데, 그건 고칠 것이 없는 상태라 잡을 빨갛게 만들
-          # 이유가 없다. Discord 버튼이 두 번 발사되면(실제로 11초 간격으로 두 번
-          # 돈 적이 있다) 뒤엣것이 이 경로를 탄다. concurrency 는
-          # cancel-in-progress: false 라 중복을 막지 않고 순서대로 돌릴 뿐이다.
+          # 실패를 바로 받지 않는다. deliver 의 종료 코드만으로는 "제출됐는지" 를
+          # 알 수 없어서(1.0.41 때 실패한 런이 ASC 를 반쯤 바꿔 놓고 끝났다)
+          # 종료 코드와 무관하게 **아래에서 ASC 에 직접 물어 판정한다.**
           set +e
           fastlane deliver submit_build \
             --api_key_path "$RUNNER_TEMP/asc_key.json" \
@@ -200,17 +242,53 @@ jobs:
           set -e
           rm -f "$RUNNER_TEMP/asc_key.json"
 
-          if [ "$STATUS" -eq 0 ]; then
-            echo "심사 제출 완료"
-            exit 0
+          # ── 제출 후 검증: ASC 에 붙은 빌드가 정말 우리가 올린 빌드인가 ─────────
+          #
+          # 옛 코드는 deliver 로그에 'is in (Waiting For Review|...)' 가 있으면
+          # 중복 제출로 보고 exit 0 했다. 그런데 그 문자열은 두 가지 경우에 똑같이
+          # 나온다.
+          #   (a) 같은 버전·빌드를 두 번 제출했다            → 넘겨도 되는 상태
+          #   (b) 다른 버전이 심사 줄을 잡아 빌드를 못 붙였다 → 1.0.41 사고
+          # 로그로는 둘을 구분할 수 없어서 (b) 가 초록불로 끝났다. 이제 로그를 믿지
+          # 않고 ASC 에 "그 버전에 붙은 빌드 번호" 를 물어 판정한다.
+          VERIFY_OUT=$(python3 scripts/asc_version_state.py || true)
+          echo "$VERIFY_OUT"
+          v_field() { printf '%s\n' "$VERIFY_OUT" | grep "^$1=" | head -1 | cut -d= -f2-; }
+
+          if [ "$(v_field ok)" != "true" ]; then
+            # 제출 전에는 조회 실패를 경고로 넘겼지만, 여기서는 넘길 수 없다.
+            # 검증하지 못한 제출을 성공으로 보고하는 것이 이번 사고의 본질이다.
+            echo "::error::제출 후 ASC 상태를 확인하지 못해 결과를 보증할 수 없다. ASC 에서 $MARKETING_VERSION 에 붙은 빌드가 $BUILD_NUMBER 인지 직접 확인하라."
+            exit 1
           fi
-          # deliver 가 이 상태를 로그로 알려 준다 — ASC 를 따로 조회하지 않는다.
-          if grep -qiE 'is in (Waiting For Review|In Review|Pending Developer Release)' /tmp/ios-submit.log; then
-            echo "::warning::$MARKETING_VERSION 은 이미 심사에 올라가 있다. 중복 제출이라 건너뛴다."
-            exit 0
+
+          GOT_VERSION=$(v_field version)
+          GOT_BUILD=$(v_field build)
+          GOT_STATE=$(v_field state)
+          echo "ASC 확인: $GOT_VERSION / $GOT_STATE / 빌드 ${GOT_BUILD:-(없음)}"
+
+          if [ "$GOT_VERSION" != "$MARKETING_VERSION" ]; then
+            echo "::error::ASC 의 버전이 $GOT_VERSION 이다 — $MARKETING_VERSION 을 제출했는데 반영되지 않았다."
+            exit 1
           fi
-          echo "::error::심사 제출이 실패했다. 위 로그를 확인하라."
-          exit "$STATUS"
+          if [ "$GOT_BUILD" != "$BUILD_NUMBER" ]; then
+            echo "::error::$MARKETING_VERSION 에 붙은 빌드가 ${GOT_BUILD:-(없음)} 이다 — 올리려던 빌드는 $BUILD_NUMBER 다."
+            echo "::error::1.0.41 사고와 같은 상태다. 이대로 승인되면 버전 표시만 바뀌고 옛 코드가 나간다."
+            echo "::error::ASC 에서 심사를 취소하고 빌드를 바로잡은 뒤 다시 제출하라."
+            exit 1
+          fi
+
+          # 버전·빌드가 맞다. 심사 줄에 들어갔는지까지 본다 — deliver 가 메타데이터만
+          # 올리고 제출 단계에서 조용히 멈춘 경우를 여기서 잡는다.
+          case "$GOT_STATE" in
+            WAITING_FOR_REVIEW|IN_REVIEW|PENDING_DEVELOPER_RELEASE|PENDING_APPLE_RELEASE|PROCESSING_FOR_APP_STORE|READY_FOR_SALE|READY_FOR_DISTRIBUTION)
+              echo "심사 제출 완료 — $MARKETING_VERSION (빌드 $BUILD_NUMBER) / $GOT_STATE"
+              exit 0
+              ;;
+          esac
+          echo "::error::빌드는 $BUILD_NUMBER 로 맞게 붙었지만 상태가 $GOT_STATE 다 — 심사 줄에 들어가지 않았다."
+          echo "::error::deliver 종료 코드: $STATUS. 위 로그를 확인하고 ASC 에서 제출 상태를 보라."
+          exit 1
 
       - name: 실패 로그 업로드
         if: failure()

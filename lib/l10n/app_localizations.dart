@@ -2327,7 +2327,7 @@ abstract class AppLocalizations {
   /// No description provided for @playerLoadFailed.
   ///
   /// In ko, this message translates to:
-  /// **'선수 목록을 불러오지 못했어요'**
+  /// **'선수 정보를 불러오지 못했어요'**
   String get playerLoadFailed;
 
   /// No description provided for @noPlayerInfo.
@@ -3787,6 +3787,426 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'개인배너 / 팀홍보 / 자유후원'**
   String get advertiserBannerBody;
+
+  /// No description provided for @playerNextMatch.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음 경기 · {stage}'**
+  String playerNextMatch(String stage);
+
+  /// No description provided for @playerNextMatchNoStage.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음 경기'**
+  String get playerNextMatchNoStage;
+
+  /// No description provided for @playerDday.
+  ///
+  /// In ko, this message translates to:
+  /// **'D-{days}'**
+  String playerDday(int days);
+
+  /// No description provided for @playerDdayToday.
+  ///
+  /// In ko, this message translates to:
+  /// **'D-DAY'**
+  String get playerDdayToday;
+
+  /// No description provided for @playerBestOf.
+  ///
+  /// In ko, this message translates to:
+  /// **'{games}판 {wins}선승'**
+  String playerBestOf(int games, int wins);
+
+  /// No description provided for @playerSingleGame.
+  ///
+  /// In ko, this message translates to:
+  /// **'단판'**
+  String get playerSingleGame;
+
+  /// No description provided for @playerWinLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'{wins}승 {losses}패'**
+  String playerWinLoss(int wins, int losses);
+
+  /// No description provided for @playerMatchAlarm.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 알림'**
+  String get playerMatchAlarm;
+
+  /// No description provided for @playerMatchAlarmOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 켜짐'**
+  String get playerMatchAlarmOn;
+
+  /// No description provided for @playerStatSubscribers.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독자'**
+  String get playerStatSubscribers;
+
+  /// No description provided for @playerStatCheers7d.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 7일 응원'**
+  String get playerStatCheers7d;
+
+  /// No description provided for @playerStatWorldsRating.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 팬 평점'**
+  String get playerStatWorldsRating;
+
+  /// No description provided for @playerTabWorlds.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈'**
+  String get playerTabWorlds;
+
+  /// No description provided for @playerTabSolo.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭'**
+  String get playerTabSolo;
+
+  /// No description provided for @playerWorldsRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 성적'**
+  String get playerWorldsRecord;
+
+  /// No description provided for @playerWorldsRecordSub.
+  ///
+  /// In ko, this message translates to:
+  /// **'{games}경기 · {wins}승 {losses}패'**
+  String playerWorldsRecordSub(int games, int wins, int losses);
+
+  /// No description provided for @playerWorldsPending.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 기록 집계 중'**
+  String get playerWorldsPending;
+
+  /// No description provided for @playerStatKda.
+  ///
+  /// In ko, this message translates to:
+  /// **'KDA'**
+  String get playerStatKda;
+
+  /// No description provided for @playerStatKp.
+  ///
+  /// In ko, this message translates to:
+  /// **'킬 관여'**
+  String get playerStatKp;
+
+  /// No description provided for @playerStatDpm.
+  ///
+  /// In ko, this message translates to:
+  /// **'분당 딜'**
+  String get playerStatDpm;
+
+  /// No description provided for @playerStatCspm.
+  ///
+  /// In ko, this message translates to:
+  /// **'분당 CS'**
+  String get playerStatCspm;
+
+  /// No description provided for @playerStatGd15.
+  ///
+  /// In ko, this message translates to:
+  /// **'15분 골드 차'**
+  String get playerStatGd15;
+
+  /// No description provided for @playerStatVspm.
+  ///
+  /// In ko, this message translates to:
+  /// **'분당 시야 점수'**
+  String get playerStatVspm;
+
+  /// No description provided for @playerStatRank.
+  ///
+  /// In ko, this message translates to:
+  /// **'{position} {rank}위'**
+  String playerStatRank(String position, int rank);
+
+  /// No description provided for @playerStatAvg.
+  ///
+  /// In ko, this message translates to:
+  /// **'대회 평균 {avg}'**
+  String playerStatAvg(String avg);
+
+  /// No description provided for @playerWorldsGames.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기별 기록'**
+  String get playerWorldsGames;
+
+  /// No description provided for @playerWin.
+  ///
+  /// In ko, this message translates to:
+  /// **'승리'**
+  String get playerWin;
+
+  /// No description provided for @playerLoss.
+  ///
+  /// In ko, this message translates to:
+  /// **'패배'**
+  String get playerLoss;
+
+  /// No description provided for @playerGameCsDamage.
+  ///
+  /// In ko, this message translates to:
+  /// **'CS {cs} · 딜 {damage}'**
+  String playerGameCsDamage(int cs, String damage);
+
+  /// No description provided for @playerFanRating.
+  ///
+  /// In ko, this message translates to:
+  /// **'팬 평점'**
+  String get playerFanRating;
+
+  /// No description provided for @playerWorldsRating.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 평점'**
+  String get playerWorldsRating;
+
+  /// No description provided for @playerChampions.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭 vs 월즈 챔피언'**
+  String get playerChampions;
+
+  /// No description provided for @playerSortSolo.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭순'**
+  String get playerSortSolo;
+
+  /// No description provided for @playerSortWorlds.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈순'**
+  String get playerSortWorlds;
+
+  /// No description provided for @playerChampionHeader.
+  ///
+  /// In ko, this message translates to:
+  /// **'챔피언'**
+  String get playerChampionHeader;
+
+  /// No description provided for @playerSeeAllCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 {count}개 보기'**
+  String playerSeeAllCount(int count);
+
+  /// No description provided for @playerRatingSub.
+  ///
+  /// In ko, this message translates to:
+  /// **'월즈 {games}경기 · {count}명'**
+  String playerRatingSub(int games, String count);
+
+  /// No description provided for @playerRatingScore.
+  ///
+  /// In ko, this message translates to:
+  /// **'{score}점'**
+  String playerRatingScore(int score);
+
+  /// No description provided for @playerRatingThreeOrLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'3점 이하'**
+  String get playerRatingThreeOrLess;
+
+  /// No description provided for @playerSoloRecent.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 {count}판'**
+  String playerSoloRecent(int count);
+
+  /// No description provided for @playerSoloRecent7d.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 7일'**
+  String get playerSoloRecent7d;
+
+  /// No description provided for @playerSoloRecord.
+  ///
+  /// In ko, this message translates to:
+  /// **'전적'**
+  String get playerSoloRecord;
+
+  /// No description provided for @playerSoloWinRate.
+  ///
+  /// In ko, this message translates to:
+  /// **'승률 {percent}%'**
+  String playerSoloWinRate(int percent);
+
+  /// No description provided for @playerSoloAvgKda.
+  ///
+  /// In ko, this message translates to:
+  /// **'평균 KDA'**
+  String get playerSoloAvgKda;
+
+  /// No description provided for @playerSoloPerDay.
+  ///
+  /// In ko, this message translates to:
+  /// **'하루 평균'**
+  String get playerSoloPerDay;
+
+  /// No description provided for @playerSoloGames.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}판'**
+  String playerSoloGames(String count);
+
+  /// No description provided for @playerSoloAvgDuration.
+  ///
+  /// In ko, this message translates to:
+  /// **'한 판 {minutes}분'**
+  String playerSoloAvgDuration(int minutes);
+
+  /// No description provided for @playerSoloOldest.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}판 전'**
+  String playerSoloOldest(int count);
+
+  /// No description provided for @playerSoloLatest.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근'**
+  String get playerSoloLatest;
+
+  /// No description provided for @playerSoloMost.
+  ///
+  /// In ko, this message translates to:
+  /// **'모스트 챔피언'**
+  String get playerSoloMost;
+
+  /// No description provided for @playerSoloGamesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 솔랭'**
+  String get playerSoloGamesTitle;
+
+  /// No description provided for @playerSoloMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}판 더 보기'**
+  String playerSoloMore(int count);
+
+  /// No description provided for @playerSoloEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 솔랭 기록이 없어요'**
+  String get playerSoloEmpty;
+
+  /// No description provided for @playerLastSolo.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 솔랭 · {ago}'**
+  String playerLastSolo(String ago);
+
+  /// No description provided for @playerNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 정보를 찾을 수 없어요'**
+  String get playerNotFound;
+
+  /// No description provided for @playerSubscribeSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 구독'**
+  String playerSubscribeSemantics(String name);
+
+  /// No description provided for @playerUnsubscribeSemantics.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 구독 해제'**
+  String playerUnsubscribeSemantics(String name);
+
+  /// No description provided for @worldsSoloOpenPlayer.
+  ///
+  /// In ko, this message translates to:
+  /// **'선수 페이지'**
+  String get worldsSoloOpenPlayer;
+
+  /// No description provided for @playerMetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'솔랭에서 만난 선수'**
+  String get playerMetTitle;
+
+  /// No description provided for @playerMetNextOpponent.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음 상대'**
+  String get playerMetNextOpponent;
+
+  /// No description provided for @playerMetSameTeam.
+  ///
+  /// In ko, this message translates to:
+  /// **'같은 편'**
+  String get playerMetSameTeam;
+
+  /// No description provided for @playerMetOpponent.
+  ///
+  /// In ko, this message translates to:
+  /// **'상대'**
+  String get playerMetOpponent;
+
+  /// No description provided for @playerWins.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}승'**
+  String playerWins(int count);
+
+  /// No description provided for @playerLosses.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}패'**
+  String playerLosses(int count);
+
+  /// No description provided for @playerMetLast.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 {ago}'**
+  String playerMetLast(String ago);
+
+  /// No description provided for @matchAlarmOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 끄기'**
+  String get matchAlarmOff;
+
+  /// No description provided for @matchAlarmUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'경기 알림 설정을 바꿨어요'**
+  String get matchAlarmUpdated;
+
+  /// No description provided for @matchAlarmUpdateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'알림 설정 변경에 실패했어요. 다시 시도해주세요'**
+  String get matchAlarmUpdateFailed;
+
+  /// No description provided for @playerReviewsMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄평 더 보기'**
+  String get playerReviewsMore;
+
+  /// No description provided for @playerReviewsAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄평 전체 {count}개 보기'**
+  String playerReviewsAll(int count);
 }
 
 class _AppLocalizationsDelegate

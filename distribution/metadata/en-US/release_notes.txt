@@ -1,7 +1,11 @@
-■ Filter Worlds SoloQ by league and team!
-  - Pick a league like LCK, LPL or LEC to see only its teams and players.
-  - Team chips now show logos and follow league standings order.
-  - "Playing now" and "Last SoloQ game" sections show player counts.
+■ Expired ads no longer show up!
+  - Fixed splash ads that kept appearing after a campaign ended.
 
-■ Overseas team logos now show correctly!
-  - Players from overseas Worlds teams now show their own team logo.
+■ Player pages are easier to read!
+  - SoloQ tiers now show crisp emblems you can recognise at a glance.
+  - Worlds ratings show a star score and score breakdown.
+  - Comments keep loading as you scroll down.
+  - A placeholder layout appears while the page loads.
+
+■ Lists are easier to expand!
+  - Open recent SoloQ, champion and match records with "See more".

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
@@ -6,6 +8,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../components/app_bottom_sheet.dart';
 import '../../../components/common_button.dart';
 import '../../../components/nar_toggle.dart';
+import '../../../repository/live_activity/live_activity_logo_prefetcher.dart';
+import '../../../repository/match/match_subscription_repository.dart';
 import '../../../screens/my_subscription_setting/component/live_event_detail_card.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
@@ -26,11 +30,26 @@ typedef MatchAlarmResult = ({
   bool inhibitor,
 });
 
+/// "알림 끄기"로 닫혔다는 표시. 확인 버튼은 세 알림이 모두 꺼지면 비활성이라
+/// 확인으로는 이 값(전부 false)이 나올 수 없다.
+const MatchAlarmResult matchAlarmOff = (
+  setStart: false,
+  setEnd: false,
+  liveEvent: false,
+  kill: false,
+  baron: false,
+  dragon: false,
+  tower: false,
+  inhibitor: false,
+);
+
 /// 경기 카드의 벨 아이콘을 탭했을 때 뜨는 '경기 알림 설정' 바텀시트를 띄운다.
 /// 하단 확인으로 닫히면 선택한 토글값을, 닫기(X)나 바깥 탭으로 닫히면 null 을 반환한다.
 ///
 /// [initial] 을 주면 그 값으로 토글을 채운다(이미 구독 중인 경기를 수정할 때).
 /// 없으면 신규 구독 기본값(전부 ON)으로 연다.
+///
+/// [subscribed] 면 확인 아래에 "알림 끄기"를 둔다 — 누르면 [matchAlarmOff] 를 반환한다.
 Future<MatchAlarmResult?> showMatchAlarmSheet({
   required BuildContext context,
   required String homeName,
@@ -38,6 +57,7 @@ Future<MatchAlarmResult?> showMatchAlarmSheet({
   required String awayName,
   String? awayLogoUrl,
   MatchAlarmResult? initial,
+  bool subscribed = false,
 }) {
   return showAppBottomSheet<MatchAlarmResult>(
     context: context,
@@ -47,8 +67,146 @@ Future<MatchAlarmResult?> showMatchAlarmSheet({
       awayName: awayName,
       awayLogoUrl: awayLogoUrl,
       initial: initial,
+      subscribed: subscribed,
     ),
   );
+}
+
+/// 경기 알림 벨 공통 흐름 — 경기 카드와 선수 페이지 다음 경기 카드가 같이 쓴다.
+///
+/// - 미구독: 시트(기본값 전부 ON) → 확인이면 구독.
+/// - 구독 중: 서버의 현재 설정으로 시트를 연다 → 확인이면 설정 변경, "알림 끄기"면 해제.
+///   바로 끄지 않는다 — 신청과 대칭으로 시트에서 확인받는다.
+///
+/// 로그인 확인은 호출부가 한다. 흐름이 끝난 뒤의 구독 여부를 반환하고, 취소면 null.
+Future<bool?> runMatchAlarmFlow(
+  BuildContext context, {
+  required String matchId,
+  required bool subscribed,
+  required String homeName,
+  String? homeLogoUrl,
+  String homeCode = '',
+  required String awayName,
+  String? awayLogoUrl,
+  String awayCode = '',
+  MatchSubscriptionRepository? repository,
+}) async {
+  final repo = repository ?? MatchSubscriptionRepository.instance;
+  final l = AppLocalizations.of(context)!;
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  void feedback(String message) => showMatchAlarmFeedback(messenger, message);
+
+  MatchAlarmResult? initial;
+  if (subscribed) {
+    try {
+      final st = await repo.matchSubscriptionStatus(matchId);
+      initial = (
+        setStart: st.setStartEnabled,
+        setEnd: st.setEndEnabled,
+        liveEvent: st.liveEventEnabled,
+        kill: st.killEnabled,
+        baron: st.baronEnabled,
+        dragon: st.dragonEnabled,
+        tower: st.towerEnabled,
+        inhibitor: st.inhibitorEnabled,
+      );
+    } catch (_) {
+      // 현재 설정을 못 읽어도 끄기는 할 수 있어야 한다 — 기본값으로 연다.
+    }
+    if (!context.mounted) return null;
+  }
+
+  final result = await showMatchAlarmSheet(
+    context: context,
+    homeName: homeName,
+    homeLogoUrl: homeLogoUrl,
+    awayName: awayName,
+    awayLogoUrl: awayLogoUrl,
+    initial: initial,
+    subscribed: subscribed,
+  );
+  if (result == null) return null;
+
+  if (result == matchAlarmOff) {
+    try {
+      await repo.unsubscribeMatch(matchId);
+      feedback(l.matchAlarmRemoved);
+      return false;
+    } catch (_) {
+      feedback(l.matchAlarmRemoveFailed);
+      return true;
+    }
+  }
+
+  if (subscribed) {
+    try {
+      await repo.updateMatchAlarms(
+        matchId,
+        setStartEnabled: result.setStart,
+        setEndEnabled: result.setEnd,
+        liveEventEnabled: result.liveEvent,
+        killEnabled: result.kill,
+        baronEnabled: result.baron,
+        dragonEnabled: result.dragon,
+        towerEnabled: result.tower,
+        inhibitorEnabled: result.inhibitor,
+      );
+      feedback(l.matchAlarmUpdated);
+    } catch (_) {
+      feedback(l.matchAlarmUpdateFailed);
+    }
+    return true;
+  }
+
+  try {
+    await repo.subscribeMatch(
+      matchId,
+      setStartEnabled: result.setStart,
+      setEndEnabled: result.setEnd,
+      liveEventEnabled: result.liveEvent,
+      killEnabled: result.kill,
+      baronEnabled: result.baron,
+      dragonEnabled: result.dragon,
+      towerEnabled: result.tower,
+      inhibitorEnabled: result.inhibitor,
+    );
+    feedback(l.matchAlarmRegistered);
+    // 이 경기는 서버가 세트 시작에 맞춰 카드를 만든다. 그때 앱은 안 떠
+    // 있으므로 지금 양 팀 로고를 미리 저장해 둔다.
+    unawaited(
+      liveActivityLogoPrefetcher.prefetch([
+        LogoTarget(code: homeCode, imageUrl: homeLogoUrl ?? ''),
+        LogoTarget(code: awayCode, imageUrl: awayLogoUrl ?? ''),
+      ]),
+    );
+    return true;
+  } catch (_) {
+    feedback(l.matchAlarmRegisterFailed);
+    return false;
+  }
+}
+
+/// 경기 알림 결과 스낵바.
+void showMatchAlarmFeedback(ScaffoldMessengerState? messenger, String message) {
+  messenger
+    ?..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: AppColors.narText,
+          ),
+        ),
+        backgroundColor: AppColors.narDark600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
 }
 
 /// 경기 알림 설정 시트 본문.
@@ -65,6 +223,7 @@ class MatchAlarmSheet extends StatefulWidget {
     required this.awayName,
     this.awayLogoUrl,
     this.initial,
+    this.subscribed = false,
   });
 
   final String homeName;
@@ -74,6 +233,11 @@ class MatchAlarmSheet extends StatefulWidget {
 
   /// 초기 토글값. null 이면 신규 구독 기본값(전부 ON).
   final MatchAlarmResult? initial;
+
+  /// 구독 중인 경기 — 확인 아래 "알림 끄기"를 둔다.
+  final bool subscribed;
+
+  static const Key offKey = ValueKey('matchAlarmOff');
 
   @override
   State<MatchAlarmSheet> createState() => _MatchAlarmSheetState();
@@ -174,6 +338,26 @@ class _MatchAlarmSheetState extends State<MatchAlarmSheet> {
                 ))
               : null,
         ),
+        if (widget.subscribed)
+          GestureDetector(
+            key: MatchAlarmSheet.offKey,
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(matchAlarmOff),
+            child: SizedBox(
+              height: 48 * scale,
+              child: Center(
+                child: Text(
+                  l.matchAlarmOff,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15 * scale,
+                    color: AppColors.narTextRed,
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -224,10 +408,12 @@ class _Header extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _TeamBadge(
-                      name: homeName,
-                      logoUrl: homeLogoUrl,
-                      scale: scale,
+                    Flexible(
+                      child: _TeamBadge(
+                        name: homeName,
+                        logoUrl: homeLogoUrl,
+                        scale: scale,
+                      ),
                     ),
                     SizedBox(width: 12 * scale),
                     Text(
@@ -242,10 +428,12 @@ class _Header extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 12 * scale),
-                    _TeamBadge(
-                      name: awayName,
-                      logoUrl: awayLogoUrl,
-                      scale: scale,
+                    Flexible(
+                      child: _TeamBadge(
+                        name: awayName,
+                        logoUrl: awayLogoUrl,
+                        scale: scale,
+                      ),
                     ),
                   ],
                 ),
@@ -314,15 +502,19 @@ class _TeamBadge extends StatelessWidget {
               )
             : placeholder,
         SizedBox(width: 8 * scale),
-        Text(
-          name,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-            fontSize: 16 * scale,
-            height: 19 / 16,
-            letterSpacing: 0.21 * scale,
-            color: AppColors.narText,
+        Flexible(
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+              fontSize: 16 * scale,
+              height: 19 / 16,
+              letterSpacing: 0.21 * scale,
+              color: AppColors.narText,
+            ),
           ),
         ),
       ],

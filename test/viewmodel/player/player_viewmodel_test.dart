@@ -1,0 +1,182 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:warding/model/player_detail.dart';
+import 'package:warding/repository/home/home_sources.dart';
+import 'package:warding/repository/player/player_mock_source.dart';
+import 'package:warding/screens/player/component/player_next_match_card.dart';
+import 'package:warding/viewmodel/home/solo_cheer_controller.dart';
+import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/viewmodel/player/player_viewmodel.dart';
+
+PlayerViewModel _vm(int id, {SoloCheerController? cheers}) => PlayerViewModel(
+  playerId: id,
+  source: const MockPlayerSource(),
+  cheers: cheers,
+  isLoggedIn: () async => false,
+);
+
+void main() {
+  test('솔랭 중 선수 — 상세·탭을 읽고 응원 수를 공유 컨트롤러에 합친다', () async {
+    final cheers = SoloCheerController(source: MockCheerSource());
+    final vm = _vm(1, cheers: cheers);
+    await vm.load();
+
+    expect(vm.detail!.live, isNotNull);
+    expect(vm.detail!.nextMatch!.bestOf, 1);
+    expect(vm.worlds!.matches, hasLength(3));
+    expect(vm.solo!.games, hasLength(20));
+    // 홈과 같은 키(이름)로 합쳐 홈 카드와 숫자가 같다.
+    expect(cheers.totalOf('Faker'), 1284);
+    vm.dispose();
+    cheers.dispose();
+  });
+
+  test('실시간 갱신(폴링)은 상세를 다시 읽어 응원 수를 합친다', () async {
+    final cheers = SoloCheerController(source: MockCheerSource());
+    final vm = _vm(1, cheers: cheers);
+    await vm.refreshLive();
+    expect(vm.detail!.live, isNotNull);
+    expect(cheers.totalOf('Faker'), 1284);
+    vm.dispose();
+    cheers.dispose();
+  });
+
+  test('챔피언 최근 플레이는 솔랭·월즈 각각 그쪽 판의 가장 최근 시각', () async {
+    final vm = _vm(1);
+    await vm.load();
+    final name = vm.solo!.games.first.championName;
+    final solo = [
+      for (final g in vm.solo!.games)
+        if (g.championName == name) g.endedAt,
+    ].whereType<DateTime>().toList()..sort();
+    expect(vm.championLastPlayed(name, PlayerChampionSort.solo), solo.last);
+
+    final worldsGame = vm.worlds!.matches.first;
+    final worlds = [
+      for (final g in vm.worlds!.matches)
+        if (g.championName == worldsGame.championName) g.playedAt,
+    ].whereType<DateTime>().toList()..sort();
+    expect(
+      vm.championLastPlayed(worldsGame.championName, PlayerChampionSort.worlds),
+      worlds.last,
+    );
+    expect(vm.championLastPlayed('없는 챔피언', PlayerChampionSort.solo), isNull);
+    vm.dispose();
+  });
+
+  test('경기 기록이 아직 없으면 월즈 경기 목록이 빈다(집계 중)', () async {
+    final vm = _vm(2);
+    await vm.load();
+    expect(vm.worlds!.matches, isEmpty);
+    expect(vm.worlds!.rating, isNull);
+    vm.dispose();
+  });
+
+  test('챔피언 정렬 — 고른 쪽 판수 많은 순', () async {
+    final vm = _vm(1);
+    await vm.load();
+    expect(vm.sortedChampions.first.championName, '오로라');
+    vm.setChampionSort(PlayerChampionSort.worlds);
+    expect(vm.sortedChampions.first.worldsGames, 1);
+    expect(vm.sortedChampions.first.championName, '아지르');
+    vm.dispose();
+  });
+
+  test('구독 시트 엔트리 — 상세의 구독·알림 토글과 솔랭 상태를 옮긴다', () async {
+    final live = _vm(1);
+    await live.load();
+    final e = live.sheetEntry(1)!;
+    expect(e.player.subscribed, isTrue);
+    expect(e.player.startEnabled, isTrue);
+    expect(e.status, MyPlayerStatus.liveSolo);
+    expect(live.sheetEntry(999), isNull);
+    live.dispose();
+
+    final resting = _vm(103);
+    await resting.load();
+    expect(resting.sheetEntry(103)!.player.subscribed, isFalse);
+    expect(resting.sheetEntry(103)!.status, isNot(MyPlayerStatus.liveSolo));
+    resting.dispose();
+  });
+
+  test('한줄평 전체 — 0페이지로 펼치고 다음 페이지를 붙인다', () async {
+    final vm = _vm(1);
+    await vm.load();
+    expect(vm.allReviews, isNull);
+    await vm.loadMoreReviews();
+    expect(vm.allReviews, hasLength(20));
+    expect(vm.reviewsHasNext, isTrue);
+    await vm.loadMoreReviews();
+    await vm.loadMoreReviews();
+    expect(vm.allReviews, hasLength(45));
+    expect(vm.reviewsHasNext, isFalse);
+    expect(vm.allReviews!.first.canOpen, isTrue);
+    // 새로고침하면 미리보기로 돌아간다.
+    await vm.load();
+    expect(vm.allReviews, isNull);
+    vm.dispose();
+  });
+
+  test('해외 팀 코드가 null 이면 팀 이름으로 표시한다', () {
+    final g = PlayerWorldsGame.fromJson({
+      'win': true,
+      'opponentTeamCode': null,
+      'opponentTeamImageUrl': null,
+      'opponentTeamName': 'LOS Grandes',
+      'stage': '스위스',
+    });
+    expect(g.opponentLabel, 'LOS Grandes');
+  });
+
+  test('prod 실측 — stage null·UTC(Z) 시각도 읽는다', () {
+    final g = PlayerWorldsGame.fromJson({
+      'playedAt': '2026-10-23T23:21:10Z',
+      'win': true,
+      'stage': null,
+      'opponentTeamCode': null,
+      'opponentTeamName': 'Løs',
+      'opponentTeamImageUrl': null,
+      'rating': null,
+    });
+    expect(g.stage, '');
+    expect(g.opponentLabel, 'Løs');
+    expect(g.playedAt, DateTime.utc(2026, 10, 23, 23, 21, 10));
+    final m = PlayerNextMatch.fromJson({
+      'matchId': '1',
+      'scheduledAt': '2026-10-24T23:00:00Z',
+      'bestOf': 1,
+    });
+    expect(
+      m.scheduledAt!.isAtSameMomentAs(DateTime.utc(2026, 10, 24, 23)),
+      isTrue,
+    );
+  });
+
+  test('D-day 는 달력 날짜로 센다', () {
+    final now = DateTime(2026, 10, 25, 23, 50);
+    expect(daysUntil(DateTime(2026, 10, 26, 0, 10), now), 1);
+    expect(daysUntil(DateTime(2026, 10, 25, 22), now), 0);
+    expect(daysUntil(DateTime(2026, 10, 24, 22), now), isNull);
+  });
+
+  test('솔랭에서 만난 선수 — 없으면 빈 목록, 팀은 null 가능', () {
+    expect(PlayerSoloRank.fromJson({}).metPlayers, isEmpty);
+    final m = PlayerSoloRank.fromJson({
+      'metPlayers': [
+        {
+          'playerId': 223,
+          'playerName': 'Zeka',
+          'teamCode': null,
+          'sameTeamGames': 1,
+          'sameTeamWins': 1,
+          'opponentGames': 2,
+          'opponentWins': 2,
+          'opponentLosses': 0,
+          'lastMetAt': '2026-10-24T01:42:33+09:00',
+        },
+      ],
+    }).metPlayers.single;
+    expect(m.teamCode, isNull);
+    expect(m.opponentWins, 2);
+    expect(m.lastMetAt, DateTime.utc(2026, 10, 23, 16, 42, 33));
+  });
+}
