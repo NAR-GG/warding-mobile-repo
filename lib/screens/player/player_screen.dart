@@ -8,6 +8,7 @@ import '../../components/load_error.dart';
 import '../../components/nar_badge.dart';
 import '../../components/nar_card.dart';
 import '../../components/nar_stat_box.dart';
+import '../../components/solo_hero_card.dart';
 import '../../components/subscribe_bell.dart';
 import '../../components/nar_detail_header.dart';
 import '../../components/nar_tab_bar.dart';
@@ -21,7 +22,6 @@ import '../../util/rating_mapping.dart';
 import '../../viewmodel/home/solo_cheer_controller.dart';
 import '../../viewmodel/player/player_viewmodel.dart';
 import '../home/component/home_solo_cheer.dart';
-import '../home/component/home_solo_rank_section.dart';
 import '../login/login_screen.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart'
     show PlayerRating;
@@ -309,7 +309,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               controller: _vm.cheers,
               heroHeight: 196 * scale,
               scale: scale,
-              hero: HomeSoloHeroCard(
+              hero: SoloHeroCard(
                 player: live,
                 secondsOf: () {
                   final s = live.startedAt;

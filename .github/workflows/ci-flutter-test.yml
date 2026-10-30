@@ -17,6 +17,15 @@ jobs:
       - uses: actions/checkout@v4
       - run: .github/workflows/mixpanel-dau-summary-test.sh
 
+  # 패치 배포 가드 회귀 테스트. 패치는 스토어 심사를 거치지 않고 바로 사용자에게
+  # 가므로, "나가면 안 되는 것"(네이티브·에셋 변경)을 거르는 가드가 실제로 거는지
+  # 확인한다. 태그를 밀어 봐야 도는 워크플로우라 눈으로는 검증할 수 없다.
+  patch-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: .github/workflows/patch-deploy-test.sh
+
   test:
     runs-on: ubuntu-latest
     steps:
