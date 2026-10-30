@@ -4,6 +4,7 @@ import '../../../components/nar_card.dart';
 import '../../../components/nar_live_dot.dart';
 import '../../../components/nar_more_button.dart';
 import '../../../components/nar_progress_bar.dart';
+import '../../../components/solo_face.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/player_detail.dart';
 import '../../../styles/app_colors.dart';
@@ -11,7 +12,6 @@ import '../../../util/app_image.dart';
 import '../../../util/rating_mapping.dart' show ratingTimeAgo;
 import '../../../viewmodel/player/player_viewmodel.dart';
 import '../../home/component/home_solo_cheer.dart' show formatCheerCount;
-import '../../home/component/home_solo_rank_section.dart' show HomeSoloFace;
 import '../../my_players/component/my_player_tile.dart' show RegionChip;
 import 'player_parts.dart';
 
@@ -607,7 +607,7 @@ class _MetCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                HomeSoloFace(
+                SoloFace(
                   name: m.playerName,
                   url: resolveImageUrl(m.playerImageUrl),
                   size: 34 * scale,

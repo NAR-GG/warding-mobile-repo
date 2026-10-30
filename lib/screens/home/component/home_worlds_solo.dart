@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/nar_live_dot.dart';
+import '../../../components/solo_face.dart';
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../my_players/component/my_player_tile.dart';
-import 'home_solo_rank_section.dart';
 
 // 홈 솔랭 섹션의 월즈 블록. 구독 선수 카드 상태에 따라 하나만 붙는다
 // (HomeSoloRankSection 참고):
@@ -73,7 +73,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          HomeSoloFace(
+                          SoloFace(
                             name: p.name,
                             url: resolveImageUrl(p.playerImageUrl),
                             size: size,
@@ -101,7 +101,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
                   if (extra > 0)
                     Positioned(
                       left: step * faces.length,
-                      child: HomeSoloFace(
+                      child: SoloFace(
                         name: '+$extra',
                         url: null,
                         size: size,

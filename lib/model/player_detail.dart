@@ -90,7 +90,7 @@ class PlayerDetail {
     stats: stats,
   );
 
-  /// 홈 큰 카드([HomeSoloHeroCard])를 그대로 쓰려고 홈 모델로 옮긴다.
+  /// 공용 솔랭 큰 카드(`SoloHeroCard`)를 그대로 쓰려고 홈 모델로 옮긴다.
   HomeLiveSoloPlayer? get liveAsHome {
     final l = live;
     if (l == null) return null;
