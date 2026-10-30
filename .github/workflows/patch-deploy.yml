@@ -1,0 +1,356 @@
+name: 패치 배포 (Shorebird)
+
+# `patch/<릴리즈 버전>/<번호>` 태그를 밀면 iOS·Android 패치가 나간다.
+#
+#   git tag -a patch/1.0.42+92/1 -m "patch"
+#   git push --follow-tags
+#
+# 릴리즈(release-deploy.yml)와 다른 점:
+#   - 스토어 심사·업로드가 없다. 사용자는 앱 재실행 2번이면 받는다.
+#   - 업데이트 팝업이 뜨지 않는다(스토어 버전이 그대로다). 팝업 피로 없이
+#     고칠 수 있는 유일한 경로다 — 그래서 Dart 수정은 되도록 이쪽으로 낸다.
+#   - 서명 인증서·프로비저닝이 필요 없다. shorebird 가 릴리즈 빌드에 붙인다.
+#   - e2e 를 **기다린다**. 릴리즈는 업로드 직전에 결과를 보지만(빌드가 비싸서
+#     병렬로 돌린다), 패치는 올리고 나면 사용자에게 바로 가므로 통과 전에
+#     내보내지 않는다.
+#
+# 패치로 나갈 수 없는 변경(네이티브 코드·에셋·pubspec 네이티브 의존성·Flutter
+# 버전)은 verify 잡이 막는다. 그런 변경은 스토어 재제출이 필요하다.
+on:
+  push:
+    tags: ['patch/*']
+
+# 같은 태그로 두 번 돌면 패치가 두 개 쌓인다. 과금이 설치 수 기준이라
+# 중복 패치는 한도를 두 배로 먹는다 — 앞엣것이 끝나기를 기다린다.
+concurrency:
+  group: patch-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+# e2e-release-check.yml 의 escalate 잡이 contents: write 와 actions: read 를
+# 요구한다. 재사용 워크플로우는 호출한 쪽보다 넓은 권한을 못 가져서, 여기서
+# 좁히면 워크플로우가 시작조차 못 한다(release-deploy.yml 과 같은 함정).
+permissions:
+  contents: write
+  actions: read
+
+env:
+  # verify 잡(analyze·test)에서만 쓴다. ci-flutter-test.yml·release-deploy.yml 과
+  # 같은 버전으로 맞춘다.
+  FLUTTER_VERSION: '3.44.0'
+
+  # shorebird 에 넘기는 Flutter 버전. **릴리즈를 뽑을 때 쓴 값과 같아야 한다** —
+  # 패치는 그 릴리즈에 붙는 것이라 다른 Flutter 로 만들면 붙지 않는다.
+  SHOREBIRD_FLUTTER_VERSION: '3.44.6'
+
+jobs:
+  # ── [1] 태그 형식·패치 가능 여부 확인 + 단위/위젯 테스트 ──────────────────
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.parse.outputs.release_version }}
+      patch_number: ${{ steps.parse.outputs.patch_number }}
+    steps:
+      # 패치 가능 여부를 보려면 릴리즈 태그와의 diff 가 필요하다 — 전체 히스토리를 받는다.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 태그에서 릴리즈 버전·패치 번호를 읽는다
+        id: parse
+        run: |
+          set -euo pipefail
+          # patch/1.0.42+92/1 → 릴리즈 버전 1.0.42+92, 패치 번호 1 (CLAUDE.md 태그 규칙).
+          REF="${GITHUB_REF_NAME#patch/}"
+          RELEASE_VERSION="${REF%/*}"
+          PATCH_NUMBER="${REF##*/}"
+          echo "릴리즈 버전: $RELEASE_VERSION / 패치 번호: $PATCH_NUMBER"
+
+          if [ "$RELEASE_VERSION" = "$REF" ] || [ -z "$PATCH_NUMBER" ]; then
+            echo "::error::태그 형식이 patch/<릴리즈 버전>/<번호> 가 아니다 (예: patch/1.0.42+92/1)."
+            exit 1
+          fi
+          if ! printf '%s' "$PATCH_NUMBER" | grep -qE '^[0-9]+$'; then
+            echo "::error::패치 번호($PATCH_NUMBER)가 숫자가 아니다. 같은 릴리즈에 낼 때마다 1부터 올린다."
+            exit 1
+          fi
+          if ! printf '%s' "$RELEASE_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$'; then
+            echo "::error::릴리즈 버전($RELEASE_VERSION)이 <x.y.z>+<빌드> 형식이 아니다."
+            exit 1
+          fi
+
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "patch_number=$PATCH_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: annotated 태그인지 확인
+        run: |
+          set -euo pipefail
+          # 패치도 릴리즈와 같은 이유로 annotated 여야 한다 — lightweight 태그는
+          # 자기 날짜가 없어 커밋 날짜로 대체되는데, 알고 싶은 건 패치를 낸 시각이다
+          # (CLAUDE.md: -a 필수).
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          TYPE=$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")
+          if [ "$TYPE" != "tag" ]; then
+            echo "::error::$GITHUB_REF_NAME 이 lightweight 태그다. 'git tag -a' 로 다시 찍어라."
+            exit 1
+          fi
+
+      - name: pubspec 버전이 패치 대상 릴리즈와 같은지 확인
+        run: |
+          set -euo pipefail
+          # 패치는 그 릴리즈 빌드 위에 붙는다. pubspec 이 이미 다음 버전으로
+          # 올라가 있으면 다른 릴리즈를 패치하려는 것이다 — shorebird 가
+          # "release not found" 로 끊기기 전에 여기서 막는다.
+          PUBSPEC_VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
+          TARGET="${{ steps.parse.outputs.release_version }}"
+          echo "pubspec: $PUBSPEC_VERSION / 패치 대상: $TARGET"
+          if [ "$PUBSPEC_VERSION" != "$TARGET" ]; then
+            echo "::error::pubspec version($PUBSPEC_VERSION)이 패치 대상($TARGET)과 다르다."
+            echo "::error::구버전에 패치할 때는 그 릴리즈 커밋을 worktree 로 checkout 해서 픽스만 cherry-pick 한다 (CLAUDE.md)."
+            exit 1
+          fi
+
+      - name: 패치로 나갈 수 없는 변경이 섞였는지 확인
+        run: |
+          set -euo pipefail
+          # 패치는 Dart 코드만 배포한다. 네이티브·에셋 변경은 조용히 빠진 채로
+          # 패치가 나가서, 그 코드를 기대하는 Dart 가 런타임에 깨진다.
+          RELEASE_TAG="release/${{ steps.parse.outputs.release_version }}"
+          if ! git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG" 2>/dev/null || true
+          fi
+          if ! git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "::warning::$RELEASE_TAG 태그가 없어 변경 범위를 비교하지 못했다. 네이티브·에셋 변경이 없는지 직접 확인하라."
+            exit 0
+          fi
+
+          # 릴리즈 시점 대비 지금까지의 변경 목록.
+          CHANGED=$(git diff --name-only "refs/tags/$RELEASE_TAG" HEAD)
+          echo "── 릴리즈 이후 바뀐 파일 ──"
+          echo "$CHANGED"
+
+          BLOCKED=$(printf '%s\n' "$CHANGED" | grep -E '^(ios/|android/|assets/|macos/|windows/|linux/)' || true)
+          if [ -n "$BLOCKED" ]; then
+            echo "::error::패치로 나갈 수 없는 변경이 있다 — 네이티브·에셋은 스토어 재제출이 필요하다:"
+            printf '%s\n' "$BLOCKED" | while read -r f; do echo "::error::  $f"; done
+            exit 1
+          fi
+
+          # pubspec 의 dependencies 가 바뀌었으면 네이티브 의존성일 수 있다.
+          # version 줄만 바뀐 경우는 통과시킨다(패치는 version 을 올리지 않지만,
+          # 릴리즈 준비 커밋이 섞여 들어올 수 있다).
+          if printf '%s\n' "$CHANGED" | grep -qx 'pubspec.yaml'; then
+            DEP_DIFF=$(git diff "refs/tags/$RELEASE_TAG" HEAD -- pubspec.yaml | grep -E '^[+-][[:space:]]+[a-z_0-9]+:' || true)
+            if [ -n "$DEP_DIFF" ]; then
+              echo "::error::pubspec 의존성이 바뀌었다. 순수 Dart 패키지면 넘겨도 되지만, 네이티브 의존성이면 패치로 못 나간다:"
+              printf '%s\n' "$DEP_DIFF" | while read -r l; do echo "::error::  $l"; done
+              echo "::error::확인했고 순수 Dart 라면 이 스텝을 임시로 건너뛰지 말고, 릴리즈로 내보내는 쪽을 먼저 검토하라."
+              exit 1
+            fi
+          fi
+
+          echo "✅ Dart 코드 변경만 있다 — 패치로 나갈 수 있다."
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  # ── [2] e2e — 패치는 통과를 **기다린다** ──────────────────────────────────
+  # 릴리즈는 빌드와 병렬로 돌리고 업로드 직전에 결과를 본다(macOS 러너가 느리고
+  # 비싸서 순차로 묶으면 전체가 길어진다). 패치는 빌드가 가볍고, 한번 올리면
+  # 심사 없이 사용자에게 바로 가므로 통과 전에 내보내지 않는다.
+  e2e:
+    needs: verify
+    uses: ./.github/workflows/e2e-release-check.yml
+    secrets: inherit
+
+  # ── [3-a] iOS 패치 ────────────────────────────────────────────────────────
+  patch-ios:
+    needs: [verify, e2e]
+    runs-on: macos-latest
+    outputs:
+      patch_number: ${{ steps.patch.outputs.patch-number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Flutter 를 따로 설치하지 않는다 — shorebird 가 자기 Flutter 리비전을
+      # 들고 와서 빌드한다(release-deploy.yml 과 같은 이유).
+      - uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      - name: Secrets.xcconfig 복원 (네이버 Client Secret)
+        env:
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
+          # 프로젝트에 Release 면 빌드를 실패시키는 가드가 들어가 있어, 복원하지
+          # 않으면 빌드 단계에서 멈춘다(release-deploy.yml 과 같은 이유).
+          if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
+            echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다."
+            exit 1
+          fi
+          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > ios/Flutter/Secrets.xcconfig
+
+      - name: shorebird patch ios
+        id: patch
+        uses: shorebirdtech/shorebird-patch@v1
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        with:
+          platform: ios
+          release-version: ${{ needs.verify.outputs.release_version }}
+          # --no-confirm: CI 에 사람이 없다. 확인 프롬프트에서 멈추면 잡이 타임아웃까지 매달린다.
+          args: '--no-confirm'
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-patch-logs
+          path: |
+            ~/Library/Application Support/shorebird/logs/
+          if-no-files-found: ignore
+
+  # ── [3-b] Android 패치 ────────────────────────────────────────────────────
+  patch-android:
+    needs: [verify, e2e]
+    runs-on: ubuntu-latest
+    outputs:
+      patch_number: ${{ steps.patch.outputs.patch-number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      # 릴리즈 서명 키가 필요하다. 패치는 그 릴리즈 빌드에 붙는 것이라
+      # 같은 키로 서명해야 한다. 파일명·경로·형식은 release-deploy.yml 과
+      # 글자까지 같아야 한다(다르면 build.gradle.kts 가 조용히 debug 서명으로 떨어진다).
+      - name: 릴리즈 서명 키 복원
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 Secret 이 비어 있다."
+            exit 1
+          fi
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          # heredoc 을 쓰지 않는다 — YAML 블록 안에서는 들여쓰기가 파일 내용에
+          # 그대로 들어가고 닫는 토큰이 0번 칼럼이 아니어서 끝나지 않는다.
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=./upload-keystore.jks\n' \
+            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          for f in android/upload-keystore.jks android/key.properties; do
+            if [ ! -s "$f" ]; then
+              echo "::error::$f 복원 실패 — debug 서명으로 빌드될 수 있어 중단한다."
+              exit 1
+            fi
+          done
+
+      - name: naver_secrets.xml 복원
+        env:
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
+            echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다."
+            exit 1
+          fi
+          # heredoc 을 쓰지 않는 이유는 위 서명 키 복원 스텝의 주석과 같다.
+          printf '%s\n<resources>\n    <string name="naver_client_secret">%s</string>\n</resources>\n' \
+            '<?xml version="1.0" encoding="utf-8"?>' "$NAVER_CLIENT_SECRET" \
+            > android/app/src/main/res/values/naver_secrets.xml
+
+      - name: shorebird patch android
+        id: patch
+        uses: shorebirdtech/shorebird-patch@v1
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        with:
+          platform: android
+          release-version: ${{ needs.verify.outputs.release_version }}
+          args: '--no-confirm'
+
+      - name: 실패 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-patch-logs
+          path: |
+            ~/.local/share/shorebird/logs/
+          if-no-files-found: ignore
+
+  # ── [4] 알림 ──────────────────────────────────────────────────────────────
+  notify:
+    needs: [verify, e2e, patch-ios, patch-android]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord 알림
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL || secrets.DISCORD_PR_WEBHOOK_URL }}
+          RELEASE_VERSION: ${{ needs.verify.outputs.release_version }}
+          PATCH_NUMBER: ${{ needs.verify.outputs.patch_number }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          R_VERIFY: ${{ needs.verify.result }}
+          R_E2E: ${{ needs.e2e.result }}
+          R_IOS: ${{ needs.patch-ios.result }}
+          R_ANDROID: ${{ needs.patch-android.result }}
+          N_IOS: ${{ needs.patch-ios.outputs.patch_number }}
+          N_ANDROID: ${{ needs.patch-android.outputs.patch_number }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "🔴" ;;
+              cancelled) echo "⚪" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "❔" ;;
+            esac
+          }
+          # cancelled 를 실패와 구분한다 — 사람이 일부러 멈춘 것까지 빨간 "실패" 로
+          # 나가면 아무도 안 깨뜨렸는데 막힌 것처럼 보인다(release-deploy.yml 과 같은 판단).
+          if [ "$R_IOS" = "success" ] && [ "$R_ANDROID" = "success" ]; then
+            TITLE="🐦 패치 배포 완료 — $RELEASE_VERSION (patch $PATCH_NUMBER)"
+            COLOR=3066993
+            FOOTER="사용자는 앱을 두 번 재실행하면 받는다. 업데이트 팝업은 뜨지 않는다."
+          elif [ "$R_IOS" = "cancelled" ] || [ "$R_ANDROID" = "cancelled" ]; then
+            TITLE="⚪ 패치 중단 — $RELEASE_VERSION (patch $PATCH_NUMBER)"
+            COLOR=9807270
+            FOOTER="사람이 멈췄다."
+          else
+            TITLE="🔴 패치 실패 — $RELEASE_VERSION (patch $PATCH_NUMBER)"
+            COLOR=15158332
+            FOOTER="한쪽만 나갔으면 플랫폼별로 적용 상태가 어긋난다. 로그를 보고 같은 번호로 다시 밀지 말고 번호를 올려 다시 낸다."
+          fi
+
+          DESC=$(printf '%s verify\n%s e2e\n%s iOS%s\n%s Android%s' \
+            "$(icon "$R_VERIFY")" \
+            "$(icon "$R_E2E")" \
+            "$(icon "$R_IOS")" "${N_IOS:+ (patch $N_IOS)}" \
+            "$(icon "$R_ANDROID")" "${N_ANDROID:+ (patch $N_ANDROID)}")
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$DESC" \
+            --arg url "$RUN_URL" \
+            --arg footer "$FOOTER" \
+            --argjson color "$COLOR" \
+            '{embeds: [{title: $title, description: $desc, url: $url, color: $color, footer: {text: $footer}}]}' \
+            | curl -sf -H "Content-Type: application/json" -X POST "$WEBHOOK" -d @-
