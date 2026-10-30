@@ -20,7 +20,15 @@ class NarSpoilerToggle extends StatelessWidget {
     this.textColor = AppColors.narTextTertiary,
     this.gap = 12,
     this.verticalPadding = 8,
+    this.showState = true,
   });
+
+  /// 라벨에 ON/OFF 를 함께 쓸지.
+  ///
+  /// false 면 '스포방지' 만 쓰고 상태는 옆 스위치로 읽는다. 폭이 빠듯한
+  /// 헤더(경기일정처럼 월 라벨·필터와 한 줄을 나눠 쓰는 곳)에서 쓴다 —
+  /// ON/OFF 두 글자가 붙으면 그만큼 월 라벨이 밀려 잘린다.
+  final bool showState;
 
   final bool value;
   final ValueChanged<bool>? onChanged;
@@ -50,7 +58,9 @@ class NarSpoilerToggle extends StatelessWidget {
             // 좁은 폭에서 토글까지 밀어내 오버플로가 나지 않게 라벨만 줄인다.
             Flexible(
               child: Text(
-                value ? l.spoilerPreventionOn : l.spoilerPreventionOff,
+                showState
+                    ? (value ? l.spoilerPreventionOn : l.spoilerPreventionOff)
+                    : l.spoilerPrevention,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,

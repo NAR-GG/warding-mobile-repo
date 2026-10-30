@@ -316,6 +316,63 @@ class MatchListViewModel extends ChangeNotifier {
     _loadLeagues();
   }
 
+  /// 목록이 어느 달부터 시작할지. null 이면 '오늘'부터.
+  ///
+  /// 위쪽 캘린더가 보고 있는 달을 따라간다 — 10월로 넘기면 목록도 10/1 부터
+  /// 다시 시작한다. 거기서 아래로 계속 스크롤하면 11월·12월로 평소처럼
+  /// 이어진다(월 경계에서 끊지 않는다). 이번 달이면 '오늘' 기준 그대로다.
+  DateTime? _anchorMonth;
+
+  DateTime? get anchorMonth => _anchorMonth;
+
+  /// 목록 시작 달을 [month] 로 옮기고 다시 조회한다.
+  ///
+  /// 같은 달이면 아무것도 하지 않는다 — 캘린더를 좌우로 스와이프하는 동안
+  /// 매 프레임 불릴 수 있어서, 같은 달에 재조회가 걸리면 목록이 계속 처음으로
+  /// 되돌아간다.
+  void setAnchorMonth(DateTime month) {
+    final normalized = DateTime(month.year, month.month);
+    if (_anchorMonth == normalized) return;
+    final first = _anchorMonth == null;
+    _anchorMonth = normalized;
+    // 첫 통지는 보통 '이번 달'이다. 그 값은 기본 동작('오늘' 기준)과 같으니
+    // 기억만 해 두고 재조회하지 않는다 — 안 그러면 화면에 들어오자마자
+    // 진입 조회와 겹쳐 같은 목록을 두 번 받는다.
+    final now = DateTime.now();
+    if (first && normalized.year == now.year && normalized.month == now.month) {
+      return;
+    }
+    _reloadSchedule();
+  }
+
+  /// 필터를 초기 상태(최신 시즌·리그 전체·팀 전체)로 되돌린다.
+  ///
+  /// 필터 시트의 '초기화'가 쓴다. 정렬은 건드리지 않는다 — 필터가 아니라
+  /// 보기 방식이라, 초기화로 같이 뒤집히면 의도치 않은 변화로 느껴진다.
+  void resetFilter() {
+    final season = seasons.last;
+    final alreadyDefault =
+        _selectedSeason == season &&
+        _selectedLeague == allLeagueLabel &&
+        _selectedTeams.length == 1 &&
+        _selectedTeams.contains(allTeamsLabel);
+    if (alreadyDefault) return;
+
+    final seasonChanged = _selectedSeason != season;
+    _selectedSeason = season;
+    _selectedLeague = allLeagueLabel;
+    _updateTeams();
+    _persistFilter();
+    notifyListeners();
+    // 시즌이 바뀌면 리그 목록부터 다시 받아야 한다([_loadLeagues] 가 끝나며
+    // 재조회까지 이어 간다). 아니면 곧장 목록만 다시 조회한다.
+    if (seasonChanged) {
+      _loadLeagues();
+    } else {
+      _reloadSchedule();
+    }
+  }
+
   void selectLeague(String league) {
     if (_selectedLeague == league) return;
     _selectedLeague = league;
@@ -668,7 +725,17 @@ class MatchListViewModel extends ChangeNotifier {
 
   /// 서버 `from`/`around` 파라미터에 쓸 오늘 날짜(`yyyy-MM-dd`).
   String _todayParam() {
+    final anchor = _anchorMonth;
+    // 캘린더가 보고 있는 달이 지정돼 있으면 그 달 1일부터 시작한다.
+    // 이번 달이면 '오늘'을 그대로 써서 기존 진입과 똑같이 동작한다 —
+    // 이번 달을 보면서 월초부터 보여 주면 이미 끝난 경기만 한 화면 가득
+    // 차고 '오늘로 스크롤'도 의미가 없어진다.
     final now = DateTime.now();
+    if (anchor != null &&
+        !(anchor.year == now.year && anchor.month == now.month)) {
+      return '${anchor.year}-'
+          '${anchor.month.toString().padLeft(2, '0')}-01';
+    }
     return '${now.year}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';

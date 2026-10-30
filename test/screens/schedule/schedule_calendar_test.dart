@@ -44,9 +44,11 @@ class _HostState extends State<_Host> {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
+        // 캘린더는 아래 경기 리스트와 세로를 나눠 쓰므로 자기 행 수만큼만
+        // 차지한다(화면도 같은 방식으로 얹는다). 높이를 고정해 주면 그보다
+        // 작게 그려져 PageView 가 가운데를 벗어난다.
         body: SizedBox(
           width: 375,
-          height: 600,
           child: ScheduleCalendar(
             month: month,
             matchesOfMonth: widget.matchesOfMonth ?? (_) => const {},

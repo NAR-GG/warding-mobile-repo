@@ -50,6 +50,29 @@ class CalendarMonthLabel extends StatelessWidget {
     // 재서 고정한다.
     final width = _measure(labelOf(_monthAt(from)), style);
 
+    // 정착 상태에서는 그냥 [Text] 로 그린다.
+    //
+    // 폭을 재서 고정하고 [ClipRect] 로 자르는 건 **스와이프 중 두 라벨을
+    // 겹쳐 그릴 때만** 필요하다(폭이 프레임마다 변하면 옆 요소가 흔들린다).
+    // 그런데 라벨 폰트 'SF Pro Display' 는 pubspec 에 싣지 않은 시스템
+    // 폰트라, [TextPainter] 가 재는 시점의 폴백과 iOS 가 실제로 그리는
+    // 글꼴이 달라 몇 px 어긋난다 — 그 상태로 자르면 `...` 도 없이 마지막
+    // 글자가 썰린다('2026.01' → '2026.0'). 정착 상태에는 겹칠 라벨이
+    // 아예 없으니 자를 이유도 없다.
+    //
+    // `t == 0` 으로 정확히 비교하면 안 된다 — [PageController.page] 는
+    // 정착해도 1e-8 같은 찌꺼기를 남겨서, 사실상 멈춰 있는데도 겹침
+    // 경로를 타고 라벨이 잘린 채로 머문다. 눈에 보이지 않을 만큼
+    // 작은 진행률은 정착으로 본다.
+    if (t < 0.001 || t > 0.999) {
+      return Text(
+        labelOf(_monthAt(t > 0.999 ? from + 1 : from)),
+        maxLines: 1,
+        softWrap: false,
+        style: style,
+      );
+    }
+
     return SizedBox(
       width: width,
       height: lineHeight,
@@ -68,19 +91,13 @@ class CalendarMonthLabel extends StatelessWidget {
               offset: -t,
               opacity: 1 - t,
             ),
-            // 정착 상태(t == 0)면 들어오는 라벨은 화면 밖이라 그릴 필요가
-            // 없다. 그래도 자식 수와 순서는 유지해 위젯 트리가 흔들리지
-            // 않게 SizedBox.shrink 로 자리만 남긴다.
-            if (t == 0)
-              const SizedBox.shrink()
-            else
-              _slot(
-                text: labelOf(_monthAt(from + 1)),
-                style: style,
-                lineHeight: lineHeight,
-                offset: 1 - t,
-                opacity: t,
-              ),
+            _slot(
+              text: labelOf(_monthAt(from + 1)),
+              style: style,
+              lineHeight: lineHeight,
+              offset: 1 - t,
+              opacity: t,
+            ),
           ],
         ),
       ),

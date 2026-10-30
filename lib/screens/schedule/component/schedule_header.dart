@@ -1,16 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../../l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../components/nar_spoiler_toggle.dart';
 import '../../../model/team.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 
 /// 경기 일정 페이지 상단 헤더.
 ///
-/// - 왼쪽: 'yyyy.MM' 월 + 달력·펼침 아이콘, 그 아래 요약 텍스트.
-/// - 오른쪽: 필터 버튼(44 원형).
+/// - 왼쪽: 'yyyy.MM' 월 라벨(탭 → 월 피커).
+/// - 오른쪽: 스포방지 토글 · 필터 버튼(44 원형) · 응원팀 아이콘.
+///
+/// 스포방지는 값이 null 이면 그리지 않는다 — 캘린더와 경기 리스트를 한 화면에
+/// 합치며 들어온 것이라, 그 맥락이 아닌 곳에서는 빠진다. 캘린더 월간/주간
+/// 전환은 헤더가 아니라 캘린더 아래 화살표 손잡이가 맡는다.
 ///
 /// 시안 폭 375 기준으로 내부에서 [MediaQuery] 폭에 맞춰 스케일한다.
 class ScheduleHeader extends StatelessWidget {
@@ -18,14 +22,35 @@ class ScheduleHeader extends StatelessWidget {
     super.key,
     required this.monthLabel,
     this.monthLabelWidget,
-    this.summary,
     this.onMonthTap,
     this.onFilterTap,
     this.hasActiveFilter = false,
     this.preferredTeam,
     this.teamSelected = false,
     this.onTeamTap,
+    this.spoilerPreventionEnabled,
+    this.spoilerListenable,
+    this.onSpoilerChanged,
   });
+
+  /// 스포방지 상태를 읽는 함수. null 이면 토글을 그리지 않는다.
+  ///
+  /// 값이 아니라 **함수**로 받는다 — 토글만 [spoilerListenable] 을 구독해
+  /// 따로 다시 그리므로, 헤더가 다시 빌드되지 않은 사이에도 최신 값을
+  /// 읽어야 한다.
+  ///
+  /// 경기 리스트가 같은 화면 아래에 들어오면서 리스트 쪽 제목 행이 사라졌고,
+  /// 그 행에 있던 토글이 이 헤더로 올라왔다.
+  final bool Function()? spoilerPreventionEnabled;
+
+  /// 스포방지 값을 들고 있는 알림원(경기 리스트 VM).
+  ///
+  /// 이것만 토글 위젯이 구독한다. 헤더 전체가 이 VM 을 구독하면 목록을
+  /// 스크롤하는 내내(조회·로딩 통지) 헤더가 통째로 다시 그려진다.
+  final Listenable? spoilerListenable;
+
+  /// 스포방지 토글 콜백.
+  final ValueChanged<bool>? onSpoilerChanged;
 
   /// 'yyyy.MM' 형식 월 라벨. 예: '2026.04'.
   final String monthLabel;
@@ -45,9 +70,6 @@ class ScheduleHeader extends StatelessWidget {
     letterSpacing: 0,
     color: AppColors.narText,
   );
-
-  /// 월 아래 요약 텍스트. null 이면 l.monthlyScheduleSummary 를 사용한다.
-  final String? summary;
 
   /// 월·달력 영역 탭 콜백. null 이면 비활성.
   final VoidCallback? onMonthTap;
@@ -70,7 +92,6 @@ class ScheduleHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
@@ -78,51 +99,52 @@ class ScheduleHeader extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       child: Row(
         children: [
-          // 왼쪽: 월 + 요약
+          // 왼쪽: 월 라벨(탭 → 월 피커).
+          //
+          // [Flexible] 과 [Spacer] 를 같이 두면 안 된다 — 둘 다 flex 1 이라
+          // 남는 폭을 **반씩 나눠 갖고**, 그래서 라벨이 자기 폭을 다 못 받아
+          // '2026.10' 이 '2026…' 으로 줄어든다.
+          //
+          // 라벨은 그냥 내용 폭을 쓰고, 폭이 모자랄 때만 줄어들게 한다.
+          // 그 '모자랄 때' 는 아래 [Flexible] 이 감싼 토글이 먼저 양보해
+          // 처리한다(라벨보다 토글 라벨이 줄어드는 편이 낫다).
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: onMonthTap,
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      monthLabelWidget ??
-                          Text(monthLabel, style: monthLabelStyle(scale)),
-                      SizedBox(width: 8 * scale),
-                      SvgPicture.asset(
-                        'assets/icons/nar_calendar.svg',
-                        width: 22 * scale,
-                        height: 22 * scale,
-                      ),
-                      SizedBox(width: 4 * scale),
-                      SvgPicture.asset(
-                        'assets/icons/chevron-down.svg',
-                        width: 16 * scale,
-                        height: 16 * scale,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 4 * scale),
-                Text(
-                  summary ?? l.monthlyScheduleSummary,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16 * scale,
-                    height: 1.55, // 155%
-                    letterSpacing: 0,
-                    color: AppColors.narTextGnbDefault,
-                  ),
-                ),
-              ],
+            child: GestureDetector(
+              onTap: onMonthTap,
+              behavior: HitTestBehavior.opaque,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child:
+                    monthLabelWidget ??
+                    Text(
+                      monthLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: monthLabelStyle(scale),
+                    ),
+              ),
             ),
           ),
-          SizedBox(width: 12 * scale),
+          // 오른쪽 묶음: 스포방지 토글 · 필터 버튼 · 응원팀 아이콘.
+          // 토글은 자기 내용 폭을 그대로 쓴다(라벨이 'OFF'·영문일 때 더 길다).
+          if (spoilerPreventionEnabled != null) ...[
+            // 토글은 **자기 내용 폭만** 쓴다. [Flexible] 로 두면 위
+            // [Expanded] 와 flex 를 나눠 갖느라 필요 이상으로 넓어지고,
+            // 그만큼 월 라벨이 줄어 '2026…' 이 된다.
+            ListenableBuilder(
+              listenable: spoilerListenable ?? const _NeverNotifies(),
+              builder: (context, _) => NarSpoilerToggle(
+                value: spoilerPreventionEnabled!(),
+                onChanged: onSpoilerChanged ?? (_) {},
+                scale: scale,
+                // 라벨은 '스포방지' 만. ON/OFF 는 옆 스위치로 읽는다 —
+                // 두 글자를 더 쓰면 390 폭에서 전체가 넘친다.
+                showState: false,
+              ),
+            ),
+            SizedBox(width: 8 * scale),
+          ],
           // 오른쪽: 필터 버튼 + (온보딩에서 고른) 팀 아이콘.
           // 알림함 벨은 커뮤니티 헤더로 옮겼다 — 알림함이 커뮤니티 전용이 됐다.
           GestureDetector(
@@ -214,4 +236,14 @@ class _CircleSlot extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 아무것도 알리지 않는 [Listenable]. [ScheduleHeader.spoilerListenable] 이
+/// 없을 때 [ListenableBuilder] 에 넘길 자리를 채운다.
+class _NeverNotifies implements Listenable {
+  const _NeverNotifies();
+  @override
+  void addListener(VoidCallback listener) {}
+  @override
+  void removeListener(VoidCallback listener) {}
 }

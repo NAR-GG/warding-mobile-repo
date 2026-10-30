@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../model/calendar_week_start.dart';
 import 'calendar_match.dart';
 import 'calendar_month_grid.dart';
 import 'calendar_weekday_header.dart';
 
-// CalendarMatch 를 함께 노출 — 이 파일만 import 해도 타입을 쓸 수 있다.
+// CalendarMatch 와 그리드 상수를 함께 노출 — 이 파일만 import 해도
+// 타입과 주 수(gridWeeks)를 쓸 수 있다.
 export 'calendar_match.dart';
+export 'calendar_month_grid.dart' show CalendarMonthGrid;
 
 /// 캘린더의 좌우 스와이프 진행 상태.
 ///
@@ -88,6 +91,17 @@ class ScheduleCalendar extends StatefulWidget {
   /// 프레임·같은 진행률로 움직인다. null 이면 캘린더는 그리드만 그린다.
   final ValueNotifier<CalendarScrollProgress>? scrollProgress;
 
+  /// 월간 한 행의 높이(스케일 적용 전).
+  ///
+  /// 6주를 기본 최소값(64)으로 그리면 384 — 화면 세로의 절반을 먹어 아래
+  /// 목록이 거의 안 남는다. 목록과 나눠 쓰는 지금은 월간을 조밀하게 간다.
+  ///
+  /// 56 은 '칩 두 개가 보이는' 최소값이다(날짜 줄 18 + 칩 15×2 + 간격 1).
+  /// 48 일 때는 한 개밖에 안 들어가 하루에 경기가 둘 이상인 날이 전부
+  /// dots 로만 보였다. 62 면 dots 까지 같이 들어가지만 그만큼 목록이 줄어
+  /// 카드가 한 장도 온전히 안 보여서, 월간은 여기서 멈춘다.
+  static const double monthRowHeight = 56.0;
+
   @override
   State<ScheduleCalendar> createState() => _ScheduleCalendarState();
 }
@@ -142,6 +156,12 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
   }
 
   /// 현재 스크롤 위치를 [ScheduleCalendar.scrollProgress] 로 밀어낸다.
+  ///
+  /// 빌드/레이아웃 중에 불릴 수 있다 — 캘린더를 [AnimatedSize] 로 감싸면
+  /// 그 레이아웃이 `PageController` 리스너를 같은 프레임에 깨운다. 그때
+  /// 곧바로 값을 바꾸면 이 노티파이어를 구독하는 헤더 라벨이 빌드 도중에
+  /// `setState` 를 맞아 'setState() called during build' 로 죽고, 그
+  /// 프레임의 제스처 등록까지 함께 날아간다(월·주 스와이프가 먹통이 된다).
   void _publishProgress() {
     final notifier = widget.scrollProgress;
     if (notifier == null || !mounted) return;
@@ -149,10 +169,25 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
         _controller.hasClients && _controller.position.haveDimensions
         ? (_controller.page ?? _initialPage.toDouble())
         : _initialPage.toDouble();
-    notifier.value = CalendarScrollProgress(
+    final next = CalendarScrollProgress(
       month: _baseMonth,
       page: position - _initialPage,
     );
+    if (notifier.value == next) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    final duringBuild =
+        phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+    if (duringBuild) {
+      // 이 프레임이 끝난 뒤에 알린다. 한 프레임 늦지만 정착 상태에서는
+      // 눈에 띄지 않고, 스와이프 중에는 어차피 매 프레임 갱신된다.
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) notifier.value = next;
+      });
+      return;
+    }
+    notifier.value = next;
   }
 
   @override
@@ -256,6 +291,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     super.dispose();
   }
 
+
   /// 페이지 [delta] 위치의 월 그리드. 아직 데이터가 없는 달은 날짜 칸만
   /// 그린다 — 부모가 그 달을 받아 오면 다음 build 에서 칩이 채워진다.
   Widget _buildPage(int delta, double scale) {
@@ -265,6 +301,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
       month: month,
       scale: scale,
       weekStart: widget.weekStart,
+      minRowHeightOverride: ScheduleCalendar.monthRowHeight,
       selectedDate: widget.selectedDate,
       onDateTap: widget.onDateTap,
       matchesOf: (date) {
@@ -281,13 +318,29 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
     final width = MediaQuery.of(context).size.width;
     final scale = width.clamp(320.0, 430.0) / 375;
 
+    // 캘린더는 아래 경기 리스트와 한 화면을 나눠 쓰므로 세로를 다 먹지 않고
+    // 자기 행 수만큼만 차지한다. 행 높이는 그리드의 최소값을 그대로 쓴다 —
+    // 월간(6주)↔주간(1주) 전환에서 행 높이가 변하면 접히는 동안 칸 안의
+    // 내용이 같이 늘었다 줄어 흔들린다.
+    // 월간 6주를 최소 행 높이(64)로 그리면 384 — 화면 세로의 절반을 먹어
+    // 아래 목록이 거의 안 남는다. 캘린더가 화면을 통째로 쓰던 시절의 값이라
+    // 목록과 나눠 쓰는 지금은 월간만 더 조밀하게 간다. 칸 안에는 날짜 숫자와
+    // 칩 한 줄(+넘치면 dots)이 들어가는데 48 이면 그게 유지된다.
+    //
+    // 주간은 한 줄뿐이라 줄일 이유가 없고, 접었을 때 칸이 커 보이는 편이
+    // 날짜를 고르기도 쉽다.
+    const weeks = CalendarMonthGrid.gridWeeks;
+    final rowHeight = ScheduleCalendar.monthRowHeight * scale;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8 * scale),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CalendarWeekdayHeader(scale: scale, weekStart: widget.weekStart),
-          Expanded(
+          SizedBox(
+            height: rowHeight * weeks,
             child: NotificationListener<ScrollEndNotification>(
               onNotification: (notification) {
                 if (notification.depth == 0) _onScrollEnd();
