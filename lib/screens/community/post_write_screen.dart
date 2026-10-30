@@ -14,10 +14,10 @@ import '../../model/community_post_block.dart';
 import '../../model/community_remote_post.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/community/post_write_viewmodel.dart';
-import 'community_rules.dart';
 import 'component/community_draft_sheet.dart';
 import 'component/community_image.dart';
-import 'component/community_rules_sheet.dart';
+import 'component/post_poll_composer.dart';
+import 'component/post_write_rules.dart';
 
 /// 글쓰기 — 제목 + **블록 에디터**(텍스트 사이에 사진·링크·임베드를 끼워 넣는
 /// 샌드위치 구성). 본문은 bodyFormat=BLOCKS 로 나간다.
@@ -736,14 +736,38 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                     for (final block in _blocks) _blockWidget(l, scale, block),
                     if (_pollEnabled) ...[
                       SizedBox(height: 12 * scale),
-                      _pollComposer(l, scale),
+                      PostPollComposer(
+                        scale: scale,
+                        question: _pollQuestion,
+                        options: _pollOptions,
+                        maxOptions: _maxPollOptions,
+                        allowMultiple: _pollAllowMultiple,
+                        alwaysShowResults: _pollAlwaysShowResults,
+                        onChanged: _onChanged,
+                        onClose: _togglePoll,
+                        onAddOption: () => setState(
+                          () => _pollOptions.add(TextEditingController()),
+                        ),
+                        onRemoveOption: (i) => setState(() {
+                          final removed = _pollOptions.removeAt(i);
+                          // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
+                          // 아직 붙어 있어 assertion 크래시(실사고).
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => removed.dispose(),
+                          );
+                        }),
+                        onAllowMultipleChanged: (v) =>
+                            setState(() => _pollAllowMultiple = v),
+                        onAlwaysShowResultsChanged: (v) =>
+                            setState(() => _pollAlwaysShowResults = v),
+                      ),
                     ],
                     // 이용규칙 안내는 빈 화면에서만 — 쓰기 시작하면 걷어서
                     // 본문 아래에 낯선 문단이 떠 있는 것처럼 보이지 않게 한다.
                     // 전문은 언제든 상세 시트(showCommunityRulesSheet)로 볼 수 있다.
                     if (!_hasContent && !_pollEnabled) ...[
                       SizedBox(height: 24 * scale),
-                      _rules(l, scale),
+                      PostWriteRules(scale: scale),
                     ],
                   ],
                 ),
@@ -991,237 +1015,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   );
 
   /// 투표 컴포저 — 질문 + 선택지 2~4개. 우측 상단 ✕로 통째로 제거.
-  Widget _pollComposer(AppLocalizations l, double scale) {
-    return Container(
-      padding: EdgeInsets.all(14 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narDark600,
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: AppColors.narLine2, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.poll_outlined,
-                  size: 15 * scale, color: AppColors.narViolet3),
-              SizedBox(width: 5 * scale),
-              Expanded(
-                child: Text(
-                  l.communityPollLabel,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13 * scale,
-                    height: 1.45,
-                    color: AppColors.narText,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _togglePoll,
-                child: Icon(Icons.close,
-                    size: 16 * scale, color: AppColors.narText2),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          TextField(
-            controller: _pollQuestion,
-            maxLength: 100,
-            onChanged: (_) => _onChanged(),
-            style: _inputStyle(scale, 13.5, weight: FontWeight.w600),
-            cursorColor: AppColors.narViolet3,
-            decoration: _pollFieldDecoration(l.communityPollQuestionHint, scale),
-          ),
-          SizedBox(height: 8 * scale),
-          for (var i = 0; i < _pollOptions.length; i++) ...[
-            if (i > 0) SizedBox(height: 6 * scale),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _pollOptions[i],
-                    maxLength: 50,
-                    onChanged: (_) => _onChanged(),
-                    style: _inputStyle(scale, 13),
-                    cursorColor: AppColors.narViolet3,
-                    decoration: _pollFieldDecoration(
-                        '${l.communityPollOptionHint} ${i + 1}', scale),
-                  ),
-                ),
-                if (_pollOptions.length > 2)
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => setState(() {
-                      final removed = _pollOptions.removeAt(i);
-                      // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
-                      // 아직 붙어 있어 assertion 크래시(실사고).
-                      WidgetsBinding.instance
-                          .addPostFrameCallback((_) => removed.dispose());
-                    }),
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 8 * scale),
-                      child: Icon(Icons.remove_circle_outline,
-                          size: 17 * scale, color: AppColors.narText2),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-          if (_pollOptions.length < _maxPollOptions) ...[
-            SizedBox(height: 8 * scale),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () =>
-                  setState(() => _pollOptions.add(TextEditingController())),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add,
-                      size: 15 * scale, color: AppColors.narViolet3),
-                  SizedBox(width: 4 * scale),
-                  Text(
-                    l.communityPollAddOption,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12.5 * scale,
-                      height: 1.4,
-                      color: AppColors.narViolet3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          SizedBox(height: 10 * scale),
-          _pollSwitchRow(
-            scale,
-            label: l.communityPollAllowMultiple,
-            value: _pollAllowMultiple,
-            onChanged: (v) => setState(() => _pollAllowMultiple = v),
-          ),
-          _pollSwitchRow(
-            scale,
-            label: l.communityPollAlwaysShowResults,
-            value: _pollAlwaysShowResults,
-            onChanged: (v) => setState(() => _pollAlwaysShowResults = v),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pollSwitchRow(
-    double scale, {
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w500,
-            fontSize: 12.5 * scale,
-            height: 1.4,
-            color: AppColors.narText3,
-          ),
-        ),
-      ),
-      SizedBox(
-        height: 30 * scale,
-        child: FittedBox(
-          child: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: AppColors.narViolet3,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  InputDecoration _pollFieldDecoration(String hint, double scale) =>
-      InputDecoration(
-        hintText: hint,
-        hintStyle:
-            _inputStyle(scale, 13).copyWith(color: AppColors.narDark300),
-        isDense: true,
-        counterText: '',
-        filled: true,
-        fillColor: AppColors.narDark500,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 12 * scale,
-          vertical: 9 * scale,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9 * scale),
-          borderSide: BorderSide.none,
-        ),
-      );
-
-  /// 규칙 요약 + 전문 보기. 본문 아래에 연하게 깔아 방해하지 않되, 스크롤하면
-  /// 반드시 지나가도록 둔다.
-  Widget _rules(AppLocalizations l, double scale) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => showCommunityRulesSheet(context),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 14 * scale,
-              vertical: 9 * scale,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.narDark600,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l.communityRulesSeeAll,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12 * scale,
-                    height: 1.45,
-                    color: AppColors.narText3,
-                  ),
-                ),
-                SizedBox(width: 4 * scale),
-                Icon(
-                  Icons.chevron_right,
-                  size: 15 * scale,
-                  color: AppColors.narText3,
-                ),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(height: 12 * scale),
-        Text(
-          kCommunityRulesSummary.trim(),
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w400,
-            fontSize: 12 * scale,
-            height: 1.7,
-            color: AppColors.narDark300,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _toolbar(AppLocalizations l, double scale) {
     final count = _imageCount;
     final full = count >= PostWriteViewModel.maxPhotos;
@@ -1285,13 +1078,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     double scale,
     double size, {
     FontWeight weight = FontWeight.w400,
-  }) => TextStyle(
-    fontFamily: 'Pretendard',
-    fontWeight: weight,
-    fontSize: size * scale,
-    height: 1.55,
-    color: AppColors.narText,
-  );
+  }) => postWriteInputStyle(scale, size, weight: weight);
 
   InputDecoration _underlined(
     String hint,
