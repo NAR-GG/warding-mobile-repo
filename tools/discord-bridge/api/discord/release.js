@@ -10,7 +10,15 @@
 // 설계 배경은 intent/discord-release-approval/spec.md 참고.
 
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
-import { readRawBody, sendText, sendStatus, sendJson, dispatch } from '../../lib/http.js';
+import {
+  readRawBody,
+  sendText,
+  sendStatus,
+  sendJson,
+  dispatch,
+  respondThenRun,
+} from '../../lib/http.js';
+import { claimOnce, interactionKey } from '../../lib/once.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -114,31 +122,28 @@ export default async function handler(req, res) {
     // distribution/ 에 이미 있는 내용으로 제출한다.
     const releaseNotes = extractReleaseNotes(interaction.message);
 
-    const err = await dispatch('release-submit', {
-      version,
-      platform: 'both',
-      releaseNotes,
-      requestedBy: user,
-    }).catch((e) => e);
+    // 응답을 먼저 보낸다. dispatch 를 먼저 await 하다가 3초를 넘기면 Discord 가
+    // 재시도하고, 재시도마다 제출이 한 번씩 더 나간다(2026-10-27 중복 제출).
+    respondThenRun(res, interaction, { ephemeral: true }, async () => {
+      // 재시도가 이미 통과했다면 여기서 멈춘다. 콜드 스타트가 3초를 먹으면
+      // 응답을 먼저 보내도 재시도가 올 수 있어, 이 가드가 최종 방어선이다.
+      if (!(await claimOnce(interactionKey(interaction, 'rel_confirm')))) {
+        return `ℹ️ **${version}** 제출은 이미 접수됐어요. (중복 요청은 무시합니다)`;
+      }
 
-    if (err) {
-      console.error('[release-bot] dispatch failed', err);
-      sendJson(res, 200, {
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: '❌ 제출 실패 — GitHub 연동 중 오류가 났어요.', flags: 64 },
+      await dispatch('release-submit', {
+        version,
+        platform: 'both',
+        releaseNotes,
+        requestedBy: user,
       });
-      return;
-    }
 
-    sendJson(res, 200, {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        content:
-          `✅ **${version}** 심사 제출을 시작했어요. (요청: ${user})\n` +
-          (releaseNotes
-            ? '패치노트 초안을 distribution/ 에 반영하고 제출합니다.'
-            : 'distribution/ 에 있는 패치노트 그대로 제출합니다.'),
-      },
+      return (
+        `✅ **${version}** 심사 제출을 시작했어요. (요청: ${user})\n` +
+        (releaseNotes
+          ? '패치노트 초안을 distribution/ 에 반영하고 제출합니다.'
+          : 'distribution/ 에 있는 패치노트 그대로 제출합니다.')
+      );
     });
     return;
   }
@@ -195,29 +200,24 @@ export default async function handler(req, res) {
       return;
     }
 
-    const err = await dispatch('release-submit', {
-      version,
-      platform: 'both',
-      releaseNotes: notes,
-      requestedBy: user,
-    }).catch((e) => e);
+    // 버튼 경로와 같은 이유로 응답을 먼저 보낸다 (lib/once.js 참고).
+    // 모달 결과는 채널에 보이는 편이 자연스러워 ephemeral 을 끈다.
+    respondThenRun(res, interaction, { ephemeral: false }, async () => {
+      if (!(await claimOnce(interactionKey(interaction, 'rel_notes_modal')))) {
+        return `ℹ️ **${version}** 제출은 이미 접수됐어요. (중복 요청은 무시합니다)`;
+      }
 
-    if (err) {
-      console.error('[release-bot] dispatch failed', err);
-      sendJson(res, 200, {
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: '❌ 제출 실패 — GitHub 연동 중 오류가 났어요.', flags: 64 },
+      await dispatch('release-submit', {
+        version,
+        platform: 'both',
+        releaseNotes: notes,
+        requestedBy: user,
       });
-      return;
-    }
 
-    sendJson(res, 200, {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        content:
-          `✅ **${version}** 을 고친 패치노트로 제출했어요. (요청: ${user})\n` +
-          '```\n' + notes.slice(0, 1800) + '\n```',
-      },
+      return (
+        `✅ **${version}** 을 고친 패치노트로 제출했어요. (요청: ${user})\n` +
+        '```\n' + notes.slice(0, 1800) + '\n```'
+      );
     });
     return;
   }

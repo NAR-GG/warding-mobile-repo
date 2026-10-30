@@ -8,6 +8,7 @@ import '../../components/nar_badge.dart';
 import '../../components/nar_detail_header.dart';
 import '../../model/my_rating_list.dart';
 import '../../styles/app_colors.dart';
+import '../../util/analytics_events.dart';
 import '../../util/rating_mapping.dart';
 import '../../viewmodel/my_review/my_review_viewmodel.dart';
 import '../match_detail/component/match_detail_team_rating_section.dart';
@@ -78,6 +79,9 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
     final setLabel = setNumber > 0 ? l.setLabel(setNumber) : '';
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
+        // 이름이 없으면 observer 가 시트로 보고 무시한다(경기 상세 쪽과 같은
+        // 이유 — `page_view` 누락 + 복귀 시 `prev_page` 가 안 맞는다).
+        settings: const RouteSettings(name: AnalyticsPage.playerRating),
         builder: (_) => PlayerRatingScreen(
           player: PlayerRating(
             name: item.playerName,

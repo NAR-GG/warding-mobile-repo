@@ -7,6 +7,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@vercel/functions": "^3.10.3",
     "discord-interactions": "^3.4.0"
   }
 }
