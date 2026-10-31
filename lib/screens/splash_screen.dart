@@ -377,13 +377,21 @@ class _SplashScreenState extends State<SplashScreen>
     _checkForUpdate();
   }
 
-  /// 앱스토어/플레이스토어 최신 버전을 조회해, 현재 버전보다 높으면
+  /// 스토어 설명에 적힌 최소 버전(`[:mav: 1.0.43]`)보다 낮을 때만
   /// [NarAlertDialog] 팝업을 띄운다. 확인 누르면 스토어로 이동.
   ///
+  /// 예전에는 스토어에 더 높은 버전만 있으면 띄웠다. 주 2회 배포와 겹쳐 사용자가
+  /// 앱을 켤 때마다 팝업을 봤다. 일반 배포는 스토어 자동 업데이트에 맡기고, 꼭
+  /// 올려야 하는 릴리즈만 설명에 태그를 단다(방법은 `distribution/README.md`).
+  /// 태그가 없으면 팝업은 뜨지 않는다.
+  ///
+  /// `isUpdateAvailable()` 도 함께 본다. 태그를 스토어 버전보다 높게 잘못 적으면
+  /// 스토어에 가도 받을 게 없는 팝업이 매번 뜨기 때문이다.
+  ///
   /// `countryCode` 를 안 주면 upgrader 가 미국 스토어를 조회한다. 와딩은 한국
-  /// 스토어에만 있어서 조회 결과가 비고, `isUpdateAvailable()` 이 조용히 false 를
-  /// 돌려줘 팝업이 영영 안 떴다. `durationUntilAlertAgain` 기본값(3일)도 함께
-  /// 걷어낸다 — 스플래시는 앱을 켤 때마다 도는 자리라, 최신이 아니면 매번 알린다.
+  /// 스토어에만 있어서 조회 결과가 비고, 팝업이 영영 안 떴다.
+  /// `durationUntilAlertAgain` 기본값(3일)도 걷어낸다 — 최소 버전 미만이면
+  /// 앱을 켤 때마다 알린다.
   Future<void> _checkForUpdate() async {
     try {
       final upgrader = Upgrader(
@@ -393,7 +401,9 @@ class _SplashScreenState extends State<SplashScreen>
         debugLogging: kDebugMode,
       );
       await upgrader.initialize();
-      if (!upgrader.isUpdateAvailable()) return;
+      if (!upgrader.isUpdateAvailable() || !upgrader.belowMinAppVersion()) {
+        return;
+      }
 
       // await 이후에 navigatorKey 에서 context 를 새로 얻는다 — 이 위젯의
       // context 를 async gap across 로 들고 오는 게 아니라, 지금 살아있는
