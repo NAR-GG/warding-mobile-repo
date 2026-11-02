@@ -14,22 +14,34 @@ const String kIosStoreUrl = 'https://apps.apple.com/app/id6786755741';
 const String kAndroidStoreUrl =
     'https://play.google.com/store/apps/details?id=com.warding.app';
 
-/// 스토어 최신 버전을 조회해 현재 버전보다 높으면 [NarAlertDialog] 팝업을 띄우고,
-/// 확인을 누르면 스토어로 보낸다.
+/// 스토어 설명에 적힌 **최소 버전보다 설치 버전이 낮을 때만** [NarAlertDialog]
+/// 팝업을 띄운다. 확인을 누르면 스토어로 보낸다.
+///
+/// 예전에는 스토어에 더 높은 버전만 있으면 띄웠다. 주 2회꼴 배포(8/9~10/27 동안
+/// 24개 버전, 그중 15개는 Dart 만 바뀐 일반 배포)와 겹쳐 사용자는 거의 매번
+/// 팝업을 봤고, **팝업을 닫는 습관**이 생기면 정작 올려야 하는 버전에서도 같이
+/// 무시된다. 일반 배포는 스토어 자동 업데이트에 맡기고, 꼭 올려야 하는 릴리즈만
+/// 스토어 설명에 최소 버전 태그를 단다(방법은 `distribution/README.md`).
+/// **태그가 없으면 팝업은 뜨지 않는다.**
+///
+/// `isUpdateAvailable()`(스토어 버전 > 설치 버전)도 함께 본다. **이미 최신인데
+/// 태그만 더 높은 경우**에 스토어로 보내도 받을 게 없는 팝업이 뜨는 것을 막는다.
+///
+/// 이 가드가 막지 못하는 것 둘:
+/// - 태그를 **스토어에 아직 없는 버전**으로 적은 경우(예: 태그 1.0.50 / 스토어
+///   1.0.43 / 설치 1.0.42). 설치 버전이 스토어보다 낮으니 `isUpdateAvailable()` 은
+///   true 고, 사용자는 올려도 태그에 못 닿아 **팝업이 계속 뜬다.** 태그는 반드시
+///   이미 출시된 버전 이하로 적어야 한다.
+/// - 2026-10-27 사고(스토어 표시 1.0.41 / 실제 바이너리 1.0.39)처럼 표시 버전과
+///   바이너리가 어긋난 경우. 여기는 스토어 **메타데이터**만 보기 때문이다. 그쪽
+///   방어는 릴리즈 파이프라인의 ASC 직접 조회가 맡는다.
 ///
 /// `countryCode` 를 안 주면 upgrader 가 미국 스토어를 조회한다. 와딩은 한국
-/// 스토어에만 있어서 조회 결과가 비고, `isUpdateAvailable()` 이 조용히 false 를
-/// 돌려줘 팝업이 영영 안 떴다.
+/// 스토어에만 있어서 조회 결과가 비고, 팝업이 영영 안 떴다.
 ///
-/// **"어떤 버전에 팝업을 띄울지" 는 아직 이 함수가 결정하지 않는다.** 지금은
-/// 스토어에 더 높은 버전이 있으면 띄운다 — 주 2회꼴 배포와 겹쳐 사용자가 거의
-/// 매번 팝업을 보는 문제가 있고, 그 판단을 스토어 설명의 최소 버전 태그로
-/// 옮기는 작업이 PR #428 에서 따로 진행 중이다(`upgrader` 의
-/// `belowMinAppVersion()`). 그 로직이 들어올 자리가 이 함수다.
-///
-/// `durationUntilAlertAgain` 은 넘기지 않아 upgrader 기본값(3일)을 쓴다. 예전에는
-/// `Duration.zero` 로 **앱을 켤 때마다** 알렸는데, 매 실행 알림은 사용자가 팝업을
-/// 닫는 습관을 만들어 정작 올려야 하는 버전에서도 같이 무시된다.
+/// `durationUntilAlertAgain` 은 `Duration.zero` 다 — 최소 버전 미만이면 꼭 올려야
+/// 하는 상황이라 앱을 켤 때마다 알린다. 일반 배포에서는 애초에 팝업이 뜨지 않으니
+/// 간격을 둘 이유가 없다.
 ///
 /// 테스트를 위해 조회([upgraderFactory])·확인 팝업([confirm])·스토어 이동
 /// ([openStore])을 주입할 수 있다. 실제 앱은 기본 구현을 쓴다.
@@ -41,7 +53,9 @@ Future<void> checkForUpdate({
   try {
     final upgrader = (upgraderFactory ?? _defaultUpgrader)();
     await upgrader.initialize();
-    if (!upgrader.isUpdateAvailable()) return;
+    if (!upgrader.isUpdateAvailable() || !upgrader.belowMinAppVersion()) {
+      return;
+    }
 
     // await 이후에 navigatorKey 에서 context 를 새로 얻는다 — 이 함수가 받아 둔
     // context 를 async gap 을 넘겨 들고 오는 게 아니라, 지금 살아있는 navigator
@@ -82,6 +96,7 @@ class UpdatePromptText {
 Upgrader _defaultUpgrader() => Upgrader(
   languageCode: AppLanguage.instance.isKo ? 'ko' : 'en',
   countryCode: 'KR',
+  durationUntilAlertAgain: Duration.zero,
   debugLogging: kDebugMode,
 );
 
