@@ -507,6 +507,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get clickToSeeScore => '클릭시 스코어 확인 가능';
 
   @override
+  String get spoilerPrevention => '스포방지';
+
+  @override
   String get spoilerPreventionOn => '스포방지 ON';
 
   @override
@@ -538,6 +541,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get team => '팀';
+
+  @override
+  String get sort => '정렬';
 
   @override
   String get all => '전체';

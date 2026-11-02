@@ -6,7 +6,7 @@ import '../../../styles/app_colors.dart';
 /// [MatchCard] 와 동일한 레이아웃·치수에 회색 박스를 깔고 opacity 를 펄스시킨다.
 ///
 /// 실제 카드로 바뀔 때 목록이 튀지 않도록 높이를 카드와 맞춘다:
-/// 위 10 + 헤더 24 + 간격 20 + 스코어 블록 77 + 아래 24 = 155 (+ 구분선 1).
+/// 위 10 + 헤더 24 + 간격 12 + 스코어 블록 77 + 아래 14 = 137 (+ 구분선 1).
 class MatchCardSkeleton extends StatefulWidget {
   const MatchCardSkeleton({
     super.key,
@@ -92,7 +92,7 @@ class _MatchCardSkeletonState extends State<MatchCardSkeleton>
             top: 10 * scale,
             left: 16 * scale,
             right: 16 * scale,
-            bottom: 24 * scale,
+            bottom: 14 * scale,
           ),
           child: Column(
             children: [
@@ -118,7 +118,7 @@ class _MatchCardSkeletonState extends State<MatchCardSkeleton>
                   ],
                 ),
               ),
-              SizedBox(height: 20 * scale),
+              SizedBox(height: 12 * scale),
               // 시안 'box': 헤더보다 좌우 16 안쪽, 팀 컬럼 80 고정 + space-between.
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16 * scale),

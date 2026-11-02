@@ -4,8 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/model/calendar_week_start.dart';
 import 'package:warding/screens/schedule/component/calendar_day_cell.dart';
-import 'package:warding/screens/schedule/component/calendar_month_grid.dart';
 import 'package:warding/screens/schedule/component/calendar_weekday_header.dart';
+import 'package:warding/screens/schedule/component/schedule_calendar.dart';
 import 'package:warding/screens/schedule/component/schedule_calendar_skeleton.dart';
 
 /// 스켈레톤과 실제 그리드는 같은 자리에 번갈아 그려진다. 로딩이 끝나는
@@ -36,9 +36,12 @@ void main() {
     await tester.pump();
   }
 
-  /// 실제 그리드를 [ScheduleCalendar] 와 같은 뼈대(가로 패딩 + 요일 헤더 +
-  /// Expanded 그리드)로 감싼다. 스켈레톤은 이 뼈대를 자기 안에 포함하므로,
-  /// 같은 조건으로 맞춰야 공정한 비교가 된다.
+  /// 실제 그리드를 [ScheduleCalendar] 와 같은 뼈대로 감싼다.
+  ///
+  /// 캘린더는 아래 경기 리스트와 세로를 나눠 쓰게 되면서 **자기 행 수만큼만**
+  /// 차지한다(`SizedBox(height: monthRowHeight * weeks)`). 예전처럼
+  /// `Expanded` 로 감싸면 뷰포트를 꽉 채워서, 스켈레톤(고정 높이)과 비교하는
+  /// 의미가 없어진다.
   Widget wrapGrid(DateTime month, CalendarWeekStart weekStart) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -46,11 +49,14 @@ void main() {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CalendarWeekdayHeader(scale: 1, weekStart: weekStart),
-          Expanded(
+          SizedBox(
+            height:
+                ScheduleCalendar.monthRowHeight * CalendarMonthGrid.gridWeeks,
             child: CalendarMonthGrid(
               month: month,
               scale: 1,
               weekStart: weekStart,
+              minRowHeightOverride: ScheduleCalendar.monthRowHeight,
               matchesOf: (_) => const [],
             ),
           ),
@@ -145,7 +151,7 @@ void main() {
     });
   }
 
-  testWidgets('스켈레톤도 뷰포트를 세로로 꽉 채운다', (tester) async {
+  testWidgets('스켈레톤은 자기 행 수만큼만 차지한다', (tester) async {
     const height = 600.0;
     await pumpChild(
       tester,
@@ -160,11 +166,16 @@ void main() {
       skeleton.rowHeight * skeleton.rows,
       closeTo(skeleton.bottom - skeleton.top, 0.5),
     );
-    // 요일 헤더가 위를 차지하므로 그리드 영역은 그만큼 짧다. 헤더 아래부터
-    // 화면 바닥까지는 빈틈없이 채워야 한다.
+    // 예전엔 뷰포트를 꽉 채웠다. 지금은 아래 경기 리스트와 세로를 나눠 쓰므로
+    // 행 수만큼만 차지하고 남는 공간은 목록에 넘긴다 — 실제 캘린더와 같은 규칙.
+    expect(
+      skeleton.rowHeight,
+      closeTo(ScheduleCalendar.monthRowHeight, 0.5),
+    );
     expect(
       skeleton.bottom,
-      closeTo(tester.getRect(find.byType(Scaffold)).bottom, 0.5),
+      lessThan(tester.getRect(find.byType(Scaffold)).bottom),
+      reason: '뷰포트를 다 쓰지 않고 아래를 목록에 남겨야 한다',
     );
   });
 
@@ -192,16 +203,21 @@ void main() {
     expect(sunday.rowHeight, closeTo(grid.rowHeight, 0.5));
   });
 
-  testWidgets('뷰포트가 너무 짧으면 스켈레톤도 최소 행 높이를 지키고 스크롤된다', (tester) async {
-    // 6주 × 최소 64 = 384 보다 훨씬 짧은 뷰포트.
+  testWidgets('짧은 뷰포트에서도 행 높이를 지킨다', (tester) async {
+    // 캘린더는 이제 아래 목록과 세로를 나눠 쓰느라 **자기 행 수만큼** 고정
+    // 높이를 차지한다. 부모가 그보다 짧아도 칸을 찌그러뜨리지 않는다 —
+    // 찌그러지면 로딩이 끝나는 순간 칸이 튀어 목록이 밀린다.
     await pumpChild(
       tester,
       ScheduleCalendarSkeleton(month: DateTime(2026, 8), scale: 1),
       height: 200,
     );
 
-    expect(find.byType(SingleChildScrollView), findsOneWidget);
     final skeleton = measureSkeleton(tester);
-    expect(skeleton.rowHeight, closeTo(CalendarMonthGrid.minRowHeight, 0.5));
+    expect(
+      skeleton.rowHeight,
+      closeTo(ScheduleCalendar.monthRowHeight, 0.5),
+      reason: '뷰포트가 짧아도 실제 그리드와 같은 행 높이를 쓴다',
+    );
   });
 }

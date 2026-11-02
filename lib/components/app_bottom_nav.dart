@@ -49,10 +49,15 @@ class AppBottomNav extends StatelessWidget {
   /// 마이구독은 홈 알림 벨로 진입 경로를 옮기며 하단 네비에서 뺐다(2026-09-29
   /// 결정). [AppNavTab.subscription] 자체와 화면·라우팅은 그대로 둬 다른
   /// 진입 경로(구독하기 버튼 등)에는 영향이 없다.
+  ///
+  /// 경기리스트도 같은 방식으로 뺐다 — 월간 캘린더와 리스트를 경기일정 화면
+  /// 안에서 토글로 바꿔 보게 되면서(`ScheduleScreen`) 탭을 왕복할 이유가
+  /// 없어졌다. [AppNavTab.matchList] 와 라우팅은 그대로 둬 홈 '전체 대진'
+  /// 같은 진입 경로에는 영향이 없다.
   static const List<({String icon, AppNavTab tab})> _items = [
     (icon: 'assets/icons/home.svg', tab: AppNavTab.home),
     (icon: 'assets/icons/calendar-event.svg', tab: AppNavTab.schedule),
-    (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.matchList),
+    // (icon: 'assets/icons/layout-list.svg', tab: AppNavTab.matchList),
     (icon: 'assets/icons/message-circle-heart.svg', tab: AppNavTab.community),
     // (icon: 'assets/icons/empty-stars.svg', tab: AppNavTab.subscription),
     (icon: 'assets/icons/user.svg', tab: AppNavTab.mypage),
@@ -62,7 +67,10 @@ class AppBottomNav extends StatelessWidget {
   /// 있다(마이구독처럼 enum은 남아 있지만 목록에서 뺀 탭이 있을 때).
   static int get visibleTabCount => _items.length;
 
-  /// 탭이 5개가 되며 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수.
+  /// 바 폭(335)에 맞추기 위해 좁힌 비활성 chip 치수. 탭이 5개였을 때 정한
+  /// 값으로, 경기리스트를 빼 4개가 된 뒤에도 그대로 둔다 — 간격을
+  /// [MainAxisAlignment.spaceBetween] 으로 분배하므로 탭 수가 줄면 chip 은
+  /// 그대로고 간격만 넓어진다.
   ///
   /// 활성 chip 폭은 최소폭 없이 아이콘+라벨+패딩(좌우 16)만큼만 차지한다. 간격을
   /// 고정 gap 대신 [MainAxisAlignment.spaceBetween] 으로 자동 분배해,

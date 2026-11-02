@@ -242,6 +242,7 @@
 
   "spoilerBlock": "스포방지",
   "clickToSeeScore": "클릭시 스코어 확인 가능",
+  "spoilerPrevention": "스포방지",
   "spoilerPreventionOn": "스포방지 ON",
   "spoilerPreventionOff": "스포방지 OFF",
 
@@ -255,6 +256,7 @@
 
   "filter": "필터",
   "team": "팀",
+  "sort": "정렬",
   "all": "전체",
 
   "monthlyScheduleSummary": "월간 경기 일정 요약",

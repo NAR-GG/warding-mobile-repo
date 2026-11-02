@@ -213,6 +213,7 @@
 
   "spoilerBlock": "Spoiler",
   "clickToSeeScore": "Tap to reveal score",
+  "spoilerPrevention": "Spoiler",
   "spoilerPreventionOn": "Spoiler ON",
   "spoilerPreventionOff": "Spoiler OFF",
 
@@ -226,6 +227,7 @@
 
   "filter": "Filter",
   "team": "Team",
+  "sort": "Sort",
   "all": "All",
 
   "monthlyScheduleSummary": "Monthly Schedule Summary",

@@ -520,6 +520,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clickToSeeScore => 'Tap to reveal score';
 
   @override
+  String get spoilerPrevention => 'Spoiler';
+
+  @override
   String get spoilerPreventionOn => 'Spoiler ON';
 
   @override
@@ -551,6 +554,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get team => 'Team';
+
+  @override
+  String get sort => 'Sort';
 
   @override
   String get all => 'All';
