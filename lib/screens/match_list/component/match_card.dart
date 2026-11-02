@@ -92,12 +92,15 @@ class MatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 시안 공통: padding 10px 16px 24px.
+    // 시안은 padding 10px 16px 24px 였다. 캘린더와 한 화면을 나눠 쓰게 되면서
+    // 목록에 보이는 카드가 2장 남짓으로 줄어, 한눈에 안 들어온다는 피드백에
+    // 따라 세로 여백만 줄였다(10/24 → 10/14). 좌우는 시안 그대로 둔다 —
+    // 팀 로고·스코어 정렬이 걸려 있어 건드리면 행 전체가 틀어진다.
     final padding = EdgeInsets.only(
       top: 10 * scale,
       left: 16 * scale,
       right: 16 * scale,
-      bottom: 24 * scale,
+      bottom: 14 * scale,
     );
 
     // LIVE: 배경 narDark600 + 왼쪽 3px 보더. 예정·종료: 배경 narBgTertiary +
@@ -173,7 +176,9 @@ class MatchCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 20 * scale),
+                // 헤더행 ↔ 스코어행 간격. 시안은 20 이었는데 카드 높이를
+                // 줄이며 함께 좁혔다(위 padding 주석 참고).
+                SizedBox(height: 12 * scale),
                 // 시안 'box': 헤더보다 좌우 16 안쪽, 팀 컬럼 80 고정 + space-between.
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16 * scale),

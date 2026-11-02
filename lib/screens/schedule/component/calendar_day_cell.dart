@@ -53,8 +53,10 @@ class CalendarDayCell extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(
               left: 4 * scale,
-              top: 3 * scale,
-              bottom: 3 * scale,
+              // 위아래 3 → 2. 칸 높이를 늘리는 대신 여기서 아낀 4px 를
+              // 칩 자리로 돌린다(칸 하나에 칩을 더 많이 보이게 하려는 것).
+              top: 2 * scale,
+              bottom: 2 * scale,
             ),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -79,11 +81,60 @@ class CalendarDayCell extends StatelessWidget {
       ),
     );
 
-    if (onTap == null) return cell;
-    return GestureDetector(
+    final tap = onTap;
+    if (tap == null) return cell;
+    // 탭만 받고 드래그는 흘려보낸다.
+    //
+    // [GestureDetector] 를 쓰면 칸마다 탭 인식기가 제스처 아레나에 들어가,
+    // 캘린더를 좌우로 쓸 때 **PageView 가 드래그를 못 받는다**(월·주 이동이
+    // 통째로 죽는다). 칸은 한 줄 높이(64)뿐이라 세로로 멀어질 여지도 없어
+    // 아레나가 탭 쪽으로 기울기 쉽다.
+    //
+    // 대신 '탭 다운 → 같은 칸에서 탭 업' 만 직접 본다. 손가락이 움직이기
+    // 시작하면([onPointerMove] 문턱 초과) 탭을 포기해 스크롤에 양보한다.
+    return _TapOnly(onTap: tap, child: cell);
+  }
+}
+
+/// 탭만 받고 드래그는 부모(스크롤·페이저)에 양보하는 얇은 래퍼.
+///
+/// [GestureDetector] 대신 [Listener] 를 쓴다 — 제스처 아레나에 참가하지
+/// 않으므로 같은 자리의 [PageView] 가 드래그를 그대로 가져간다. 캘린더
+/// 날짜 칸처럼 "탭은 되어야 하는데 좌우 스와이프를 막으면 안 되는" 자리에 쓴다.
+class _TapOnly extends StatefulWidget {
+  const _TapOnly({required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_TapOnly> createState() => _TapOnlyState();
+}
+
+class _TapOnlyState extends State<_TapOnly> {
+  /// 탭으로 인정할 최대 이동 거리(px). 이보다 움직이면 스크롤로 본다.
+  static const double _slop = 12;
+
+  Offset? _downAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: cell,
+      onPointerDown: (e) => _downAt = e.position,
+      onPointerMove: (e) {
+        final down = _downAt;
+        if (down == null) return;
+        if ((e.position - down).distance > _slop) _downAt = null;
+      },
+      onPointerUp: (e) {
+        final down = _downAt;
+        _downAt = null;
+        if (down == null) return;
+        if ((e.position - down).distance <= _slop) widget.onTap();
+      },
+      onPointerCancel: (_) => _downAt = null,
+      child: widget.child,
     );
   }
 }

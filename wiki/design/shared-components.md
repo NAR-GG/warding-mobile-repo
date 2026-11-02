@@ -31,6 +31,7 @@ timestamp: 2026-10-26T00:00:00Z
 | `NarCard` | `nar_card.dart` | narBgTertiary + narLine + radius 12 카드 틀. `.list` 는 행 사이 구분선 |
 | `NarSectionTitle` | `nar_section_title.dart` | 굵은 제목 + 회색 부제 + 우측 "전체 보기" 링크 |
 | `NarTabBar` | `nar_tab_bar.dart` | 페이지 상단 탭(page) / 섹션 내부 콤팩트 탭(compact) |
+| `NarSelectDropdownField` | `nar_select_dropdown_field.dart` | 셀렉트 박스 + 펼침 체크박스 드롭다운. 경기 일정 필터와 경기 리스트 필터가 공유한다. `LabeledField` 로 감싸 쓴다 |
 | `NarDetailHeader` | `nar_detail_header.dart` | 상세 화면 상단 바(뒤로·제목·trailing) |
 | `NarBadge` 외 | `nar_badge.dart` | 시간·진영(BLUE/RED)·LIVE 배지 |
 

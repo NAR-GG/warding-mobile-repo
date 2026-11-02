@@ -2,19 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:upgrader/upgrader.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../components/cheer_ad_banner.dart';
-import '../components/nar_alert_dialog.dart';
-import '../config/app_globals.dart';
 import '../config/app_language.dart';
 import '../config/secure_storage.dart';
-import '../l10n/app_localizations.dart';
 import '../repository/ad/ad_repository.dart';
 import '../repository/auth/auth_service.dart';
 import '../repository/fcm/fcm_service.dart';
@@ -23,6 +18,7 @@ import '../repository/preference/filter_preference_repository.dart';
 import '../repository/schedule/schedule_repository.dart';
 import '../styles/app_colors.dart';
 import '../util/home_widget_service.dart';
+import '../util/update_prompt.dart';
 import 'login/login_screen.dart';
 import 'home/home_screen.dart';
 import '../util/analytics_events.dart';
@@ -374,65 +370,9 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     // 화면 전환 후 업데이트 체크 (팝업은 NarAlertDialog 로 띄운다).
-    _checkForUpdate();
+    checkForUpdate();
   }
 
-  /// 스토어 설명에 적힌 최소 버전(`[:mav: 1.0.43]`)보다 낮을 때만
-  /// [NarAlertDialog] 팝업을 띄운다. 확인 누르면 스토어로 이동.
-  ///
-  /// 예전에는 스토어에 더 높은 버전만 있으면 띄웠다. 주 2회 배포와 겹쳐 사용자가
-  /// 앱을 켤 때마다 팝업을 봤다. 일반 배포는 스토어 자동 업데이트에 맡기고, 꼭
-  /// 올려야 하는 릴리즈만 설명에 태그를 단다(방법은 `distribution/README.md`).
-  /// 태그가 없으면 팝업은 뜨지 않는다.
-  ///
-  /// `isUpdateAvailable()` 도 함께 본다. 태그를 스토어 버전보다 높게 잘못 적으면
-  /// 스토어에 가도 받을 게 없는 팝업이 매번 뜨기 때문이다.
-  ///
-  /// `countryCode` 를 안 주면 upgrader 가 미국 스토어를 조회한다. 와딩은 한국
-  /// 스토어에만 있어서 조회 결과가 비고, 팝업이 영영 안 떴다.
-  /// `durationUntilAlertAgain` 기본값(3일)도 걷어낸다 — 최소 버전 미만이면
-  /// 앱을 켤 때마다 알린다.
-  Future<void> _checkForUpdate() async {
-    try {
-      final upgrader = Upgrader(
-        languageCode: AppLanguage.instance.isKo ? 'ko' : 'en',
-        countryCode: 'KR',
-        durationUntilAlertAgain: Duration.zero,
-        debugLogging: kDebugMode,
-      );
-      await upgrader.initialize();
-      if (!upgrader.isUpdateAvailable() || !upgrader.belowMinAppVersion()) {
-        return;
-      }
-
-      // await 이후에 navigatorKey 에서 context 를 새로 얻는다 — 이 위젯의
-      // context 를 async gap across 로 들고 오는 게 아니라, 지금 살아있는
-      // navigator 의 것을 그때그때 읽으므로 안전하다.
-      final ctx = navigatorKey.currentContext;
-      if (ctx == null || !ctx.mounted) return;
-      final l = AppLocalizations.of(ctx);
-      if (l == null) return;
-      final title = l.updateAvailableTitle;
-      final message = l.updateAvailableMessage;
-      final confirmLabel = l.updateNow;
-
-      final confirmed = await showNarConfirmDialog(
-        context: ctx,
-        title: title,
-        message: message,
-        confirmLabel: confirmLabel,
-      );
-      if (confirmed == true) {
-        const iosUrl = 'https://apps.apple.com/app/id6786755741';
-        const androidUrl =
-            'https://play.google.com/store/apps/details?id=com.warding.app';
-        final url = Platform.isIOS ? iosUrl : androidUrl;
-        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('[Update] 업데이트 체크 실패: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

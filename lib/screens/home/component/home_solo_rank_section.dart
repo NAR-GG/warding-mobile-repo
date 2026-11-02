@@ -1,23 +1,19 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../components/dashed_border.dart';
-import '../../../components/nar_live_dot.dart';
-import '../../../components/team_code_badge.dart';
+import '../../../components/solo_hero_card.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../model/home_models.dart';
-import '../../../model/player_subscription.dart';
 import '../../../styles/app_colors.dart';
-import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';
 import '../../../viewmodel/player/player_viewmodel.dart';
 import '../../my_players/component/worlds_player_sheet.dart';
 import '../../login/login_screen.dart';
 import 'home_skeletons.dart';
 import 'home_solo_cheer.dart';
+import 'home_solo_parts.dart';
+import 'home_solo_states.dart';
 import 'home_worlds_solo.dart';
 
 /// 구독 선수 솔랭 상태 — spec "상태" 표의 세 갈래를 [HomeViewModel.soloState]
@@ -34,6 +30,11 @@ import 'home_worlds_solo.dart';
 ///
 /// 라이브 카드에 보여주는 숫자는 경과 시간 하나뿐이다 — 관전하기·포지션·진행 중
 /// 스코어는 spectator-v5 가 주지 않는다(spec 결정). 에러는 그리지 않는다.
+///
+/// 상태별 위젯은 [home_solo_states.dart], 카드 아래 부품(스켈레톤·스와이프
+/// 점·끝난 경기 칩·전체 버튼)은 [home_solo_parts.dart] 에 있다. 큰 카드와 얼굴
+/// 아바타는 선수 페이지와 같이 쓰므로 `lib/components/` 의 [SoloHeroCard],
+/// `SoloFace` 다.
 class HomeSoloRankSection extends StatefulWidget {
   const HomeSoloRankSection({
     super.key,
@@ -95,7 +96,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
   // 예전엔 틱마다 `setState(() {})` 를 불러 **섹션 전체**(스플래시·선수 사진
   // 3장과 PageView, 끝난 경기 칩 줄까지)를 매초 재구성했다. 실제로 바뀌는 건
   // 카드 하단의 경과 시간 텍스트 하나뿐이라, 이 notifier 를 구독하는 그
-  // 텍스트만 다시 그린다([_ElapsedText]).
+  // 텍스트만 다시 그린다([SoloHeroCard] 의 `tick`).
   final ValueNotifier<int> _tick = ValueNotifier<int>(0);
   Timer? _clockTimer;
 
@@ -212,7 +213,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            child: _HeroCardSkeleton(scale: scale),
+            child: HomeSoloHeroSkeleton(scale: scale),
           ),
           // 오늘 끝난 경기 줄 자리 — 구독 조회가 끝나기 전엔 몇 명인지 몰라
           // 칩 줄 모양만 잡아 둔다.
@@ -228,7 +229,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                 children: [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-                    child: _EmptyCard(
+                    child: HomeSoloEmptyCard(
                       scale: scale,
                       onSubscribe: widget.onSubscribe,
                     ),
@@ -241,7 +242,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            child: _QuietRow(
+            child: HomeSoloQuietRow(
               faces: vm.subscribedFaces,
               subscribedTotal: vm.subscribedTotal,
               scale: scale,
@@ -363,7 +364,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: _openPlayer(player.playerId),
-                          child: HomeSoloHeroCard(
+                          child: SoloHeroCard(
                             key: HomeSoloRankSection.worldsHeroKey(player.name),
                             player: player,
                             secondsOf: () => _liveElapsedSeconds(player),
@@ -373,7 +374,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                           ),
                         ),
                       ),
-                      _WorldsSubscribeBar(
+                      HomeWorldsSubscribeBar(
                         player: player,
                         scale: scale,
                         onSubscribe: player.playerId == null
@@ -389,11 +390,11 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         ),
         if (live.length > 1) ...[
           SizedBox(height: 10 * scale),
-          _SwipeDots(count: live.length, index: index, scale: scale),
+          HomeSoloSwipeDots(count: live.length, index: index, scale: scale),
         ],
         Padding(
           padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 0),
-          child: _SeeAllButton(
+          child: HomeSoloSeeAllButton(
             label: l.worldsSoloSeeAll,
             scale: scale,
             onTap: widget.onOpenWorlds,
@@ -431,7 +432,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 진행 중인 선수가 없으면(끝난 경기만 있어 active 상태) 스와이프할
-        // 카드가 없다 — 대신 조용한 상태 줄(_QuietRow)을 그대로 보여주고
+        // 카드가 없다 — 대신 조용한 상태 줄(HomeSoloQuietRow)을 그대로 보여주고
         // 그 아래에 끝난 경기 줄을 잇는다(2026-09-29 결정, spec.md "상태" 표).
         if (live.isNotEmpty) ...[
           SizedBox(
@@ -453,7 +454,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
                   hero: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: _openPlayer(live[i].playerId),
-                    child: HomeSoloHeroCard(
+                    child: SoloHeroCard(
                       key: HomeSoloRankSection.heroKey(live[i].name),
                       player: live[i],
                       secondsOf: () => _liveElapsedSeconds(live[i]),
@@ -468,7 +469,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
           ),
           if (live.length > 1) ...[
             SizedBox(height: 10 * scale),
-            _SwipeDots(
+            HomeSoloSwipeDots(
               count: live.length,
               index: vm.soloSwipeIndex,
               scale: scale,
@@ -477,7 +478,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         ] else ...[
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20 * scale),
-            child: _QuietRow(
+            child: HomeSoloQuietRow(
               faces: vm.subscribedFaces,
               subscribedTotal: vm.subscribedTotal,
               scale: scale,
@@ -521,7 +522,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
               itemBuilder: (context, i) => GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _openPlayer(done[i].playerId),
-                child: _FinishedChip(
+                child: HomeSoloFinishedChip(
                   key: HomeSoloRankSection.finishedKey(done[i].name),
                   player: done[i],
                   scale: scale,
@@ -532,7 +533,7 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         ],
         Padding(
           padding: EdgeInsets.fromLTRB(20 * scale, 10 * scale, 20 * scale, 0),
-          child: _SeeAllButton(
+          child: HomeSoloSeeAllButton(
             label: l.homeSubscribedSeeAll(vm.subscribedTotal),
             scale: scale,
             onTap: widget.onOpenMyPlayers,
@@ -540,950 +541,6 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
         ),
         if (live.isNotEmpty) ..._worldsBelow(),
       ],
-    );
-  }
-}
-
-/// 경과 시간 "m:ss". 1시간이 넘으면 "h:mm:ss".
-String _clock(int seconds) {
-  final h = seconds ~/ 3600;
-  final m = (seconds % 3600) ~/ 60;
-  final s = (seconds % 60).toString().padLeft(2, '0');
-  if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$s';
-  return '$m:$s';
-}
-
-/// "12분 전" / "2시간 전".
-String _ago(AppLocalizations l, int minutes) =>
-    minutes < 60 ? l.homeMinutesAgo(minutes) : l.homeHoursAgo(minutes ~/ 60);
-
-/// 첫 구독 조회 중([SoloCardState.loading])에 보여줄 스켈레톤.
-///
-/// 응답 후 가장 흔히 보이는 [HomeSoloHeroCard]와 같은 높이(196)·모서리(14)로 맞춰,
-/// 구독 중인 선수가 있는 사용자가 겪는 레이아웃 튐(CLS)을 없앤다. 구독
-/// 0명으로 끝나 [_EmptyCard](186)나 [_QuietRow]로 바뀌는 경우엔 약간의
-/// 높이 차가 남지만, 셋 모두를 동시에 맞출 수는 없어 가장 흔한 경로를
-/// 우선한다.
-class _HeroCardSkeleton extends StatefulWidget {
-  const _HeroCardSkeleton({required this.scale});
-
-  final double scale;
-
-  @override
-  State<_HeroCardSkeleton> createState() => _HeroCardSkeletonState();
-}
-
-class _HeroCardSkeletonState extends State<_HeroCardSkeleton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = widget.scale;
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
-        final opacity = 0.3 + (_ctrl.value * 0.3);
-        Widget box({double? w, required double h, double r = 4}) => Container(
-          width: w,
-          height: h,
-          decoration: BoxDecoration(
-            color: AppColors.narLine2.withValues(alpha: opacity),
-            borderRadius: BorderRadius.circular(r * scale),
-          ),
-        );
-
-        return Container(
-          height: 196 * scale,
-          padding: EdgeInsets.fromLTRB(
-            15 * scale,
-            13 * scale,
-            15 * scale,
-            13 * scale,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.narSoloHeroBg,
-            borderRadius: BorderRadius.circular(14 * scale),
-            border: Border.all(color: AppColors.narLine),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  box(w: 18 * scale, h: 18 * scale, r: 9),
-                  SizedBox(width: 6 * scale),
-                  box(w: 32 * scale, h: 12 * scale),
-                ],
-              ),
-              SizedBox(height: 10 * scale),
-              box(w: 140 * scale, h: 27 * scale, r: 6),
-              SizedBox(height: 10 * scale),
-              box(w: 90 * scale, h: 30 * scale, r: 6),
-              const Spacer(),
-              box(w: 100 * scale, h: 24 * scale, r: 12),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 구독 0명 — 점선 빈 카드와 빈 프로필 원.
-class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.scale, this.onSubscribe});
-
-  final double scale;
-  final VoidCallback? onSubscribe;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return KeyedSubtree(
-      key: HomeSoloRankSection.emptyCardKey,
-      child: DashedBorder(
-        radius: 14 * scale,
-        child: Container(
-          width: double.infinity,
-          constraints: BoxConstraints(minHeight: 186 * scale),
-          padding: EdgeInsets.symmetric(
-            horizontal: 18 * scale,
-            vertical: 24 * scale,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.narBgTertiary,
-            borderRadius: BorderRadius.circular(14 * scale),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DashedBorder(
-                circle: true,
-                child: Container(
-                  width: 64 * scale,
-                  height: 64 * scale,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: AppColors.narBgTertiary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    size: 34 * scale,
-                    color: AppColors.narDark400,
-                  ),
-                ),
-              ),
-              SizedBox(height: 12 * scale),
-              Text(
-                l.homeHeroEmptyMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 15 * scale,
-                  height: 1.55,
-                  color: AppColors.narGray400,
-                ),
-              ),
-              SizedBox(height: 14 * scale),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onSubscribe,
-                child: Container(
-                  height: 40 * scale,
-                  padding: EdgeInsets.symmetric(horizontal: 22 * scale),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.narBg,
-                    borderRadius: BorderRadius.circular(20 * scale),
-                  ),
-                  child: Text(
-                    l.homeHeroEmptyButton,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14 * scale,
-                      color: AppColors.narText,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 구독은 있는데 진행 중인 선수도 오늘 끝난 경기도 0명 — 한 줄짜리 조용한
-/// 상태. 누르면 내 선수 화면.
-///
-/// 끝난 경기가 하나라도 있으면 이 대신 끝난 경기 줄(활성 상태)을 보여주므로,
-/// 여기는 정말 아무 소식도 없을 때만 그린다 — "마지막 경기" 같은 보조 정보는
-/// 없다. 시안(`mockup.html`)의 `.quiet`: 구독 선수 얼굴이 겹쳐 놓인 스택 +
-/// 구독 수 한 줄 + 화살표. 구독이 얼굴 수보다 많으면 "+N" 칸이 붙는다.
-class _QuietRow extends StatelessWidget {
-  const _QuietRow({
-    required this.faces,
-    required this.subscribedTotal,
-    required this.scale,
-    this.onTap,
-  });
-
-  final List<PlayerSubscription> faces;
-  final int subscribedTotal;
-  final double scale;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-
-    return GestureDetector(
-      key: HomeSoloRankSection.quietKey,
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 16 * scale,
-          vertical: 18 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.narBgTertiary,
-          borderRadius: BorderRadius.circular(14 * scale),
-          border: Border.all(color: AppColors.narLine),
-        ),
-        child: Row(
-          children: [
-            if (faces.isNotEmpty) ...[
-              _FaceStack(
-                faces: faces,
-                extra: subscribedTotal - faces.length,
-                scale: scale,
-              ),
-              SizedBox(width: 14 * scale),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.homeSoloQuietTitle,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15 * scale,
-                      height: 1.35,
-                      color: AppColors.narTextTertiary,
-                    ),
-                  ),
-                  SizedBox(height: 5 * scale),
-                  Text(
-                    l.homeSoloQuietSubscribed(subscribedTotal),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 13 * scale,
-                      height: 1.5,
-                      color: AppColors.narText2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 8 * scale),
-            Icon(
-              Icons.chevron_right,
-              size: 16 * scale,
-              color: AppColors.narText2,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 구독 선수 얼굴을 겹쳐 놓은 스택 — 38 원, 12씩 겹치고 카드 색 2px 테두리로
-/// 서로를 갈라 놓는다. 뒤에 오는 얼굴이 위에 올라온다. [extra] 가 0보다 크면
-/// 마지막에 "+N" 칸을 붙인다.
-class _FaceStack extends StatelessWidget {
-  const _FaceStack({
-    required this.faces,
-    required this.extra,
-    required this.scale,
-  });
-
-  final List<PlayerSubscription> faces;
-  final int extra;
-  final double scale;
-
-  static const double _size = 38;
-  static const double _step = 26; // 38 - 겹침 12
-
-  @override
-  Widget build(BuildContext context) {
-    final count = faces.length + (extra > 0 ? 1 : 0);
-    final size = _size * scale;
-    return SizedBox(
-      width: (_size + _step * (count - 1)) * scale,
-      height: size,
-      child: Stack(
-        children: [
-          for (final (i, p) in faces.indexed)
-            Positioned(
-              left: _step * i * scale,
-              child: HomeSoloFace(
-                name: p.playerName,
-                url: resolveImageUrl(p.playerImageUrl),
-                size: size,
-                scale: scale,
-              ),
-            ),
-          if (extra > 0)
-            Positioned(
-              left: _step * faces.length * scale,
-              child: HomeSoloFace(
-                name: '+$extra',
-                url: null,
-                size: size,
-                scale: scale,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class HomeSoloFace extends StatelessWidget {
-  const HomeSoloFace({
-    super.key,
-    required this.name,
-    required this.url,
-    required this.size,
-    required this.scale,
-  });
-
-  final String name;
-  final String? url;
-  final double size;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = name.startsWith('+')
-        ? name
-        : (name.length >= 2 ? name.substring(0, 2) : name).toUpperCase();
-    final initials = Center(
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w700,
-          fontSize: 13 * scale,
-          color: AppColors.narText2,
-        ),
-      ),
-    );
-    final photo = url;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.narLine2,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.narBgTertiary, width: 2 * scale),
-      ),
-      child: ClipOval(
-        child: photo == null || photo.isEmpty
-            ? initials
-            : CachedNetworkImage(
-                imageUrl: photo,
-                fit: BoxFit.cover,
-                // 전신 사진이라 얼굴이 위쪽에 있다 — 시안의 `center 12%`.
-                alignment: const Alignment(0, -0.75),
-                memCacheWidth: (size * 3).round(),
-                fadeInDuration: const Duration(milliseconds: 150),
-                placeholder: (_, _) => initials,
-                errorWidget: (_, _, _) => initials,
-              ),
-      ),
-    );
-  }
-}
-
-/// 진행 중인 선수 한 명의 큰 카드. 숫자는 경과 시간 하나뿐이다.
-class HomeSoloHeroCard extends StatelessWidget {
-  const HomeSoloHeroCard({
-    super.key,
-    required this.player,
-    required this.secondsOf,
-    required this.tick,
-    required this.scale,
-    this.embedded = false,
-    this.role,
-    this.showRegion = false,
-  });
-
-  final HomeLiveSoloPlayer player;
-
-  /// 선수 페이지 — 팀 옆에 포지션("T1 · MID")을 붙인다. 홈은 null.
-  final String? role;
-
-  /// 선수 페이지 — "솔로 랭크 · NA" 처럼 해외 계정 지역을 배지에 붙인다.
-  final bool showRegion;
-
-  /// 응원 영역과 한 장으로 묶일 때 true — 모서리·테두리는 바깥 [SoloCheerCard] 가
-  /// 그린다.
-  final bool embedded;
-
-  /// 지금 보여줄 경과 초를 계산한다(기기 시계 기준).
-  /// [tick] 이 바뀔 때마다 다시 불러 초를 갱신한다.
-  /// [HomeLiveSoloPlayer.startedAt] 참고.
-  final int Function() secondsOf;
-
-  /// 1초마다 값이 바뀌는 카운터. 이 카드에서 경과 시간 텍스트만 구독한다 —
-  /// 카드(스플래시·선수 사진)까지 매초 다시 그리지 않기 위해서다.
-  final ValueListenable<int> tick;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    // 가로형 Data Dragon 스플래시(1215×717)를 먼저 쓴다. 백엔드의
-    // `championImageUrl` 은 400×600 세로형으로 이미 잘려 와서, 가로로 긴 이
-    // 카드에 `cover` 로 깔면 한가운데만 크게 확대돼 보였다. 이름으로 URL 을
-    // 만들 수 없을 때(`championSplashUrl` 이 null)만 서버 이미지로 폴백한다.
-    // `resolveImageUrl` 은 빈 문자열을 빈 문자열로 돌려주므로 ?? 로는 폴백이
-    // 걸리지 않는다 — 비었는지 직접 본다.
-    final fromServer = resolveImageUrl(player.championImageUrl);
-    final splashUrl =
-        championSplashUrl(player.champion) ??
-        ((fromServer != null && fromServer.isNotEmpty) ? fromServer : null);
-    final photoUrl = resolveImageUrl(player.playerImageUrl);
-    final radius = BorderRadius.circular(14 * scale);
-
-    // 테두리를 배경 데코레이션이 아니라 foregroundDecoration으로 그린다 —
-    // 배경 데코레이션은 Stack(챔피언 스플래시·선수 사진) 뒤에 깔리고 그 위에
-    // Stack 이 덮어 그려지는 순서라, 사진이 모서리까지 닿으면 안쪽 클립은
-    // 맞아도 테두리 선 자체가 사진에 가려 그 구간만 끊겨 보였다. 테두리를
-    // 맨 위(foreground)에 그리면 어떤 내용이 깔려도 항상 온전히 보인다.
-    return Container(
-      foregroundDecoration: embedded
-          ? null
-          : BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(color: AppColors.narLine),
-            ),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: embedded ? null : radius,
-          color: AppColors.narSoloHeroBg,
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 배경: 챔피언 스플래시 아트. 카드가 세로로 짧아 상단(얼굴)이 잘리기
-            // 쉬워 top 쪽으로 정렬한다.
-            if (splashUrl != null)
-              LayoutBuilder(
-                builder: (context, constraints) => CachedNetworkImage(
-                  imageUrl: splashUrl,
-                  fit: BoxFit.cover,
-                  alignment: const Alignment(0, -0.3),
-                  memCacheWidth: decodeWidthFor(
-                    context,
-                    boxWidth: constraints.maxWidth,
-                    boxHeight: constraints.maxHeight,
-                    sourceWidth: kChampionSplashWidth,
-                    sourceHeight: kChampionSplashHeight,
-                  ),
-                  fadeInDuration: const Duration(milliseconds: 150),
-                  errorWidget: (_, _, _) => const SizedBox.shrink(),
-                ),
-              ),
-            // 배경 위 어두운 그라데이션 — 콘텐츠 가독성 확보.
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: AppColors.narPlayedChampOverlay,
-              ),
-            ),
-            // 선수 사진 — 카드 우측 하단에 붙인다. 시안(mockup.html `.hero .ph`)
-            // 대로 카드 가장자리 밖으로 살짝 흘러넘치게 키워, 안쪽 클립이 정확히
-            // 모서리에서 잘라낸다. 없으면 빈 자리 유지.
-            if (photoUrl != null && photoUrl.isNotEmpty)
-              Positioned(
-                right: -10 * scale,
-                bottom: -10 * scale,
-                child: CachedNetworkImage(
-                  imageUrl: photoUrl,
-                  width: 216 * scale,
-                  height: 258 * scale,
-                  fit: BoxFit.contain,
-                  alignment: Alignment.bottomCenter,
-                  fadeInDuration: const Duration(milliseconds: 150),
-                  errorWidget: (_, _, _) => const SizedBox.shrink(),
-                ),
-              ),
-            // 우상단: "아리 플레이 중" — 챔피언을 모르면 그리지 않는다.
-            if (player.champion.isNotEmpty)
-              Positioned(
-                top: 10 * scale,
-                right: 10 * scale,
-                child: Container(
-                  height: 22 * scale,
-                  padding: EdgeInsets.symmetric(horizontal: 9 * scale),
-                  decoration: BoxDecoration(
-                    color: AppColors.narDarkOpacity62,
-                    borderRadius: BorderRadius.circular(11 * scale),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      NarLiveDot(
-                        scale: scale,
-                        size: 5,
-                        color: AppColors.narSoloDot,
-                      ),
-                      SizedBox(width: 5 * scale),
-                      Text(
-                        l.homeSoloPlaying(player.champion),
-                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12 * scale,
-                          color: AppColors.narGray400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                15 * scale,
-                13 * scale,
-                138 * scale,
-                13 * scale,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TeamCodeBadge(
-                        teamCode: player.teamCode,
-                        size: 20 * scale,
-                        fallbackImageUrl: player.teamImageUrl,
-                      ),
-                      SizedBox(width: 6 * scale),
-                      Text(
-                        [player.teamCode, ?role].join(' · '),
-                        style: TextStyle(
-                          fontFamily: 'Open Sans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13 * scale,
-                          color: AppColors.narGray400,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 6 * scale),
-                  Text(
-                    player.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 27 * scale,
-                      height: 1.1,
-                      color: AppColors.narText,
-                    ),
-                  ),
-                  SizedBox(height: 8 * scale),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // 매초 바뀌는 건 이 텍스트뿐이다 — 섹션 전체가 아니라
-                      // 여기만 다시 그린다([_HomeSoloRankSectionState._tick]).
-                      ValueListenableBuilder<int>(
-                        valueListenable: tick,
-                        builder: (context, _, _) => Text(
-                          _clock(secondsOf()),
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 30 * scale,
-                            height: 1,
-                            color: AppColors.narText,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 8 * scale),
-                      Flexible(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 3 * scale),
-                          child: Text(
-                            l.homeSoloInProgress,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              fontSize: 13 * scale,
-                              color: AppColors.narText2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  // "솔로 랭크" 배지 — 브랜드 3색을 옅게 깐다(신호색 없음).
-                  Container(
-                    height: 24 * scale,
-                    padding: EdgeInsets.symmetric(horizontal: 10 * scale),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.narSoloTint,
-                      borderRadius: BorderRadius.circular(12 * scale),
-                      border: Border.all(color: AppColors.narSoloLine),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        NarLiveDot(
-                          scale: scale,
-                          size: 6,
-                          color: AppColors.narSoloDot,
-                        ),
-                        SizedBox(width: 6 * scale),
-                        Text(
-                          [
-                            l.homeSoloQueueBadge,
-                            if (showRegion) ?player.overseasRegion,
-                          ].join(' · '),
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13 * scale,
-                            color: AppColors.narSoloText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 월즈 큰 카드 아래 — 응원 영역 자리에 "{name} 구독하면 / 솔랭 시작할 때 바로
-/// 알려드려요" 와 그라데이션 "구독하기" 버튼.
-class _WorldsSubscribeBar extends StatelessWidget {
-  const _WorldsSubscribeBar({
-    required this.player,
-    required this.scale,
-    this.onSubscribe,
-  });
-
-  final HomeLiveSoloPlayer player;
-  final double scale;
-  final VoidCallback? onSubscribe;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final radius = BorderRadius.circular(10 * scale);
-    return Container(
-      height: SoloCheerCard.barHeight * scale,
-      padding: EdgeInsets.only(left: 15 * scale, right: 12 * scale),
-      decoration: const BoxDecoration(
-        color: AppColors.narBgTertiary,
-        border: Border(top: BorderSide(color: AppColors.narDark500)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.worldsSoloSubscribePrompt(player.name),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14 * scale,
-                    color: AppColors.narTextTertiary,
-                  ),
-                ),
-                SizedBox(height: 3 * scale),
-                Text(
-                  l.worldsSoloSubscribePromptSub,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 12 * scale,
-                    color: AppColors.narText2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 10 * scale),
-          Material(
-            color: Colors.transparent,
-            child: Ink(
-              height: 44 * scale,
-              decoration: BoxDecoration(
-                gradient: AppColors.narBg,
-                borderRadius: radius,
-              ),
-              child: InkWell(
-                key: HomeSoloRankSection.worldsSubscribeKey(player.name),
-                borderRadius: radius,
-                onTap: onSubscribe,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16 * scale),
-                  child: Center(
-                    child: Text(
-                      l.worldsSoloSubscribe,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15 * scale,
-                        color: AppColors.narText,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 스와이프 위치 점. 5개까지만 그리고 넘치면 "+N".
-class _SwipeDots extends StatelessWidget {
-  const _SwipeDots({
-    required this.count,
-    required this.index,
-    required this.scale,
-  });
-
-  static const int _maxDots = 5;
-
-  final int count;
-  final int index;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = count < _maxDots ? count : _maxDots;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < shown; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            margin: EdgeInsets.symmetric(horizontal: 2 * scale),
-            width: i == index ? 14 * scale : 5 * scale,
-            height: 5 * scale,
-            decoration: BoxDecoration(
-              color: i == index ? AppColors.narGray400 : AppColors.narLine2,
-              borderRadius: BorderRadius.circular(3 * scale),
-            ),
-          ),
-        if (count > _maxDots) ...[
-          SizedBox(width: 6 * scale),
-          Text(
-            '+${count - _maxDots}',
-            style: TextStyle(
-              fontFamily: 'Open Sans',
-              fontSize: 10 * scale,
-              height: 1,
-              color: AppColors.narDark200,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// 오늘 끝난 경기 한 명. 종료 시각("12분 전 종료")과 경기 길이("32분")를
-/// 다른 줄에 둔다 — 한 줄에 같이 두면 "32분"이 "32분 전"으로 읽힌다.
-class _FinishedChip extends StatelessWidget {
-  const _FinishedChip({super.key, required this.player, required this.scale});
-
-  final HomeFinishedSoloPlayer player;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final duration = player.durationMinutes;
-    return Container(
-      height: 44 * scale,
-      padding: EdgeInsets.only(left: 6 * scale, right: 14 * scale),
-      decoration: BoxDecoration(
-        color: AppColors.narBgTertiary,
-        borderRadius: BorderRadius.circular(22 * scale),
-        border: Border.all(color: AppColors.narLine),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HomeSoloFace(
-            name: player.name,
-            url: resolveImageUrl(player.playerImageUrl),
-            size: 32 * scale,
-            scale: scale,
-          ),
-          SizedBox(width: 7 * scale),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    player.name,
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14 * scale,
-                      color: AppColors.narTextTertiary,
-                    ),
-                  ),
-                  if (duration != null) ...[
-                    SizedBox(width: 5 * scale),
-                    Text(
-                      l.homeSoloDuration(duration),
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 12 * scale,
-                        color: AppColors.narDark200,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              SizedBox(height: 1 * scale),
-              Text(
-                '${l.homeSoloEndedAgo(_ago(l, player.minutesAgo))} · '
-                '${player.won ? l.homeSoloWin : l.homeSoloLoss}',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 11 * scale,
-                  // 승자 빨강 / 패자 회색 — 스코어 표시 관례(policy/design.md).
-                  color: player.won ? AppColors.scoreWin : AppColors.narDark200,
-                ),
-              ),
-            ],
-          ),
-          if (player.cheerTotal > 0) ...[
-            SizedBox(width: 10 * scale),
-            Icon(
-              Icons.local_fire_department_rounded,
-              size: 13 * scale,
-              color: AppColors.narGuideAccent,
-            ),
-            SizedBox(width: 2 * scale),
-            Text(
-              formatCheerCount(player.cheerTotal),
-              key: HomeSoloRankSection.finishedCheerKey(player.name),
-              style: TextStyle(
-                fontFamily: 'Open Sans',
-                fontWeight: FontWeight.w700,
-                fontSize: 12 * scale,
-                color: AppColors.narGuideAccent,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SeeAllButton extends StatelessWidget {
-  const _SeeAllButton({required this.label, required this.scale, this.onTap});
-
-  final String label;
-  final double scale;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 34 * scale,
-        decoration: BoxDecoration(
-          color: AppColors.narBgTertiary,
-          borderRadius: BorderRadius.circular(10 * scale),
-          border: Border.all(color: AppColors.narLine),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-                fontSize: 14 * scale,
-                color: AppColors.narText2,
-              ),
-            ),
-            SizedBox(width: 3 * scale),
-            Icon(
-              Icons.chevron_right,
-              size: 15 * scale,
-              color: AppColors.narText2,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

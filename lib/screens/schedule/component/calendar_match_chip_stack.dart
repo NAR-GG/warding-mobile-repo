@@ -19,9 +19,9 @@ class CalendarMatchChipStack extends StatelessWidget {
   Widget build(BuildContext context) {
     if (matches.isEmpty) return const SizedBox.shrink();
 
-    final chipHeight = 18.0 * scale;
+    final chipHeight = 15.0 * scale;
     const gap = 1.0; // 칩 사이 간격 1px
-    final dotsHeight = 15.0 * scale;
+    final dotsHeight = 13.0 * scale;
 
     return LayoutBuilder(
       builder: (context, constraints) {

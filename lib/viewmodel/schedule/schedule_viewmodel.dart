@@ -37,6 +37,9 @@ class ScheduleViewModel extends ChangeNotifier {
        _onboarding = onboarding ?? OnboardingRepository.instance,
        _weekStartPreferences = weekStartPreferences ??
            CalendarWeekStartPreferenceRepository.instance {
+    // 위젯 딥링크로 다른 달에 진입했으면 오늘은 그 달에 없다. 엉뚱한 달의
+    // 칸이 강조되지 않도록 선택을 비운다.
+    if (_displayMonth != _monthOf(_todayDate())) _selectedDate = null;
     _weekStart = _weekStartPreferences.cachedValue ?? CalendarWeekStart.monday;
     _init();
     _loadPreferredTeam();
@@ -132,6 +135,22 @@ class ScheduleViewModel extends ChangeNotifier {
   Map<int, List<CalendarMatchBrief>> matchesOfMonth(DateTime month) =>
       _calendarByMonth[_monthOf(month)] ?? const {};
 
+  /// [month] 의 캘린더 조회가 끝났는지(결과가 비었더라도 true).
+  ///
+  /// 캐시에 키가 있으면 응답을 받은 것이다. '아직 모름'과 '받아 봤더니
+  /// 비어 있음'을 구분해야 하는 쪽에서 쓴다.
+  bool isMonthLoaded(DateTime month) =>
+      _calendarByMonth.containsKey(_monthOf(month));
+
+  /// [month] 조회가 끝났고 **경기가 하나도 없는지**.
+  ///
+  /// 아직 안 받은 달과 구분해야 한다 — 둘 다 [matchesOfMonth] 는 빈 맵이지만,
+  /// 전자는 기다리면 채워지고 후자는 영영 비어 있다.
+  bool isMonthEmpty(DateTime month) {
+    final cached = _calendarByMonth[_monthOf(month)];
+    return cached != null && cached.isEmpty;
+  }
+
   /// 필터가 바뀌어 기존 월별 데이터가 모두 무효해졌을 때.
   void _clearCalendarCache() => _calendarByMonth.clear();
 
@@ -158,9 +177,31 @@ class ScheduleViewModel extends ChangeNotifier {
   bool _teamSelected = false;
   bool get teamSelected => _teamSelected;
 
-  /// 날짜 피커에서 고른 날짜. 캘린더에서 그 칸 배경을 강조한다.
-  DateTime? _selectedDate;
+  /// 캘린더에서 강조할 날짜. 날짜 피커·칸 탭으로 바뀐다.
+  ///
+  /// 첫 진입에는 **오늘**이 선택돼 있다 — 화면을 열면 캘린더가 오늘을
+  /// 가리키고, 주간으로 접었을 때도 이번 주부터 보인다. 들어오자마자
+  /// 아무 날짜도 안 골라진 상태면 주간 캘린더가 어느 주를 비출지 모호하다.
+  /// 목록을 스크롤해 다른 달로 넘어가면 [clearSelectedDate] 로 놓아 준다.
+  DateTime? _selectedDate = _todayDate();
+
+  /// 오늘 00:00. [_selectedDate] 초기값과 비교에 쓴다.
+  static DateTime _todayDate() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
   DateTime? get selectedDate => _selectedDate;
+
+  /// 선택 강조를 지운다. 달은 그대로 둔다.
+  ///
+  /// 목록을 스크롤해 고른 날짜에서 멀어졌을 때 쓴다 — 선택이 남아 있으면
+  /// 주간 캘린더가 그 주에 붙박여 스크롤을 따라오지 못한다.
+  void clearSelectedDate() {
+    if (_selectedDate == null) return;
+    _selectedDate = null;
+    _notify();
+  }
 
   /// 캘린더 조회 진행 중 여부.
   bool _isLoading = false;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../components/nar_select_dropdown_field.dart';
 import '../../model/schedule_filter_options.dart';
 import '../../repository/live_activity/live_activity_logo_prefetcher.dart';
 import '../../repository/schedule/schedule_repository.dart';
@@ -14,6 +15,17 @@ class FilterOption {
   const FilterOption({required this.name, required this.selected});
   final String name;
   final bool selected;
+}
+
+/// 공용 드롭다운([NarSelectDropdownField])이 받는 타입으로 옮긴다.
+///
+/// 두 타입을 하나로 합치지 않은 이유: [FilterOption] 은 이 ViewModel 의
+/// 공개 API 라 화면·테스트가 이름으로 쓰고 있고, 컴포넌트 쪽은 뷰모델을
+/// 모르는 채로 있어야 다른 시트도 같은 드롭다운을 쓸 수 있다.
+extension FilterOptionList on List<FilterOption> {
+  List<NarSelectOption> toSelectOptions() => [
+    for (final o in this) NarSelectOption(name: o.name, selected: o.selected),
+  ];
 }
 
 /// 필터 모달이 '조회'로 닫힐 때 화면에 돌려주는 선택 결과.

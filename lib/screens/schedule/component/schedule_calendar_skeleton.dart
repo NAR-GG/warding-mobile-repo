@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../model/calendar_week_start.dart';
 import '../../../styles/app_colors.dart';
-import 'calendar_month_grid.dart';
+import 'schedule_calendar.dart';
 import 'calendar_weekday_header.dart';
 
 /// 캘린더 최초 로딩 중 표시할 스켈레톤.
@@ -68,13 +68,23 @@ class _ScheduleCalendarSkeletonState extends State<ScheduleCalendarSkeleton>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CalendarWeekdayHeader(scale: scale, weekStart: widget.weekStart),
-          Expanded(
-            child: LayoutBuilder(
+          // 실제 캘린더와 같은 높이로 띄운다 — 스켈레톤이 더 크면 로딩이
+          // 끝나는 순간 캘린더가 줄면서 아래 목록이 통째로 밀려 올라온다.
+          //
+          // 부모가 그보다 짧으면 그만큼만 쓴다(Flexible). 넘치는 채로 두면
+          // RenderFlex overflow 가 난다.
+          Flexible(
+            child: SizedBox(
+              height: ScheduleCalendar.monthRowHeight * scale * weekCount,
+              child: LayoutBuilder(
               builder: (context, constraints) {
                 final rowHeight = CalendarMonthGrid.rowHeightFor(
                   availableHeight: constraints.maxHeight,
                   weekCount: weekCount,
                   scale: scale,
+                  // 실제 그리드와 같은 하한을 써야 로딩 전후로 칸 높이가
+                  // 바뀌지 않는다([ScheduleCalendar] 참고).
+                  minHeight: ScheduleCalendar.monthRowHeight,
                 );
                 // 뷰포트보다 커지는 건 화면이 너무 짧아 최소 높이를 지킬
                 // 때뿐이다. 그때만 스크롤한다 — 실제 그리드와 같은 규칙.
@@ -153,6 +163,7 @@ class _ScheduleCalendarSkeletonState extends State<ScheduleCalendarSkeleton>
                   },
                 );
               },
+            ),
             ),
           ),
         ],
