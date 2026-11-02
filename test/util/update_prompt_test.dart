@@ -86,11 +86,12 @@ void main() {
       expect(opened, hasLength(1));
     });
 
-    testWidgets('스토어에 받을 게 없으면 태그가 있어도 안 띄운다', (tester) async {
+    testWidgets('이미 최신이면 태그가 더 높아도 안 띄운다', (tester) async {
       await tester.pumpWidget(harness());
       var confirmCalls = 0;
 
-      // 태그를 스토어 버전보다 높게 잘못 적은 경우. 가드가 없으면 스토어에 가도
+      // `isUpdateAvailable()` 가드가 실제로 막는 경우는 이것뿐이다 — 설치 버전이
+      // 스토어 최신인데 태그만 그보다 높게 적힌 상태. 가드가 없으면 스토어로 가도
       // 받을 게 없는 팝업이 매번 뜬다.
       await checkForUpdate(
         upgraderFactory: () => _FakeUpgrader(available: false, belowMin: true),
@@ -103,6 +104,34 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(confirmCalls, 0);
+    });
+
+    testWidgets('태그를 미출시 버전으로 적으면 가드가 막지 못한다 — 태그 운영으로 지켜야 한다', (
+      tester,
+    ) async {
+      await tester.pumpWidget(harness());
+      var confirmCalls = 0;
+
+      // 태그 1.0.50 / 스토어 1.0.43 / 설치 1.0.42 인 상태. 설치 버전이 스토어보다
+      // 낮으니 isUpdateAvailable() 은 true, 태그보다도 낮으니 belowMinAppVersion()
+      // 도 true — 팝업이 뜬다. 사용자가 1.0.43 으로 올려도 태그 1.0.50 에는 닿지
+      // 못해 계속 뜬다. 가드로는 못 막으므로 README 가 "이미 출시된 버전 이하" 를
+      // 규칙으로 못박고 있다. 이 테스트는 그 한계를 문서가 아니라 코드로 고정한다.
+      await checkForUpdate(
+        upgraderFactory: () => _FakeUpgrader(available: true, belowMin: true),
+        confirm: (_, _) async {
+          confirmCalls++;
+          return false;
+        },
+        openStore: (_) async {},
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        confirmCalls,
+        1,
+        reason: '가드가 이 경우를 막는다고 기대하면 안 된다 — 태그 운영 규칙으로 지켜야 한다',
+      );
     });
 
     testWidgets('최신이면 팝업을 띄우지 않는다', (tester) async {
