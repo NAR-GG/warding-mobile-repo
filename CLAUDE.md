@@ -190,6 +190,31 @@ shorebird patch android --release-version <pubspec의 version>
 릴리즈와 같은 방식으로 태그를 찍는다 — `patch/<release version>/<번호>`, `-a` 필수. 번호는
 같은 릴리즈 버전에 패치를 낼 때마다 1부터 순서대로 올린다.
 
+**패치도 태그를 밀면 자동으로 돈다** (`patch-deploy.yml`). 릴리즈와 같은 방식이다.
+
+```
+git tag -a patch/1.0.42+92/1 -m "patch"
+git push --follow-tags
+```
+
+```
+[1] verify      태그 형식 · annotated · pubspec↔대상 버전 일치
+                **패치로 나갈 수 없는 변경(네이티브·에셋·pubspec 의존성) 차단**
+                analyze · test
+[2] e2e         통과를 **기다린다** (릴리즈는 업로드 직전에 보지만, 패치는
+                올리면 심사 없이 바로 사용자에게 가므로 먼저 막는다)
+[3] patch-ios ∥ patch-android
+[4] notify      #와딩-릴리즈-배포 채널에 결과
+```
+
+가드 로직은 `.github/workflows/patch-deploy-test.sh` 로 회귀 테스트하며 PR마다 돈다
+(태그를 밀어 봐야 도는 워크플로우라 눈으로는 검증할 수 없다).
+
+패치는 **업데이트 팝업을 띄우지 않는다** — 스토어 버전이 그대로이기 때문이다. Dart 수정을
+스토어 릴리즈로 내보내면 팝업이 또 뜨고, 그게 쌓이면 사용자가 팝업을 닫는 습관을 들여
+정작 올려야 하는 버전에서도 무시한다(`util/update_prompt.dart` 주석 참고). **Dart 만 바뀐
+수정은 되도록 패치로 낸다.**
+
 패치 규칙:
 - 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출이 필요하다.
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시가 발생할 위험이 있다.
