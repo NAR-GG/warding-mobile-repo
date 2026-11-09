@@ -125,6 +125,82 @@ def page_users($p): ev("page_view") | map(select(.properties.location_page == $p
                | map(select(all(.[]; .properties.app_version == null)))
                | length),
 
+  # ── 앱 진입 경로 ────────────────────────────────────────────────────────
+  #
+  # "오늘 이 사용자가 앱을 어떻게 켰나" 를 두 축으로 본다. 한 축만으로는
+  # 답이 안 나오기 때문이다.
+  #
+  # `entry_point` 는 super property 가 아니라 **특정 화면에만** 실린다
+  # (경기 상세: push/widget/in_app, 로그인: app_start/session_expired/
+  # guest_lock). 그래서 "푸시로 들어왔지만 경기 상세에 안 간 사용자" 는
+  # 이 값이 없다 — `entry_points` 는 **부분 집계**라는 전제로 읽어야 한다.
+  #
+  # 그 공백을 메우는 게 `first_pages` 다. 그날 **첫 page_view** 가 어느
+  # 화면이었는지로 진입을 추론한다(`exit_pages` 의 거울). home 이면 일반
+  # 실행, match_detail 이면 푸시·위젯 가능성, login 이면 미로그인이다.
+  # 다만 이쪽도 근사치다 — 화면을 한 번도 안 보고 끈 사용자는 page_view 가
+  # 없어 빠지고, 자정을 넘긴 세션은 그날 첫 화면이 진입으로 잡힌다.
+  #
+  # 두 값을 나란히 두면 서로를 보정해 읽을 수 있다.
+  first_pages: (ev("page_view")
+                | map(select(.properties.location_page != null))
+                | group_by(.properties.distinct_id)
+                | map(sort_by(.properties.time) | first.properties.location_page)
+                | group_by(.) | map({key: .[0], n: length})
+                | sort_by(-.n, .key)),
+
+  # `entry_point` 가 실린 이벤트에서 센다. **사용자당 대표값 하나**만 —
+  # 그냥 이벤트를 묶으면 한 명이 푸시로 들어와 앱 안을 돌아다닌 경우
+  # push 와 in_app 양쪽에 잡혀 합이 사용자 수를 넘는다(`versions` 와 같은
+  # 함정이다). 대표값은 **그날 처음 본 값**으로 한다 — 진입 경로를 묻고
+  # 있으니 나중의 in_app 이동이 아니라 최초 진입이 답이다.
+  #
+  # `app_open` 이 있으면 **그것만** 쓴다. 그 이벤트는 앱을 켤 때 한 번,
+  # 모든 진입에 찍히도록 심은 것이라(`AnalyticsEvent.appOpen`) 진입 경로의
+  # 정답이다. `page_view` 의 `entry_point` 는 경기 상세·로그인에만 실리는
+  # 부분 집계라, 둘을 섞으면 같은 사용자가 app_open=launcher 와
+  # page_view=in_app 으로 두 번 세어질 수 있다.
+  #
+  # app_open 을 심기 전 빌드가 남아 있는 동안에는 page_view 쪽으로 떨어진다
+  # (계측이 사용자에게 도달하기까지의 과도기).
+  entry_points: ((ours | map(select(.properties.entry_point != null
+                                    and .properties.distinct_id != null))) as $ep
+    | ($ep | map(select(.event == "app_open"))) as $open
+    | (if ($open | length) > 0 then $open else $ep end)
+    | group_by(.properties.distinct_id)
+    | map(sort_by(.properties.time) | first.properties.entry_point)
+    | group_by(.) | map({key: .[0], n: length})
+    | sort_by(-.n, .key)),
+
+  # `entry_points` 가 `app_open` 기준으로 집계됐나.
+  #
+  # 알림이 주석을 바꿔 달아야 해서 필요하다 — app_open 기준이면 **모든 진입**을
+  # 센 것이고, page_view 폴백이면 경기 상세·로그인만 센 **부분 집계**다. 둘을
+  # 같은 문구로 보여주면 숫자를 잘못 읽는다.
+  entry_from_app_open: (ours
+                        | map(select(.event == "app_open"
+                                     and .properties.entry_point != null))
+                        | length > 0),
+
+  # 진입 경로를 모르는 사용자 수. `entry_points` 합 + 이 값 = DAU 가
+  # 성립해야 한다(해석의 전제). 이 값이 대부분이면 "경로를 모른다" 는 뜻이고,
+  # `first_pages` 쪽을 봐야 한다.
+  #
+  # 기준을 `entry_points` 와 **똑같이** 맞춘다 — 그쪽이 app_open 만 썼다면
+  # 여기도 app_open 이 없는 사용자를 세야 한다. 안 맞추면 app_open 을 심은
+  # 빌드와 안 심은 빌드가 섞인 날 합이 DAU 를 넘는다.
+  no_entry_point: ((ours | map(select(.event == "app_open"
+                                      and .properties.entry_point != null))
+                    | length > 0) as $has_open
+    | (map(select(.properties.distinct_id != null))
+       | group_by(.properties.distinct_id)
+       | map(select(if $has_open
+                    then all(.[]; .event != "app_open"
+                                  or .properties.entry_point == null)
+                    else all(.[]; .properties.entry_point == null)
+                    end))
+       | length)),
+
   # 이탈 화면: 그 사용자의 **마지막** page_view 가 어느 화면이었나.
   # 하루 경계로 자르는 근사치다(자정 넘겨 계속 쓴 세션은 그날 마지막 화면이
   # 이탈로 잡힌다). 그래도 "어디서 앱을 덮는가" 의 신호로는 쓸 만하다.

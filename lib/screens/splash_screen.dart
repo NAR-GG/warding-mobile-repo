@@ -21,6 +21,7 @@ import '../util/home_widget_service.dart';
 import '../util/update_prompt.dart';
 import 'login/login_screen.dart';
 import 'home/home_screen.dart';
+import '../util/analytics.dart';
 import '../util/analytics_events.dart';
 import '../util/analytics_route_observer.dart';
 
@@ -347,6 +348,10 @@ class _SplashScreenState extends State<SplashScreen>
     void consumeNow() {
       FcmService.instance.consumePendingDeepLink();
       HomeWidgetService.markSplashReady();
+      // 푸시·위젯 진입이면 각 핸들러가 이미 자기 경로로 선점했다
+      // (`Analytics.trackAppOpen` 은 실행당 첫 호출만 채택한다). 여기까지
+      // 비어 있다면 런처 아이콘으로 켠 것이다.
+      Analytics.trackAppOpen(AnalyticsEntryPoint.launcher);
     }
 
     // `route.animation` 은 라우트가 Navigator 에 설치된 뒤에야 생긴다.

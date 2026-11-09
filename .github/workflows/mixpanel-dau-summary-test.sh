@@ -30,10 +30,11 @@ check() {
 # 하루치 샘플. 자동 이벤트($ae_*)·우리 이벤트·버전 있는/없는 사용자를 섞는다.
 cat > "$FIX/day.jsonl" <<'EOF'
 {"event":"page_view","properties":{"distinct_id":"u1","time":100,"location_page":"home","app_version":"1.0.36+86"}}
-{"event":"page_view","properties":{"distinct_id":"u1","time":200,"location_page":"match_detail","app_version":"1.0.36+86"}}
+{"event":"page_view","properties":{"distinct_id":"u1","time":200,"location_page":"match_detail","entry_point":"push","app_version":"1.0.36+86"}}
+{"event":"page_view","properties":{"distinct_id":"u1","time":250,"location_page":"match_detail","entry_point":"in_app","app_version":"1.0.36+86"}}
 {"event":"match_card_click","properties":{"distinct_id":"u1","time":150,"location_page":"home","app_version":"1.0.36+86"}}
 {"event":"match_card_click","properties":{"distinct_id":"u1","time":160,"location_page":"home","app_version":"1.0.36+86"}}
-{"event":"page_view","properties":{"distinct_id":"u2","time":300,"location_page":"login","app_version":"1.0.36+86"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":300,"location_page":"login","entry_point":"app_start","app_version":"1.0.36+86"}}
 {"event":"login_button_click","properties":{"distinct_id":"u2","time":310,"location_page":"login","login_method":"kakao","app_version":"1.0.36+86"}}
 {"event":"page_view","properties":{"distinct_id":"u2","time":320,"location_page":"onboarding","app_version":"1.0.36+86"}}
 {"event":"section_view","properties":{"distinct_id":"u2","time":321,"location_page":"onboarding","location_section":"league","app_version":"1.0.36+86"}}
@@ -59,9 +60,9 @@ j() { printf '%s' "$OUT" | jq -c "$1"; }
 
 # DAU 는 자동 이벤트도 센다 → u1..u5 = 5명
 check "dau (자동 이벤트 포함)" "5" "$(j '.dau')"
-check "events_total" "22" "$(j '.events_total')"
+check "events_total" "23" "$(j '.events_total')"
 # 자동 이벤트 2건 제외
-check "events_ours" "20" "$(j '.events_ours')"
+check "events_ours" "21" "$(j '.events_ours')"
 
 # 퍼널은 고유 사용자 수
 check "funnel.login_users" "2" "$(j '.funnel.login_users')"
@@ -88,6 +89,25 @@ check "exit_pages" \
   '[{"key":"onboarding","n":2},{"key":"match_detail","n":1}]' \
   "$(j '.exit_pages')"
 
+# 진입 화면 = 사용자별 **첫** page_view. u1 home, u2·u3 login.
+# 자동 이벤트만 보낸 u5 는 page_view 가 없어 빠진다(근사치의 한계).
+check "first_pages" \
+  '[{"key":"login","n":2},{"key":"home","n":1}]' \
+  "$(j '.first_pages')"
+
+# 진입 경로는 **사용자당 대표값 하나**(그날 처음 본 값)다.
+# u1 은 push(t=200) → in_app(t=250) 를 둘 다 보냈지만 push 로만 센다 —
+# 이벤트를 그냥 묶으면 한 명이 두 칸에 들어가 합이 사용자 수를 넘는다.
+check "entry_points (사용자당 1개, 최초 진입)" \
+  '[{"key":"app_start","n":1},{"key":"push","n":1}]' \
+  "$(j '.entry_points')"
+
+# entry_point 를 하나도 안 보낸 사용자 = u3·u4·u5 → 3명.
+# entry_points 합(2) + no_entry_point(3) = DAU(5) 가 성립해야 한다.
+check "no_entry_point" "3" "$(j '.no_entry_point')"
+check "entry 합 + 미상 = DAU" "5" \
+  "$(j '[(.entry_points | map(.n) | add // 0), .no_entry_point] | add')"
+
 check "risk.withdraw" "1" "$(j '.risk.withdraw')"
 
 echo "[2] 빈 하루(이벤트 0건)"
@@ -96,6 +116,9 @@ E=$(jq -sf "$JQ_FILE" "$FIX/empty.jsonl")
 check "dau" "0" "$(printf '%s' "$E" | jq -c '.dau')"
 check "pages" "[]" "$(printf '%s' "$E" | jq -c '.pages')"
 check "exit_pages" "[]" "$(printf '%s' "$E" | jq -c '.exit_pages')"
+check "first_pages" "[]" "$(printf '%s' "$E" | jq -c '.first_pages')"
+check "entry_points" "[]" "$(printf '%s' "$E" | jq -c '.entry_points')"
+check "no_entry_point" "0" "$(printf '%s' "$E" | jq -c '.no_entry_point')"
 check "versions" "[]" "$(printf '%s' "$E" | jq -c '.versions')"
 # 단계는 항상 4칸을 유지해야 알림 렌더가 깨지지 않는다
 check "onboarding_steps 길이" "4" "$(printf '%s' "$E" | jq -c '.onboarding_steps | length')"
@@ -181,6 +204,50 @@ A=$(jq -sf "$JQ_FILE" "$FIX/auto.jsonl")
 check "dau (앱은 켰다)" "1" "$(printf '%s' "$A" | jq -c '.dau')"
 check "events_ours" "0" "$(printf '%s' "$A" | jq -c '.events_ours')"
 check "no_version (버전 미상)" "1" "$(printf '%s' "$A" | jq -c '.no_version')"
+
+echo "[8] 진입 경로: app_open 이 있으면 그것만 쓴다"
+# u1: app_open(push) + page_view(in_app) → push 로만 세야 한다. 둘을 섞으면
+#     한 사용자가 두 칸에 들어가 합이 DAU 를 넘는다.
+# u2: app_open(launcher) 만.
+# u3: app_open 없이 page_view(entry_point) 만 — app_open 을 심기 전 빌드.
+#     이 날은 app_open 이 있으므로 u3 는 '경로 미상' 으로 떨어진다.
+cat > "$FIX/entry.jsonl" <<'EOF'
+{"event":"app_open","properties":{"distinct_id":"u1","time":10,"entry_point":"push"}}
+{"event":"page_view","properties":{"distinct_id":"u1","time":20,"location_page":"match_detail","entry_point":"in_app"}}
+{"event":"app_open","properties":{"distinct_id":"u2","time":30,"entry_point":"launcher"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":40,"location_page":"home"}}
+{"event":"page_view","properties":{"distinct_id":"u3","time":50,"location_page":"login","entry_point":"app_start"}}
+EOF
+EN=$(jq -sf "$JQ_FILE" "$FIX/entry.jsonl")
+en() { printf '%s' "$EN" | jq -c "$1"; }
+check "dau" "3" "$(en '.dau')"
+check "entry_points (app_open 만)" \
+  '[{"key":"launcher","n":1},{"key":"push","n":1}]' \
+  "$(en '.entry_points')"
+# u3 는 app_open 이 없어 미상. 합(2) + 미상(1) = DAU(3).
+check "no_entry_point (app_open 없는 사용자)" "1" "$(en '.no_entry_point')"
+check "entry 합 + 미상 = DAU" "3" \
+  "$(en '[(.entry_points | map(.n) | add // 0), .no_entry_point] | add')"
+# 알림이 주석 문구를 가르는 데 쓴다 — app_open 기준이면 "부분 집계" 경고를
+# 달지 않는다.
+check "entry_from_app_open" "true" "$(en '.entry_from_app_open')"
+
+echo "[9] 진입 경로: app_open 이 아직 없는 날은 page_view 로 떨어진다"
+# 계측이 사용자에게 도달하기 전 과도기. app_open 이 하나도 없으면
+# page_view 의 entry_point 를 쓴다(부분 집계라도 없는 것보다 낫다).
+cat > "$FIX/entry_legacy.jsonl" <<'EOF'
+{"event":"page_view","properties":{"distinct_id":"u1","time":10,"location_page":"match_detail","entry_point":"push"}}
+{"event":"page_view","properties":{"distinct_id":"u1","time":20,"location_page":"match_detail","entry_point":"in_app"}}
+{"event":"page_view","properties":{"distinct_id":"u2","time":30,"location_page":"home"}}
+EOF
+EL=$(jq -sf "$JQ_FILE" "$FIX/entry_legacy.jsonl")
+el() { printf '%s' "$EL" | jq -c "$1"; }
+# u1 은 push(먼저) → in_app 이라 push 하나만.
+check "entry_points (page_view 폴백)" '[{"key":"push","n":1}]' "$(el '.entry_points')"
+check "no_entry_point" "1" "$(el '.no_entry_point')"
+check "entry 합 + 미상 = DAU" "2" \
+  "$(el '[(.entry_points | map(.n) | add // 0), .no_entry_point] | add')"
+check "entry_from_app_open (폴백이라 false)" "false" "$(el '.entry_from_app_open')"
 
 if [ "$fail" -ne 0 ]; then
   echo

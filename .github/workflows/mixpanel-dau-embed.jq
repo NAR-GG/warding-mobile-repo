@@ -57,6 +57,27 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
                 then " (월즈 솔랭 알림 \($c.engagement.worlds_subscribe))" else "" end)),
      inline: false},
 
+    {name: "진입 경로",
+     # 두 축을 같이 보여준다. `entry_point` 는 경기 상세·로그인에만 실려
+     # 부분 집계라, 그것만 보면 "푸시로 들어와 홈만 보고 끈 사용자" 가
+     # 안 보인다. 첫 화면 분포가 그 공백을 메운다.
+     value: (("첫 화면 " + ($s.first_top | lines))
+             + (if ($s.entry_top | length) > 0
+                then "\n경로 " + ($s.entry_top | lines)
+                     + (if ($c.no_entry_point // 0) > 0
+                        then " · 미상 \($c.no_entry_point)명" else "" end)
+                     # 집계 기준에 따라 숫자의 뜻이 다르다. app_open 기준이면
+                     # 모든 진입이고, 폴백이면 경기 상세·로그인만이다.
+                     + (if $c.entry_from_app_open then ""
+                        else "\n※ 경로는 경기 상세·로그인 진입만 집계된다(부분)"
+                        end)
+                # entry_point 가 하나도 없는 날은 "없음" 대신 **왜** 없는지를
+                # 적는다. 앱 버전 필드와 같은 이유다.
+                else "\n※ 경로 값이 없다 — `app_open` 을 심은 빌드가 사용자에게"
+                     + " 도달하기 전이다"
+                end)),
+     inline: false},
+
     {name: "이탈 화면 TOP 5",
      value: ($s.exit_top | lines),
      inline: false},

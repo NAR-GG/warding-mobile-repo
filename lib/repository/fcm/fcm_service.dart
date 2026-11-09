@@ -15,6 +15,7 @@ import '../device/device_repository.dart';
 import '../notification/live_match_notification_store.dart';
 import '../notification/solo_rank_notification_store.dart';
 import 'fcm_notification_types.dart';
+import '../../util/analytics.dart';
 import '../../util/analytics_events.dart';
 
 /// FCM(푸시) 초기화·토큰 등록·메시지 핸들링을 담당한다.
@@ -113,6 +114,9 @@ class FcmService {
     if (initial != null) {
       debugPrint('[FCM] 종료 상태에서 알림으로 시작 → 딥링크 보류');
       _pendingInitialData = initial.data;
+      // 진입 경로는 **여기서** 확정된다 — 내비게이션(스플래시가 소비)보다
+      // 먼저다. 딥링크 처리를 기다리면 스플래시가 `launcher` 로 선점한다.
+      Analytics.trackAppOpen(AnalyticsEntryPoint.push);
     }
   }
 
