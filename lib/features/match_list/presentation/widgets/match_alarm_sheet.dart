@@ -9,7 +9,8 @@ import 'package:warding/core/ui/app_bottom_sheet.dart';
 import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
-import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/my_subscription_setting/presentation/widgets/live_event_detail_card.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
@@ -91,7 +92,7 @@ Future<bool?> runMatchAlarmFlow(
   String awayCode = '',
   MatchSubscriptionRepository? repository,
 }) async {
-  final repo = repository ?? MatchSubscriptionRepository.instance;
+  final repo = repository ?? di<MatchSubscriptionRepository>();
   final l = AppLocalizations.of(context)!;
   final messenger = ScaffoldMessenger.maybeOf(context);
   void feedback(String message) => showMatchAlarmFeedback(messenger, message);
@@ -99,7 +100,8 @@ Future<bool?> runMatchAlarmFlow(
   MatchAlarmResult? initial;
   if (subscribed) {
     try {
-      final st = await repo.matchSubscriptionStatus(matchId);
+      final st = (await repo.matchSubscriptionStatus(matchId))
+          .getOrElse((f) => throw StateError('$f'));
       initial = (
         setStart: st.setStartEnabled,
         setEnd: st.setEndEnabled,

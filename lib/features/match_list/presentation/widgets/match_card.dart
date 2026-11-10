@@ -9,7 +9,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_live_badge.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/core/util/league_meta.dart';
@@ -257,7 +258,7 @@ class _AlarmBell extends StatefulWidget {
 }
 
 class _AlarmBellState extends State<_AlarmBell> {
-  final _repo = MatchSubscriptionRepository.instance;
+  final _repo = di<MatchSubscriptionRepository>();
   bool _subscribed = false;
 
   @override
@@ -270,7 +271,8 @@ class _AlarmBellState extends State<_AlarmBell> {
     try {
       final jwt = await AuthService.instance.jwt;
       if (jwt == null || jwt.isEmpty) return; // 비회원은 정적 상태로 둔다.
-      final ids = await _repo.subscribedMatchIds();
+      final ids = (await _repo.subscribedMatchIds())
+          .getOrElse((f) => throw StateError('$f'));
       if (mounted && ids.contains(widget.matchId)) {
         setState(() => _subscribed = true);
       }

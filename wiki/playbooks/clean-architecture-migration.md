@@ -238,6 +238,12 @@ while j < len(text):
 text = text[:open_pos] + "Right(" + text[open_pos:j+1] + ")" + text[j+1:]
 ```
 
+- **`git checkout <테스트파일>` 로 되돌리면 그 파일의 import 경로 치환도 함께 날아간다.**
+  되돌린 뒤 `analyze` 가 "Target of URI doesn't exist" 를 내면 그것이다 — 경로 치환을
+  다시 적용한다. 치환 실패를 되돌릴 때는 **그 파일만** 되돌리고, 경로 수정은 별도로
+  다시 하는 편이 혼동이 적다.
+- 스텁이 2~3 줄이면 정규식을 쓸 이유가 없다. 줄 전체를 문자열로 찾아 바꾼다.
+
 ## 8. 검증
 
 ```bash

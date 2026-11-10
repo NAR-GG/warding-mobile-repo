@@ -7,7 +7,8 @@ import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/player/data/player_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
@@ -37,7 +38,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
        cheers = cheers ?? SoloCheerController(source: defaultCheerSource()),
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        _matchSubscriptions =
-           matchSubscriptions ?? MatchSubscriptionRepository.instance,
+           matchSubscriptions ?? di<MatchSubscriptionRepository>(),
        _isLoggedIn = isLoggedIn ?? _defaultLoggedIn;
 
   final int playerId;
@@ -169,7 +170,8 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     final matchId = detail?.nextMatch?.matchId;
     if (matchId == null || matchId.isEmpty || !await _isLoggedIn()) return;
     try {
-      final ids = await _matchSubscriptions.subscribedMatchIds();
+      final ids = (await _matchSubscriptions.subscribedMatchIds())
+          .getOrElse((f) => throw StateError('$f'));
       matchAlarmOn = ids.contains(matchId);
       _notify();
     } catch (_) {
