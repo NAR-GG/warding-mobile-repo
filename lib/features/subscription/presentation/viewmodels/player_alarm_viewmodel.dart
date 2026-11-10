@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 /// 마이 구독 설정 '선수' 탭 ViewModel.
 ///
@@ -17,7 +19,7 @@ import 'package:warding/features/subscription/data/subscription_repository.dart'
 ///   있는 마이 구독 설정 화면.
 class PlayerAlarmViewModel extends ChangeNotifier {
   PlayerAlarmViewModel({SubscriptionRepository? repository, this.deferSave = false})
-      : _repo = repository ?? SubscriptionRepository.instance {
+      : _repo = repository ?? di<SubscriptionRepository>() {
     load();
   }
 
@@ -85,7 +87,8 @@ class PlayerAlarmViewModel extends ChangeNotifier {
         return;
       }
       _loggedIn = true;
-      final fetched = await _repo.fetchSubscribedPlayers();
+      final fetched = (await _repo.fetchSubscribedPlayers())
+          .getOrElse((f) => throw FailureException(f));
       // 기준선은 언제나 서버 값. 화면 값만 유지할 변경분으로 덮는다.
       _saved = fetched;
       _players = [for (final p in fetched) pending[p.playerId] ?? p];
@@ -128,11 +131,12 @@ class PlayerAlarmViewModel extends ChangeNotifier {
     _notify();
     if (deferSave) return;
     try {
-      await _repo.updatePlayerAlarm(
+      (await _repo.updatePlayerAlarm(
         playerId,
         startEnabled: after.startEnabled,
         endEnabled: after.endEnabled,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _saved = _players;
     } catch (e) {
       // 실패 시 이전 상태로 롤백.
@@ -165,11 +169,12 @@ class PlayerAlarmViewModel extends ChangeNotifier {
         continue;
       }
       try {
-        await _repo.updatePlayerAlarm(
+        (await _repo.updatePlayerAlarm(
           player.playerId,
           startEnabled: player.startEnabled,
           endEnabled: player.endEnabled,
-        );
+        ))
+          .getOrElse((f) => throw FailureException(f));
         // 성공한 선수는 기준선을 새 값으로 옮긴다.
         final i = saved.indexWhere((p) => p.playerId == player.playerId);
         if (i >= 0) saved[i] = player;

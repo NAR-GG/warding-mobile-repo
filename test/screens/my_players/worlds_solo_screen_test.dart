@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
@@ -44,7 +45,7 @@ void main() {
     AuthService.instance.resetJwtCacheForTesting();
     repo = MockSubscriptionRepository();
     when(() => repo.subscribePlayer(any())).thenAnswer(
-      (inv) async => _player(inv.positionalArguments.first as int, ''),
+      (inv) async => Right(_player(inv.positionalArguments.first as int, '')),
     );
     when(
       () => repo.updatePlayerAlarm(
@@ -52,7 +53,7 @@ void main() {
         startEnabled: any(named: 'startEnabled'),
         endEnabled: any(named: 'endEnabled'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => const Right(unit));
     late MyPlayersViewModel vm;
     await tester.runAsync(() async {
       vm = MyPlayersViewModel(

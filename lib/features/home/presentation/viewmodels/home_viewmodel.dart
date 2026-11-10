@@ -24,7 +24,7 @@ import 'package:warding/features/schedule/domain/repositories/schedule_repositor
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/home/domain/repositories/standings_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
 import 'package:warding/core/util/match_status.dart';
 import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
@@ -87,7 +87,7 @@ class HomeViewModel extends ChangeNotifier {
        _standingsRepo = standings ?? di<StandingsRepository>(),
        _community = community ?? CommunityRepository.instance,
        _shortsRepo = shorts ?? di<ShortsRepository>(),
-       _subscriptions = subscriptions ?? SubscriptionRepository.instance,
+       _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
        _memberNotifications =
            memberNotifications ?? di<MemberNotificationRepository>(),
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
@@ -311,7 +311,8 @@ class HomeViewModel extends ChangeNotifier {
     final gen = ++_subscriptionsGen;
     try {
       // 비회원(JWT 없음)이면 authorizedRequest 가 던진다 → 아래 catch.
-      final players = await _subscriptions.fetchSubscribedPlayers();
+      final players = (await _subscriptions.fetchSubscribedPlayers())
+          .getOrElse((f) => throw FailureException(f));
       // 그 사이 더 새 요청이 떴으면 옛 응답은 버린다(아래 로더들도 같다).
       if (_disposed || gen != _subscriptionsGen) return;
       _subscribedPlayers = players;

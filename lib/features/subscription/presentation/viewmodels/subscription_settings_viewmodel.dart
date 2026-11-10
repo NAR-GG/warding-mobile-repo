@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 
@@ -23,7 +25,7 @@ enum PlayerSortMode {
 /// 팀은 `notification-subscriptions`, 선수는 `player-subscriptions` API 를 쓴다.
 class SubscriptionSettingsViewModel extends ChangeNotifier {
   SubscriptionSettingsViewModel({SubscriptionRepository? repository})
-    : _repo = repository ?? SubscriptionRepository.instance {
+    : _repo = repository ?? di<SubscriptionRepository>() {
     load();
   }
 
@@ -121,17 +123,20 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     _error = null;
     _notify();
 
-    final subscribed = _repo.fetchSubscribedPlayers().then((v) {
+    final subscribed = _repo.fetchSubscribedPlayers().then((r) {
+      final v = r.getOrElse((f) => throw FailureException(f));
       _subscribedPlayers = _sortPlayers(v);
       _notify();
     });
-    final teams = _repo.fetchAvailableTeams().then((v) {
+    final teams = _repo.fetchAvailableTeams().then((r) {
+      final v = r.getOrElse((f) => throw FailureException(f));
       _availableTeams = v;
       _notify();
     });
     final available = _repo
         .searchAvailablePlayers(query: _query, page: 0, size: _pageSize)
-        .then((v) {
+        .then((r) {
+          final v = r.getOrElse((f) => throw FailureException(f));
           _availablePlayers = _sortPlayers(v.content);
           _availPage = v.page;
           _availTotalPages = v.totalPages;
@@ -157,11 +162,12 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   Future<void> searchPlayers(String query) async {
     _query = query;
     try {
-      final v = await _repo.searchAvailablePlayers(
+      final v = (await _repo.searchAvailablePlayers(
         query: query,
         page: 0,
         size: _pageSize,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _availablePlayers = _sortPlayers(v.content);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
@@ -180,11 +186,12 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
     _loadingMorePlayers = true;
     _notify();
     try {
-      final v = await _repo.searchAvailablePlayers(
+      final v = (await _repo.searchAvailablePlayers(
         query: _query,
         page: _availPage + 1,
         size: _pageSize,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _availablePlayers = _sortPlayers([..._availablePlayers, ...v.content]);
       _availPage = v.page;
       _availTotalPages = v.totalPages;
@@ -201,9 +208,11 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   Future<void> togglePlayer(int playerId, bool subscribed) async {
     try {
       if (subscribed) {
-        await _repo.unsubscribePlayer(playerId);
+        (await _repo.unsubscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
       } else {
-        await _repo.subscribePlayer(playerId);
+        (await _repo.subscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
       }
       _applyPlayerToggle(playerId, !subscribed);
       // API 성공 후에 찍는다 — 실패는 아래 catch 에서 조용히 삼켜지고
@@ -226,9 +235,11 @@ class SubscriptionSettingsViewModel extends ChangeNotifier {
   Future<void> toggleTeam(int teamId, bool subscribed) async {
     try {
       if (subscribed) {
-        await _repo.unsubscribeTeam(teamId);
+        (await _repo.unsubscribeTeam(teamId))
+          .getOrElse((f) => throw FailureException(f));
       } else {
-        await _repo.subscribeTeam(teamId);
+        (await _repo.subscribeTeam(teamId))
+          .getOrElse((f) => throw FailureException(f));
       }
       _availableTeams = [
         for (final t in _availableTeams)

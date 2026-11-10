@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/core/ui/nar_chip_multi_select.dart';
 import 'package:warding/l10n/app_localizations.dart';
@@ -95,7 +96,7 @@ Future<MyPlayersViewModel> _buildVm(
 }) async {
   final repo = MockSubscriptionRepository();
   final list = players ?? _hundred();
-  when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => list);
+  when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(list));
   late MyPlayersViewModel vm;
   await tester.runAsync(() async {
     vm = MyPlayersViewModel(

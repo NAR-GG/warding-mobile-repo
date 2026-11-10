@@ -21,7 +21,8 @@ import 'package:warding/features/notice/domain/repositories/notice_repository.da
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
 import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
@@ -329,7 +330,8 @@ void main() {
     (di<NoticeRepository>() as NoticeRepositoryImpl)
       .resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
-    SubscriptionRepository.instance.resetCacheForTesting();
+    (di<SubscriptionRepository>() as SubscriptionRepositoryImpl)
+        .resetCacheForTesting();
     TeamLogoDirectory.instance.resetForTesting();
     setUpServer();
   });
@@ -562,7 +564,8 @@ void main() {
 
       // AuthService.signOut 이 하는 일 — 토큰 삭제 + 구독 캐시 비우기.
       setUpServer();
-      SubscriptionRepository.instance.clearCache();
+      (di<SubscriptionRepository>() as SubscriptionRepositoryImpl)
+          .clearCache();
       await vm.refreshSubscriptionsOnReturn();
       expect(vm.subscribedTotal, 0);
       expect(vm.soloState, SoloCardState.noSubscription);
@@ -609,7 +612,7 @@ void main() {
 
     test('구독하지 않은 선수의 솔랭은 홈에 나오지 않는다', () async {
       final repo = MockSubscriptionRepository();
-      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(subs));
       final vm = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),
@@ -627,7 +630,7 @@ void main() {
 
     test('홈과 내 선수 화면이 같은 fixture 에서 같은 결과를 낸다', () async {
       final repo = MockSubscriptionRepository();
-      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(subs));
       final home = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),

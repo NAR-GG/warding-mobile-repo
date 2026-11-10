@@ -6,7 +6,7 @@ import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 
 /// 잠금화면에 잘못 남은 Live Activity 카드를 정리하는 컨트롤러.
@@ -185,7 +185,8 @@ class LiveMatchActivityController {
     }
     try {
       final list =
-          await SubscriptionRepository.instance.fetchTeamNotifications();
+          (await di<SubscriptionRepository>().fetchTeamNotifications())
+          .getOrElse((f) => throw FailureException(f));
       _teamSubs = list;
       _teamSubsAt = DateTime.now();
       return list;

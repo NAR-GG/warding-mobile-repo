@@ -9,7 +9,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 /// 선수 평점 상세 화면 상태·로직.
 ///
@@ -33,7 +33,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
         _repository = repository ?? di<RatingRepository>(),
         _auth = auth ?? AuthService.instance,
         _onboarding = onboarding ?? di<OnboardingRepository>(),
-        _subscription = subscription ?? SubscriptionRepository.instance {
+        _subscription = subscription ?? di<SubscriptionRepository>() {
     _loadMyProfile();
     _loadSubscription();
   }
@@ -53,7 +53,8 @@ class PlayerRatingViewModel extends ChangeNotifier {
   /// 평점 로딩과 독립이라 실패해도 화면 나머지에 영향이 없다(구독 아님으로 둠).
   Future<void> _loadSubscription() async {
     try {
-      final players = await _subscription.fetchSubscribedPlayers();
+      final players = (await _subscription.fetchSubscribedPlayers())
+          .getOrElse((f) => throw FailureException(f));
       _isSubscribed = players.any((p) => p.playerId == playerId);
       _safeNotify();
     } catch (e) {

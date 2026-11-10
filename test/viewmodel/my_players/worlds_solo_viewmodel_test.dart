@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';
@@ -66,16 +67,18 @@ void main() {
   setUp(() {
     repo = MockSubscriptionRepository();
     when(() => repo.subscribePlayer(any())).thenAnswer(
-      (inv) async => _player(inv.positionalArguments.first as int, '', ''),
+      (inv) async =>
+          Right(_player(inv.positionalArguments.first as int, '', '')),
     );
-    when(() => repo.unsubscribePlayer(any())).thenAnswer((_) async {});
+    when(() => repo.unsubscribePlayer(any()))
+        .thenAnswer((_) async => const Right(unit));
     when(
       () => repo.updatePlayerAlarm(
         any(),
         startEnabled: any(named: 'startEnabled'),
         endEnabled: any(named: 'endEnabled'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => const Right(unit));
   });
 
   Future<MyPlayersViewModel> build() async {

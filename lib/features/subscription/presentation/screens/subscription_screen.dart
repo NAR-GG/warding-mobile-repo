@@ -20,7 +20,7 @@ import 'package:warding/core/domain/member_notification.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/tab_route.dart';
 import 'package:warding/core/util/match_detail_router.dart';
@@ -121,7 +121,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   Future<void> _loadPlayers() async {
     try {
       final players =
-          await SubscriptionRepository.instance.fetchSubscribedPlayers();
+          (await di<SubscriptionRepository>().fetchSubscribedPlayers())
+          .getOrElse((f) => throw FailureException(f));
       if (!mounted) return;
       setState(() => _players = players.map((p) => p.playerName).toList());
     } catch (e) {

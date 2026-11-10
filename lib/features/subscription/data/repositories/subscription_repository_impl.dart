@@ -4,7 +4,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 
+import 'package:fpdart/fpdart.dart';
+
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
 import 'package:warding/core/util/sentry_logger.dart';
@@ -14,9 +19,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 ///
 /// 모두 인증이 필요하다. [AuthService.authorizedRequest] 로 감싸 Access Token을
 /// 싣고, 만료 시 Refresh Token으로 자동 갱신·재시도한다.
-class SubscriptionRepository {
-  SubscriptionRepository._();
-  static final SubscriptionRepository instance = SubscriptionRepository._();
+class SubscriptionRepositoryImpl implements SubscriptionRepository {
 
   final AuthService _auth = AuthService.instance;
 
@@ -51,7 +54,16 @@ class SubscriptionRepository {
   void resetCacheForTesting() => clearCache();
 
   /// 내 구독 선수 목록을 조회한다.
-  Future<List<PlayerSubscription>> fetchSubscribedPlayers() {
+  @override
+  Future<Either<Failure, List<PlayerSubscription>>> fetchSubscribedPlayers() async {
+    try {
+      return Right(await _fetchSubscribedPlayers());
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchSubscribedPlayers'));
+    }
+  }
+
+  Future<List<PlayerSubscription>> _fetchSubscribedPlayers() {
     final cached = _subscribedCache;
     if (cached != null &&
         DateTime.now().difference(cached.$1) < _subscribedCacheTtl) {
@@ -61,7 +73,7 @@ class SubscriptionRepository {
     final inFlight = _subscribedInFlight;
     if (inFlight != null) return inFlight;
 
-    final request = _fetchSubscribedPlayers().then((list) {
+    final request = _fetchSubscribedPlayersFromApi().then((list) {
       _subscribedCache = (DateTime.now(), list);
       return list;
     });
@@ -74,7 +86,7 @@ class SubscriptionRepository {
     return request;
   }
 
-  Future<List<PlayerSubscription>> _fetchSubscribedPlayers() async {
+  Future<List<PlayerSubscription>> _fetchSubscribedPlayersFromApi() async {
     final sw = Stopwatch()..start();
     final response = await _auth.authorizedRequest(
       (token) => http.get(
@@ -95,7 +107,26 @@ class SubscriptionRepository {
   }
 
   /// 구독 가능한 선수를 검색한다 (페이지네이션).
-  Future<PlayerPage> searchAvailablePlayers({
+  @override
+  Future<Either<Failure, PlayerPage>> searchAvailablePlayers({
+    String? query,
+    int? teamId,
+    int page = 0,
+    int size = 20,
+  }) async {
+    try {
+      return Right(await _searchAvailablePlayers(
+        query: query,
+        teamId: teamId,
+        page: page,
+        size: size,
+      ));
+    } catch (e) {
+      return Left(toFailure(e, op: 'searchAvailablePlayers'));
+    }
+  }
+
+  Future<PlayerPage> _searchAvailablePlayers({
     String? query,
     int? teamId,
     int page = 0,
@@ -121,7 +152,16 @@ class SubscriptionRepository {
   }
 
   /// 선수를 구독한다.
-  Future<PlayerSubscription> subscribePlayer(int playerId) async {
+  @override
+  Future<Either<Failure, PlayerSubscription>> subscribePlayer(int playerId) async {
+    try {
+      return Right(await _subscribePlayer(playerId));
+    } catch (e) {
+      return Left(toFailure(e, op: 'subscribePlayer'));
+    }
+  }
+
+  Future<PlayerSubscription> _subscribePlayer(int playerId) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
         Uri.parse(ApiConfig.playerSubscriptionsUrl),
@@ -147,7 +187,17 @@ class SubscriptionRepository {
   }
 
   /// 선수 구독을 해제한다.
-  Future<void> unsubscribePlayer(int playerId) async {
+  @override
+  Future<Either<Failure, Unit>> unsubscribePlayer(int playerId) async {
+    try {
+      await _unsubscribePlayer(playerId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(toFailure(e, op: 'unsubscribePlayer'));
+    }
+  }
+
+  Future<void> _unsubscribePlayer(int playerId) async {
     final response = await _auth.authorizedRequest(
       (token) => http.delete(
         Uri.parse(ApiConfig.playerSubscriptionUrl(playerId)),
@@ -171,7 +221,25 @@ class SubscriptionRepository {
   /// 선수별 솔랭 시작/종료 알림을 변경한다.
   ///
   /// 성공 시 204 No Content(빈 바디)로 응답해 파싱하지 않는다.
-  Future<void> updatePlayerAlarm(
+  @override
+  Future<Either<Failure, Unit>> updatePlayerAlarm(
+    int playerId, {
+    required bool startEnabled,
+    required bool endEnabled,
+  }) async {
+    try {
+      await _updatePlayerAlarm(
+        playerId,
+        startEnabled: startEnabled,
+        endEnabled: endEnabled,
+      );
+      return const Right(unit);
+    } catch (e) {
+      return Left(toFailure(e, op: 'updatePlayerAlarm'));
+    }
+  }
+
+  Future<void> _updatePlayerAlarm(
     int playerId, {
     required bool startEnabled,
     required bool endEnabled,
@@ -200,7 +268,16 @@ class SubscriptionRepository {
   // ── 팀 알림 구독 ──────────────────────────────────────────────────
 
   /// 내 팀 알림 구독 목록을 조회한다.
-  Future<List<TeamNotificationSubscription>> fetchTeamNotifications() async {
+  @override
+  Future<Either<Failure, List<TeamNotificationSubscription>>> fetchTeamNotifications() async {
+    try {
+      return Right(await _fetchTeamNotifications());
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchTeamNotifications'));
+    }
+  }
+
+  Future<List<TeamNotificationSubscription>> _fetchTeamNotifications() async {
     final response = await _auth.authorizedRequest(
       (token) => http.get(
         Uri.parse(ApiConfig.teamNotificationsUrl),
@@ -219,7 +296,16 @@ class SubscriptionRepository {
   }
 
   /// 구독 가능한 LCK 팀 목록을 조회한다.
-  Future<List<TeamNotificationSubscription>> fetchAvailableTeams() async {
+  @override
+  Future<Either<Failure, List<TeamNotificationSubscription>>> fetchAvailableTeams() async {
+    try {
+      return Right(await _fetchAvailableTeams());
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchAvailableTeams'));
+    }
+  }
+
+  Future<List<TeamNotificationSubscription>> _fetchAvailableTeams() async {
     final response = await _auth.authorizedRequest(
       (token) => http.get(
         Uri.parse(ApiConfig.availableTeamsUrl),
@@ -238,7 +324,16 @@ class SubscriptionRepository {
   }
 
   /// 팀 알림을 구독한다.
-  Future<TeamNotificationSubscription> subscribeTeam(int teamId) async {
+  @override
+  Future<Either<Failure, TeamNotificationSubscription>> subscribeTeam(int teamId) async {
+    try {
+      return Right(await _subscribeTeam(teamId));
+    } catch (e) {
+      return Left(toFailure(e, op: 'subscribeTeam'));
+    }
+  }
+
+  Future<TeamNotificationSubscription> _subscribeTeam(int teamId) async {
     final response = await _auth.authorizedRequest(
       (token) => http.post(
         Uri.parse(ApiConfig.teamNotificationsUrl),
@@ -265,7 +360,37 @@ class SubscriptionRepository {
   /// 팀별 알림 설정(세트 시작/종료·라이브·라이브 이벤트 세부 항목)을 변경한다.
   ///
   /// 성공 시 204 No Content(빈 바디)로 응답해 파싱하지 않는다.
-  Future<void> updateTeamNotification(
+  @override
+  Future<Either<Failure, Unit>> updateTeamNotification(
+    int teamId, {
+    required bool setStartEnabled,
+    required bool setEndEnabled,
+    required bool liveEventEnabled,
+    required bool killEnabled,
+    required bool baronEnabled,
+    required bool dragonEnabled,
+    required bool towerEnabled,
+    required bool inhibitorEnabled,
+  }) async {
+    try {
+      await _updateTeamNotification(
+        teamId,
+        setStartEnabled: setStartEnabled,
+        setEndEnabled: setEndEnabled,
+        liveEventEnabled: liveEventEnabled,
+        killEnabled: killEnabled,
+        baronEnabled: baronEnabled,
+        dragonEnabled: dragonEnabled,
+        towerEnabled: towerEnabled,
+        inhibitorEnabled: inhibitorEnabled,
+      );
+      return const Right(unit);
+    } catch (e) {
+      return Left(toFailure(e, op: 'updateTeamNotification'));
+    }
+  }
+
+  Future<void> _updateTeamNotification(
     int teamId, {
     required bool setStartEnabled,
     required bool setEndEnabled,
@@ -306,7 +431,17 @@ class SubscriptionRepository {
   }
 
   /// 팀 알림 구독을 삭제한다.
-  Future<void> unsubscribeTeam(int teamId) async {
+  @override
+  Future<Either<Failure, Unit>> unsubscribeTeam(int teamId) async {
+    try {
+      await _unsubscribeTeam(teamId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(toFailure(e, op: 'unsubscribeTeam'));
+    }
+  }
+
+  Future<void> _unsubscribeTeam(int teamId) async {
     final response = await _auth.authorizedRequest(
       (token) => http.delete(
         Uri.parse(ApiConfig.teamNotificationUrl(teamId)),

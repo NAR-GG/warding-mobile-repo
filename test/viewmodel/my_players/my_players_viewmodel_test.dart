@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';
@@ -85,7 +86,7 @@ void main() {
     repo = MockSubscriptionRepository();
     when(
       () => repo.fetchSubscribedPlayers(),
-    ).thenAnswer((_) async => hundred());
+    ).thenAnswer((_) async => Right(hundred()));
     solo = _FakeSolo(
       SoloRankSnapshot(
         live: [live('Faker', 'T1', 300), live('Chovy', 'GEN', 100)],

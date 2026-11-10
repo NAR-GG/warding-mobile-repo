@@ -11,7 +11,7 @@ import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/player/data/player_repository.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
@@ -37,7 +37,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
   }) : _source = source ?? defaultPlayerSource(),
        _ownsCheers = cheers == null,
        cheers = cheers ?? SoloCheerController(source: defaultCheerSource()),
-       _subscriptions = subscriptions ?? SubscriptionRepository.instance,
+       _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
        _matchSubscriptions =
            matchSubscriptions ?? di<MatchSubscriptionRepository>(),
        _isLoggedIn = isLoggedIn ?? _defaultLoggedIn;
@@ -321,17 +321,20 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     _notify();
     try {
       if (subscribed) {
-        await _subscriptions.subscribePlayer(playerId);
+        (await _subscriptions.subscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
         // 서버 기본값(시작 ON·종료 OFF)과 다를 때만 토글을 맞춘다.
         if (!startEnabled || endEnabled) {
-          await _subscriptions.updatePlayerAlarm(
+          (await _subscriptions.updatePlayerAlarm(
             playerId,
             startEnabled: startEnabled,
             endEnabled: endEnabled,
-          );
+          ))
+          .getOrElse((f) => throw FailureException(f));
         }
       } else {
-        await _subscriptions.unsubscribePlayer(playerId);
+        (await _subscriptions.unsubscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
       }
       // API 성공 후에 찍는다(월즈 솔랭과 같은 이벤트·같은 규칙).
       Analytics.track(AnalyticsEvent.subscribeButtonClick, {
@@ -363,11 +366,12 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     );
     _notify();
     try {
-      await _subscriptions.updatePlayerAlarm(
+      (await _subscriptions.updatePlayerAlarm(
         playerId,
         startEnabled: startEnabled,
         endEnabled: endEnabled,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Player] 알림 토글 변경 실패: $e');
       detail = before;

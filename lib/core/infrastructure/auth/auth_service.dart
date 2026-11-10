@@ -22,7 +22,9 @@ import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/device/device_repository.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 class AuthResult {
   const AuthResult({required this.jwt, required this.isOnboarded});
@@ -700,7 +702,9 @@ class AuthService {
     await _storage.delete(key: _jwtKey);
     _setCachedJwt(null);
     await _storage.delete(key: _refreshKey);
-    SubscriptionRepository.instance.clearCache();
+    // 캐시 비우기는 Impl 관심사라 Interface 에 올리지 않았다 — 로그아웃 때만
+    // 필요하고, 다른 구현(목업 등)에는 캐시가 없을 수 있다.
+    (di<SubscriptionRepository>() as SubscriptionRepositoryImpl).clearCache();
     SentryLogger.clearUser();
     Analytics.reset();
   }

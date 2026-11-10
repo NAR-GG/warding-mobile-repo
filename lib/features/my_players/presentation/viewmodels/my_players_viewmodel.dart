@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/features/home/presentation/viewmodels/solo_rank_rules.dart';
@@ -106,7 +108,7 @@ class MyPlayersViewModel extends ChangeNotifier implements PlayerSheetSource {
     SubscriptionRepository? subscriptions,
     SoloRankSource? soloRank,
     WorldsSoloSource? worlds,
-  }) : _subscriptions = subscriptions ?? SubscriptionRepository.instance,
+  }) : _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
        // 기본은 실제 솔랭 API. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
        _worlds = worlds {
@@ -184,7 +186,8 @@ class MyPlayersViewModel extends ChangeNotifier implements PlayerSheetSource {
   Future<void> _loadSubscriptions() async {
     try {
       // 비회원(JWT 없음)이면 authorizedRequest 가 던진다 → 아래 catch.
-      final players = await _subscriptions.fetchSubscribedPlayers();
+      final players = (await _subscriptions.fetchSubscribedPlayers())
+          .getOrElse((f) => throw FailureException(f));
       if (_disposed) return;
       _players = players;
       _classify();
@@ -311,17 +314,20 @@ class MyPlayersViewModel extends ChangeNotifier implements PlayerSheetSource {
     _notify();
     try {
       if (subscribed) {
-        await _subscriptions.subscribePlayer(playerId);
+        (await _subscriptions.subscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
         // 서버 기본값(시작 ON·종료 OFF)과 다를 때만 토글을 맞춘다.
         if (!startEnabled || endEnabled) {
-          await _subscriptions.updatePlayerAlarm(
+          (await _subscriptions.updatePlayerAlarm(
             playerId,
             startEnabled: startEnabled,
             endEnabled: endEnabled,
-          );
+          ))
+          .getOrElse((f) => throw FailureException(f));
         }
       } else {
-        await _subscriptions.unsubscribePlayer(playerId);
+        (await _subscriptions.unsubscribePlayer(playerId))
+          .getOrElse((f) => throw FailureException(f));
       }
       // API 성공 **후**에 찍는다 — 실패는 아래 catch 에서 조용히 삼켜지고
       // 상태도 되돌려지므로, 클릭 시점에 찍으면 구독되지 않은 것이 성공으로
@@ -391,11 +397,12 @@ class MyPlayersViewModel extends ChangeNotifier implements PlayerSheetSource {
     _classify();
     _notify();
     try {
-      await _subscriptions.updatePlayerAlarm(
+      (await _subscriptions.updatePlayerAlarm(
         playerId,
         startEnabled: startEnabled,
         endEnabled: endEnabled,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[WorldsSolo] 알림 토글 변경 실패: $e');
       if (_disposed) return;

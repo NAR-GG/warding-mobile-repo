@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/core/domain/team_notification_subscription.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 /// 마이페이지 '구독 팀 알림 설정' 섹션 ViewModel.
 ///
@@ -17,7 +19,7 @@ import 'package:warding/features/subscription/data/subscription_repository.dart'
 ///   있는 마이 구독 설정 화면.
 class TeamAlarmViewModel extends ChangeNotifier {
   TeamAlarmViewModel({SubscriptionRepository? repository, this.deferSave = false})
-      : _repo = repository ?? SubscriptionRepository.instance {
+      : _repo = repository ?? di<SubscriptionRepository>() {
     load();
   }
 
@@ -85,7 +87,8 @@ class TeamAlarmViewModel extends ChangeNotifier {
         return;
       }
       _loggedIn = true;
-      final all = await _repo.fetchTeamNotifications();
+      final all = (await _repo.fetchTeamNotifications())
+          .getOrElse((f) => throw FailureException(f));
       // 마이페이지 섹션은 '구독중인 팀'만 보여 준다.
       final fetched = all.where((t) => t.subscribed).toList();
       // 기준선은 언제나 서버 값. 화면 값만 유지할 변경분으로 덮는다.
@@ -174,7 +177,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
     _notify();
     if (deferSave) return;
     try {
-      await _repo.updateTeamNotification(
+      (await _repo.updateTeamNotification(
         teamId,
         setStartEnabled: after.setStartEnabled,
         setEndEnabled: after.setEndEnabled,
@@ -184,7 +187,8 @@ class TeamAlarmViewModel extends ChangeNotifier {
         dragonEnabled: after.dragonEnabled,
         towerEnabled: after.towerEnabled,
         inhibitorEnabled: after.inhibitorEnabled,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _saved = _teams;
     } catch (e) {
       // 실패 시 이전 상태로 롤백.
@@ -217,7 +221,7 @@ class TeamAlarmViewModel extends ChangeNotifier {
         continue;
       }
       try {
-        await _repo.updateTeamNotification(
+        (await _repo.updateTeamNotification(
           team.teamId,
           setStartEnabled: team.setStartEnabled,
           setEndEnabled: team.setEndEnabled,
@@ -227,7 +231,8 @@ class TeamAlarmViewModel extends ChangeNotifier {
           dragonEnabled: team.dragonEnabled,
           towerEnabled: team.towerEnabled,
           inhibitorEnabled: team.inhibitorEnabled,
-        );
+        ))
+          .getOrElse((f) => throw FailureException(f));
         // 성공한 팀은 기준선을 새 값으로 옮긴다.
         final i = saved.indexWhere((t) => t.teamId == team.teamId);
         if (i >= 0) saved[i] = team;

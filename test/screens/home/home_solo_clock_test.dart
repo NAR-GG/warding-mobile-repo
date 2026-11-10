@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
@@ -38,7 +39,7 @@ void main() {
   ) async {
     final repo = MockSubscriptionRepository();
     when(() => repo.fetchSubscribedPlayers())
-        .thenAnswer((_) async => [subOf('Faker')]);
+        .thenAnswer((_) async => Right([subOf('Faker')]));
     final vm = HomeViewModel(
       subscriptions: repo,
       soloRank: _FixedSolo(snapshot),

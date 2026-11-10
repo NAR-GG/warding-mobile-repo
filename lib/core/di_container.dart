@@ -24,6 +24,8 @@ import 'package:warding/features/profile_edit/domain/repositories/profile_image_
 import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 
@@ -49,6 +51,11 @@ void configureDependencies() {
 
   // ── shorts ───────────────────────────────────────────────────
   di.registerLazySingleton<ShortsRepository>(ShortsRepositoryImpl.new);
+
+  // ── subscription ─────────────────────────────────────────────
+  di.registerLazySingleton<SubscriptionRepository>(
+    SubscriptionRepositoryImpl.new,
+  );
 
   // ── core/notification ────────────────────────────────────────
   di.registerLazySingleton<MemberNotificationRepository>(
