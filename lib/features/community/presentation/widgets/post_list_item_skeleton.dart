@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 커뮤니티 목록 최초 로딩 중 표시할 스켈레톤 카드.
 /// [PostListItem] 과 같은 padding·구분선으로 실데이터 전환 시 목록이

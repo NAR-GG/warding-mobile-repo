@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 첨부 사진 전체화면 뷰어. 좌우 스와이프로 넘기고 핀치로 확대한다.
 ///

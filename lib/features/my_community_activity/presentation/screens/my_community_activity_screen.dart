@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/app_refresh_indicator.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_tab_bar.dart';
+import 'package:warding/core/ui/app_refresh_indicator.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
 import 'package:warding/features/my_community_activity/data/community_my_activity.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/my_community_activity/presentation/viewmodels/my_community_activity_viewmodel.dart';
 import 'package:warding/features/community/presentation/widgets/post_list_item.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';

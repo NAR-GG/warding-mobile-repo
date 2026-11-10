@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:warding/components/bottom_action_bar.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/bottom_action_bar.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 
 /// 지면별 정가(원, 1일). 오픈 기간에는 [_openDiscount] 를 적용한 값을 판다.

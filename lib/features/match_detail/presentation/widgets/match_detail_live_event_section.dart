@@ -5,9 +5,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/champion_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/champion_image.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_locked_empty.dart';
 
 /// 경기 상세 — 라이브 이벤트 탭 콘텐츠.

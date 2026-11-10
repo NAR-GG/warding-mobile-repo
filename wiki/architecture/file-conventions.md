@@ -20,7 +20,7 @@ timestamp: 2026-11-10T00:00:00Z
 | 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
 | 여러 기능이 쓰는 모델 | `core/domain/` | — |
 | 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
-| 앱 공용 위젯 | `components/` | `components/common_button.dart` |
+| 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 
 `lib/` 전체가 이 구조다 — `screens/`·`viewmodel/`·`model/`·`repository/` 최상위 폴더는
 없어졌다. → [폴더 구조](/architecture/folder-structure.md)
@@ -44,7 +44,7 @@ timestamp: 2026-11-10T00:00:00Z
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.
 - 한 화면에서만 쓰는 위젯 → 그 기능의 `presentation/widgets/`.
-- 여러 기능에서 쓰는 위젯 → `lib/components/`.
+- 여러 기능에서 쓰는 위젯 → `lib/core/ui/`.
 
 # import
 

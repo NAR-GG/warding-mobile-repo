@@ -6,16 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_live_badge.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_live_badge.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/league_meta.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/league_meta.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_alarm_sheet.dart';
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 경기 한 건 카드. 헤더(알림 벨/시간·LIVE 칩·라벨·우측 chevron) + 양 팀 로고·이름 + 가운데 스코어.
 /// [isLive] 가 true 면 카드 배경/왼쪽 보더/LIVE 칩/스코어 색 분기.

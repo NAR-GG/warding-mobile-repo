@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_image_repository.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 
 // Cloudinary 업로드 leg(`request.send()`)는 `BaseRequest.send()`가 내부에서
 // 매번 새 `Client()`를 만들어 쓰므로(package:http 1.6.0, base_request.dart:141)

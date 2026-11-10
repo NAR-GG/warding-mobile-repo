@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
-import 'package:warding/util/tab_route.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
+import 'package:warding/core/util/tab_route.dart';
 
 /// [AnalyticsRouteObserver] 가 `page_view` 를 **언제** 보내는지 검증한다.
 ///

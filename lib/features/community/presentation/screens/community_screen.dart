@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/app_bottom_nav.dart';
-import 'package:warding/components/app_refresh_indicator.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/app_refresh_indicator.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/viewmodels/community_list_viewmodel.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/notification/presentation/screens/notification_screen.dart';
@@ -17,10 +17,10 @@ import 'package:warding/features/community/presentation/widgets/post_list_item_s
 import 'package:warding/features/community/presentation/widgets/write_lock_bar.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
-import 'package:warding/util/nav_tab_navigation.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/nav_tab_navigation.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 
 /// 커뮤니티 — 단일 전체 게시판.
 ///

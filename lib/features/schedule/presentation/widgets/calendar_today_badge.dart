@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/config/app_language.dart';
+import 'package:warding/core/config/app_language.dart';
 
 /// 페이지 진입 시 오늘 날짜 칸 좌상단에 잠깐 떴다 사라지는 'today' 배지.
 ///

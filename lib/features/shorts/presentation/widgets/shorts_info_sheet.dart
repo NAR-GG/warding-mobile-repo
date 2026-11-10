@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/shorts/domain/story_video.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/shorts_url.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/shorts_url.dart';
 
 /// 플레이어 아래 정보 영역. 유튜브 정책상 플레이어 위에는 아무것도 덮지 않아
 /// 채널·제목·조회수는 전부 이 바깥 영역에 둔다.

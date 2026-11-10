@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_dropdown.dart';
-import 'package:warding/components/nar_search_bar.dart';
-import 'package:warding/components/scroll_to_top_button.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_dropdown.dart';
+import 'package:warding/core/ui/nar_search_bar.dart';
+import 'package:warding/core/ui/scroll_to_top_button.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_settings_viewmodel.dart';
 import 'package:warding/features/subscription/presentation/widgets/all_subscription_section.dart';
 import 'package:warding/features/subscription/presentation/widgets/subscribed_section.dart';

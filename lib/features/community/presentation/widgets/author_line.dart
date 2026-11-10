@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_author.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 작성자 표기 — 닉네임 + 원형 팀 로고.
 ///

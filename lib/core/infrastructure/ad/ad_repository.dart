@@ -7,8 +7,8 @@ import 'package:flutter/painting.dart'
     show ImageConfiguration, ImageInfo, ImageStreamListener;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:warding/config/api_config.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/util/api_client.dart' as http;
 
 /// 백오피스에서 등록한 광고 배너 1건. [placement] = home | match_list | match_detail.
 class Ad {

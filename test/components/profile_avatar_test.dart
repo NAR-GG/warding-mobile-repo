@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/profile_avatar.dart';
+import 'package:warding/core/ui/profile_avatar.dart';
 
 /// 이 위젯의 존재 이유가 "URL 이 없을 때 기본 이미지" 하나라서 거기만 본다.
 void main() {

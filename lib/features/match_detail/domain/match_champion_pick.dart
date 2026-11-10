@@ -1,4 +1,4 @@
-import 'package:warding/util/champion_image.dart';
+import 'package:warding/core/util/champion_image.dart';
 
 /// 경기 상세 — 챔피언 픽 탭의 양 팀 밴·픽 데이터.
 ///

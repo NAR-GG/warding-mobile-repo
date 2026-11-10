@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:warding/components/nar_card.dart';
-import 'package:warding/components/nar_chip_multi_select.dart';
-import 'package:warding/components/nar_more_button.dart';
-import 'package:warding/components/nar_star_rating.dart';
-import 'package:warding/components/team_code_badge.dart';
-import 'package:warding/components/win_loss_text.dart';
+import 'package:warding/core/ui/nar_card.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/nar_more_button.dart';
+import 'package:warding/core/ui/nar_star_rating.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
+import 'package:warding/core/ui/win_loss_text.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart' show formatCheerCount;
 import 'package:warding/features/player_rating/presentation/widgets/rating_distribution_section.dart';

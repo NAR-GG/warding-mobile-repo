@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
 import 'package:warding/features/onboarding/presentation/widgets/onboarding_progress_bar.dart';
@@ -12,8 +12,8 @@ import 'package:warding/features/onboarding/presentation/screens/step/league_ste
 import 'package:warding/features/onboarding/presentation/screens/step/notification_step.dart';
 import 'package:warding/features/onboarding/presentation/screens/step/player_step.dart';
 import 'package:warding/features/onboarding/presentation/screens/step/team_step.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 
 /// 디자인 시안 기준 화면 너비.
 const double _designWidth = 375;

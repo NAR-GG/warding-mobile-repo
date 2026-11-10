@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/features/community/presentation/widgets/community_photo_viewer.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 뷰어의 회귀 포인트는 둘이다 — 확대해서 보는 화면인데 본문용으로 깎은 URL 을
 /// 쓰면 뭉개진다는 것, 그리고 사진이 없을 때 빈 화면이 뜨면 안 된다는 것.

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/domain/quiet_hours.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 알림 잠자기 설정 API (`/api/mobile/me/quiet-hours`).

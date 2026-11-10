@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 룬·아이템 탭 시 뜨는 가이드(이름+설명) 카드. 탭한 아이콘 바로 아래
 /// [layerLink]를 기준으로 붙는다. 배경 전체를 덮는 투명 배리어를 같이 깔아

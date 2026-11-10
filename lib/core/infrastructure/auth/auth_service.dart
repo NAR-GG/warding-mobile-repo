@@ -6,22 +6,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:flutter_naver_login/interface/types/naver_login_result.dart';
 import 'package:flutter_naver_login/interface/types/naver_login_status.dart';
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import 'package:warding/config/api_config.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/device/device_repository.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 
 class AuthResult {

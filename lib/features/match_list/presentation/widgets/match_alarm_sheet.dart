@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_toggle.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
 import 'package:warding/features/my_subscription_setting/presentation/widgets/live_event_detail_card.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 경기 알림 설정 결과 — 켠 알림 종류. 확인으로 닫혀야만 반환된다.
 ///

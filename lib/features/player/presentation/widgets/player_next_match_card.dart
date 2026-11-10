@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:warding/components/nar_card.dart';
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/nar_card.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/player/presentation/widgets/player_parts.dart';
 
 /// 남은 날짜 — 달력 날짜 기준. 지난 경기면 null.

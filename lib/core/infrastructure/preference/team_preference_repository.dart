@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 import 'package:warding/core/domain/team.dart';
 

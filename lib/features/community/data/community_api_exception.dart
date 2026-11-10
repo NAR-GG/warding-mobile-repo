@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
 /// 커뮤니티 API가 2xx가 아닐 때 던지는 공통 예외.
 ///

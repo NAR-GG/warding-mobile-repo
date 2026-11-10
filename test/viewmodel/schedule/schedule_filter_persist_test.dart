@@ -7,7 +7,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/notice/data/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/schedule/presentation/viewmodels/schedule_viewmodel.dart';
 
 class MockFilterPreferenceRepository extends Mock

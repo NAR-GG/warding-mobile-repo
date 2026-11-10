@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/lane_asset.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/lane_asset.dart';
 
 /// 선수 평점 상세 — '플레이한 챔프' 카드.
 ///

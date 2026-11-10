@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/search_select_box.dart';
+import 'package:warding/core/ui/search_select_box.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 

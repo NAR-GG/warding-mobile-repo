@@ -1,11 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_toggle.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/player_alarm_viewmodel.dart';
 
 /// 구독중인 선수 알림 카드 ('선수' 탭 내용).

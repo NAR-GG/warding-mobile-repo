@@ -6,17 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 import 'package:warding/features/subscription/presentation/screens/subscription_screen.dart';
-import 'package:warding/util/match_detail_router.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/match_detail_router.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/device/device_repository.dart';
 import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
 import 'package:warding/core/infrastructure/notification/solo_rank_notification_store.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_notification_types.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// FCM(푸시) 초기화·토큰 등록·메시지 핸들링을 담당한다.
 ///

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 

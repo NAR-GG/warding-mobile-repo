@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 빌드 카드 상단의 지표 한 칸 — 라벨 + 값. [child] 를 주면 값 자리를 대체한다
 /// (KDA 처럼 색이 섞인 텍스트).

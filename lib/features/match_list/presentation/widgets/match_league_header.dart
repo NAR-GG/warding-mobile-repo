@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/league_icon.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/league_icon.dart';
 
 /// 경기 리스트의 리그 그룹 헤더. 리그 로고 + 리그명.
 ///

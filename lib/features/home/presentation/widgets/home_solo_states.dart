@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/dashed_border.dart';
-import 'package:warding/components/solo_face.dart';
+import 'package:warding/core/ui/dashed_border.dart';
+import 'package:warding/core/ui/solo_face.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 
 /// 구독 0명 — 점선 빈 카드와 빈 프로필 원.

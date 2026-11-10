@@ -18,7 +18,7 @@ import 'package:warding/core/infrastructure/preference/notice_preference_reposit
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 

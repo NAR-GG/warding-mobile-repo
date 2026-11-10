@@ -5,14 +5,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_popup_dialog.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_popup_dialog.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_draft.dart';
 import 'package:warding/features/community/domain/community_post_block.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/viewmodels/post_write_viewmodel.dart';
 import 'package:warding/features/community/presentation/widgets/community_draft_sheet.dart';
 import 'package:warding/features/community/presentation/widgets/community_image.dart';

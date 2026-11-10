@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/guide_popup.dart';
-import 'package:warding/components/nar_button.dart';
+import 'package:warding/core/ui/guide_popup.dart';
+import 'package:warding/core/ui/nar_button.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 Widget _host({bool allowPostpone = true}) {

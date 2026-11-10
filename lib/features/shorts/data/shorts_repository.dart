@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/shorts/domain/story_video.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
 /// 쇼츠 목록 한 페이지. [isLast] 가 true 면 다음 페이지가 없다.
 class ShortsPage {

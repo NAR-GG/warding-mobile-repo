@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/util/home_widget_service.dart';
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_input.dart';
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/components/nar_popup_dialog.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/util/home_widget_service.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_input.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_popup_dialog.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/profile_edit/presentation/viewmodels/profile_edit_viewmodel.dart';
 import 'package:warding/features/profile_edit/presentation/widgets/cheer_team_section.dart';
 

@@ -1,6 +1,6 @@
 import 'package:warding/l10n/app_strings.dart';
-import 'package:warding/util/champion_image.dart';
-import 'package:warding/util/dragon_type.dart';
+import 'package:warding/core/util/champion_image.dart';
+import 'package:warding/core/util/dragon_type.dart';
 
 /// 라이브 이벤트 종류.
 enum LiveEventType { kill, dragon, baron, tower, inhibitor, nexus, unknown }

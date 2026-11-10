@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 분 선택 간격. 취침 시간에 1분 정밀도는 필요 없고, 서버도 5의 배수만 받는다.
 const int kQuietHoursMinuteStep = 5;

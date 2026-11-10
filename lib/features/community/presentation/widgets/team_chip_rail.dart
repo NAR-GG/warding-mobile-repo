@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/domain/team.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/widgets/author_line.dart';
 
 /// 팀 게시판 전환용 가로 칩 레일.

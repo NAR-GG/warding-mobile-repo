@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 마이 구독 설정 화면 상단의 '구독 관리' 진입 카드 (양옆 20 패딩).
 ///

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/notification_card.dart';
-import 'package:warding/config/app_language.dart';
-import 'package:warding/util/champion_name_map.dart';
-import 'package:warding/util/korean_particle.dart';
+import 'package:warding/core/ui/notification_card.dart';
+import 'package:warding/core/config/app_language.dart';
+import 'package:warding/core/util/champion_name_map.dart';
+import 'package:warding/core/util/korean_particle.dart';
 
 /// 선수 솔랭 **종료** 알림. 레이아웃은 [RankStartNotification] 과 같고 문구만 다르다.
 ///

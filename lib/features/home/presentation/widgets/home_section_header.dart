@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 홈 섹션 공용 헤더 — 제목(+옅은 부제) + 우측 "전체 보기" 링크.
 ///

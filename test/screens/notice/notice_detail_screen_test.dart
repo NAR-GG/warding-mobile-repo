@@ -5,7 +5,7 @@ import 'package:http/testing.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/presentation/screens/notice_detail_screen.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 
 /// 광고 안내처럼 버튼 주소가 있는 공지는 하단에 고정 버튼이 뜨고, 일반 공지는
 /// 화면이 그대로다. 버튼이 본문 마지막 줄을 가리지 않는 것도 함께 잠근다.

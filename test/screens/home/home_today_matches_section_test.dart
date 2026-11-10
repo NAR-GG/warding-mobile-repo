@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_live_dot.dart';
-import 'package:warding/components/team_logo.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
+import 'package:warding/core/ui/team_logo.dart';
 import 'package:warding/features/home/presentation/widgets/home_today_matches_section.dart';
 
 import 'home_test_harness.dart';

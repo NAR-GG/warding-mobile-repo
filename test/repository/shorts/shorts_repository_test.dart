@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/features/shorts/data/shorts_repository.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

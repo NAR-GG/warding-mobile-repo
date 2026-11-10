@@ -4,15 +4,15 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/components/app_bottom_nav.dart';
-import 'package:warding/components/guest_lock_overlay.dart';
-import 'package:warding/components/guide_popup.dart';
-import 'package:warding/components/nar_banner.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/guest_lock_overlay.dart';
+import 'package:warding/core/ui/guide_popup.dart';
+import 'package:warding/core/ui/nar_banner.dart';
 import 'package:warding/core/domain/team.dart';
-import 'package:warding/config/api_config.dart';
-import 'package:warding/config/app_language.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/config/app_language.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/mypage/presentation/viewmodels/mypage_viewmodel.dart';
 import 'package:warding/features/mypage/presentation/widgets/language_setting_sheet.dart';
 import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
@@ -26,8 +26,8 @@ import 'package:warding/features/my_subscription_setting/presentation/screens/my
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
 import 'package:warding/features/profile_edit/presentation/screens/profile_edit_screen.dart';
-import 'package:warding/util/nav_tab_navigation.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/nav_tab_navigation.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.
 class MypageScreen extends StatefulWidget {

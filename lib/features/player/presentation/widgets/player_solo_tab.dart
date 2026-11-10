@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_card.dart';
-import 'package:warding/components/nar_live_dot.dart';
-import 'package:warding/components/nar_more_button.dart';
-import 'package:warding/components/nar_progress_bar.dart';
-import 'package:warding/components/solo_face.dart';
+import 'package:warding/core/ui/nar_card.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
+import 'package:warding/core/ui/nar_more_button.dart';
+import 'package:warding/core/ui/nar_progress_bar.dart';
+import 'package:warding/core/ui/solo_face.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/rating_mapping.dart' show ratingTimeAgo;
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/rating_mapping.dart' show ratingTimeAgo;
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart' show formatCheerCount;
 import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart' show RegionChip;

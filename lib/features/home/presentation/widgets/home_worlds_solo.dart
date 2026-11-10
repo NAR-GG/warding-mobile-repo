@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_live_dot.dart';
-import 'package:warding/components/solo_face.dart';
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
+import 'package:warding/core/ui/solo_face.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart';
 
 // 홈 솔랭 섹션의 월즈 블록. 구독 선수 카드 상태에 따라 하나만 붙는다

@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/solo_hero_card.dart';
+import 'package:warding/core/ui/solo_hero_card.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 import 'package:warding/features/my_players/presentation/widgets/worlds_player_sheet.dart';

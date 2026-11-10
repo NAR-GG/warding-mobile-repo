@@ -5,8 +5,8 @@ import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 구독 설정 화면 선수 목록 정렬 모드.
 enum PlayerSortMode {

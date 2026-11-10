@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/nar_chip.dart';
+import 'package:warding/core/ui/nar_chip.dart';
 
 /// 마이 구독 선수 필터 칩. 선택 상태에 따라 모양이 달라진다.
 ///

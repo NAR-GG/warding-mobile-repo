@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_match.dart';
 
 /// 경기 칩 — 50×15, 라운드 8, 1px 테두리. 안에 [홈팀] vs [원정팀].

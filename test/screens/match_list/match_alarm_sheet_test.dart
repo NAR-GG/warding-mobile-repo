@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/components/nar_toggle.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_alarm_sheet.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 글 상세 최초 로딩 중 표시할 스켈레톤. [PostDetailScreen._body] 의
 /// 아바타·작성자줄·제목·본문 자리와, 그 아래 댓글 목록([CommentTile]) 자리를

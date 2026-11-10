@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/inner_shadow.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/champion_image.dart';
+import 'package:warding/core/ui/inner_shadow.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/champion_image.dart';
 
 /// 경기 상세 — 챔피언 픽 탭 콘텐츠.
 ///

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:warding/features/community/domain/community_post_block.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/widgets/community_image.dart';
 import 'package:warding/features/community/presentation/widgets/community_photo_viewer.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/dashed_border.dart';
+import 'package:warding/core/ui/dashed_border.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/home/presentation/widgets/home_community_section.dart';

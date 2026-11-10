@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_build_guide.dart';
 
 /// 룬 트리 두 칸(주/부) — 주 트리는 키스톤(큰 아이콘)+나머지 3개, 부 트리는

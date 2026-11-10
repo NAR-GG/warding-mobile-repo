@@ -2,9 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 로그인 화면 하단 동의 고지.
 ///

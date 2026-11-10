@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/cheer_ad_banner.dart';
+import 'package:warding/core/ui/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/match_detail/presentation/screens/match_detail_screen.dart';
 

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/cumulative_count_bar.dart';
-import 'package:warding/components/date_group_header.dart';
-import 'package:warding/components/nar_alert_dialog.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/cumulative_count_bar.dart';
+import 'package:warding/core/ui/date_group_header.dart';
+import 'package:warding/core/ui/nar_alert_dialog.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/features/my_review/domain/my_rating_list.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 import 'package:warding/features/my_review/presentation/viewmodels/my_review_viewmodel.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_rating_section.dart';
 import 'package:warding/features/player_rating/presentation/screens/player_rating_screen.dart';

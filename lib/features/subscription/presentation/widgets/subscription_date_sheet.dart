@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 마이 구독 날짜 점프 바텀시트 — 월 네비게이터 + 요일 행 + 날짜 그리드.
 ///

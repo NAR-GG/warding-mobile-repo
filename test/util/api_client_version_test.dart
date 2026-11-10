@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/util/api_client.dart';
+import 'package:warding/core/util/api_client.dart';
 
 /// 닫혔는지만 기록하는 클라이언트. [MockClient] 는 close() 를 지켜볼 수 없다.
 class _ClosableClient extends http.BaseClient {

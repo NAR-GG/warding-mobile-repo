@@ -39,6 +39,8 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 모은다. 이전에는 레이어가 최상위 축(`model`·`repository`·`viewmodel`·`screens`)이어서
 한 기능을 작업할 때 네 군데를 오가야 했다.
 
+**규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.**
+
 ```
 lib/
 ├── features/     기능별 27개
@@ -49,18 +51,30 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── core/
+├── core/         기능 소유가 아닌 모든 것
 │   ├── domain/             여러 기능이 쓰는 모델
-│   └── infrastructure/     여러 기능이 쓰는 서비스·repository
-│
-├── config/       앱 설정 (API URL, 키 등)
-├── components/   앱 전역 공용 위젯
-├── styles/       디자인 토큰 (app_colors 등)
-└── util/         유틸리티
+│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository
+│   ├── ui/                 앱 전역 공용 위젯
+│   ├── theme/              디자인 토큰 (app_colors 등)
+│   ├── config/             앱 설정 (API URL, 키 등)
+│   └── util/               유틸리티
+├── l10n/         생성물 (아래 참고)
+├── main.dart     진입점
+└── firebase_options.dart   생성물
 ```
 
-**`core/`에 있는 것**: `auth`, `preference`, `notification`, `fcm`, `ad`, `device`,
-`rating`, `team`, `live_activity`. 소유 기능이 없는 횡단 관심사다 — `auth`는 18곳,
+**`core/` 밖에 남는 예외는 생성물과 진입점이다.** 생성물은 생성 도구가 경로를 정하므로
+옮겨도 도구가 원래 자리에 다시 만든다.
+
+| 대상 | 경로를 못박는 설정 |
+|---|---|
+| `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
+| `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
+
+`firebase.json` 은 FlutterFire CLI 가 관리하므로 손으로 고치지 않는다.
+
+**`core/infrastructure/`에 있는 것**: `auth`, `preference`, `notification`, `fcm`, `ad`,
+`device`, `rating`, `team`, `live_activity`. 소유 기능이 없는 횡단 관심사다 — `auth`는 18곳,
 `preference`는 10곳이 쓴다.
 
 **import 는 `package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을
@@ -80,11 +94,11 @@ lib/
 | 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
 | 여러 기능이 쓰는 모델 | `core/domain/` | — |
 | 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
-| 앱 공용 위젯 | `components/` | `components/common_button.dart` |
+| 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.
 - 한 화면에서만 쓰는 위젯은 그 기능의 `presentation/widgets/`에, 여러 기능에서 쓰면
-  `lib/components/`에 둔다.
+  `lib/core/ui/`에 둔다.
 - **`data` 와 `domain` 의 구분**: `domain`은 그 기능의 개념(모델·규칙·상수), `data`는 그것을
   가져오는 수단(repository·API 예외)과 그 기능 전용 DTO다. `community_permission.dart`처럼
   화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
@@ -96,7 +110,7 @@ lib/
 
 ## 색상 / 디자인 토큰
 
-모든 색은 `lib/styles/app_colors.dart`의 `AppColors` 클래스에 정의한다.
+모든 색은 `lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
 
 - 위젯에 색을 **하드코딩하지 않는다**. 항상 `AppColors.xxx`를 참조한다.
 - 디자인 시안의 토큰 이름을 그대로 쓴다 (`narText`, `narDark800`, `narButton1Bg` 등).

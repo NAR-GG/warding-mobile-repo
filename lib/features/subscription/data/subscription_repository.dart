@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 선수 구독·팀 알림 구독 관련 API (`/api/mobile/me/...`).

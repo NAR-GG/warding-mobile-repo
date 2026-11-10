@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 알림 피드 최초 로딩 중 표시할 스켈레톤 카드.
 /// [NotificationCard] 와 동일한 레이아웃(좌 44×44 아이콘 + 우 제목/본문/시간)에

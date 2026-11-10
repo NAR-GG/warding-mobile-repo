@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 /// 다국어를 쓰는 코드를 테스트할 때 필요한 준비물 모음.

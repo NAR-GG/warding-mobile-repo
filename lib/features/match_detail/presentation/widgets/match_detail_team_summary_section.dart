@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/gold_format.dart';
-import 'package:warding/util/league_icon.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/gold_format.dart';
+import 'package:warding/core/util/league_icon.dart';
 
 /// 경기 상세 — 챔피언픽 탭 맨 아래의 "Team Summary" 섹션.
 ///

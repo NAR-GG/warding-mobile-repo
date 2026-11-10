@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/board_badge.dart';
+import 'package:warding/core/ui/board_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 import 'package:warding/features/community/presentation/widgets/author_line.dart';
 import 'package:warding/features/community/presentation/widgets/community_image.dart';
 

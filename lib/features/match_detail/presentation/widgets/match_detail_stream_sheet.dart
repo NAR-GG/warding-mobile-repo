@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 플랫폼별 브랜드색. 미지정 플랫폼은 기본 회색.
 Color streamProviderColor(String provider) {

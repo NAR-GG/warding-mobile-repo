@@ -7,7 +7,7 @@ import 'package:warding/features/home/data/home_api_sources.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/l10n/app_localizations.dart';

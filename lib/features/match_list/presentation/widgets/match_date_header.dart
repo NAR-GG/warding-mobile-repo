@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 경기 리스트의 날짜 그룹 헤더. 예: "4월 14일  오늘 ──────"
 class MatchDateHeader extends StatelessWidget {

@@ -2,11 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
 import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';

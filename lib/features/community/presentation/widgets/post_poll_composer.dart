@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 글쓰기 입력 글꼴 — 제목·본문·설문 입력이 같이 쓴다.
 TextStyle postWriteInputStyle(

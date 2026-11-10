@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 실시간 경기 카드 푸시 토큰 등록 API (`/api/mobile/me/live-activities`).

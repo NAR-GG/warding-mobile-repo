@@ -3,7 +3,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/domain/calendar_week_start.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/schedule/presentation/viewmodels/month_picker_viewmodel.dart';
 
 /// 날짜 피커 바텀시트 본문 — 월 네비게이터 + 요일 행 + 날짜 그리드.

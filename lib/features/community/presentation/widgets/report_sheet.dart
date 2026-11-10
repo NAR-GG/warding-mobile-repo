@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_report.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// `⋯` 메뉴에서 고른 동작.
 enum CommunityMoreAction { report, block, edit, delete }

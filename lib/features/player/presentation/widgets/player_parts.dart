@@ -2,12 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:warding/components/nar_card.dart';
-import 'package:warding/components/nar_section_title.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
-import 'package:warding/util/champion_image.dart';
-import 'package:warding/util/champion_name_map.dart';
+import 'package:warding/core/ui/nar_card.dart';
+import 'package:warding/core/ui/nar_section_title.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/core/util/champion_image.dart';
+import 'package:warding/core/util/champion_name_map.dart';
 
 /// 선수 페이지 공용 조각 — 숫자 포맷·텍스트 스타일·섹션 제목·챔피언 아이콘·승패 줄.
 /// 카드 틀은 공용 [NarCard] 를 쓴다.

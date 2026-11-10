@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/components/bottom_action_bar.dart';
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/bottom_action_bar.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/data/notice_repository.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
 
 /// 공지사항 상세 화면. 목록/띠배너에서 [Notice]를 통째로 받아 그린다

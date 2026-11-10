@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_poll.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 글에 붙은 투표 카드 — 본문 아래.
 ///

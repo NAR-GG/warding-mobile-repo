@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/util/standings_group_label.dart';
+import 'package:warding/core/util/standings_group_label.dart';
 
 /// 순위표 그룹 이름 표시 규칙. 서버는 표시 문구가 아니라 코드를 준다
 /// (실측 2026-10-06: LCK `LEGEND`·`RISE`, ASIAN_GAMES `A`·`B`).

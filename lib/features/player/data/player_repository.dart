@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart' show kHomeMocks;
 import 'package:warding/features/player/data/player_mock_source.dart';

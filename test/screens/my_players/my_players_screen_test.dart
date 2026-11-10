@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/components/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';

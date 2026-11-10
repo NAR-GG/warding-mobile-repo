@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_spoiler_toggle.dart';
+import 'package:warding/core/ui/nar_spoiler_toggle.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_header.dart';
 

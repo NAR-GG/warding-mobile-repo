@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/components/nar_popup_dialog.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_popup_dialog.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// [showNarPopup] 을 띄우는 최소 화면.
 Widget _host({

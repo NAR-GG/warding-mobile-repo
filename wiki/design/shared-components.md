@@ -1,14 +1,14 @@
 ---
 type: Concept
 title: 공용 컴포넌트
-description: lib/components/ 의 앱 전역 공용 위젯 — 칩·버튼·카드·섹션 제목. 화면마다 같은 모양을 다시 만들지 않는다.
+description: lib/core/ui/ 의 앱 전역 공용 위젯 — 칩·버튼·카드·섹션 제목. 화면마다 같은 모양을 다시 만들지 않는다.
 tags: [design, components, ui]
 timestamp: 2026-10-26T00:00:00Z
 ---
 
 # 원칙
 
-화면에 같은 모양이 두 번째로 필요해지면, 그 화면 폴더에 복사하지 말고 `lib/components/` 로
+화면에 같은 모양이 두 번째로 필요해지면, 그 화면 폴더에 복사하지 말고 `lib/core/ui/` 로
 올려서 둘 다 그걸 쓴다. 색은 [색상 토큰](color-tokens.md), 수치는
 [UI 스케일](ui-scaling.md) 규칙을 따른다(모든 공용 위젯이 `scale` 파라미터를 받는다).
 

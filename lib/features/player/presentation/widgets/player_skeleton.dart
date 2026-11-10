@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_card.dart';
-import 'package:warding/components/nar_skeleton.dart';
-import 'package:warding/components/nar_stat_box.dart';
+import 'package:warding/core/ui/nar_card.dart';
+import 'package:warding/core/ui/nar_skeleton.dart';
+import 'package:warding/core/ui/nar_stat_box.dart';
 
 /// 선수 페이지 첫 로딩 스켈레톤.
 ///

@@ -7,23 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/cheer_ad_banner.dart';
-import 'package:warding/config/app_language.dart';
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/ui/cheer_ad_banner.dart';
+import 'package:warding/core/config/app_language.dart';
+import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_service.dart';
 import 'package:warding/features/notice/data/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/home_widget_service.dart';
-import 'package:warding/util/update_prompt.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/home_widget_service.dart';
+import 'package:warding/core/util/update_prompt.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

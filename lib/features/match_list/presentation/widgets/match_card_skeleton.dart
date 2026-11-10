@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 무한 스크롤 추가 로드 중 표시할 스켈레톤 카드.
 /// [MatchCard] 와 동일한 레이아웃·치수에 회색 박스를 깔고 opacity 를 펄스시킨다.

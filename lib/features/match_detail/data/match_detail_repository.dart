@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';

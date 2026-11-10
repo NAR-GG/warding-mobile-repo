@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:warding/components/cheer_ad_banner.dart';
+import 'package:warding/core/ui/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -9,18 +9,18 @@ import 'package:warding/core/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/util/match_status.dart';
-import 'package:warding/util/match_title_l10n.dart';
-import 'package:warding/util/rating_mapping.dart';
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/app_refresh_indicator.dart';
-import 'package:warding/components/scroll_to_top_button.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_dropdown.dart';
-import 'package:warding/components/nar_tab_bar.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/util/match_status.dart';
+import 'package:warding/core/util/match_title_l10n.dart';
+import 'package:warding/core/util/rating_mapping.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/app_refresh_indicator.dart';
+import 'package:warding/core/ui/scroll_to_top_button.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_dropdown.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
 import 'package:warding/features/player_rating/presentation/screens/player_rating_screen.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_champion_pick_section.dart';
@@ -38,8 +38,8 @@ import 'package:warding/features/match_detail/presentation/widgets/match_detail_
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_summary_section.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_toc.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_refresh_pill.dart';
-import 'package:warding/util/analytics_route_observer.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 경기 상세 페이지. 경기 리스트에서 카드를 탭하면 진입한다.
 class MatchDetailScreen extends StatefulWidget {

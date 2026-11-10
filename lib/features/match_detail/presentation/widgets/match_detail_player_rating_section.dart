@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_banner.dart';
-import 'package:warding/components/nar_star_rating.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_banner.dart';
+import 'package:warding/core/ui/nar_star_rating.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_rating_section.dart';
 
 /// 경기 상세 — 선수 평점 탭 콘텐츠.

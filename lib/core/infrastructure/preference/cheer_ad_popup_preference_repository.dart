@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 응원 광고 진입 팝업을 오늘(KST) 그만 보겠다고 했는지 기기에 저장한다.
 ///

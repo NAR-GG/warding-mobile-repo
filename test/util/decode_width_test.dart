@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 디코딩 폭 계산([decodeWidthFor]).
 ///

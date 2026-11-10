@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/notification_card.dart';
+import 'package:warding/core/ui/notification_card.dart';
 
 /// 경기 시작 알림. monitor-play 아이콘 + 응원 팀 경기 시작 안내.
 class MatchStartNotification extends StatelessWidget {

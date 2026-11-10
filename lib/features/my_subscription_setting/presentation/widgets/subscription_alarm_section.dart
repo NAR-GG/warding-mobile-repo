@@ -2,11 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/nar_tab_bar.dart';
-import 'package:warding/components/nar_toggle.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/player_alarm_viewmodel.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/team_alarm_viewmodel.dart';
 import 'package:warding/features/my_subscription_setting/presentation/widgets/live_event_detail_card.dart';

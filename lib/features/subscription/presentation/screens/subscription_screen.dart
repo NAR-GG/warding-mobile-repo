@@ -6,23 +6,23 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/components/app_bottom_nav.dart';
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/app_refresh_indicator.dart';
-import 'package:warding/components/guest_lock_overlay.dart';
-import 'package:warding/components/nar_alert_dialog.dart';
-import 'package:warding/components/nar_banner.dart';
-import 'package:warding/components/nar_chip_multi_select.dart';
-import 'package:warding/components/notification_feed_card.dart';
-import 'package:warding/components/scroll_to_top_button.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/app_refresh_indicator.dart';
+import 'package:warding/core/ui/guest_lock_overlay.dart';
+import 'package:warding/core/ui/nar_alert_dialog.dart';
+import 'package:warding/core/ui/nar_banner.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/notification_feed_card.dart';
+import 'package:warding/core/ui/scroll_to_top_button.dart';
 import 'package:warding/core/domain/member_notification.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/tab_route.dart';
-import 'package:warding/util/match_detail_router.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/tab_route.dart';
+import 'package:warding/core/util/match_detail_router.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_layout.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';
 import 'package:warding/features/community/presentation/screens/community_screen.dart';
@@ -36,8 +36,8 @@ import 'package:warding/features/subscription/presentation/widgets/player_filter
 import 'package:warding/features/subscription/presentation/widgets/player_select_sheet.dart';
 import 'package:warding/features/subscription/presentation/widgets/subscription_date_sheet.dart';
 import 'package:warding/features/subscription/presentation/screens/subscription_settings_screen.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 마이 구독 페이지. 하단 네비 '마이 구독' 탭에 해당한다.
 class SubscriptionScreen extends StatefulWidget {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_spoiler_toggle.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_spoiler_toggle.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_pager_viewmodel.dart';
 import 'package:warding/features/match_day/presentation/widgets/match_day_view.dart';
 

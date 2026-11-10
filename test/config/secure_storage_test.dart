@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 

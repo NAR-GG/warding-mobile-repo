@@ -2,15 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/util/home_widget_service.dart';
-import 'package:warding/util/league_meta.dart';
-import 'package:warding/util/match_status.dart';
+import 'package:warding/core/util/home_widget_service.dart';
+import 'package:warding/core/util/league_meta.dart';
+import 'package:warding/core/util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.
 class MatchPage {

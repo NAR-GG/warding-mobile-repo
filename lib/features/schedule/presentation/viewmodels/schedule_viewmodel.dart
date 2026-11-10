@@ -13,7 +13,7 @@ import 'package:warding/core/infrastructure/preference/calendar_week_start_prefe
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
-import 'package:warding/util/home_widget_service.dart';
+import 'package:warding/core/util/home_widget_service.dart';
 
 /// 경기 일정 화면 ViewModel.
 ///

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 선수 평점 탭 최초 로딩 중 표시할 스켈레톤.
 /// [MatchDetailPlayerRatingSection] 과 동일한 레이아웃(요약 + 팀별 5행)에

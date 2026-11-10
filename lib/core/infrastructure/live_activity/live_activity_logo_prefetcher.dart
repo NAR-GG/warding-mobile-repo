@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 

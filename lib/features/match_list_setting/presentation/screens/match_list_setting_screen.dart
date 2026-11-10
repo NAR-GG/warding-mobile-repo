@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_setting_header.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_setting_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_list_setting/presentation/viewmodels/match_list_setting_viewmodel.dart';
 import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
 

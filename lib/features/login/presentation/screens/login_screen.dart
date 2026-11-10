@@ -8,15 +8,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_sync_service.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:warding/features/login/presentation/widgets/login_consent_notice.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
 import 'package:warding/features/login/presentation/widgets/easy_login_divider.dart';
 import 'package:warding/features/login/presentation/widgets/social_login_button.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/core/domain/calendar_week_start.dart';
 
 /// 캘린더 시작 요일(월요일/일요일) 설정을 기기에 로컬 저장한다.

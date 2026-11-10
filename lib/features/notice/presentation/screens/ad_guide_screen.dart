@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/data/notice_repository.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/notice/presentation/screens/notice_detail_screen.dart';
 
 /// 광고 안내 화면. 마이페이지 > 고객 지원에서 연다.

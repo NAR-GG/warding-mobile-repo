@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/features/community/domain/community_draft.dart';
 
 /// 커뮤니티 글쓰기 임시저장 목록 — 기기 로컬(로그인 여부 무관), 여러 개 보관.

@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_spoiler_toggle.dart';
+import 'package:warding/core/ui/nar_spoiler_toggle.dart';
 import 'package:warding/core/domain/team.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 경기 일정 페이지 상단 헤더.
 ///

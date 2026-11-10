@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/nar_radio.dart';
-import 'package:warding/components/nar_toggle.dart';
+import 'package:warding/core/ui/nar_radio.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/components/nar_word_break_text.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/ui/nar_word_break_text.dart';
 
 /// 마이페이지 카드 섹션의 행 하나.
 ///

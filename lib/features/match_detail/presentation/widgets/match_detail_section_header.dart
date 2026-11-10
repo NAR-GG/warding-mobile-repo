@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 경기 상세 탭 콘텐츠 맨 위에 붙는 섹션 타이틀 바.
 ///

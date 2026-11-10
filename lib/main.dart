@@ -8,9 +8,9 @@ import 'package:home_widget/home_widget.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import 'config/api_config.dart';
-import 'config/app_globals.dart';
-import 'config/app_language.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/config/app_globals.dart';
+import 'package:warding/core/config/app_language.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'package:warding/core/infrastructure/ad/ad_repository.dart';
@@ -21,12 +21,12 @@ import 'package:warding/core/infrastructure/live_activity/live_match_activity_co
 import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
 import 'package:warding/core/infrastructure/notification/solo_rank_notification_store.dart';
 import 'package:warding/features/splash/presentation/screens/splash_screen.dart';
-import 'styles/app_colors.dart';
-import 'util/analytics.dart';
-import 'util/analytics_route_observer.dart';
-import 'util/api_client.dart' show loadAppVersion;
-import 'util/champion_image.dart';
-import 'util/home_widget_service.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
+import 'package:warding/core/util/api_client.dart' show loadAppVersion;
+import 'package:warding/core/util/champion_image.dart';
+import 'package:warding/core/util/home_widget_service.dart';
 
 /// 홈 화면 위젯 백그라운드 갱신 콜백.
 ///

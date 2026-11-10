@@ -2,21 +2,21 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/components/nar_chip_multi_select.dart';
-import 'package:warding/components/nar_tab_bar.dart';
-import 'package:warding/components/dashed_border.dart';
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
+import 'package:warding/core/ui/dashed_border.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 import 'package:warding/features/shorts/presentation/screens/shorts_feed_screen.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
 import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';
 
-export 'package:warding/util/shorts_url.dart' show shortsLaunchUri;
+export 'package:warding/core/util/shorts_url.dart' show shortsLaunchUri;
 
 /// 콘텐츠 — 밖에서 온 것(뉴스·쇼츠). 평점 한줄평은 유저가 쓴 것이라 커뮤니티
 /// 섹션 탭에 있다(spec 결정: 섹션을 둘로 나눈다).

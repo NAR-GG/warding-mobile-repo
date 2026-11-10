@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 경기 상세 — 챔피언픽 탭 스크롤 중 오른쪽에 떴다 사라지는 목차(TOC).
 ///

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/app_bottom_nav.dart';
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/load_error.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/load_error.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 import 'package:warding/features/schedule/presentation/viewmodels/filter_viewmodel.dart';
 import 'package:warding/features/schedule/presentation/viewmodels/schedule_viewmodel.dart';
@@ -13,16 +13,16 @@ import 'package:warding/features/match_day/presentation/screens/match_day_screen
 import 'package:warding/features/match_list/presentation/widgets/match_list_view.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_month_label.dart';
 import 'package:warding/features/schedule/presentation/widgets/filter_sheet.dart';
-import 'package:warding/util/home_widget_service.dart';
+import 'package:warding/core/util/home_widget_service.dart';
 import 'package:warding/features/schedule/presentation/widgets/month_picker_sheet.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar_skeleton.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_header.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_week_calendar.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_list_filter_sheet.dart';
-import 'package:warding/util/nav_tab_navigation.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics_route_observer.dart';
+import 'package:warding/core/util/nav_tab_navigation.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
 
 /// 경기 일정 페이지. 하단 네비 '경기' 탭에 해당한다.
 ///

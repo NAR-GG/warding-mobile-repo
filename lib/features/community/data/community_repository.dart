@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/community/domain/community_poll.dart';
 import 'package:warding/features/community/domain/community_post_block.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 

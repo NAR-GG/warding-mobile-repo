@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/notification_card.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/notification_card.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 경기 종료 알림. monitor-x(closing) 아이콘 + 경기 정보 + 평점 남기기 링크.
 class MatchEndNotification extends StatelessWidget {

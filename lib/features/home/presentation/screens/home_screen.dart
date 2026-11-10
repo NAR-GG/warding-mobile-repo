@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/app_bottom_nav.dart';
-import 'package:warding/components/cheer_ad_banner.dart';
-import 'package:warding/components/cheer_ad_popup.dart';
-import 'package:warding/components/guide_popup.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_banner.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/cheer_ad_banner.dart';
+import 'package:warding/core/ui/cheer_ad_popup.dart';
+import 'package:warding/core/ui/guide_popup.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/util/tab_route.dart';
+import 'package:warding/core/util/tab_route.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
@@ -32,8 +32,8 @@ import 'package:warding/features/home/presentation/widgets/home_review_section.d
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_standings_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_today_matches_section.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/nav_tab_navigation.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/nav_tab_navigation.dart';
 
 /// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠 ·
 /// 평점 한줄평 6개 섹션 + 하단 네비 '홈' 탭에 해당한다.

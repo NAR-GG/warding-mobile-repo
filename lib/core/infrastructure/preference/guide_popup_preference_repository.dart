@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 진입 시 뜨는 사용 가이드 팝업을 이미 봤는지 기기에 저장한다.
 ///

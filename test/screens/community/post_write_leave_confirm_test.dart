@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/community/data/community_draft_repository.dart';

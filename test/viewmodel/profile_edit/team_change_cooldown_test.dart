@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/profile_edit/presentation/viewmodels/profile_edit_viewmodel.dart';
 
 /// 응원팀은 30일에 한 번만 바꿀 수 있다. 화면이 아니라 여기서 막아야 "고를 수는

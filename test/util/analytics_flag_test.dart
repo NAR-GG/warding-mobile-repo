@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/analytics.dart';
+import 'package:warding/core/util/analytics.dart';
 
 /// [Analytics.flag] 계열이 **SDK 가 없을 때 fallback 을 주고 던지지 않는지**
 /// 검증한다.

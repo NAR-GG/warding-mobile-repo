@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/domain/community_rules.dart';
 import 'package:warding/features/community/presentation/widgets/community_rules_sheet.dart';
 

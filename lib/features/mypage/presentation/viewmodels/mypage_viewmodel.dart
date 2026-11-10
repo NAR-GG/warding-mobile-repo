@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';

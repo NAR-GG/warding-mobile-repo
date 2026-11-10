@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/team_logo.dart';
+import 'package:warding/core/ui/team_logo.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 
 Widget _wrap(Widget child) => MaterialApp(

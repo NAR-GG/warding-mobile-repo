@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/board_badge.dart';
+import 'package:warding/core/ui/board_badge.dart';
 import 'package:warding/features/my_community_activity/data/community_my_activity.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 
 /// "내가 쓴 댓글" 목록의 한 줄 — [배지] 원글 제목 · 댓글 본문(2줄) · 시각·추천수.
 ///

@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 프로필 이미지 업로드 — 백엔드에서 Cloudinary 서명 파라미터를 발급받아

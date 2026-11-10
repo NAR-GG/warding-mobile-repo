@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/components/app_refresh_indicator.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/match_detail_router.dart';
-import 'package:warding/util/match_status.dart';
-import 'package:warding/util/match_title_l10n.dart';
+import 'package:warding/core/ui/app_refresh_indicator.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/match_detail_router.dart';
+import 'package:warding/core/util/match_status.dart';
+import 'package:warding/core/util/match_title_l10n.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card_skeleton.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_date_header.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_league_header.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 특정 날짜 하나의 경기 리스트 본문(날짜 헤더 + 카드 리스트 + 로딩/빈 상태).
 ///

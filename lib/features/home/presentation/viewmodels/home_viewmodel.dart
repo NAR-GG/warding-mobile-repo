@@ -24,7 +24,7 @@ import 'package:warding/features/shorts/data/shorts_repository.dart';
 import 'package:warding/features/home/data/standings_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
-import 'package:warding/util/match_status.dart';
+import 'package:warding/core/util/match_status.dart';
 import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
 import 'package:warding/features/home/presentation/viewmodels/solo_rank_rules.dart';
 

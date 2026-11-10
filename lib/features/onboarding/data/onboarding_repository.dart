@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/onboarding/domain/league.dart';
 import 'package:warding/features/onboarding/domain/player.dart';
 import 'package:warding/core/domain/team.dart';
-import 'package:warding/util/sentry_logger.dart';
+import 'package:warding/core/util/sentry_logger.dart';
 
 /// 온보딩 관련 API.
 class OnboardingRepository {

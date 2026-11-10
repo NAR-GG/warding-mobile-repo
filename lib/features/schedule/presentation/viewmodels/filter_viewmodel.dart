@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/components/nar_select_dropdown_field.dart';
+import 'package:warding/core/ui/nar_select_dropdown_field.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';

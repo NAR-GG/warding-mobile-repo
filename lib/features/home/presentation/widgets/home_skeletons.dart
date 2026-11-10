@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_skeleton.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_skeleton.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 홈 섹션 스켈레톤 모음. 실제 데이터로 바뀔 때 화면이 튀지 않게 각 섹션의
 /// 실제 크기·여백(헤더 아래 간격, 카드 높이)에 맞춘다.

@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_build_guide.dart';
 
 /// 아이템 8칸 — 코어 6 + 퀘스트 아이템(신발) + 장신구, 한 줄에 나란히.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/nar_tab_bar.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/subscription/presentation/widgets/subscribed_section.dart';
 
 /// 구독 설정 화면의 '전체 목록' 섹션.

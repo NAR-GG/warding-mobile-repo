@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
 import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';

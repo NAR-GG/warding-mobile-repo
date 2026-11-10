@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/util/league_meta.dart';
+import 'package:warding/core/util/league_meta.dart';
 
 ScheduleFilterOptions _options(List<FilterLeague> leagues) =>
     ScheduleFilterOptions(

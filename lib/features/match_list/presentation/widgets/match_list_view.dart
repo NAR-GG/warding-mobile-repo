@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/cheer_ad_banner.dart';
-import 'package:warding/components/load_error.dart';
+import 'package:warding/core/ui/cheer_ad_banner.dart';
+import 'package:warding/core/ui/load_error.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/match_status.dart';
-import 'package:warding/util/match_title_l10n.dart';
-import 'package:warding/util/match_detail_router.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/match_status.dart';
+import 'package:warding/core/util/match_title_l10n.dart';
+import 'package:warding/core/util/match_detail_router.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card_skeleton.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_date_header.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_league_header.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 무한 스크롤 경기 목록.
 ///

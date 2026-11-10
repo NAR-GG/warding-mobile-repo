@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 구독한 선수 평점 유도 배너.
 ///

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_chip.dart';
-import 'package:warding/components/nar_tab_bar.dart';
+import 'package:warding/core/ui/nar_chip.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/player/data/player_mock_source.dart';
 import 'package:warding/features/player/presentation/widgets/player_solo_tab.dart';

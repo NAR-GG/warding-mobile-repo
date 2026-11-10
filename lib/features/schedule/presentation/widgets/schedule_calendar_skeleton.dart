@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/domain/calendar_week_start.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_weekday_header.dart';
 

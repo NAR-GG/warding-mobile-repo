@@ -6,7 +6,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 import 'package:warding/features/community/data/community_repository.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/widgets/post_list_item.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 

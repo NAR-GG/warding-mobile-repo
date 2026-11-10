@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/community/presentation/viewmodels/community_detail_viewmodel.dart';
 
 /// v1.0.23 실사고 회귀: 좋아요·벨 토글이 상세 객체를 재조립하면서 bodyFormat 을

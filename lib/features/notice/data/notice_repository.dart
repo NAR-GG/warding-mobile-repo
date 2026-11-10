@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 공지사항 API (`/api/notices`). 공개 API라 인증이 필수는 아니지만,
 /// ADMIN 계정 토큰을 실어 보내면 임시저장 공지도 내려온다 (앱 검수용).

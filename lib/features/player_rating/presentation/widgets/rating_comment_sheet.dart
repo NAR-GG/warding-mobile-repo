@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_star_rating_input.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/lane_asset.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_star_rating_input.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/lane_asset.dart';
 
 /// 평점·코멘트 남기기 바텀시트를 띄운다.
 /// 등록 시 입력된 (평점, 코멘트)를 반환하고, 닫으면 null 을 반환한다.

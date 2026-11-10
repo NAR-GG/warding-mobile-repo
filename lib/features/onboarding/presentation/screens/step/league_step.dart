@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/load_error.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/ui/load_error.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
 import 'package:warding/features/onboarding/presentation/widgets/onboarding_select_card.dart';
 import 'package:warding/features/onboarding/presentation/widgets/onboarding_title.dart';

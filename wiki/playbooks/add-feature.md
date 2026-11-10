@@ -24,7 +24,7 @@ warding에 새 화면/기능을 추가할 때 일관성을 유지하는 절차.
    `ListenableBuilder`로 ViewModel 구독, 이벤트는 ViewModel 메서드로 위임,
    `Navigator`만 직접 처리.
 5. **위젯 분리** — 화면 전용 위젯은 `features/{기능}/presentation/widgets/`, 여러 기능에서
-   쓰는 위젯은 `components/`. → [파일 생성 규칙](/architecture/file-conventions.md)
+   쓰는 위젯은 `core/ui/`. → [파일 생성 규칙](/architecture/file-conventions.md)
 6. **import 는 절대경로** — `package:warding/features/...` 로 쓴다. 상대경로는 파일을 옮길 때
    깨진다.
 7. **색·치수** — 색은 [`AppColors`](/design/color-tokens.md) 토큰만 사용(하드코딩 금지). 크기·폰트는 [비율 스케일](/design/ui-scaling.md) 적용.

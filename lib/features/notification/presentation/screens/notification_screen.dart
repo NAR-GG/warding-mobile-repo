@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/notification_feed_card.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/notification_feed_card.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/member_notification.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 

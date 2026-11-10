@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_draft.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 임시저장 목록 바텀시트. 행을 탭하면 그 드래프트로 pop, 삭제 아이콘은 시트를
 /// 닫지 않고 목록에서만 뺀다.

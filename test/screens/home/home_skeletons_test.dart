@@ -13,7 +13,7 @@ import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_standings_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_today_matches_section.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import '../../support/l10n_test_setup.dart';

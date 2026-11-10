@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_tab_bar.dart';
+import 'package:warding/core/ui/nar_tab_bar.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/shorts/domain/story_video.dart';
 import 'package:warding/features/shorts/data/shorts_repository.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/shorts_url.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/shorts_url.dart';
 import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 import 'package:warding/features/shorts/presentation/widgets/shorts_embed.dart';
 import 'package:warding/features/shorts/presentation/widgets/shorts_info_sheet.dart';

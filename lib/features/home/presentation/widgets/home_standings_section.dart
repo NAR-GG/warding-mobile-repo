@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/components/nar_chip_multi_select.dart';
-import 'package:warding/components/team_code_badge.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/standings_group_label.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/standings_group_label.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/home/domain/standing.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';

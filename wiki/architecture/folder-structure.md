@@ -23,15 +23,36 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── core/
+├── core/         기능 소유가 아닌 모든 것
 │   ├── domain/             여러 기능이 쓰는 모델 12개
-│   └── infrastructure/     여러 기능이 쓰는 서비스·repository 9개
-│
-├── config/       앱 설정 (API URL, 키 등)
-├── components/   앱 전역 공용 위젯
-├── styles/       디자인 토큰 (app_colors 등)
-└── util/         유틸리티
+│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 9개
+│   ├── ui/                 앱 전역 공용 위젯 59개
+│   ├── theme/              디자인 토큰 (app_colors 등)
+│   ├── config/             앱 설정 (API URL, 키 등)
+│   └── util/               유틸리티
+├── l10n/         생성물 (아래 예외 참고)
+├── main.dart     진입점
+└── firebase_options.dart   생성물
 ```
+
+**규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.** 처음에는 `components`·
+`styles`·`config`·`util` 을 최상위에 뒀는데, 그러면 `core/` 에 들어간 `team`(2곳에서 사용)
+보다 더 광범위하게 공유되는 것들(`styles` 27곳, `components` 25곳, `util` 22곳,
+`config` 16곳)이 밖에 남아 기준이 어긋났다.
+
+# core 밖에 남는 예외
+
+**생성물과 진입점.** 생성물은 생성 도구가 경로를 정하므로, 옮겨도 도구가 원래 자리에 다시
+만들어 두 벌이 생긴다.
+
+| 대상 | 경로를 못박는 설정 |
+|---|---|
+| `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
+| `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
+| `lib/main.dart` | 진입점 |
+
+옮기려면 그 설정부터 바꿔야 하는데 이득이 없다. 특히 `firebase.json` 은 FlutterFire CLI 가
+관리하는 파일이라 손으로 고치면 다음 `flutterfire configure` 에 덮일 수 있다.
 
 # core 에 있는 것
 
@@ -67,8 +88,8 @@ shorts_url.dart'` 하나가 테스트 10건을 깨뜨렸다).
 - 한 기능 소유가 아닌 것을 `features/` 안에 두면 다른 기능이 남의 폴더를 들여다봐야 한다.
   쓰는 기능이 둘 이상이면 `core/` 후보다.
 - 한 화면에서만 쓰는 위젯은 그 기능의 `presentation/widgets/`에, 여러 기능에서 쓰면
-  `components/`에 둔다.
-- 디자인 토큰은 `styles/`에 모은다 → [색상 토큰](/design/color-tokens.md).
+  `core/ui/`에 둔다.
+- 디자인 토큰은 `core/theme/`에 모은다 → [색상 토큰](/design/color-tokens.md).
 - 계층별 책임은 [MVVM 패턴](/architecture/mvvm.md), 새 파일 위치는
   [파일 생성 규칙](/architecture/file-conventions.md) 참조.
 - 상태 관리는 `ChangeNotifier` 기반 MVVM 을 유지한다. `presentation/`은 BLoC 을 전제한

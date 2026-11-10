@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/config/secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 캘린더 상단 띠배너에서 ✕로 닫은 공지 id 목록을 기기에 저장한다.
 ///

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/app_bottom_sheet.dart';
-import 'package:warding/components/nar_alert_dialog.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/components/nar_button.dart';
-import 'package:warding/components/nar_detail_header.dart';
-import 'package:warding/components/nar_dropdown.dart';
+import 'package:warding/core/ui/app_bottom_sheet.dart';
+import 'package:warding/core/ui/nar_alert_dialog.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_dropdown.dart';
 import 'package:warding/core/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/styles/app_colors.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 import 'package:warding/features/player_rating/presentation/viewmodels/player_rating_viewmodel.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_rating_section.dart';
@@ -21,9 +21,9 @@ import 'package:warding/features/player_rating/presentation/widgets/player_comme
 import 'package:warding/features/player_rating/presentation/widgets/rating_comment_sheet.dart';
 import 'package:warding/features/player_rating/presentation/widgets/rating_distribution_section.dart';
 import 'package:warding/features/player_rating/presentation/widgets/subscribed_rating_banner.dart';
-import 'package:warding/config/secure_storage.dart';
-import 'package:warding/util/analytics_events.dart';
-import 'package:warding/util/analytics.dart';
+import 'package:warding/core/config/secure_storage.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
 
 /// 선수 평점 상세 페이지.
 ///

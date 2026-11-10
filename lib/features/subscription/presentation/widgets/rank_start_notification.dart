@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/components/notification_card.dart';
-import 'package:warding/config/app_language.dart';
-import 'package:warding/util/champion_name_map.dart';
-import 'package:warding/util/korean_particle.dart';
+import 'package:warding/core/ui/notification_card.dart';
+import 'package:warding/core/config/app_language.dart';
+import 'package:warding/core/util/champion_name_map.dart';
+import 'package:warding/core/util/korean_particle.dart';
 
 /// 선수 랭크 시작 감지 알림. 좌측 headset 아이콘 + 선수/챔피언/큐 정보.
 /// OP.GG 이동은 카드 전체 탭으로 처리하므로 카드 안에는 링크를 두지 않는다.
