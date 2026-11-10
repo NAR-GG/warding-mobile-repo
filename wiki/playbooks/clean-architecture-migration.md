@@ -86,6 +86,18 @@ features/community/data/         community_draft_repository
 
 판별 기준: **네트워크를 타지 않고 실패가 기본값으로 수렴하면 그대로 둔다.**
 
+## DTO/Entity 분리도 생략할 수 있다
+
+모델이 중첩 클래스로 깊으면 복제 비용이 이득을 넘는다. `CategoryTree` 는 클래스 5 개
+90 줄이라, DTO·Entity·Mapper 를 다 만들면 260 줄이 되는데 얻는 것은 "서버 필드명 변경이
+mapper 까지만 번진다" 하나뿐이다.
+
+**트리 구조가 서버 스펙과 1:1 이고 파생 로직이 없으면 기존 모델을 그대로 쓴다.** Interface
+와 `Either` 만 적용한다 — 그 둘이 이 작업의 실제 이득이다.
+
+반대로 분리하는 편이 나은 경우: 파생 getter 가 있다(`hasMore`), 필드가 많아 서버 변경이
+잦다, 한 Entity 를 여러 응답이 조립한다.
+
 # 절차
 
 ## 1. 소유권·호출부를 먼저 센다
@@ -145,6 +157,14 @@ ViewModel 생성자는 테스트용으로 주입을 받아 둔다.
 XViewModel({XRepository? repository}) : _repo = repository ?? di<XRepository>();
 ```
 
+**주의 — 기본값을 `di<X>()` 로 바꾸면 주입하지 않는 기존 테스트가 전부 깨진다.**
+`GetIt: ... is not registered` 로 **생성 자체가 터지는데 런타임 오류라 `analyze` 가 잡지
+못한다.** 실제로 `ShortsRepository` 를 바꿨을 때 111 개가 한꺼번에 깨졌다 — 화면 테스트들이
+repository 를 주입하는 대신 HTTP 클라이언트만 가짜로 갈아끼우기 때문이다.
+
+`test/flutter_test_config.dart` 가 모든 테스트 전에 `configureDependencies()` 를 부르므로
+이제는 한 곳에서 해결된다. 개별 테스트에 추가하지 않는다.
+
 ## 5. ViewModel 의 try/catch 를 Either 분기로
 
 ```dart
@@ -195,7 +215,9 @@ Entity 이름 충돌 | `player_rating` 에 이미 `MyRating` 이 있었다 | Ent
 지운 메서드를 다른 기능이 쓰고 있었다 | `grep` 을 `X.instance.` 로 좁혀서 놓쳤다 | 메서드명으로 전체 검색 |
 스낵바가 안 뜸 | 반환형이 바뀌어 `catch` 가 죽은 코드가 됐다 | 6 번 참고 |
 유닛 테스트가 바인딩 오류로 죽음 | `appStrings` 가 navigator context 를 거친다 | `try/catch` 로 fallback |
-`sed` 치환이 안 먹음 | 긴 이름(`MyRatingPage`)을 짧은 이름(`MyRating`)보다 먼저 치환해야 한다 | Python 으로 순서 지정 |
+`sed` 치환이 안 먹음 | 긴 이름(`MyRatingPage`)을 짧은 이름(`MyRating`)보다 먼저 치환해야 한다 | Python 으로 순서 지정
+테스트 111 개가 `GetIt is not registered` 로 깨짐 | 기본값을 `di<X>()` 로 바꿨는데 테스트가 주입을 안 한다. `analyze` 는 못 잡는다 | `test/flutter_test_config.dart` 가 전역으로 등록한다 (4 번 참고)
+`match_list` 만 돌려 보고 "통과" 라고 보고 | 하위 디렉터리 테스트만 확인했다 | **커밋 전에 반드시 `fvm flutter test` 전체를 돌리고 마지막 줄을 확인한다** |
 
 # 순서
 

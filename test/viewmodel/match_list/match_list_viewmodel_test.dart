@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/match_list/domain/category_tree.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/features/match_list/data/category_repository.dart';
+import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
@@ -55,7 +57,7 @@ void main() {
               teams: [],
             ));
     when(() => cat.fetchTree(year: any(named: 'year')))
-        .thenAnswer((_) async => const CategoryTree(seasons: []));
+        .thenAnswer((_) async => const Right(CategoryTree(seasons: [])));
 
     // 뷰모델이 만들 수 있는 네 가지 호출 모양(진입=around, 오늘이후 진입=from,
     // 미래 이어받기=cursor+from, 과거 이어받기=before) 을 모두 빈 응답으로
@@ -557,7 +559,7 @@ void main() {
       when(() => sched.fetchFilterOptions(league: any(named: 'league')))
           .thenThrow(Exception('network down'));
       when(() => cat.fetchTree(year: any(named: 'year')))
-          .thenThrow(Exception('network down'));
+          .thenAnswer((_) async => const Left(NetworkFailure()));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -574,7 +576,7 @@ void main() {
       when(() => sched.fetchFilterOptions(league: any(named: 'league')))
           .thenThrow(Exception('network down'));
       when(() => cat.fetchTree(year: any(named: 'year')))
-          .thenThrow(Exception('network down'));
+          .thenAnswer((_) async => const Left(NetworkFailure()));
 
       final vm = buildVm();
       await pumpEventQueue();

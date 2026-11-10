@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import 'package:warding/features/my_review/data/repositories/my_review_repository_impl.dart';
+import 'package:warding/features/match_list/data/repositories/category_repository_impl.dart';
+import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
@@ -24,6 +26,9 @@ void configureDependencies() {
 
   // ── shorts ───────────────────────────────────────────────────
   di.registerLazySingleton<ShortsRepository>(ShortsRepositoryImpl.new);
+
+  // ── match_list ───────────────────────────────────────────────
+  di.registerLazySingleton<CategoryRepository>(CategoryRepositoryImpl.new);
 }
 
 /// 테스트에서 등록을 비운다. 앱 코드는 부르지 않는다.
