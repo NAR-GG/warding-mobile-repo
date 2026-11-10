@@ -24,6 +24,7 @@ import '../util/match_detail_router.dart';
 import '../screens/schedule/schedule_screen.dart';
 import '../util/app_image.dart';
 import '../config/secure_storage.dart';
+import 'analytics.dart';
 import 'analytics_events.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
@@ -501,6 +502,12 @@ class HomeWidgetService {
     bool skipDuplicateCheck = false,
   }) {
     debugPrint('[HomeWidget] 위젯 URL: $urlStr');
+    // 진입 경로를 **보류보다 먼저** 기록한다. 아래에서 `_pendingWidgetUrl` 로
+    // 보류되면 실제 내비게이션은 스플래시 뒤로 밀리는데, 그때는 스플래시가
+    // 이미 `launcher` 를 쏴 선점해 버린다. 중복은 `trackAppOpen` 이 막는다
+    // (백그라운드 복귀로 들어온 두 번째 딥링크는 무시된다 — 진입이 아니다).
+    Analytics.trackAppOpen(AnalyticsEntryPoint.widget);
+
     // 콜드 스타트에서는 스플래시가 첫 화면으로 교체를 마칠 때까지 보류한다.
     //
     // navigator 유무로 판단하면 안 된다 — 스플래시도 MaterialApp 아래에 있어

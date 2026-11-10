@@ -220,6 +220,8 @@ jobs:
             --arg mix "$MIX_TEXT" \
             --arg f "$FOOTER" \
             '{date: $date, cur: $c[0], pages_top: ($c[0].pages[0:5]),
+              first_top: ($c[0].first_pages[0:5]),
+              entry_top: ($c[0].entry_points[0:5]),
               exit_top: ($c[0].exit_pages[0:5]),
               versions_top: ($c[0].versions[0:4]),
               delta_text: $delta, mix_text: $mix, footer: $f}' \

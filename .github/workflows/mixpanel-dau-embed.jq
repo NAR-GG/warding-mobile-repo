@@ -57,6 +57,39 @@ def lines: if length == 0 then "없음" else map("\(.key) \(.n)") | join(" · ")
                 then " (월즈 솔랭 알림 \($c.engagement.worlds_subscribe))" else "" end)),
      inline: false},
 
+    {name: "진입 경로",
+     # 두 축을 같이 보여준다. `entry_point` 는 경기 상세·로그인에만 실려
+     # 부분 집계라, 그것만 보면 "푸시로 들어와 홈만 보고 끈 사용자" 가
+     # 안 보인다. 첫 화면 분포가 그 공백을 메운다.
+     value: (("첫 화면 TOP 5 " + ($s.first_top | lines))
+             + (if ($s.entry_top | length) > 0
+                then "\n경로 TOP 5 " + ($s.entry_top | lines)
+                     + (if ($c.no_entry_point // 0) > 0
+                        then " · 미상 \($c.no_entry_point)명" else "" end)
+                     # 집계 기준에 따라 숫자의 뜻이 다르다. 폴백이면 경기 상세·
+                     # 로그인만이고, app_open 기준이어도 그 이벤트를 안 심은
+                     # 구버전이 섞인 날은 그 사용자가 빠진 부분 집계다
+                     # (`no_entry_point` 가 그 수다). 어느 쪽이든 "전체 분포"로
+                     # 읽으면 DAU 와의 차이를 오해한다.
+                     # 인원은 위 줄의 "미상 N명" 이 이미 말했다 — 주석은 그
+                     # 사람들이 **왜** 빠졌는지만 적는다.
+                     + (if $c.entry_from_app_open
+                        then (if ($c.no_entry_point // 0) > 0
+                              then "\n※ `app_open` 을 심은 빌드의 사용자만"
+                                   + " 집계된다(부분)"
+                              else "" end)
+                        else "\n※ 경로는 경기 상세·로그인 진입만 집계된다(부분)"
+                        end)
+                # entry_point 가 하나도 없는 날은 "없음" 대신 무엇을 봐야 하는지
+                # 적는다. 앱 버전 필드와 같은 이유다. 단 원인은 단정하지 않는다 —
+                # 빌드 미도달이 가장 흔하지만 쿼리 범위·집계 실패일 수도 있다.
+                else "\n※ 집계할 진입 경로 데이터가 없다"
+                     + (if ($c.no_entry_point // 0) > 0
+                        then " (미상 \($c.no_entry_point)명)" else "" end)
+                     + " — `app_open` 을 심은 빌드의 도달 여부를 먼저 본다"
+                end)),
+     inline: false},
+
     {name: "이탈 화면 TOP 5",
      value: ($s.exit_top | lines),
      inline: false},

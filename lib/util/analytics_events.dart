@@ -15,6 +15,17 @@ library;
 class AnalyticsEvent {
   AnalyticsEvent._();
 
+  /// 앱 진입. **앱을 켤 때 한 번**, `entry_point` 를 실어 쏜다.
+  ///
+  /// `page_view` 의 `entry_point` 와 다르다 — 그쪽은 경기 상세·로그인 같은
+  /// 특정 화면에만 실려서, "푸시로 들어왔지만 경기 상세에 안 간 사용자" 의
+  /// 진입 경로를 알 수 없다. 이 이벤트는 **모든 진입**을 센다.
+  ///
+  /// 포그라운드 복귀에는 쏘지 않는다(그건 진입이 아니라 재개다). 하루에 앱을
+  /// 여러 번 켜면 여러 번 찍히므로, 집계는 사용자당 **최초 1건**만 본다
+  /// (`mixpanel-dau-summary.jq` 의 `entry_points`).
+  static const String appOpen = 'app_open';
+
   // 화면·섹션 단위 (object = page / section)
   static const String pageView = 'page_view';
   static const String sectionView = 'section_view';
@@ -168,6 +179,10 @@ class AnalyticsEntryPoint {
 
   /// 앱 내 일반 이동.
   static const String inApp = 'in_app';
+
+  /// 홈 화면 아이콘으로 앱을 켠 것. 푸시·위젯이 아닌 모든 진입이다
+  /// (`app_open` 전용 — 화면 단위 `page_view` 에는 쓰지 않는다).
+  static const String launcher = 'launcher';
 
   // match_detail
   static const String push = 'push';

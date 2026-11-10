@@ -55,6 +55,13 @@ class Analytics {
         ),
       );
       await _registerAppVersion();
+
+      // SDK 가 뜨기 전에 선점된 진입 경로가 있으면 지금 보낸다. `app_version`
+      // 등록 **뒤**라야 app_open 에도 버전이 실린다(super property 는 등록 이후
+      // 이벤트에만 붙는다).
+      final pending = _appOpenEntryPoint;
+      if (pending != null) _sendAppOpen(pending);
+
       // 비회원도 실험 대상이라 여기서 한 번 받는다(로그인하면 `identify` 뒤에
       // 다시 받는다). **단 기다리지 않는다** — `main.dart` 가 `init()` 을
       // `Future.wait([...]).timeout(8초)` 안에서 await 한 뒤 `runApp` 을
@@ -286,5 +293,68 @@ class Analytics {
     } catch (e) {
       debugPrint('[Analytics] track 실패: $e');
     }
+  }
+
+  /// 이번 실행에서 [trackAppOpen] 이 이미 발사됐나.
+  ///
+  /// 진입 경로를 아는 쪽이 여럿이라(푸시·위젯 핸들러, 스플래시) 각자 부르게
+  /// 두고 **처음 부른 것만** 채택한다. 순서를 호출부들이 맞추게 하면
+  /// 경로 하나가 늘 때마다 그 약속이 깨진다.
+  static bool _appOpenSent = false;
+
+  /// 앱 진입을 한 번 기록한다. 같은 실행에서 두 번째 호출은 무시된다.
+  ///
+  /// 푸시·위젯 핸들러는 자기 경로를 알자마자 부르고, 스플래시는 **한 프레임
+  /// 뒤에** `launcher` 로 부른다. 딥링크가 있으면 그쪽이 먼저 선점하므로
+  /// `launcher` 는 "푸시도 위젯도 아니었다" 는 뜻이 된다.
+  ///
+  /// 포그라운드 복귀에는 부르지 않는다 — 진입이 아니라 재개다.
+  ///
+  /// SDK 가 아직 안 떴으면 경로만 보관하고 [init] 끝에서 보낸다. `main.dart` 가
+  /// `_initFirebaseMessaging()`·`HomeWidgetService.init()`·[init] 을 **같은
+  /// `Future.wait` 로 병렬** 실행하므로, 푸시·위젯 핸들러가 [init] 보다 먼저
+  /// 끝날 수 있다. 그냥 쏘면 [track] 이 null 인 SDK 에 떨어뜨려 조용히 버리고,
+  /// 그러면 가장 중요한 경로(푸시로 들어온 콜드 스타트)가 집계에서 사라진다.
+  static void trackAppOpen(String entryPoint) {
+    if (_appOpenSent) return;
+    _appOpenSent = true;
+    _appOpenEntryPoint = entryPoint;
+    // 선점은 지금 확정하고(먼저 부른 쪽이 이긴다) 전송만 미룬다.
+    if (_mixpanel == null) return;
+    _sendAppOpen(entryPoint);
+  }
+
+  /// 보관해 둔 진입 경로를 실제로 보낸다. 두 번 보내지 않는다.
+  static void _sendAppOpen(String entryPoint) {
+    if (_appOpenFlushed) return;
+    _appOpenFlushed = true;
+    track(AnalyticsEvent.appOpen, {AnalyticsProp.entryPoint: entryPoint});
+  }
+
+  /// `app_open` 이 실제로 전송됐나. [_appOpenSent] 는 "경로가 선점됐나"라서
+  /// 둘을 구분해야 한다 — SDK 전이면 선점만 되고 전송은 안 된 상태가 생긴다.
+  static bool _appOpenFlushed = false;
+
+  /// 이번 실행에서 채택된 진입 경로. 아직 안 쐈으면 null.
+  ///
+  /// 테스트가 "누가 선점했나"를 확인하는 통로다 — 테스트 환경에서는 SDK 가
+  /// null 이라 실제 발사를 들여다볼 수 없다.
+  static String? _appOpenEntryPoint;
+
+  @visibleForTesting
+  static String? get appOpenEntryPoint => _appOpenEntryPoint;
+
+  /// 선점된 경로가 **아직 전송되지 않은** 상태인가. SDK 가 뜨기 전에 불린
+  /// 진입이 [init] 에서 보내질 것으로 남아 있는지를 테스트가 확인하는 통로다.
+  @visibleForTesting
+  static bool get appOpenPending =>
+      _appOpenEntryPoint != null && !_appOpenFlushed;
+
+  /// 테스트에서 실행 경계를 되돌린다. 앱 코드는 부르지 않는다.
+  @visibleForTesting
+  static void resetAppOpenForTest() {
+    _appOpenSent = false;
+    _appOpenFlushed = false;
+    _appOpenEntryPoint = null;
   }
 }
