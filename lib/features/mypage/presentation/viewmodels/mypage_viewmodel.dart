@@ -12,7 +12,6 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
-import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 
 /// 마이페이지 ViewModel.
 ///

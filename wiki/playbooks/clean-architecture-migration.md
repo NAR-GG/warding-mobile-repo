@@ -231,6 +231,11 @@ fvm flutter test
 
 기능 하나가 끝날 때마다 커밋한다. 중간 상태에서도 빌드가 통과해야 한다.
 
+**검증과 커밋을 같은 명령에 묶지 않는다.** `analyze && commit` 으로 붙이면 결과를 보기
+전에 커밋이 실행된다 — 실제로 "2 issues found" 를 그대로 커밋한 적이 있다. 둘을 나눠
+실행하고, `analyze` 가 "No issues found", `test` 가 "All tests passed!" 를 낸 것을
+**눈으로 확인한 뒤** 커밋한다.
+
 # 실제로 겪은 함정
 
 | 증상 | 원인 | 대응 |
