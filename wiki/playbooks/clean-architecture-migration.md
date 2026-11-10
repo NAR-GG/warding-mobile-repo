@@ -365,7 +365,7 @@ Entity 이름 충돌 | `player_rating` 에 이미 `MyRating` 이 있었다 | Ent
 | 3 | `match_detail_repository`, `match_subscription_repository` | `match_detail` | 없음 |
 | 4 | `onboarding_repository` | `onboarding` | 없음 — 호출부 많음 |
 | 4 | `player_repository` | `player` | 없음 |
-| 5 | `schedule_repository` | `schedule` | **있음** |
+| 5 | `schedule_repository` | `schedule` | **있음** — 아래 "schedule 메모" 참고 |
 | 6 | `subscription_repository` | `subscription` | **있음** |
 | 6 | `member_notification_repository`, `quiet_hours_repository` | `@core/notification` | 없음 |
 | 7 | `community_repository`, `community_image_repository`, `community_report_repository` | `community` | **있음** |
@@ -380,6 +380,29 @@ repository 와 바뀐 것이 섞인다.
 `account_setting`·`my_subscription_setting`·`calendar_setting`·`match_list_setting`)은
 자기 repository 가 없어 계층 작업이 없다. 다른 기능의 Interface 를 쓰게 되면 그때 호출부만
 바뀐다.
+
+# schedule 메모 (착수했다가 보류)
+
+**호출 지점 62 개**로 지금까지 중 압도적으로 크다. 한 번 시도했고 에러를 66 → 33 개까지
+줄였으나, 남은 33 개가 두 종류의 까다로운 패턴이어서 `git stash` 로 보류했다
+(stash 메시지: "schedule 전환 진행중 (에러 33개 남음)").
+
+진행한 것:
+- `MatchPage` 를 `domain/match_page.dart` 로 분리
+- Interface(`domain/repositories/schedule_repository.dart`) 작성
+- Impl 변환 — **공개 메서드를 `_xxxOrThrow` 로 바꾸고 `Either` 래퍼를 새로 추가**했다.
+  캐시 4 종 + in-flight 맵 + 세대 번호(`_cacheGeneration`) 로직을 건드리지 않으려는 것이다.
+- 호출부 9 개 파일을 괄호 매칭으로 `getOrElse` 처리
+
+남은 두 패턴:
+1. **`Future.wait([... .catchError((_) => <ScheduleMatch>[])])`** —
+   `home_widget_service`(2 곳), `live_match_activity_controller`(1 곳).
+   `catchError` 가 `Either` 와 맞지 않는다. `Future.wait` 안에서 각 호출을
+   `.getOrElse((_) => const [])` 로 바꾸면 `catchError` 자체가 불필요해진다.
+2. **`fetchFilterOptions` 결과를 변수에 담아 여러 줄에서 쓰는 경우** —
+   `match_list_viewmodel`(3 곳), `filter_viewmodel`(2 곳). 변수 선언부에서 풀어야 한다.
+
+다음에 재개할 때는 `git stash pop` 후 이 두 패턴만 처리하면 된다.
 
 # 관련
 
