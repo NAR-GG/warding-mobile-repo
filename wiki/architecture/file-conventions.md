@@ -22,8 +22,8 @@ timestamp: 2026-11-10T00:00:00Z
 | 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
 | 앱 공용 위젯 | `components/` | `components/common_button.dart` |
 
-아직 옮기지 않은 기능을 수정할 때는 그 기능의 기존 위치를 따른다. 전환 상태는
-[폴더 구조](/architecture/folder-structure.md) 참조.
+`lib/` 전체가 이 구조다 — `screens/`·`viewmodel/`·`model/`·`repository/` 최상위 폴더는
+없어졌다. → [폴더 구조](/architecture/folder-structure.md)
 
 # 레이어 구분
 

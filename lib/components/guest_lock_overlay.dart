@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import '../l10n/app_localizations.dart';
 
 import '../config/secure_storage.dart';
-import '../repository/auth/auth_service.dart';
-import '../screens/login/login_screen.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import '../styles/app_colors.dart';
 import 'nar_button.dart';
 import '../util/analytics_events.dart';

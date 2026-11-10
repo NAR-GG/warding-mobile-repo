@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
 import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 
 /// 닫은 공지 id 저장의 회귀 테스트.
 ///

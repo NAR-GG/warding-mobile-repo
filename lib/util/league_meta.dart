@@ -1,4 +1,4 @@
-import '../model/schedule_filter_options.dart';
+import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 
 /// 서버(`/mobile/schedules/filters`)가 내려준 리그 메타 — 알림 벨·아이콘.
 ///

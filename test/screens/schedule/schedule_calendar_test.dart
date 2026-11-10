@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/schedule/component/calendar_month_label.dart';
-import 'package:warding/screens/schedule/component/schedule_calendar.dart';
-import 'package:warding/screens/schedule/component/schedule_header.dart';
+import 'package:warding/features/schedule/presentation/widgets/calendar_month_label.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_header.dart';
 
 /// 부모(ScheduleScreen)와 같은 방식으로 캘린더를 감싼다 — onMonthShift 로
 /// 올라온 이동량을 month 에 반영해 다시 내려준다.

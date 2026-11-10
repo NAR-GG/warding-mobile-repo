@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/player_detail.dart';
-import 'package:warding/repository/player/player_mock_source.dart';
-import 'package:warding/repository/player/player_repository.dart';
-import 'package:warding/screens/player/component/player_worlds_tab.dart';
-import 'package:warding/screens/player/player_screen.dart';
-import 'package:warding/viewmodel/player/player_viewmodel.dart';
+import 'package:warding/features/player/domain/player_detail.dart';
+import 'package:warding/features/player/data/player_mock_source.dart';
+import 'package:warding/features/player/data/player_repository.dart';
+import 'package:warding/features/player/presentation/widgets/player_worlds_tab.dart';
+import 'package:warding/features/player/presentation/screens/player_screen.dart';
+import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 
 /// 한줄평 조회만 실패하는 소스(옛 서버·네트워크 장애 재현).
 /// [failForever] 가 false 면 첫 번째만 실패하고 그 뒤로는 정상 응답한다.

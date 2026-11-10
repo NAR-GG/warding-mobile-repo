@@ -1,0 +1,250 @@
+import 'dart:convert';
+
+import 'package:warding/config/api_config.dart';
+import 'package:warding/features/home/domain/home_models.dart';
+import 'package:warding/core/domain/player_subscription.dart';
+import 'package:warding/util/api_client.dart' as http;
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/home/data/home_sources.dart';
+
+/// 오프셋이 없는 시각은 KST 로 본다 — 뉴스·한줄평 `createdAt` 이 `2026-09-16T22:19:16`
+/// 꼴이다. 솔랭 시각은 `+09:00` 이 붙어 온다. 파싱에 실패하면 null.
+DateTime? parseServerTime(Object? raw) {
+  if (raw is! String || raw.isEmpty) return null;
+  final hasOffset = RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(raw);
+  return DateTime.tryParse(hasOffset ? raw : '$raw+09:00');
+}
+
+int _minutesSince(DateTime? at, DateTime now) =>
+    at == null ? 0 : now.difference(at).inMinutes.clamp(0, 1 << 30);
+
+/// 구독 선수 솔랭 상태 (`GET /api/mobile/me/solo-rank`, 로그인 필수).
+///
+/// 토큰이 없는 비회원은 조회하지 않고 빈 결과를 준다. 승패를 못 받은 판
+/// (`win == null`)은 승/패를 그릴 수 없어 끝난 경기에서 뺀다.
+class ApiSoloRankSource implements SoloRankSource {
+  ApiSoloRankSource({AuthService? auth, DateTime Function()? now})
+    : _auth = auth ?? AuthService.instance,
+      _now = now ?? DateTime.now;
+
+  final AuthService _auth;
+  final DateTime Function() _now;
+
+  @override
+  Future<SoloRankSnapshot> fetch() async {
+    final token = await _auth.jwt;
+    if (token == null || token.isEmpty) {
+      return const SoloRankSnapshot(live: [], finished: []);
+    }
+    final response = await _auth.authorizedRequest(
+      (t) => http.get(
+        Uri.parse(ApiConfig.soloRankUrl),
+        headers: {'Authorization': 'Bearer $t'},
+      ),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('솔랭 상태 조회 실패 (${response.statusCode})');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return soloSnapshotFromJson(data, _now());
+  }
+}
+
+/// `live`·`finished` 두 목록을 [SoloRankSnapshot] 으로 — 구독 솔랭과 월즈 솔랭이
+/// 같은 모양이라 함께 쓴다.
+SoloRankSnapshot soloSnapshotFromJson(Map<String, dynamic> data, DateTime now) {
+  final live = <HomeLiveSoloPlayer>[
+    for (final e in data['live'] as List<dynamic>? ?? const [])
+      _live(e as Map<String, dynamic>, now),
+  ];
+  final finished = <HomeFinishedSoloPlayer>[
+    for (final e in data['finished'] as List<dynamic>? ?? const [])
+      if ((e as Map<String, dynamic>)['win'] is bool) _finished(e, now),
+  ];
+  return SoloRankSnapshot(live: live, finished: finished);
+}
+
+HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
+  final startedAt = parseServerTime(j['startedAt']);
+  return HomeLiveSoloPlayer(
+    name: j['playerName'] as String? ?? '',
+    teamCode: j['teamCode'] as String? ?? '',
+    champion: j['championName'] as String? ?? '',
+    elapsedSeconds: startedAt == null
+        ? 0
+        : now.difference(startedAt).inSeconds.clamp(0, 1 << 30),
+    playerImageUrl: j['playerImageUrl'] as String?,
+    championImageUrl: j['championImageUrl'] as String?,
+    startedAt: startedAt,
+    playerId: (j['playerId'] as num?)?.toInt(),
+    cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+    cheerMine: (j['cheerMine'] as num?)?.toInt() ?? 0,
+    platform: j['platform'] as String?,
+    teamImageUrl: j['teamImageUrl'] as String?,
+  );
+}
+
+HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
+  final seconds = (j['durationSeconds'] as num?)?.toInt();
+  return HomeFinishedSoloPlayer(
+    name: j['playerName'] as String? ?? '',
+    teamCode: j['teamCode'] as String? ?? '',
+    won: j['win'] as bool,
+    minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
+    durationMinutes: seconds == null ? null : seconds ~/ 60,
+    playerImageUrl: j['playerImageUrl'] as String?,
+    cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
+    playerId: (j['playerId'] as num?)?.toInt(),
+  );
+}
+
+/// 월즈 솔랭 (`GET /api/mobile/me/solo-rank/worlds`).
+///
+/// 비회원도 토큰 없이 부른다 — 서버가 전원 미구독으로 준다. 비회원을 막던 옛
+/// 서버(401)면 빈 결과라, 명단이 비어 화면은 월즈 솔랭을 통째로 숨긴다.
+class ApiWorldsSoloSource implements WorldsSoloSource {
+  ApiWorldsSoloSource({AuthService? auth, DateTime Function()? now})
+    : _auth = auth ?? AuthService.instance,
+      _now = now ?? DateTime.now;
+
+  final AuthService _auth;
+  final DateTime Function() _now;
+
+  @override
+  Future<WorldsSoloSnapshot> fetch() async {
+    final token = await _auth.jwt;
+    final url = Uri.parse(ApiConfig.worldsSoloRankUrl);
+    final anonymous = token == null || token.isEmpty;
+    final response = anonymous
+        ? await http.get(url)
+        : await _auth.authorizedRequest(
+            (t) => http.get(url, headers: {'Authorization': 'Bearer $t'}),
+          );
+    if (anonymous && response.statusCode == 401) {
+      return WorldsSoloSnapshot.empty;
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('월즈 솔랭 조회 실패 (${response.statusCode})');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return WorldsSoloSnapshot(
+      players: [
+        for (final e in data['players'] as List<dynamic>? ?? const [])
+          PlayerSubscription.fromJson(e as Map<String, dynamic>),
+      ],
+      solo: soloSnapshotFromJson(data, _now()),
+      today: {
+        for (final e in data['today'] as List<dynamic>? ?? const [])
+          (e as Map<String, dynamic>)['playerId'] as int: WorldsTodayRecord(
+            games: e['games'] as int? ?? 0,
+            wins: e['wins'] as int? ?? 0,
+            losses: e['losses'] as int? ?? 0,
+          ),
+      },
+    );
+  }
+}
+
+/// 솔랭 응원 전송 (`POST /api/mobile/solo-rank/players/{playerId}/cheers`, 로그인 필수).
+///
+/// 200 이면 서버 합계를 돌려준다. 409(그 선수가 지금 솔랭 중이 아님)·400(count 범위
+/// 밖)은 다시 보내도 소용없으므로 [CheerRejected] 로 구분한다. 그 밖의 실패(네트워크·
+/// 5xx·인증)는 일반 예외라 호출부가 재시도한다.
+class ApiCheerSource implements CheerSource {
+  ApiCheerSource({AuthService? auth}) : _auth = auth ?? AuthService.instance;
+
+  final AuthService _auth;
+
+  @override
+  Future<CheerResult> send(int playerId, int count) async {
+    final response = await _auth.authorizedRequest(
+      (t) => http.post(
+        Uri.parse(ApiConfig.soloRankCheerUrl(playerId)),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'count': count}),
+      ),
+    );
+    final code = response.statusCode;
+    if (code == 409 || code == 400) throw CheerRejected(code);
+    if (code < 200 || code >= 300) {
+      throw Exception('응원 전송 실패 ($code)');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return CheerResult(
+      total: (data['cheerTotal'] as num?)?.toInt() ?? 0,
+      mine: (data['cheerMine'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// 최근 평점 한줄평 (`GET /api/mobile/ratings/recent`, 인증 불필요).
+class ApiReviewSource implements ReviewSource {
+  ApiReviewSource({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
+
+  @override
+  Future<List<HomeReviewItem>> fetchRecent() async {
+    final response = await http.get(Uri.parse(ApiConfig.recentRatingsUrl()));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('최근 한줄평 조회 실패 (${response.statusCode})');
+    }
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final now = _now();
+    return [
+      for (final e in data['ratings'] as List<dynamic>? ?? const [])
+        _review(e as Map<String, dynamic>, now),
+    ];
+  }
+
+  HomeReviewItem _review(Map<String, dynamic> j, DateTime now) {
+    return HomeReviewItem(
+      playerName: j['playerName'] as String? ?? '',
+      champion: j['championName'] as String? ?? '',
+      stars: (j['rating'] as num?)?.toInt() ?? 0,
+      comment: j['comment'] as String? ?? '',
+      nickname: j['nickname'] as String? ?? '',
+      teamCode: j['playerTeamCode'] as String? ?? '',
+      minutesAgo: _minutesSince(parseServerTime(j['createdAt']), now),
+      gameId: j['gameId'] as String?,
+      participantId: (j['participantId'] as num?)?.toInt(),
+      playerId: (j['playerId'] as num?)?.toInt(),
+      teamSide: j['teamSide'] as String?,
+      ratingId: (j['ratingId'] as num?)?.toInt(),
+    );
+  }
+}
+
+/// 홈 뉴스 (`GET /api/home/news`, 인증 불필요). 최신 TOP 5 고정.
+class ApiNewsSource implements NewsSource {
+  ApiNewsSource({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
+
+  @override
+  Future<List<HomeNewsArticle>> fetchTop() async {
+    final response = await http.get(Uri.parse(ApiConfig.homeNewsUrl));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('홈 뉴스 조회 실패 (${response.statusCode})');
+    }
+    final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+    final now = _now();
+    return [
+      for (final e in data)
+        HomeNewsArticle(
+          title: (e as Map<String, dynamic>)['title'] as String? ?? '',
+          office: e['officeName'] as String? ?? '',
+          minutesAgo: _minutesSince(parseServerTime(e['createdAt']), now),
+          thumbnailUrl: e['thumbnail'] as String?,
+          postUrl: e['postUrl'] as String?,
+        ),
+    ];
+  }
+}

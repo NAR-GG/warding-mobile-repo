@@ -4,8 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/notice/data/notice_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
 
 /// 캘린더 상단 띠배너 공지 조회의 캐시 동작.

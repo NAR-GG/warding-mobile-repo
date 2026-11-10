@@ -39,14 +39,14 @@ timestamp: 2026-10-26T00:00:00Z
 
 같은 모양이 여러 화면에 흩어져 있지만 아직 공용으로 안 올린 것들 — 손댈 일이 생기면 함께 정리한다.
 
-- 홈 `HomeSectionHeader`(`screens/home/component/home_section_header.dart`)는 `NarSectionTitle`
+- 홈 `HomeSectionHeader`(`lib/features/home/presentation/widgets/home_section_header.dart`)는 `NarSectionTitle`
   과 같은 구성이다. 홈 5개 호출부를 옮기면 지울 수 있다.
 - 홈 `HomeListBox` 와 순위표·뉴스·월즈 선수 시트의 인라인 카드 장식은 `NarCard` 로 대체 가능하다.
 - 홈 순위표의 "전체 보기"·"접기" 줄 2곳은 `NarMoreButton.inCard` 와 같은 모양이다.
 - 내 선수 월즈 줄의 `_BellButton`·홈 월즈 솔랭 벨은 `SubscribeBell` 로 모을 수 있다(상수가 조금씩 어긋나 있다).
 - 내 선수 월즈 시트의 `_TodayStats`/`_StatBox` 는 `NarStatBox` 로 대체 가능하다.
 - "N승 M패" 표기가 화면마다 다르다(`worlds_player_sheet`·`home_standings_section`·`player_next_match_card`). `WinLossText` 로 통일할 수 있다.
-- `screens/community/component/team_chip_rail.dart` 의 `_Chip` 은 `NarChip(leading:)` 로 대체 가능하다.
+- `lib/features/community/presentation/widgets/team_chip_rail.dart` 의 `_Chip` 은 `NarChip(leading:)` 로 대체 가능하다.
 
 # 관련
 

@@ -1,11 +1,11 @@
 // test/repository/onboarding/onboarding_sync_service_test.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/onboarding_selection.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/onboarding/onboarding_repository.dart';
-import 'package:warding/repository/onboarding/onboarding_sync_service.dart';
-import 'package:warding/repository/preference/onboarding_preference_repository.dart';
+import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/data/onboarding_sync_service.dart';
+import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
 
 class MockOnboardingRepository extends Mock implements OnboardingRepository {}
 

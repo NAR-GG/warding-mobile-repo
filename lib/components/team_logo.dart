@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../repository/team/team_logo_directory.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 import '../styles/app_colors.dart';
 import '../util/app_image.dart';
 

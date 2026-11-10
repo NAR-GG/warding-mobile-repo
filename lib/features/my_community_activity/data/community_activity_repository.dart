@@ -6,7 +6,7 @@ import 'package:warding/config/api_config.dart';
 import 'package:warding/features/my_community_activity/data/community_my_activity.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/util/sentry_logger.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 
 /// 마이페이지 "내 활동" API (`/api/mobile/me/community/...`). 전부 인증

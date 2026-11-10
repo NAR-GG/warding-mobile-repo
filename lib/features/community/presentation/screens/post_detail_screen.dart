@@ -12,7 +12,7 @@ import 'package:warding/features/community/domain/community_report.dart';
 import 'package:warding/styles/app_colors.dart';
 import 'package:warding/util/rating_mapping.dart';
 import 'package:warding/features/community/presentation/viewmodels/community_detail_viewmodel.dart';
-import 'package:warding/screens/login/login_screen.dart';
+import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/community/domain/community_teams.dart';
 import 'package:warding/features/community/presentation/widgets/author_line.dart';
 import 'package:warding/features/community/presentation/widgets/comment_tile.dart';

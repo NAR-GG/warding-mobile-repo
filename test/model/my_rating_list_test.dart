@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/my_rating_list.dart';
+import 'package:warding/features/my_review/domain/my_rating_list.dart';
 
 void main() {
   test('fromJson: 페이지·항목·매치정보 파싱', () {

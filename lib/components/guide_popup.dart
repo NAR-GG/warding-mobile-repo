@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../repository/preference/guide_popup_preference_repository.dart';
-import '../screens/guide/guide_screen.dart';
-import '../screens/guide/page/guide_page_1.dart';
-import '../screens/guide/page/guide_page_2.dart';
-import '../screens/guide/page/guide_page_3.dart';
-import '../screens/guide/page/guide_page_4.dart';
-import '../screens/guide/page/guide_page_5.dart';
-import '../screens/guide/page/guide_page_6.dart';
+import 'package:warding/core/infrastructure/preference/guide_popup_preference_repository.dart';
+import 'package:warding/features/guide/presentation/screens/guide_screen.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_1.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_2.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_3.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_4.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_5.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_6.dart';
 import '../styles/app_colors.dart';
 import 'nar_button.dart';
 import 'nar_popup_dialog.dart';

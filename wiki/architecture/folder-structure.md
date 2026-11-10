@@ -1,7 +1,7 @@
 ---
 type: Architecture Reference
 title: 폴더 구조
-description: lib/ 하위 디렉토리별 역할 정의. feature 단위 구조로 전환 중.
+description: lib/ 하위 디렉토리별 역할 정의. feature 단위 구조.
 resource: https://github.com/NAR-GG/warding-mobile-repo/tree/main/lib
 tags: [architecture, structure]
 timestamp: 2026-11-10T00:00:00Z
@@ -9,54 +9,55 @@ timestamp: 2026-11-10T00:00:00Z
 
 # lib/ 구조
 
-**feature 단위 구조로 옮기는 중이다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를
-한 폴더에 모은다. 이전에는 레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데
+**feature 단위 구조다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를 한 폴더에
+모은다. 이전에는 레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데
 (`model`·`repository`·`viewmodel`·`screens`)를 오가야 했다.
 
 ```
 lib/
-├── features/     새 구조. 기능별로 레이어를 모은다
+├── features/     기능별 27개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
 │       └── presentation/
-│           ├── screens/    화면
+│           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── core/         여러 기능이 공유하는 domain·infrastructure
+├── core/
+│   ├── domain/             여러 기능이 쓰는 모델 12개
+│   └── infrastructure/     여러 기능이 쓰는 서비스·repository 9개
 │
 ├── config/       앱 설정 (API URL, 키 등)
 ├── components/   앱 전역 공용 위젯
 ├── styles/       디자인 토큰 (app_colors 등)
-├── util/         유틸리티
-│
-└── (이전 구조 — 아직 옮기지 않은 기능)
-    ├── model/        데이터 모델 클래스
-    ├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)
-    ├── viewmodel/    ViewModel (기능별 하위 폴더)
-    └── screens/      화면 (기능별 폴더)
+└── util/         유틸리티
 ```
 
-# 전환 상태
+# core 에 있는 것
 
-| 기능 | 상태 |
+| 대상 | 쓰는 곳 |
 |---|---|
-| `community` | 완료 |
-| `my_community_activity` | 완료 |
-| 그 외 24개 | 이전 구조 |
+| `auth` | 18 |
+| `preference` | 10 |
+| `notification` | 5 |
+| `rating` | 4 |
+| `fcm`, `ad`, `live_activity` | 3 |
+| `team` | 2 |
+| `device` | 0 (미사용) |
 
-한 기능씩 옮긴다. `community` 실측으로 **기능 하나가 77 파일 변경**(이동 44 / import 수정 33)
-이라, 한 번에 옮기면 리뷰가 불가능하고 진행 중인 다른 브랜치와 충돌한다.
+소유 기능이 없는 횡단 관심사다. `core/domain` 에는 `team`·`schedule_match`(각 7곳),
+`player_subscription`(5곳) 등 모델 12개가 있다.
 
-`core/`는 생성만 해 두고 비어 있다. 여러 기능이 공유하는 것을 올릴 자리다 — `auth`(8개 기능),
-`preference`(7), `onboarding`(5), `rating`·`subscription`(각 4)이 후보다. 이동은 영향 범위가
-한 기능을 넘어가므로 별도로 판단한다.
+**소유자 판단 기준**: 쓰는 기능이 둘 이상이고 이름이 같은 기능이 없으면 `core/`. 이름이
+같은 기능이 있으면 그 기능 소유로 본다 — `notice` repository 는 `home` 도 쓰지만
+`features/notice/data/` 에 둔다. `home` 은 집계 화면이라 거의 모든 기능을 소비하므로,
+`home` 을 소비처로 세면 대부분이 `core/` 로 가 버린다.
 
 # import 규칙
 
 **`package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을 옮길 때
-대량으로 깨진다 — `community`를 옮길 때 540건이 났다. 새 코드는 절대경로로 쓰고, 기존
-상대경로는 그 기능을 옮길 때 함께 바꾼다.
+대량으로 깨진다 — 이 전환에서 540건이 났다. `export` 도 마찬가지다(`export '../../../util/
+shorts_url.dart'` 하나가 테스트 10건을 깨뜨렸다).
 
 # 비고
 

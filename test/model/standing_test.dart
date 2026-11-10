@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/standing.dart';
+import 'package:warding/features/home/domain/standing.dart';
 
 void main() {
   test('지원 리그: groups·rows를 그대로 파싱한다', () {

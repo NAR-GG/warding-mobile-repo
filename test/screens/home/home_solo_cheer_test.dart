@@ -2,17 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/repository/home/home_api_sources.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/home/component/home_solo_cheer.dart';
-import 'package:warding/screens/home/component/home_solo_rank_section.dart';
+import 'package:warding/features/home/domain/home_models.dart';
+import 'package:warding/features/home/data/home_api_sources.dart';
+import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart';
+import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/util/api_client.dart' as api;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
-import 'package:warding/viewmodel/home/solo_cheer_controller.dart';
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
+import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
 
 import 'home_test_harness.dart';
 

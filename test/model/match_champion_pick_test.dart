@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/match_champion_pick.dart';
+import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 
 void main() {
   group('MatchChampionPick.fromJson', () {

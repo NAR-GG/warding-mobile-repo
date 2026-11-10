@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/dashed_border.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/home/component/home_community_section.dart';
-import 'package:warding/screens/home/component/home_content_section.dart';
-import 'package:warding/screens/home/component/home_review_section.dart';
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/features/home/domain/home_models.dart';
+import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/home/presentation/widgets/home_community_section.dart';
+import 'package:warding/features/home/presentation/widgets/home_content_section.dart';
+import 'package:warding/features/home/presentation/widgets/home_review_section.dart';
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import 'home_test_harness.dart';
 

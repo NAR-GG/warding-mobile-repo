@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 강제 로그아웃은 **서버가 401 로 토큰 무효를 확정했을 때만** 일어나야 한다.
 ///

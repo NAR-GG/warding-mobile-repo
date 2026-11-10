@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/story_video.dart';
-import 'package:warding/repository/shorts/shorts_repository.dart';
-import 'package:warding/viewmodel/shorts/shorts_feed_viewmodel.dart';
+import 'package:warding/features/shorts/domain/story_video.dart';
+import 'package:warding/features/shorts/data/shorts_repository.dart';
+import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 
 StoryVideo _v(int id, {String team = ''}) => StoryVideo(
   videoId: id,

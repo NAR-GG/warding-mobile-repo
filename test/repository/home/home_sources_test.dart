@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/repository/home/home_api_sources.dart';
-import 'package:warding/repository/home/home_sources.dart';
+import 'package:warding/features/home/data/home_api_sources.dart';
+import 'package:warding/features/home/data/home_sources.dart';
 
 void main() {
   test('MockSoloRankSource: 진행 중과 끝난 경기를 따로 준다', () async {

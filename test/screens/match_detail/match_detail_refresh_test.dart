@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/match_game.dart';
-import 'package:warding/screens/match_detail/match_detail_screen.dart';
+import 'package:warding/features/match_detail/domain/match_game.dart';
+import 'package:warding/features/match_detail/presentation/screens/match_detail_screen.dart';
 
 import '../../support/fake_rating_repository.dart';
 

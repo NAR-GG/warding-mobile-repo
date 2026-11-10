@@ -1,7 +1,7 @@
 # Bundle Update Log
 
 ## 2026-11-10
-* **feature 단위 폴더 구조로 전환을 시작했다** (`community`, `my_community_activity`).
+* **feature 단위 폴더 구조로 전환했다** (기능 27개 전부).
   레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·
   `screens`)를 오가야 했다. 실측으로 `community` 는 **45 파일이 4 곳에 흩어져** 있었고,
   `lib/model/` 은 37 개가 평면 배치라 `community_` 접두어 9 개가 알파벳 순으로 끼어 있었다.
@@ -21,8 +21,15 @@
   * `core/{domain,infrastructure}` 는 만들어만 뒀다. 공유되는 것을 올릴 자리다 —
     `auth`(8 개 기능)·`preference`(7)·`onboarding`(5)·`rating`·`subscription`(각 4) 이
     후보지만, 이동 영향이 한 기능을 넘어가 별도로 판단한다.
-  * 기능 하나가 **77 파일 변경**(이동 44 / import 수정 33)이라 한 기능씩 PR 로 옮긴다.
-    남은 24 개 기능은 이전 구조에 있다.
+  * **`lib/screens`·`viewmodel`·`model`·`repository` 최상위 폴더는 없어졌다.** 총 361 파일
+    변경(이동 233 / import 수정 127). `community` 를 먼저 시범해 절대경로 전략을 확인한 뒤
+    나머지 24 개를 한 번에 옮겼다 — 중간 상태를 길게 두면 "어떤 기능은 새 구조, 어떤 건
+    옛 구조" 가 되어 그 위에 올릴 작업(웹앱 모노레포)이 더 헷갈린다.
+  * `core/infrastructure` 9 개(`auth`·`preference`·`notification`·`fcm`·`ad`·`device`·
+    `rating`·`team`·`live_activity`), `core/domain` 모델 12 개.
+  * **소유자 판단에서 `home` 을 소비처로 세지 않았다.** `home` 은 집계 화면이라 거의 모든
+    기능을 당겨서, 그걸 세면 repository 20 개 중 15 개가 `core/` 로 가 버린다. 이름이 같은
+    기능이 있으면 그 기능 소유로 봤다 — `notice` 는 `home` 도 쓰지만 `features/notice/data/`.
 
 ## 2026-11-09
 * **DAU 알림에 앱 진입 경로를 넣었다.** "활성 사용자 1856" 만으로는 그 사용자들이

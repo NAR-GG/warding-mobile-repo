@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
-import '../repository/ad/ad_repository.dart';
-import '../screens/cheer_ad/cheer_ad_screen.dart';
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
+import 'package:warding/features/cheer_ad/presentation/screens/cheer_ad_screen.dart';
 import '../styles/app_colors.dart';
 
 /// 광고 자리(홈·경기 리스트·경기 상세)의 배너. 백오피스에서 등록한 광고가 [placement] 에

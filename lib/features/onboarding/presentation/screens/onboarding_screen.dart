@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import 'package:warding/l10n/app_localizations.dart';
+
+import 'package:warding/components/common_button.dart';
+import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/styles/app_colors.dart';
+import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
+import 'package:warding/features/home/presentation/screens/home_screen.dart';
+import 'package:warding/features/onboarding/presentation/widgets/onboarding_progress_bar.dart';
+import 'package:warding/features/onboarding/presentation/screens/step/league_step.dart';
+import 'package:warding/features/onboarding/presentation/screens/step/notification_step.dart';
+import 'package:warding/features/onboarding/presentation/screens/step/player_step.dart';
+import 'package:warding/features/onboarding/presentation/screens/step/team_step.dart';
+import 'package:warding/util/analytics_events.dart';
+import 'package:warding/util/analytics_route_observer.dart';
+
+/// 디자인 시안 기준 화면 너비.
+const double _designWidth = 375;
+
+/// 진행도 바 점 개수.
+const int _progressDotCount = 5;
+
+/// 온보딩 화면 (View).
+///
+/// 상태·로직은 [OnboardingViewModel] 이 담당하고, 이 위젯은
+/// ViewModel 을 구독해 헤더·진행도 바·단계별 본문·하단 버튼을 그린다.
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with WidgetsBindingObserver {
+  late final OnboardingViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _viewModel = OnboardingViewModel(
+      repository: OnboardingRepository.instance,
+      onFinish: _finish,
+    );
+    AnalyticsRouteObserver.instance.setProvider(AnalyticsPage.onboarding, () {
+      // JWT 조회가 비동기라 진입 직후 몇 프레임은 null 이고, 그때는 키를
+      // 보내지 않는다(값 없으면 미전송 규칙).
+      return {AnalyticsProp.loginStatus: ?_viewModel.loginStatusValue};
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    AnalyticsRouteObserver.instance.removeProvider(AnalyticsPage.onboarding);
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 알림 설정 화면을 다녀온 경우 권한을 다시 확인한다.
+    if (state == AppLifecycleState.resumed) {
+      _viewModel.recheckNotificationPermission();
+    }
+  }
+
+  void _finish() {
+    // 비회원 선호 팀 로컬 저장은 OnboardingViewModel 이 끝낸 뒤 호출한다.
+    // (회원 백엔드 온보딩 완료 API 연동은 추후)
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
+  }
+
+  /// 헤더 뒤로가기 — 첫 단계면 화면을 닫는다.
+  void _onBack() {
+    if (_viewModel.canGoBack) {
+      _viewModel.goBack();
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / _designWidth;
+
+    return Scaffold(
+      backgroundColor: AppColors.narDark800,
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: _viewModel,
+          builder: (context, _) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                NarDetailHeader(
+                  title: _headerTitle(context, _viewModel.currentStep),
+                  onBack: _onBack,
+                  backIconAsset: 'assets/icons/chevron-left.svg',
+                  trailing: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _viewModel.skip,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8 * scale,
+                        vertical: 4 * scale,
+                      ),
+                      child: Text(
+                        l.skipButton,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14 * scale,
+                          height: 1,
+                          color: AppColors.narText2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  scale: scale,
+                ),
+                const SizedBox(height: 4),
+                OnboardingProgressBar(
+                  totalSteps: _progressDotCount,
+                  currentStep: _viewModel.stepIndex,
+                ),
+                Expanded(child: _buildStep(scale)),
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 24 * scale,
+                    right: 24 * scale,
+                    top: 16 * scale,
+                    bottom: 32 * scale,
+                  ),
+                  child: CommonButton(
+                    label: _viewModel.isLastStep ? l.startWarding : l.next,
+                    scale: scale,
+                    onPressed: _viewModel.canProceed ? _viewModel.goNext : null,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 현재 단계에 해당하는 본문 View.
+  Widget _buildStep(double scale) {
+    switch (_viewModel.currentStep) {
+      case OnboardingStep.league:
+        return LeagueStep(viewModel: _viewModel, scale: scale);
+      case OnboardingStep.team:
+        return TeamStep(viewModel: _viewModel, scale: scale);
+      case OnboardingStep.player:
+        return PlayerStep(viewModel: _viewModel, scale: scale);
+      case OnboardingStep.notification:
+        return NotificationStep(viewModel: _viewModel, scale: scale);
+    }
+  }
+
+  String _headerTitle(BuildContext context, OnboardingStep step) {
+    final l = AppLocalizations.of(context)!;
+    switch (step) {
+      case OnboardingStep.league:
+        return l.preferredLeague;
+      case OnboardingStep.team:
+        return l.preferredTeam;
+      case OnboardingStep.player:
+        return l.preferredPlayer;
+      case OnboardingStep.notification:
+        return l.notificationPermission;
+    }
+  }
+}

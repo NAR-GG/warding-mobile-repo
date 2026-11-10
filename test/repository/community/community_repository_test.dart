@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/util/api_client.dart' as api;

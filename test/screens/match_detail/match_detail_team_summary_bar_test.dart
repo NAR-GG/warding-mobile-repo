@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/match_champion_pick.dart';
-import 'package:warding/screens/match_detail/component/match_detail_team_summary_section.dart';
+import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
+import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_summary_section.dart';
 import 'package:warding/styles/app_colors.dart';
 
 /// Team Summary 의 비율 막대바 — 전체 배경은 항상 narLine2(트랙), 그 위에

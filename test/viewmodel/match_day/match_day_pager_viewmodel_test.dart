@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/viewmodel/match_day/match_day_pager_viewmodel.dart';
+import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/match_day/presentation/viewmodels/match_day_pager_viewmodel.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
 

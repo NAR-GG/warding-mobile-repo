@@ -12,8 +12,7 @@ warding에 새 화면/기능을 추가할 때 일관성을 유지하는 절차.
 
 # 단계
 
-새 기능은 `lib/features/{기능}/` 아래에 만든다. 기존 기능 중 아직 옮기지 않은 것을 수정할
-때는 그 기능의 현재 위치를 따른다 → [폴더 구조](/architecture/folder-structure.md)의 전환 상태.
+새 기능은 `lib/features/{기능}/` 아래에 만든다 → [폴더 구조](/architecture/folder-structure.md)
 
 1. **모델 정의** — `features/{기능}/domain/{이름}.dart`. 여러 기능이 쓸 모델이면 `core/domain/`.
 2. **리포지토리 작성** — API 통신을 `features/{기능}/data/{기능}_repository.dart`에 둔다.

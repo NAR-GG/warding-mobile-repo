@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/model/team.dart';
-import 'package:warding/repository/onboarding/onboarding_repository.dart';
+import 'package:warding/core/domain/team.dart';
+import 'package:warding/features/onboarding/data/onboarding_repository.dart';
 
 /// 커뮤니티 팀 게시판 목록.
 ///

@@ -10,7 +10,7 @@ import 'package:warding/features/community/domain/community_post_block.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/util/sentry_logger.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 
 /// 커뮤니티 게시글·댓글 API (`/api/mobile/community/...`).

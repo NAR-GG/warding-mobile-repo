@@ -3,11 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/nar_chip.dart';
 import 'package:warding/components/nar_tab_bar.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/repository/player/player_mock_source.dart';
-import 'package:warding/screens/player/component/player_solo_tab.dart';
-import 'package:warding/screens/player/component/player_worlds_tab.dart';
-import 'package:warding/screens/player/player_screen.dart';
-import 'package:warding/viewmodel/player/player_viewmodel.dart';
+import 'package:warding/features/player/data/player_mock_source.dart';
+import 'package:warding/features/player/presentation/widgets/player_solo_tab.dart';
+import 'package:warding/features/player/presentation/widgets/player_worlds_tab.dart';
+import 'package:warding/features/player/presentation/screens/player_screen.dart';
+import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 
 Widget _app(PlayerViewModel vm) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,

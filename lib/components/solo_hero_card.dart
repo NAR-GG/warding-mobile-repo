@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../model/home_models.dart';
+import 'package:warding/features/home/domain/home_models.dart';
 import '../styles/app_colors.dart';
 import '../util/app_image.dart';
 import 'nar_live_dot.dart';

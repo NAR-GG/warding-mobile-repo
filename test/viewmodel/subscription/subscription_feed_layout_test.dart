@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/member_notification.dart';
-import 'package:warding/viewmodel/subscription/subscription_feed_layout.dart';
+import 'package:warding/core/domain/member_notification.dart';
+import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_layout.dart';
 
 /// 서버는 알림을 최신순으로 준다 — 목록도 그 순서를 그대로 쓴다.
 MemberNotification _n(int id, DateTime at, {MemberNotificationType? type}) =>

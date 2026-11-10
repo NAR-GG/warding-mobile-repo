@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/story_video.dart';
-import 'package:warding/repository/shorts/shorts_repository.dart';
-import 'package:warding/screens/shorts/shorts_feed_screen.dart';
-import 'package:warding/viewmodel/shorts/shorts_feed_viewmodel.dart';
+import 'package:warding/features/shorts/domain/story_video.dart';
+import 'package:warding/features/shorts/data/shorts_repository.dart';
+import 'package:warding/features/shorts/presentation/screens/shorts_feed_screen.dart';
+import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 
 StoryVideo _v(int id) => StoryVideo(
   videoId: id,

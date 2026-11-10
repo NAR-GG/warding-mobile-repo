@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/category_tree.dart';
-import 'package:warding/model/schedule_filter_options.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/repository/category/category_repository.dart';
-import 'package:warding/repository/preference/filter_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/viewmodel/match_list/match_list_viewmodel.dart';
+import 'package:warding/features/match_list/domain/category_tree.dart';
+import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
+import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/features/match_list/data/category_repository.dart';
+import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
+import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 
 class MockCategoryRepository extends Mock implements CategoryRepository {}
 

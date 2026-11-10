@@ -14,9 +14,13 @@ timestamp: 2026-06-21T00:00:00Z
 
 | 계층 | 위치 | 역할 |
 |------|------|------|
-| **Model** | `model/`, `repository/` | 데이터 모델 클래스, 데이터 소스(API) |
-| **ViewModel** | `viewmodel/` | `ChangeNotifier` 상속. 화면 상태·비즈니스 로직 담당, `notifyListeners()`로 변경 통지 |
-| **View** | `screens/` | UI만 담당 |
+| **Model** | `features/{기능}/domain/`, `features/{기능}/data/` | 데이터 모델 클래스, 데이터 소스(API). 여러 기능이 쓰면 `core/domain/`·`core/infrastructure/` |
+| **ViewModel** | `features/{기능}/presentation/viewmodels/` | `ChangeNotifier` 상속. 화면 상태·비즈니스 로직 담당, `notifyListeners()`로 변경 통지 |
+| **View** | `features/{기능}/presentation/screens/`, `widgets/` | UI만 담당 |
+
+폴더 이름은 `presentation`이지만 상태 관리는 `ChangeNotifier` MVVM 이다. Flutter 공식
+아키텍처 권고도 MVVM + Repository 라서 그대로 쓴다 — 나중에 상태 관리를 바꿀 때 폴더는
+건드리지 않아도 된다.
 
 자세한 위치 규칙은 [폴더 구조](/architecture/folder-structure.md)와 [파일 생성 규칙](/architecture/file-conventions.md) 참조.
 

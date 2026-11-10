@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/story_video.dart';
+import 'package:warding/features/shorts/domain/story_video.dart';
 
 void main() {
   test('필드를 그대로 파싱한다', () {

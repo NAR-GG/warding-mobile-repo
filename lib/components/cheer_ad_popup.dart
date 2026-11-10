@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../repository/ad/ad_repository.dart';
-import '../repository/preference/cheer_ad_popup_preference_repository.dart';
-import '../screens/cheer_ad/cheer_ad_screen.dart';
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
+import 'package:warding/core/infrastructure/preference/cheer_ad_popup_preference_repository.dart';
+import 'package:warding/features/cheer_ad/presentation/screens/cheer_ad_screen.dart';
 import '../styles/app_colors.dart';
 import 'cheer_ad_banner.dart';
 

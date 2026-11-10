@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:warding/repository/ad/ad_repository.dart';
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 import 'package:warding/util/api_client.dart' show setApiClientForTesting;
 
 /// 스플래시 광고는 **첫 프레임에 한 번** `readyFor` 를 읽고 끝까지 안 바꾼다.

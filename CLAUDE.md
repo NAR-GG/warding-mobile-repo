@@ -35,41 +35,36 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 
 ## 폴더 구조
 
-**feature 단위 구조로 옮기는 중이다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를
-한 폴더에 모은다. 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·`screens`)를
-오가지 않게 하는 것이 목적이다.
+**feature 단위 구조다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를 한 폴더에
+모은다. 이전에는 레이어가 최상위 축(`model`·`repository`·`viewmodel`·`screens`)이어서
+한 기능을 작업할 때 네 군데를 오가야 했다.
 
 ```
 lib/
-├── features/     ★ 새 구조. 기능별로 레이어를 모은다
+├── features/     기능별 27개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
 │       └── presentation/
-│           ├── screens/    화면
+│           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── core/         여러 기능이 공유하는 domain·infrastructure
+├── core/
+│   ├── domain/             여러 기능이 쓰는 모델
+│   └── infrastructure/     여러 기능이 쓰는 서비스·repository
 │
 ├── config/       앱 설정 (API URL, 키 등)
 ├── components/   앱 전역 공용 위젯
 ├── styles/       디자인 토큰 (app_colors 등)
-├── util/         유틸리티
-│
-└── (이전 구조 — 아직 옮기지 않은 기능)
-    ├── model/        데이터 모델 클래스
-    ├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)
-    ├── viewmodel/    ViewModel (기능별 하위 폴더)
-    └── screens/      화면 (기능별 폴더)
+└── util/         유틸리티
 ```
 
-**전환 완료:** `community`, `my_community_activity`.
-나머지 기능은 아직 이전 구조에 있다. 한 기능씩 옮긴다 — 한 번에 옮기면 PR이 리뷰 불가능한
-크기가 되고 진행 중인 다른 브랜치와 충돌한다.
+**`core/`에 있는 것**: `auth`, `preference`, `notification`, `fcm`, `ad`, `device`,
+`rating`, `team`, `live_activity`. 소유 기능이 없는 횡단 관심사다 — `auth`는 18곳,
+`preference`는 10곳이 쓴다.
 
 **import 는 `package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을
-옮길 때 대량으로 깨진다 (community 를 옮길 때 실측으로 540건 났다). 새 코드도 절대경로로
-쓰고, 기존 상대경로는 그 기능을 옮길 때 함께 바꾼다.
+옮길 때 대량으로 깨진다 — 이 전환에서 실측으로 540건이 났다. `export` 도 마찬가지다.
 
 ## 파일 생성 규칙
 
@@ -95,8 +90,9 @@ lib/
   화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
 - **공유되면 `core/` 로 올린다.** 한 기능 소유가 아닌 것을 `features/` 안에 두면 다른 기능이
   남의 폴더를 들여다봐야 한다. 쓰는 기능이 둘 이상이면 `core/` 후보다.
-- 아직 옮기지 않은 기능을 수정할 때는 그 기능의 기존 위치를 따른다. 옮기는 것은 별도 PR 로
-  한다 — 기능 하나가 70~80 파일 변경이라 다른 작업에 섞으면 리뷰가 불가능해진다.
+- **import·export 는 `package:warding/...` 절대경로.** 상대경로는 파일을 옮길 때 깨진다.
+- 이름이 공용처럼 보여도 한 기능만 쓰면 그 기능 안에 둔다 — `community_my_activity` 는
+  접두어가 `community_` 지만 `my_community_activity` 기능만 쓰므로 그 기능의 `data/` 에 있다.
 
 ## 색상 / 디자인 토큰
 

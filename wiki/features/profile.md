@@ -13,13 +13,13 @@ timestamp: 2026-06-21T00:00:00Z
 # 구현됨
 
 - 프로필 저장 연동 (#20).
-- 관련 화면: `screens/mypage/mypage_screen.dart`, `screens/profile_edit/profile_edit_screen.dart`.
-- 모델: `model/user_profile.dart`.
+- 관련 화면: `lib/features/mypage/presentation/screens/mypage_screen.dart`, `lib/features/profile_edit/presentation/screens/profile_edit_screen.dart`.
+- 모델: `lib/core/domain/user_profile.dart`.
 
 # 진행 중 (#35)
 
 - 프로필 수정 화면 Flutter 연동: **이미지 업로드 + name/tag**.
-- 현재 작업 브랜치에 미커밋 변경 다수 (`profile_edit_screen.dart`, `user_profile.dart`, `repository/profile/` 등).
+- 현재 작업 브랜치에 미커밋 변경 다수 (`profile_edit_screen.dart`, `user_profile.dart`, `lib/features/profile/data/` 등).
 
 # 관련
 

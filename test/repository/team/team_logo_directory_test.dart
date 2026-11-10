@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/repository/team/team_logo_directory.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 
 void main() {
   test('불러온 팀 코드로 로고를 찾는다(대소문자 무시)', () async {

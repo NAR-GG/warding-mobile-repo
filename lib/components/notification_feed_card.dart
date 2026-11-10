@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../l10n/app_localizations.dart';
-import '../model/member_notification.dart';
+import 'package:warding/core/domain/member_notification.dart';
 import '../styles/app_colors.dart';
-import '../screens/subscription/component/rank_end_notification.dart';
-import '../screens/subscription/component/rank_start_notification.dart';
+import 'package:warding/features/subscription/presentation/widgets/rank_end_notification.dart';
+import 'package:warding/features/subscription/presentation/widgets/rank_start_notification.dart';
 import 'notification_card.dart';
 
 /// 알림 한 건 → 카드 위젯. 마이구독 피드와 알림함이 같은 카드를 그리도록

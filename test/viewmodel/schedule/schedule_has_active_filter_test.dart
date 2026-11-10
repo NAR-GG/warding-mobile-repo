@@ -2,11 +2,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/schedule/schedule_viewmodel.dart';
+import 'package:warding/features/schedule/presentation/viewmodels/schedule_viewmodel.dart';
 
 /// 헤더 필터 버튼 테두리 표시([hasActiveFilter])의 회귀 테스트.
 ///

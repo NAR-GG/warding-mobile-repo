@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/match_champion_pick.dart';
-import 'package:warding/screens/match_detail/component/match_detail_player_build_section.dart';
+import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
+import 'package:warding/features/match_detail/presentation/widgets/match_detail_player_build_section.dart';
 
 /// "Player Builds" 섹션 — 선택된 선수 정보가 보이고, 반대팀 포지션 아이콘을
 /// 탭하면 [onSelect] 로 그 선수가 통지된다(스크롤·상태는 호출부 책임).

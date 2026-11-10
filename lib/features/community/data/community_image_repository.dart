@@ -6,7 +6,7 @@ import 'package:warding/util/api_client.dart' as http;
 
 import 'package:warding/config/api_config.dart';
 import 'package:warding/util/sentry_logger.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
 /// 커뮤니티 사진 업로드 — 백엔드에서 Cloudinary 서명 파라미터를 발급받아
 /// 앱이 Cloudinary로 직접 업로드하고, 받은 `secure_url`을 돌려준다. 이미지

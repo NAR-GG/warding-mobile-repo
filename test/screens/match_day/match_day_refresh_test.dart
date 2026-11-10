@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/screens/match_day/component/match_day_view.dart';
-import 'package:warding/viewmodel/match_day/match_day_viewmodel.dart';
+import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/match_day/presentation/widgets/match_day_view.dart';
+import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
 

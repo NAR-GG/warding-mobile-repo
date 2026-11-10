@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/guide/component/guide_callout.dart';
-import 'package:warding/screens/guide/component/guide_progress_bar.dart';
-import 'package:warding/screens/guide/guide_page_data.dart';
-import 'package:warding/screens/guide/guide_screen.dart';
-import 'package:warding/screens/guide/page/guide_page_1.dart';
-import 'package:warding/screens/guide/page/guide_page_2.dart';
-import 'package:warding/screens/guide/page/guide_page_3.dart';
-import 'package:warding/screens/guide/page/guide_page_4.dart';
-import 'package:warding/screens/guide/page/guide_page_5.dart';
-import 'package:warding/screens/guide/page/guide_page_6.dart';
+import 'package:warding/features/guide/presentation/widgets/guide_callout.dart';
+import 'package:warding/features/guide/presentation/widgets/guide_progress_bar.dart';
+import 'package:warding/features/guide/presentation/screens/guide_page_data.dart';
+import 'package:warding/features/guide/presentation/screens/guide_screen.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_1.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_2.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_3.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_4.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_5.dart';
+import 'package:warding/features/guide/presentation/screens/page/guide_page_6.dart';
 
 Widget _host({int pages = 1}) {
   return MaterialApp(

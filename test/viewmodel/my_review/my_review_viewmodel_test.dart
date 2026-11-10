@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/my_rating_list.dart';
-import 'package:warding/viewmodel/my_review/my_review_viewmodel.dart';
+import 'package:warding/features/my_review/domain/my_rating_list.dart';
+import 'package:warding/features/my_review/presentation/viewmodels/my_review_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';
 

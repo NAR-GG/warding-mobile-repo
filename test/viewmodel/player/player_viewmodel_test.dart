@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/player_detail.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/repository/player/player_mock_source.dart';
-import 'package:warding/screens/player/component/player_next_match_card.dart';
-import 'package:warding/viewmodel/home/solo_cheer_controller.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
-import 'package:warding/viewmodel/player/player_viewmodel.dart';
+import 'package:warding/features/player/domain/player_detail.dart';
+import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/player/data/player_mock_source.dart';
+import 'package:warding/features/player/presentation/widgets/player_next_match_card.dart';
+import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
+import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 
 PlayerViewModel _vm(int id, {SoloCheerController? cheers}) => PlayerViewModel(
   playerId: id,

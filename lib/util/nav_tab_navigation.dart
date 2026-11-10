@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../components/app_bottom_nav.dart';
 import 'package:warding/features/community/presentation/screens/community_screen.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/match_list/match_list_screen.dart';
-import '../screens/mypage/mypage_screen.dart';
-import '../screens/schedule/schedule_screen.dart';
-import '../screens/subscription/subscription_screen.dart';
+import 'package:warding/features/home/presentation/screens/home_screen.dart';
+import 'package:warding/features/match_list/presentation/screens/match_list_screen.dart';
+import 'package:warding/features/mypage/presentation/screens/mypage_screen.dart';
+import 'package:warding/features/schedule/presentation/screens/schedule_screen.dart';
+import 'package:warding/features/subscription/presentation/screens/subscription_screen.dart';
 import 'analytics.dart';
 import 'analytics_events.dart';
 import 'analytics_route_observer.dart';

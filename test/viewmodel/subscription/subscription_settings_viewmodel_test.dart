@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/viewmodel/subscription/subscription_settings_viewmodel.dart';
+import 'package:warding/core/domain/player_subscription.dart';
+import 'package:warding/features/subscription/presentation/viewmodels/subscription_settings_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 

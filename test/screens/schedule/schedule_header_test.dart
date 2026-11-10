@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/components/nar_spoiler_toggle.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/schedule/component/schedule_header.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_header.dart';
 
 /// 경기일정 헤더 레이아웃 회귀 테스트.
 ///

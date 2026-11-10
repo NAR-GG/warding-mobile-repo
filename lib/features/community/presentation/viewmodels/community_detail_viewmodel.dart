@@ -6,7 +6,7 @@ import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/community/domain/community_report.dart';
-import 'package:warding/repository/auth/auth_service.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 import 'package:warding/features/community/data/community_report_repository.dart';
 import 'package:warding/features/community/data/community_repository.dart';

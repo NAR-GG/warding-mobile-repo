@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
-import '../screens/notice/ad_guide_screen.dart';
+import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import '../styles/app_colors.dart';
 
 /// 광고주 모집 배너. 광고가 들어오기 전까지 광고 자리에 둔다.

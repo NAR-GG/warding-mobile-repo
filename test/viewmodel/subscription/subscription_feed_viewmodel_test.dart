@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/member_notification.dart';
-import 'package:warding/repository/notification/member_notification_repository.dart';
-import 'package:warding/viewmodel/subscription/subscription_feed_viewmodel.dart';
+import 'package:warding/core/domain/member_notification.dart';
+import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
+import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';
 
 class MockRepo extends Mock implements MemberNotificationRepository {}
 

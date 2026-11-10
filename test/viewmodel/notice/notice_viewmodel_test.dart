@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/notice.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/viewmodel/notice/notice_viewmodel.dart';
+import 'package:warding/features/notice/domain/notice.dart';
+import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/features/notice/presentation/viewmodels/notice_viewmodel.dart';
 
 class MockNoticeRepository extends Mock implements NoticeRepository {}
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_globals.dart';
-import '../model/schedule_match.dart';
-import '../screens/match_detail/match_detail_screen.dart';
+import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/features/match_detail/presentation/screens/match_detail_screen.dart';
 import 'analytics.dart';
 import 'analytics_events.dart';
 import 'analytics_route_observer.dart';

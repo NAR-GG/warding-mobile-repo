@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/onboarding_selection.dart';
-import 'package:warding/repository/preference/onboarding_preference_repository.dart';
+import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 

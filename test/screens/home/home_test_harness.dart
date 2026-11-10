@@ -5,16 +5,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/repository/subscription/subscription_repository.dart';
-import 'package:warding/repository/team/team_logo_directory.dart';
+import 'package:warding/features/home/domain/home_models.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/subscription/data/subscription_repository.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import '../../support/l10n_test_setup.dart';
 

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/components/advertiser_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/notice/ad_guide_screen.dart';
+import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/util/api_client.dart' as api;
 
 void main() {
