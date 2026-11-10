@@ -1,6 +1,25 @@
 # Bundle Update Log
 
 ## 2026-11-10
+* **repository 를 Interface + `Either<Failure, T>` 로 바꿨다** (API repository 23 개 중
+  14 개 전환, 9 개는 기준에 따라 제외). 목적은 둘이었다 — repository 인터페이스가 있어야
+  `mocktail` Mock 이 되고(전에는 테스트마다 Fake 를 손으로 썼다, 49 개), `Either` 를 쓰면
+  `try/catch` 를 빠뜨릴 수 없다.
+  * **테스트가 구체적으로 나아졌다.** `expect(..., throwsException)` 이
+    `expect(failure, isA<ServerFailure>()); expect(failure.statusCode, 404)` 가 됐다 —
+    전자는 네트워크 오류든 파싱 오류든 통과했다.
+  * `core/` 에 `failure.dart`(sealed) · `failure_exception.dart` ·
+    `data/failure_mapper.dart` · `di_container.dart`(get_it) 를 추가했다.
+    `pubspec` 에 `get_it`·`fpdart` 가 늘었다 → **Shorebird 패치로 못 나간다.**
+  * **제외 기준 5 개를 문서화했다.** 처음 30 개로 보였던 범위가 실측으로 절반이 됐다 —
+    로컬 저장소 전용(실패가 기본값으로 수렴), 인프라끼리 쓰는 것(결과를 안 씀),
+    인터페이스가 이미 있는 것(`player`·`home_api_sources`), 도메인 예외로 분기하는 것
+    (커뮤니티 4 개는 `CommunityApiException` 의 `code`·`retryAfterSeconds` 로 409 를
+    성공 처리한다), DTO/Entity 분리가 비용을 넘는 것(`CategoryTree` 90 줄 → 260 줄).
+  * 절차·함정 14 개·판별 기준은
+    [Clean Architecture 전환 플레이북](/playbooks/clean-architecture-migration.md) 에 있다.
+    특히 `Future.wait` 인덱스 캐스팅은 **`analyze` 를 통과하고 런타임에 깨지는** 유일한
+    패턴이라 따로 적어 뒀다.
 * **feature 단위 폴더 구조로 전환했다** (기능 27개 전부).
   레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·
   `screens`)를 오가야 했다. 실측으로 `community` 는 **45 파일이 4 곳에 흩어져** 있었고,

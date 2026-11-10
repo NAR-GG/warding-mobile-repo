@@ -20,7 +20,7 @@ Flutter 루트로 가정하고 있고 그 가정은 태그를 밀어야 검증�
 
 ### 기능
 
-- 토큰 소스 JSON에서 `app_colors.dart`(또는 후속 토큰 파일)와 웹용 CSS를 생성한다.
+- 토큰 소스 JSON에서 `core/theme/app_colors.dart`(또는 후속 토큰 파일)와 웹용 CSS를 생성한다.
 - 생성은 결정적이다. 같은 소스에서 항상 같은 바이트가 나온다.
 - 생성물이 소스와 어긋나면 CI가 실패한다.
 - 토큰에 색·간격·모서리·그림자·모션·컴포넌트 토큰을 담는다.
@@ -45,7 +45,7 @@ Flutter 루트로 가정하고 있고 그 가정은 태그를 밀어야 검증�
 warding-mobile-repo/            ← Flutter 루트 (그대로)
   pubspec.yaml
   lib/
-    styles/
+    core/theme/
       app_colors.dart           ← 생성물 (커밋됨, 수정 금지 헤더)
   design_tokens/                ← 신규: 토큰 단일 출처
     source/
@@ -151,6 +151,53 @@ git diff --exit-code
 의존 버튼을 비활성화하고 안내를 띄운다. 같은 페이지를 웹에도 노출할 계획이므로 이 분기가
 처음부터 필요하다.
 
+### Flutter 쪽 배치
+
+2026-11-10 에 `lib/` 전체가 feature 단위 구조로 바뀌었다
+(→ [폴더 구조](../../wiki/architecture/folder-structure.md)). 웹뷰 관련 코드는 그 위에
+이렇게 얹는다.
+
+```
+lib/
+├── core/
+│   └── ui/
+│       └── webview/
+│           └── warding_webview.dart   웹뷰 컨테이너 **하나**
+├── bridge/                            ← 신규: 웹 ↔ 네이티브 경계
+│   ├── bridge_channel.dart            Stage A/B/C 전송 계층
+│   ├── bridge_contract.dart           웹이 요구하는 Stage 선언
+│   └── handlers/                      웹 요청 → repository 호출
+├── routing/
+│   └── webview_routes.dart            ← 신규: 웹으로 간 화면 단일 목록
+└── features/{기능}/presentation/
+    ├── screens/                       Flutter 로 남는 화면
+    └── widgets/
+```
+
+**웹뷰 컨테이너를 기능별로 복제하지 않는다.** 기능마다 두면 URL 과 브리지 핸들러만 다른
+거의 같은 파일이 27 개가 된다. `core/ui/webview/` 에 하나 두고 URL 은
+`routing/webview_routes.dart` 에서, 핸들러는 `bridge/` 에서 주입받는다.
+
+**`bridge/` 를 `features/` 밖에 둔다.** 웹의 데이터 요청을 받아 repository 를 호출하는
+코드는 ViewModel 도 repository 도 아닌 **경계(boundary)** 다. 의존 방향은 `bridge/ → core/`
+와 `bridge/ → features/{기능}/domain/` 이고, `presentation/` 을 import 하지 않는다.
+
+`routing/webview_routes.dart` 가 **전환 상태의 단일 출처**다. 어느 화면이 웹으로 갔는지
+한 파일에서 보이고, 웹 배포 파이프라인의 브리지 계약 가드가 읽어야 하는 데이터가 바로
+이것이다(아래 "웹 배포 파이프라인" 참고).
+
+```dart
+const webviewRoutes = {
+  '/community/post/:id': WebRoute(path: 'community/post', stage: Stage.b),
+  '/notice/:id':         WebRoute(path: 'notice',         stage: Stage.a),
+};
+```
+
+**아직 검증되지 않은 설계다.** 웹뷰 화면을 하나도 만들지 않은 상태에서 그린 것이라,
+두 가지는 첫 화면을 옮겨 보고 확정한다 — `bridge/handlers/` 가 Stage A·B 만 쓰는 동안
+정말 필요한지, 그리고 컨테이너 하나가 화면별 스크롤·높이 동기화 차이를 파라미터로
+흡수할 수 있는지.
+
 ### 치수 규약 재현
 
 웹뷰 루트에서 Flutter와 같은 수식을 쓴다.
@@ -178,9 +225,13 @@ Flutter가 `수치 * scale`을 하는 것과 같은 결과가 된다.
 
 | 분류 | 처리 |
 |---|---|
-| 양쪽에 나옴 — 버튼·칩·카드·배지·빈 상태·스켈레톤 | 두 벌 구현, 컴포넌트 토큰으로 계약 고정 |
+| 양쪽에 나옴 — 버튼·칩·카드·배지·빈 상태·스켈레톤 | 두 벌 구현(`core/ui/` ↔ 웹), 컴포넌트 토큰으로 계약 고정 |
 | 웹뷰에만 — 본문 렌더러·리치텍스트·댓글 | 웹만 |
-| 네이티브에만 — 쇼츠 피드·온보딩·하단탭·권한 플로우 | Flutter만 |
+| 네이티브에만 — 쇼츠 피드·온보딩·하단탭·권한 플로우 | Flutter만 (`features/{기능}/presentation/widgets/`) |
+
+**`core/ui/` 가 "양쪽에 나오는 것" 의 경계다.** 아키텍처 전환으로 앱 전역 공용 위젯이
+거기 모였으니(59 개), 웹에 React 로 만들 대상은 그 안에서 고른다. 기능 전용 위젯
+(`features/{기능}/presentation/widgets/`)은 애초에 공유 대상이 아니다.
 
 목록을 미리 확정하지 않는다. **첫 전환 화면에서 실제로 필요한 것만** 웹에 만들고, 그것이
 "양쪽에 나오는 것" 목록의 초안이 된다.
@@ -254,7 +305,8 @@ Discord 알림 잡도 재사용 후보로 검토했으나, 재사용 가치가 �
 - **모노레포로 간다.** 단 Flutter 루트를 옮기지 않는 비대칭 배치다. 릴리즈 자동화의 경로
   가정을 건드리지 않는 것이 모노레포의 어떤 정돈보다 우선한다.
 - **토큰 단일 출처는 중립 JSON이다.** Dart를 출처로 두면 Dart 전용 표현(`LinearGradient`,
-  `Alignment`)이 섞여 CSS 변환이 지저분해진다. 현재 `app_colors.dart`가 이미 그 상태다.
+  `Alignment`)이 섞여 CSS 변환이 지저분해진다. 현재 `core/theme/app_colors.dart`가 이미
+  그 상태다.
 - **생성물을 커밋하고 CI로 일치만 검증한다.** 생성을 빌드 선행 조건으로 만들지 않는다.
 - **컴포넌트 토큰까지 소스에 올린다.** 색만 공유하는 것으로는 디자인 시스템이 갈리는 것을
   막지 못한다.
