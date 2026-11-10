@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
@@ -21,7 +22,7 @@ void main() {
   });
 
   MatchDetailViewModel vmFor(List<MatchGame> games) {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (games, null));
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((games, null)));
     return MatchDetailViewModel(
       matchId: 'm-1',
       repository: match,

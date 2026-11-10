@@ -9,7 +9,7 @@ import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/features/match_detail/data/match_detail_repository.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 
@@ -27,7 +27,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     RatingRepository? ratingRepository,
   }) : _matchInfo = initialMatch,
        _activeTab = initialTabIndex,
-       _repository = repository ?? MatchDetailRepository.instance,
+       _repository = repository ?? di<MatchDetailRepository>(),
        _ratingRepository = ratingRepository ?? di<RatingRepository>();
 
   final String matchId;
@@ -295,7 +295,11 @@ class MatchDetailViewModel extends ChangeNotifier {
     _loadingGames = true;
     _safeNotify();
     try {
-      final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
+      // 아래 catch 가 상태 복구를 하므로 Left 를 그 경로로 보낸다. 과도기 —
+      // 이 ViewModel 의 repository 들이 모두 Either 가 되면 match 로 정리한다.
+      final (games, matchInfoFromGames) =
+          (await _repository.fetchGames(matchId))
+              .getOrElse((f) => throw StateError('$f'));
       _games = games;
       // 진입 시 기본 세트: LIVE → 최신 ENDED → 1세트.
       _currentSet = _computeInitialSet(games);
@@ -425,7 +429,11 @@ class MatchDetailViewModel extends ChangeNotifier {
     _loadingGames = true;
     _safeNotify();
     try {
-      final (games, matchInfoFromGames) = await _repository.fetchGames(matchId);
+      // 아래 catch 가 상태 복구를 하므로 Left 를 그 경로로 보낸다. 과도기 —
+      // 이 ViewModel 의 repository 들이 모두 Either 가 되면 match 로 정리한다.
+      final (games, matchInfoFromGames) =
+          (await _repository.fetchGames(matchId))
+              .getOrElse((f) => throw StateError('$f'));
       _games = games;
       if (games.isNotEmpty && !games.any((g) => g.gameOrder == _currentSet)) {
         _currentSet = _computeInitialSet(games);
@@ -506,7 +514,8 @@ class MatchDetailViewModel extends ChangeNotifier {
       if (gameId == null || gameId.isEmpty) {
         throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
-      _championPick = await _repository.fetchChampionPick(gameId);
+      _championPick = (await _repository.fetchChampionPick(gameId))
+          .getOrElse((f) => throw StateError('$f'));
       _restartChampionPollingIfNeeded();
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick failed: $e');
@@ -562,7 +571,8 @@ class MatchDetailViewModel extends ChangeNotifier {
     final gameId = currentGameId;
     if (gameId == null || gameId.isEmpty) return;
     try {
-      final updated = await _repository.fetchChampionPick(gameId);
+      final updated = (await _repository.fetchChampionPick(gameId))
+          .getOrElse((f) => throw StateError('$f'));
       if (_disposed) return;
       _championPick = updated;
       _safeNotify(isPoll: true);
@@ -580,7 +590,8 @@ class MatchDetailViewModel extends ChangeNotifier {
       if (gameId == null || gameId.isEmpty) {
         throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
-      _liveEventsData = await _repository.fetchLiveEvents(gameId);
+      _liveEventsData = (await _repository.fetchLiveEvents(gameId))
+          .getOrElse((f) => throw StateError('$f'));
     } catch (e) {
       debugPrint('[MatchDetailVM] live events failed: $e');
       _eventsError =

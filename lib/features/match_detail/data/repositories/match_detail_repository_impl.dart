@@ -1,9 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/infrastructure/api_status_exception.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
@@ -12,11 +17,10 @@ import 'package:warding/core/domain/schedule_match.dart';
 
 /// 경기 상세 관련 API (`/api/mobile/matches/{matchId}/games`,
 /// `/api/mobile/live/games/{gameId}/{champions,events}`). 모두 인증 불필요.
-class MatchDetailRepository {
-  MatchDetailRepository._();
-  static final MatchDetailRepository instance = MatchDetailRepository._();
+class MatchDetailRepositoryImpl implements MatchDetailRepository {
 
   /// 단일 경기 정보를 조회한다. 실패 시 null 을 반환한다.
+  @override
   Future<ScheduleMatch?> fetchMatch(String matchId) async {
     final url = ApiConfig.matchUrl(matchId);
     debugPrint('[MatchDetail] GET $url');
@@ -44,7 +48,16 @@ class MatchDetailRepository {
   /// 경기(matchId)의 세트별 게임 목록을 조회한다 (인증 불필요).
   /// 세트 순서 → gameId 해석에 쓴다.
   /// 응답 최상위에 팀 정보(teamA/blueTeam)가 있으면 [ScheduleMatch]도 파싱해 함께 반환한다.
-  Future<(List<MatchGame>, ScheduleMatch?)> fetchGames(String matchId) async {
+  @override
+  Future<Either<Failure, (List<MatchGame>, ScheduleMatch?)>> fetchGames(String matchId) async {
+    try {
+      return Right(await _fetchGames(matchId));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchGames'));
+    }
+  }
+
+  Future<(List<MatchGame>, ScheduleMatch?)> _fetchGames(String matchId) async {
     final url = ApiConfig.matchGamesUrl(matchId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
@@ -54,7 +67,7 @@ class MatchDetailRepository {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('세트 목록 조회 실패 ($matchId, ${response.statusCode})');
+      throw ApiStatusException(response.statusCode, endpoint: url);
     }
 
     final decoded = jsonDecode(response.body);
@@ -102,14 +115,23 @@ class MatchDetailRepository {
   }
 
   /// 세트(gameId)의 챔피언 밴·픽을 조회한다 (인증 불필요).
-  Future<MatchChampionPick> fetchChampionPick(String gameId) async {
+  @override
+  Future<Either<Failure, MatchChampionPick>> fetchChampionPick(String gameId) async {
+    try {
+      return Right(await _fetchChampionPick(gameId));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchChampionPick'));
+    }
+  }
+
+  Future<MatchChampionPick> _fetchChampionPick(String gameId) async {
     final url = ApiConfig.gameChampionsUrl(gameId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
     debugPrint('[MatchDetail] champions ← ${response.statusCode}');
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('챔피언 픽 조회 실패 ($gameId, ${response.statusCode})');
+      throw ApiStatusException(response.statusCode, endpoint: url);
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -137,14 +159,23 @@ class MatchDetailRepository {
 
   /// 세트(gameId)의 라이브 이벤트를 조회한다 (인증 불필요, 최신순).
   /// 응답 최상위의 양 팀 로고 URL과 이벤트 목록을 함께 담아 반환한다.
-  Future<MatchLiveEvents> fetchLiveEvents(String gameId) async {
+  @override
+  Future<Either<Failure, MatchLiveEvents>> fetchLiveEvents(String gameId) async {
+    try {
+      return Right(await _fetchLiveEvents(gameId));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchLiveEvents'));
+    }
+  }
+
+  Future<MatchLiveEvents> _fetchLiveEvents(String gameId) async {
     final url = ApiConfig.gameEventsUrl(gameId);
     debugPrint('[MatchDetail] GET $url');
     final response = await http.get(Uri.parse(url));
     debugPrint('[MatchDetail] events ← ${response.statusCode}');
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('라이브 이벤트 조회 실패 ($gameId, ${response.statusCode})');
+      throw ApiStatusException(response.statusCode, endpoint: url);
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

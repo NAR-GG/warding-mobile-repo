@@ -7,6 +7,8 @@ import 'package:warding/features/match_list/data/repositories/category_repositor
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/features/match_detail/data/repositories/match_detail_repository_impl.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/features/player_rating/data/repositories/rating_repository_impl.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
@@ -43,6 +45,11 @@ void configureDependencies() {
 
   // ── notice ───────────────────────────────────────────────────
   di.registerLazySingleton<NoticeRepository>(NoticeRepositoryImpl.new);
+
+  // ── match_detail ─────────────────────────────────────────────
+  di.registerLazySingleton<MatchDetailRepository>(
+    MatchDetailRepositoryImpl.new,
+  );
 
   // ── player_rating ────────────────────────────────────────────
   di.registerLazySingleton<RatingRepository>(RatingRepositoryImpl.new);

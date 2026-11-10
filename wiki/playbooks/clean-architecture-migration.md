@@ -221,6 +221,22 @@ grep -rn "\.{메서드}(" lib --include="*.dart"   # 직접 눈으로 본다
   **대상 repository 변수명으로 좁혀서** 치환한다 — `rating.fetchGameRatings` 처럼.
 - 다중행 스텁을 `Right(...)` 로 감쌀 때 닫는 괄호를 빠뜨리기 쉽다. 치환 후 `analyze` 가
   "Expected to find ';'" 를 내면 그것이다.
+- **다중행 스텁은 정규식으로 감싸지 말고 괄호를 세서 닫는다.** `match_detail` 에서 정규식을
+  쓰다가 에러가 17 → 195 개로 폭증했다(`git checkout` 으로 되돌렸다). 여는 괄호 위치부터
+  depth 를 세어 대응하는 닫는 괄호를 찾고 그 뒤에 `)` 를 넣는 방식이 안전하다.
+
+```python
+# 여는 괄호에서 depth 를 세어 짝을 찾는다
+depth = 0
+j = open_pos
+while j < len(text):
+    if text[j] == '(': depth += 1
+    elif text[j] == ')':
+        depth -= 1
+        if depth == 0: break
+    j += 1
+text = text[:open_pos] + "Right(" + text[open_pos:j+1] + ")" + text[j+1:]
+```
 
 ## 8. 검증
 

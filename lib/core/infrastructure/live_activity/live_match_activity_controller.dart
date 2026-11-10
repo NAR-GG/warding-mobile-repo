@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/domain/team_notification_subscription.dart';
-import 'package:warding/features/match_detail/data/match_detail_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/features/match_detail/data/match_subscription_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
@@ -106,7 +107,7 @@ class LiveMatchActivityController {
   /// 알리지 않으므로 서버는 카드가 살아있다고 믿고 그 경기 내내 재생성하지 못한다 —
   /// 늦게 닫는 건 만회되고 잘못 닫는 건 복구 불가라, 의심스러우면 두는 쪽이 싸다.
   Future<bool> _isOngoing(String matchId) async {
-    final match = await MatchDetailRepository.instance.fetchMatch(matchId);
+    final match = await di<MatchDetailRepository>().fetchMatch(matchId);
     if (match == null) return false;
     return !isScheduledStatus(match.matchStatus) &&
         !isFinishedStatus(match.matchStatus);
