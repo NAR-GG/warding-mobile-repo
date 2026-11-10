@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../model/community_remote_post.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
 import '../../model/home_models.dart';
 import '../../model/notice.dart';
 import '../../model/player_subscription.dart';
@@ -12,7 +12,7 @@ import '../../model/standing.dart';
 import '../../model/story_video.dart';
 import '../../model/worlds_standings.dart';
 import '../../repository/auth/auth_service.dart';
-import '../../repository/community/community_repository.dart';
+import 'package:warding/features/community/data/community_repository.dart';
 import '../../repository/home/home_sources.dart';
 import '../../repository/notice/notice_repository.dart';
 import '../../repository/notification/member_notification_repository.dart';

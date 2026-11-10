@@ -6,7 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../model/member_notification.dart';
 import '../../styles/app_colors.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
-import '../community/post_detail_screen.dart';
+import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 
 /// 커뮤니티 알림함. 진입점은 커뮤니티 헤더 벨 하나다.
 ///

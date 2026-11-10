@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/community/community_activity_repository.dart';
+import 'package:warding/features/my_community_activity/data/community_activity_repository.dart';
 import 'package:warding/util/api_client.dart' as api;
 
 void main() {

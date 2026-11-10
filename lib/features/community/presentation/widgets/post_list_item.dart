@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import 'package:warding/components/board_badge.dart';
+import 'package:warding/l10n/app_localizations.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
+import 'package:warding/styles/app_colors.dart';
+import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/features/community/presentation/widgets/author_line.dart';
+import 'package:warding/features/community/presentation/widgets/community_image.dart';
+
+/// 글 목록의 한 줄 — 제목 · 본문 미리보기 2줄 · 메타 · (있으면) 사진 썸네일.
+///
+/// 팀 로고는 팀 게시판에서도 그린다. 전원이 같은 팀이라 정보량은 적지만,
+/// 게시판마다 작성자 줄 모양이 달라지는 쪽이 더 어색하다.
+class PostListItem extends StatelessWidget {
+  const PostListItem({
+    super.key,
+    required this.post,
+    required this.scale,
+    required this.onTap,
+    this.showBoardBadge = false,
+  });
+
+  final CommunityRemotePost post;
+  final double scale;
+  final VoidCallback onTap;
+
+  /// true면 제목 위에 [BoardBadge] 를 붙인다. 게시판이 이미 정해진 일반
+  /// 목록(전체·우리팀·다른팀 탭)에서는 필요 없고, 여러 게시판 글이 섞여
+  /// 나오는 마이페이지 "내 활동" 목록에서만 켠다.
+  final bool showBoardBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumb = post.thumbnailUrl;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: 20 * scale,
+          vertical: 18 * scale,
+        ),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: AppColors.narLine, width: 1),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showBoardBadge) ...[
+                    BoardBadge(
+                      boardTeamId: post.boardTeamId,
+                      boardTeamCode: post.boardTeamCode,
+                      scale: scale,
+                    ),
+                    SizedBox(height: 4 * scale),
+                  ],
+                  // 투표가 붙은 글은 제목 앞에 [투표] 배지 — 목록을 훑을 때 바로
+                  // 걸린다. 썸네일 칸은 사진·영상용으로 남긴다(에타·클리앙 방식).
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        if (post.hasPoll)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              // 제목과 붙어 보이지 않게 배지 오른쪽에 여백.
+                              padding: EdgeInsets.only(right: 6 * scale),
+                              child: _PollBadge(scale: scale),
+                            ),
+                          ),
+                        TextSpan(text: post.title),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w700,
+                      // 에브리타임 목록 밀도에 맞춘 크기(제목 16/미리보기 14/메타 12.5).
+                      // 한 번 12.5~14.5 로 줄였다가 너무 작다는 피드백으로 되올렸다.
+                      fontSize: 16 * scale,
+                      height: 1.4,
+                      color: AppColors.narText,
+                    ),
+                  ),
+                  SizedBox(height: 4 * scale),
+                  Text(
+                    post.bodyPreview,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14 * scale,
+                      height: 1.5,
+                      color: AppColors.narText3,
+                    ),
+                  ),
+                  SizedBox(height: 10 * scale),
+                  // 추천 · 댓글 · 시간 · 작성자 순으로 왼쪽에 붙여 나열한다.
+                  Row(
+                    children: [
+                      // 추천·댓글은 0 이면 아예 그리지 않는다. 아무도 반응하지
+                      // 않은 글에 '0' 을 붙여두면 그 사실만 강조된다.
+                      if (post.likeCount > 0) ...[
+                        _iconMeta(
+                          'assets/icons/thumb-up.svg',
+                          '${post.likeCount}',
+                          scale,
+                          color: AppColors.narTextRed,
+                        ),
+                        SizedBox(width: 9 * scale),
+                      ],
+                      if (post.commentCount > 0) ...[
+                        _iconMeta(
+                          'assets/icons/message-circle.svg',
+                          '${post.commentCount}',
+                          scale,
+                          color: AppColors.narChipActive,
+                        ),
+                        SizedBox(width: 9 * scale),
+                      ],
+                      _meta(ratingTimeAgo(post.createdAt), scale),
+                      SizedBox(width: 9 * scale),
+                      Flexible(
+                        child: AuthorLine(
+                          author: post.author,
+                          scale: scale,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (thumb != null && thumb.isNotEmpty) ...[
+              SizedBox(width: 12 * scale),
+              CommunityImage(
+                source: thumb,
+                width: 62 * scale,
+                height: 62 * scale,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _meta(String text, double scale) => Text(
+  text,
+  style: TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w400,
+    fontSize: 12.5 * scale,
+    height: 1.45,
+    color: AppColors.narText2,
+  ),
+);
+
+Widget _iconMeta(
+  String asset,
+  String text,
+  double scale, {
+  required Color color,
+}) => Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    SvgPicture.asset(
+      asset,
+      width: 14.5 * scale,
+      height: 14.5 * scale,
+      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+    ),
+    SizedBox(width: 3 * scale),
+    Text(
+      text,
+      style: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+        fontSize: 12.5 * scale,
+        height: 1.45,
+        color: color,
+      ),
+    ),
+  ],
+);
+
+/// 제목 앞 [투표] 배지. 목록에서 투표 글을 한눈에 구분하는 표시다.
+///
+/// 모양은 [BoardBadge] 와 같은 규격(어두운 칩 + 얇은 테두리, radius 4, 11/w600)을
+/// 따르고 글자만 보라로 둔다 — 배지끼리 톤이 어긋나면 목록이 시끄러워진다.
+class _PollBadge extends StatelessWidget {
+  const _PollBadge({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 6 * scale,
+        vertical: 2 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.narDark500,
+        border: Border.all(color: AppColors.narLine),
+        borderRadius: BorderRadius.circular(4 * scale),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.communityPollLabel,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          fontSize: 11 * scale,
+          height: 1.3,
+          color: AppColors.narViolet3,
+        ),
+      ),
+    );
+  }
+}

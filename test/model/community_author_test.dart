@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_author.dart';
+import 'package:warding/features/community/domain/community_author.dart';
 
 void main() {
   test('fromJson이 필드를 그대로 매핑한다', () {

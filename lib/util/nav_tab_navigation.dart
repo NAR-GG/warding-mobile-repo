@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/app_bottom_nav.dart';
-import '../screens/community/community_screen.dart';
+import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/match_list/match_list_screen.dart';
 import '../screens/mypage/mypage_screen.dart';

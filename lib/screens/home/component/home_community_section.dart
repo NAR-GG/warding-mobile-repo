@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/team_code_badge.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../model/community_remote_post.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
 import '../../../styles/app_colors.dart';
 import '../../../util/app_image.dart';
 import '../../../viewmodel/home/home_viewmodel.dart';

@@ -35,34 +35,68 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 
 ## 폴더 구조
 
+**feature 단위 구조로 옮기는 중이다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를
+한 폴더에 모은다. 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·`screens`)를
+오가지 않게 하는 것이 목적이다.
+
 ```
 lib/
+├── features/     ★ 새 구조. 기능별로 레이어를 모은다
+│   └── {기능}/
+│       ├── data/           repository, API 예외, 그 기능 전용 DTO
+│       ├── domain/         모델, 규칙·상수
+│       └── presentation/
+│           ├── screens/    화면
+│           ├── viewmodels/ ViewModel
+│           └── widgets/    그 화면 전용 위젯
+├── core/         여러 기능이 공유하는 domain·infrastructure
+│
 ├── config/       앱 설정 (API URL, 키 등)
-├── model/        데이터 모델 클래스
-├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)
-├── viewmodel/    ViewModel (기능별 하위 폴더)
-├── screens/      화면 (기능별 폴더)
 ├── components/   앱 전역 공용 위젯
 ├── styles/       디자인 토큰 (app_colors 등)
-└── util/         유틸리티
+├── util/         유틸리티
+│
+└── (이전 구조 — 아직 옮기지 않은 기능)
+    ├── model/        데이터 모델 클래스
+    ├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)
+    ├── viewmodel/    ViewModel (기능별 하위 폴더)
+    └── screens/      화면 (기능별 폴더)
 ```
+
+**전환 완료:** `community`, `my_community_activity`.
+나머지 기능은 아직 이전 구조에 있다. 한 기능씩 옮긴다 — 한 번에 옮기면 PR이 리뷰 불가능한
+크기가 되고 진행 중인 다른 브랜치와 충돌한다.
+
+**import 는 `package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을
+옮길 때 대량으로 깨진다 (community 를 옮길 때 실측으로 540건 났다). 새 코드도 절대경로로
+쓰고, 기존 상대경로는 그 기능을 옮길 때 함께 바꾼다.
 
 ## 파일 생성 규칙
 
-새 기능을 추가할 때 종류별 위치:
+**새 기능은 `features/` 에 만든다.**
 
 | 종류 | 위치 | 예 |
 |------|------|-----|
-| 화면 | `screens/{기능}/{기능}_screen.dart` | `screens/onboarding/onboarding_screen.dart` |
-| 화면 전용 위젯 | `screens/{기능}/component/` | `screens/onboarding/component/onboarding_header.dart` |
-| 단계별 화면 (멀티 스텝) | `screens/{기능}/step/` | `screens/onboarding/step/team_step.dart` |
+| 화면 | `features/{기능}/presentation/screens/` | `features/community/presentation/screens/community_screen.dart` |
+| 화면 전용 위젯 | `features/{기능}/presentation/widgets/` | `features/community/presentation/widgets/post_list_item.dart` |
+| 단계별 화면 (멀티 스텝) | `features/{기능}/presentation/screens/step/` | `.../presentation/screens/step/team_step.dart` |
+| ViewModel | `features/{기능}/presentation/viewmodels/` | `features/community/presentation/viewmodels/community_list_viewmodel.dart` |
+| 모델·규칙·상수 | `features/{기능}/domain/` | `features/community/domain/community_remote_post.dart` |
+| 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
+| 여러 기능이 쓰는 모델 | `core/domain/` | — |
+| 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
 | 앱 공용 위젯 | `components/` | `components/common_button.dart` |
-| ViewModel | `viewmodel/{기능}/{기능}_viewmodel.dart` | `viewmodel/onboarding/onboarding_viewmodel.dart` |
-| 모델 | `model/{이름}.dart` | `model/team.dart` |
-| 리포지토리 | `repository/{기능}/{기능}_repository.dart` | `repository/onboarding/onboarding_repository.dart` |
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.
-- 한 화면에서만 쓰는 위젯은 그 화면 폴더의 `component/`에, 여러 화면에서 쓰면 `lib/components/`에 둔다.
+- 한 화면에서만 쓰는 위젯은 그 기능의 `presentation/widgets/`에, 여러 기능에서 쓰면
+  `lib/components/`에 둔다.
+- **`data` 와 `domain` 의 구분**: `domain`은 그 기능의 개념(모델·규칙·상수), `data`는 그것을
+  가져오는 수단(repository·API 예외)과 그 기능 전용 DTO다. `community_permission.dart`처럼
+  화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
+- **공유되면 `core/` 로 올린다.** 한 기능 소유가 아닌 것을 `features/` 안에 두면 다른 기능이
+  남의 폴더를 들여다봐야 한다. 쓰는 기능이 둘 이상이면 `core/` 후보다.
+- 아직 옮기지 않은 기능을 수정할 때는 그 기능의 기존 위치를 따른다. 옮기는 것은 별도 PR 로
+  한다 — 기능 하나가 70~80 파일 변경이라 다른 작업에 섞으면 리뷰가 불가능해진다.
 
 ## 색상 / 디자인 토큰
 

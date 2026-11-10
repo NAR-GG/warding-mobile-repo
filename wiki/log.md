@@ -1,5 +1,29 @@
 # Bundle Update Log
 
+## 2026-11-10
+* **feature 단위 폴더 구조로 전환을 시작했다** (`community`, `my_community_activity`).
+  레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·
+  `screens`)를 오가야 했다. 실측으로 `community` 는 **45 파일이 4 곳에 흩어져** 있었고,
+  `lib/model/` 은 37 개가 평면 배치라 `community_` 접두어 9 개가 알파벳 순으로 끼어 있었다.
+  * 기능별로 `data`(repository·API 예외·전용 DTO) / `domain`(모델·규칙·상수) /
+    `presentation`(screens·viewmodels·widgets) 세 레이어를 한 폴더에 모은다.
+  * **상태 관리는 `ChangeNotifier` MVVM 을 유지한다.** `presentation/` 은 BLoC 을 전제한
+    이름이지만 지금은 ViewModel 이 그 자리에 있다 — 나중에 바꿀 때 폴더는 그대로 쓴다.
+    Flutter 공식 권고도 MVVM + Repository 라서 아키텍처 자체를 바꿀 이유가 없었다.
+  * **import 를 `package:warding/...` 절대경로로 바꿨다.** 이게 핵심이다 — 상대경로라서
+    `community` 를 옮기는 중 **540 건이 깨졌다**. 공용 폴더(`styles`·`util`·`components`·
+    `l10n`) 참조까지 절대경로로 바꿔 뒀으므로, 다음 기능부터는 거의 `git mv` 로 끝난다.
+  * **`my_community_activity` 가 별도 기능임을 발견했다.** `community_activity_repository`
+    와 `community_my_activity` 모델은 접두어가 `community_` 지만 그 기능만 쓴다. 이름만
+    보고 community 소유로 넣으면 남의 폴더를 들여다보게 된다.
+  * 화면이 아닌 파일 3 개(`community_permission`·`community_rules`·`community_teams`)를
+    `screens` 에서 `domain` 으로 옮겼다. 규칙·상수인데 화면 폴더에 있었다.
+  * `core/{domain,infrastructure}` 는 만들어만 뒀다. 공유되는 것을 올릴 자리다 —
+    `auth`(8 개 기능)·`preference`(7)·`onboarding`(5)·`rating`·`subscription`(각 4) 이
+    후보지만, 이동 영향이 한 기능을 넘어가 별도로 판단한다.
+  * 기능 하나가 **77 파일 변경**(이동 44 / import 수정 33)이라 한 기능씩 PR 로 옮긴다.
+    남은 24 개 기능은 이전 구조에 있다.
+
 ## 2026-11-09
 * **DAU 알림에 앱 진입 경로를 넣었다.** "활성 사용자 1856" 만으로는 그 사용자들이
   푸시로 들어왔는지 런처로 켰는지 알 수 없었다. 두 축으로 나눠 보여준다.

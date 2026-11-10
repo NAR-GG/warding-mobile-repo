@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/community/community_detail_viewmodel.dart';
+import 'package:warding/features/community/presentation/viewmodels/community_detail_viewmodel.dart';
 
 /// v1.0.23 실사고 회귀: 좋아요·벨 토글이 상세 객체를 재조립하면서 bodyFormat 을
 /// 빼먹어 PLAIN 으로 리셋 → 블록 글 본문이 원문 JSON 으로 표시됐다.

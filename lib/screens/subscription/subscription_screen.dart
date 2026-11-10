@@ -25,7 +25,7 @@ import '../../util/match_detail_router.dart';
 import '../../config/app_globals.dart';
 import '../../viewmodel/subscription/subscription_feed_layout.dart';
 import '../../viewmodel/subscription/subscription_feed_viewmodel.dart';
-import '../community/community_screen.dart';
+import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import '../home/home_screen.dart';
 import '../match_list/match_list_screen.dart';
 import '../mypage/mypage_screen.dart';

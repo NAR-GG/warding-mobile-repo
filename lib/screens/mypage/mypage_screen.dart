@@ -20,7 +20,7 @@ import 'component/quiet_hours_section.dart';
 import '../account_setting/account_setting_screen.dart';
 import '../calendar_setting/calendar_setting_screen.dart';
 import '../match_list_setting/match_list_setting_screen.dart';
-import '../my_community_activity/my_community_activity_screen.dart';
+import 'package:warding/features/my_community_activity/presentation/screens/my_community_activity_screen.dart';
 import '../my_review/my_review_screen.dart';
 import '../my_subscription_setting/my_subscription_setting_screen.dart';
 import '../notice/ad_guide_screen.dart';

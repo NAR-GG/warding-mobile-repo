@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/repository/auth/auth_service.dart';
 import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/my_community_activity/my_community_activity_viewmodel.dart';
+import 'package:warding/features/my_community_activity/presentation/viewmodels/my_community_activity_viewmodel.dart';
 
 /// 본문에 한글이 섞여 있어 UTF-8 로 명시해야 한다 — `http.Response(String, ...)`
 /// 는 charset 헤더가 없으면 latin1 로 해석해 'Invalid argument' 로 죽는다.

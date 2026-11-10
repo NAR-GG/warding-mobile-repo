@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../config/app_globals.dart';
-import '../../screens/community/post_detail_screen.dart';
+import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 import '../../screens/subscription/subscription_screen.dart';
 import '../../util/match_detail_router.dart';
 import '../../util/sentry_logger.dart';

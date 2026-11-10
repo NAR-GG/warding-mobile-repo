@@ -1,0 +1,1176 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import 'package:warding/components/nar_button.dart';
+import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/components/nar_popup_dialog.dart';
+import 'package:warding/l10n/app_localizations.dart';
+import 'package:warding/features/community/domain/community_draft.dart';
+import 'package:warding/features/community/domain/community_post_block.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
+import 'package:warding/styles/app_colors.dart';
+import 'package:warding/features/community/presentation/viewmodels/post_write_viewmodel.dart';
+import 'package:warding/features/community/presentation/widgets/community_draft_sheet.dart';
+import 'package:warding/features/community/presentation/widgets/community_image.dart';
+import 'package:warding/features/community/presentation/widgets/post_poll_composer.dart';
+import 'package:warding/features/community/presentation/widgets/post_write_rules.dart';
+
+/// 글쓰기 — 제목 + **블록 에디터**(텍스트 사이에 사진·링크·임베드를 끼워 넣는
+/// 샌드위치 구성). 본문은 bodyFormat=BLOCKS 로 나간다.
+///
+/// - 사진/링크는 포커스된 텍스트 블록의 커서 위치에서 텍스트를 쪼개 끼운다
+///   (포커스가 없으면 맨 끝). 미디어 블록은 ✕ 삭제, ▲▼ 이동.
+/// - URL 이 유튜브·치지직·SOOP·X 면 임베드 블록, 아니면 서버 link-preview 를
+///   불러 링크 카드 블록이 된다.
+/// - 서식 v1 은 텍스트 블록별 heading 토글 하나다.
+///
+/// 본문 아래에는 커뮤니티 이용규칙 요약이 연하게 깔린다. 글을 쓰기 직전이
+/// 규칙을 읽을 유일한 순간이라, 별도 화면으로 빼면 아무도 안 본다.
+///
+/// 등록에 성공하면 새 글 id 를 결과로 pop 한다. 수정 모드([edit])면 같은 id 를 pop 한다.
+class PostWriteScreen extends StatefulWidget {
+  const PostWriteScreen({
+    super.key,
+    required this.boardTeamId,
+    this.edit,
+    this.tester = false,
+  });
+
+  /// null 이면 전체 게시판(현재는 항상 null — 단일 게시판).
+  final int? boardTeamId;
+
+  /// 테스트 글을 만들 수 있는 계정인가(서버 판정 boardViewer.tester).
+  /// true 일 때만 "테스트 글" 토글이 보인다 — 일반 사용자에겐 없는 UI.
+  final bool tester;
+
+  /// 수정할 글. null 이면 새 글 작성이다. PLAIN 글은 텍스트 블록 하나로 열리고
+  /// 수정 등록 시 BLOCKS 로 저장된다(서버 하위호환 유지, 본문 내용은 동일).
+  final CommunityRemotePostDetail? edit;
+
+  @override
+  State<PostWriteScreen> createState() => _PostWriteScreenState();
+}
+
+/// 뒤로가기 확인 팝업에서 고른 것 — null(팝업 dismiss)이면 "취소"와 같다.
+enum _LeaveAction { discard, save }
+
+/// 뒤로가기 확인 판단용 상태 스냅샷 — 투표 설정까지 포함해 구조적으로 비교한다.
+typedef _Snapshot = ({
+  String title,
+  String blocksJson,
+  bool pollEnabled,
+  String pollQuestion,
+  String pollOptionsJson,
+  bool pollAllowMultiple,
+  bool pollAlwaysShowResults,
+});
+
+/// 에디터 블록. 텍스트는 입력 상태(controller·focus)를 들고, 미디어는
+/// [DraftBlock] 그대로 든다.
+sealed class _EditorBlock {}
+
+class _TextBlock extends _EditorBlock {
+  _TextBlock({String text = '', this.heading = false})
+    : controller = TextEditingController(text: text);
+
+  final TextEditingController controller;
+  final FocusNode focus = FocusNode();
+  bool heading = false;
+
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+  }
+}
+
+class _MediaBlock extends _EditorBlock {
+  _MediaBlock(this.draft);
+
+  final DraftBlock draft;
+}
+
+class _PostWriteScreenState extends State<PostWriteScreen> {
+  late final PostWriteViewModel _vm = PostWriteViewModel(
+    boardTeamId: widget.boardTeamId,
+    editPostId: widget.edit?.id,
+  );
+
+  final TextEditingController _title = TextEditingController();
+  final List<_EditorBlock> _blocks = [];
+
+  /// 투표 컴포저(글당 1개, 작성 시에만 — 수정 모드에선 버튼 자체를 숨긴다).
+  bool _pollEnabled = false;
+  final TextEditingController _pollQuestion = TextEditingController();
+  final List<TextEditingController> _pollOptions = [];
+  static const int _maxPollOptions = 4;
+
+  /// 투표 옵션: 복수 선택 / 결과 항상 공개.
+  /// 마감은 서버가 지원하지만 v1 작성 UI 에선 뺐다(항상 무기한) — 컴포저가
+  /// 무거워진다는 피드백. 되살릴 땐 closesHours 만 다시 노출하면 된다.
+  bool _pollAllowMultiple = false;
+  bool _pollAlwaysShowResults = false;
+
+  /// 테스트 글로 올린다(테스터만). 서버가 status=TEST 로 저장해 테스터에게만 보인다.
+  bool _testPost = false;
+
+  /// 이 편집 세션이 불러온 임시저장 글의 id. "임시" 재탭 시 새로 쌓지 않고
+  /// 이 드래프트를 덮어쓴다. null 이면 처음부터 쓰는 중이라 다음 저장이 새 항목.
+  int? _loadedDraftId;
+
+  /// 마지막으로 저장/불러온 시점의 내용 — 뒤로가기 확인 팝업을 띄울지 판단하는
+  /// 기준선. 지금 내용이 이거랑 같으면 "달라진 게 없다"고 보고 팝업 없이 바로
+  /// 나간다. 시작 시점 값(새 글은 빈 상태, 수정 모드는 원본 그대로)이라
+  /// 아무것도 안 건드리고 나갈 때도 안 뜬다. 투표 설정도 포함해야 투표만
+  /// 바꾸고 뒤로가도 제대로 잡힌다.
+  _Snapshot? _savedSnapshot;
+
+  _Snapshot _currentSnapshot() => (
+    title: _title.text.trim(),
+    blocksJson: DraftBlock.encodeList(_draftBlocks),
+    pollEnabled: _pollEnabled,
+    pollQuestion: _pollQuestion.text.trim(),
+    pollOptionsJson: jsonEncode([
+      for (final o in _pollOptions) o.text.trim(),
+    ]),
+    pollAllowMultiple: _pollAllowMultiple,
+    pollAlwaysShowResults: _pollAlwaysShowResults,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    final edit = widget.edit;
+    if (edit == null) {
+      _blocks.add(_TextBlock());
+    } else {
+      _title.text = edit.title;
+      _initFromEdit(edit);
+    }
+    _title.addListener(_onChanged);
+    _vm.addListener(_showError);
+    unawaited(_vm.refreshDrafts());
+    _savedSnapshot = _currentSnapshot();
+  }
+
+  void _initFromEdit(CommunityRemotePostDetail edit) {
+    if (!edit.isBlocks) {
+      // PLAIN 글: 본문 전체를 텍스트 블록 하나로, 기존 첨부는 이미지 블록으로.
+      _blocks.add(_TextBlock(text: edit.body));
+      for (final img in edit.images) {
+        _blocks.add(_MediaBlock(DraftBlock.image(url: img.url)));
+      }
+      return;
+    }
+    for (final b in CommunityPostBlock.parseList(edit.body)) {
+      switch (b.type) {
+        case 'text':
+          _blocks.add(_TextBlock(text: b.text ?? '', heading: b.isHeading));
+        case 'image':
+          if (b.url != null) _blocks.add(_MediaBlock(DraftBlock.image(url: b.url)));
+        case 'link':
+          _blocks.add(_MediaBlock(DraftBlock.link(
+            url: b.url ?? '',
+            title: b.title,
+            description: b.description,
+            imageUrl: b.imageUrl,
+            siteName: b.siteName,
+          )));
+        case 'embed':
+          _blocks.add(_MediaBlock(
+            DraftBlock.embed(provider: b.provider ?? '', url: b.url ?? ''),
+          ));
+      }
+    }
+    // 이미지로 시작하는 글(예: 사진만 올린 글)을 수정할 때도 위에 커서 자리가
+    // 있어야 한다 — 삽입·이동과 같은 불변식.
+    _ensureTextEdges();
+  }
+
+  @override
+  void dispose() {
+    _vm.removeListener(_showError);
+    _title.dispose();
+    _pollQuestion.dispose();
+    for (final option in _pollOptions) {
+      option.dispose();
+    }
+    for (final block in _blocks) {
+      if (block is _TextBlock) block.dispose();
+    }
+    _vm.dispose();
+    super.dispose();
+  }
+
+  void _onChanged() => setState(() {});
+
+  void _showError() {
+    final message = _vm.error;
+    if (message == null || !mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool get _hasContent => _blocks.any(
+    (b) =>
+        b is _MediaBlock ||
+        (b is _TextBlock && b.controller.text.trim().isNotEmpty),
+  );
+
+  /// 투표를 켰으면 질문과 선택지 2개 이상이 차야 등록이 열린다.
+  bool get _pollValid =>
+      !_pollEnabled ||
+      (_pollQuestion.text.trim().isNotEmpty &&
+          _pollOptions.where((o) => o.text.trim().isNotEmpty).length >= 2);
+
+  /// 투표만 있는 글도 허용한다 — 질문이 곧 내용이다.
+  bool get _submittable =>
+      _title.text.trim().isNotEmpty &&
+      (_hasContent || _pollEnabled) &&
+      _pollValid &&
+      !_vm.submitting;
+
+  void _togglePoll() {
+    setState(() {
+      _pollEnabled = !_pollEnabled;
+      if (_pollEnabled && _pollOptions.isEmpty) {
+        _pollOptions.addAll([TextEditingController(), TextEditingController()]);
+      }
+    });
+  }
+
+  int get _imageCount => _blocks
+      .whereType<_MediaBlock>()
+      .where((b) => b.draft.type == 'image')
+      .length;
+
+  _TextBlock? get _focusedText {
+    for (final block in _blocks) {
+      if (block is _TextBlock && block.focus.hasFocus) return block;
+    }
+    return null;
+  }
+
+  /// 블록 배열 불변식 — **맨 위와 맨 아래는 항상 텍스트 블록**이어야 한다.
+  /// 이미지가 첫 블록이 되면 그 위에 커서를 둘 자리가 없어 "사진 위에
+  /// 첫 줄 쓰기"가 불가능해진다(1.0.23 피드백). 삽입·이동·삭제 후마다 부른다.
+  void _ensureTextEdges() {
+    if (_blocks.isEmpty || _blocks.first is! _TextBlock) {
+      _blocks.insert(0, _TextBlock());
+    }
+    if (_blocks.last is! _TextBlock) {
+      _blocks.add(_TextBlock());
+    }
+  }
+
+  /// 미디어 블록들을 포커스된 텍스트 블록의 커서에서 텍스트를 쪼개 끼운다.
+  /// 포커스가 없으면 맨 끝. 항상 이어서 쓸 텍스트 블록이 뒤따르게 한다.
+  void _insertMedia(List<_MediaBlock> media) {
+    if (media.isEmpty) return;
+    setState(() {
+      final focused = _focusedText;
+      if (focused == null) {
+        if (_blocks.isNotEmpty &&
+            _blocks.last is _TextBlock &&
+            (_blocks.last as _TextBlock).controller.text.trim().isEmpty) {
+          // 끝의 빈 텍스트 블록 앞에 끼워 커서 자리를 보존한다.
+          _blocks.insertAll(_blocks.length - 1, media);
+        } else {
+          _blocks.addAll(media);
+          _blocks.add(_TextBlock());
+        }
+        _ensureTextEdges();
+        return;
+      }
+      final index = _blocks.indexOf(focused);
+      final text = focused.controller.text;
+      final cursor = focused.controller.selection.isValid
+          ? focused.controller.selection.start
+          : text.length;
+      // 커서 주변의 빈 줄은 걷어낸다 — "글 쓰고 엔터 → 사진"이 이미지 위아래
+      // 공백 줄로 남으면 안 된다(블록 간격이 이미 여백을 준다).
+      final before = text.substring(0, cursor).trimRight();
+      final after = text.substring(cursor).trimLeft();
+      focused.controller.text = before;
+      final tail = _TextBlock(text: after, heading: false);
+      _blocks.insertAll(index + 1, [...media, tail]);
+      _ensureTextEdges();
+      tail.focus.requestFocus();
+    });
+  }
+
+  Future<void> _pickPhotos() async {
+    final remaining = PostWriteViewModel.maxPhotos - _imageCount;
+    final paths = await _vm.pickPhotosForBlocks(remaining);
+    if (paths.isEmpty || !mounted) return;
+    _insertMedia([
+      for (final path in paths) _MediaBlock(DraftBlock.image(localPath: path)),
+    ]);
+  }
+
+  Future<void> _addLink() async {
+    final l = AppLocalizations.of(context)!;
+    final input = TextEditingController();
+    final url = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.narDark600,
+        title: Text(
+          l.communityLinkDialogTitle,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppColors.narText,
+          ),
+        ),
+        content: TextField(
+          controller: input,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            color: AppColors.narText,
+          ),
+          cursorColor: AppColors.narViolet3,
+          decoration: InputDecoration(
+            hintText: l.communityLinkHint,
+            hintStyle: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 14,
+              color: AppColors.narDark300,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l.cancel,
+                style: const TextStyle(color: AppColors.narText2)),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(input.text.trim()),
+            child: Text(l.communityLinkConfirm,
+                style: const TextStyle(color: AppColors.narViolet3)),
+          ),
+        ],
+      ),
+    );
+    // input은 여기서 dispose하지 않는다 — 다이얼로그가 실제로 닫히는(전환
+    // 애니메이션이 끝나는) 시점보다 이 코드가 먼저 실행되기 때문에, 아직 화면에
+    // 남아 애니메이션 중인 TextField가 disposed된 controller를 다시 참조하며
+    // 크래시가 난다. State에 매달린 게 아니라 이 다이얼로그에서만 쓰는 로컬
+    // controller라 안 지워도 다이얼로그 요소가 unmount되면 참조가 사라진다.
+    if (url == null || url.isEmpty || !mounted) return;
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l.communityLinkInvalid)));
+      return;
+    }
+    final provider = CommunityPostBlock.embedProviderOf(url);
+    if (provider != null) {
+      _insertMedia([_MediaBlock(DraftBlock.embed(provider: provider, url: url))]);
+      return;
+    }
+    // 일반 링크 — 서버 OG 스냅샷을 붙인 카드. 실패해도 맨 링크 카드로 들어간다.
+    final preview = await _vm.fetchLinkPreview(url);
+    if (!mounted) return;
+    _insertMedia([
+      _MediaBlock(DraftBlock.link(
+        url: url,
+        title: preview.title,
+        description: preview.description,
+        imageUrl: preview.imageUrl,
+        siteName: preview.siteName,
+      )),
+    ]);
+  }
+
+  void _removeBlock(_MediaBlock block) {
+    setState(() {
+      final index = _blocks.indexOf(block);
+      _blocks.remove(block);
+      // 미디어를 지워 텍스트 블록이 연달아 남으면 하나로 합친다 — 안 그러면
+      // 보이지 않는 경계가 남아 커서가 두 자리를 오간다.
+      if (index > 0 &&
+          index < _blocks.length &&
+          _blocks[index - 1] is _TextBlock &&
+          _blocks[index] is _TextBlock) {
+        final head = _blocks[index - 1] as _TextBlock;
+        final tail = _blocks[index] as _TextBlock;
+        final joined = [head.controller.text, tail.controller.text]
+            .where((t) => t.isNotEmpty)
+            .join('\n');
+        head.controller.text = joined;
+        _blocks.removeAt(index);
+        // 이 프레임에는 tail 의 TextField 가 아직 트리에 붙어 있다 — 즉시
+        // dispose 하면 '_dependents.isEmpty' assertion 으로 터진다(실사고).
+        WidgetsBinding.instance.addPostFrameCallback((_) => tail.dispose());
+      }
+      _ensureTextEdges();
+    });
+  }
+
+  void _moveBlock(_MediaBlock block, int delta) {
+    setState(() {
+      final index = _blocks.indexOf(block);
+      final target = index + delta;
+      if (index < 0 || target < 0 || target >= _blocks.length) return;
+      _blocks.removeAt(index);
+      _blocks.insert(target, block);
+      // 미디어가 맨 위/아래로 가면 커서 둘 텍스트 자리를 만들어 준다.
+      _ensureTextEdges();
+    });
+  }
+
+  List<DraftBlock> get _draftBlocks => [
+    for (final block in _blocks)
+      if (block is _TextBlock)
+        DraftBlock.text(block.controller.text, heading: block.heading)
+      else if (block is _MediaBlock)
+        block.draft,
+  ];
+
+  Future<void> _submit() async {
+    final id = await _vm.submitBlocks(
+      title: _title.text,
+      blocks: _draftBlocks,
+      poll: _pollEnabled
+          ? (
+              question: _pollQuestion.text.trim(),
+              options: [
+                for (final option in _pollOptions)
+                  if (option.text.trim().isNotEmpty) option.text.trim(),
+              ],
+              allowMultiple: _pollAllowMultiple,
+              alwaysShowResults: _pollAlwaysShowResults,
+              closesHours: null, // 마감 UI 는 v1 미노출 — 항상 무기한
+            )
+          : null,
+      test: _testPost,
+    );
+    if (id == null || !mounted) return;
+    final draftId = _loadedDraftId;
+    if (draftId != null) unawaited(_vm.deleteDraft(draftId));
+    Navigator.of(context).pop<int>(id);
+  }
+
+  /// 지금 쓰던 내용을 로컬에 저장한다. [_loadedDraftId]가 있으면 그 드래프트를
+  /// 덮어쓴다. 저장할 내용이 없으면(제목·본문·투표 다 빈 채) null.
+  Future<CommunityDraft?> _persistDraft() async {
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
+      return null;
+    }
+    final saved = await _vm.saveDraft(
+      title: _title.text,
+      blocks: _draftBlocks,
+      draftId: _loadedDraftId,
+      pollEnabled: _pollEnabled,
+      pollQuestion: _pollQuestion.text,
+      pollOptions: [
+        for (final o in _pollOptions)
+          if (o.text.trim().isNotEmpty) o.text.trim(),
+      ],
+      pollAllowMultiple: _pollAllowMultiple,
+      pollAlwaysShowResults: _pollAlwaysShowResults,
+    );
+    if (mounted) {
+      setState(() {
+        _loadedDraftId = saved.id;
+        _savedSnapshot = _currentSnapshot();
+      });
+    }
+    return saved;
+  }
+
+  /// "임시" 탭 — 저장 결과를 스낵바로 알린다.
+  Future<void> _saveDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final saved = await _persistDraft();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved == null ? l.communityDraftEmpty : l.communityDraftSaved),
+      ),
+    );
+  }
+
+  /// 뒤로가기 아이콘 — 작성 중인 내용이 있으면 임시저장 확인 팝업을 먼저 띄운다.
+  /// 스와이프 백 제스처 등 시스템 pop은 건드리지 않는다(iOS 엣지 스와이프가
+  /// 깨지는 문제, [post_detail_screen.dart]의 PopScope 관련 주석 참고).
+  Future<void> _handleBackPressed() async {
+    if (_title.text.trim().isEmpty && !_hasContent && !_pollEnabled) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    if (_currentSnapshot() == _savedSnapshot) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final action = await _confirmLeaveDialog();
+    if (action == null || !mounted) return; // 취소·바깥 탭 → 머무른다
+    if (action == _LeaveAction.save) {
+      await _persistDraft();
+      if (!mounted) return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
+  Future<_LeaveAction?> _confirmLeaveDialog() {
+    final l = AppLocalizations.of(context)!;
+    return showNarPopup<_LeaveAction>(
+      context: context,
+      title: l.communityDraftLeaveTitle,
+      message: l.communityDraftLeaveMessage,
+      actions: [
+        NarPopupAction(
+          label: l.cancel,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveDiscard,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.discard),
+        ),
+        NarPopupAction(
+          label: l.communityDraftLeaveSave,
+          variant: NarButtonVariant.type1,
+          onPressed: () => Navigator.of(context).pop(_LeaveAction.save),
+        ),
+      ],
+    );
+  }
+
+  /// "저장n" 탭 — 임시저장 목록을 열고 고른 드래프트를 에디터에 채운다. 지금
+  /// 쓰던 내용이 있으면 덮어쓰기 전에 확인한다.
+  Future<void> _openDraftList() async {
+    final selected = await showCommunityDraftSheet(
+      context,
+      drafts: _vm.drafts,
+      onDelete: _vm.deleteDraft,
+    );
+    if (selected == null || !mounted) return;
+    if (_title.text.trim().isNotEmpty || _hasContent || _pollEnabled) {
+      final confirmed = await _confirmLoadDraft();
+      if (!confirmed || !mounted) return;
+    }
+    _loadDraft(selected);
+  }
+
+  Future<bool> _confirmLoadDraft() async {
+    final l = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.narDark600,
+        title: Text(
+          l.communityDraftLoadConfirmTitle,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            color: AppColors.narText,
+          ),
+        ),
+        content: Text(
+          l.communityDraftLoadConfirmMessage,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+            color: AppColors.narText2,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l.cancel,
+                style: const TextStyle(color: AppColors.narText2)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l.communityDraftLoadConfirm,
+                style: const TextStyle(color: AppColors.narViolet3)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  void _loadDraft(CommunityDraft draft) {
+    setState(() {
+      for (final block in _blocks) {
+        if (block is _TextBlock) block.dispose();
+      }
+      _blocks
+        ..clear()
+        ..addAll([
+          for (final b in DraftBlock.decodeList(draft.blocksJson))
+            if (b.type == 'text')
+              _TextBlock(text: b.text ?? '', heading: b.heading)
+            else
+              _MediaBlock(b),
+        ]);
+      _title.text = draft.title;
+      _ensureTextEdges();
+      _loadedDraftId = draft.id;
+
+      _pollEnabled = draft.pollEnabled;
+      _pollQuestion.text = draft.pollQuestion;
+      for (final option in _pollOptions) {
+        option.dispose();
+      }
+      _pollOptions
+        ..clear()
+        ..addAll([
+          for (final option in draft.pollOptions) TextEditingController(text: option),
+        ]);
+      // 투표 켠 채로 저장했는데 선택지가 2개 미만으로 손상됐다면(옛 데이터 등)
+      // _togglePoll 이 항상 유지하는 최소 2개 불변식을 여기서도 지킨다.
+      if (_pollEnabled && _pollOptions.length < 2) {
+        _pollOptions.addAll([
+          for (var i = _pollOptions.length; i < 2; i++) TextEditingController(),
+        ]);
+      }
+      _pollAllowMultiple = draft.pollAllowMultiple;
+      _pollAlwaysShowResults = draft.pollAlwaysShowResults;
+    });
+    _savedSnapshot = _currentSnapshot();
+    _vm.resumePreuploads([
+      for (final block in _blocks)
+        if (block is _MediaBlock && block.draft.localPath != null)
+          block.draft.localPath!,
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+
+    return Scaffold(
+      backgroundColor: AppColors.narDark800,
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: _vm,
+          builder: (context, _) => Column(
+            children: [
+              NarDetailHeader(
+                title: l.communityBoardAll,
+                scale: scale,
+                onBack: _handleBackPressed,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _headerButton(
+                      scale,
+                      label: l.communityDraftSave,
+                      onTap: _saveDraft,
+                    ),
+                    if (_vm.draftCount > 0)
+                      _headerButton(
+                        scale,
+                        label: l.communityDraftCount(_vm.draftCount),
+                        onTap: _openDraftList,
+                      ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _submittable ? _submit : null,
+                      // NarDetailHeader 의 슬롯 높이가 34*scale 이라 세로 패딩을
+                      // 주면 글자가 위아래로 잘린다. 좌우로만 넓혀 탭 영역을
+                      // 확보한다. 버튼이 셋으로 늘어 타이틀과 겹치지 않게
+                      // 여백은 최소로 좁힌다.
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+                        child: Text(
+                          _vm.submitting
+                              ? l.communityWriteSubmitting
+                              : l.communityWriteSubmit,
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14 * scale,
+                            height: 1.45,
+                            color: _submittable
+                                ? AppColors.narViolet3
+                                : AppColors.narDark300,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    20 * scale,
+                    10 * scale,
+                    20 * scale,
+                    20 * scale,
+                  ),
+                  children: [
+                    TextField(
+                      controller: _title,
+                      maxLength: 100,
+                      style: _inputStyle(scale, 16, weight: FontWeight.w700),
+                      cursorColor: AppColors.narViolet3,
+                      decoration: _underlined(
+                        l.communityWriteTitleHint,
+                        scale,
+                        16,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 14 * scale),
+                    for (final block in _blocks) _blockWidget(l, scale, block),
+                    if (_pollEnabled) ...[
+                      SizedBox(height: 12 * scale),
+                      PostPollComposer(
+                        scale: scale,
+                        question: _pollQuestion,
+                        options: _pollOptions,
+                        maxOptions: _maxPollOptions,
+                        allowMultiple: _pollAllowMultiple,
+                        alwaysShowResults: _pollAlwaysShowResults,
+                        onChanged: _onChanged,
+                        onClose: _togglePoll,
+                        onAddOption: () => setState(
+                          () => _pollOptions.add(TextEditingController()),
+                        ),
+                        onRemoveOption: (i) => setState(() {
+                          final removed = _pollOptions.removeAt(i);
+                          // 마운트 해제 후에 정리 — 즉시 dispose 는 TextField 가
+                          // 아직 붙어 있어 assertion 크래시(실사고).
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => removed.dispose(),
+                          );
+                        }),
+                        onAllowMultipleChanged: (v) =>
+                            setState(() => _pollAllowMultiple = v),
+                        onAlwaysShowResultsChanged: (v) =>
+                            setState(() => _pollAlwaysShowResults = v),
+                      ),
+                    ],
+                    // 이용규칙 안내는 빈 화면에서만 — 쓰기 시작하면 걷어서
+                    // 본문 아래에 낯선 문단이 떠 있는 것처럼 보이지 않게 한다.
+                    // 전문은 언제든 상세 시트(showCommunityRulesSheet)로 볼 수 있다.
+                    if (!_hasContent && !_pollEnabled) ...[
+                      SizedBox(height: 24 * scale),
+                      PostWriteRules(scale: scale),
+                    ],
+                  ],
+                ),
+              ),
+              _toolbar(l, scale),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// "임시"/"저장n" — 등록 버튼과 같은 텍스트 버튼 스타일, 항상 활성 상태.
+  Widget _headerButton(
+    double scale, {
+    required String label,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4 * scale),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w700,
+          fontSize: 14 * scale,
+          height: 1.45,
+          color: AppColors.narText3,
+        ),
+      ),
+    ),
+  );
+
+  Widget _blockWidget(AppLocalizations l, double scale, _EditorBlock block) {
+    if (block is _TextBlock) {
+      final first = _blocks.isNotEmpty && identical(_blocks.first, block);
+      return TextField(
+        controller: block.controller,
+        focusNode: block.focus,
+        // 4줄 예약은 블록이 하나뿐인 빈 화면용(placeholder 자리) — 미디어를
+        // 끼운 뒤에도 유지하면 짧은 문단 밑에 빈 3줄이 공백으로 남는다.
+        minLines: first && _blocks.length == 1 ? 4 : 1,
+        maxLines: null,
+        onChanged: (_) => _onChanged(),
+        onTap: _onChanged, // 포커스 이동 시 heading 토글 활성 상태 갱신
+        style: _inputStyle(
+          scale,
+          block.heading ? 16 : 14,
+          weight: block.heading ? FontWeight.w700 : FontWeight.w400,
+        ),
+        cursorColor: AppColors.narViolet3,
+        decoration: InputDecoration(
+          // 안내 문구는 본문이 완전히 빈 상태에서만 — 사진·링크·투표 등 내용이
+          // 하나라도 생기면 걷는다. 안 그러면 빈 첫 블록에 안내가 남아
+          // 콘텐츠 사이에 떠 있는 문장처럼 보인다.
+          hintText:
+              first && !_hasContent && !_pollEnabled
+                  ? l.communityWriteBodyHint
+                  : null,
+          hintStyle: _inputStyle(
+            scale,
+            14,
+          ).copyWith(color: AppColors.narDark300),
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 4 * scale),
+        ),
+      );
+    }
+    final media = block as _MediaBlock;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6 * scale),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          _mediaPreview(scale, media.draft),
+          Positioned(
+            top: 6 * scale,
+            right: 6 * scale,
+            child: Row(
+              children: [
+                _mediaAction(
+                  scale,
+                  icon: Icons.keyboard_arrow_up,
+                  onTap: () => _moveBlock(media, -1),
+                ),
+                SizedBox(width: 5 * scale),
+                _mediaAction(
+                  scale,
+                  icon: Icons.keyboard_arrow_down,
+                  onTap: () => _moveBlock(media, 1),
+                ),
+                SizedBox(width: 5 * scale),
+                _mediaAction(
+                  scale,
+                  icon: Icons.close,
+                  onTap: () => _removeBlock(media),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mediaAction(
+    double scale, {
+    required IconData icon,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Container(
+      width: 26 * scale,
+      height: 26 * scale,
+      decoration: BoxDecoration(
+        color: AppColors.narDark800.withValues(alpha: 0.75),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 16 * scale, color: AppColors.narText),
+    ),
+  );
+
+  Widget _mediaPreview(double scale, DraftBlock draft) {
+    switch (draft.type) {
+      case 'image':
+        final radius = BorderRadius.circular(10 * scale);
+        if (draft.localPath != null) {
+          return ClipRRect(
+            borderRadius: radius,
+            child: Image.file(
+              File(draft.localPath!),
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                width: double.infinity,
+                height: 160 * scale,
+                color: AppColors.narDark500,
+              ),
+            ),
+          );
+        }
+        return CommunityImage(
+          source: draft.url ?? '',
+          width: double.infinity,
+          height: null,
+          maxHeight: 320 * scale,
+          radius: 10 * scale,
+        );
+      case 'embed':
+        final videoId = draft.provider == 'youtube'
+            ? CommunityPostBlock.youtubeVideoId(draft.url ?? '')
+            : null;
+        return _card(
+          scale,
+          image: videoId == null
+              ? null
+              : CommunityImage(
+                  source: 'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
+                  width: double.infinity,
+                  height: 160 * scale,
+                ),
+          title: switch (draft.provider) {
+            'youtube' => 'YouTube',
+            'chzzk' => '치지직',
+            'soop' => 'SOOP',
+            'x' => 'X',
+            _ => draft.provider ?? '',
+          },
+          subtitle: draft.url ?? '',
+        );
+      default: // link
+        return _card(
+          scale,
+          image: draft.imageUrl == null
+              ? null
+              : CommunityImage(
+                  source: draft.imageUrl!,
+                  width: double.infinity,
+                  height: 140 * scale,
+                ),
+          title: (draft.title == null || draft.title!.isEmpty)
+              ? (draft.url ?? '')
+              : draft.title!,
+          subtitle: draft.siteName ??
+              (Uri.tryParse(draft.url ?? '')?.host ?? ''),
+        );
+    }
+  }
+
+  Widget _card(
+    double scale, {
+    Widget? image,
+    required String title,
+    required String subtitle,
+  }) => Container(
+    clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(
+      color: AppColors.narDark600,
+      borderRadius: BorderRadius.circular(10 * scale),
+      border: Border.all(color: AppColors.narLine2, width: 1),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ?image,
+        Padding(
+          padding: EdgeInsets.all(12 * scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13 * scale,
+                  height: 1.45,
+                  color: AppColors.narText,
+                ),
+              ),
+              SizedBox(height: 3 * scale),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 11 * scale,
+                  height: 1.4,
+                  color: AppColors.narText2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// 투표 컴포저 — 질문 + 선택지 2~4개. 우측 상단 ✕로 통째로 제거.
+  Widget _toolbar(AppLocalizations l, double scale) {
+    final count = _imageCount;
+    final full = count >= PostWriteViewModel.maxPhotos;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 16 * scale,
+        vertical: 10 * scale,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.narLine, width: 1)),
+      ),
+      child: Row(
+        children: [
+          _ToolButton(
+            asset: 'assets/icons/photo-edit.svg',
+            label: count == 0
+                ? l.communityAttachPhoto
+                : l.communityPhotoCount(count),
+            active: count > 0,
+            scale: scale,
+            onTap: full ? null : _pickPhotos,
+          ),
+          SizedBox(width: 8 * scale),
+          _ToolButton(
+            icon: Icons.link,
+            label: l.communityAddLink,
+            active: false,
+            scale: scale,
+            onTap: _addLink,
+          ),
+          // 투표는 작성 시에만 붙는다(서버 계약) — 수정 모드에선 숨긴다.
+          if (widget.edit == null) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.poll_outlined,
+              label: l.communityPollLabel,
+              active: _pollEnabled,
+              scale: scale,
+              onTap: _togglePoll,
+            ),
+          ],
+          // 테스트 글 토글 — 테스터 계정에만 나오는 버튼. 켜고 올리면 목록·상세에서
+          // 테스터에게만 보인다(prod 확인용). 일반 사용자에겐 이 UI 자체가 없다.
+          if (widget.edit == null && widget.tester) ...[
+            SizedBox(width: 8 * scale),
+            _ToolButton(
+              icon: Icons.science_outlined,
+              label: 'TEST',
+              active: _testPost,
+              scale: scale,
+              onTap: () => setState(() => _testPost = !_testPost),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  TextStyle _inputStyle(
+    double scale,
+    double size, {
+    FontWeight weight = FontWeight.w400,
+  }) => postWriteInputStyle(scale, size, weight: weight);
+
+  InputDecoration _underlined(
+    String hint,
+    double scale,
+    double size, {
+    FontWeight weight = FontWeight.w400,
+  }) => InputDecoration(
+    hintText: hint,
+    hintStyle: _inputStyle(
+      scale,
+      size,
+      weight: weight,
+    ).copyWith(color: AppColors.narDark300),
+    isDense: true,
+    counterText: '',
+    contentPadding: EdgeInsets.symmetric(vertical: 10 * scale),
+    enabledBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: AppColors.narLine2, width: 1),
+    ),
+    focusedBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: AppColors.narChipActive, width: 1),
+    ),
+  );
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({
+    this.asset,
+    this.icon,
+    required this.label,
+    required this.active,
+    required this.scale,
+    required this.onTap,
+  });
+
+  final String? asset;
+  final IconData? icon;
+  final String label;
+  final bool active;
+  final double scale;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onTap == null
+        ? AppColors.narDark300
+        : active
+        ? AppColors.narViolet3
+        : AppColors.narText3;
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 38 * scale,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active ? AppColors.narChipBadgeBg : null,
+            borderRadius: BorderRadius.circular(9 * scale),
+            border: Border.all(
+              color: active ? AppColors.narChipActive : AppColors.narLine2,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (asset != null)
+                SvgPicture.asset(
+                  asset!,
+                  width: 15 * scale,
+                  height: 15 * scale,
+                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                )
+              else
+                Icon(icon, size: 16 * scale, color: color),
+              SizedBox(width: 6 * scale),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12.5 * scale,
+                  height: 1.45,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
