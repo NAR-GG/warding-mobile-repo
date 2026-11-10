@@ -1,11 +1,15 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/util/api_client.dart' as http;
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/infrastructure/api_status_exception.dart';
+import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
-import 'package:warding/features/my_review/data/models/my_rating_dto.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
@@ -13,9 +17,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 ///
 /// 인증이 필요하다. [AuthService.authorizedRequest] 로 감싸 토큰 만료 시
 /// 자동 갱신·재시도한다.
-class RatingRepository {
-  RatingRepository._();
-  static final RatingRepository instance = RatingRepository._();
+class RatingRepositoryImpl implements RatingRepository {
 
   final AuthService _auth = AuthService.instance;
 
@@ -37,47 +39,60 @@ class RatingRepository {
   }
 
   /// 세트(게임) 전체 선수 평점 목록을 조회한다.
-  Future<GameRatings> fetchGameRatings(
+  @override
+  Future<Either<Failure, GameRatings>> fetchGameRatings(
     String gameId, {
     String teamSide = 'ALL',
   }) async {
-    final response = await _optionalAuthGet(
-      ApiConfig.gameRatingsUrl(gameId, teamSide: teamSide),
-    );
-    debugPrint('[Rating] 세트평점 ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('세트 평점 조회 실패 (${response.statusCode})');
+    final url = ApiConfig.gameRatingsUrl(gameId, teamSide: teamSide);
+    try {
+      final response = await _optionalAuthGet(url);
+      debugPrint('[Rating] 세트평점 ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiStatusException(response.statusCode, endpoint: url);
+      }
+      return Right(
+        GameRatings.fromJson(jsonDecode(response.body) as Map<String, dynamic>),
+      );
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchGameRatings'));
     }
-    return GameRatings.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   /// 선수 평점 상세와 리뷰 목록을 조회한다 (페이지네이션).
-  Future<PlayerRatingDetail> fetchPlayerRating(
+  @override
+  Future<Either<Failure, PlayerRatingDetail>> fetchPlayerRating(
     String gameId,
     int participantId, {
     int page = 0,
     int size = 20,
   }) async {
-    final response = await _optionalAuthGet(
-      ApiConfig.playerRatingUrl(gameId, participantId, page: page, size: size),
-    );
-    debugPrint('[Rating] 선수상세 ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('선수 평점 상세 조회 실패 (${response.statusCode})');
+    final url =
+        ApiConfig.playerRatingUrl(gameId, participantId, page: page, size: size);
+    try {
+      final response = await _optionalAuthGet(url);
+      debugPrint('[Rating] 선수상세 ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiStatusException(response.statusCode, endpoint: url);
+      }
+      return Right(PlayerRatingDetail.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      ));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchPlayerRating'));
     }
-    return PlayerRatingDetail.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
   }
 
   /// 내 평가를 작성하거나 수정한다.
-  Future<MyRating> putMyRating(
+  @override
+  Future<Either<Failure, MyRating>> putMyRating(
     String gameId,
     int participantId, {
     required int rating,
     String? comment,
   }) async {
-    final response = await _auth.authorizedRequest(
+    try {
+      final response = await _auth.authorizedRequest(
       (token) => http.put(
         Uri.parse(ApiConfig.myRatingUrl(gameId, participantId)),
         headers: _headers(token),
@@ -92,15 +107,28 @@ class RatingRepository {
         reason: 'status_${response.statusCode}',
         extra: {'endpoint': ApiConfig.myRatingUrl(gameId, participantId), 'statusCode': response.statusCode, 'gameId': gameId, 'participantId': participantId},
       );
-      throw Exception('내 평가 저장 실패 (${response.statusCode})');
+      throw ApiStatusException(
+          response.statusCode,
+          endpoint: ApiConfig.myRatingUrl(gameId, participantId),
+        );
+      }
+      SentryLogger.info(module: 'API', eventName: 'postRating', extra: {'gameId': gameId, 'participantId': participantId});
+      return Right(
+        MyRating.fromJson(jsonDecode(response.body) as Map<String, dynamic>),
+      );
+    } catch (e) {
+      return Left(toFailure(e, op: 'putMyRating'));
     }
-    SentryLogger.info(module: 'API', eventName: 'postRating', extra: {'gameId': gameId, 'participantId': participantId});
-    return MyRating.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   /// 내 평가를 삭제한다.
-  Future<void> deleteMyRating(String gameId, int participantId) async {
-    final response = await _auth.authorizedRequest(
+  @override
+  Future<Either<Failure, Unit>> deleteMyRating(
+    String gameId,
+    int participantId,
+  ) async {
+    try {
+      final response = await _auth.authorizedRequest(
       (token) => http.delete(
         Uri.parse(ApiConfig.myRatingUrl(gameId, participantId)),
         headers: _headers(token),
@@ -114,25 +142,15 @@ class RatingRepository {
         reason: 'status_${response.statusCode}',
         extra: {'endpoint': ApiConfig.myRatingUrl(gameId, participantId), 'statusCode': response.statusCode, 'gameId': gameId, 'participantId': participantId},
       );
-      throw Exception('내 평가 삭제 실패 (${response.statusCode})');
+      throw ApiStatusException(
+          response.statusCode,
+          endpoint: ApiConfig.myRatingUrl(gameId, participantId),
+        );
+      }
+      SentryLogger.info(module: 'API', eventName: 'deleteRating', extra: {'gameId': gameId, 'participantId': participantId});
+      return const Right(unit);
+    } catch (e) {
+      return Left(toFailure(e, op: 'deleteMyRating'));
     }
-    SentryLogger.info(module: 'API', eventName: 'deleteRating', extra: {'gameId': gameId, 'participantId': participantId});
-  }
-
-  /// 내가 작성한 평가 전체 목록을 조회한다 (인증 필요, 페이지네이션).
-  Future<MyRatingListDto> fetchMyRatings({int page = 0, int size = 20}) async {
-    final response = await _auth.authorizedRequest(
-      (token) => http.get(
-        Uri.parse(ApiConfig.myRatingsUrl(page: page, size: size)),
-        headers: _headers(token),
-      ),
-    );
-    debugPrint('[Rating] 내평가목록 ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('내 평가 목록 조회 실패 (${response.statusCode})');
-    }
-    return MyRatingListDto.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
   }
 }

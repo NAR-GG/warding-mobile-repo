@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
@@ -32,7 +34,8 @@ void main() {
           MatchGame(gameId: 'g2', gameOrder: 2, status: 'ENDED'),
         ], null));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -53,7 +56,8 @@ void main() {
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
         ], null));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -76,7 +80,8 @@ void main() {
           MatchGame(gameId: 'g2', gameOrder: 2, status: 'ENDED'),
         ], null));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -95,7 +100,7 @@ void main() {
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
         ], null));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenThrow(Exception('boom'));
+        .thenAnswer((_) async => const Left(ServerFailure(statusCode: 500)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',

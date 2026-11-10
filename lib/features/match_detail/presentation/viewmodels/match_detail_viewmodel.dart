@@ -10,7 +10,8 @@ import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/data/match_detail_repository.dart';
-import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 
 /// 경기 상세 화면(챔피언 픽 · 라이브 이벤트 탭) 상태·로직.
 ///
@@ -27,7 +28,7 @@ class MatchDetailViewModel extends ChangeNotifier {
   }) : _matchInfo = initialMatch,
        _activeTab = initialTabIndex,
        _repository = repository ?? MatchDetailRepository.instance,
-       _ratingRepository = ratingRepository ?? RatingRepository.instance;
+       _ratingRepository = ratingRepository ?? di<RatingRepository>();
 
   final String matchId;
 
@@ -600,7 +601,11 @@ class MatchDetailViewModel extends ChangeNotifier {
       if (gameId == null || gameId.isEmpty) {
         _ratings = null;
       } else {
-        _ratings = await _ratingRepository.fetchGameRatings(gameId);
+        // 아래 catch 가 문구·상태 복구를 하므로 Left 를 그 경로로 보낸다.
+        // 과도기 — 이 ViewModel 의 다른 repository 가 Either 로 바뀌면 전체를
+        // match 로 정리한다.
+        _ratings = (await _ratingRepository.fetchGameRatings(gameId))
+            .getOrElse((f) => throw StateError('$f'));
       }
     } catch (e) {
       debugPrint('[MatchDetailVM] load ratings failed: $e');

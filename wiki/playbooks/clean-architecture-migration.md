@@ -215,6 +215,12 @@ grep -rn "\.{메서드}(" lib --include="*.dart"   # 직접 눈으로 본다
 - **실패 경로 테스트를 새로 추가한다** — 이게 이 작업의 핵심 이득이다
   (`my_review` 는 4 개 → 7 개가 됐고 네트워크·401·부분 실패를 처음 덮었다)
 - DTO 파싱 테스트는 `test/features/{기능}/data/` 로 옮긴다
+- **정규식으로 스텁을 일괄 치환하지 않는다.** 한 테스트 파일에 전환된 repository 와 아직
+  전환 안 된 repository 의 스텁이 섞여 있어서, `thenAnswer`·`thenThrow` 를 통째로 바꾸면
+  건드리면 안 되는 쪽까지 깨진다(`match_detail_rating_test` 에서 에러가 13 → 30 개로 늘었다).
+  **대상 repository 변수명으로 좁혀서** 치환한다 — `rating.fetchGameRatings` 처럼.
+- 다중행 스텁을 `Right(...)` 로 감쌀 때 닫는 괄호를 빠뜨리기 쉽다. 치환 후 `analyze` 가
+  "Expected to find ';'" 를 내면 그것이다.
 
 ## 8. 검증
 

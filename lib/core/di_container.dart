@@ -7,6 +7,8 @@ import 'package:warding/features/match_list/data/repositories/category_repositor
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/features/player_rating/data/repositories/rating_repository_impl.dart';
+import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
 import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
@@ -41,6 +43,9 @@ void configureDependencies() {
 
   // ── notice ───────────────────────────────────────────────────
   di.registerLazySingleton<NoticeRepository>(NoticeRepositoryImpl.new);
+
+  // ── player_rating ────────────────────────────────────────────
+  di.registerLazySingleton<RatingRepository>(RatingRepositoryImpl.new);
 
   // ── profile_edit ─────────────────────────────────────────────
   di.registerLazySingleton<ProfileImageRepository>(

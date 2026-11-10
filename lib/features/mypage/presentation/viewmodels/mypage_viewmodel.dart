@@ -10,7 +10,9 @@ import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
+import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 
 /// 마이페이지 ViewModel.
 ///
@@ -20,10 +22,10 @@ class MypageViewModel extends ChangeNotifier {
   MypageViewModel({
     AuthService? auth,
     OnboardingRepository? onboarding,
-    RatingRepository? rating,
+    MyReviewRepository? myReview,
   })  : _auth = auth ?? AuthService.instance,
         _onboarding = onboarding ?? OnboardingRepository.instance,
-        _rating = rating ?? RatingRepository.instance {
+        _myReview = myReview ?? di<MyReviewRepository>() {
     load();
     _loadTeamBanner();
     _loadVersion();
@@ -31,7 +33,7 @@ class MypageViewModel extends ChangeNotifier {
 
   final AuthService _auth;
   final OnboardingRepository _onboarding;
-  final RatingRepository _rating;
+  final MyReviewRepository _myReview;
   bool _disposed = false;
 
   /// 로컬 저장(응원팀 자동설정 안내 배너 노출 여부 등). 이미 설치된
@@ -142,13 +144,15 @@ class MypageViewModel extends ChangeNotifier {
   /// 내 리뷰/평점 누적 건수만 가볍게 조회한다(첫 페이지 메타의 totalElements).
   /// 프로필 로딩과 독립적이라 실패해도 화면 나머지에 영향이 없다.
   Future<void> _loadReviewCount() async {
-    try {
-      final ratings = await _rating.fetchMyRatings(page: 0, size: 1);
-      _reviewCount = ratings.totalElements;
-      _notify();
-    } catch (e) {
-      debugPrint('[Mypage] 리뷰 건수 로드 에러: $e');
-    }
+    // 내 평가 목록은 my_review 가 소유한다 — 여기는 메타(totalElements) 만 쓴다.
+    final result = await _myReview.fetchMyRatings(page: 0, size: 1);
+    result.match(
+      (failure) => debugPrint('[Mypage] 리뷰 건수 로드 실패: $failure'),
+      (page) {
+        _reviewCount = page.totalElements;
+        _notify();
+      },
+    );
   }
 
   Future<void> _loadVersion() async {

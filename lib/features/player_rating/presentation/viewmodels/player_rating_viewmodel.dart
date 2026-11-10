@@ -6,7 +6,8 @@ import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 
 /// 선수 평점 상세 화면 상태·로직.
@@ -28,7 +29,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
   })  : _gameId = gameId,
         _participantId = participantId,
         _currentSet = currentSet,
-        _repository = repository ?? RatingRepository.instance,
+        _repository = repository ?? di<RatingRepository>(),
         _auth = auth ?? AuthService.instance,
         _onboarding = onboarding ?? OnboardingRepository.instance,
         _subscription = subscription ?? SubscriptionRepository.instance {
@@ -130,11 +131,12 @@ class PlayerRatingViewModel extends ChangeNotifier {
     _error = null;
     _safeNotify();
     try {
-      final detail = await _repository.fetchPlayerRating(
+      final detail = (await _repository.fetchPlayerRating(
         _gameId,
         _participantId,
         page: 0,
-      );
+      ))
+          .getOrElse((f) => throw StateError('$f'));
       _detail = detail;
       _reviews
         ..clear()
@@ -155,11 +157,12 @@ class PlayerRatingViewModel extends ChangeNotifier {
     _loadingMore = true;
     _safeNotify();
     try {
-      final next = await _repository.fetchPlayerRating(
+      final next = (await _repository.fetchPlayerRating(
         _gameId,
         _participantId,
         page: current.page + 1,
-      );
+      ))
+          .getOrElse((f) => throw StateError('$f'));
       _detail = next;
       _reviews.addAll(next.reviews);
     } catch (e) {
@@ -185,7 +188,8 @@ class PlayerRatingViewModel extends ChangeNotifier {
     _safeNotify();
 
     try {
-      final list = await _repository.fetchGameRatings(game.gameId);
+      final list = (await _repository.fetchGameRatings(game.gameId))
+          .getOrElse((f) => throw StateError('$f'));
       final player =
           list.players.where((p) => p.playerId == playerId).firstOrNull;
       if (player == null) {
