@@ -22,7 +22,7 @@ import 'package:warding/core/infrastructure/preference/team_preference_repositor
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
-import 'package:warding/features/home/data/standings_repository.dart';
+import 'package:warding/features/home/domain/repositories/standings_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
 import 'package:warding/core/util/match_status.dart';
@@ -83,7 +83,7 @@ class HomeViewModel extends ChangeNotifier {
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
        _schedule = schedule ?? ScheduleRepository.instance,
-       _standingsRepo = standings ?? StandingsRepository.instance,
+       _standingsRepo = standings ?? di<StandingsRepository>(),
        _community = community ?? CommunityRepository.instance,
        _shortsRepo = shorts ?? di<ShortsRepository>(),
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
@@ -634,19 +634,22 @@ class HomeViewModel extends ChangeNotifier {
         DateTime.now().difference(cached.$1) < _standingsSupportTtl) {
       return cached.$2;
     }
-    try {
-      final result = await _standingsRepo.fetchStandings(code);
-      // `supported: false` 여도 대진이 실려 왔으면 그릴 게 있다 — 리그
-      // 테이블이 없다는 뜻이지 보여줄 게 없다는 뜻이 아니다. 예전엔 월즈를
-      // 코드로 예외 처리했는데, 이제 응답으로 판단한다.
-      final usable = result.supported || result.hasBracket;
-      _standingsSupport[code] = (DateTime.now(), usable);
-      return usable;
-    } catch (e) {
-      // 확인 실패로 칩을 숨기지 않는다 — 서버 값을 믿는다.
-      debugPrint('[Home] 순위표 지원 확인 실패($code): $e');
-      return true;
-    }
+    final outcome = await _standingsRepo.fetchStandings(code);
+    return outcome.match(
+      (failure) {
+        // 확인 실패로 칩을 숨기지 않는다 — 서버 값을 믿는다.
+        debugPrint('[Home] 순위표 지원 확인 실패($code): $failure');
+        return true;
+      },
+      (result) {
+        // `supported: false` 여도 대진이 실려 왔으면 그릴 게 있다 — 리그
+        // 테이블이 없다는 뜻이지 보여줄 게 없다는 뜻이 아니다. 예전엔 월즈를
+        // 코드로 예외 처리했는데, 이제 응답으로 판단한다.
+        final usable = result.supported || result.hasBracket;
+        _standingsSupport[code] = (DateTime.now(), usable);
+        return usable;
+      },
+    );
   }
 
   Future<void> _loadLeagueChips() async {
@@ -760,28 +763,28 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadStandings() async {
     final league = _selectedLeague;
-    try {
-      final result = await _standingsRepo.fetchStandings(league);
-      // 그 사이 리그를 바꿨으면 옛 응답은 버린다.
-      if (_disposed || league != _selectedLeague) return;
-      _standings = result;
-      // 대진은 응답에 실려 왔을 때만 그린다. 안 실려 오면 리그 테이블이다.
-      _worldsStandings = result.hasBracket
-          ? result.bracket!.toWorldsStandings()
-          : null;
-      // 백엔드에 아직 대진 API 가 없어, 목업 빌드에서만 대진 UI 를 미리 본다
-      // (`--dart-define=HOME_MOCKS=true`). 릴리즈에는 영향이 없다.
-      if (_worldsStandings == null && kHomeMocks && !result.supported) {
-        unawaited(_loadBracketMock(league));
-      }
-      _standingsFirstLoadPending = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 순위표 조회 실패($league): $e');
-      if (_disposed || league != _selectedLeague) return;
-      _standingsFirstLoadPending = false;
-      _notify();
-    }
+    final outcome = await _standingsRepo.fetchStandings(league);
+    // 그 사이 리그를 바꿨으면 옛 응답은 버린다.
+    if (_disposed || league != _selectedLeague) return;
+
+    outcome.match(
+      (failure) => debugPrint('[Home] 순위표 조회 실패($league): $failure'),
+      (result) {
+        _standings = result;
+        // 대진은 응답에 실려 왔을 때만 그린다. 안 실려 오면 리그 테이블이다.
+        _worldsStandings = result.hasBracket
+            ? result.bracket!.toWorldsStandings()
+            : null;
+        // 백엔드에 아직 대진 API 가 없어, 목업 빌드에서만 대진 UI 를 미리 본다
+        // (`--dart-define=HOME_MOCKS=true`). 릴리즈에는 영향이 없다.
+        if (_worldsStandings == null && kHomeMocks && !result.supported) {
+          unawaited(_loadBracketMock(league));
+        }
+      },
+    );
+    // 성공·실패 모두 첫 로드는 끝난 것으로 본다(스켈레톤을 치운다).
+    _standingsFirstLoadPending = false;
+    _notify();
   }
 
   WorldsStandings? _worldsStandings;
