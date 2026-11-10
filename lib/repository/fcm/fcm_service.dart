@@ -117,6 +117,28 @@ class FcmService {
       // 진입 경로는 **여기서** 확정된다 — 내비게이션(스플래시가 소비)보다
       // 먼저다. 딥링크 처리를 기다리면 스플래시가 `launcher` 로 선점한다.
       Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+      return;
+    }
+
+    // 5) 포그라운드에서 우리가 직접 띄운 로컬 알림을 **종료 상태에서** 탭해
+    //    시작된 경우. `onDidReceiveNotificationResponse` 는 앱이 떠 있는 동안의
+    //    탭만 받으므로, 이 경로는 여기서 따로 읽어야 한다. 안 읽으면 스플래시가
+    //    `launcher` 로 선점해 푸시 진입이 런처로 집계된다.
+    //
+    //    위 `getInitialMessage()` 가 잡은 경우에는 오지 않는다(그쪽이 FCM 이
+    //    직접 표시한 알림이다) — 중복을 피하려고 위에서 `return` 한다.
+    final launch = await _localNotifications.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp ?? false) {
+      debugPrint('[FCM] 종료 상태에서 로컬 알림으로 시작 → 딥링크 보류');
+      Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+      final payload = launch?.notificationResponse?.payload;
+      if (payload != null && payload.isNotEmpty) {
+        try {
+          _pendingInitialData = jsonDecode(payload) as Map<String, dynamic>;
+        } catch (e) {
+          debugPrint('[FCM] 로컬 알림 payload 파싱 실패: $e');
+        }
+      }
     }
   }
 

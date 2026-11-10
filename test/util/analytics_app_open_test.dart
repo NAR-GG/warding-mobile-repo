@@ -56,6 +56,38 @@ void main() {
     );
   });
 
+  test('SDK 전 호출은 버리지 않고 보류한다', () {
+    // `main()` 이 `_initFirebaseMessaging()`·`HomeWidgetService.init()`·
+    // `Analytics.init()` 을 같은 `Future.wait` 로 **병렬** 실행한다. 그래서
+    // 푸시·위젯 핸들러가 SDK 초기화보다 먼저 끝날 수 있다. 그때 그냥 쏘면
+    // `track` 이 null 인 SDK 에 떨어뜨려 조용히 버리고, 가장 중요한 경로인
+    // "푸시로 들어온 콜드 스타트" 가 집계에서 통째로 사라진다.
+    Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+
+    expect(Analytics.appOpenEntryPoint, AnalyticsEntryPoint.push);
+    expect(
+      Analytics.appOpenPending,
+      isTrue,
+      reason: 'SDK 가 뜨면 init() 이 이 경로를 보내야 한다',
+    );
+  });
+
+  test('보류 중에도 선점은 그대로 — 뒤에 온 launcher 가 덮지 않는다', () {
+    // 전송을 미루는 것이 선점 규칙을 느슨하게 만들면 안 된다.
+    Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+    Analytics.trackAppOpen(AnalyticsEntryPoint.launcher);
+
+    expect(Analytics.appOpenEntryPoint, AnalyticsEntryPoint.push);
+    expect(Analytics.appOpenPending, isTrue);
+  });
+
+  test('실행을 되돌리면 보류도 사라진다', () {
+    Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+    Analytics.resetAppOpenForTest();
+
+    expect(Analytics.appOpenPending, isFalse);
+  });
+
   test('실행이 새로 시작되면 다시 채택한다', () {
     Analytics.trackAppOpen(AnalyticsEntryPoint.push);
     Analytics.resetAppOpenForTest();

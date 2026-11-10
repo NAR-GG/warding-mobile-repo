@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mixpanel-dau-summary.jq 회귀 테스트.
+# mixpanel-dau-summary.jq + mixpanel-dau-embed.jq 회귀 테스트.
 #
 # jq 는 타입·스코프 오류를 조용히 삼키는 편이라(예: `select(.x == .)` 가 빈
 # 결과를 내고 끝난다) 눈으로 봐서는 0 이 "사실" 인지 "버그" 인지 구분이 안 된다.
@@ -11,6 +11,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 JQ_FILE=.github/workflows/mixpanel-dau-summary.jq
+EMBED_FILE=.github/workflows/mixpanel-dau-embed.jq
 FIX=$(mktemp -d)
 trap 'rm -rf "$FIX"' EXIT
 
@@ -248,6 +249,55 @@ check "no_entry_point" "1" "$(el '.no_entry_point')"
 check "entry 합 + 미상 = DAU" "2" \
   "$(el '[(.entry_points | map(.n) | add // 0), .no_entry_point] | add')"
 check "entry_from_app_open (폴백이라 false)" "false" "$(el '.entry_from_app_open')"
+
+echo "[10] embed 진입 경로 문구"
+# 집계 JSON 만 보던 테스트는 embed 의 분기를 못 덮는다 — 미상 인원이 빠지거나
+# 부분 집계 주석이 사라져도 위 검사는 전부 통과한다. 실제 출력 문구를 본다.
+#
+# `cur` 은 embed 가 읽는 필드만 채운다(없으면 jq 가 null 참조로 죽는다).
+embed() {
+  jq -n --argjson cur "$1" --argjson entry_top "$2" \
+    '{date: "2026-11-10", prev_dau: 0, delta_text: "-", mix_text: "-",
+      footer: "-", pages_top: [], first_top: [], exit_top: [],
+      versions_top: [], entry_top: $entry_top, cur: $cur}' \
+  | jq -rf "$EMBED_FILE" \
+  | jq -r '.embeds[0].fields[] | select(.name == "진입 경로") | .value'
+}
+
+# 기본 cur — 진입 경로 필드가 읽는 값만 덮어쓴다.
+BASE='{"dau":10,
+  "funnel":{"login_users":0,"login_click":0,"guest_click":0,
+            "login_and_guest":0,"onboarding_users":0,
+            "onboarding_done":0,"onboarding_skip":0},
+  "engagement":{"match_card":0,"post_card":0,"review_submit":0,
+                "subscribe":0,"worlds_subscribe":0},
+  "risk":{"withdraw":0,"permission":0},
+  "onboarding_steps":[],"onboarding_skip_by_step":[],"no_version":0}'
+
+# (a) app_open 기준 + 전원 집계됨 → 부분 집계 주석이 붙지 않는다.
+OUT_A=$(embed "$(jq -n --argjson b "$BASE" \
+  '$b + {entry_from_app_open: true, no_entry_point: 0}')" '[{"key":"push","n":10}]')
+check "TOP 5 표기 (첫 화면)" "1" "$(printf '%s' "$OUT_A" | grep -c '첫 화면 TOP 5')"
+check "TOP 5 표기 (경로)" "1" "$(printf '%s' "$OUT_A" | grep -c '경로 TOP 5')"
+check "전원 집계면 부분 주석 없음" "0" "$(printf '%s' "$OUT_A" | grep -c '※')"
+
+# (b) app_open 기준인데 구버전이 섞인 날 → 미상 인원 + 부분 집계 주석.
+OUT_B=$(embed "$(jq -n --argjson b "$BASE" \
+  '$b + {entry_from_app_open: true, no_entry_point: 4}')" '[{"key":"push","n":6}]')
+check "미상 인원 표시" "1" "$(printf '%s' "$OUT_B" | grep -c '미상 4명')"
+check "혼합 버전은 부분 집계로 알린다" "1" "$(printf '%s' "$OUT_B" | grep -c '집계된다(부분)')"
+
+# (c) page_view 폴백 → 경기 상세·로그인만 집계된다는 기존 주석 유지.
+OUT_C=$(embed "$(jq -n --argjson b "$BASE" \
+  '$b + {entry_from_app_open: false, no_entry_point: 4}')" '[{"key":"push","n":6}]')
+check "폴백 주석 유지" "1" "$(printf '%s' "$OUT_C" | grep -c '경기 상세·로그인 진입만')"
+
+# (d) 경로가 하나도 없는 날 → 원인을 단정하지 않고, 미상 인원은 그대로 싣는다.
+OUT_D=$(embed "$(jq -n --argjson b "$BASE" \
+  '$b + {entry_from_app_open: false, no_entry_point: 10}')" '[]')
+check "빈 경로에도 미상 인원" "1" "$(printf '%s' "$OUT_D" | grep -c '미상 10명')"
+check "빈 경로 원인을 단정하지 않는다" "0" "$(printf '%s' "$OUT_D" | grep -c '도달하기 전이다')"
+check "빈 경로는 볼 곳을 알린다" "1" "$(printf '%s' "$OUT_D" | grep -c '데이터가 없다')"
 
 if [ "$fail" -ne 0 ]; then
   echo
