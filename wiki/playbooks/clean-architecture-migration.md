@@ -99,6 +99,18 @@ ViewModel 이 결과로 화면을 바꾸지 않으면 그대로 둔다.
 
 **기준: 실패가 사용자에게 보이지 않고 호출부가 결과를 쓰지 않으면 그대로 둔다.**
 
+## 이미 인터페이스가 있는 repository 도 대상이 아니다
+
+`features/player/data/player_repository.dart` — `abstract class PlayerSource` 에 구현이
+둘(`ApiPlayerSource`·`MockPlayerSource`)이다. 테스트 Mock 목적이 이미 충족됐다.
+
+게다가 실패를 **타입으로** 구분한다. `PlayerNotFound` 예외를 ViewModel 이 `on
+PlayerNotFound` 로 잡아 `notFound` 플래그를 세우고 "선수를 찾을 수 없음" 화면을 띄운다.
+`Either` 로 바꾸려면 `NotFoundFailure` 를 추가해야 하는데, 이미 명시적으로 동작하는 것을
+형태만 바꾸는 셈이다.
+
+**기준: 인터페이스가 있고 실패가 이미 타입으로 구분되면 그대로 둔다.**
+
 ## DTO/Entity 분리도 생략할 수 있다
 
 모델이 중첩 클래스로 깊으면 복제 비용이 이득을 넘는다. `CategoryTree` 는 클래스 5 개
