@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/core/ui/advertiser_banner.dart';
+import 'package:warding/features/notice/presentation/widgets/advertiser_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/core/util/api_client.dart' as api;

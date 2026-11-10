@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'analytics.dart';
-import 'analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 화면 전환을 보고 `page_view` 를 쏘는 observer.
 ///

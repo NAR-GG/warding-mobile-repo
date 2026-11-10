@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/ui/app_bottom_nav.dart';
-import 'package:warding/core/ui/cheer_ad_banner.dart';
-import 'package:warding/core/ui/cheer_ad_popup.dart';
-import 'package:warding/core/ui/guide_popup.dart';
+import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_banner.dart';
+import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_popup.dart';
+import 'package:warding/features/guide/presentation/widgets/guide_popup.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
@@ -33,7 +33,7 @@ import 'package:warding/features/home/presentation/widgets/home_solo_rank_sectio
 import 'package:warding/features/home/presentation/widgets/home_standings_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_today_matches_section.dart';
 import 'package:warding/core/util/analytics_events.dart';
-import 'package:warding/core/util/nav_tab_navigation.dart';
+import 'package:warding/app/nav_tab_navigation.dart';
 
 /// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠 ·
 /// 평점 한줄평 6개 섹션 + 하단 네비 '홈' 탭에 해당한다.

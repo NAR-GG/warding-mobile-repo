@@ -10,7 +10,7 @@ import 'package:warding/core/ui/team_logo.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/core/util/league_icon.dart';
+import 'package:warding/features/schedule/presentation/widgets/league_icon.dart';
 import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart';
 import 'package:warding/features/player/presentation/screens/player_screen.dart';

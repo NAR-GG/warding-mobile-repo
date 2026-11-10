@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'league_meta.dart';
+import 'package:warding/features/schedule/domain/league_meta.dart';
 
 /// 아이콘이 있는 리그 코드. `/mobile/schedules/filters` 가 내려주는 13개 리그
 /// 전부 아이콘을 받았다.

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'secure_storage.dart';
+import 'package:warding/core/config/secure_storage.dart';
 
 /// 앱 내 지원 언어.
 enum AppLang {

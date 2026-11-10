@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'dashed_border.dart';
+import 'package:warding/core/ui/dashed_border.dart';
 
 /// [NarChip.active] 의 우측 트레일링 아이콘 종류.
 enum NarChipTrailing {

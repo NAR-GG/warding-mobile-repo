@@ -14,7 +14,7 @@ import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
-import 'package:warding/core/util/league_meta.dart';
+import 'package:warding/features/schedule/domain/league_meta.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_alarm_sheet.dart';
 import 'package:warding/core/config/secure_storage.dart';

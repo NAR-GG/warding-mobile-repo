@@ -6,8 +6,8 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
-import 'nar_live_dot.dart';
-import 'team_code_badge.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
+import 'package:warding/core/ui/team_code_badge.dart';
 
 /// 경과 시간 "m:ss". 1시간이 넘으면 "h:mm:ss".
 String _clock(int seconds) {

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
 /// 서버가 내려주는 챔피언 이미지의 해상도.
 ///

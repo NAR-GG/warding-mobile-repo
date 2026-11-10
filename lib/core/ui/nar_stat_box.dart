@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_card.dart';
+import 'package:warding/core/ui/nar_card.dart';
 
 /// 공용 지표 상자 — 작은 회색 라벨 + 큰 값. 카드 틀([NarCard]) 안에 담는다.
 ///

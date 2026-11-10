@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'analytics_events.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 하단 네비 탭 전환용 무애니메이션 라우트.
 ///

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'nar_chip.dart';
+import 'package:warding/core/ui/nar_chip.dart';
 
 /// 부모의 전체 너비를 차지하는 가로 스크롤 멀티 셀렉트 폼.
 /// 컨테이너 패딩(가로 [horizontalPadding], 세로 10) 안에 [NarChip] 을 8px

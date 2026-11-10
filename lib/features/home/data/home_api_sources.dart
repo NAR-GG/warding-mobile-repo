@@ -4,16 +4,9 @@ import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/util/api_client.dart' as http;
+import 'package:warding/core/util/server_time.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-
-/// 오프셋이 없는 시각은 KST 로 본다 — 뉴스·한줄평 `createdAt` 이 `2026-09-16T22:19:16`
-/// 꼴이다. 솔랭 시각은 `+09:00` 이 붙어 온다. 파싱에 실패하면 null.
-DateTime? parseServerTime(Object? raw) {
-  if (raw is! String || raw.isEmpty) return null;
-  final hasOffset = RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(raw);
-  return DateTime.tryParse(hasOffset ? raw : '$raw+09:00');
-}
 
 int _minutesSince(DateTime? at, DateTime now) =>
     at == null ? 0 : now.difference(at).inMinutes.clamp(0, 1 << 30);

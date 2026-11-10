@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_live_dot.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
 
 /// 라이브 진행중 표시 배지. 빨간 점 + LIVE 텍스트, 둥근 8.
 /// 시간 배지([NarBadge])와 동일한 높이(24)라 그대로 자리에 교체 가능.

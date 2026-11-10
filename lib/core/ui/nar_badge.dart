@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_live_dot.dart';
+import 'package:warding/core/ui/nar_live_dot.dart';
 
 /// 공용 작은 배지 (높이 24, 둥근 8).
 /// 다크 배경 + 회색 테두리 + 흰 텍스트. 시간/태그 등 짧은 라벨에 쓴다.

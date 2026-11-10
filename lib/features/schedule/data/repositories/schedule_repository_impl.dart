@@ -14,8 +14,8 @@ import 'package:warding/features/schedule/domain/repositories/schedule_repositor
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/core/util/home_widget_service.dart';
-import 'package:warding/core/util/league_meta.dart';
+import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/domain/league_meta.dart';
 import 'package:warding/core/util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.

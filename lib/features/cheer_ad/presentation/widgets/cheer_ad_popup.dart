@@ -6,7 +6,7 @@ import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 import 'package:warding/core/infrastructure/preference/cheer_ad_popup_preference_repository.dart';
 import 'package:warding/features/cheer_ad/presentation/screens/cheer_ad_screen.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'cheer_ad_banner.dart';
+import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_banner.dart';
 
 /// 팝업이 지금 떠 있는지(겹침 방지).
 bool _showing = false;

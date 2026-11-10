@@ -16,15 +16,11 @@ import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/core/domain/user_profile.dart';
-import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/device/device_repository.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
-import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 class AuthResult {
   const AuthResult({required this.jwt, required this.isOnboarded});
@@ -66,6 +62,14 @@ class NicknameConflictException implements Exception {
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
+
+  /// 토큰이 끊겨 튕길 때 띄울 로그인 화면. core 는 화면을 모르므로 앱 시작 때
+  /// `configureAppHooks` 가 채운다. 비어 있으면 화면 전환은 건너뛴다.
+  static WidgetBuilder? loginScreenBuilder;
+
+  /// 로그아웃할 때마다 불린다 — 계정에 묶인 캐시를 비우는 용도. 캐시를 가진 쪽이
+  /// `configureAppHooks` 에서 등록한다.
+  static final List<VoidCallback> onSignedOut = [];
 
   static const _jwtKey = 'jwt';
   static const _refreshKey = 'refreshToken';
@@ -631,13 +635,16 @@ class AuthService {
       AnalyticsRouteObserver.instance.attachNext({
         AnalyticsProp.entryPoint: AnalyticsEntryPoint.sessionExpired,
       });
-      navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute<void>(
-          settings: const RouteSettings(name: AnalyticsPage.login),
-          builder: (_) => const LoginScreen(),
-        ),
-        (route) => false,
-      );
+      final loginBuilder = loginScreenBuilder;
+      if (loginBuilder != null) {
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: AnalyticsPage.login),
+            builder: loginBuilder,
+          ),
+          (route) => false,
+        );
+      }
     } finally {
       _forcingLogout = false;
     }
@@ -702,9 +709,9 @@ class AuthService {
     await _storage.delete(key: _jwtKey);
     _setCachedJwt(null);
     await _storage.delete(key: _refreshKey);
-    // 캐시 비우기는 Impl 관심사라 Interface 에 올리지 않았다 — 로그아웃 때만
-    // 필요하고, 다른 구현(목업 등)에는 캐시가 없을 수 있다.
-    (di<SubscriptionRepository>() as SubscriptionRepositoryImpl).clearCache();
+    for (final hook in onSignedOut) {
+      hook();
+    }
     SentryLogger.clearUser();
     Analytics.reset();
   }

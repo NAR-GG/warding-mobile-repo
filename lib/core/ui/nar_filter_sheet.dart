@@ -3,7 +3,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'common_button.dart';
+import 'package:warding/core/ui/common_button.dart';
 
 /// 공용 필터/선택 바텀시트 스캐폴드.
 ///

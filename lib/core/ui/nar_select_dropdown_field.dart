@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'app_select_box.dart';
+import 'package:warding/core/ui/app_select_box.dart';
 
 /// 드롭다운 한 항목 — 표시 이름과 현재 선택 여부.
 ///

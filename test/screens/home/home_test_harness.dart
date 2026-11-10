@@ -16,7 +16,7 @@ import 'package:warding/features/schedule/data/repositories/schedule_repository_
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
-import 'package:warding/features/home/data/team/team_logo_directory.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 import 'package:warding/core/util/api_client.dart' as api;
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 

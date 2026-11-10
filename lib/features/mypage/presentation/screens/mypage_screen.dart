@@ -5,8 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:warding/core/ui/app_bottom_nav.dart';
-import 'package:warding/core/ui/guest_lock_overlay.dart';
-import 'package:warding/core/ui/guide_popup.dart';
+import 'package:warding/features/login/presentation/widgets/guest_lock_overlay.dart';
+import 'package:warding/features/guide/presentation/widgets/guide_popup.dart';
 import 'package:warding/core/ui/nar_banner.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/config/api_config.dart';
@@ -26,7 +26,7 @@ import 'package:warding/features/my_subscription_setting/presentation/screens/my
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
 import 'package:warding/features/profile_edit/presentation/screens/profile_edit_screen.dart';
-import 'package:warding/core/util/nav_tab_navigation.dart';
+import 'package:warding/app/nav_tab_navigation.dart';
 import 'package:warding/core/util/analytics_events.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.

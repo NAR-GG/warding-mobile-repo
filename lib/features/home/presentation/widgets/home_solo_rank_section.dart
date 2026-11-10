@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/ui/solo_hero_card.dart';
+import 'package:warding/features/home/presentation/widgets/solo_hero_card.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/theme/app_colors.dart';

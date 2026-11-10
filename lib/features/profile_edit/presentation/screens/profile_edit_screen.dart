@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/core/util/home_widget_service.dart';
+import 'package:warding/app/home_widget_service.dart';
 import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/core/ui/nar_input.dart';

@@ -8,8 +8,8 @@ import 'package:warding/features/schedule/presentation/widgets/calendar_weekday_
 
 // CalendarMatch 와 그리드 상수를 함께 노출 — 이 파일만 import 해도
 // 타입과 주 수(gridWeeks)를 쓸 수 있다.
-export 'calendar_match.dart';
-export 'calendar_month_grid.dart' show CalendarMonthGrid;
+export 'package:warding/features/schedule/presentation/widgets/calendar_match.dart';
+export 'package:warding/features/schedule/presentation/widgets/calendar_month_grid.dart' show CalendarMonthGrid;
 
 /// 캘린더의 좌우 스와이프 진행 상태.
 ///

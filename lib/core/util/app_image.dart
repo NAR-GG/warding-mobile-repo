@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:warding/core/config/api_config.dart';
-import 'champion_image.dart';
-import 'champion_name_map.dart';
+import 'package:warding/core/util/champion_image.dart';
+import 'package:warding/core/util/champion_name_map.dart';
 
 /// 백엔드가 상대경로(`/images/...`)로 주는 이미지 URL에 API 호스트를 붙이고,
 /// 평문 `http://` 는 `https://` 로 올린다.

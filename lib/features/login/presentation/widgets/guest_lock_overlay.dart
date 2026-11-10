@@ -8,7 +8,7 @@ import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_button.dart';
+import 'package:warding/core/ui/nar_button.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';
 

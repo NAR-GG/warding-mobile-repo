@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'analytics_events.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// Mixpanel 이벤트 트래킹 래퍼.
 ///

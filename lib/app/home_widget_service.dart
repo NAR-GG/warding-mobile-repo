@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:home_widget/home_widget.dart';
-import 'api_client.dart' as http;
+import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,12 +22,12 @@ import 'package:warding/core/infrastructure/preference/calendar_week_start_prefe
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/core/util/match_detail_router.dart';
+import 'package:warding/app/match_detail_router.dart';
 import 'package:warding/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/core/config/secure_storage.dart';
-import 'analytics.dart';
-import 'analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// iOS/Android 홈 화면 위젯에 캘린더 데이터를 전달한다.
 ///

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_button.dart';
+import 'package:warding/core/ui/nar_button.dart';
 
 /// [NarPopupDialog] 하단 버튼 하나.
 ///

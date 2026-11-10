@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:warding/app/app_hooks.dart';
 import 'package:warding/core/di_container.dart';
 
 /// `test/` 하위 모든 테스트 실행 전에 Flutter 가 자동으로 부르는 훅.
@@ -15,5 +16,6 @@ import 'package:warding/core/di_container.dart';
 /// 주입하는 테스트는 기본값을 쓰지 않으므로 영향이 없다.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   configureDependencies();
+  configureAppHooks();
   await testMain();
 }

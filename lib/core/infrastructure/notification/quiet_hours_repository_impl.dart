@@ -9,7 +9,7 @@ import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/domain/failure.dart';
 import 'package:warding/core/domain/repositories/quiet_hours_repository.dart';
 import 'package:warding/core/infrastructure/api_status_exception.dart';
-import 'package:warding/features/mypage/domain/quiet_hours.dart';
+import 'package:warding/core/domain/quiet_hours.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 

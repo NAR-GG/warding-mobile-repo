@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'common_button.dart';
+import 'package:warding/core/ui/common_button.dart';
 
 /// 화면 하단에 떠 있는 주 행동 버튼. 본문 스크롤 위에 [Stack] 으로 얹고, 버튼 뒤로
 /// 배경색이 위로 옅어지는 막을 깔아 본문이 버튼 밑으로 흐려지며 가려지게 한다.

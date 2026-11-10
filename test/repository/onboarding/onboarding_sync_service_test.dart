@@ -6,7 +6,7 @@ import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/features/onboarding/data/onboarding_sync_service.dart';
-import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
+import 'package:warding/features/onboarding/data/onboarding_preference_repository.dart';
 
 class MockOnboardingRepository extends Mock implements OnboardingRepository {}
 

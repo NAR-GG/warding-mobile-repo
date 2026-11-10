@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_button.dart';
+import 'package:warding/core/ui/nar_button.dart';
 
 /// 공용 확인/취소 알럿 다이얼로그를 띄운다.
 ///

@@ -1,6 +1,13 @@
 # Bundle Update Log
 
 ## 2026-11-10
+* **`core → features` 역방향 참조를 없앴다** (66건 → DI 컨테이너 24건만 남김). 앱 셸 코드 6개를
+  새 `lib/app/` 로 옮기고, 한 기능 전용 위젯·모델 9개를 그 기능으로 내렸다. core 가 화면·구현을
+  알아야 하던 3곳은 훅(`AuthService.loginScreenBuilder`·`onSignedOut`,
+  `TeamLogoDirectory.defaultLoader`)으로 바꾸고 `app/app_hooks.dart` 에서 연결한다. 반대로
+  공용이던 `quiet_hours`·`team_logo_directory`·`parseServerTime` 은 core 로 올렸다. 같은 작업에서
+  같은 폴더 상대 import 55건 중 `l10n` 생성물을 뺀 나머지를 `package:` 절대경로로 바꿨다.
+  [폴더 구조](/architecture/folder-structure.md)의 "의존 방향" 참고.
 * **repository 를 Interface + `Either<Failure, T>` 로 바꿨다** (API repository 23 개 중
   14 개 전환, 9 개는 기준에 따라 제외). 목적은 둘이었다 — repository 인터페이스가 있어야
   `mocktail` Mock 이 되고(전에는 테스트마다 Fake 를 손으로 썼다, 49 개), `Either` 를 쓰면

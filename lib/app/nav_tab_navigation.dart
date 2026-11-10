@@ -7,10 +7,10 @@ import 'package:warding/features/match_list/presentation/screens/match_list_scre
 import 'package:warding/features/mypage/presentation/screens/mypage_screen.dart';
 import 'package:warding/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:warding/features/subscription/presentation/screens/subscription_screen.dart';
-import 'analytics.dart';
-import 'analytics_events.dart';
-import 'analytics_route_observer.dart';
-import 'tab_route.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
+import 'package:warding/core/util/tab_route.dart';
 
 /// 하단 네비 탭 선택을 처리한다. 6개 탭 화면이 공통으로 쓴다.
 ///

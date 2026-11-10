@@ -4,7 +4,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/core/ui/app_refresh_indicator.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/core/util/match_detail_router.dart';
+import 'package:warding/app/match_detail_router.dart';
 import 'package:warding/core/util/match_status.dart';
 import 'package:warding/core/util/match_title_l10n.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';

@@ -12,7 +12,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
-import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
+import 'package:warding/features/onboarding/data/onboarding_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 
 /// 온보딩 단계.

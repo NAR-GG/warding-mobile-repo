@@ -23,6 +23,7 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
+├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결)
 ├── core/         기능 소유가 아닌 모든 것
 │   ├── domain/             여러 기능이 쓰는 모델 12개
 │   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 9개
@@ -40,6 +41,24 @@ lib/
 보다 더 광범위하게 공유되는 것들(`styles` 27곳, `components` 25곳, `util` 22곳,
 `config` 16곳)이 밖에 남아 기준이 어긋났다.
 
+# 의존 방향: app → features → core
+
+`core/` 는 `features/`·`app/` 을 import 하지 않는다. 유일한 예외는 조립 지점인
+`core/di_container.dart` 로, repository 구현체를 등록하느라 24개 기능 파일을 안다.
+
+2026-11-10 점검에서 `core` 가 `features` 를 거꾸로 참조하는 곳이 66건(DI 24 + 42)
+나왔고, 전부 풀었다. 푸는 방법은 세 가지였다.
+
+| 상황 | 해법 | 예 |
+|---|---|---|
+| 앱 셸 코드 (모든 기능을 알아야 한다) | `lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `live_match_activity_controller`, `live_activity_logo_prefetcher`, `match_detail_router`, `nav_tab_navigation` |
+| 한 기능 전용 위젯·모델이 core 에 있었다 | 그 기능으로 이동 | `guide_popup`→`guide`, `cheer_ad_popup`·`cheer_ad_banner`→`cheer_ad`, `notification_feed_card`→`subscription`, `guest_lock_overlay`→`login`, `solo_hero_card`→`home`, `advertiser_banner`→`notice`, `league_meta`·`league_icon`→`schedule`, `onboarding_preference_repository`→`onboarding` |
+| core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`, `AuthService.onSignedOut`, `TeamLogoDirectory.defaultLoader` |
+
+반대로 `features` 가 소유하던 것이 사실은 공용이라 `core` 로 올린 것도 있다:
+`quiet_hours`(→`core/domain`), `team_logo_directory`(→`core/infrastructure/team`),
+`parseServerTime`(→`core/util/server_time.dart`).
+
 # core 밖에 남는 예외
 
 **생성물과 진입점.** 생성물은 생성 도구가 경로를 정하므로, 옮겨도 도구가 원래 자리에 다시
@@ -50,6 +69,7 @@ lib/
 | `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
 | `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
 | `lib/main.dart` | 진입점 |
+| `lib/app/` | 앱 셸. 의존 방향상 `core` 밖이어야 한다 (위 절) |
 
 옮기려면 그 설정부터 바꿔야 하는데 이득이 없다. 특히 `firebase.json` 은 FlutterFire CLI 가
 관리하는 파일이라 손으로 고치면 다음 `flutterfire configure` 에 덮일 수 있다.
@@ -79,7 +99,8 @@ lib/
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면
   repository 대부분이 `core/` 로 가 버린다.
 - 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만), `quiet_hours`(`mypage` 만).
+  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `core/domain` 에
+  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓴다.
 - 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` — `user_profile`(`mypage`·
   `profile_edit`).
 

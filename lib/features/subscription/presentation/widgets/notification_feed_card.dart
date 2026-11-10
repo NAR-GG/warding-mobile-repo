@@ -6,7 +6,7 @@ import 'package:warding/core/domain/member_notification.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/subscription/presentation/widgets/rank_end_notification.dart';
 import 'package:warding/features/subscription/presentation/widgets/rank_start_notification.dart';
-import 'notification_card.dart';
+import 'package:warding/core/ui/notification_card.dart';
 
 /// 알림 한 건 → 카드 위젯. 마이구독 피드와 알림함이 같은 카드를 그리도록
 /// 여기로 뺐다(커뮤니티 후속 문서 A절 — "카드를 그대로 재사용").

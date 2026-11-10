@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
-import 'package:warding/core/infrastructure/live_activity/live_match_activity_controller.dart';
+import 'package:warding/app/live_match_activity_controller.dart';
 
 class _MockService extends Mock implements LiveActivityService {}
 

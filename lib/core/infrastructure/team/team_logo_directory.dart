@@ -1,19 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 팀 코드 → 로고 URL 사전. 팀 코드만 내려오는 화면(홈 솔랭·한줄평, 내 선수 등)이
 /// 로고를 그릴 때 쓴다.
 ///
-/// 팀 목록은 [OnboardingRepository.fetchTeams] 가 캐시하므로 여기서는 한 번만
-/// 채운다. 실패하면 [_retryAfter] 뒤에 다시 시도하고, 그동안 배지는 빈 원으로
+/// 팀 목록은 온보딩의 팀 조회가 캐시하므로 여기서는 한 번만 채운다. 어디서 가져올지는
+/// [defaultLoader] 로 앱이 정한다(`app_hooks.dart`) — core 가 기능을 알면 안 되기 때문이다. 실패하면 [_retryAfter] 뒤에 다시 시도하고, 그동안 배지는 빈 원으로
 /// 그려진다.
 class TeamLogoDirectory {
   TeamLogoDirectory({Future<List<TeamLogoEntry>> Function()? load})
-    : _load = load ?? _loadFromOnboarding;
+    : _load = load ?? (() => defaultLoader());
 
   static final TeamLogoDirectory instance = TeamLogoDirectory();
+
+  /// 앱 시작 때 `configureAppHooks` 가 채운다. 안 채워져 있으면 빈 목록이다.
+  static Future<List<TeamLogoEntry>> Function() defaultLoader =
+      () async => const [];
 
   static const Duration _retryAfter = Duration(seconds: 30);
 
@@ -73,11 +75,6 @@ class TeamLogoDirectory {
     _failedAt = null;
   }
 
-  static Future<List<TeamLogoEntry>> _loadFromOnboarding() async {
-    final teams = (await di<OnboardingRepository>().fetchTeams())
-        .getOrElse((_) => const []);
-    return [for (final t in teams) TeamLogoEntry(t.code, t.imageUrl)];
-  }
 }
 
 class TeamLogoEntry {

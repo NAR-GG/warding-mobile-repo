@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_spoiler_switch.dart';
+import 'package:warding/core/ui/nar_spoiler_switch.dart';
 
 /// 경기 카드 스코어 블러(스포방지) on/off 토글. 경기리스트·경기 상세(날짜별) 헤더에서 쓴다.
 ///

@@ -10,8 +10,8 @@ import 'package:warding/features/guide/presentation/screens/page/guide_page_4.da
 import 'package:warding/features/guide/presentation/screens/page/guide_page_5.dart';
 import 'package:warding/features/guide/presentation/screens/page/guide_page_6.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'nar_button.dart';
-import 'nar_popup_dialog.dart';
+import 'package:warding/core/ui/nar_button.dart';
+import 'package:warding/core/ui/nar_popup_dialog.dart';
 
 /// 앱에 담긴 가이드 이미지 경로.
 ///

@@ -8,7 +8,7 @@ import 'package:warding/core/ui/load_error.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_card.dart';
 import 'package:warding/core/ui/nar_stat_box.dart';
-import 'package:warding/core/ui/solo_hero_card.dart';
+import 'package:warding/features/home/presentation/widgets/solo_hero_card.dart';
 import 'package:warding/core/ui/subscribe_bell.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/core/ui/nar_tab_bar.dart';

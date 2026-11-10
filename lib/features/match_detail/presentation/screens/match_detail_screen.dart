@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:warding/core/ui/cheer_ad_banner.dart';
+import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 

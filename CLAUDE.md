@@ -51,6 +51,7 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
+├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결)
 ├── core/         기능 소유가 아닌 모든 것
 │   ├── domain/             여러 기능이 쓰는 모델
 │   ├── infrastructure/     여러 기능이 쓰는 서비스·repository
@@ -62,6 +63,20 @@ lib/
 ├── main.dart     진입점
 └── firebase_options.dart   생성물
 ```
+
+**의존 방향은 `app → features → core` 한 방향이다.** `core/` 는 `features/`·`app/` 을
+import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container.dart` 다 — repository 구현체를
+등록하려면 알 수밖에 없다). 화면을 띄우거나 기능의 구현을 알아야 하는 코드는 둘 중 하나로 푼다.
+
+- **앱 셸이면 `app/` 에 둔다.** FCM·홈 위젯·Live Activity 의 딥링크 처리(`fcm_service`·
+  `home_widget_service`·`live_match_activity_controller`), 경기 상세로 가는 유일한 창구
+  (`match_detail_router`), 탭 이동(`nav_tab_navigation`)이 여기 있다.
+- **core 가 필요로 하는 화면·구현은 훅으로 받는다.** `AuthService.loginScreenBuilder`·
+  `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader` 는 core 쪽에 비워 둔 자리고,
+  `app/app_hooks.dart` 의 `configureAppHooks()` 가 `main.dart`·`test/flutter_test_config.dart`
+  에서 채운다. 새 훅을 만들면 거기에 연결하는 것을 잊지 않는다.
+- 한 기능 전용 위젯은 `core/ui/` 에 두지 않는다 — `guide_popup` 은 `guide`, `cheer_ad_*` 는
+  `cheer_ad` 가 소유한다.
 
 **`core/` 밖에 남는 예외는 생성물과 진입점이다.** 생성물은 생성 도구가 경로를 정하므로
 옮겨도 도구가 원래 자리에 다시 만든다.
@@ -85,7 +100,8 @@ lib/
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면 대부분이
   `core/` 로 가 버린다.
 - 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만), `quiet_hours`(`mypage` 만).
+  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `core/domain` 에
+  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓰므로 `core/domain` 이다.
 - 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` 에 둔다 — `user_profile` 은 `mypage`·
   `profile_edit` 둘이 쓴다.
 
