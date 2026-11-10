@@ -9,6 +9,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/di_container.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/core/config/app_language.dart';
 import 'firebase_options.dart';
@@ -72,6 +73,11 @@ Future<void> _initFirebaseMessaging() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 의존성 등록. ViewModel 이 생성될 때 이미 등록돼 있어야 하므로 아래
+  // 초기화들보다 먼저 부른다 — 등록 자체는 lazy 라 객체를 만들지 않으니 비용이
+  // 없다(첫 참조 시점에 생성된다).
+  configureDependencies();
 
   // 디코딩된 이미지 캐시 상한. Flutter 기본값은 100MB 인데, 이 앱이 다루는
   // 이미지는 팀 로고·선수 사진·챔피언 아이콘처럼 작은 것들이라 그만큼 필요

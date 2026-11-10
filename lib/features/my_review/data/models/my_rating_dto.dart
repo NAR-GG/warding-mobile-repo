@@ -1,8 +1,12 @@
-// 마이페이지 '내 리뷰/평점' 모델 (`GET /api/mobile/me/ratings`).
+// 마이페이지 '내 리뷰/평점' 서버 응답 DTO (`GET /api/mobile/me/ratings`).
+//
+// 서버 응답 모양만 안다. 도메인 타입(`domain/entities/my_rating.dart`) 으로의
+// 변환은 `data/mappers/my_rating_mapper.dart` 가 한다 — 서버 필드명이 바뀌면
+// 이 파일과 mapper 만 고치면 된다.
 
 /// 내가 작성한 평가 전체 목록 응답.
-class MyRatingList {
-  const MyRatingList({
+class MyRatingListDto {
+  const MyRatingListDto({
     required this.ratings,
     required this.page,
     required this.size,
@@ -10,18 +14,17 @@ class MyRatingList {
     required this.totalPages,
   });
 
-  final List<MyRatingItem> ratings;
+  final List<MyRatingItemDto> ratings;
   final int page;
   final int size;
   final int totalElements;
   final int totalPages;
 
-  bool get hasMore => page + 1 < totalPages;
 
-  factory MyRatingList.fromJson(Map<String, dynamic> json) {
-    return MyRatingList(
+  factory MyRatingListDto.fromJson(Map<String, dynamic> json) {
+    return MyRatingListDto(
       ratings: (json['ratings'] as List<dynamic>? ?? const [])
-          .map((e) => MyRatingItem.fromJson(e as Map<String, dynamic>))
+          .map((e) => MyRatingItemDto.fromJson(e as Map<String, dynamic>))
           .toList(),
       page: json['page'] as int? ?? 0,
       size: json['size'] as int? ?? 0,
@@ -32,8 +35,8 @@ class MyRatingList {
 }
 
 /// 내가 작성한 평가 한 건.
-class MyRatingItem {
-  const MyRatingItem({
+class MyRatingItemDto {
+  const MyRatingItemDto({
     required this.ratingId,
     required this.gameId,
     required this.participantId,
@@ -72,11 +75,11 @@ class MyRatingItem {
   /// 작성자(나) 응원팀 로고 URL. 없으면 placeholder.
   final String? teamImageUrl;
 
-  final MatchInfo? match;
+  final MatchInfoDto? match;
 
-  factory MyRatingItem.fromJson(Map<String, dynamic> json) {
+  factory MyRatingItemDto.fromJson(Map<String, dynamic> json) {
     final m = json['match'];
-    return MyRatingItem(
+    return MyRatingItemDto(
       ratingId: json['ratingId'] as int? ?? 0,
       gameId: json['gameId'] as String? ?? '',
       participantId: json['participantId'] as int? ?? 0,
@@ -92,14 +95,14 @@ class MyRatingItem {
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? ''),
       profileImageUrl: json['profileImageUrl'] as String?,
       teamImageUrl: json['teamImageUrl'] as String?,
-      match: m == null ? null : MatchInfo.fromJson(m as Map<String, dynamic>),
+      match: m == null ? null : MatchInfoDto.fromJson(m as Map<String, dynamic>),
     );
   }
 }
 
 /// 평가 대상 세트가 속한 매치 정보. 매핑이 없으면 null.
-class MatchInfo {
-  const MatchInfo({
+class MatchInfoDto {
+  const MatchInfoDto({
     required this.matchId,
     required this.gameOrder,
     required this.leagueName,
@@ -117,8 +120,8 @@ class MatchInfo {
   final String redTeamCode;
   final DateTime? matchDate;
 
-  factory MatchInfo.fromJson(Map<String, dynamic> json) {
-    return MatchInfo(
+  factory MatchInfoDto.fromJson(Map<String, dynamic> json) {
+    return MatchInfoDto(
       matchId: json['matchId'] as String? ?? '',
       gameOrder: json['gameOrder'] as int? ?? 0,
       leagueName: json['leagueName'] as String? ?? '',

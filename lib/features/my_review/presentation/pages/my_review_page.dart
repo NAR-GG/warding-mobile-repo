@@ -6,7 +6,7 @@ import 'package:warding/core/ui/date_group_header.dart';
 import 'package:warding/core/ui/nar_alert_dialog.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
-import 'package:warding/features/my_review/domain/my_rating_list.dart';
+import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/rating_mapping.dart';
@@ -50,7 +50,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
   }
 
   /// 응답 항목을 기존 ReviewCard 입력(MyReview)으로 변환.
-  MyReview _toReview(MyRatingItem item) => MyReview(
+  MyReview _toReview(MyReviewItem item) => MyReview(
     league: item.match?.leagueName ?? '',
     teamName: item.match == null
         ? ''
@@ -72,7 +72,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
 
   /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다
   /// (상세에서 평가를 수정·삭제했을 수 있으므로).
-  Future<void> _openPlayerRating(MyRatingItem item) async {
+  Future<void> _openPlayerRating(MyReviewItem item) async {
     // 리뷰가 남겨진 세트 번호(gameOrder)로 헤더 세트 라벨('세트 N')을 채운다.
     final l = AppLocalizations.of(context)!;
     final setNumber = item.match?.gameOrder ?? 0;
@@ -110,7 +110,7 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
   }
 
   /// 리뷰삭제 — 확인 후 VM 삭제.
-  Future<void> _confirmDelete(MyRatingItem item) async {
+  Future<void> _confirmDelete(MyReviewItem item) async {
     final l = AppLocalizations.of(context)!;
     final ok = await showNarConfirmDialog(
       context: context,
@@ -120,14 +120,13 @@ class _MyReviewScreenState extends State<MyReviewScreen> {
       confirmLabel: l.delete,
     );
     if (ok != true) return;
-    try {
-      await _vm.deleteRating(item);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.deleteFailed2)),
-      );
-    }
+    // ViewModel 은 예외를 던지지 않고 성공 여부를 돌려준다 — 실패 종류는
+    // Failure 로 이미 분류돼 있고, 화면은 "실패했는지" 만 알면 된다.
+    final deleted = await _vm.deleteRating(item);
+    if (deleted || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.deleteFailed2)),
+    );
   }
 
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/my_review/domain/my_rating_list.dart';
+import 'package:warding/features/my_review/data/models/my_rating_dto.dart';
 
 void main() {
   test('fromJson: 페이지·항목·매치정보 파싱', () {
@@ -36,10 +36,11 @@ void main() {
       'totalPages': 1,
     };
 
-    final list = MyRatingList.fromJson(json);
+    final list = MyRatingListDto.fromJson(json);
 
     expect(list.totalElements, 3);
-    expect(list.hasMore, isFalse);
+    // hasMore 는 도메인 관심사라 Entity(MyReviewPage) 가 갖는다.
+    expect(list.page + 1 < list.totalPages, isFalse);
     expect(list.ratings, hasLength(1));
     final item = list.ratings.first;
     expect(item.ratingId, 7);
@@ -77,8 +78,8 @@ void main() {
       'totalPages': 3,
     };
 
-    final list = MyRatingList.fromJson(json);
-    expect(list.hasMore, isTrue);
+    final list = MyRatingListDto.fromJson(json);
+    expect(list.page + 1 < list.totalPages, isTrue);
     expect(list.ratings.first.match, isNull);
     expect(list.ratings.first.comment, isNull);
   });

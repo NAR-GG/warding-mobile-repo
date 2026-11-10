@@ -21,7 +21,7 @@ import 'package:warding/features/account_setting/presentation/screens/account_se
 import 'package:warding/features/calendar_setting/presentation/screens/calendar_setting_screen.dart';
 import 'package:warding/features/match_list_setting/presentation/screens/match_list_setting_screen.dart';
 import 'package:warding/features/my_community_activity/presentation/screens/my_community_activity_screen.dart';
-import 'package:warding/features/my_review/presentation/screens/my_review_screen.dart';
+import 'package:warding/features/my_review/presentation/pages/my_review_page.dart';
 import 'package:warding/features/my_subscription_setting/presentation/screens/my_subscription_setting_screen.dart';
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';

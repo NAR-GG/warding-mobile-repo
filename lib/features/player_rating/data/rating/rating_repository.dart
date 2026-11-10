@@ -5,7 +5,7 @@ import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
-import 'package:warding/features/my_review/domain/my_rating_list.dart';
+import 'package:warding/features/my_review/data/models/my_rating_dto.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 
@@ -120,7 +120,7 @@ class RatingRepository {
   }
 
   /// 내가 작성한 평가 전체 목록을 조회한다 (인증 필요, 페이지네이션).
-  Future<MyRatingList> fetchMyRatings({int page = 0, int size = 20}) async {
+  Future<MyRatingListDto> fetchMyRatings({int page = 0, int size = 20}) async {
     final response = await _auth.authorizedRequest(
       (token) => http.get(
         Uri.parse(ApiConfig.myRatingsUrl(page: page, size: size)),
@@ -131,7 +131,7 @@ class RatingRepository {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('내 평가 목록 조회 실패 (${response.statusCode})');
     }
-    return MyRatingList.fromJson(
+    return MyRatingListDto.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
