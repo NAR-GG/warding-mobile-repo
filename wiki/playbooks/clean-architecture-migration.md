@@ -111,6 +111,27 @@ PlayerNotFound` 로 잡아 `notFound` 플래그를 세우고 "선수를 찾을 �
 
 **기준: 인터페이스가 있고 실패가 이미 타입으로 구분되면 그대로 둔다.**
 
+## 도메인 예외를 쓰는 repository 도 대상이 아니다
+
+**커뮤니티 계열 4 개**(`community`·`community_image`·`community_report`·
+`community_activity`)는 `CommunityApiException` 을 던진다. 그 예외가
+`statusCode`·`code`·`message`·`retryAfterSeconds` 를 구조화해 담고, ViewModel 5 곳이
+그것으로 분기한다.
+
+```dart
+} on CommunityApiException catch (e) {
+  // 같은 대상 재신고는 409. 이미 접수된 것이니 실패로 보여줄 이유가 없다.
+  if (e.statusCode == 409) return true;
+  _fail(e);   // code·message·retryAfterSeconds 로 문구를 그린다
+}
+```
+
+`Either<Failure, T>` 로 바꾸면 이 정보를 `Failure` 에 다시 담아야 한다. **이미 하는 일을
+형태만 바꾸는 것**이고, 그 과정에서 409 를 성공으로 보는 규칙 같은 것이 깨질 위험만 생긴다.
+
+**기준: 서버 응답을 구조화한 도메인 예외가 있고 호출부가 그 필드로 분기하면 그대로 둔다.**
+`Failure` 는 "실패했다" 만 전하면 되는 경우에 값이 있다.
+
 ## DTO/Entity 분리도 생략할 수 있다
 
 모델이 중첩 클래스로 깊으면 복제 비용이 이득을 넘는다. `CategoryTree` 는 클래스 5 개
