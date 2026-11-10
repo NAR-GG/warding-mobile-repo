@@ -10,7 +10,7 @@ import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/core/infrastructure/rating/rating_repository.dart';
+import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
 
 /// 마이페이지 ViewModel.
 ///

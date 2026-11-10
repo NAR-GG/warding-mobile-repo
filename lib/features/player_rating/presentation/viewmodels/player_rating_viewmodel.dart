@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/core/domain/game_rating.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/core/infrastructure/rating/rating_repository.dart';
+import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 
 /// 선수 평점 상세 화면 상태·로직.

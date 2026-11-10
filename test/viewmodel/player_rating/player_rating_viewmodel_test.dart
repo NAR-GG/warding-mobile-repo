@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/core/domain/game_rating.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/player_rating/presentation/viewmodels/player_rating_viewmodel.dart';
 

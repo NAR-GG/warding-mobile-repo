@@ -5,7 +5,7 @@ import 'package:warding/core/ui/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:warding/core/domain/game_rating.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/domain/schedule_match.dart';

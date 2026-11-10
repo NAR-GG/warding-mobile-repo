@@ -33,6 +33,16 @@
     25 곳·`util` 22 곳·`config` 16 곳)이 밖에 남아 기준이 어긋났다. 규칙을 한 문장으로
     정리했다 — **기능 소유면 `features/`, 아니면 `core/`.** `l10n/` 은 `l10n.yaml` 이 경로를
     못박는 생성물이라 최상위에 남겼다.
+  * **`core/` 배치를 한 번 재검토했다.** "presentation 만 있는 기능이 많다" 는 지적을 받아
+    소비처를 다시 셌더니 기준을 잘못 적용한 것이 나왔다 — `rating` 은 4곳이 쓰지만
+    `player_rating` 기능이 있으니 이름 매칭 규칙상 그쪽 소유였다. `team` repository(`home`
+    1곳)·`onboarding_selection`(`onboarding` 1곳)·`quiet_hours`(`mypage` 1곳)·
+    `game_rating`(`player_rating`)도 함께 내렸다. **`core/` 안에서의 참조는 소비처로 세지
+    않는다**는 규칙도 명시했다 — `device` 는 기능 소비처가 0 이고 `auth_service`·
+    `fcm_service` 만 쓰므로 `core/` 가 맞다.
+  * `presentation` 만 있는 기능 13개는 그대로 뒀다. 데이터가 공용이거나(`mypage` →
+    `core/domain/user_profile`) 애초에 자기 데이터가 없는 화면(`login`·`withdraw`·`guide`)
+    이다. 빈 폴더는 구조가 아니라 소음이다.
   * **소유자 판단에서 `home` 을 소비처로 세지 않았다.** `home` 은 집계 화면이라 거의 모든
     기능을 당겨서, 그걸 세면 repository 20 개 중 15 개가 `core/` 로 가 버린다. 이름이 같은
     기능이 있으면 그 기능 소유로 봤다 — `notice` 는 `home` 도 쓰지만 `features/notice/data/`.

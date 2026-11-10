@@ -7,7 +7,7 @@ import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_button.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/core/ui/nar_dropdown.dart';
-import 'package:warding/core/domain/game_rating.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/theme/app_colors.dart';

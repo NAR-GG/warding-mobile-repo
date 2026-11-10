@@ -4,13 +4,13 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/core/domain/game_rating.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/data/match_detail_repository.dart';
-import 'package:warding/core/infrastructure/rating/rating_repository.dart';
+import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
 
 /// 경기 상세 화면(챔피언 픽 · 라이브 이벤트 탭) 상태·로직.
 ///

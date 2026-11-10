@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/my_review/domain/my_rating_list.dart';
-import 'package:warding/core/infrastructure/rating/rating_repository.dart';
+import 'package:warding/features/player_rating/data/rating/rating_repository.dart';
 
 /// 마이페이지 '내 리뷰/평점' 상태·로직.
 ///

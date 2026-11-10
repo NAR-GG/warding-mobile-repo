@@ -4,7 +4,7 @@ import 'package:warding/l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:warding/features/onboarding/domain/league.dart';
-import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 import 'package:warding/features/onboarding/domain/player.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';

@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:warding/core/config/secure_storage.dart';
 
-import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 
 /// 비회원 온보딩 선택값을 기기에 로컬 저장한다.
 ///

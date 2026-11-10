@@ -2,7 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';

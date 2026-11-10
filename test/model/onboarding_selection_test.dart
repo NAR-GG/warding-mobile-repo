@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/core/domain/onboarding_selection.dart';
+import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 
 void main() {
   test('toJson/fromJson 라운드트립', () {

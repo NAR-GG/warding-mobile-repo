@@ -56,23 +56,45 @@ lib/
 
 # core 에 있는 것
 
-| 대상 | 쓰는 곳 |
+| 대상 | 기능 소비처 수 |
 |---|---|
 | `auth` | 18 |
-| `preference` | 10 |
-| `notification` | 5 |
-| `rating` | 4 |
-| `fcm`, `ad`, `live_activity` | 3 |
-| `team` | 2 |
-| `device` | 0 (미사용) |
+| `preference` | 8 |
+| `notification` | 4 |
+| `fcm`, `ad`, `live_activity` | 2~3 |
+| `device` | 0 (`auth_service`·`fcm_service` 만 씀) |
 
-소유 기능이 없는 횡단 관심사다. `core/domain` 에는 `team`·`schedule_match`(각 7곳),
-`player_subscription`(5곳) 등 모델 12개가 있다.
+`core/domain` 에는 모델 9개 — `schedule_match`(6곳), `team`(6곳),
+`player_subscription`(5곳), `user_profile`(2곳) 등.
 
-**소유자 판단 기준**: 쓰는 기능이 둘 이상이고 이름이 같은 기능이 없으면 `core/`. 이름이
-같은 기능이 있으면 그 기능 소유로 본다 — `notice` repository 는 `home` 도 쓰지만
-`features/notice/data/` 에 둔다. `home` 은 집계 화면이라 거의 모든 기능을 소비하므로,
-`home` 을 소비처로 세면 대부분이 `core/` 로 가 버린다.
+# 소유자 판단 기준
+
+**소비처를 세서 정한다.** 세는 규칙:
+
+- **`core/` 안에서의 참조는 세지 않는다.** core 끼리 쓰는 건 당연하다. `device` 는 기능
+  소비처가 0 이고 인프라끼리만 쓰므로 `core/` 가 맞다. `live_match_notification`·
+  `solo_rank_notification` 모델도 같은 이유로 자기 store 옆(`core/domain`)에 있다.
+- **이름이 같은 기능이 있으면 그 기능 소유로 본다.** `rating` repository 는 4곳이 쓰지만
+  `player_rating` 기능이 있어 `features/player_rating/data/` 에 둔다.
+- **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면
+  repository 대부분이 `core/` 로 가 버린다.
+- 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
+  `onboarding_selection`(`onboarding` 만), `quiet_hours`(`mypage` 만).
+- 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` — `user_profile`(`mypage`·
+  `profile_edit`).
+
+# presentation 만 있는 기능이 많은 이유
+
+27개 중 13개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
+
+- **데이터가 공용이라서** — `mypage` 는 `core/domain/user_profile`,
+  `my_subscription_setting` 은 `core/domain/player_subscription` 을 쓴다. 한 기능 소유가
+  아니니 `core/` 가 맞고, 그 기능 폴더가 비는 것이 정상이다.
+- **애초에 자기 데이터가 없어서** — `login`·`withdraw`·`account_setting`·`splash`·`guide`·
+  `cheer_ad` 는 설정·플로우·안내 화면이라 공용 서비스만 호출한다. `guide` 11개 파일은 전부
+  페이지 위젯이다.
+
+빈 폴더는 구조가 아니라 소음이다. 필요할 때 만든다.
 
 # import 규칙
 
