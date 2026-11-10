@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:warding/core/domain/member_notification.dart';
-import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/core/domain/repositories/member_notification_repository.dart';
 
 /// 마이구독 피드 ViewModel — 서버 알림 리스트(`/api/mobile/me/notifications`)를
 /// 들고 있다. 화면 진입·복귀 시 다시 읽는다.
@@ -17,7 +19,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
   SubscriptionFeedViewModel({
     MemberNotificationRepository? repository,
     this.group,
-  }) : _repo = repository ?? MemberNotificationRepository.instance {
+  }) : _repo = repository ?? di<MemberNotificationRepository>() {
     load();
     refreshNotificationPermission();
   }
@@ -94,11 +96,12 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _error = null;
     _notify();
     try {
-      final pageData = await _repo.fetchNotifications(
+      final pageData = (await _repo.fetchNotifications(
         group: group,
         page: 0,
         size: _pageSize,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _notifications = pageData.notifications;
       _unreadCount = pageData.unreadCount;
       _page = pageData.page;
@@ -123,11 +126,12 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _isLoadingMore = true;
     _notify();
     try {
-      final pageData = await _repo.fetchNotifications(
+      final pageData = (await _repo.fetchNotifications(
         group: group,
         page: _page + 1,
         size: _pageSize,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       // 중복 id 는 걸러낸다 — 이어받는 사이 새 알림이 쌓이면 서버 페이지가
       // 한 칸씩 밀려 같은 건이 다시 내려올 수 있다.
       final seen = _notifications.map((n) => n.id).toSet();
@@ -155,7 +159,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     if (_unreadCount > 0) _unreadCount--;
     _notify();
     try {
-      await _repo.markRead(n.id);
+      (await _repo.markRead(n.id)).getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Feed] markRead 실패(무시): $e');
     }
@@ -170,7 +174,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     if (!removed.read && _unreadCount > 0) _unreadCount--;
     _notify();
     try {
-      await _repo.delete(n.id);
+      (await _repo.delete(n.id)).getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Feed] delete 실패, 복구: $e');
       _notifications = [..._notifications]..insert(idx, removed);
@@ -189,7 +193,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _unreadCount = 0;
     _notify();
     try {
-      await _repo.markAllRead(group: group);
+      (await _repo.markAllRead(group: group)).getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Feed] 전체읽음 실패, 복구: $e');
       _notifications = backup;
@@ -216,7 +220,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
   Future<void> markAllReadOnExit() async {
     if (_loadedOnce && _unreadCount == 0) return;
     try {
-      await _repo.markAllRead(group: group);
+      (await _repo.markAllRead(group: group)).getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Feed] 이탈 시 전체읽음 실패(무시): $e');
     }
@@ -230,7 +234,7 @@ class SubscriptionFeedViewModel extends ChangeNotifier {
     _unreadCount = 0;
     _notify();
     try {
-      await _repo.deleteAll();
+      (await _repo.deleteAll()).getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Feed] 전체삭제 실패, 복구: $e');
       _notifications = backup;

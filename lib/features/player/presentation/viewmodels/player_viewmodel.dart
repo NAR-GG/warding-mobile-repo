@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/core/domain/player_subscription.dart';
@@ -171,7 +172,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
     if (matchId == null || matchId.isEmpty || !await _isLoggedIn()) return;
     try {
       final ids = (await _matchSubscriptions.subscribedMatchIds())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       matchAlarmOn = ids.contains(matchId);
       _notify();
     } catch (_) {

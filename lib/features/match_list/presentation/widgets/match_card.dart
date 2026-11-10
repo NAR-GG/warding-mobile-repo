@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -272,7 +273,7 @@ class _AlarmBellState extends State<_AlarmBell> {
       final jwt = await AuthService.instance.jwt;
       if (jwt == null || jwt.isEmpty) return; // 비회원은 정적 상태로 둔다.
       final ids = (await _repo.subscribedMatchIds())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       if (mounted && ids.contains(widget.matchId)) {
         setState(() => _subscribed = true);
       }

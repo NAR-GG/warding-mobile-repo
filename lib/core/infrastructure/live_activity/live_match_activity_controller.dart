@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/domain/team_notification_subscription.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
@@ -123,7 +124,7 @@ class LiveMatchActivityController {
       // 실패를 null 로 바꿔 아래 catch 와 같은 의미로 만든다 — 호출부가
       // "구독 목록을 모른다" 와 "구독이 없다" 를 구분해야 하기 때문이다.
       return (await di<MatchSubscriptionRepository>().subscribedMatchIds())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[LiveActivity] 경기 구독 목록 조회 실패: $e');
       return null;

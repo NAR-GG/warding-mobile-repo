@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/ui/app_bottom_nav.dart';
 import 'package:warding/core/ui/app_refresh_indicator.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/core/domain/repositories/member_notification_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/presentation/viewmodels/community_list_viewmodel.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
@@ -92,8 +94,9 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   Future<void> _refreshUnreadCount() async {
     try {
-      final page = await MemberNotificationRepository.instance
-          .fetchNotifications(group: 'COMMUNITY', page: 0, size: 1);
+      final page = (await di<MemberNotificationRepository>()
+              .fetchNotifications(group: 'COMMUNITY', page: 0, size: 1))
+          .getOrElse((f) => throw FailureException(f));
       if (mounted) setState(() => _unreadCount = page.unreadCount);
     } catch (_) {
       if (mounted) setState(() => _unreadCount = 0);

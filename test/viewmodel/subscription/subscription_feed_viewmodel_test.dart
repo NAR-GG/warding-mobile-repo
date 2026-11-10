@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/core/domain/member_notification.dart';
-import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
+import 'package:warding/core/domain/repositories/member_notification_repository.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';
 
 class MockRepo extends Mock implements MemberNotificationRepository {}
@@ -49,7 +51,7 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenAnswer((_) async => _page([_n(1), _n(2, read: true)], 1));
+        )).thenAnswer((_) async => Right(_page([_n(1), _n(2, read: true)], 1)));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();
@@ -63,8 +65,8 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenAnswer((_) async => _page([_n(1)], 1));
-    when(() => repo.markRead(any())).thenAnswer((_) async {});
+        )).thenAnswer((_) async => Right(_page([_n(1)], 1)));
+    when(() => repo.markRead(any())).thenAnswer((_) async => const Right(unit));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();
@@ -81,7 +83,7 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenThrow(Exception('boom'));
+        )).thenAnswer((_) async => const Left(ServerFailure()));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();
@@ -94,8 +96,8 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenAnswer((_) async => _page([_n(1), _n(2)], 0));
-    when(() => repo.delete(any())).thenAnswer((_) async {});
+        )).thenAnswer((_) async => Right(_page([_n(1), _n(2)], 0)));
+    when(() => repo.delete(any())).thenAnswer((_) async => const Right(unit));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();
@@ -110,8 +112,8 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenAnswer((_) async => _page([_n(1), _n(2)], 0));
-    when(() => repo.delete(any())).thenThrow(Exception('fail'));
+        )).thenAnswer((_) async => Right(_page([_n(1), _n(2)], 0)));
+    when(() => repo.delete(any())).thenAnswer((_) async => const Left(ServerFailure()));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();
@@ -125,9 +127,9 @@ void main() {
       when(() => repo.fetchNotifications(
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenAnswer((_) async => _page([_n(1), _n(2, read: true)], 1));
+          )).thenAnswer((_) async => Right(_page([_n(1), _n(2, read: true)], 1)));
       when(() => repo.markAllRead(group: any(named: 'group')))
-          .thenAnswer((_) async {});
+          .thenAnswer((_) async => const Right(unit));
 
       final vm = SubscriptionFeedViewModel(repository: repo);
       await vm.load();
@@ -145,7 +147,7 @@ void main() {
       when(() => repo.fetchNotifications(
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenAnswer((_) async => _page([_n(1, read: true)], 0));
+          )).thenAnswer((_) async => Right(_page([_n(1, read: true)], 0)));
 
       final vm = SubscriptionFeedViewModel(repository: repo);
       await vm.load();
@@ -162,9 +164,9 @@ void main() {
       when(() => repo.fetchNotifications(
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenAnswer((_) => Completer<MemberNotificationPage>().future);
+          )).thenAnswer((_) => Completer<Either<Failure, MemberNotificationPage>>().future);
       when(() => repo.markAllRead(group: any(named: 'group')))
-          .thenAnswer((_) async {});
+          .thenAnswer((_) async => const Right(unit));
 
       final vm = SubscriptionFeedViewModel(repository: repo);
       expect(vm.unreadCount, 0);
@@ -178,9 +180,9 @@ void main() {
       when(() => repo.fetchNotifications(
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenThrow(Exception('boom'));
+          )).thenAnswer((_) async => const Left(ServerFailure()));
       when(() => repo.markAllRead(group: any(named: 'group')))
-          .thenAnswer((_) async {});
+          .thenAnswer((_) async => const Right(unit));
 
       final vm = SubscriptionFeedViewModel(repository: repo);
       await vm.load();
@@ -195,9 +197,9 @@ void main() {
       when(() => repo.fetchNotifications(
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenAnswer((_) async => _page([_n(1)], 1));
+          )).thenAnswer((_) async => Right(_page([_n(1)], 1)));
       when(() => repo.markAllRead(group: any(named: 'group')))
-          .thenThrow(Exception('boom'));
+          .thenAnswer((_) async => const Left(ServerFailure()));
 
       final vm = SubscriptionFeedViewModel(repository: repo);
       await vm.load();
@@ -210,9 +212,9 @@ void main() {
             group: any(named: 'group'),
             page: any(named: 'page'),
             size: any(named: 'size'),
-          )).thenAnswer((_) async => _page([_n(1)], 1));
+          )).thenAnswer((_) async => Right(_page([_n(1)], 1)));
       when(() => repo.markAllRead(group: any(named: 'group')))
-          .thenAnswer((_) async {});
+          .thenAnswer((_) async => const Right(unit));
 
       final vm = SubscriptionFeedViewModel(
         repository: repo,
@@ -230,8 +232,8 @@ void main() {
     when(() => repo.fetchNotifications(
           page: any(named: 'page'),
           size: any(named: 'size'),
-        )).thenAnswer((_) async => _page([_n(1), _n(2)], 2));
-    when(() => repo.deleteAll()).thenAnswer((_) async => 2);
+        )).thenAnswer((_) async => Right(_page([_n(1), _n(2)], 2)));
+    when(() => repo.deleteAll()).thenAnswer((_) async => const Right(2));
 
     final vm = SubscriptionFeedViewModel(repository: repo);
     await vm.load();

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
@@ -20,7 +21,7 @@ Future<void> loadCommunityTeams() async {
   if (communityTeams.value.isNotEmpty) return;
   try {
     communityTeams.value = (await di<OnboardingRepository>().fetchTeams())
-        .getOrElse((f) => throw StateError('$f'));
+        .getOrElse((f) => throw FailureException(f));
   } on Exception catch (e) {
     debugPrint('[Community] 팀 목록 조회 실패: $e');
   }

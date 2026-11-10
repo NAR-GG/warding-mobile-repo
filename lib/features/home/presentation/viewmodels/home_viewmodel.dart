@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
@@ -15,7 +16,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
-import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
+import 'package:warding/core/domain/repositories/member_notification_repository.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
@@ -88,7 +89,7 @@ class HomeViewModel extends ChangeNotifier {
        _shortsRepo = shorts ?? di<ShortsRepository>(),
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        _memberNotifications =
-           memberNotifications ?? MemberNotificationRepository.instance,
+           memberNotifications ?? di<MemberNotificationRepository>(),
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
        _worlds = worlds ?? defaultWorldsSoloSource(),
@@ -279,10 +280,11 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> refreshUnreadNotifications() async {
     var count = 0;
     try {
-      final page = await _memberNotifications.fetchNotifications(
+      final page = (await _memberNotifications.fetchNotifications(
         page: 0,
         size: 1,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       count = page.unreadCount;
     } catch (e) {
       debugPrint('[Home] 알림 미읽음 수 조회 실패(비회원 포함): $e');

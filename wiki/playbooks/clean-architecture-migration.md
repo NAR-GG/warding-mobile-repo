@@ -221,6 +221,25 @@ result.match(
 );
 ```
 
+## Left 를 예외로 되돌려야 할 때는 FailureException 을 쓴다
+
+기존 `try/catch` 가 의미 있는 복구를 하면 `Left` 를 그 경로로 보내는 편이 안전하다.
+그때 **`StateError` 를 쓰지 않는다** — `core/domain/failure_exception.dart` 의
+`FailureException` 을 쓴다.
+
+```dart
+// 쓴다
+(await _repo.delete(id)).getOrElse((f) => throw FailureException(f));
+
+// 쓰지 않는다 — StateError 는 Error 라서 `throwsException` 테스트가 깨지고,
+// 의미도 다르다(프로그래밍 오류가 아니라 예상된 실패다)
+(await _repo.delete(id)).getOrElse((f) => throw StateError('$f'));
+```
+
+실제로 `subscription_feed` 의 "delete 실패: 항목 원위치 복구 + rethrow" 테스트가
+`StateError` 때문에 깨졌다. ViewModel 이 `rethrow` 로 화면에 실패를 알리는 계약을
+쓰고 있었는데, 테스트는 `throwsException` 으로 검증한다.
+
 `finally` 로 정리하던 코드는 `match` 뒤로 내린다. **`gen`/`_disposed` 가드 위치를 옮기지
 않는다** — 원래 `try` 안에서 `return` 하던 것을 `match` 앞으로 빼야 한다.
 

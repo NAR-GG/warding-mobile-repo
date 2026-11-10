@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -101,7 +102,7 @@ Future<bool?> runMatchAlarmFlow(
   if (subscribed) {
     try {
       final st = (await repo.matchSubscriptionStatus(matchId))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       initial = (
         setStart: st.setStartEnabled,
         setEnd: st.setEndEnabled,

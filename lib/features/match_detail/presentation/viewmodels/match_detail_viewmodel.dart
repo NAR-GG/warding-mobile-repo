@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/player_rating/domain/game_rating.dart';
@@ -299,7 +300,7 @@ class MatchDetailViewModel extends ChangeNotifier {
       // 이 ViewModel 의 repository 들이 모두 Either 가 되면 match 로 정리한다.
       final (games, matchInfoFromGames) =
           (await _repository.fetchGames(matchId))
-              .getOrElse((f) => throw StateError('$f'));
+              .getOrElse((f) => throw FailureException(f));
       _games = games;
       // 진입 시 기본 세트: LIVE → 최신 ENDED → 1세트.
       _currentSet = _computeInitialSet(games);
@@ -433,7 +434,7 @@ class MatchDetailViewModel extends ChangeNotifier {
       // 이 ViewModel 의 repository 들이 모두 Either 가 되면 match 로 정리한다.
       final (games, matchInfoFromGames) =
           (await _repository.fetchGames(matchId))
-              .getOrElse((f) => throw StateError('$f'));
+              .getOrElse((f) => throw FailureException(f));
       _games = games;
       if (games.isNotEmpty && !games.any((g) => g.gameOrder == _currentSet)) {
         _currentSet = _computeInitialSet(games);
@@ -515,7 +516,7 @@ class MatchDetailViewModel extends ChangeNotifier {
         throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
       _championPick = (await _repository.fetchChampionPick(gameId))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       _restartChampionPollingIfNeeded();
     } catch (e) {
       debugPrint('[MatchDetailVM] champion pick failed: $e');
@@ -572,7 +573,7 @@ class MatchDetailViewModel extends ChangeNotifier {
     if (gameId == null || gameId.isEmpty) return;
     try {
       final updated = (await _repository.fetchChampionPick(gameId))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       if (_disposed) return;
       _championPick = updated;
       _safeNotify(isPoll: true);
@@ -591,7 +592,7 @@ class MatchDetailViewModel extends ChangeNotifier {
         throw Exception(appStrings?.setInfoNotFound ?? 'Set info not found');
       }
       _liveEventsData = (await _repository.fetchLiveEvents(gameId))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[MatchDetailVM] live events failed: $e');
       _eventsError =
@@ -616,7 +617,7 @@ class MatchDetailViewModel extends ChangeNotifier {
         // 과도기 — 이 ViewModel 의 다른 repository 가 Either 로 바뀌면 전체를
         // match 로 정리한다.
         _ratings = (await _ratingRepository.fetchGameRatings(gameId))
-            .getOrElse((f) => throw StateError('$f'));
+            .getOrElse((f) => throw FailureException(f));
       }
     } catch (e) {
       debugPrint('[MatchDetailVM] load ratings failed: $e');

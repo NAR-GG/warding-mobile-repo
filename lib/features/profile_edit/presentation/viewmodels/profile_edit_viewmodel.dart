@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -122,7 +123,7 @@ class ProfileEditViewModel extends ChangeNotifier {
       final meFuture = _auth.fetchMe();
       final teamsFuture = _onboarding.fetchTeams();
       _profile = await meFuture;
-      _teams = (await teamsFuture).getOrElse((f) => throw StateError('$f'));
+      _teams = (await teamsFuture).getOrElse((f) => throw FailureException(f));
       _name = _profile!.name;
       _tag = _profile!.tag;
       _favoriteTeamId = _profile!.favoriteTeamId;

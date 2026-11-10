@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -293,7 +294,7 @@ class OnboardingViewModel extends ChangeNotifier {
     _safeNotify();
     try {
       _leagues = (await _repository.fetchLeagues())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       _leaguesError = appStrings?.leagueLoadFailed ?? 'Failed to load leagues';
       debugPrint('[Onboarding] loadLeagues 에러: $e');
@@ -322,7 +323,7 @@ class OnboardingViewModel extends ChangeNotifier {
     _safeNotify();
     try {
       _teams = (await _repository.fetchTeams())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       _teamsError = appStrings?.teamLoadFailed ?? 'Failed to load teams';
       debugPrint('[Onboarding] loadTeams 에러: $e');
@@ -357,7 +358,7 @@ class OnboardingViewModel extends ChangeNotifier {
         year: DateTime.now().year,
         teamId: teamId,
       ))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       _playersLoaded = true;
     } catch (e) {
       _playersError = appStrings?.playerLoadFailed ?? 'Failed to load players';

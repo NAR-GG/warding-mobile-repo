@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/match_list/domain/category_tree.dart';
@@ -456,7 +457,7 @@ class MatchListViewModel extends ChangeNotifier {
       // 과도기 코드다 — `schedule_repository` 가 Either 로 바뀌면 두 결과를
       // 함께 `match` 로 다루고 이 throw 는 없앤다.
       _tree = treeResult.getOrElse(
-        (failure) => throw StateError('카테고리 트리 조회 실패: $failure'),
+        (failure) => throw FailureException(failure),
       );
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.

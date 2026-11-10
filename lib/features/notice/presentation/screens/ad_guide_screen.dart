@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
@@ -36,7 +37,7 @@ class _AdGuideScreenState extends State<AdGuideScreen> {
   /// 이 화면은 실패 종류를 구분하지 않고 재시도 버튼만 보여준다.
   Future<Notice> _load() async {
     final result = await di<NoticeRepository>().fetchPage(AdGuideScreen.slug);
-    return result.getOrElse((failure) => throw StateError('$failure'));
+    return result.getOrElse((failure) => throw FailureException(failure));
   }
 
   void _retry() {

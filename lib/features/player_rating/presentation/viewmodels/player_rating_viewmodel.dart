@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/player_rating/domain/game_rating.dart';
@@ -136,7 +137,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
         _participantId,
         page: 0,
       ))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       _detail = detail;
       _reviews
         ..clear()
@@ -162,7 +163,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
         _participantId,
         page: current.page + 1,
       ))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       _detail = next;
       _reviews.addAll(next.reviews);
     } catch (e) {
@@ -189,7 +190,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
 
     try {
       final list = (await _repository.fetchGameRatings(game.gameId))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
       final player =
           list.players.where((p) => p.playerId == playerId).firstOrNull;
       if (player == null) {

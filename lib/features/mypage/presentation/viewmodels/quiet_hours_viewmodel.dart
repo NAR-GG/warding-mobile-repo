@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/features/mypage/domain/quiet_hours.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
@@ -46,7 +47,7 @@ class QuietHoursViewModel extends ChangeNotifier {
       }
       _loggedIn = true;
       _settings = (await _repo.fetch())
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e, st) {
       debugPrint('[QuietHours] load 에러: $e\n$st');
     } finally {
@@ -80,7 +81,7 @@ class QuietHoursViewModel extends ChangeNotifier {
     try {
       // 아래 catch 가 이전 값으로 되돌리고 문구를 세운다.
       _settings = (await _repo.update(next))
-          .getOrElse((f) => throw StateError('$f'));
+          .getOrElse((f) => throw FailureException(f));
     } catch (e, st) {
       _settings = previous;
       _errorMessage = appStrings?.quietHoursSaveFailed ??
