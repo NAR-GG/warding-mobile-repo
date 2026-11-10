@@ -19,14 +19,15 @@ timestamp: 2026-11-10T00:00:00Z
 
 # 진행 상황
 
-**API 를 타는 repository 23 개가 대상이고 2 개가 끝났다.** 로컬 저장소 전용 7 개는 대상이
-아니다(아래 기준 참고).
+**완료됐다.** API 를 타는 repository 23 개 중 14 개를 전환하고 9 개는 기준에 따라 제외했다.
 
-| 완료 | 날짜 |
-|---|---|
-| `my_review`, `shorts` | 2026-11-10 |
+| 구분 | 개수 | 대상 |
+|---|---|---|
+| 전환 | 14 | `my_review` `shorts` `category` `profile_image` `notice` `standings` `rating` `match_detail` `match_subscription` `onboarding` `quiet_hours` `member_notification` `schedule` `subscription` |
+| 제외 | 9 | `device` `ad` `live_activity_push_token` `player` `community` ×4 `home_api_sources` |
+| 제외(로컬 저장소) | 7 | `preference` ×6, `community_draft` |
 
-남은 21 개는 아래 "순서" 를 따른다.
+제외 근거는 아래 다섯 절에 적었다. 새 repository 를 추가할 때 같은 기준으로 판단한다.
 
 # 목표 구조
 
@@ -131,6 +132,20 @@ PlayerNotFound` 로 잡아 `notFound` 플래그를 세우고 "선수를 찾을 �
 
 **기준: 서버 응답을 구조화한 도메인 예외가 있고 호출부가 그 필드로 분기하면 그대로 둔다.**
 `Failure` 는 "실패했다" 만 전하면 되는 경우에 값이 있다.
+
+## home_api_sources 도 대상이 아니다
+
+마지막으로 남겨 뒀던 것인데, 열어 보니 **이미 인터페이스 구조**였다.
+
+- `abstract class` 5 개 — `SoloRankSource`·`WorldsSoloSource`·`CheerSource`·
+  `ReviewSource`·`NewsSource`. 구현이 14 개(`Empty`·`Mock`·`Api`)다.
+- 테스트가 이미 `implements SoloRankSource` 로 Fake 를 만든다
+  (`_FakeSolo`·`_GatedSolo`·`_SwitchableReviews`).
+- 실패를 타입으로 구분한다 — `CheerRejected(code)` 를 `solo_cheer_controller` 가
+  `on CheerRejected catch` 로 잡아 **409·400(재시도 무의미)** 을 그 밖의 실패와 가른다.
+
+`home` 이 소비하는 repository 13 개는 전부 전환됐으므로, `home_viewmodel` 은 이미
+`Either` 를 다룬다. 남은 `home_sources` 는 그 자체가 이 작업의 목적을 달성한 상태다.
 
 ## DTO/Entity 분리도 생략할 수 있다
 
@@ -351,62 +366,25 @@ Entity 이름 충돌 | `player_rating` 에 이미 `MyRating` 이 있었다 | Ent
 테스트 111 개가 `GetIt is not registered` 로 깨짐 | 기본값을 `di<X>()` 로 바꿨는데 테스트가 주입을 안 한다. `analyze` 는 못 잡는다 | `test/flutter_test_config.dart` 가 전역으로 등록한다 (4 번 참고)
 `match_list` 만 돌려 보고 "통과" 라고 보고 | 하위 디렉터리 테스트만 확인했다 | **커밋 전에 반드시 `fvm flutter test` 전체를 돌리고 마지막 줄을 확인한다** |
 
-# 순서
+# 새 repository 를 추가할 때
 
-대상은 **API 를 타는 repository 23 개**다(로컬 저장소 7 개는 위 기준으로 제외).
-그중 2 개가 끝났다. repository 를 공유하는 것끼리 묶어 각 단계 끝에서 빌드·테스트를 통과시킨다.
+위 다섯 제외 기준을 먼저 본다. 어디에도 걸리지 않으면 Interface + `Either` 로 만든다 —
+처음부터 그렇게 쓰면 나중에 전환할 일이 없다.
 
-| 단계 | repository | 소유 기능 | UseCase |
-|---|---|---|---|
-| ✅ | `my_review_repository` | `my_review` | 없음 |
-| ✅ | `shorts_repository` | `shorts` | 없음 |
-| 1 | `category_repository` | `match_list` | 없음 |
-| 1 | `profile_image_repository` | `profile_edit` | 없음 |
-| 1 | `device_repository` | `@core/device` | 없음 |
-| 2 | `notice_repository` | `notice` | 없음 — **캐시·in-flight 합류·타임아웃** |
-| 2 | `standings_repository` | `home` 소유 | 없음 |
-| 3 | `rating_repository` | `player_rating` | 없음 — 호출부 4 곳 |
-| 3 | `match_detail_repository`, `match_subscription_repository` | `match_detail` | 없음 |
-| 4 | `onboarding_repository` | `onboarding` | 없음 — 호출부 많음 |
-| 4 | `player_repository` | `player` | 없음 |
-| 5 | `schedule_repository` | `schedule` | **있음** — 아래 "schedule 메모" 참고 |
-| 6 | `subscription_repository` | `subscription` | **있음** |
-| 6 | `member_notification_repository`, `quiet_hours_repository` | `@core/notification` | 없음 |
-| 7 | `community_repository`, `community_image_repository`, `community_report_repository` | `community` | **있음** |
-| 7 | `community_activity_repository` | `my_community_activity` | 없음 |
-| 8 | `home_api_sources` | `home` | **있음** |
-| 8 | `ad_repository`, `live_activity_push_token_repository` | `@core` | 없음 |
+```
+features/{기능}/
+├── data/
+│   ├── models/        DTO (fromJson). 중첩이 깊고 파생 로직이 없으면 생략 가능
+│   ├── mappers/       DTO → Entity
+│   └── repositories/  {X}RepositoryImpl — toFailure() 로 예외를 Failure 로
+├── domain/
+│   ├── entities/
+│   ├── repositories/  {X}Repository (abstract interface class)
+│   └── usecases/      여러 repository 조합·재사용일 때만
+└── presentation/
+```
 
-**8 번이 마지막인 이유**는 `home` 이 나머지 전부를 소비하기 때문이다. 먼저 하면 아직 안 바뀐
-repository 와 바뀐 것이 섞인다.
-
-화면만 있는 기능(`guide`·`cheer_ad`·`notification`·`login`·`splash`·`withdraw`·
-`account_setting`·`my_subscription_setting`·`calendar_setting`·`match_list_setting`)은
-자기 repository 가 없어 계층 작업이 없다. 다른 기능의 Interface 를 쓰게 되면 그때 호출부만
-바뀐다.
-
-# schedule 메모 (착수했다가 보류)
-
-**호출 지점 62 개**로 지금까지 중 압도적으로 크다. 한 번 시도했고 에러를 66 → 33 개까지
-줄였으나, 남은 33 개가 두 종류의 까다로운 패턴이어서 `git stash` 로 보류했다
-(stash 메시지: "schedule 전환 진행중 (에러 33개 남음)").
-
-진행한 것:
-- `MatchPage` 를 `domain/match_page.dart` 로 분리
-- Interface(`domain/repositories/schedule_repository.dart`) 작성
-- Impl 변환 — **공개 메서드를 `_xxxOrThrow` 로 바꾸고 `Either` 래퍼를 새로 추가**했다.
-  캐시 4 종 + in-flight 맵 + 세대 번호(`_cacheGeneration`) 로직을 건드리지 않으려는 것이다.
-- 호출부 9 개 파일을 괄호 매칭으로 `getOrElse` 처리
-
-남은 두 패턴:
-1. **`Future.wait([... .catchError((_) => <ScheduleMatch>[])])`** —
-   `home_widget_service`(2 곳), `live_match_activity_controller`(1 곳).
-   `catchError` 가 `Either` 와 맞지 않는다. `Future.wait` 안에서 각 호출을
-   `.getOrElse((_) => const [])` 로 바꾸면 `catchError` 자체가 불필요해진다.
-2. **`fetchFilterOptions` 결과를 변수에 담아 여러 줄에서 쓰는 경우** —
-   `match_list_viewmodel`(3 곳), `filter_viewmodel`(2 곳). 변수 선언부에서 풀어야 한다.
-
-다음에 재개할 때는 `git stash pop` 후 이 두 패턴만 처리하면 된다.
+`core/di_container.dart` 에 한 줄 등록하고, ViewModel 은 `di<X>()` 를 기본값으로 받는다.
 
 # 관련
 

@@ -117,6 +117,11 @@ lib/
 - **공유되면 `core/` 로 올린다.** 한 기능 소유가 아닌 것을 `features/` 안에 두면 다른 기능이
   남의 폴더를 들여다봐야 한다. 쓰는 기능이 둘 이상이면 `core/` 후보다.
 - **import·export 는 `package:warding/...` 절대경로.** 상대경로는 파일을 옮길 때 깨진다.
+- **repository 는 `domain/repositories/` 에 인터페이스를 두고 `Either<Failure, T>` 를
+  돌려준다.** `try/catch` 없이 실패 분기가 컴파일 단계에서 강제되고, 테스트에서
+  `mocktail` Mock 을 쓸 수 있다. 예외를 던지던 때는 `catch` 를 빠뜨려도 아무도 몰랐다.
+  판단 기준과 예외(로컬 저장소·도메인 예외를 쓰는 경우 등)는
+  [Clean Architecture 전환 플레이북](./wiki/playbooks/clean-architecture-migration.md) 참고.
 - 이름이 공용처럼 보여도 한 기능만 쓰면 그 기능 안에 둔다 — `community_my_activity` 는
   접두어가 `community_` 지만 `my_community_activity` 기능만 쓰므로 그 기능의 `data/` 에 있다.
 
