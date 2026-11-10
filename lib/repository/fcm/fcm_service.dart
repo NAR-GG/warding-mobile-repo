@@ -112,11 +112,11 @@ class FcmService {
     // [consumePendingDeepLink] 로 그 위에 push 하게 한다.
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
-      debugPrint('[FCM] 종료 상태에서 알림으로 시작 → 딥링크 보류');
-      _pendingInitialData = initial.data;
+      debugPrint('[FCM] 종료 상태에서 알림으로 시작');
       // 진입 경로는 **여기서** 확정된다 — 내비게이션(스플래시가 소비)보다
       // 먼저다. 딥링크 처리를 기다리면 스플래시가 `launcher` 로 선점한다.
       Analytics.trackAppOpen(AnalyticsEntryPoint.push);
+      _deliverColdStartDeepLink(initial.data);
       return;
     }
 
@@ -129,12 +129,12 @@ class FcmService {
     //    직접 표시한 알림이다) — 중복을 피하려고 위에서 `return` 한다.
     final launch = await _localNotifications.getNotificationAppLaunchDetails();
     if (launch?.didNotificationLaunchApp ?? false) {
-      debugPrint('[FCM] 종료 상태에서 로컬 알림으로 시작 → 딥링크 보류');
+      debugPrint('[FCM] 종료 상태에서 로컬 알림으로 시작');
       Analytics.trackAppOpen(AnalyticsEntryPoint.push);
       final payload = launch?.notificationResponse?.payload;
       if (payload != null && payload.isNotEmpty) {
         try {
-          _pendingInitialData = jsonDecode(payload) as Map<String, dynamic>;
+          _deliverColdStartDeepLink(jsonDecode(payload) as Map<String, dynamic>);
         } catch (e) {
           debugPrint('[FCM] 로컬 알림 payload 파싱 실패: $e');
         }
@@ -145,9 +145,32 @@ class FcmService {
   /// 콜드 스타트 딥링크로 보류해 둔 알림 데이터. 스플래시가 소비한다.
   Map<String, dynamic>? _pendingInitialData;
 
+  /// 스플래시가 [consumePendingDeepLink] 를 이미 지났나.
+  ///
+  /// `main()` 이 시작 초기화를 `Future.wait(...).timeout(8초)` 로 감싸고 **실패·
+  /// 지연을 삼킨 뒤 `runApp` 으로 넘어간다.** 그래서 [initMessaging] 의 await
+  /// 들이 늦게 풀리면 스플래시가 먼저 소비를 끝내 버린다. 그때 보류만 하면
+  /// 데이터가 아무도 안 보는 채로 남아, 사용자는 알림을 탭했는데 첫 화면에
+  /// 멈춘다.
+  bool _splashConsumed = false;
+
+  /// 콜드 스타트 딥링크를 스플래시 상태에 맞게 넘긴다. 스플래시 전이면
+  /// 보류하고(navigator 가 아직 없어 push 가 조용히 무시된다), 지난 뒤면 바로
+  /// 내비게이션한다.
+  void _deliverColdStartDeepLink(Map<String, dynamic> data) {
+    if (_splashConsumed) {
+      debugPrint('[FCM] 스플래시 통과 후 도착 → 즉시 이동');
+      _navigateFromData(data);
+      return;
+    }
+    debugPrint('[FCM] 스플래시 전 도착 → 딥링크 보류');
+    _pendingInitialData = data;
+  }
+
   /// 스플래시가 첫 화면(로그인/홈) 분기 내비게이션을 마친 직후 호출한다.
   /// 보류된 콜드 스타트 딥링크가 있으면 그 위에 push 하고 비운다.
   void consumePendingDeepLink() {
+    _splashConsumed = true;
     final data = _pendingInitialData;
     _pendingInitialData = null;
     if (data != null) _navigateFromData(data);
