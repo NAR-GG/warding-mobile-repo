@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/shorts/domain/story_video.dart';
+import 'package:warding/features/shorts/data/models/story_video_dto.dart';
 
 void main() {
   test('필드를 그대로 파싱한다', () {
-    final v = StoryVideo.fromJson({
+    final v = StoryVideoDto.fromJson({
       'videoId': 1001,
       'youtubeVideoId': 'abc123',
       'title': '제우스 하이라이트',
@@ -19,7 +19,7 @@ void main() {
   });
 
   test('필드 누락에도 죽지 않는다', () {
-    final v = StoryVideo.fromJson(const {});
+    final v = StoryVideoDto.fromJson(const {});
     expect(v.videoId, 0);
     expect(v.publishedAt, isNull);
   });

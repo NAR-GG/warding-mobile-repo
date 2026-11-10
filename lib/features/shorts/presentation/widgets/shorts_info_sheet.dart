@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/features/shorts/domain/story_video.dart';
+import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/shorts_url.dart';
 

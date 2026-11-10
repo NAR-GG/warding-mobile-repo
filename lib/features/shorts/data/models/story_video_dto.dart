@@ -1,6 +1,8 @@
-/// 유튜브 쇼츠 한 건. 서버 `VideoListResponse`의 일부 필드만 쓴다.
-class StoryVideo {
-  const StoryVideo({
+/// 유튜브 쇼츠 한 건의 서버 응답 DTO (`VideoListResponse`).
+///
+/// 변환은 `data/mappers/shorts_mapper.dart` 가 한다.
+class StoryVideoDto {
+  const StoryVideoDto({
     required this.videoId,
     required this.youtubeVideoId,
     required this.title,
@@ -28,8 +30,8 @@ class StoryVideo {
   final String channelProfileUrl;
   final DateTime? publishedAt;
 
-  factory StoryVideo.fromJson(Map<String, dynamic> json) {
-    return StoryVideo(
+  factory StoryVideoDto.fromJson(Map<String, dynamic> json) {
+    return StoryVideoDto(
       videoId: (json['videoId'] as num?)?.toInt() ?? 0,
       youtubeVideoId: json['youtubeVideoId'] as String? ?? '',
       title: json['title'] as String? ?? '',

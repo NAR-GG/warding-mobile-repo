@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/features/shorts/domain/story_video.dart';
-import 'package:warding/features/shorts/data/shorts_repository.dart';
+import 'package:warding/features/shorts/domain/entities/story_video.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 
 /// 전체화면 쇼츠 피드 필터. 홈 쇼츠 탭과 같다.
 enum ShortsFeedFilter { all, team }
@@ -29,7 +30,7 @@ class ShortsFeedViewModel extends ChangeNotifier {
        _filter = filter,
        _pageSize = initialPageSize,
        _resolveTeamCode = resolveTeamCode,
-       _repo = repository ?? ShortsRepository.instance {
+       _repo = repository ?? di<ShortsRepository>() {
     // 홈은 0페이지를 받아 왔다 — 이어서 1페이지부터.
     _nextPage = 1;
     if (_videos.isEmpty) {
@@ -204,34 +205,38 @@ class ShortsFeedViewModel extends ChangeNotifier {
   Future<void> _fetch(int gen) async {
     _loading = true;
     var ok = false;
-    try {
-      final page = await _repo.fetchShortsPage(
-        page: _nextPage,
-        size: _pageSize,
-        teamCode: _teamCode,
-      );
-      if (_disposed || gen != _gen) return;
-      _nextPage++;
-      _isLast = page.isLast;
-      final seen = {for (final v in _videos) v.videoId};
-      final code = _teamCode;
-      _videos = [
-        ..._videos,
-        for (final v in page.items)
-          if (!seen.contains(v.videoId) && (code == null || v.teamCode == code))
-            v,
-      ];
-      ok = true;
-    } catch (e) {
-      // 네트워크 실패: 현재 영상은 그대로 두고 다음 스와이프 때 다시 요청한다.
-      debugPrint('[Shorts] 다음 페이지 조회 실패: $e');
-      _pendingSkip = false;
-    } finally {
-      if (!_disposed && gen == _gen) {
-        _loading = false;
-        _notify();
-      }
-    }
+
+    final result = await _repo.fetchShortsPage(
+      page: _nextPage,
+      size: _pageSize,
+      teamCode: _teamCode,
+    );
+    if (_disposed || gen != _gen) return;
+
+    result.match(
+      (failure) {
+        // 실패: 현재 영상은 그대로 두고 다음 스와이프 때 다시 요청한다.
+        debugPrint('[Shorts] 다음 페이지 조회 실패: $failure');
+        _pendingSkip = false;
+      },
+      (page) {
+        _nextPage++;
+        _isLast = page.isLast;
+        final seen = {for (final v in _videos) v.videoId};
+        final code = _teamCode;
+        _videos = [
+          ..._videos,
+          for (final v in page.items)
+            if (!seen.contains(v.videoId) &&
+                (code == null || v.teamCode == code))
+              v,
+        ];
+        ok = true;
+      },
+    );
+
+    _loading = false;
+    _notify();
     if (_disposed || gen != _gen) return;
     // 서버가 팀을 안 거르는 동안 한 페이지가 전부 걸러질 수 있다 — 이어 받는다.
     if (ok && _videos.isEmpty && !_isLast) {

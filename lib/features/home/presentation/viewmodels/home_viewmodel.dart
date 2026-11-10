@@ -9,7 +9,7 @@ import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/features/home/domain/standing.dart';
-import 'package:warding/features/shorts/domain/story_video.dart';
+import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
@@ -20,7 +20,8 @@ import 'package:warding/features/onboarding/data/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
-import 'package:warding/features/shorts/data/shorts_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/home/data/standings_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
@@ -84,7 +85,7 @@ class HomeViewModel extends ChangeNotifier {
        _schedule = schedule ?? ScheduleRepository.instance,
        _standingsRepo = standings ?? StandingsRepository.instance,
        _community = community ?? CommunityRepository.instance,
-       _shortsRepo = shorts ?? ShortsRepository.instance,
+       _shortsRepo = shorts ?? di<ShortsRepository>(),
        _subscriptions = subscriptions ?? SubscriptionRepository.instance,
        _memberNotifications =
            memberNotifications ?? MemberNotificationRepository.instance,
@@ -1073,12 +1074,17 @@ class HomeViewModel extends ChangeNotifier {
           return;
         }
       }
-      final videos = await _shortsRepo.fetchShorts(
+      final result = await _shortsRepo.fetchShortsPage(
         sort: 'latest',
         size: onlyTeam ? _shortsTeamFetchSize : shortsCardCount,
         teamCode: teamCode,
       );
       if (_disposed || gen != _shortsGen) return;
+      // 실패하면 빈 목록으로 둔다 — 홈의 한 섹션이고 다른 섹션은 영향이 없다.
+      final videos = result.getOrElse((_) => const ShortsPage(
+            items: [],
+            isLast: true,
+          )).items;
       _shorts = videos;
       _shortsLoading = false;
       _notify();

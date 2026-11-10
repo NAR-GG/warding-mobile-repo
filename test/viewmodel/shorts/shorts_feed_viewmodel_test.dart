@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/shorts/domain/story_video.dart';
-import 'package:warding/features/shorts/data/shorts_repository.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/features/shorts/domain/entities/story_video.dart';
+import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 
 StoryVideo _v(int id, {String team = ''}) => StoryVideo(
@@ -21,23 +23,17 @@ class _FakeRepo implements ShortsRepository {
   bool fail = false;
 
   @override
-  Future<ShortsPage> fetchShortsPage({
+  Future<Either<Failure, ShortsPage>> fetchShortsPage({
     String sort = 'latest',
     int size = 20,
     int page = 0,
     String? teamCode,
   }) async {
     calls.add((page: page, size: size, teamCode: teamCode));
-    if (fail) throw Exception('network');
-    return pages[page] ?? const ShortsPage(items: [], isLast: true);
+    if (fail) return const Left(NetworkFailure());
+    return Right(pages[page] ?? const ShortsPage(items: [], isLast: true));
   }
 
-  @override
-  Future<List<StoryVideo>> fetchShorts({
-    String sort = 'latest',
-    int size = 20,
-    String? teamCode,
-  }) async => (await fetchShortsPage(size: size, teamCode: teamCode)).items;
 }
 
 void main() {
