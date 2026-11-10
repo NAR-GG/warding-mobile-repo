@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/features/mypage/domain/quiet_hours.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/infrastructure/notification/quiet_hours_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/core/domain/repositories/quiet_hours_repository.dart';
 
 /// 마이페이지 알림 잠자기 섹션 ViewModel.
 class QuietHoursViewModel extends ChangeNotifier {
   QuietHoursViewModel({QuietHoursRepository? repository})
-      : _repo = repository ?? QuietHoursRepository.instance {
+      : _repo = repository ?? di<QuietHoursRepository>() {
     load();
   }
 
@@ -44,7 +45,8 @@ class QuietHoursViewModel extends ChangeNotifier {
         return;
       }
       _loggedIn = true;
-      _settings = await _repo.fetch();
+      _settings = (await _repo.fetch())
+          .getOrElse((f) => throw StateError('$f'));
     } catch (e, st) {
       debugPrint('[QuietHours] load 에러: $e\n$st');
     } finally {
@@ -76,7 +78,9 @@ class QuietHoursViewModel extends ChangeNotifier {
     _errorMessage = null;
     _notify();
     try {
-      _settings = await _repo.update(next);
+      // 아래 catch 가 이전 값으로 되돌리고 문구를 세운다.
+      _settings = (await _repo.update(next))
+          .getOrElse((f) => throw StateError('$f'));
     } catch (e, st) {
       _settings = previous;
       _errorMessage = appStrings?.quietHoursSaveFailed ??
