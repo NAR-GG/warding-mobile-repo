@@ -2,14 +2,15 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 로그인 직후 비회원 시절 로컬에 저장된 온보딩 선택값을 서버로 1회 동기화한다.
 class OnboardingSyncService {
   OnboardingSyncService({
     OnboardingRepository? repository,
     OnboardingPreferenceRepository? preferences,
-  })  : _repository = repository ?? OnboardingRepository.instance,
+  })  : _repository = repository ?? di<OnboardingRepository>(),
         _preferences = preferences ?? OnboardingPreferenceRepository.instance;
 
   static final OnboardingSyncService instance = OnboardingSyncService();

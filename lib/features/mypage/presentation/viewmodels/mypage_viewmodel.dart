@@ -9,7 +9,7 @@ import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 
@@ -23,7 +23,7 @@ class MypageViewModel extends ChangeNotifier {
     OnboardingRepository? onboarding,
     MyReviewRepository? myReview,
   })  : _auth = auth ?? AuthService.instance,
-        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _onboarding = onboarding ?? di<OnboardingRepository>(),
         _myReview = myReview ?? di<MyReviewRepository>() {
     load();
     _loadTeamBanner();
@@ -119,7 +119,7 @@ class MypageViewModel extends ChangeNotifier {
       _notify(); // 닉네임 등은 먼저 보여 준다.
 
       final teamId = me.favoriteTeamId;
-      final teams = await teamsFuture;
+      final teams = (await teamsFuture).getOrElse((_) => const []);
       if (teamId != null) {
         for (final t in teams) {
           if (t.id == teamId) {

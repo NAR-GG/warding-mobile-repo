@@ -10,7 +10,7 @@ import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/onboarding_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 
@@ -292,7 +292,8 @@ class OnboardingViewModel extends ChangeNotifier {
     _leaguesError = null;
     _safeNotify();
     try {
-      _leagues = await _repository.fetchLeagues();
+      _leagues = (await _repository.fetchLeagues())
+          .getOrElse((f) => throw StateError('$f'));
     } catch (e) {
       _leaguesError = appStrings?.leagueLoadFailed ?? 'Failed to load leagues';
       debugPrint('[Onboarding] loadLeagues 에러: $e');
@@ -320,7 +321,8 @@ class OnboardingViewModel extends ChangeNotifier {
     _teamsError = null;
     _safeNotify();
     try {
-      _teams = await _repository.fetchTeams();
+      _teams = (await _repository.fetchTeams())
+          .getOrElse((f) => throw StateError('$f'));
     } catch (e) {
       _teamsError = appStrings?.teamLoadFailed ?? 'Failed to load teams';
       debugPrint('[Onboarding] loadTeams 에러: $e');
@@ -351,10 +353,11 @@ class OnboardingViewModel extends ChangeNotifier {
     _playersError = null;
     _safeNotify();
     try {
-      _players = await _repository.fetchPlayers(
+      _players = (await _repository.fetchPlayers(
         year: DateTime.now().year,
         teamId: teamId,
-      );
+      ))
+          .getOrElse((f) => throw StateError('$f'));
       _playersLoaded = true;
     } catch (e) {
       _playersError = appStrings?.playerLoadFailed ?? 'Failed to load players';

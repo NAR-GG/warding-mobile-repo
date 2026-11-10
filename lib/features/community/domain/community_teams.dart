@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/domain/team.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 커뮤니티 팀 게시판 목록.
 ///
@@ -18,7 +19,8 @@ final ValueNotifier<List<Team>> communityTeams = ValueNotifier(const []);
 Future<void> loadCommunityTeams() async {
   if (communityTeams.value.isNotEmpty) return;
   try {
-    communityTeams.value = await OnboardingRepository.instance.fetchTeams();
+    communityTeams.value = (await di<OnboardingRepository>().fetchTeams())
+        .getOrElse((f) => throw StateError('$f'));
   } on Exception catch (e) {
     debugPrint('[Community] 팀 목록 조회 실패: $e');
   }

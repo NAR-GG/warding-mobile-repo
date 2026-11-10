@@ -11,6 +11,8 @@ import 'package:warding/features/match_detail/data/repositories/match_detail_rep
 import 'package:warding/features/match_detail/data/repositories/match_subscription_repository_impl.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
+import 'package:warding/features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/features/player_rating/data/repositories/rating_repository_impl.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
@@ -54,6 +56,11 @@ void configureDependencies() {
   );
   di.registerLazySingleton<MatchSubscriptionRepository>(
     MatchSubscriptionRepositoryImpl.new,
+  );
+
+  // ── onboarding ───────────────────────────────────────────────
+  di.registerLazySingleton<OnboardingRepository>(
+    OnboardingRepositoryImpl.new,
   );
 
   // ── player_rating ────────────────────────────────────────────

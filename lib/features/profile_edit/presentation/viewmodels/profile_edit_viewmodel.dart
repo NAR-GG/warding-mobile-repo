@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 
@@ -25,7 +25,7 @@ class ProfileEditViewModel extends ChangeNotifier {
     ProfileImageRepository? imageRepo,
     ImagePicker? picker,
   })  : _auth = auth ?? AuthService.instance,
-        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _onboarding = onboarding ?? di<OnboardingRepository>(),
         _imageRepo = imageRepo ?? di<ProfileImageRepository>(),
         _picker = picker ?? ImagePicker() {
     load();
@@ -116,12 +116,13 @@ class ProfileEditViewModel extends ChangeNotifier {
     _isLoading = true;
     _notify();
     try {
-      final results = await Future.wait([
-        _auth.fetchMe(),
-        _onboarding.fetchTeams(),
-      ]);
-      _profile = results[0] as UserProfile;
-      _teams = results[1] as List<Team>;
+      // fetchTeams 는 Either 를 돌려주고 fetchMe 는 아직 예외를 던진다.
+      // 반환형이 섞여 Future.wait 로 묶으면 인덱스 캐스팅이 필요해지는데,
+      // 그 캐스팅은 analyze 가 잡지 못하고 런타임에서 깨진다(실제로 깨졌다).
+      final meFuture = _auth.fetchMe();
+      final teamsFuture = _onboarding.fetchTeams();
+      _profile = await meFuture;
+      _teams = (await teamsFuture).getOrElse((f) => throw StateError('$f'));
       _name = _profile!.name;
       _tag = _profile!.tag;
       _favoriteTeamId = _profile!.favoriteTeamId;

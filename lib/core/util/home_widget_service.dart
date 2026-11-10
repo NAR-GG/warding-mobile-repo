@@ -15,7 +15,8 @@ import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
@@ -785,7 +786,9 @@ class HomeWidgetService {
       final me = await _fetchMeWithoutRefresh();
       if (me != null) {
         if (me.favoriteTeamId != null) {
-          final teams = await OnboardingRepository.instance.fetchTeams();
+          // 실패하면 빈 목록 — 응원팀을 못 찾은 것과 같게 다룬다.
+          final teams = (await di<OnboardingRepository>().fetchTeams())
+              .getOrElse((_) => const []);
           for (final t in teams) {
             if (t.id == me.favoriteTeamId) return t;
           }

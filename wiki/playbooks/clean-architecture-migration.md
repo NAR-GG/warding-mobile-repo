@@ -207,6 +207,31 @@ grep -rn "\.{메서드}(" lib --include="*.dart"   # 직접 눈으로 본다
 
 실제로 `my_review` 에서 삭제 실패 스낵바가 영원히 안 뜨는 상태가 됐었다.
 
+**`Future.wait` + 인덱스 캐스팅을 반드시 찾는다.** `analyze` 가 통과하는데 런타임에서
+깨지는 유일한 패턴이다.
+
+```dart
+// 이렇게 쓰던 곳이 조용히 깨진다
+final results = await Future.wait([_auth.fetchMe(), _onboarding.fetchTeams()]);
+_teams = results[1] as List<Team>;   // Right<Failure, List<Team>> → 캐스팅 실패
+```
+
+`Future.wait` 는 원소 타입이 섞이면 `List<dynamic>` 이 되고, 캐스팅은 컴파일 시점에
+검사되지 않는다. 실제로 `profile_edit` 에서 `analyze` 통과 후 테스트가 깨졌다.
+
+```bash
+grep -rn "results\[[0-9]\] as\|as List<" lib --include="*.dart"
+```
+
+고치는 방법은 따로 기다리는 것이다 — 병렬성은 그대로다.
+
+```dart
+final meFuture = _auth.fetchMe();
+final teamsFuture = _onboarding.fetchTeams();
+_profile = await meFuture;
+_teams = (await teamsFuture).getOrElse((f) => throw StateError('$f'));
+```
+
 ## 7. 테스트
 
 - 손으로 쓴 Fake → `class _MockX extends Mock implements XRepository {}`

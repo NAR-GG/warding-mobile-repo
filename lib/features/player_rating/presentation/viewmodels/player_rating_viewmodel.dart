@@ -5,7 +5,7 @@ import 'package:warding/l10n/app_strings.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
@@ -31,7 +31,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
         _currentSet = currentSet,
         _repository = repository ?? di<RatingRepository>(),
         _auth = auth ?? AuthService.instance,
-        _onboarding = onboarding ?? OnboardingRepository.instance,
+        _onboarding = onboarding ?? di<OnboardingRepository>(),
         _subscription = subscription ?? SubscriptionRepository.instance {
     _loadMyProfile();
     _loadSubscription();
@@ -110,7 +110,7 @@ class PlayerRatingViewModel extends ChangeNotifier {
       final me = await _auth.fetchMe();
       _myProfileImageUrl = me.profileImageUrl;
       final teamId = me.favoriteTeamId;
-      final teams = await teamsFuture;
+      final teams = (await teamsFuture).getOrElse((_) => const []);
       if (teamId != null) {
         for (final t in teams) {
           if (t.id == teamId) {

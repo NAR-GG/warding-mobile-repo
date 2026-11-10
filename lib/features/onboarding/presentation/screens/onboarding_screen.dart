@@ -3,7 +3,8 @@ import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
@@ -41,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _viewModel = OnboardingViewModel(
-      repository: OnboardingRepository.instance,
+      repository: di<OnboardingRepository>(),
       onFinish: _finish,
     );
     AnalyticsRouteObserver.instance.setProvider(AnalyticsPage.onboarding, () {

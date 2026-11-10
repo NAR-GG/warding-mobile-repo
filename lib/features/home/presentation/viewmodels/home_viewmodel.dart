@@ -16,7 +16,7 @@ import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
@@ -96,7 +96,7 @@ class HomeViewModel extends ChangeNotifier {
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource(),
        _auth = auth ?? AuthService.instance,
-       _onboarding = onboarding ?? OnboardingRepository.instance,
+       _onboarding = onboarding ?? di<OnboardingRepository>(),
        _teamPreferences = teamPreferences ?? TeamPreferenceRepository.instance {
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
@@ -1040,7 +1040,7 @@ class HomeViewModel extends ChangeNotifier {
       final teamsFuture = _onboarding.fetchTeams();
       final me = await _auth.fetchMe();
       final teamId = me.favoriteTeamId;
-      final teams = await teamsFuture;
+      final teams = (await teamsFuture).getOrElse((_) => const []);
       Team? team;
       if (teamId != null) {
         for (final t in teams) {

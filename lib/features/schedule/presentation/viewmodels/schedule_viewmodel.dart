@@ -8,7 +8,8 @@ import 'package:warding/core/domain/calendar_week_start.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
@@ -34,7 +35,7 @@ class ScheduleViewModel extends ChangeNotifier {
        _filterPreferences =
            filterPreferences ?? FilterPreferenceRepository.instance,
        _auth = auth ?? AuthService.instance,
-       _onboarding = onboarding ?? OnboardingRepository.instance,
+       _onboarding = onboarding ?? di<OnboardingRepository>(),
        _weekStartPreferences = weekStartPreferences ??
            CalendarWeekStartPreferenceRepository.instance {
     // 위젯 딥링크로 다른 달에 진입했으면 오늘은 그 달에 없다. 엉뚱한 달의
@@ -418,7 +419,7 @@ class ScheduleViewModel extends ChangeNotifier {
       final teamsFuture = _onboarding.fetchTeams();
       final me = await _auth.fetchMe();
       final teamId = me.favoriteTeamId;
-      final teams = await teamsFuture;
+      final teams = (await teamsFuture).getOrElse((_) => const []);
       Team? team;
       if (teamId != null) {
         for (final t in teams) {

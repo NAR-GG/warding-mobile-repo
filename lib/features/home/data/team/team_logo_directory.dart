@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/features/onboarding/data/onboarding_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 팀 코드 → 로고 URL 사전. 팀 코드만 내려오는 화면(홈 솔랭·한줄평, 내 선수 등)이
 /// 로고를 그릴 때 쓴다.
@@ -73,7 +74,8 @@ class TeamLogoDirectory {
   }
 
   static Future<List<TeamLogoEntry>> _loadFromOnboarding() async {
-    final teams = await OnboardingRepository.instance.fetchTeams();
+    final teams = (await di<OnboardingRepository>().fetchTeams())
+        .getOrElse((_) => const []);
     return [for (final t in teams) TeamLogoEntry(t.code, t.imageUrl)];
   }
 }
