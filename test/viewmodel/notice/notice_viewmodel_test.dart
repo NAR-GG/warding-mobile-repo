@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/features/notice/presentation/viewmodels/notice_viewmodel.dart';
 
 class MockNoticeRepository extends Mock implements NoticeRepository {}
@@ -21,10 +23,10 @@ void main() {
   test('첫 페이지 로드 후 last=false면 loadMore로 다음 페이지 누적', () async {
     when(() => repo.fetchNotices(page: 0, size: any(named: 'size')))
         .thenAnswer((_) async =>
-            NoticePage(notices: [_notice(1), _notice(2)], last: false));
+            Right(NoticePage(notices: [_notice(1), _notice(2)], last: false)));
     when(() => repo.fetchNotices(page: 1, size: any(named: 'size')))
         .thenAnswer(
-            (_) async => NoticePage(notices: [_notice(3)], last: true));
+            (_) async => Right(NoticePage(notices: [_notice(3)], last: true)));
 
     final vm = NoticeViewModel(repository: repo);
     await Future<void>.delayed(Duration.zero); // 생성자 내 첫 로드 대기
@@ -43,7 +45,7 @@ void main() {
 
   test('첫 로드 실패 시 failed=true', () async {
     when(() => repo.fetchNotices(page: 0, size: any(named: 'size')))
-        .thenThrow(Exception('network'));
+        .thenAnswer((_) async => const Left(NetworkFailure()));
 
     final vm = NoticeViewModel(repository: repo);
     await Future<void>.delayed(Duration.zero);

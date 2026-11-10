@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/util/api_client.dart' as api;
@@ -26,7 +28,8 @@ void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
     AuthService.instance.resetJwtCacheForTesting();
-    NoticeRepository.instance.resetPromotedCacheForTesting();
+    (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
 
     prefs = MockFilterPreferenceRepository();

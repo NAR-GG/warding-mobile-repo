@@ -8,7 +8,9 @@ import 'package:http/testing.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
@@ -203,7 +205,8 @@ HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
     loggedIn ? {'jwt': 'test-jwt'} : {},
   );
   AuthService.instance.resetJwtCacheForTesting();
-  NoticeRepository.instance.resetPromotedCacheForTesting();
+  (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
   NoticePreferenceRepository.instance.resetCacheForTesting();
   SubscriptionRepository.instance.resetCacheForTesting();
   ScheduleRepository.instance.resetCacheForTesting();

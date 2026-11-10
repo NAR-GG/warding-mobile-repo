@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:warding/features/my_review/data/repositories/my_review_repository_impl.dart';
 import 'package:warding/features/match_list/data/repositories/category_repository_impl.dart';
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
 import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
@@ -31,6 +33,9 @@ void configureDependencies() {
 
   // ── match_list ───────────────────────────────────────────────
   di.registerLazySingleton<CategoryRepository>(CategoryRepositoryImpl.new);
+
+  // ── notice ───────────────────────────────────────────────────
+  di.registerLazySingleton<NoticeRepository>(NoticeRepositoryImpl.new);
 
   // ── profile_edit ─────────────────────────────────────────────
   di.registerLazySingleton<ProfileImageRepository>(

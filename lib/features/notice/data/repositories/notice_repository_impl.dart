@@ -2,19 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/infrastructure/api_status_exception.dart';
 import 'package:warding/features/notice/domain/notice.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/config/secure_storage.dart';
 
 /// 공지사항 API (`/api/notices`). 공개 API라 인증이 필수는 아니지만,
 /// ADMIN 계정 토큰을 실어 보내면 임시저장 공지도 내려온다 (앱 검수용).
-class NoticeRepository {
-  NoticeRepository._();
-  static final NoticeRepository instance = NoticeRepository._();
-
+class NoticeRepositoryImpl implements NoticeRepository {
   static const bool useMock = false;
 
   /// 로그인 상태면 토큰 헤더를 만든다. 만료 토큰이어도 서버가 비회원 취급할 뿐이라
@@ -31,33 +33,49 @@ class NoticeRepository {
 
   /// 공지 목록을 조회한다 (발행분만, 고정 먼저, 최신순).
   /// ADMIN 토큰이면 임시저장 포함.
-  Future<NoticePage> fetchNotices({int page = 0, int size = 20}) async {
-    if (useMock) return _mockPage(page);
-    final response = await http.get(
-      Uri.parse(ApiConfig.noticesUrl(page: page, size: size)),
-      headers: await _optionalAuthHeaders(),
-    );
-    debugPrint('[Notice] 목록 ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('공지 조회 실패 (${response.statusCode})');
+  @override
+  Future<Either<Failure, NoticePage>> fetchNotices({
+    int page = 0,
+    int size = 20,
+  }) async {
+    if (useMock) return Right(_mockPage(page));
+    final url = ApiConfig.noticesUrl(page: page, size: size);
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: await _optionalAuthHeaders(),
+      );
+      debugPrint('[Notice] 목록 ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiStatusException(response.statusCode, endpoint: url);
+      }
+      return Right(NoticePage.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchNotices'));
     }
-    return NoticePage.fromJson(
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
   /// 앱 전용 고정 페이지(예: `ad-guide`)를 조회한다. 없거나 임시저장이면 예외.
-  Future<Notice> fetchPage(String slug) async {
-    final response = await http.get(Uri.parse(ApiConfig.noticePageUrl(slug)));
-    debugPrint('[Notice] 페이지 $slug ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('공지 페이지 조회 실패 (${response.statusCode})');
+  @override
+  Future<Either<Failure, Notice>> fetchPage(String slug) async {
+    final url = ApiConfig.noticePageUrl(slug);
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('[Notice] 페이지 $slug ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiStatusException(response.statusCode, endpoint: url);
+      }
+      return Right(Notice.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchPage'));
     }
-    return Notice.fromJson(
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>);
   }
 
   /// 공지 조회수 +1. 화면 표시와 무관한 집계라 실패해도 조용히 무시한다
   /// (열람 자체는 이미 성공한 상태 — 에러를 띄울 이유가 없다).
+  @override
   Future<void> markViewed(int id) async {
     if (useMock) return;
     try {
@@ -72,7 +90,7 @@ class NoticeRepository {
   (DateTime, List<Notice>)? _promotedCache;
 
   /// 진행 중인 배너 공지 요청. 같은 조회가 겹치면 여기에 합류한다.
-  Future<List<Notice>>? _promotedInFlight;
+  Future<Either<Failure, List<Notice>>>? _promotedInFlight;
 
   /// 배너 공지 캐시를 신뢰하는 시간.
   ///
@@ -96,6 +114,7 @@ class NoticeRepository {
   /// 쓴다. 같은 값을 [fetchPromoted] 로 받으면 아무리 빨라도 한 프레임 뒤라,
   /// 그 사이에 배너 없는 화면이 한 번 그려졌다가 배너가 끼어들며 캘린더를
   /// 밀어낸다 — 스플래시에서 미리 받아 둔 보람이 사라진다.
+  @override
   List<Notice>? get cachedPromoted {
     final cached = _promotedCache;
     if (cached == null) return null;
@@ -108,15 +127,18 @@ class NoticeRepository {
   ///
   /// 같은 조회가 이미 떠 있거나 방금 끝났으면 그 결과를 재사용한다.
   /// [forceRefresh] 를 주면 캐시를 건너뛰고 새로 받는다.
-  Future<List<Notice>> fetchPromoted({bool forceRefresh = false}) {
-    if (useMock) return Future.value([_mockNotices.first]);
+  @override
+  Future<Either<Failure, List<Notice>>> fetchPromoted({
+    bool forceRefresh = false,
+  }) {
+    if (useMock) return Future.value(Right([_mockNotices.first]));
 
     if (!forceRefresh) {
       final cached = _promotedCache;
       if (cached != null &&
           DateTime.now().difference(cached.$1) < _promotedCacheTtl) {
         debugPrint('[Notice] 배너 cache hit');
-        return Future.value(cached.$2);
+        return Future.value(Right(cached.$2));
       }
       final inFlight = _promotedInFlight;
       if (inFlight != null) {
@@ -125,31 +147,43 @@ class NoticeRepository {
       }
     }
 
-    final request = _fetchPromoted().timeout(_promotedTimeout).then((notices) {
-      _promotedCache = (DateTime.now(), notices);
-      return notices;
+    // **성공만 캐시한다.** 실패한 Either 를 캐시하면 TTL 동안 같은 실패가
+    // 재생되어 재시도가 막힌다.
+    final request = _fetchPromoted().then((result) {
+      result.match((_) {}, (notices) {
+        _promotedCache = (DateTime.now(), notices);
+      });
+      return result;
     });
-    // 성공·실패 무관하게 진행 중 표시를 지운다. 실패한 요청이 남아 있으면
-    // 다음 조회가 이미 끝난 실패 future 에 합류해 계속 같은 에러만 받는다.
-    // 그 사이 새 요청이 들어와 있으면 그 쪽을 지우지 않도록 확인한다.
-    // 정리용 체인 자체의 에러는 여기서 삼킨다 — 원본 에러는 호출자가 받는다.
+    // 끝나면 진행 중 표시를 지운다. 실패한 요청이 남아 있으면 다음 조회가 이미
+    // 끝난 future 에 합류해 계속 같은 실패만 받는다. 그 사이 새 요청이 들어와
+    // 있으면 그 쪽을 지우지 않도록 확인한다.
+    //
+    // 이제 실패가 Left 로 오므로 `catchError` 가 필요 없다 — `_fetchPromoted`
+    // 가 던지지 않는다.
     unawaited(request.whenComplete(() {
       if (identical(_promotedInFlight, request)) _promotedInFlight = null;
-    }).catchError((_) => const <Notice>[]));
+    }));
     _promotedInFlight = request;
     return request;
   }
 
-  Future<List<Notice>> _fetchPromoted() async {
-    final response = await http.get(Uri.parse(ApiConfig.promotedNoticeUrl));
-    debugPrint('[Notice] 배너 ← ${response.statusCode}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('배너 공지 조회 실패 (${response.statusCode})');
+  Future<Either<Failure, List<Notice>>> _fetchPromoted() async {
+    final url = ApiConfig.promotedNoticeUrl;
+    try {
+      final response =
+          await http.get(Uri.parse(url)).timeout(_promotedTimeout);
+      debugPrint('[Notice] 배너 ← ${response.statusCode}');
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiStatusException(response.statusCode, endpoint: url);
+      }
+      final body = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+      return Right([
+        for (final item in body) Notice.fromJson(item as Map<String, dynamic>),
+      ]);
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchPromoted'));
     }
-    final body = jsonDecode(utf8.decode(response.bodyBytes)) as List;
-    return [
-      for (final item in body) Notice.fromJson(item as Map<String, dynamic>),
-    ];
   }
 
   /// 테스트 전용 — 캐시를 비워 다음 [fetchPromoted] 가 다시 네트워크를 보게 한다.

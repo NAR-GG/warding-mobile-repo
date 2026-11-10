@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/core/util/api_client.dart' as api;
 
 /// 캘린더 상단 띠배너 공지 조회의 캐시 동작.
@@ -17,7 +19,11 @@ import 'package:warding/core/util/api_client.dart' as api;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final repo = NoticeRepository.instance;
+  final repo = NoticeRepositoryImpl();
+
+  /// Either 를 풀어 성공값만 꺼낸다. 실패면 테스트를 실패시킨다.
+  T ok<T>(Either<Object, T> e) =>
+      e.getOrElse((l) => fail('성공이어야 한다: $l'));
 
   /// 배너 엔드포인트가 받은 요청 수 — 캐시가 먹었는지 세는 기준.
   var hits = 0;
@@ -59,8 +65,8 @@ void main() {
   test('두 번째 조회는 캐시를 쓴다 — 스플래시 프리페치가 헛돌지 않도록', () async {
     mockBanner(bannerBody([(id: 1, title: '점검 안내')]));
 
-    final first = await repo.fetchPromoted();
-    final second = await repo.fetchPromoted();
+    final first = ok(await repo.fetchPromoted());
+    final second = ok(await repo.fetchPromoted());
 
     expect(first.single.title, '점검 안내');
     expect(second.single.title, '점검 안내');
@@ -76,8 +82,8 @@ void main() {
       repo.fetchPromoted(),
     ]);
 
-    expect(results[0].single.id, 1);
-    expect(results[1].single.id, 1);
+    expect(ok(results[0]).single.id, 1);
+    expect(ok(results[1]).single.id, 1);
     expect(hits, 1);
   });
 
@@ -107,7 +113,7 @@ void main() {
     await repo.fetchPromoted();
 
     mockBanner(bannerBody([(id: 2, title: '새 공지')]));
-    final refreshed = await repo.fetchPromoted(forceRefresh: true);
+    final refreshed = ok(await repo.fetchPromoted(forceRefresh: true));
 
     expect(refreshed.single.title, '새 공지');
     expect(hits, 2, reason: '캐시가 있어도 새로 받아야 하므로 왕복이 한 번 더 든다');
@@ -118,11 +124,14 @@ void main() {
   test('실패한 요청은 캐시에 남지 않는다 — 다음 조회가 다시 시도한다', () async {
     mockBanner('', status: 500);
 
-    await expectLater(repo.fetchPromoted(), throwsA(isA<Exception>()));
-    expect(repo.cachedPromoted, isNull);
+    // 던지지 않고 Left 로 돌려준다 — 호출부가 실패 처리를 빠뜨릴 수 없다.
+    final failed = await repo.fetchPromoted();
+    expect(failed.getLeft().toNullable(), isA<ServerFailure>());
+    expect(repo.cachedPromoted, isNull,
+        reason: '실패를 캐시하면 TTL 동안 재시도가 막힌다');
 
     mockBanner(bannerBody([(id: 3, title: '복구됨')]));
-    final retried = await repo.fetchPromoted();
+    final retried = ok(await repo.fetchPromoted());
 
     expect(retried.single.title, '복구됨');
   });
@@ -146,17 +155,21 @@ void main() {
         );
       }));
 
-      final page = await repo.fetchPage('ad-guide');
+      final page = ok(await repo.fetchPage('ad-guide'));
 
       expect(requested!.path, endsWith('/notices/by-slug/ad-guide'));
       expect(page.title, '와딩 광고 안내');
       expect(page.actionUrl, 'https://forms.gle/abc');
     });
 
-    test('없는 페이지(404)는 예외를 던진다', () async {
+    test('없는 페이지(404)는 ServerFailure 를 돌려준다', () async {
       mockBanner('', status: 404);
 
-      expect(() => repo.fetchPage('ad-guide'), throwsException);
+      final result = await repo.fetchPage('ad-guide');
+
+      final failure = result.getLeft().toNullable();
+      expect(failure, isA<ServerFailure>());
+      expect((failure! as ServerFailure).statusCode, 404);
     });
   });
 }

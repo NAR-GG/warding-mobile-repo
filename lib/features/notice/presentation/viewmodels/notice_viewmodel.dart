@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 
 /// 공지사항 목록 화면 상태.
 ///
@@ -9,7 +10,7 @@ import 'package:warding/features/notice/data/notice_repository.dart';
 /// 다음 페이지를 이어 붙인다.
 class NoticeViewModel extends ChangeNotifier {
   NoticeViewModel({NoticeRepository? repository})
-      : _repository = repository ?? NoticeRepository.instance {
+      : _repository = repository ?? di<NoticeRepository>() {
     loadMore();
   }
 
@@ -52,18 +53,22 @@ class NoticeViewModel extends ChangeNotifier {
     _loading = true;
     _failed = false;
     _safeNotify();
-    try {
-      final page =
-          await _repository.fetchNotices(page: _page, size: _pageSize);
-      _notices.addAll(page.notices);
-      _hasMore = !page.last;
-      _page += 1;
-    } catch (e) {
-      debugPrint('[NoticeViewModel] 목록 조회 실패: $e');
-      _failed = _notices.isEmpty;
-    } finally {
-      _loading = false;
-      _safeNotify();
-    }
+    final result =
+        await _repository.fetchNotices(page: _page, size: _pageSize);
+    result.match(
+      (failure) {
+        debugPrint('[NoticeViewModel] 목록 조회 실패: $failure');
+        // 이미 받아 둔 목록이 있으면 실패 화면으로 덮지 않는다 — 다음
+        // 페이지를 못 받은 것이지 지금까지 본 것이 무효가 된 게 아니다.
+        _failed = _notices.isEmpty;
+      },
+      (page) {
+        _notices.addAll(page.notices);
+        _hasMore = !page.last;
+        _page += 1;
+      },
+    );
+    _loading = false;
+    _safeNotify();
   }
 }

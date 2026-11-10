@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/domain/failure.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
@@ -13,7 +15,9 @@ import 'package:warding/core/domain/player_subscription.dart';
 import 'package:warding/core/domain/schedule_match.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
@@ -321,7 +325,8 @@ void main() {
 
   setUp(() {
     server = _FakeApi();
-    NoticeRepository.instance.resetPromotedCacheForTesting();
+    (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
     SubscriptionRepository.instance.resetCacheForTesting();
     TeamLogoDirectory.instance.resetForTesting();
@@ -1208,7 +1213,7 @@ void main() {
       const notice = Notice(id: 7, title: '점검 안내', content: '', pinned: false);
       final notices = _MockNotices();
       final prefs = _MockNoticePrefs();
-      final fetch = Completer<List<Notice>>();
+      final fetch = Completer<Either<Failure, List<Notice>>>();
       when(() => notices.cachedPromoted).thenReturn(const [notice]);
       when(() => notices.fetchPromoted()).thenAnswer((_) => fetch.future);
       when(() => prefs.cachedValue).thenReturn(null);
@@ -1230,7 +1235,7 @@ void main() {
       vm.dismissBanner();
       expect(vm.bannerVisible, isFalse);
 
-      fetch.complete(const [notice]);
+      fetch.complete(const Right([notice]));
       await pumpEventQueue();
       expect(vm.bannerVisible, isFalse);
     });

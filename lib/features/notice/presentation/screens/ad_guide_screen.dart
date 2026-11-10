@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/notice/presentation/screens/notice_detail_screen.dart';
 
@@ -28,12 +29,19 @@ class _AdGuideScreenState extends State<AdGuideScreen> {
   @override
   void initState() {
     super.initState();
-    _page = NoticeRepository.instance.fetchPage(AdGuideScreen.slug);
+    _page = _load();
+  }
+
+  /// `FutureBuilder` 는 에러를 예외로 받으므로 Left 를 예외로 되돌린다.
+  /// 이 화면은 실패 종류를 구분하지 않고 재시도 버튼만 보여준다.
+  Future<Notice> _load() async {
+    final result = await di<NoticeRepository>().fetchPage(AdGuideScreen.slug);
+    return result.getOrElse((failure) => throw StateError('$failure'));
   }
 
   void _retry() {
     setState(() {
-      _page = NoticeRepository.instance.fetchPage(AdGuideScreen.slug);
+      _page = _load();
     });
   }
 

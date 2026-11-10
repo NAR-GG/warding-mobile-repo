@@ -8,7 +8,8 @@ import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
 
@@ -54,7 +55,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     // 조회수 집계 — 화면 진입 1회. 임시저장은 ADMIN 검수 열람이라 세지 않는다.
     // 응답을 기다리지 않는다(실패해도 화면은 그대로).
     if (!widget.notice.isDraft) {
-      NoticeRepository.instance.markViewed(widget.notice.id);
+      di<NoticeRepository>().markViewed(widget.notice.id);
     }
   }
 

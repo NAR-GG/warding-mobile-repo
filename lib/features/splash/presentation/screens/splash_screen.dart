@@ -13,7 +13,8 @@ import 'package:warding/core/config/secure_storage.dart';
 import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_service.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
@@ -288,7 +289,7 @@ class _SplashScreenState extends State<SplashScreen>
   /// 합류하므로([NoticeRepository.fetchPromoted]) 왕복이 두 번 일어나지 않는다.
   Future<void> _prefetchPromotedNotice() async {
     try {
-      await NoticeRepository.instance.fetchPromoted();
+      await di<NoticeRepository>().fetchPromoted();
     } catch (e) {
       debugPrint('[Splash] 공지 프리페치 실패(무시): $e');
     }

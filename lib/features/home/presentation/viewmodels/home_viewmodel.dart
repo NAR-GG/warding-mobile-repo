@@ -14,7 +14,7 @@ import 'package:warding/features/home/domain/worlds_standings.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/notice/data/notice_repository.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/notification/member_notification_repository.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
@@ -79,7 +79,7 @@ class HomeViewModel extends ChangeNotifier {
     AuthService? auth,
     OnboardingRepository? onboarding,
     TeamPreferenceRepository? teamPreferences,
-  }) : _notices = notices ?? NoticeRepository.instance,
+  }) : _notices = notices ?? di<NoticeRepository>(),
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
        _schedule = schedule ?? ScheduleRepository.instance,
@@ -247,7 +247,9 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadPromotedNotice() async {
     try {
-      final notices = await _notices.fetchPromoted();
+      // 배너 실패는 홈의 한 줄이고 다른 섹션과 무관하다 — 빈 목록으로 둔다.
+      final notices =
+          (await _notices.fetchPromoted()).getOrElse((_) => const []);
       final dismissed = await _noticePreferences.loadDismissedIds();
       if (_disposed) return;
       final before = promotedNotice;
