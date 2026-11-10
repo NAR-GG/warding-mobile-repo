@@ -2,11 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/infrastructure/api_status_exception.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 
 /// 프로필 이미지 업로드 — 백엔드에서 Cloudinary 서명 파라미터를 발급받아
 /// 앱이 Cloudinary 로 직접 업로드하고, 받은 `secure_url` 을 돌려준다.
@@ -14,18 +19,23 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 ///
 /// 흐름: `POST /api/auth/me/profile-image/signature`(인증) →
 /// Cloudinary `image/upload`(multipart) → `secure_url`.
-class ProfileImageRepository {
-  ProfileImageRepository({AuthService? auth})
+class ProfileImageRepositoryImpl implements ProfileImageRepository {
+  ProfileImageRepositoryImpl({AuthService? auth})
       : _auth = auth ?? AuthService.instance;
-
-  static final ProfileImageRepository instance = ProfileImageRepository();
 
   final AuthService _auth;
 
-  /// [file] 을 Cloudinary 에 업로드하고 `secure_url` 을 반환한다.
-  Future<String> upload(File file) async {
-    final sig = await _fetchSignature();
-    return _uploadToCloudinary(sig, file);
+  @override
+  Future<Either<Failure, String>> upload(File file) async {
+    // 두 단계를 한 try 로 감싼다. 내부 메서드는 예외를 던지고 여기서만
+    // Failure 로 바꾼다 — 단계마다 Either 를 엮으면 코드만 길어지고,
+    // 호출부가 할 수 있는 일은 어느 단계든 "다시 시도" 하나다.
+    try {
+      final sig = await _fetchSignature();
+      return Right(await _uploadToCloudinary(sig, file));
+    } catch (e) {
+      return Left(toFailure(e, op: 'uploadProfileImage'));
+    }
   }
 
   /// 백엔드에서 서명 파라미터를 발급받는다(인증 필요).
@@ -43,7 +53,10 @@ class ProfileImageRepository {
         reason: 'status_${response.statusCode}',
         extra: {'endpoint': ApiConfig.profileImageSignatureUrl, 'statusCode': response.statusCode, 'step': 'fetchSignature'},
       );
-      throw Exception('프로필 이미지 서명 발급 실패 (${response.statusCode})');
+      throw ApiStatusException(
+        response.statusCode,
+        endpoint: ApiConfig.profileImageSignatureUrl,
+      );
     }
     return _CloudinarySignature.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
@@ -75,9 +88,7 @@ class ProfileImageRepository {
         reason: 'status_${response.statusCode}',
         extra: {'endpoint': sig.uploadUrl, 'statusCode': response.statusCode, 'step': 'cloudinaryUpload'},
       );
-      throw Exception(
-        'Cloudinary 업로드 실패 (${response.statusCode}): ${response.body}',
-      );
+      throw ApiStatusException(response.statusCode, endpoint: sig.uploadUrl);
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final url = data['secure_url'] as String?;

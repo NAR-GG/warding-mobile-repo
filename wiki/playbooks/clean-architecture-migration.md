@@ -86,6 +86,19 @@ features/community/data/         community_draft_repository
 
 판별 기준: **네트워크를 타지 않고 실패가 기본값으로 수렴하면 그대로 둔다.**
 
+## 인프라끼리 쓰는 repository 도 대상이 아니다
+
+`core/infrastructure/device/device_repository.dart` — 호출부가 ViewModel 이 아니라
+`auth_service`·`fcm_service` 다. `registerDevice` 는 비로그인·스토리지 잠금 상황에서
+**조용히 건너뛰고 다음 기회에 등록**하며 반환형이 `Future<void>` 라 호출부가 결과를 쓰지
+않는다.
+
+여기에 `Either` 를 씌우면 호출부에 의미 없는 `match` 만 생긴다. 같은 이유로
+`ad_repository`·`live_activity_push_token_repository` 도 호출부를 먼저 확인한다 —
+ViewModel 이 결과로 화면을 바꾸지 않으면 그대로 둔다.
+
+**기준: 실패가 사용자에게 보이지 않고 호출부가 결과를 쓰지 않으면 그대로 둔다.**
+
 ## DTO/Entity 분리도 생략할 수 있다
 
 모델이 중첩 클래스로 깊으면 복제 비용이 이득을 넘는다. `CategoryTree` 는 클래스 5 개

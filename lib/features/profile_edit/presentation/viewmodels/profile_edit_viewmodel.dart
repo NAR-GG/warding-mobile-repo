@@ -9,7 +9,8 @@ import 'package:warding/core/domain/team.dart';
 import 'package:warding/core/domain/user_profile.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_repository.dart';
-import 'package:warding/features/profile_edit/data/profile_image_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 
 /// 프로필 수정 화면 ViewModel.
 ///
@@ -25,7 +26,7 @@ class ProfileEditViewModel extends ChangeNotifier {
     ImagePicker? picker,
   })  : _auth = auth ?? AuthService.instance,
         _onboarding = onboarding ?? OnboardingRepository.instance,
-        _imageRepo = imageRepo ?? ProfileImageRepository.instance,
+        _imageRepo = imageRepo ?? di<ProfileImageRepository>(),
         _picker = picker ?? ImagePicker() {
     load();
   }
@@ -196,7 +197,17 @@ class ProfileEditViewModel extends ChangeNotifier {
       var imageUrl = _profile?.profileImageUrl;
       final pending = _pendingImagePath;
       if (pending != null && pending.isNotEmpty) {
-        imageUrl = await _imageRepo.upload(File(pending));
+        final uploaded = await _imageRepo.upload(File(pending));
+        // 업로드 실패는 저장 전체 실패와 같게 다룬다 — 이미지를 못 올린 채
+        // 프로필만 저장하면 사용자가 고른 사진이 조용히 사라진다.
+        final failure = uploaded.getLeft().toNullable();
+        if (failure != null) {
+          debugPrint('[ProfileEdit] 이미지 업로드 실패: $failure');
+          _nameError =
+              appStrings?.saveFailed ?? 'Failed to save. Please try again later.';
+          return false;
+        }
+        imageUrl = uploaded.getOrElse((_) => imageUrl ?? '');
       }
       final updated = await _auth.updateProfile(
         name: _name.trim(),
