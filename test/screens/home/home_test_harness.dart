@@ -12,7 +12,8 @@ import 'package:warding/core/di_container.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
 import 'package:warding/core/util/api_client.dart' as api;
@@ -209,7 +210,8 @@ HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
       .resetPromotedCacheForTesting();
   NoticePreferenceRepository.instance.resetCacheForTesting();
   SubscriptionRepository.instance.resetCacheForTesting();
-  ScheduleRepository.instance.resetCacheForTesting();
+  (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
   TeamLogoDirectory.instance.resetForTesting();
   api.setApiClientForTesting(server.client);
   addTearDown(() => api.setApiClientForTesting(null));

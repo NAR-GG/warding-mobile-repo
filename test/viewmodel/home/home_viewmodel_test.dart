@@ -19,7 +19,8 @@ import 'package:warding/core/di_container.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/features/home/data/team/team_logo_directory.dart';
 import 'package:warding/core/util/api_client.dart' as api;
@@ -696,8 +697,10 @@ void main() {
       'alarm': false,
     };
 
-    setUp(() => ScheduleRepository.instance.resetCacheForTesting());
-    tearDown(() => ScheduleRepository.instance.resetCacheForTesting());
+    setUp(() => (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting());
+    tearDown(() => (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting());
 
     test('standings 가 null 인 리그는 칩에서 빠지고 false 는 점선, true 는 live', () async {
       server.filterLeagues = [
@@ -773,7 +776,8 @@ void main() {
 
       // 사용자가 직접 바꾼 뒤 앱 복귀 등으로 칩을 다시 불러도 유지돼야 한다.
       vm.selectLeague('LCK');
-      ScheduleRepository.instance.resetCacheForTesting();
+      (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
       await vm.refreshAll();
       await pumpEventQueue();
 
@@ -799,7 +803,8 @@ void main() {
         league('ASIAN_GAMES', standings: true),
         league('LCK', standings: false),
       ];
-      ScheduleRepository.instance.resetCacheForTesting();
+      (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
       await vm.refreshAll();
       await pumpEventQueue();
 
@@ -1246,12 +1251,12 @@ void main() {
 
     test('오늘 경기: 늦게 도착한 옛 응답이 새 응답을 덮지 않는다', () async {
       final schedule = _MockSchedule();
-      final gates = <Completer<List<ScheduleMatch>>>[];
+      final gates = <Completer<Either<Failure, List<ScheduleMatch>>>>[];
       when(
         () =>
             schedule.fetchMatchesByDate(any(), leagues: any(named: 'leagues')),
       ).thenAnswer((_) {
-        final c = Completer<List<ScheduleMatch>>();
+        final c = Completer<Either<Failure, List<ScheduleMatch>>>();
         gates.add(c);
         return c.future;
       });
@@ -1271,9 +1276,11 @@ void main() {
       expect(gates.length, 2);
 
       // 새 요청이 먼저 끝나고, 옛 요청이 뒤늦게 끝난다.
-      gates[1].complete([ScheduleMatch.fromJson(_match('new', 'inProgress'))]);
+      gates[1].complete(
+          Right([ScheduleMatch.fromJson(_match('new', 'inProgress'))]));
       await second;
-      gates[0].complete([ScheduleMatch.fromJson(_match('old', 'inProgress'))]);
+      gates[0].complete(
+          Right([ScheduleMatch.fromJson(_match('old', 'inProgress'))]));
       await pumpEventQueue();
 
       expect(vm.todayMatchesSorted.map((m) => m.matchId), ['new']);

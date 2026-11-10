@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/ui/nar_select_dropdown_field.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 필터 모달에서 펼쳐진 드롭다운 식별자.
 enum FilterDropdown { none, league, team }
@@ -60,7 +62,7 @@ class FilterViewModel extends ChangeNotifier {
     List<String>? initialLeagues,
     List<int>? initialTeamIds,
     ScheduleRepository? repository,
-  })  : _repository = repository ?? ScheduleRepository.instance,
+  })  : _repository = repository ?? di<ScheduleRepository>(),
         _initialLeagueCodes = _stripAll(initialLeagues),
         _initialTeamIds = (initialTeamIds ?? const []).toSet(),
         _selectedLeagueCodes = _stripAll(initialLeagues),
@@ -235,8 +237,11 @@ class FilterViewModel extends ChangeNotifier {
     _loading = true;
     _safeNotify();
     try {
+      // 아래 catch 가 복구를 하므로 실패를 그 경로로 보낸다.
       final results = await Future.wait(
-        leagues.map((l) => _repository.fetchFilterOptions(league: l)),
+        leagues.map((l) => _repository
+            .fetchFilterOptions(league: l)
+            .then((r) => r.getOrElse((f) => throw FailureException(f)))),
       );
       if (loadId != _loadId) return; // 더 최신 선택의 조회가 이미 떠 있다.
       _leagues = results.first.leagues;

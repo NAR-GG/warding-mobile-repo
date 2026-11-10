@@ -20,7 +20,7 @@ import 'package:warding/core/domain/repositories/member_notification_repository.
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/home/domain/repositories/standings_repository.dart';
@@ -83,7 +83,7 @@ class HomeViewModel extends ChangeNotifier {
   }) : _notices = notices ?? di<NoticeRepository>(),
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
-       _schedule = schedule ?? ScheduleRepository.instance,
+       _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
        _community = community ?? CommunityRepository.instance,
        _shortsRepo = shorts ?? di<ShortsRepository>(),
@@ -574,10 +574,11 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> loadTodayMatches() async {
     final gen = ++_todayGen;
     try {
-      final matches = await _schedule.fetchMatchesByDate(
+      final matches = (await _schedule.fetchMatchesByDate(
         DateTime.now(),
         leagues: const ['ALL'],
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       if (_disposed || gen != _todayGen) return;
       _todayMatches = matches;
       _todayFirstLoadPending = false;
@@ -660,7 +661,8 @@ class HomeViewModel extends ChangeNotifier {
     // 그대로 둔다.
     String serverDefault = '';
     try {
-      final options = await _schedule.fetchFilterOptions();
+      final options = (await _schedule.fetchFilterOptions())
+          .getOrElse((f) => throw FailureException(f));
       serverDefault = options.defaultLeague;
       if (!options.hasLeagueMeta) {
         chips = _fallbackLeagueChips;

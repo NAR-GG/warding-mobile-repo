@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,7 +18,8 @@ import 'package:warding/core/ui/notification_feed_card.dart';
 import 'package:warding/core/ui/scroll_to_top_button.dart';
 import 'package:warding/core/domain/member_notification.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/tab_route.dart';
@@ -249,9 +251,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     // 알림 생성 날짜로 일정 API를 조회해 ScheduleMatch를 찾아 스코어 카드에 넘긴다.
     ScheduleMatch? match;
     try {
-      final matches = await ScheduleRepository.instance.fetchMatchesByDate(
+      final matches = (await di<ScheduleRepository>().fetchMatchesByDate(
         n.createdAt,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       final found = matches.where((m) => m.matchId == matchId);
       if (found.isNotEmpty) match = found.first;
     } catch (_) {}

@@ -4,7 +4,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 
+import 'package:fpdart/fpdart.dart';
+
 import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/data/failure_mapper.dart';
+import 'package:warding/core/domain/failure.dart';
+import 'package:warding/features/schedule/domain/match_page.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/domain/schedule_match.dart';
@@ -13,33 +19,7 @@ import 'package:warding/core/util/league_meta.dart';
 import 'package:warding/core/util/match_status.dart';
 
 /// 커서 페이지네이션 경기 리스트 한 페이지 결과.
-class MatchPage {
-  const MatchPage({
-    required this.matches,
-    required this.nextCursor,
-    required this.hasNext,
-    this.prevCursor,
-    this.hasPrev = false,
-  });
-
-  final List<ScheduleMatch> matches;
-  final String? nextCursor;
-  final bool hasNext;
-
-  /// 이전(과거) 방향으로 한 페이지 더 받기 위한 커서.
-  ///
-  /// `around` 로 오늘 앞뒤를 함께 받았거나 `before` 로 과거를 이어받은
-  /// 응답에 채워진다. 더 과거가 없으면 null.
-  final String? prevCursor;
-
-  /// 위쪽(과거)에 더 받을 페이지가 있는지.
-  final bool hasPrev;
-}
-
-/// 경기 일정 관련 API (`/api/mobile/schedules`).
-class ScheduleRepository {
-  ScheduleRepository._();
-  static final ScheduleRepository instance = ScheduleRepository._();
+class ScheduleRepositoryImpl implements ScheduleRepository {
 
   /// 테스트 전용 — 캘린더·날짜별 경기·커서 페이지 캐시를 모두 비운다.
   ///
@@ -118,7 +98,26 @@ class ScheduleRepository {
   ///
   /// 같은 조건의 요청이 이미 떠 있거나 방금 끝났으면 그 결과를 재사용한다.
   /// [forceRefresh] 를 주면 캐시를 건너뛰고 새로 받는다 (당겨서 새로고침 등).
-  Future<List<MatchCalendarDay>> fetchCalendar(
+  @override
+  Future<Either<Failure, List<MatchCalendarDay>>> fetchCalendar(
+    DateTime month, {
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
+    bool forceRefresh = false,
+  }) async {
+    try {
+      return Right(await _fetchCalendarOrThrow(
+        month,
+        leagues: leagues,
+        teamIds: teamIds,
+        forceRefresh: forceRefresh,
+      ));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchCalendar'));
+    }
+  }
+
+  Future<List<MatchCalendarDay>> _fetchCalendarOrThrow(
     DateTime month, {
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
@@ -205,7 +204,24 @@ class ScheduleRepository {
   ///
   /// 같은 조건의 요청이 이미 떠 있거나 방금 끝났으면([_calendarCacheTtl] 이내)
   /// 그 결과를 재사용한다.
-  Future<List<ScheduleMatch>> fetchMatchesByDate(
+  @override
+  Future<Either<Failure, List<ScheduleMatch>>> fetchMatchesByDate(
+    DateTime date, {
+    List<String> leagues = const ['LCK'],
+    List<int>? teamIds,
+  }) async {
+    try {
+      return Right(await _fetchMatchesByDateOrThrow(
+        date,
+        leagues: leagues,
+        teamIds: teamIds,
+      ));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchMatchesByDate'));
+    }
+  }
+
+  Future<List<ScheduleMatch>> _fetchMatchesByDateOrThrow(
     DateTime date, {
     List<String> leagues = const ['LCK'],
     List<int>? teamIds,
@@ -304,7 +320,36 @@ class ScheduleRepository {
   ///
   /// 같은 조건(같은 커서 포함)의 요청이 이미 떠 있거나 방금 끝났으면
   /// ([_calendarCacheTtl] 이내) 그 결과를 재사용한다.
-  Future<MatchPage> fetchMatches({
+  @override
+  Future<Either<Failure, MatchPage>> fetchMatches({
+    String? cursor,
+    int size = 20,
+    required String league,
+    int? teamId,
+    int? seasonYear,
+    String? split,
+    String? from,
+    String? around,
+    String? before,
+  }) async {
+    try {
+      return Right(await _fetchMatchesOrThrow(
+        cursor: cursor,
+        size: size,
+        league: league,
+        teamId: teamId,
+        seasonYear: seasonYear,
+        split: split,
+        from: from,
+        around: around,
+        before: before,
+      ));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchMatches'));
+    }
+  }
+
+  Future<MatchPage> _fetchMatchesOrThrow({
     String? cursor,
     int size = 20,
     required String league,
@@ -409,7 +454,20 @@ class ScheduleRepository {
   ///
   /// 같은 리그 요청이 이미 떠 있거나 방금 끝났으면([_filtersCacheTtl] 이내)
   /// 그 결과를 재사용한다.
-  Future<ScheduleFilterOptions> fetchFilterOptions({String league = 'LCK'}) {
+  @override
+  Future<Either<Failure, ScheduleFilterOptions>> fetchFilterOptions({
+    String league = 'LCK',
+  }) async {
+    try {
+      return Right(await _fetchFilterOptionsOrThrow(league: league));
+    } catch (e) {
+      return Left(toFailure(e, op: 'fetchFilterOptions'));
+    }
+  }
+
+  Future<ScheduleFilterOptions> _fetchFilterOptionsOrThrow({
+    String league = 'LCK',
+  }) {
     final cached = _filtersCache[league];
     if (cached != null &&
         DateTime.now().difference(cached.$1) < _filtersCacheTtl) {

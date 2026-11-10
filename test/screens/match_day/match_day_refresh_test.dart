@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/match_day/presentation/widgets/match_day_view.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';
 
@@ -58,7 +59,7 @@ void main() {
         leagues: any(named: 'leagues'),
         teamIds: any(named: 'teamIds'),
       ),
-    ).thenAnswer((_) async => [sample()]);
+    ).thenAnswer((_) async => Right([sample()]));
 
     final vm = MatchDayViewModel(date: DateTime(2026, 8, 19), repository: repo);
     addTearDown(vm.dispose);

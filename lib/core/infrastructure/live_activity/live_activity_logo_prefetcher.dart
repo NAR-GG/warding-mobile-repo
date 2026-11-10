@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/util/app_image.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 
 /// 서버가 만들 카드에 쓸 팀 로고를 미리 App Group 에 캐싱한다.
@@ -18,7 +20,7 @@ class LiveActivityLogoPrefetcher {
     LiveActivityService? service,
     ScheduleRepository? scheduleRepository,
   })  : _service = service ?? LiveActivityService.instance,
-        _schedule = scheduleRepository ?? ScheduleRepository.instance;
+        _schedule = scheduleRepository ?? di<ScheduleRepository>();
 
   final LiveActivityService _service;
   final ScheduleRepository _schedule;
@@ -121,7 +123,8 @@ class LiveActivityLogoPrefetcher {
   Future<void> prefetchLeague([String league = defaultLeague]) async {
     if (!await _service.isSupported()) return;
     try {
-      final options = await _schedule.fetchFilterOptions(league: league);
+      final options = (await _schedule.fetchFilterOptions(league: league))
+          .getOrElse((f) => throw FailureException(f));
       await prefetchTeams(options.teams);
     } catch (e) {
       debugPrint('[LiveActivity] 로고 프리페치용 팀 목록 조회 실패($league): $e');

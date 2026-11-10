@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_pager_viewmodel.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
@@ -15,7 +16,7 @@ void main() {
           any(),
           leagues: any(named: 'leagues'),
           teamIds: any(named: 'teamIds'),
-        )).thenAnswer((_) async => const []);
+        )).thenAnswer((_) async => const Right([]));
   });
 
   test('초기 상태는 [초기일-1, 초기일, 초기일+1] 3페이지 윈도우로 채워진다', () async {

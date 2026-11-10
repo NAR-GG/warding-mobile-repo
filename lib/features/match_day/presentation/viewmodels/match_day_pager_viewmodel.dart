@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/infrastructure/preference/spoiler_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';
 
 /// [MatchDayScreen] 좌우 스와이프용 3페이지 롤링 윈도우 ViewModel.
@@ -18,7 +19,7 @@ class MatchDayPagerViewModel extends ChangeNotifier {
     this.teamIds,
     ScheduleRepository? repository,
     SpoilerPreferenceRepository? spoilerPreferences,
-  }) : _repository = repository ?? ScheduleRepository.instance,
+  }) : _repository = repository ?? di<ScheduleRepository>(),
        _spoilerPreferences =
            spoilerPreferences ?? SpoilerPreferenceRepository.instance {
     // 이미 읽어둔 값이 있으면 첫 프레임부터 그 상태로 그린다.

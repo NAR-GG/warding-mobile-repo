@@ -7,6 +7,7 @@ import 'api_client.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/core/domain/calendar_week_start.dart';
@@ -20,7 +21,7 @@ import 'package:warding/features/onboarding/domain/repositories/onboarding_repos
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/util/match_detail_router.dart';
 import 'package:warding/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:warding/core/util/app_image.dart';
@@ -105,13 +106,15 @@ class HomeWidgetService {
             // 개별 리그 실패는 빈 목록으로 접어 기존 동작을 유지한다.
             final perLeague = await Future.wait([
               for (final league in leaguesForDetail)
-                ScheduleRepository.instance
+                di<ScheduleRepository>()
                     .fetchMatchesByDate(
                       now,
                       leagues: [league],
                       teamIds: teamIds.isNotEmpty ? teamIds : null,
                     )
-                    .catchError((_) => <ScheduleMatch>[]),
+                    // 실패는 Left 로 오므로 catchError 가 필요 없다 — 빈
+                    // 목록으로 떨어뜨려 다른 리그 결과는 그대로 쓴다.
+                    .then((r) => r.getOrElse((_) => const [])),
             ]);
             for (final matches in perLeague) {
               allMatches.addAll(matches);
@@ -227,13 +230,13 @@ class HomeWidgetService {
       final matches = <ScheduleMatch>[];
       final perLeague = await Future.wait([
         for (final league in leaguesForDetail)
-          ScheduleRepository.instance
+          di<ScheduleRepository>()
               .fetchMatchesByDate(
                 now,
                 leagues: [league],
                 teamIds: teamIds.isNotEmpty ? teamIds : null,
               )
-              .catchError((_) => <ScheduleMatch>[]),
+              .then((r) => r.getOrElse((_) => const [])),
       ]);
       for (final result in perLeague) {
         matches.addAll(result);
@@ -681,11 +684,12 @@ class HomeWidgetService {
       final month = await _currentDisplayedMonth();
       // 저장된 필터를 그대로 보낸다('ALL' → 'LCK' 치환 제거). 스플래시가 미리
       // 받아 둔 것과 같은 주소가 되므로 앱을 켤 때 캘린더를 두 번 받지도 않는다.
-      final days = await ScheduleRepository.instance.fetchCalendar(
+      final days = (await di<ScheduleRepository>().fetchCalendar(
         month,
         leagues: leagues,
         teamIds: teamIds.isNotEmpty ? teamIds : null,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       final matchesByDay = <int, List<CalendarMatchBrief>>{
         for (final day in days) day.date.day: day.matches,
       };
@@ -885,11 +889,12 @@ class HomeWidgetService {
     // 이 위젯은 경기 일정 화면의 필터와 같은 것을 보여주기로 한 것이라
     // 필터가 '전체'인데 위젯만 LCK 만 나오는 상태였다(8월 기준 경기 있는 날
     // 31일 → 22일). 캘린더 API 는 'ALL' 을 그대로 받는다.
-    final days = await ScheduleRepository.instance.fetchCalendar(
+    final days = (await di<ScheduleRepository>().fetchCalendar(
       month,
       leagues: leagues,
       teamIds: teamIds.isNotEmpty ? teamIds : null,
-    );
+    ))
+          .getOrElse((f) => throw FailureException(f));
     final matchesByDay = <int, List<CalendarMatchBrief>>{
       for (final day in days) day.date.day: day.matches,
     };

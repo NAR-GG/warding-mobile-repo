@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 날짜 피커 모달 전용 ViewModel.
 ///
@@ -17,7 +19,7 @@ class MonthPickerViewModel extends ChangeNotifier {
   }) : _month = DateTime(initialMonth.year, initialMonth.month),
        _filterLeagues = filterLeagues,
        _filterTeamIds = filterTeamIds,
-       _repository = repository ?? ScheduleRepository.instance {
+       _repository = repository ?? di<ScheduleRepository>() {
     loadCalendar();
   }
 
@@ -55,11 +57,12 @@ class MonthPickerViewModel extends ChangeNotifier {
   /// 현재 월의 경기 있는 날짜를 조회한다.
   Future<void> loadCalendar() async {
     try {
-      final days = await _repository.fetchCalendar(
+      final days = (await _repository.fetchCalendar(
         _month,
         leagues: _filterLeagues,
         teamIds: _filterTeamIds,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _matchDays = {for (final day in days) day.date.day};
     } catch (e) {
       debugPrint('[MonthPicker] loadCalendar 에러: $e');

@@ -5,7 +5,7 @@ import 'package:warding/core/domain/team_notification_subscription.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/subscription/data/subscription_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 
@@ -144,11 +144,17 @@ class LiveMatchActivityController {
 
     try {
       final now = DateTime.now();
+      // 아래 catch 가 null 을 돌려준다 — "목록을 모른다" 와 "경기가 없다" 를
+      // 구분해야 멀쩡한 라이브 카드를 내리지 않는다. 그래서 실패를 그 경로로
+      // 보낸다.
       final days = await Future.wait([
-        ScheduleRepository.instance.fetchMatchesByDate(now, leagues: const ['ALL']),
-        ScheduleRepository.instance.fetchMatchesByDate(
-            now.subtract(const Duration(days: 1)),
-            leagues: const ['ALL']),
+        di<ScheduleRepository>()
+            .fetchMatchesByDate(now, leagues: const ['ALL'])
+            .then((r) => r.getOrElse((f) => throw FailureException(f))),
+        di<ScheduleRepository>()
+            .fetchMatchesByDate(now.subtract(const Duration(days: 1)),
+                leagues: const ['ALL'])
+            .then((r) => r.getOrElse((f) => throw FailureException(f))),
       ]);
       return [
         for (final matches in days)

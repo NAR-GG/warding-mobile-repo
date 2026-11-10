@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/core/domain/calendar_week_start.dart';
@@ -13,7 +14,7 @@ import 'package:warding/features/onboarding/domain/repositories/onboarding_repos
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/util/home_widget_service.dart';
 
 /// 경기 일정 화면 ViewModel.
@@ -29,7 +30,7 @@ class ScheduleViewModel extends ChangeNotifier {
     OnboardingRepository? onboarding,
     CalendarWeekStartPreferenceRepository? weekStartPreferences,
   }) : _displayMonth = _monthOf(initialMonth ?? DateTime.now()),
-       _repository = repository ?? ScheduleRepository.instance,
+       _repository = repository ?? di<ScheduleRepository>(),
        _teamPreferences =
            teamPreferences ?? TeamPreferenceRepository.instance,
        _filterPreferences =
@@ -315,12 +316,13 @@ class ScheduleViewModel extends ChangeNotifier {
     _error = null;
     _notify();
     try {
-      final days = await _repository.fetchCalendar(
+      final days = (await _repository.fetchCalendar(
         month,
         leagues: leagues,
         teamIds: teamIds,
         forceRefresh: forceRefresh,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       if (requestId != _calendarRequestId) {
         debugPrint('[Schedule] loadCalendar#$requestId 결과 폐기 (더 최신 조회 있음)');
         return;
@@ -378,11 +380,12 @@ class ScheduleViewModel extends ChangeNotifier {
       final target = DateTime(month.year, month.month + delta);
       if (_calendarByMonth.containsKey(target)) continue;
       try {
-        final days = await _repository.fetchCalendar(
+        final days = (await _repository.fetchCalendar(
           target,
           leagues: leagues,
           teamIds: teamIds,
-        );
+        ))
+          .getOrElse((f) => throw FailureException(f));
         // 기다리는 동안 필터가 바뀌었으면 이 결과는 다른 조건의 것이다.
         if (!identical(leagues, _leagues) || !identical(teamIds, _teamIds)) {
           return;

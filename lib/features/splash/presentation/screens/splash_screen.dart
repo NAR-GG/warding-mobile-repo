@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/core/ui/cheer_ad_banner.dart';
 import 'package:warding/core/config/app_language.dart';
 import 'package:warding/core/config/secure_storage.dart';
@@ -16,7 +17,7 @@ import 'package:warding/core/infrastructure/fcm/fcm_service.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/home_widget_service.dart';
 import 'package:warding/core/util/update_prompt.dart';
@@ -271,11 +272,12 @@ class _SplashScreenState extends State<SplashScreen>
                 : ['ALL'];
         teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
-      await ScheduleRepository.instance.fetchCalendar(
+      (await di<ScheduleRepository>().fetchCalendar(
         DateTime.now(),
         leagues: leagues,
         teamIds: teamIds,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       debugPrint('[Splash] 캘린더 프리페치 실패(무시): $e');
     }

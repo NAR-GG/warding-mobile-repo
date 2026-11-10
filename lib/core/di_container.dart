@@ -21,6 +21,8 @@ import 'package:warding/features/player_rating/data/repositories/rating_reposito
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
 import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
@@ -41,6 +43,9 @@ void configureDependencies() {
 
   // ── my_review ────────────────────────────────────────────────
   di.registerLazySingleton<MyReviewRepository>(MyReviewRepositoryImpl.new);
+
+  // ── schedule ─────────────────────────────────────────────────
+  di.registerLazySingleton<ScheduleRepository>(ScheduleRepositoryImpl.new);
 
   // ── shorts ───────────────────────────────────────────────────
   di.registerLazySingleton<ShortsRepository>(ShortsRepositoryImpl.new);

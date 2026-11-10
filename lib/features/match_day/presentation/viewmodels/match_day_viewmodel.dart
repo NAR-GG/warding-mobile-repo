@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:warding/core/domain/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 경기 일정 캘린더에서 특정 날짜를 탭했을 때 여는 '그 날의 경기 리스트' 화면 ViewModel.
 ///
@@ -16,7 +18,7 @@ class MatchDayViewModel extends ChangeNotifier {
     this.leagues = const ['LCK'],
     this.teamIds,
     ScheduleRepository? repository,
-  }) : _repository = repository ?? ScheduleRepository.instance {
+  }) : _repository = repository ?? di<ScheduleRepository>() {
     load();
   }
 
@@ -61,11 +63,12 @@ class MatchDayViewModel extends ChangeNotifier {
     _error = null;
     _notify();
     try {
-      _matches = await _repository.fetchMatchesByDate(
+      _matches = (await _repository.fetchMatchesByDate(
         date,
         leagues: leagues,
         teamIds: teamIds,
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
     } catch (e) {
       _error = appStrings?.matchLoadFailed ?? 'Failed to load matches';
       _matches = const [];

@@ -12,7 +12,7 @@ import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/spoiler_preference_repository.dart';
-import 'package:warding/features/schedule/data/schedule_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 경기 리스트 화면의 상태·로직.
 class MatchListViewModel extends ChangeNotifier {
@@ -23,7 +23,7 @@ class MatchListViewModel extends ChangeNotifier {
     SpoilerPreferenceRepository? spoilerPreferences,
   }) : _categoryRepository = categoryRepository ?? di<CategoryRepository>(),
        _scheduleRepository =
-           scheduleRepository ?? ScheduleRepository.instance,
+           scheduleRepository ?? di<ScheduleRepository>(),
        _filterPreferences =
            filterPreferences ?? FilterPreferenceRepository.instance,
        _spoilerPreferences =
@@ -442,23 +442,19 @@ class MatchListViewModel extends ChangeNotifier {
       // 두 조회는 서로 의존하지 않는데 예전엔 순서대로 기다렸다. 트리 조회가
       // 0.9~2.7초까지 걸려서, 필터가 뜨는 시점이 두 응답의 합이 되고 있었다.
       // 함께 띄워 느린 쪽 하나의 시간만 걸리게 한다.
-      // `fetchTree` 는 Either 를 돌려주고 `fetchFilterOptions` 는 아직 예외를
-      // 던진다(전환 전). 반환형이 섞여 `Future.wait` 로 묶으면 캐스팅이
-      // 필요해지므로 따로 띄워 둘 다 기다린다 — 병렬성은 그대로다.
+      // 둘 다 Either 를 돌려준다. Future.wait 로 묶으면 원소 타입이 섞여
+      // List<dynamic> 이 되고 인덱스 캐스팅이 필요해지는데, 그 캐스팅은
+      // analyze 가 잡지 못하고 런타임에 깨진다 — 따로 띄워 둘 다 기다린다.
       final treeFuture = _categoryRepository.fetchTree(year: year);
       final optionsFuture = _scheduleRepository.fetchFilterOptions();
       // 둘 다 끝날 때까지 기다린 뒤 푼다. 트리 실패로 먼저 throw 하면
       // optionsFuture 가 미처리 상태로 남는다.
-      final (treeResult, options) = (await treeFuture, await optionsFuture);
-      // 트리 실패를 아래 catch 와 같은 자리로 보낸다. 그 블록이 단순 로깅이
-      // 아니라 `_leaguesLoadFailed`·`_teams` 복구를 하기 때문에, 분기를 두 벌로
-      // 쪼개는 대신 기존 경로를 그대로 쓴다.
-      //
-      // 과도기 코드다 — `schedule_repository` 가 Either 로 바뀌면 두 결과를
-      // 함께 `match` 로 다루고 이 throw 는 없앤다.
-      _tree = treeResult.getOrElse(
-        (failure) => throw FailureException(failure),
-      );
+      final (treeResult, optionsResult) =
+          (await treeFuture, await optionsFuture);
+      // 아래 catch 가 단순 로깅이 아니라 `_leaguesLoadFailed`·`_teams` 복구를
+      // 하므로, 분기를 두 벌로 쪼개는 대신 기존 경로로 실패를 보낸다.
+      _tree = treeResult.getOrElse((f) => throw FailureException(f));
+      final options = optionsResult.getOrElse((f) => throw FailureException(f));
       // 리그 목록은 경기일정 필터와 동일 소스(메이저 큐레이션, MSI 포함)로 통일한다.
       // 카테고리 트리는 연도 스코프라 MSI 등 단기 대회가 누락되므로 팀 목록 산출 용도로만 유지한다.
       // 시즌 목록도 이 응답이 준다(연도+스플릿 → 연도만 추린 값).
@@ -628,12 +624,13 @@ class MatchListViewModel extends ChangeNotifier {
   /// 뒤집어서 담는다.
   Future<int> _fetchEntryPage() async {
     if (upcomingOnly) {
-      final page = await _scheduleRepository.fetchMatches(
+      final page = (await _scheduleRepository.fetchMatches(
         from: _forwardAnchor,
         size: _pageSize,
         league: _effectiveLeagueCode(_selectedLeague),
         seasonYear: int.tryParse(_selectedSeason),
-      );
+      ))
+          .getOrElse((f) => throw FailureException(f));
       _cursor = page.nextCursor;
       _hasFutureMore = page.hasNext && page.nextCursor != null;
       final filtered = _applyFilters(page.matches);
@@ -641,12 +638,13 @@ class MatchListViewModel extends ChangeNotifier {
       return filtered.length;
     }
 
-    final page = await _scheduleRepository.fetchMatches(
+    final page = (await _scheduleRepository.fetchMatches(
       around: _forwardAnchor,
       size: _pageSize,
       league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
-    );
+    ))
+          .getOrElse((f) => throw FailureException(f));
     _cursor = page.nextCursor;
     _hasFutureMore = page.hasNext && page.nextCursor != null;
     _prevCursor = page.prevCursor;
@@ -659,13 +657,14 @@ class MatchListViewModel extends ChangeNotifier {
   /// 미래 방향 한 페이지를 받는다(`from`+`cursor` 축). 서버 응답은 항상
   /// 과거→미래 오름차순이다. [_hasFutureMore]/[_cursor] 를 갱신한다.
   Future<List<ScheduleMatch>> _fetchFuturePage() async {
-    final page = await _scheduleRepository.fetchMatches(
+    final page = (await _scheduleRepository.fetchMatches(
       cursor: _cursor,
       size: _pageSize,
       league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
       from: _forwardAnchor,
-    );
+    ))
+          .getOrElse((f) => throw FailureException(f));
     _cursor = page.nextCursor;
     _hasFutureMore = page.hasNext && page.nextCursor != null;
     return _applyFilters(page.matches);
@@ -674,12 +673,13 @@ class MatchListViewModel extends ChangeNotifier {
   /// 과거 방향 한 페이지를 받는다(`before` 축). 서버 응답은 항상 과거→미래
   /// 오름차순이다. [_hasPastMore]/[_prevCursor] 를 갱신한다.
   Future<List<ScheduleMatch>> _fetchPastPage() async {
-    final page = await _scheduleRepository.fetchMatches(
+    final page = (await _scheduleRepository.fetchMatches(
       before: _prevCursor,
       size: _pageSize,
       league: _effectiveLeagueCode(_selectedLeague),
       seasonYear: int.tryParse(_selectedSeason),
-    );
+    ))
+          .getOrElse((f) => throw FailureException(f));
     _prevCursor = page.prevCursor;
     _hasPastMore = page.hasPrev && page.prevCursor != null;
     return _applyFilters(page.matches);
