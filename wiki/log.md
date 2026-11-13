@@ -1,5 +1,18 @@
 # Bundle Update Log
 
+## 2026-11-13 (5)
+* **뉴스·평점을 각 기능으로 옮겨 홈을 비웠다.** "백엔드 대기 중" 으로 보고 보류했던 둘인데
+  실제로는 `ApiReviewSource`·`ApiNewsSource` 가 실 API(`/mobile/ratings/recent`,
+  `/home/news`)를 부르고 릴리즈도 그걸 쓴다 — 목업은 `HOME_MOCKS` 뒤에만 있었다. 평점은
+  `player_rating` 기능이 있어 거기로, 뉴스는 `features/news/` 를 신설했다. 같은 작업에서
+  솔랭 API 소스도 옮겼다 — 솔랭을 독립시킬 때 `home_api_sources.dart` 의
+  `ApiSoloRankSource`·`ApiWorldsSoloSource`·`ApiCheerSource` 를 놓쳤다.
+  `home_sources.dart`(434줄)·`home_api_sources.dart`(245줄)가 사라지고
+  `home_models.dart` 는 `HomeShortsVideo` 하나만 남았다.
+  **홈 ViewModel 이 직접 쓰는 repository·소스가 0개가 됐다** (1141 → 469줄).
+  공유 헬퍼 `minutesSince` 를 `core/util/server_time.dart` 로 올렸다 — 솔랭 종료·평점
+  작성·뉴스 발행 세 곳이 쓴다. 테스트 955 → 965.
+
 ## 2026-11-13 (4)
 * **`app/` 을 5파일로 줄이고 폴더로 갈랐다.** `live_activity_logo_prefetcher`·
   `live_match_activity_controller` 는 화면을 띄우지 않으므로(Screen·Navigator 참조 0건)

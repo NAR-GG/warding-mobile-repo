@@ -43,7 +43,7 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 
 ```
 lib/
-├── features/     기능별 29개
+├── features/     기능별 30개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수

@@ -15,7 +15,7 @@ timestamp: 2026-11-10T00:00:00Z
 
 ```
 lib/
-├── features/     기능별 29개
+├── features/     기능별 30개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
@@ -208,6 +208,8 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 | 홈 섹션 | 옮긴 곳 |
 |---|---|
 | 커뮤니티 글 | `features/community/.../community_summary_viewmodel` |
+| 뉴스 | `features/news/.../news_viewmodel` (기능 신설) |
+| 평점 한줄평 | `features/player_rating/.../review_summary_viewmodel` |
 | 공지 배너 | `features/notice/.../notice_banner_viewmodel` |
 | 벨 배지 | `features/notification/.../notification_badge_viewmodel` |
 | 오늘 경기 | `features/schedule/.../today_matches_viewmodel` |
@@ -216,8 +218,8 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 | 쇼츠 | `features/shorts/.../shorts_summary_viewmodel` |
 | 순위표 | `features/standings/.../standings_viewmodel` |
 
-홈은 getter 위임만 남아 1141 → 501줄이 됐고, 직접 쓰는 repository 는 뉴스·평점 2개(백엔드
-대기 중)뿐이다. 테스트는 897 → 955 로 늘었다 — 섹션 로직이 홈 안에 묶여 있어 검증할 수
+홈은 getter 위임만 남아 **1141 → 469줄**이 됐고, **직접 쓰는 repository·소스가 0개**다.
+테스트는 897 → 965 로 늘었다 — 섹션 로직이 홈 안에 묶여 있어 검증할 수
 없던 규칙들을 각 VM 에 붙였다.
 
 지킨 규칙 네 가지.
@@ -241,7 +243,7 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 
 # presentation 만 있는 기능이 많은 이유
 
-29개 중 12개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
+30개 중 12개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
 
 - **데이터가 공용이라서** — `mypage` 는 `domain/user_profile`,
   `my_subscription_setting` 은 `domain/player_subscription` 을 쓴다. 한 기능 소유가
