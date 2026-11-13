@@ -67,8 +67,9 @@ lib/
 가장 소유자처럼 보이는 `search_form` 안에 두지 않고 `domain/models/` 로 올렸다 — Flutter 공식
 샘플이 "여러 기능이 쓰면 올린다"를 명시적으로 선택한 지점이다.
 
-**`domain/` 은 `core/` 조차 import 하지 않는다.** 모델이 인프라를 알면 방향이 뒤집힌다.
-현재 `l10n`(생성물) 외 참조 0건.
+**`domain/` 은 `features/`·`app/` 을 import 하지 않는다** (현재 0건). 모델이 기능을 알면
+방향이 뒤집힌다. `core/` 는 repository 인터페이스가 `Either<Failure, T>` 를 돌려주느라
+`core/error/failure.dart` 만 참조한다(2파일) — 실패 표현은 기술 계약이고 인프라가 아니다.
 
 반대로 **인프라 서비스는 5/5 전원 공유 위치**다 — AppFlowy 조차 모델은 feature 에 두면서
 auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/auth` 는 19개 기능이

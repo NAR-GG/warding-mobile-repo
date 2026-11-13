@@ -79,8 +79,9 @@ lib/
 
 **의존 방향은 `app → features → core`·`domain` 한 방향이다.** `core/`·`domain/` 은
 `features/`·`app/` 을 import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container.dart`
-다 — repository 구현체를 등록하려면 알 수밖에 없다). `domain/` 은 `core/` 도 import 하지
-않는다 — 모델이 인프라를 알면 방향이 뒤집힌다. 화면을 띄우거나 기능의 구현을 알아야 하는
+다 — repository 구현체를 등록하려면 알 수밖에 없다). `domain/` 은 `features/`·`app/` 을
+import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (repository 인터페이스가 쓰는
+`core/error/failure.dart` 는 예외다). 화면을 띄우거나 기능의 구현을 알아야 하는
 코드는 둘 중 하나로 푼다.
 
 - **앱 셸이면 `app/` 에 둔다. 판별은 한 줄 — "기능 2개 이상의 화면이나 구현을 알아야 하나".**
