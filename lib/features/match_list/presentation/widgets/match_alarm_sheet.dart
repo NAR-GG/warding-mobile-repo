@@ -9,7 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:warding/core/ui/app_bottom_sheet.dart';
 import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_toggle.dart';
-import 'package:warding/app/live_activity_logo_prefetcher.dart';
+import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/my_subscription_setting/presentation/widgets/live_event_detail_card.dart';

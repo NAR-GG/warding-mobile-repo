@@ -1,10 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/core/util/app_image.dart';
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 
 /// 서버가 만들 카드에 쓸 팀 로고를 미리 App Group 에 캐싱한다.
@@ -16,14 +12,17 @@ import 'package:warding/core/infrastructure/live_activity/live_activity_service.
 /// 저장 위치는 `Library/Caches` 가 아닌 App Group 컨테이너라 iOS 가 임의로
 /// 지우지 않는다. 그래서 한 번 받으면 앱을 지울 때까지 남는다.
 class LiveActivityLogoPrefetcher {
-  LiveActivityLogoPrefetcher({
-    LiveActivityService? service,
-    ScheduleRepository? scheduleRepository,
-  })  : _service = service ?? LiveActivityService.instance,
-        _schedule = scheduleRepository ?? di<ScheduleRepository>();
+  LiveActivityLogoPrefetcher({LiveActivityService? service})
+      : _service = service ?? LiveActivityService.instance;
 
   final LiveActivityService _service;
-  final ScheduleRepository _schedule;
+
+  /// 리그 소속 팀 목록을 가져오는 자리. 앱이 채운다(`app/app_hooks.dart`).
+  ///
+  /// 팀 목록은 일정 필터 API 가 주는데, 그건 `features/schedule` 소유다 —
+  /// core 가 기능을 알면 안 되므로 비워 두고 주입받는다. 안 채워져 있으면
+  /// 프리페치를 건너뛴다(로고가 없으면 위젯이 팀 코드로 폴백한다).
+  static Future<List<LogoTarget>> Function(String league)? teamTargetsLoader;
 
   /// 앱을 켤 때 미리 받아둘 기본 리그.
   static const String defaultLeague = 'LCK';
@@ -106,26 +105,16 @@ class LiveActivityLogoPrefetcher {
     }
   }
 
-  /// 필터 응답의 팀 목록을 그대로 프리페치한다.
-  ///
-  /// 리그 필터를 바꿀 때 이미 받아온 응답을 재사용하는 경로다.
-  Future<void> prefetchTeams(Iterable<FilterTeam> teams) {
-    return prefetch([
-      for (final t in teams)
-        LogoTarget(code: t.teamCode, imageUrl: t.teamImageUrl),
-    ]);
-  }
-
   /// [league] 소속 팀 로고를 미리 받아둔다. 조회에 실패하면 조용히 넘어간다.
   ///
   /// 앱 시작 훅이 쓰는 경로다 — 이미 저장된 팀은 네트워크를 타지 않으므로
   /// 두 번째 실행부터는 존재 확인만 하고 끝난다.
   Future<void> prefetchLeague([String league = defaultLeague]) async {
+    final loader = teamTargetsLoader;
+    if (loader == null) return;
     if (!await _service.isSupported()) return;
     try {
-      final options = (await _schedule.fetchFilterOptions(league: league))
-          .getOrElse((f) => throw FailureException(f));
-      await prefetchTeams(options.teams);
+      await prefetch(await loader(league));
     } catch (e) {
       debugPrint('[LiveActivity] 로고 프리페치용 팀 목록 조회 실패($league): $e');
     }

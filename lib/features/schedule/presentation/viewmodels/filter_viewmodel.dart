@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/core/ui/nar_select_dropdown_field.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/app/live_activity_logo_prefetcher.dart';
+import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
@@ -258,7 +258,12 @@ class FilterViewModel extends ChangeNotifier {
       // 실시간 카드 로고를 미리 저장해 둔다. 서버가 만든 카드는 앱 없이
       // 렌더되므로 그 전에 디스크에 있어야 로고가 보인다. 이미 받아둔 팀은
       // 존재 확인만 하고 넘어가고, 여기서 기다리지 않는다.
-      unawaited(liveActivityLogoPrefetcher.prefetchTeams(_teams));
+      unawaited(
+        liveActivityLogoPrefetcher.prefetch([
+          for (final t in _teams)
+            LogoTarget(code: t.teamCode, imageUrl: t.teamImageUrl),
+        ]),
+      );
     } catch (e) {
       // 목록이 비면 이름↔코드 매핑이 없어 선택값이 있어도 '전체'로 보이고,
       // 체크박스를 눌러도 [_leagueCodeOf] 가 null 이라 아무 반응이 없다.

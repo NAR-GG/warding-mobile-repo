@@ -17,7 +17,7 @@ import 'package:warding/firebase_options.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 import 'package:warding/app/fcm_service.dart';
-import 'package:warding/app/live_activity_logo_prefetcher.dart';
+import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 import 'package:warding/app/live_match_activity_controller.dart';
 import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
