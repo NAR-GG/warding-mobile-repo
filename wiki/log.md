@@ -1,5 +1,21 @@
 # Bundle Update Log
 
+## 2026-11-13 (3)
+* **홈 섹션 8개를 각 기능으로 내렸다.** 홈 ViewModel 이 1141줄로 섹션 9개를 직접 들고
+  있었고, 그중 7개는 이미 대응 기능이 있는데도 홈이 그 repository 를 직접 불러서 다른
+  화면에서 같은 섹션을 쓸 수 없었다. 커뮤니티·공지배너·벨배지·오늘경기·구독선수·솔랭·
+  쇼츠·순위표를 각 기능의 `presentation/viewmodels/` 로 옮기고, 홈은 getter 위임만 남겼다
+  (1141 → 501줄). 직접 쓰는 repository 는 뉴스·평점 2개(백엔드 대기)뿐이고 `di_container`
+  import 도 필요 없어졌다. 순위표는 대응 기능이 없어 `features/standings/` 를 신설했다
+  (모델·repository 5파일도 `home/` 에서 함께 옮겼다). 테스트 897 → 955 — 섹션 로직이 홈
+  안에 묶여 검증할 수 없던 규칙들을 각 VM 에 붙였다. 자세한 원칙은
+  [폴더 구조](/architecture/folder-structure.md)의 "집계 화면은 섹션을 조합만 한다" 참고.
+* **응원팀 결정 규칙을 UseCase 로 뺐다** — `features/home/domain/usecases/
+  get_preferred_team.dart`. repository 3개를 조합하고 폴백 순서가 규칙인데 ViewModel 안에
+  있어 테스트가 없었다. 반대로 홈의 섹션 로더들은 UseCase 로 빼지 않았다 — 실측하니
+  대부분이 repository 1개만 쓰고 나머지는 경쟁 조건 검사·로딩 플래그로, 화면 상태 관리라
+  ViewModel 의 일이다.
+
 ## 2026-11-13 (2)
 * **솔랭을 `features/solo_rank/` 로 독립시켰다** (6파일). `player`·`my_players` 가
   `features/home/` 을 17곳에서 당겨 쓰던 것을 0건으로 만들었다. 모델 2개

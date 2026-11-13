@@ -15,7 +15,7 @@ timestamp: 2026-11-10T00:00:00Z
 
 ```
 lib/
-├── features/     기능별 28개
+├── features/     기능별 29개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
@@ -146,9 +146,52 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
   상태였다 — `features/solo_rank/` 로 올려 0건으로 만들었다. 판단은 "홈이 만든 코드인가"
   가 아니라 "홈 밖에서도 쓰는가"다.
 
+# 집계 화면은 섹션을 조합만 한다
+
+**홈처럼 여러 기능을 모아 보여주는 화면은 각 섹션을 직접 구현하지 않는다.** 섹션 로직은 그
+기능이 갖고, 집계 화면은 그 ViewModel 을 구독해 배치만 한다.
+
+2026-11-13 점검에서 홈 ViewModel 이 1141줄로, 섹션 9개를 직접 들고 있었다. 그중 7개는 이미
+대응 기능이 있는데도 홈이 그 repository 를 직접 부르고 상태를 자기가 들고 있어서, 다른
+화면에서 같은 섹션을 쓸 수가 없었다. 전부 각 기능으로 내렸다.
+
+| 홈 섹션 | 옮긴 곳 |
+|---|---|
+| 커뮤니티 글 | `features/community/.../community_summary_viewmodel` |
+| 공지 배너 | `features/notice/.../notice_banner_viewmodel` |
+| 벨 배지 | `features/notification/.../notification_badge_viewmodel` |
+| 오늘 경기 | `features/schedule/.../today_matches_viewmodel` |
+| 구독 선수 | `features/subscription/.../subscribed_players_viewmodel` |
+| 솔랭·월즈 | `features/solo_rank/.../solo_rank_viewmodel` |
+| 쇼츠 | `features/shorts/.../shorts_summary_viewmodel` |
+| 순위표 | `features/standings/.../standings_viewmodel` |
+
+홈은 getter 위임만 남아 1141 → 501줄이 됐고, 직접 쓰는 repository 는 뉴스·평점 2개(백엔드
+대기 중)뿐이다. 테스트는 897 → 955 로 늘었다 — 섹션 로직이 홈 안에 묶여 있어 검증할 수
+없던 규칙들을 각 VM 에 붙였다.
+
+지킨 규칙 네 가지.
+
+- **전체 화면 VM 과 요약 섹션 VM 을 합치지 않는다.** 요청 모양이 다르다 — 커뮤니티 목록은
+  `boardTeamId` 필터와 cursor 페이지네이션, 요약은 `size`·`sort` 로 최신 몇 건. 한 클래스에
+  두 역할을 넣으면 홈이 비대했던 문제가 그 기능으로 옮겨갈 뿐이다.
+- **섹션 VM 생성자는 조회하지 않는다.** 첫 로드 시점은 쓰는 쪽이 `load()` 로 정한다. 홈처럼
+  여러 섹션을 한 번에 당기는 화면이 자기 갱신 주기를 가져야 한다. 생성자에서 조회하게 했다가
+  "refreshAll 은 섹션들을 다시 조회한다" 테스트가 중복 호출을 잡았다.
+- **섹션 간 의존은 숨기지 않고 주입한다.** 솔랭 카드는 "구독한 선수의 솔랭"이라 구독 목록
+  없이 성립하지 않는다 — `SoloRankViewModel(subscriptions: ...)` 로 받고, 구독 목록이 늦게
+  도착하면 리스너로 분류를 다시 계산한다. 공유 모델(`PlayerSubscription`)이 `domain/` 에
+  있어서 기능 간 결합이 모델까지 번지지 않는다.
+- **섹션 위젯은 집계 화면에 남긴다.** `HomeSectionHeader`·`HomeListBox`·`HomeListSkeleton` 은
+  홈 레이아웃 부품이고 섹션 6개가 함께 쓴다. 재사용의 핵심은 데이터 로딩·상태 규칙이고,
+  레이아웃은 화면마다 다르게 그리는 것이 정상이다.
+
+기존 위젯·테스트가 쓰던 이름은 홈의 getter 위임과 `typedef` 로 유지했다(`HomeCommunitySort`
+→ `CommunitySummarySort` 등). 그래서 이 전환에서 화면·위젯 수정은 거의 없었다.
+
 # presentation 만 있는 기능이 많은 이유
 
-28개 중 13개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
+29개 중 12개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
 
 - **데이터가 공용이라서** — `mypage` 는 `domain/user_profile`,
   `my_subscription_setting` 은 `domain/player_subscription` 을 쓴다. 한 기능 소유가
