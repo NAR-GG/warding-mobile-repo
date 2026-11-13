@@ -17,6 +17,7 @@ import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
+import 'package:warding/features/community/presentation/viewmodels/community_summary_viewmodel.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/domain/repositories/member_notification_repository.dart';
@@ -34,8 +35,9 @@ import 'package:warding/core/util/match_status.dart';
 import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
 
-/// 커뮤니티 섹션 정렬 기준. [hot] 은 칩에서 뺀 상태다([HomeViewModel.availableCommunitySorts]).
-enum HomeCommunitySort { latest, hot }
+/// 커뮤니티 섹션 정렬 기준. 정의는 커뮤니티 기능이 갖는다
+/// ([CommunitySummarySort]) — 홈 말고도 쓸 수 있어야 해서다.
+typedef HomeCommunitySort = CommunitySummarySort;
 
 /// 콘텐츠 섹션 탭.
 enum HomeContentTab { news, shorts }
@@ -72,7 +74,7 @@ class HomeViewModel extends ChangeNotifier {
     NoticePreferenceRepository? noticePreferences,
     ScheduleRepository? schedule,
     StandingsRepository? standings,
-    CommunityRepository? community,
+    CommunityRepository? communityRepository,
     ShortsRepository? shorts,
     SubscriptionRepository? subscriptions,
     MemberNotificationRepository? memberNotifications,
@@ -85,12 +87,12 @@ class HomeViewModel extends ChangeNotifier {
     OnboardingRepository? onboarding,
     TeamPreferenceRepository? teamPreferences,
     GetPreferredTeam? getPreferredTeam,
+    CommunitySummaryViewModel? communitySummary,
   }) : _notices = notices ?? di<NoticeRepository>(),
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
        _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
-       _community = community ?? CommunityRepository.instance,
        _shortsRepo = shorts ?? di<ShortsRepository>(),
        _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
        _memberNotifications =
@@ -111,7 +113,14 @@ class HomeViewModel extends ChangeNotifier {
              auth: auth,
              onboarding: onboarding,
              teamPreferences: teamPreferences,
-           ) {
+           ),
+       community =
+           communitySummary ??
+           CommunitySummaryViewModel(repository: communityRepository) {
+    // 섹션 ViewModel 의 통지를 홈 통지로 올린다 — 홈 위젯들이 HomeViewModel
+    // 하나만 구독하는 기존 구조를 유지한다. 섹션을 독립 구독하는 화면은
+    // 그 ViewModel 을 직접 쓰면 된다.
+    community.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     _promotedNotices = _notices.cachedPromoted ?? const [];
@@ -165,7 +174,6 @@ class HomeViewModel extends ChangeNotifier {
   final NoticePreferenceRepository _noticePreferences;
   final ScheduleRepository _schedule;
   final StandingsRepository _standingsRepo;
-  final CommunityRepository _community;
   final ShortsRepository _shortsRepo;
   final SubscriptionRepository _subscriptions;
   final MemberNotificationRepository _memberNotifications;
@@ -185,6 +193,8 @@ class HomeViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    community.removeListener(_notify);
+    community.dispose();
     _soloPollTimer?.cancel();
     // 남은 응원은 화면이 닫혀도 보낸다. 컨트롤러는 dispose 뒤에도 안전하다.
     unawaited(cheers.flushAll());
@@ -221,6 +231,7 @@ class HomeViewModel extends ChangeNotifier {
     _lastRefreshAt = DateTime.now();
     await Future.wait([
       _loadPromotedNotice(),
+      community.load(),
       refreshUnreadNotifications(),
       _loadSubscriptions(),
       _loadSolo(),
@@ -228,7 +239,6 @@ class HomeViewModel extends ChangeNotifier {
       loadTodayMatches(),
       _loadLeagueChips(),
       _loadStandings(),
-      _loadCommunityPosts(),
       _loadReviews(),
       _loadNews(),
       _loadShorts(),
@@ -865,75 +875,25 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   // ---- 섹션 4: 커뮤니티 ----
-  static const int _communityPostCount = 4;
+  //
+  // 로직은 `features/community` 가 갖는다 — 홈 전용이 아니라 커뮤니티 요약이
+  // 필요한 화면은 어디서든 [CommunitySummaryViewModel] 을 구독하면 된다.
+  // 아래 getter 들은 기존 위젯·테스트가 쓰던 이름을 그대로 유지하는 위임이다.
+  final CommunitySummaryViewModel community;
 
-  // 인기순은 글이 적을 때 늘 같은 글이 보여 칩에서 뺐다(spec 결정) —
-  // 지금은 latest 하나뿐이라 토글은 없지만 hot 로직은 남겨 둔다.
-  HomeCommunitySort _communitySort = HomeCommunitySort.latest;
-  HomeCommunitySort get communitySort => _communitySort;
-
-  /// 정렬을 바꾼다(latest/hot). 그 기준으로 글을 다시 조회한다.
-  void setCommunitySort(HomeCommunitySort sort) {
-    if (sort == _communitySort) return;
-    if (!availableCommunitySorts.contains(sort)) return;
-    _communitySort = sort;
-    _notify();
-    unawaited(_loadCommunityPosts());
-  }
-
-  /// 보여줄 정렬 탭. 인기순은 커뮤니티가 활성화될 때까지 뺀다(글이 적어 의미가
-  /// 없다).
-  List<HomeCommunitySort> get availableCommunitySorts => const [
-    HomeCommunitySort.latest,
-  ];
-
-  List<CommunityRemotePost> _communityPosts = const [];
-
-  /// 현재 정렬 기준의 커뮤니티 글(최대 4건). 조회 실패 시 마지막 목록 유지.
-  List<CommunityRemotePost> get communityPosts => _communityPosts;
-
-  /// 첫 커뮤니티 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다.
-  bool _communityFirstLoadPending = true;
-  bool get communityLoading => _communityFirstLoadPending;
-
-  Future<void> _loadCommunityPosts() async {
-    final sort = _communitySort;
-    try {
-      final page = await _community.fetchPosts(
-        size: _communityPostCount,
-        sort: sort.name,
-      );
-      // 응답이 오는 사이 정렬을 바꿨으면 버린다 — 바뀐 정렬이 다시 조회한다.
-      if (_disposed || sort != _communitySort) return;
-      _communityPosts = page.posts;
-      _communityFirstLoadPending = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 커뮤니티 글 조회 실패(${sort.name}): $e');
-      if (_disposed || sort != _communitySort) return;
-      _communityFirstLoadPending = false;
-      _notify();
-    }
-  }
+  HomeCommunitySort get communitySort => community.sort;
+  void setCommunitySort(HomeCommunitySort sort) => community.setSort(sort);
+  List<HomeCommunitySort> get availableCommunitySorts =>
+      community.availableSorts;
+  List<CommunityRemotePost> get communityPosts => community.posts;
+  bool get communityLoading => community.loading;
 
   /// 게시글 상세에서 삭제하고 돌아왔을 때 홈 목록에서도 지운다.
-  void removeCommunityPost(int postId) {
-    if (!_communityPosts.any((p) => p.id == postId)) return;
-    _communityPosts = [
-      for (final p in _communityPosts)
-        if (p.id != postId) p,
-    ];
-    _notify();
-  }
+  void removeCommunityPost(int postId) => community.removePost(postId);
 
   /// 게시글 상세에서 좋아요·조회수 등이 바뀌고 돌아왔을 때 홈 목록에도 반영한다.
-  void applyCommunityPostUpdate(CommunityRemotePost updated) {
-    final index = _communityPosts.indexWhere((p) => p.id == updated.id);
-    if (index == -1) return;
-    _communityPosts = [..._communityPosts];
-    _communityPosts[index] = updated;
-    _notify();
-  }
+  void applyCommunityPostUpdate(CommunityRemotePost updated) =>
+      community.applyPostUpdate(updated);
 
   static const int _reviewCount = 4;
 
