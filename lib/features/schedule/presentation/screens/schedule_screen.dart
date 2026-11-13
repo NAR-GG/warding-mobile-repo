@@ -14,6 +14,7 @@ import 'package:warding/features/match_list/presentation/widgets/match_list_view
 import 'package:warding/features/schedule/presentation/widgets/calendar_month_label.dart';
 import 'package:warding/features/schedule/presentation/widgets/filter_sheet.dart';
 import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 import 'package:warding/features/schedule/presentation/widgets/month_picker_sheet.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar_skeleton.dart';
@@ -483,7 +484,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// `loadCalendar` 가 위젯을 그 달로 밀고, 위젯이 바뀌면 복귀 때 이 함수가
   /// 앱을 그 달로 당긴다. 양쪽이 같아지는 순간 더 전파되지 않는다.
   Future<void> _syncMonthFromWidget() async {
-    final month = await HomeWidgetService.widgetDisplayedMonth();
+    final month = await ScheduleWidgetWriter.widgetDisplayedMonth();
     if (!mounted) return;
     final current = _viewModel.displayMonth;
     if (month.year == current.year && month.month == current.month) return;
@@ -545,7 +546,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       // 위젯은 11월인데 앱은 10월인 채로 갈린다.
       //
       // 반대 방향(앱 → 위젯)은 [ScheduleViewModel.loadCalendar] 가 조회할
-      // 때마다 `HomeWidgetService.updateCalendar` 로 밀어 준다. 둘이 맞물려
+      // 때마다 `ScheduleWidgetWriter.updateCalendar` 로 밀어 준다. 둘이 맞물려
       // 어느 쪽에서 달을 바꾸든 나머지 한쪽이 따라온다.
       _syncMonthFromWidget();
       _viewModel.loadCalendar(forceRefresh: true);

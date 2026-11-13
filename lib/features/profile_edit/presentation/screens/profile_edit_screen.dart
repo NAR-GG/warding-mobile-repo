@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 import 'package:warding/core/ui/common_button.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/core/ui/nar_input.dart';
@@ -69,7 +69,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final ok = await _viewModel.save();
     if (!ok || !mounted) return;
     // 응원팀 변경 시 위젯에 즉시 반영 (완료까지 대기)
-    await HomeWidgetService.refreshFromApi();
+    await ScheduleWidgetWriter.refreshFromApi();
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }

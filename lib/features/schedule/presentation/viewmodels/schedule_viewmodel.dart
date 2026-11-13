@@ -15,7 +15,7 @@ import 'package:warding/core/infrastructure/preference/calendar_week_start_prefe
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 경기 일정 화면 ViewModel.
 ///
@@ -278,7 +278,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
   /// 위젯에 필터/팀 선택 상태를 전달한다.
   void _updateWidgetFilterState() {
-    unawaited(HomeWidgetService.updateFilterState(
+    unawaited(ScheduleWidgetWriter.updateFilterState(
       hasFilter: hasActiveFilter,
       teamSelected: _teamSelected,
     ));
@@ -335,7 +335,7 @@ class ScheduleViewModel extends ChangeNotifier {
       final total = byDay.values.fold<int>(0, (sum, l) => sum + l.length);
       debugPrint('[Schedule] 완료#$requestId: ${byDay.length}일, 총 $total경기');
       // 홈 화면 위젯에 최신 캘린더 데이터 전달 (필터 포함)
-      unawaited(HomeWidgetService.updateCalendar(
+      unawaited(ScheduleWidgetWriter.updateCalendar(
         month: month,
         matchesByDay: byDay,
         leagues: leagues,
@@ -439,7 +439,7 @@ class ScheduleViewModel extends ChangeNotifier {
       _preferredTeam = await _teamPreferences.loadPreferredTeam();
     }
     // 홈 화면 위젯에 응원팀 정보 전달
-    unawaited(HomeWidgetService.updatePreferredTeam(_preferredTeam));
+    unawaited(ScheduleWidgetWriter.updatePreferredTeam(_preferredTeam));
     _notify();
   }
 

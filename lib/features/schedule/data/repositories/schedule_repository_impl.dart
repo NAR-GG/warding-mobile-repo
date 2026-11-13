@@ -14,7 +14,7 @@ import 'package:warding/features/schedule/domain/repositories/schedule_repositor
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 import 'package:warding/domain/schedule_match.dart';
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 import 'package:warding/features/schedule/domain/league_meta.dart';
 import 'package:warding/core/util/match_status.dart';
 
@@ -57,7 +57,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   /// 진행 중인 캘린더 요청. 같은 조회 조건의 요청이 겹치면 결과를 나눠 쓴다.
   ///
   /// 앱 시작 시 캘린더를 부르는 곳이 셋이다 — 스플래시 프리페치,
-  /// 홈 위젯 갱신([HomeWidgetService.refreshFromApi]), 그리고 일정 화면
+  /// 홈 위젯 갱신([ScheduleWidgetWriter.refreshFromApi]), 그리고 일정 화면
   /// 진입. 이걸 그대로 두면 같은 응답을 세 번 받으려고 회선을 서로 뺏는다.
   /// 먼저 뜬 요청에 나머지가 올라타면 실제 왕복은 한 번으로 끝난다.
   final Map<String, Future<List<MatchCalendarDay>>> _calendarInFlight = {};
@@ -485,7 +485,7 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       // iOS 위젯도 같은 목록을 쓰므로 App Group 에 함께 내려보낸다.
       ApiConfig.updateLeagueCodes(options.leagues.map((l) => l.code));
       LeagueMeta.update(options);
-      unawaited(HomeWidgetService.saveLeagueCodes(ApiConfig.allRealLeagueCodes));
+      unawaited(ScheduleWidgetWriter.saveLeagueCodes(ApiConfig.allRealLeagueCodes));
       return options;
     });
     unawaited(

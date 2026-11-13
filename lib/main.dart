@@ -29,6 +29,7 @@ import 'package:warding/core/util/analytics_route_observer.dart';
 import 'package:warding/core/util/api_client.dart' show loadAppVersion;
 import 'package:warding/core/util/champion_image.dart';
 import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 홈 화면 위젯 백그라운드 갱신 콜백.
 ///
@@ -38,7 +39,7 @@ import 'package:warding/app/home_widget_service.dart';
 Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
   WidgetsFlutterBinding.ensureInitialized();
   await HomeWidgetService.init();
-  await HomeWidgetService.handleBackgroundWidgetAction(uri);
+  await ScheduleWidgetWriter.handleBackgroundWidgetAction(uri);
 }
 
 /// 앱이 백그라운드/종료 상태일 때 도착하는 FCM 메시지 핸들러.
@@ -124,7 +125,7 @@ Future<void> main() async {
   // 백그라운드 위젯 갱신 콜백 등록
   HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback);
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
-  HomeWidgetService.refreshFromApi();
+  ScheduleWidgetWriter.refreshFromApi();
 
   // 위젯 딥링크: MethodChannel로 Swift에서 전달받음
   HomeWidgetService.listenWidgetActions();

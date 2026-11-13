@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 캘린더 설정 화면 ViewModel.
 ///
@@ -64,7 +64,7 @@ class CalendarSettingViewModel extends ChangeNotifier {
     if (!isDirty) return;
     final value = _weekStart;
     await _repository.save(value);
-    await HomeWidgetService.updateWeekStart(value);
+    await ScheduleWidgetWriter.updateWeekStart(value);
     if (_disposed) return;
     _saved = value;
     notifyListeners();
