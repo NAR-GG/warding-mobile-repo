@@ -17,6 +17,7 @@ import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/domain/repositories/member_notification_repository.dart';
+import 'package:warding/features/home/domain/usecases/get_preferred_team.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
@@ -80,6 +81,7 @@ class HomeViewModel extends ChangeNotifier {
     AuthService? auth,
     OnboardingRepository? onboarding,
     TeamPreferenceRepository? teamPreferences,
+    GetPreferredTeam? getPreferredTeam,
   }) : _notices = notices ?? di<NoticeRepository>(),
        _noticePreferences =
            noticePreferences ?? NoticePreferenceRepository.instance,
@@ -97,8 +99,16 @@ class HomeViewModel extends ChangeNotifier {
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource(),
        _auth = auth ?? AuthService.instance,
-       _onboarding = onboarding ?? di<OnboardingRepository>(),
-       _teamPreferences = teamPreferences ?? TeamPreferenceRepository.instance {
+       // 응원팀을 정하는 규칙은 UseCase 가 갖는다 — repository 3개를 조합하고
+       // 폴백 순서가 규칙이라서다. 세 파라미터는 그 UseCase 로 넘긴다(테스트가
+       // 개별 fake 를 주입하던 경로를 그대로 유지한다).
+       _getPreferredTeam =
+           getPreferredTeam ??
+           GetPreferredTeam(
+             auth: auth,
+             onboarding: onboarding,
+             teamPreferences: teamPreferences,
+           ) {
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     _promotedNotices = _notices.cachedPromoted ?? const [];
@@ -165,8 +175,7 @@ class HomeViewModel extends ChangeNotifier {
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
   final AuthService _auth;
-  final OnboardingRepository _onboarding;
-  final TeamPreferenceRepository _teamPreferences;
+  final GetPreferredTeam _getPreferredTeam;
 
   bool _disposed = false;
 
@@ -1039,28 +1048,9 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadPreferredTeam() async {
     if (_preferredTeamLoaded) return;
-    try {
-      // teamId 를 알기 전에도 팀 목록은 미리 받아둔다 — fetchMe 와 겹쳐서
-      // 왕복 한 번을 아낀다.
-      final teamsFuture = _onboarding.fetchTeams();
-      final me = await _auth.fetchMe();
-      final teamId = me.favoriteTeamId;
-      final teams = (await teamsFuture).getOrElse((_) => const []);
-      Team? team;
-      if (teamId != null) {
-        for (final t in teams) {
-          if (t.id == teamId) {
-            team = t;
-            break;
-          }
-        }
-      }
-      _preferredTeam = team;
-    } catch (e) {
-      // 비로그인 등은 로컬 캐시로 폴백.
-      debugPrint('[Home] 응원팀 서버 조회 실패, 로컬 폴백: $e');
-      _preferredTeam = await _teamPreferences.loadPreferredTeam();
-    }
+    // 어느 출처를 쓸지·실패하면 무엇으로 폴백할지는 UseCase 가 정한다.
+    // 여기서는 한 번만 받는다는 화면 쪽 사정만 본다.
+    _preferredTeam = await _getPreferredTeam();
     _preferredTeamLoaded = true;
   }
 
