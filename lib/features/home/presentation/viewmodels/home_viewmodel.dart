@@ -35,7 +35,8 @@ import 'package:warding/features/home/domain/repositories/standings_repository.d
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
-import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
+import 'package:warding/features/subscription/presentation/viewmodels/subscribed_players_viewmodel.dart';
 
 /// 커뮤니티 섹션 정렬 기준. 정의는 커뮤니티 기능이 갖는다
 /// ([CommunitySummarySort]) — 홈 말고도 쓸 수 있어야 해서다.
@@ -49,16 +50,6 @@ enum HomeShortsFilter { all, team }
 
 /// 월즈 순위표 카드가 보여주는 뷰. 하단 버튼으로 전환한다.
 enum WorldsStandingsView { swiss, knockout }
-
-/// 솔랭 카드 상태 (spec "상태" 표).
-///
-/// - [loading]: 첫 구독 조회가 아직 안 끝났다 — 스켈레톤. 구독 0명과 겉보기가
-///   같아(둘 다 아직 화면에 확정된 카드가 없음) 구분하지 않으면 응답이
-///   오는 순간 빈 카드 → 실제 카드로 레이아웃이 튄다(CLS).
-/// - [noSubscription]: 구독 0명 — 점선 빈 카드.
-/// - [noneActive]: 구독은 있는데 진행 중인 선수가 0명 — 한 줄짜리 조용한 상태.
-/// - [active]: 진행 중인 선수가 있다 — 큰 카드 스와이프.
-enum SoloCardState { loading, noSubscription, noneActive, active }
 
 /// 홈 화면 상태.
 ///
@@ -93,17 +84,14 @@ class HomeViewModel extends ChangeNotifier {
     NoticeBannerViewModel? noticeBannerViewModel,
     NotificationBadgeViewModel? notificationBadgeViewModel,
     TodayMatchesViewModel? todayMatchesViewModel,
+    SubscribedPlayersViewModel? subscribedPlayersViewModel,
+    SoloRankViewModel? soloRankViewModel,
   }) : _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
        _shortsRepo = shorts ?? di<ShortsRepository>(),
-       _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
-       _soloRank = soloRank ?? defaultSoloRankSource(),
-       _worlds = worlds ?? defaultWorldsSoloSource(),
-       cheers = SoloCheerController(source: cheer ?? defaultCheerSource()),
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource(),
-       _auth = auth ?? AuthService.instance,
        // 응원팀을 정하는 규칙은 UseCase 가 갖는다 — repository 3개를 조합하고
        // 폴백 순서가 규칙이라서다. 세 파라미터는 그 UseCase 로 넘긴다(테스트가
        // 개별 fake 를 주입하던 경로를 그대로 유지한다).
@@ -127,7 +115,21 @@ class HomeViewModel extends ChangeNotifier {
            notificationBadgeViewModel ??
            NotificationBadgeViewModel(repository: memberNotifications),
        todayMatches =
-           todayMatchesViewModel ?? TodayMatchesViewModel(repository: schedule) {
+           todayMatchesViewModel ?? TodayMatchesViewModel(repository: schedule),
+       subscribedPlayers =
+           subscribedPlayersViewModel ??
+           SubscribedPlayersViewModel(repository: subscriptions, auth: auth) {
+    // 솔랭 VM 은 **위에서 만든 구독 VM 과 같은 인스턴스**를 받아야 한다 —
+    // initializer 에서 양쪽을 만들면 두 벌이 생겨, refreshAll 이 로드한 쪽과
+    // 솔랭이 보는 쪽이 달라진다(카드가 loading 에서 안 벗어난다).
+    solo =
+        soloRankViewModel ??
+        SoloRankViewModel(
+          subscriptions: subscribedPlayers,
+          source: soloRank,
+          worlds: worlds,
+          cheer: cheer,
+        );
     // 섹션 ViewModel 의 통지를 홈 통지로 올린다 — 홈 위젯들이 HomeViewModel
     // 하나만 구독하는 기존 구조를 유지한다. 섹션을 독립 구독하는 화면은
     // 그 ViewModel 을 직접 쓰면 된다.
@@ -135,6 +137,8 @@ class HomeViewModel extends ChangeNotifier {
     noticeBanner.addListener(_notify);
     notificationBadge.addListener(_notify);
     todayMatches.addListener(_notify);
+    subscribedPlayers.addListener(_notify);
+    solo.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     unawaited(refreshAll());
@@ -145,56 +149,15 @@ class HomeViewModel extends ChangeNotifier {
     // 솔랭 카드는 진행 중인 게임의 실시간성이 중요한 유일한 섹션이라
     // 5초 폴링을 건다(2026-09-29 결정). 나머지 섹션은 앱 복귀(30초 간격)만
     // 으로 충분하다 — 경기 일정·순위표·커뮤니티 글은 그 정도로 자주 안 바뀐다.
-    _startSoloPolling();
-  }
-
-  Timer? _soloPollTimer;
-
-  // 솔랭 조회가 5초(폴링 간격)보다 오래 걸리면 다음 틱이 _soloGen 을 먼저
-  // 올려 버려, 느린 응답이 돌아와도 gen 불일치로 버려지고 카드가 멈춰
-  // 보인다(그 사이 요청만 계속 쌓인다). 이전 조회가 끝나기 전엔 새 틱을
-  // 건너뛰어 막는다.
-  bool _soloPollInFlight = false;
-
-  void _startSoloPolling() {
-    _soloPollTimer?.cancel();
-    _soloPollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_soloPollInFlight) return;
-      _soloPollInFlight = true;
-      unawaited(
-        Future.wait([
-          _loadSolo(),
-          _loadWorlds(),
-        ]).whenComplete(() => _soloPollInFlight = false),
-      );
-    });
-  }
-
-  /// 앱이 백그라운드로 가면 부른다 — 화면이 안 보이는 동안 5초마다 네트워크를
-  /// 쓰지 않게 폴링을 멈춘다. [resumeSoloPolling] 과 짝이다.
-  void pauseSoloPolling() => _soloPollTimer?.cancel();
-
-  /// 앱이 다시 포그라운드로 오면 부른다. 폴링을 재개하고, 그 사이 놓친 변화를
-  /// 바로 반영하도록 즉시 한 번 조회한다.
-  void resumeSoloPolling() {
-    _startSoloPolling();
-    unawaited(_loadSolo());
-    unawaited(_loadWorlds());
+    solo.startPolling();
   }
 
   final ScheduleRepository _schedule;
   final StandingsRepository _standingsRepo;
   final ShortsRepository _shortsRepo;
-  final SubscriptionRepository _subscriptions;
-  final SoloRankSource _soloRank;
-  final WorldsSoloSource _worlds;
 
-  /// 솔랭 카드 응원 — 낙관적 숫자와 묶음 전송. 카드는 이걸 직접 구독해 탭마다
-  /// 홈 전체가 아니라 응원 영역만 다시 그린다.
-  final SoloCheerController cheers;
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
-  final AuthService _auth;
   final GetPreferredTeam _getPreferredTeam;
 
   bool _disposed = false;
@@ -210,10 +173,12 @@ class HomeViewModel extends ChangeNotifier {
     notificationBadge.dispose();
     todayMatches.removeListener(_notify);
     todayMatches.dispose();
-    _soloPollTimer?.cancel();
-    // 남은 응원은 화면이 닫혀도 보낸다. 컨트롤러는 dispose 뒤에도 안전하다.
-    unawaited(cheers.flushAll());
-    cheers.dispose();
+    // 남은 응원을 먼저 보낸다 — solo.dispose() 가 컨트롤러를 닫는다.
+    unawaited(solo.flushCheers());
+    solo.removeListener(_notify);
+    solo.dispose();
+    subscribedPlayers.removeListener(_notify);
+    subscribedPlayers.dispose();
     super.dispose();
   }
 
@@ -248,9 +213,9 @@ class HomeViewModel extends ChangeNotifier {
       noticeBanner.load(),
       community.load(),
       notificationBadge.refresh(),
-      _loadSubscriptions(),
-      _loadSolo(),
-      _loadWorlds(),
+      subscribedPlayers.load(),
+      solo.load(),
+      solo.loadWorlds(),
       todayMatches.load(),
       _loadLeagueChips(),
       _loadStandings(),
@@ -284,266 +249,58 @@ class HomeViewModel extends ChangeNotifier {
   /// 미읽음 수를 다시 센다. 알림 화면에서 돌아올 때도 부른다.
   Future<void> refreshUnreadNotifications() => notificationBadge.refresh();
 
-  // ---- 구독 선수 (솔랭 구독 수·쇼츠 매칭에 함께 쓴다) ----
+  // ---- 구독 선수 · 솔랭 · 월즈 솔랭 ----
+  //
+  // 로직은 `features/subscription`·`features/solo_rank` 가 갖는다.
+  // 솔랭 VM 은 구독 VM 을 생성자로 받는다 — 카드가 보여주는 것이 "구독한
+  // 선수의 솔랭"이라 그 의존은 숨길 게 아니라 드러내는 것이 맞다.
+  final SubscribedPlayersViewModel subscribedPlayers;
+  late final SoloRankViewModel solo;
 
-  /// 실제 구독 선수 목록. null 이면 아직 못 받았거나 비회원·실패 —
-  /// 이때 구독 수는 0명으로 본다.
-  List<PlayerSubscription>? _subscribedPlayers;
+  /// 응원 컨트롤러 — 카드가 직접 구독해 탭마다 홈 전체가 아니라 응원 영역만
+  /// 다시 그린다.
+  SoloCheerController get cheers => solo.cheers;
 
-  /// 첫 구독 조회가 아직 끝나지 않았는지. 성공·실패·비회원 어느 쪽으로든
-  /// 한 번 끝나면 계속 false다(이후 새로고침은 이 값에 영향 없음) — 앱 복귀
-  /// 새로고침마다 스켈레톤이 다시 뜨는 걸 막는다.
-  bool _subscriptionsFirstLoadPending = true;
+  int get subscribedTotal => solo.subscribedTotal;
+  List<PlayerSubscription> get subscribedFaces => solo.subscribedFaces;
+  static const int quietFaceCount = SoloRankViewModel.quietFaceCount;
 
-  int _subscriptionsGen = 0;
+  List<HomeLiveSoloPlayer> get soloLive => solo.live;
+  List<HomeFinishedSoloPlayer> get soloFinished => solo.finished;
+  int get soloHiddenCount => solo.hiddenCount;
+  SoloCardState get soloState => solo.cardState;
 
-  Future<void> _loadSubscriptions() async {
-    final gen = ++_subscriptionsGen;
-    try {
-      // 비회원(JWT 없음)이면 authorizedRequest 가 던진다 → 아래 catch.
-      final players = (await _subscriptions.fetchSubscribedPlayers())
-          .getOrElse((f) => throw FailureException(f));
-      // 그 사이 더 새 요청이 떴으면 옛 응답은 버린다(아래 로더들도 같다).
-      if (_disposed || gen != _subscriptionsGen) return;
-      _subscribedPlayers = players;
-      _subscriptionsFirstLoadPending = false;
-      _recomputeSolo();
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 구독 선수 조회 실패(비회원 포함): $e');
-      if (_disposed || gen != _subscriptionsGen) return;
-      _subscriptionsFirstLoadPending = false;
-      // 로그아웃했으면 이전 계정의 구독 선수를 붙들고 있지 않는다(그 밖의
-      // 실패는 마지막 값을 유지한다).
-      if (_subscribedPlayers != null && await _signedOut()) {
-        if (_disposed || gen != _subscriptionsGen) return;
-        _subscribedPlayers = null;
-        _recomputeSolo();
-      }
-      _notify();
-    }
-  }
+  Set<String> get pinnedPlayerNames => solo.pinnedNames;
+  void togglePin(String name) => solo.togglePin(name);
 
-  Future<bool> _signedOut() async {
-    try {
-      return await _auth.jwt == null;
-    } catch (_) {
-      return false; // Keychain 을 못 읽은 건 로그아웃이 아니다.
-    }
-  }
-
-  // ---- 섹션 1: 구독 선수 솔랭 상태 ----
-  SoloRankSnapshot? _soloSnapshot;
-
-  List<HomeLiveSoloPlayer> _soloLive = const [];
-  List<HomeFinishedSoloPlayer> _soloFinished = const [];
-
-  /// 위쪽 큰 카드 — 지금 진행 중인 선수만. 핀 고정 선수가 먼저, 그 안팎에서는
-  /// 가장 최근에 시작한(경과 시간이 짧은) 선수가 먼저.
-  List<HomeLiveSoloPlayer> get soloLive => _soloLive;
-
-  /// 아래 줄 — 오늘 끝난 경기. 선수당 최신 1건, 최대 [_maxFinished]명.
-  List<HomeFinishedSoloPlayer> get soloFinished => _soloFinished;
-
-  static const int _maxFinished = 8;
-
-  /// 구독 수 — 실제 구독 목록 길이만 센다. 비회원(JWT 없음)이나 조회 실패는
-  /// 0명이다(구독 0명이면 점선 빈 카드).
-  int get subscribedTotal => _subscribedPlayers?.length ?? 0;
-
-  /// 솔랭 중인 선수가 없을 때 조용한 행에 겹쳐 보여줄 구독 선수 얼굴(최대 4명).
-  List<PlayerSubscription> get subscribedFaces =>
-      (_subscribedPlayers ?? const <PlayerSubscription>[])
-          .take(quietFaceCount)
-          .toList();
-
-  static const int quietFaceCount = 4;
-
-  /// "+N명" — 위·아래 어디에도 안 나온 구독 선수 수.
-  int get soloHiddenCount {
-    final hidden = subscribedTotal - _soloLive.length - _soloFinished.length;
-    return hidden < 0 ? 0 : hidden;
-  }
-
-  /// 진행 중 0명이어도 오늘 끝난 경기가 있으면 [SoloCardState.active] 다 —
-  /// 큰 카드(스와이프)는 [soloLive] 가 비어 있으면 그리지 않고, 끝난 경기
-  /// 줄은 그대로 보여준다(2026-09-29 결정, spec.md "상태" 표).
-  SoloCardState get soloState {
-    if (_subscriptionsFirstLoadPending) return SoloCardState.loading;
-    if (subscribedTotal == 0) return SoloCardState.noSubscription;
-    if (_soloLive.isEmpty && _soloFinished.isEmpty) {
-      return SoloCardState.noneActive;
-    }
-    return SoloCardState.active;
-  }
-
-  /// 핀 고정한 선수 이름. 기기 로컬(메모리)만 — 저장·서버 동기화 없음.
-  /// 몇 명까지 허용할지는 spec 미결이라 상한을 두지 않는다.
-  Set<String> _pinnedPlayerNames = const {};
-  Set<String> get pinnedPlayerNames => _pinnedPlayerNames;
-
-  void togglePin(String name) {
-    _pinnedPlayerNames = _pinnedPlayerNames.contains(name)
-        ? ({..._pinnedPlayerNames}..remove(name))
-        : {..._pinnedPlayerNames, name};
-    _recomputeSolo();
-    _notify();
-  }
-
-  int _soloSwipeIndex = 0;
-  int get soloSwipeIndex => _soloSwipeIndex;
-
-  void setSoloSwipeIndex(int index) {
-    if (index == _soloSwipeIndex) return;
-    _soloSwipeIndex = index;
-    _notify();
-  }
-
-  int _soloGen = 0;
-
-  /// 내 선수 화면(보기 전용)에서 돌아왔을 때 솔랭 상태를 다시 불러온다.
-  /// 홈은 화면 전환(push/pop)으로는 새로고침되지 않고 앱 복귀(30초 간격)
-  /// 때만 갱신되므로, 그 사이 선수가 솔랭을 시작·종료해도 내 선수 화면과
-  /// 어긋난 채로 남는다 — 벨 알림함(_openNotifications)과 같은 방식으로
-  /// 이 화면만 돌아올 때 콕 집어 새로고침한다.
-  Future<void> refreshSoloOnReturn() =>
-      Future.wait([_loadSolo(), _loadWorlds()]);
-
-  /// 구독 설정 화면(선수 구독하기)에서 돌아왔을 때 구독 목록과 솔랭 상태를
-  /// 함께 다시 불러온다. 구독 수([subscribedTotal])가 바뀌면 솔랭 카드
-  /// 상태(빈 카드 ↔ 조용한 행 ↔ 진행 중 카드, [soloState])도 같이 바뀌어야
-  /// 하므로 [refreshSoloOnReturn]만으로는 부족하다.
-  Future<void> refreshSubscriptionsOnReturn() =>
-      Future.wait([_loadSubscriptions(), _loadSolo(), _loadWorlds()]);
-
-  // ---- 월즈 솔랭 (구독 무관, 월즈 부트캠프 계정이 등록된 선수) ----
-  WorldsSoloSnapshot? _worldsSnapshot;
-  int _worldsGen = 0;
-
-  Future<void> _loadWorlds() async {
-    final gen = ++_worldsGen;
-    try {
-      final snap = await _worlds.fetch();
-      if (_disposed || gen != _worldsGen) return;
-      _worldsSnapshot = snap;
-      _notify();
-    } catch (e) {
-      // 구독 솔랭과 같이 실패하면 마지막 값을 유지한다.
-      debugPrint('[Home] 월즈 솔랭 조회 실패: $e');
-    }
-  }
-
-  /// 월즈 솔랭을 보여줄지 — 서버 명단이 비면(대회 전·후) 통째로 숨긴다.
-  bool get worldsVisible => _worldsSnapshot?.players.isNotEmpty ?? false;
-
-  /// 월즈 명단의 팀 수(진입 줄 "N팀 선수 …"). 팀 없는 선수는 세지 않는다.
-  int get worldsTeamCount => {
-    for (final p in _worldsSnapshot?.players ?? const <PlayerSubscription>[])
-      if (p.teamCode.isNotEmpty) p.teamCode,
-  }.length;
-
-  SoloRankClassification get _worldsSolo =>
-      SoloRankClassification.of(_worldsSnapshot?.solo);
-
-  /// 지금 솔랭 중인 월즈 선수 전체(구독 포함). 최근 시작 먼저.
-  List<HomeLiveSoloPlayer> get worldsLiveAll =>
-      _worldsSolo.liveByName.values.toList()
-        ..sort(SoloRankClassification.compareLive);
-
-  /// 지금 솔랭 중인 월즈 선수 중 구독하지 않은 선수 — 구독 선수는 위 큰 카드에
-  /// 이미 나오므로 월즈 카드에서는 뺀다.
-  List<HomeLiveSoloPlayer> get worldsLive {
-    final subscribed = {
-      for (final p in _subscribedPlayers ?? const <PlayerSubscription>[])
-        SoloRankClassification.soloKey(p.playerName),
-    };
-    return [
-      for (final p in worldsLiveAll)
-        if (!subscribed.contains(SoloRankClassification.soloKey(p.name))) p,
-    ];
-  }
-
-  /// 월즈 선수가 아무도 솔랭 중이 아닐 때 한 줄에 보여줄 "마지막" 판.
-  HomeFinishedSoloPlayer? get worldsLastFinished {
-    final finished = _worldsSolo.finishedByName.values.toList()
-      ..sort(SoloRankClassification.compareFinished);
-    return finished.isEmpty ? null : finished.first;
-  }
-
-  Future<void> _loadSolo() async {
-    final gen = ++_soloGen;
-    try {
-      final snap = await _soloRank.fetch();
-      if (_disposed || gen != _soloGen) return;
-      _soloSnapshot = snap;
-      _recomputeSolo();
-      _notify();
-    } catch (e) {
-      // spec 미결: 폴링 실패 시 마지막 값을 유지할지 — 잠정으로 유지한다.
-      debugPrint('[Home] 솔랭 상태 조회 실패: $e');
-    }
-  }
-
-  void _recomputeSolo() {
-    final snap = _soloSnapshot;
-    if (snap == null) return;
-
-    // 구독 목록을 받았으면 구독한 선수만 남긴다 — 그래야 숨김 수(구독 수 −
-    // 보이는 선수 수)가 맞고 내 선수 화면과 같은 선수를 보여준다. 비회원·실패는
-    // 구독 0명이라 어차피 빈 카드다.
-    final subscribed = _subscribedPlayers == null
-        ? null
-        : {
-            for (final p in _subscribedPlayers!)
-              SoloRankClassification.soloKey(p.playerName),
-          };
-    final solo = SoloRankClassification.of(snap, subscribed: subscribed);
-
-    // 핀 고정 선수가 먼저, 그 안에서는 공용 규칙(최근 시작 먼저).
-    final live = solo.liveByName.values.toList()
-      ..sort((a, b) {
-        final aPinned = _pinnedPlayerNames.contains(a.name) ? 0 : 1;
-        final bPinned = _pinnedPlayerNames.contains(b.name) ? 0 : 1;
-        if (aPinned != bPinned) return aPinned - bPinned;
-        return SoloRankClassification.compareLive(a, b);
-      });
-    _soloLive = live;
-    _syncCheers(live);
-
-    // 최대 [_maxFinished]명은 홈 카드만의 표시 상한이다.
-    final finished = solo.finishedByName.values.toList()
-      ..sort(SoloRankClassification.compareFinished);
-    _soloFinished = finished.take(_maxFinished).toList();
-
-    // 진행 중 선수가 줄어 스와이프 위치가 범위를 벗어나면 처음으로 돌린다.
-    if (_soloSwipeIndex >= _soloLive.length) _soloSwipeIndex = 0;
-  }
-
-  /// 서버 응원 수를 컨트롤러에 합치고, 카드가 사라진 선수의 미결은 보낸다.
-  /// 전송 대상 id 는 솔랭 응답에 있으면 그것, 없으면 구독 목록에서 이름으로 찾는다.
-  void _syncCheers(List<HomeLiveSoloPlayer> live) {
-    final idByName = {
-      for (final p in _subscribedPlayers ?? const <PlayerSubscription>[])
-        SoloRankClassification.soloKey(p.playerName): p.playerId,
-    };
-    for (final p in live) {
-      final key = SoloRankClassification.soloKey(p.name);
-      cheers.sync(
-        key,
-        total: p.cheerTotal,
-        mine: p.cheerMine,
-        playerId: p.playerId ?? idByName[key],
-      );
-    }
-    unawaited(
-      cheers.flushMissing({
-        for (final p in live) SoloRankClassification.soloKey(p.name),
-      }),
-    );
-  }
+  int get soloSwipeIndex => solo.swipeIndex;
+  void setSoloSwipeIndex(int index) => solo.setSwipeIndex(index);
 
   /// 앱이 백그라운드로 갈 때 미결 응원을 보낸다.
-  Future<void> flushCheers() => cheers.flushAll();
+  Future<void> flushCheers() => solo.flushCheers();
+
+  /// 내 선수 화면(보기 전용)에서 돌아왔을 때 솔랭 상태를 다시 불러온다.
+  ///
+  /// 홈은 화면 전환(push/pop)으로는 새로고침되지 않고 앱 복귀(30초 간격)
+  /// 때만 갱신되므로, 그 사이 선수가 솔랭을 시작·종료해도 내 선수 화면과
+  /// 어긋난 채로 남는다 — 벨 알림함과 같은 방식으로 이 화면만 돌아올 때
+  /// 콕 집어 새로고침한다.
+  Future<void> refreshSoloOnReturn() => solo.refreshOnReturn();
+
+  /// 구독 설정 화면(선수 구독하기)에서 돌아왔을 때 구독 목록과 솔랭 상태를
+  /// 함께 다시 불러온다.
+  Future<void> refreshSubscriptionsOnReturn() =>
+      solo.refreshWithSubscriptions();
+
+  bool get worldsVisible => solo.worldsVisible;
+  int get worldsTeamCount => solo.worldsTeamCount;
+  List<HomeLiveSoloPlayer> get worldsLiveAll => solo.worldsLiveAll;
+  List<HomeLiveSoloPlayer> get worldsLive => solo.worldsLive;
+  HomeFinishedSoloPlayer? get worldsLastFinished => solo.worldsLastFinished;
+
+  // 폴링 — 솔랭 카드만 실시간성이 필요하다.
+  void pauseSoloPolling() => solo.pausePolling();
+  void resumeSoloPolling() => solo.resumePolling();
 
   // ---- 섹션 2: 오늘 경기 ----
   //
@@ -1045,4 +802,5 @@ class HomeViewModel extends ChangeNotifier {
       thumbnailUrl: video.thumbnailUrl,
     );
   }
+
 }

@@ -1,3 +1,4 @@
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
 import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
