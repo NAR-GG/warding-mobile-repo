@@ -13,7 +13,7 @@ timestamp: 2026-06-21T00:00:00Z
 # 구현됨
 
 - 라이브 경기 **FCM 수신 + 딥링크** (모바일, #21).
-- 관련 코드: `repository/fcm/fcm_service.dart`.
+- 관련 코드: `lib/app/fcm_service.dart`.
 - Flutter 라이브 기능 배포는 백엔드 prod 선행 후 진행 (#17).
 
 # 관련

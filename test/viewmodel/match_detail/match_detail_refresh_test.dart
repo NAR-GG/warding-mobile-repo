@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/match_champion_pick.dart';
-import 'package:warding/model/match_game.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/viewmodel/match_detail/match_detail_viewmodel.dart';
+import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
+import 'package:warding/features/match_detail/domain/match_game.dart';
+import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';
 
@@ -35,15 +37,16 @@ void main() {
   setUp(() {
     match = MockMatchDetailRepository();
     rating = MockRatingRepository();
-    when(() => match.fetchLiveEvents(any())).thenThrow(Exception('skip'));
+    when(() => match.fetchLiveEvents(any()))
+        .thenAnswer((_) async => const Left(ServerFailure()));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
         .thenThrow(Exception('skip'));
     when(() => match.fetchChampionPick(any())).thenAnswer(
-      (_) async => MatchChampionPick.fromJson(const {
+      (_) async => Right(MatchChampionPick.fromJson(const {
         'gameId': 'g1',
         'blueTeam': {'teamName': 'Gen.g'},
         'redTeam': {'teamName': 'T1'},
-      }),
+      })),
     );
   });
 
@@ -56,7 +59,7 @@ void main() {
 
   test('보고 있던 세트를 유지한다 — 기본 선택으로 되돌리지 않는다', () async {
     when(() => match.fetchGames('m-1'))
-        .thenAnswer((_) async => (threeSets, null));
+        .thenAnswer((_) async => Right((threeSets, null)));
     when(() => match.fetchMatch('m-1')).thenAnswer((_) async => null);
 
     final model = vm();
@@ -75,7 +78,7 @@ void main() {
 
   test('보던 세트가 사라졌으면 기본 선택으로 되돌린다', () async {
     when(() => match.fetchGames('m-1'))
-        .thenAnswer((_) async => (threeSets, null));
+        .thenAnswer((_) async => Right((threeSets, null)));
     when(() => match.fetchMatch('m-1')).thenAnswer((_) async => null);
 
     final model = vm();
@@ -84,7 +87,7 @@ void main() {
 
     // 서버에서 3세트가 없어진 응답(취소·정정 등).
     when(() => match.fetchGames('m-1')).thenAnswer(
-      (_) async => (threeSets.sublist(0, 2), null),
+      (_) async => Right((threeSets.sublist(0, 2), null)),
     );
     await model.refresh();
 
@@ -93,7 +96,7 @@ void main() {
 
   test('스코어를 다시 받는다 — 이미 값이 있어도 갱신한다', () async {
     when(() => match.fetchGames('m-1'))
-        .thenAnswer((_) async => (threeSets, null));
+        .thenAnswer((_) async => Right((threeSets, null)));
     // 진입 시 이미 경기 정보를 들고 들어온 경우(경기 목록에서 카드 탭).
     final model = vm(initialMatch: matchWithScore(1, 0));
     await model.load();
@@ -112,7 +115,7 @@ void main() {
 
   test('활성 탭 데이터를 다시 받는다', () async {
     when(() => match.fetchGames('m-1'))
-        .thenAnswer((_) async => (threeSets, null));
+        .thenAnswer((_) async => Right((threeSets, null)));
     when(() => match.fetchMatch('m-1')).thenAnswer((_) async => null);
 
     final model = vm();
@@ -127,7 +130,7 @@ void main() {
 
   test('보지 않은 탭은 새로고침이 미리 받지 않는다 — 지연 로딩 유지', () async {
     when(() => match.fetchGames('m-1'))
-        .thenAnswer((_) async => (threeSets, null));
+        .thenAnswer((_) async => Right((threeSets, null)));
     when(() => match.fetchMatch('m-1')).thenAnswer((_) async => null);
 
     final model = vm();

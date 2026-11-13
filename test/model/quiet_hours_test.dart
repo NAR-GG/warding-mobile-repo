@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/quiet_hours.dart';
+import 'package:warding/domain/quiet_hours.dart';
 
 void main() {
   test('fromJson: "HH:mm" 를 TimeOfDay 로 파싱', () {

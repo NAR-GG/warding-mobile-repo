@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/search_select_box.dart';
+import 'package:warding/core/ui/search_select_box.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/viewmodel/match_list/match_list_viewmodel.dart';
+import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 
 /// 경기 리스트 필터의 시즌 선택지가 **화면에 실제로** 올해를 포함하는지 본다.
 ///

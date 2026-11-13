@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/schedule_filter_options.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/viewmodel/schedule/filter_viewmodel.dart';
+import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/schedule/presentation/viewmodels/filter_viewmodel.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
 
@@ -25,7 +26,7 @@ void main() {
   setUp(() {
     repo = MockScheduleRepository();
     when(() => repo.fetchFilterOptions(league: any(named: 'league')))
-        .thenAnswer((_) async => _options);
+        .thenAnswer((_) async => Right(_options));
   });
 
   test('초기 상태는 전체 — 리그·팀 옵션 첫 항목이 선택돼 있다', () async {

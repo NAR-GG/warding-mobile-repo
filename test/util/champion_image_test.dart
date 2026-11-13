@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/champion_image.dart';
+import 'package:warding/core/util/champion_image.dart';
 
 /// 챔피언 이미지 URL 해석.
 ///

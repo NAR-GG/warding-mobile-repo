@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/scroll_to_top_button.dart';
+import 'package:warding/core/ui/scroll_to_top_button.dart';
 
 void main() {
   Widget buildApp(ScrollController controller) {

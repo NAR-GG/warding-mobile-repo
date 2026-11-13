@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/community_draft.dart';
-import 'package:warding/repository/community/community_draft_repository.dart';
-import 'package:warding/repository/community/community_image_repository.dart';
-import 'package:warding/repository/community/community_repository.dart';
-import 'package:warding/viewmodel/community/post_write_viewmodel.dart';
+import 'package:warding/features/community/domain/community_draft.dart';
+import 'package:warding/features/community/data/community_draft_repository.dart';
+import 'package:warding/features/community/data/community_image_repository.dart';
+import 'package:warding/features/community/data/community_repository.dart';
+import 'package:warding/features/community/presentation/viewmodels/post_write_viewmodel.dart';
 
 class _MockRepository extends Mock implements CommunityRepository {}
 

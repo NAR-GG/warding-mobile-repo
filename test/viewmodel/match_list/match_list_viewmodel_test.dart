@@ -1,12 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/category_tree.dart';
-import 'package:warding/model/schedule_filter_options.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/repository/category/category_repository.dart';
-import 'package:warding/repository/preference/filter_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/viewmodel/match_list/match_list_viewmodel.dart';
+import 'package:warding/features/match_list/domain/category_tree.dart';
+import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
+import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
+import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
+import 'package:warding/features/schedule/domain/match_page.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 
 class MockCategoryRepository extends Mock implements CategoryRepository {}
 
@@ -38,13 +41,14 @@ void main() {
       '${d.day.toString().padLeft(2, '0')}';
 
   const emptyPage = MatchPage(matches: [], nextCursor: null, hasNext: false);
+  const emptyPageOk = Right<Failure, MatchPage>(emptyPage);
 
   setUp(() {
     cat = MockCategoryRepository();
     sched = MockScheduleRepository();
 
     when(() => sched.fetchFilterOptions(league: any(named: 'league')))
-        .thenAnswer((_) async => const ScheduleFilterOptions(
+        .thenAnswer((_) async => Right(const ScheduleFilterOptions(
               defaultLeague: 'LCK',
               leagues: [
                 // 서버가 맨 앞에 '전체'(ALL)를 포함해 내려준다.
@@ -53,9 +57,9 @@ void main() {
                 FilterLeague(code: 'MSI', name: 'MSI'),
               ],
               teams: [],
-            ));
+            )));
     when(() => cat.fetchTree(year: any(named: 'year')))
-        .thenAnswer((_) async => const CategoryTree(seasons: []));
+        .thenAnswer((_) async => const Right(CategoryTree(seasons: [])));
 
     // 뷰모델이 만들 수 있는 네 가지 호출 모양(진입=around, 오늘이후 진입=from,
     // 미래 이어받기=cursor+from, 과거 이어받기=before) 을 모두 빈 응답으로
@@ -65,26 +69,26 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => emptyPage);
+        )).thenAnswer((_) async => emptyPageOk);
     when(() => sched.fetchMatches(
           from: any(named: 'from'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => emptyPage);
+        )).thenAnswer((_) async => emptyPageOk);
     when(() => sched.fetchMatches(
           cursor: any(named: 'cursor'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
           from: any(named: 'from'),
-        )).thenAnswer((_) async => emptyPage);
+        )).thenAnswer((_) async => emptyPageOk);
     when(() => sched.fetchMatches(
           before: any(named: 'before'),
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => emptyPage);
+        )).thenAnswer((_) async => emptyPageOk);
   });
 
   test('리그 목록은 맨 앞 전체 + 경기일정 필터 옵션(ALLOWED_LEAGUES)에서 온다', () async {
@@ -163,7 +167,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             for (var i = 0; i < 3; i++) match('today$i', day),
             for (var i = 0; i < 2; i++)
@@ -171,7 +175,7 @@ void main() {
           ],
           nextCursor: 'c1',
           hasNext: true,
-        ));
+        )));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -208,7 +212,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             for (var i = -2; i <= 2; i++)
               match('d$i', today.add(Duration(days: i))),
@@ -217,7 +221,7 @@ void main() {
           hasNext: true,
           prevCursor: 'prev',
           hasPrev: true,
-        ));
+        )));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -240,7 +244,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             for (var i = -2; i <= 2; i++)
               match('d$i', today.add(Duration(days: i))),
@@ -249,7 +253,7 @@ void main() {
           hasNext: true,
           prevCursor: 'prev',
           hasPrev: true,
-        ));
+        )));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -276,7 +280,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             for (var i = -2; i <= 2; i++)
               match('d$i', today.add(Duration(days: i))),
@@ -285,7 +289,7 @@ void main() {
           hasNext: true,
           prevCursor: 'prev1',
           hasPrev: true,
-        ));
+        )));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -297,7 +301,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             match('p1', today.subtract(const Duration(days: 4))),
             match('p2', today.subtract(const Duration(days: 3))),
@@ -306,7 +310,7 @@ void main() {
           hasNext: false,
           prevCursor: null,
           hasPrev: false,
-        ));
+        )));
 
     // 최근순에서 화면 '아래쪽 끝' 트리거 = loadMoreMatches, 더 과거를 받아야 한다.
     await vm.loadMoreMatches();
@@ -327,7 +331,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             for (var i = 0; i <= 4; i++) match('d$i', today.add(Duration(days: i))),
           ],
@@ -335,7 +339,7 @@ void main() {
           hasNext: false,
           prevCursor: 'prev1',
           hasPrev: true,
-        ));
+        )));
 
     final vm = MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
     await pumpEventQueue();
@@ -346,7 +350,7 @@ void main() {
           size: any(named: 'size'),
           league: any(named: 'league'),
           seasonYear: any(named: 'seasonYear'),
-        )).thenAnswer((_) async => MatchPage(
+        )).thenAnswer((_) async => Right(MatchPage(
           matches: [
             match('2026-08-01', DateTime(2026, 8, 1)),
             match('2026-08-02', DateTime(2026, 8, 2)),
@@ -355,7 +359,7 @@ void main() {
           hasNext: false,
           prevCursor: null,
           hasPrev: false,
-        ));
+        )));
 
     await vm.loadPreviousMatches();
     await pumpEventQueue();
@@ -390,13 +394,13 @@ void main() {
   group('시즌 목록은 서버(필터 API)를 따라간다', () {
     test('서버가 준 연도를 쓴다 — 폴백(작년·올해)과 달라도 그대로 반영된다', () async {
       when(() => sched.fetchFilterOptions(league: any(named: 'league')))
-          .thenAnswer((_) async => const ScheduleFilterOptions(
+          .thenAnswer((_) async => Right(const ScheduleFilterOptions(
                 defaultLeague: 'LCK',
                 leagues: [FilterLeague(code: 'ALL', name: '전체')],
                 teams: [],
                 // 기기 시계로는 못 만드는 조합(과거 3개 연도)을 일부러 쓴다.
                 seasonYears: [2022, 2023, 2024],
-              ));
+              )));
 
       final vm =
           MatchListViewModel(categoryRepository: cat, scheduleRepository: sched);
@@ -557,7 +561,7 @@ void main() {
       when(() => sched.fetchFilterOptions(league: any(named: 'league')))
           .thenThrow(Exception('network down'));
       when(() => cat.fetchTree(year: any(named: 'year')))
-          .thenThrow(Exception('network down'));
+          .thenAnswer((_) async => const Left(NetworkFailure()));
 
       final vm = buildVm();
       await pumpEventQueue();
@@ -574,7 +578,7 @@ void main() {
       when(() => sched.fetchFilterOptions(league: any(named: 'league')))
           .thenThrow(Exception('network down'));
       when(() => cat.fetchTree(year: any(named: 'year')))
-          .thenThrow(Exception('network down'));
+          .thenAnswer((_) async => const Left(NetworkFailure()));
 
       final vm = buildVm();
       await pumpEventQueue();

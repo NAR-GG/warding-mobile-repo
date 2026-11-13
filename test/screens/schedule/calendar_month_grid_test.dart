@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/calendar_week_start.dart';
-import 'package:warding/screens/schedule/component/calendar_day_cell.dart';
-import 'package:warding/screens/schedule/component/calendar_month_grid.dart';
+import 'package:warding/domain/calendar_week_start.dart';
+import 'package:warding/features/schedule/presentation/widgets/calendar_day_cell.dart';
+import 'package:warding/features/schedule/presentation/widgets/calendar_month_grid.dart';
 
 void main() {
   /// 그리드를 [height] 높이 뷰포트에 넣고 띄운다.

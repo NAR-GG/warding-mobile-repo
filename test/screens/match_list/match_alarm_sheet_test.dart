@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/components/nar_toggle.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/match/match_subscription_repository.dart';
-import 'package:warding/screens/match_list/component/match_alarm_sheet.dart';
-import 'package:warding/screens/match_list/component/match_card.dart';
+import 'package:warding/core/ui/nar_toggle.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
+import 'package:warding/features/match_list/presentation/widgets/match_alarm_sheet.dart';
+import 'package:warding/features/match_list/presentation/widgets/match_card.dart';
 
 import '../../support/l10n_test_setup.dart';
 
@@ -214,8 +216,11 @@ void main() {
 
   testWidgets('구독 중이면 시트에 "알림 끄기" — 누르면 해제, 열기만 해선 안 끈다', (tester) async {
     final repo = _MockMatchRepo();
-    when(() => repo.matchSubscriptionStatus('m1')).thenThrow(Exception('x'));
-    when(() => repo.unsubscribeMatch('m1')).thenAnswer((_) async {});
+    // 상태 조회가 실패해도 "알림 끄기" 는 가능해야 한다 — 기본값으로 연다.
+    when(() => repo.matchSubscriptionStatus('m1'))
+        .thenAnswer((_) async => const Left(ServerFailure()));
+    when(() => repo.unsubscribeMatch('m1'))
+        .thenAnswer((_) async => const Right(unit));
     late BuildContext ctx;
     await tester.pumpWidget(
       wrapWithL10n(

@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:warding/repository/ad/ad_repository.dart';
-import 'package:warding/util/api_client.dart' show setApiClientForTesting;
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
+import 'package:warding/core/util/api_client.dart' show setApiClientForTesting;
 
 /// 스플래시 광고는 **첫 프레임에 한 번** `readyFor` 를 읽고 끝까지 안 바꾼다.
 /// 그 값을 들고 있는 `_ready` 는 메모리에만 있어서, 복원이 없으면 앱을 켤 때마다

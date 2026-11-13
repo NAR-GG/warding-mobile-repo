@@ -4,11 +4,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/model/community_remote_post.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/screens/community/community_permission.dart';
-import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/community/community_list_viewmodel.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/community/domain/community_permission.dart';
+import 'package:warding/core/util/api_client.dart' as api;
+import 'package:warding/features/community/presentation/viewmodels/community_list_viewmodel.dart';
 
 /// 커뮤니티의 비자명한 로직은 "여기에 글을 쓸 수 있는가" 하나다. 목록·상세
 /// 렌더는 응답을 그대로 그리는 것뿐이라 테스트하지 않는다.

@@ -5,8 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/core/util/api_client.dart' as api;
 
 /// [AuthService.authorizedRequest] 의 재발급 실패 구분 검증.
 ///

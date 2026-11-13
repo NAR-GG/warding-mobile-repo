@@ -1,5 +1,163 @@
 # Bundle Update Log
 
+## 2026-11-13 (5)
+* **뉴스·평점을 각 기능으로 옮겨 홈을 비웠다.** "백엔드 대기 중" 으로 보고 보류했던 둘인데
+  실제로는 `ApiReviewSource`·`ApiNewsSource` 가 실 API(`/mobile/ratings/recent`,
+  `/home/news`)를 부르고 릴리즈도 그걸 쓴다 — 목업은 `HOME_MOCKS` 뒤에만 있었다. 평점은
+  `player_rating` 기능이 있어 거기로, 뉴스는 `features/news/` 를 신설했다. 같은 작업에서
+  솔랭 API 소스도 옮겼다 — 솔랭을 독립시킬 때 `home_api_sources.dart` 의
+  `ApiSoloRankSource`·`ApiWorldsSoloSource`·`ApiCheerSource` 를 놓쳤다.
+  `home_sources.dart`(434줄)·`home_api_sources.dart`(245줄)가 사라지고
+  `home_models.dart` 는 `HomeShortsVideo` 하나만 남았다.
+  **홈 ViewModel 이 직접 쓰는 repository·소스가 0개가 됐다** (1141 → 469줄).
+  공유 헬퍼 `minutesSince` 를 `core/util/server_time.dart` 로 올렸다 — 솔랭 종료·평점
+  작성·뉴스 발행 세 곳이 쓴다. 테스트 955 → 965.
+
+## 2026-11-13 (4)
+* **`app/` 을 5파일로 줄이고 폴더로 갈랐다.** `live_activity_logo_prefetcher`·
+  `live_match_activity_controller` 는 화면을 띄우지 않으므로(Screen·Navigator 참조 0건)
+  앱 셸이 아니었다 — 기능 repository 를 쓰는 것이 유일한 이유였는데 반환 타입이 전부
+  `lib/domain/` 공용 모델이라 훅 5개로 끊어 `core/infrastructure/live_activity/` 로 내렸다.
+  남은 5개는 `app/deeplink/`(푸시·위젯 진입)·`app/navigation/`(경기 상세 창구·탭 전환)·
+  `app_hooks.dart`(조립)로 나눴다. 클래스명은 유지했다 — `FcmService` 는 딥링크만 하는 게
+  아니라 토큰 등록도 하고, `HomeWidgetService` 는 App Group 설정도 한다.
+  판별 기준을 한 줄로 고정했다: **"기능 2개 이상의 화면이나 구현을 알아야 하나"**.
+* **공용 컴포넌트와 앱 셸의 배치를 실제 앱 4개로 검증했다**(nowinandroid·compass_app·
+  Immich·AppFlowy). 같은 위치에 두는 레포 0개, 라우터·탭을 앱 셸에 두는 레포 4/4.
+  공용 폴더가 feature 를 참조하는 사례 2개(AppFlowy `lib/shared/`, Immich
+  `lib/widgets/common/`)는 둘 다 부채로 취급해 순수 패키지로 이동 중이다. 지금 `core/ui`
+  52개는 features·app·domain 참조 0건이라 그 오염이 없다. 다음 개선은 빌드 단위 격리 —
+  4개 중 3개가 디자인 시스템을 모듈·패키지로 떼어 역참조를 컴파일 에러로 막는다.
+  [폴더 구조](/architecture/folder-structure.md)의 "app/ 과 core/ui/ 는 왜 다른 자리인가" 참고.
+* 옮긴 모델에서 `Home` 접두어를 뗐다 — `HomeLiveSoloPlayer`→`LiveSoloPlayer`,
+  `HomeFinishedSoloPlayer`→`FinishedSoloPlayer`, `HomeLeagueChip`→`LeagueChip`(26파일).
+
+## 2026-11-13 (3)
+* **홈 섹션 8개를 각 기능으로 내렸다.** 홈 ViewModel 이 1141줄로 섹션 9개를 직접 들고
+  있었고, 그중 7개는 이미 대응 기능이 있는데도 홈이 그 repository 를 직접 불러서 다른
+  화면에서 같은 섹션을 쓸 수 없었다. 커뮤니티·공지배너·벨배지·오늘경기·구독선수·솔랭·
+  쇼츠·순위표를 각 기능의 `presentation/viewmodels/` 로 옮기고, 홈은 getter 위임만 남겼다
+  (1141 → 501줄). 직접 쓰는 repository 는 뉴스·평점 2개(백엔드 대기)뿐이고 `di_container`
+  import 도 필요 없어졌다. 순위표는 대응 기능이 없어 `features/standings/` 를 신설했다
+  (모델·repository 5파일도 `home/` 에서 함께 옮겼다). 테스트 897 → 955 — 섹션 로직이 홈
+  안에 묶여 검증할 수 없던 규칙들을 각 VM 에 붙였다. 자세한 원칙은
+  [폴더 구조](/architecture/folder-structure.md)의 "집계 화면은 섹션을 조합만 한다" 참고.
+* **응원팀 결정 규칙을 UseCase 로 뺐다** — `features/home/domain/usecases/
+  get_preferred_team.dart`. repository 3개를 조합하고 폴백 순서가 규칙인데 ViewModel 안에
+  있어 테스트가 없었다. 반대로 홈의 섹션 로더들은 UseCase 로 빼지 않았다 — 실측하니
+  대부분이 repository 1개만 쓰고 나머지는 경쟁 조건 검사·로딩 플래그로, 화면 상태 관리라
+  ViewModel 의 일이다.
+
+## 2026-11-13 (2)
+* **솔랭을 `features/solo_rank/` 로 독립시켰다** (6파일). `player`·`my_players` 가
+  `features/home/` 을 17곳에서 당겨 쓰던 것을 0건으로 만들었다. 모델 2개
+  (`HomeLiveSoloPlayer`·`HomeFinishedSoloPlayer`)·소스 3종(`SoloRankSource`·
+  `WorldsSoloSource`·`CheerSource`)·규칙(`solo_rank_rules`)·응원 컨트롤러·위젯 2개가
+  대상이다. `home_sources.dart` 434줄은 솔랭을 빼고 122줄(뉴스·평점만), `home_models.dart`
+  201줄은 104줄이 됐다. 양쪽이 공유하던 `kHomeMocks` 는 `core/config/home_mocks.dart` 로
+  올렸다 — `player_repository` 도 같은 플래그로 목업을 가르므로 홈 전용이 아니다.
+  홈 레이아웃 전용 위젯 4개(`home_solo_parts`·`home_solo_rank_section`·`home_solo_states`·
+  `home_worlds_solo`)는 `home` 만 쓰므로 그대로 뒀다. 클래스명의 `Home` 접두어는 93곳이라
+  이 작업에 섞지 않았다(이동 실패와 이름 변경 실패를 가릴 수 없게 된다).
+  analyze 통과, 테스트 902 통과.
+* **응원팀 결정 규칙을 UseCase 로 뺐다** — `features/home/domain/usecases/
+  get_preferred_team.dart`. repository 3개(`auth`·`onboarding`·`teamPreferences`)를
+  조합하고 폴백 순서가 규칙인데 ViewModel 안에 있어 테스트가 없었다. 분리하고 5개를
+  붙였다. 반대로 홈의 다른 섹션 로더 12개는 빼지 않았다 — 실측하니 10개가 repository
+  1개만 쓰고 나머지는 경쟁 조건 검사·로딩 플래그·notify 로, 화면 상태 관리라 ViewModel 의
+  일이다.
+* **`home_widget_service` 1035줄을 책임 둘로 쪼갰다** — `app/home_widget_service.dart`
+  259줄(위젯 탭 → 화면 열기) + `features/schedule/data/schedule_widget_writer.dart`
+  809줄(위젯에 데이터 쓰기). `features → app` 역참조 18건 중 4건이 사라졌다(18 → 14).
+  분할선은 static 가변 상태 5개가 전부 딥링크 영역에만 있다는 실측으로 정했다.
+
+## 2026-11-13
+* **`core/domain/` 을 `lib/domain/` 으로 올렸다** (모델 10개 + repository 인터페이스 2개,
+  import 126 파일 수정). 도메인 모델이 기술 인프라(`core/`) 의 하위로 읽히던 것을 최상위
+  형제로 바꿨다. 같은 작업에서 `core/domain/` 에 섞여 있던 기술 계약을 성격별로 분리했다 —
+  `failure`·`failure_exception` → `core/error/`, `usecase` → `core/usecase/`.
+  판단 근거는 실제 앱 5개 조사다: 공유 도메인 모델을 최상위 공유 위치에 두는 레포가 4
+  (nowinandroid `core:model`, compass_app·Immich `lib/domain/models/`, LocalSend `lib/model/`),
+  소유 feature 에 두는 레포가 1 (AppFlowy). "공유 위치는 도메인 중립이어야 한다" 를 지키는
+  레포는 0/5 라서, `schedule_match` 처럼 명백한 도메인 개념이 `domain/` 에 있는 것이 정상이다.
+  반대로 인프라 서비스는 5/5 전원 공유 위치이므로 `core/infrastructure/auth` 는 19개 기능이
+  쓰더라도 `features/auth/` 로 내리지 않는다. `domain/` 은 `core/` 조차 import 하지 않는다
+  (현재 `l10n` 생성물 외 참조 0건). analyze 통과, 테스트 897 통과.
+  [폴더 구조](/architecture/folder-structure.md)의 "domain 이 최상위인 이유" 참고.
+
+## 2026-11-10
+* **`core → features` 역방향 참조를 없앴다** (66건 → DI 컨테이너 24건만 남김). 앱 셸 코드 6개를
+  새 `lib/app/` 로 옮기고, 한 기능 전용 위젯·모델 9개를 그 기능으로 내렸다. core 가 화면·구현을
+  알아야 하던 3곳은 훅(`AuthService.loginScreenBuilder`·`onSignedOut`,
+  `TeamLogoDirectory.defaultLoader`)으로 바꾸고 `app/app_hooks.dart` 에서 연결한다. 반대로
+  공용이던 `quiet_hours`·`team_logo_directory`·`parseServerTime` 은 core 로 올렸다. 같은 작업에서
+  같은 폴더 상대 import 55건 중 `l10n` 생성물을 뺀 나머지를 `package:` 절대경로로 바꿨다.
+  [폴더 구조](/architecture/folder-structure.md)의 "의존 방향" 참고.
+* **repository 를 Interface + `Either<Failure, T>` 로 바꿨다** (API repository 23 개 중
+  14 개 전환, 9 개는 기준에 따라 제외). 목적은 둘이었다 — repository 인터페이스가 있어야
+  `mocktail` Mock 이 되고(전에는 테스트마다 Fake 를 손으로 썼다, 49 개), `Either` 를 쓰면
+  `try/catch` 를 빠뜨릴 수 없다.
+  * **테스트가 구체적으로 나아졌다.** `expect(..., throwsException)` 이
+    `expect(failure, isA<ServerFailure>()); expect(failure.statusCode, 404)` 가 됐다 —
+    전자는 네트워크 오류든 파싱 오류든 통과했다.
+  * `core/` 에 `failure.dart`(sealed) · `failure_exception.dart` ·
+    `data/failure_mapper.dart` · `di_container.dart`(get_it) 를 추가했다.
+    `pubspec` 에 `get_it`·`fpdart` 가 늘었다 → **Shorebird 패치로 못 나간다.**
+  * **제외 기준 5 개를 문서화했다.** 처음 30 개로 보였던 범위가 실측으로 절반이 됐다 —
+    로컬 저장소 전용(실패가 기본값으로 수렴), 인프라끼리 쓰는 것(결과를 안 씀),
+    인터페이스가 이미 있는 것(`player`·`home_api_sources`), 도메인 예외로 분기하는 것
+    (커뮤니티 4 개는 `CommunityApiException` 의 `code`·`retryAfterSeconds` 로 409 를
+    성공 처리한다), DTO/Entity 분리가 비용을 넘는 것(`CategoryTree` 90 줄 → 260 줄).
+  * 절차·함정 14 개·판별 기준은
+    [Clean Architecture 전환 플레이북](/playbooks/clean-architecture-migration.md) 에 있다.
+    특히 `Future.wait` 인덱스 캐스팅은 **`analyze` 를 통과하고 런타임에 깨지는** 유일한
+    패턴이라 따로 적어 뒀다.
+* **feature 단위 폴더 구조로 전환했다** (기능 27개 전부).
+  레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데(`model`·`repository`·`viewmodel`·
+  `screens`)를 오가야 했다. 실측으로 `community` 는 **45 파일이 4 곳에 흩어져** 있었고,
+  `lib/model/` 은 37 개가 평면 배치라 `community_` 접두어 9 개가 알파벳 순으로 끼어 있었다.
+  * 기능별로 `data`(repository·API 예외·전용 DTO) / `domain`(모델·규칙·상수) /
+    `presentation`(screens·viewmodels·widgets) 세 레이어를 한 폴더에 모은다.
+  * **상태 관리는 `ChangeNotifier` MVVM 을 유지한다.** `presentation/` 은 BLoC 을 전제한
+    이름이지만 지금은 ViewModel 이 그 자리에 있다 — 나중에 바꿀 때 폴더는 그대로 쓴다.
+    Flutter 공식 권고도 MVVM + Repository 라서 아키텍처 자체를 바꿀 이유가 없었다.
+  * **import 를 `package:warding/...` 절대경로로 바꿨다.** 이게 핵심이다 — 상대경로라서
+    `community` 를 옮기는 중 **540 건이 깨졌다**. 공용 폴더(`styles`·`util`·`components`·
+    `l10n`) 참조까지 절대경로로 바꿔 뒀으므로, 다음 기능부터는 거의 `git mv` 로 끝난다.
+  * **`my_community_activity` 가 별도 기능임을 발견했다.** `community_activity_repository`
+    와 `community_my_activity` 모델은 접두어가 `community_` 지만 그 기능만 쓴다. 이름만
+    보고 community 소유로 넣으면 남의 폴더를 들여다보게 된다.
+  * 화면이 아닌 파일 3 개(`community_permission`·`community_rules`·`community_teams`)를
+    `screens` 에서 `domain` 으로 옮겼다. 규칙·상수인데 화면 폴더에 있었다.
+  * `core/{domain,infrastructure}` 는 만들어만 뒀다. 공유되는 것을 올릴 자리다 —
+    `auth`(8 개 기능)·`preference`(7)·`onboarding`(5)·`rating`·`subscription`(각 4) 이
+    후보지만, 이동 영향이 한 기능을 넘어가 별도로 판단한다.
+  * **`lib/screens`·`viewmodel`·`model`·`repository` 최상위 폴더는 없어졌다.** 총 361 파일
+    변경(이동 233 / import 수정 127). `community` 를 먼저 시범해 절대경로 전략을 확인한 뒤
+    나머지 24 개를 한 번에 옮겼다 — 중간 상태를 길게 두면 "어떤 기능은 새 구조, 어떤 건
+    옛 구조" 가 되어 그 위에 올릴 작업(웹앱 모노레포)이 더 헷갈린다.
+  * `core/infrastructure` 9 개(`auth`·`preference`·`notification`·`fcm`·`ad`·`device`·
+    `rating`·`team`·`live_activity`), `core/domain` 모델 12 개.
+  * **`components`·`styles`·`config`·`util` 도 `core/` 아래로 모았다**
+    (`core/ui`·`core/theme`·`core/config`·`core/util`). 처음엔 최상위에 뒀는데, 그러면
+    `core/` 에 넣은 `team`(2 곳)보다 훨씬 더 공유되는 것들(`styles` 27 곳·`components`
+    25 곳·`util` 22 곳·`config` 16 곳)이 밖에 남아 기준이 어긋났다. 규칙을 한 문장으로
+    정리했다 — **기능 소유면 `features/`, 아니면 `core/`.** `l10n/` 은 `l10n.yaml` 이 경로를
+    못박는 생성물이라 최상위에 남겼다.
+  * **`core/` 배치를 한 번 재검토했다.** "presentation 만 있는 기능이 많다" 는 지적을 받아
+    소비처를 다시 셌더니 기준을 잘못 적용한 것이 나왔다 — `rating` 은 4곳이 쓰지만
+    `player_rating` 기능이 있으니 이름 매칭 규칙상 그쪽 소유였다. `team` repository(`home`
+    1곳)·`onboarding_selection`(`onboarding` 1곳)·`quiet_hours`(`mypage` 1곳)·
+    `game_rating`(`player_rating`)도 함께 내렸다. **`core/` 안에서의 참조는 소비처로 세지
+    않는다**는 규칙도 명시했다 — `device` 는 기능 소비처가 0 이고 `auth_service`·
+    `fcm_service` 만 쓰므로 `core/` 가 맞다.
+  * `presentation` 만 있는 기능 13개는 그대로 뒀다. 데이터가 공용이거나(`mypage` →
+    `core/domain/user_profile`) 애초에 자기 데이터가 없는 화면(`login`·`withdraw`·`guide`)
+    이다. 빈 폴더는 구조가 아니라 소음이다.
+  * **소유자 판단에서 `home` 을 소비처로 세지 않았다.** `home` 은 집계 화면이라 거의 모든
+    기능을 당겨서, 그걸 세면 repository 20 개 중 15 개가 `core/` 로 가 버린다. 이름이 같은
+    기능이 있으면 그 기능 소유로 봤다 — `notice` 는 `home` 도 쓰지만 `features/notice/data/`.
+
 ## 2026-11-09
 * **DAU 알림에 앱 진입 경로를 넣었다.** "활성 사용자 1856" 만으로는 그 사용자들이
   푸시로 들어왔는지 런처로 켰는지 알 수 없었다. 두 축으로 나눠 보여준다.
@@ -31,7 +189,7 @@
   올려야 하는 버전에서도 같이 무시된다.
   * 이제 스토어 설명 끝의 최소 버전 태그보다 설치 버전이 낮을 때만 띄운다(`upgrader` 의
     `belowMinAppVersion()` — 백엔드·새 의존성 없음). 태그가 없으면 팝업은 뜨지 않고 일반
-    배포는 스토어 자동 업데이트에 맡긴다. 판단은 `util/update_prompt.dart` 에 있고,
+    배포는 스토어 자동 업데이트에 맡긴다. 판단은 `core/util/update_prompt.dart` 에 있고,
     사용법은 [distribution/README](../distribution/README.md).
   * **태그 형식이 스토어마다 다르다** — App Store 는 `[:mav: x.y.z]`, Play 는
     `[Minimum supported app version: x.y.z]`. upgrader 가 양쪽에서 다른 정규식으로 찾는다.
@@ -48,7 +206,7 @@
     적음/최신, 그리고 팝업 동작.
 
 ## 2026-10-30
-* **업데이트 체크를 `splash_screen.dart` 밖으로 뺐다**(`util/update_prompt.dart`). 조회·팝업·
+* **업데이트 체크를 `splash_screen.dart` 밖으로 뺐다**(`core/util/update_prompt.dart`). 조회·팝업·
   스토어 이동을 주입 가능하게 해 테스트 5개를 붙였다. 10-27 사고(스토어 표시 1.0.41 /
   바이너리 1.0.39 → 무한 팝업)가 난 경로인데 테스트가 0개였다.
   * `durationUntilAlertAgain: Duration.zero` 를 걷어내 upgrader 기본값(3일)을 쓴다. 매 실행
@@ -103,7 +261,7 @@
     헤더로 올라갔다.
   * 그 시트는 **경기 일정 필터 시트와 같은 드롭다운**을 쓴다. `filter_sheet.dart` 안에만
     있던 비공개 `_SelectField`·`_DropdownList`·`_DropdownItem` 을
-    `components/nar_select_dropdown_field.dart`(`NarSelectDropdownField`·`NarSelectOption`)
+    `core/ui/nar_select_dropdown_field.dart`(`NarSelectDropdownField`·`NarSelectOption`)
     로 끌어올려 둘이 공유한다 — 같은 버튼에서 열리는 같은 계열 시트라 드롭다운이 두
     종류로 보이면 안 된다. 셀렉트박스·체크 항목은 기존 `AppSelectBox`·`LabeledField`
     ·`NarFilterSheet` 조합 그대로다. 시즌·리그·정렬은 단일 선택(고르면 닫힘),
@@ -277,7 +435,7 @@
   * 설계 배경은 [discord-release-approval spec](../intent/discord-release-approval/spec.md) 의 Decisions 참고.
 
 ## 2026-10-26
-* **선수 페이지를 공용 컴포넌트로 다시 짰다**: 화면마다 같은 모양을 따로 짜 두던 것을 `lib/components/` 로 모았다.
+* **선수 페이지를 공용 컴포넌트로 다시 짰다**: 화면마다 같은 모양을 따로 짜 두던 것을 `lib/core/ui/` 로 모았다.
   * 챔피언 표의 솔랭순/월즈순 정렬 칩(`_SortChip`) → `NarChipMultiSelect.single`. 홈 리그 칩·내 선수 팀 칩과 같은 칩이 됐다(높이 34 pill). 처음엔 예전 크기(30)를 지키려고 `NarChipSize.compact` 를 더했다가, "다른 화면 칩과 똑같이 보이는 것"이 목적이라 되돌렸다 — 호출부가 하나뿐인 variant 는 남기지 않는다.
   * 팬 평점 → 선수 평점 상세의 `RatingDistributionSection` 을 그대로 쓴다(평균 32px + `NarStarRating` + "총 N명 참여" + 5→1 노랑 분포 바). 한줄평도 보라 숫자 배지 대신 `NarStarRating` 을 쓴다. 분포 섹션은 고정 폭(116/204/150)이라 카드 안에서 넘쳐서, 좌측은 `ConstrainedBox(maxWidth)` 우측·트랙은 `Expanded` 로 바꾸고 `padding` 파라미터를 더했다(기본값은 시안 20 그대로라 선수 평점 화면은 안 바뀐다).
   * `_SubscribeBell` → 새 `SubscribeBell`. 내 선수 화면에 거의 같은 코드가 있는데 아이콘 18/20, 배경 narDark500/600 처럼 상수만 어긋나 있었다.
@@ -340,7 +498,7 @@
 * **DAU 알림을 사용 지표 요약으로 고도화 — 추가 API 호출 0회**: 매일 09:00 에 오던 알림이 DAU·전일 대비·이벤트 수 세 숫자뿐이었다. 원인은 데이터가 없는 게 아니라 **버리고 있었다**는 것이다 — 워크플로우가 이미 하루치 **원시 이벤트 export 전체**를 받아 놓고 `distinct_id` 유니크 개수 하나만 세고 끝냈다. 같은 파일에 P0 계측(#391)의 `location_page`·`step`·`permission_result` 가 전부 들어 있어서, **같은 응답을 다시 읽는 것만으로** 화면 TOP 5·로그인/온보딩 퍼널·참여·이탈 신호를 더했다. 402 로 막힌 조회(Query) API 를 건드리지 않으므로 레이트 리밋(시간당 60회)도 그대로다. 판단이 필요했던 지점들 — **자동 이벤트(`$ae_*`)는 화면·퍼널에서 빼고 DAU 에선 센다**(`$ae_session` 이 찍혔으면 앱을 켠 것이고 그게 활성 사용자의 정의인데, 화면 집계에 섞으면 행동 숫자가 부푼다), **퍼널은 고유 사용자 수로 센다**(이벤트 수로 세면 로그인 화면을 두 번 본 한 사람이 전환율을 100% 넘긴다), **참여는 반대로 행동 횟수**다(한 명이 경기 카드를 5번 누른 게 참여의 실체라 유니크로 접으면 정보가 사라진다), **온보딩 완료는 `step=notification` 인 `next_button_click`** 이다(마지막 단계에서 버튼이 '와딩 시작하기' 로 바뀌고 같은 핸들러가 완료를 처리한다 — 완료 전용 이벤트가 따로 없다). 전일 집합과의 차집합으로 재방문을 가르는데, **"신규" 가 아니라 "그 외" 로 적는다** — 손에 있는 게 이틀치뿐이라 첫 설치인지 그제 이후 복귀인지 구분할 수 없고, 신규라고 쓰면 실제보다 유입이 많아 보인다. ⚠️ 주의 블록(알림 권한 분포·탈퇴)은 **내용이 있을 때만** 붙인다(매일 "탈퇴 0건" 이 박혀 있으면 눈이 그 줄을 건너뛰어 정작 1건 뜬 날에도 안 보인다). 분모가 0이면 비율을 쓰지 않고, 표본이 작으면(`DAU < 30`) 꼬리말 경고를 전환율까지 확장한다. 집계·렌더링 jq 는 YAML 인라인 heredoc 에서 **별도 파일 2개**(`mixpanel-dau-summary.jq`·`mixpanel-dau-embed.jq`)로 뺐다 — heredoc 안의 jq 는 문법 오류가 매일 09:00 실 실행으로만 드러나고, 파일이면 `jq -sf` 로 로컬 검증이 된다(그래서 체크아웃 스텝이 추가됐다). 빈 하루·전일 조회 실패·자동 이벤트만 있는 하루를 샘플 JSONL 로 검증했고, embed 는 335/6000자·7/25필드로 Discord 제약 안에 있다(화면 목록은 `[0:5]` 로 구조상 길이가 묶인다).
 
 ## 2026-10-16
-* **홈 평점 최신순 → 평점 상세의 라인 마커가 안 뜨던 것을 고쳤다**: 상세 헤더(`PlayedChampCard`)의 라인 아이콘·라벨이 `widget.player.position` 만 보는데, 홈 평점 한줄평 타일에서 들어오는 경로는 그 값을 **`position: ''` 으로 넘기고 있었다**. `/api/mobile/ratings/recent` 응답에 `role` 이 없어 `HomeReviewItem` 자체에 포지션 필드가 없는 탓이다. 빈 문자열은 `laneAssetPath` 에서 매칭에 실패해 **회색 placeholder 사각형 + 빈 라벨**이 됐다(경기 상세·내가 쓴 리뷰 경로는 각각 `player.position`·`positionFromRole(role)` 을 채워 보내 정상이었다). 고치는 방법이 둘이었는데 — 홈 쪽 응답에 `role` 을 추가해 받아 넘기거나, 상세 화면이 스스로 채우거나 — **후자를 골랐다**: 평점 상세 응답(`RatingPlayerDetail`)이 이미 `role` 을 주고 있어 백엔드 변경 없이 끝나고, 앞으로 포지션을 안 넘기는 호출부가 또 생겨도 같은 증상이 재발하지 않는다. 판단 규칙은 `resolvePosition`(`util/rating_mapping.dart`)으로 뺐다 — 호출부 값이 있으면 그대로, 비어 있으면 상세 `role` 을 `positionFromRole` 로 변환한다. 상세가 로드되기 전 짧은 순간은 여전히 placeholder 고, 로드되면 라인 아이콘이 붙는다. `RatingRepository` 가 클라이언트 주입이 없는 싱글턴이라 화면 전체 위젯 테스트는 실제 HTTP 를 타므로, 규칙만 단위 테스트 3개로 덮었다.
+* **홈 평점 최신순 → 평점 상세의 라인 마커가 안 뜨던 것을 고쳤다**: 상세 헤더(`PlayedChampCard`)의 라인 아이콘·라벨이 `widget.player.position` 만 보는데, 홈 평점 한줄평 타일에서 들어오는 경로는 그 값을 **`position: ''` 으로 넘기고 있었다**. `/api/mobile/ratings/recent` 응답에 `role` 이 없어 `HomeReviewItem` 자체에 포지션 필드가 없는 탓이다. 빈 문자열은 `laneAssetPath` 에서 매칭에 실패해 **회색 placeholder 사각형 + 빈 라벨**이 됐다(경기 상세·내가 쓴 리뷰 경로는 각각 `player.position`·`positionFromRole(role)` 을 채워 보내 정상이었다). 고치는 방법이 둘이었는데 — 홈 쪽 응답에 `role` 을 추가해 받아 넘기거나, 상세 화면이 스스로 채우거나 — **후자를 골랐다**: 평점 상세 응답(`RatingPlayerDetail`)이 이미 `role` 을 주고 있어 백엔드 변경 없이 끝나고, 앞으로 포지션을 안 넘기는 호출부가 또 생겨도 같은 증상이 재발하지 않는다. 판단 규칙은 `resolvePosition`(`core/util/rating_mapping.dart`)으로 뺐다 — 호출부 값이 있으면 그대로, 비어 있으면 상세 `role` 을 `positionFromRole` 로 변환한다. 상세가 로드되기 전 짧은 순간은 여전히 placeholder 고, 로드되면 라인 아이콘이 붙는다. `RatingRepository` 가 클라이언트 주입이 없는 싱글턴이라 화면 전체 위젯 테스트는 실제 HTTP 를 타므로, 규칙만 단위 테스트 3개로 덮었다.
 
 ## 2026-10-14
 * **릴리즈 자동화를 실제로 켰다 — Secret 14개 등록 + Discord 배포 봇**: 워크플로우만 있고 꺼져 있던 자동화를 실제로 동작하는 상태로 만들었다. Shorebird 토큰·ASC API 키·iOS 배포 인증서와 프로파일 2개·Android keystore·Play 서비스 계정·네이버 시크릿까지 **14개를 등록하면서 각각 CI 와 같은 방식으로 검증**했다. 그 과정에서 세 가지 함정을 미리 밟았다 — **`.p12` 는 `openssl pkcs12 -export -legacy` 로 만들어야 한다**(OpenSSL 3 기본 암호화는 macOS `security` 가 못 열어 "MAC verification failed" 로 죽는다), **iOS 배포 인증서는 새로 발급해야 한다**(기존 것은 Cloud Managed 라 개인키가 Apple 에 있어 `.p12` 로 못 꺼낸다 — 한도 3개가 차서 가장 오래된 것을 폐기했다), **Android keystore 는 `upload-keystore.jks` + alias `upload`** 다(레포에 jks 가 2개인데 틀린 쪽으로도 빌드는 성공해서 Play 업로드에서야 드러난다). 함께 **배포 전용 Discord 봇**을 `/intent` 봇과 분리해 만들었다. Vercel 프로젝트는 새로 만들지 않고 기존 것에 엔드포인트(`api/discord/release.js`)만 더했다 — 다만 앱마다 서명 검증 공개키가 달라 엔드포인트 자체는 나눠야 한다. 릴리즈 알림에 **[✅ 심사 제출]·[✏️ 패치노트 수정]·[취소]** 버튼이 붙고, 제출은 **2단계 확인**을 거친다(되돌릴 수 없는 동작이라 실수 클릭을 막는다). **일반 채널 웹훅으로는 버튼을 못 보낸다**는 Discord 제약 때문에 봇 토큰으로 메시지를 보낸다. 패치노트는 `distribution/` 에서 파일로 관리하고, 빌드 후 **커밋 로그를 Anthropic API 로 요약한 초안**이 알림에 함께 온다(사용자가 체감할 변경이 없으면 억지로 지어내지 않고 그렇다고 알린다). 첫 실행에서 **`shorebird-release` 액션의 `flutter-version` 이 필수 입력**이라는 것과 **`main-pr-only` ruleset 때문에 bot 도 직접 push 를 못 한다**는 것을 발견해 각각 고쳤다(패치노트는 PR 로 올린다). e2e 는 캐시(Flutter SDK·pub·CocoaPods)와 시뮬레이터 부팅 병렬화로 줄였다 — 테스트 1개에 20분이 걸리고 있었고 캐시가 하나도 없었다.
@@ -370,13 +528,13 @@
 * **순위표 형식 분기를 리그 코드에서 응답 기반으로 바꿨다 (대진 UI 잠금 해제)**: `selectedLeague == 'WORLDS'` 하드코딩이라 **월즈가 아닌 리그는 어떤 응답을 받아도 대진을 못 그렸다.** 월즈 칩은 출시 보류로 `live: false` 라서, 이미 구현해 둔 토너먼트 UI(`_WorldsKnockout` — 스위스 버킷 + 8강/4강/결승 + 연결선 `CustomPaint`)에 **사용자가 도달할 경로가 0개인 죽은 코드**였다. 이제 **응답에 `bracket` 이 실려 왔는지로만** 분기한다(`StandingsResult.hasBracket`). 실려 오면 `toWorldsStandings()` 로 옮겨 **기존 대진 UI를 그대로 재사용**한다 — 형식은 warding-docs `features/home/spec.md` 에 선제시했고(백엔드 회신 대기), 서버가 아직 안 주므로 지금은 기존 동작과 100% 동일하다. **처음엔 `reason: "BRACKET_ONLY"` 로 분기했다가 되물렀다**: 백엔드 소스(`nar-back-repo` `StandingsService`)를 열어 보니 그 값은 "스위스·토너먼트 포맷이라서"가 아니라 `SCOPES`(현재 LCK·ASIAN_GAMES·DEMACIA_CUP)에 **없는 리그 전부**에 붙는 기본값이었다(`scope == null → unsupported(league, "BRACKET_ONLY")`). 엔드포인트 응답만 보고 WORLDS·MSI 가 그 값을 준다는 걸 포맷 신호로 잘못 읽은 것이다. 그대로 뒀으면 LPL·LEC·EWC 같은 미등록 리그까지 대진으로 취급했을 것이다(지금은 그 리그들이 `standings: null` 이라 칩이 없어 실제 피해는 없었다). 데이터 유무를 신호로 삼으면 백엔드가 reason 체계를 바꿔도 앱이 안 흔들린다. 곁들여: ① 스위스·녹아웃 중 **한쪽만 있으면 전환 버튼을 숨긴다**(`worldsHasBothViews`) — 누르면 빈 화면으로 가기 때문. ② 리그를 바꾸면 옛 대진을 즉시 버린다. ③ `_isStandingsSupported` 의 월즈 코드 예외를 없애고 `supported || hasBracket` 로 바꿨다. ⑤ 헤더 부제의 월즈 전용 하드코딩 문구("2025 · 스위스 스테이지")를 서버 `scopeLabel` 로 교체 — 대진이 월즈 전용이 아니게 되면서 다른 대회에서 틀려진다. **ASIAN_GAMES 가 녹아웃에 들어가면 이 경로를 탄다.**
 * **대진 노드가 2px 넘치던 레이아웃 버그 수정**: `_nodeHeight = 68` 이 팀 로우 높이를 배지(20) 기준으로 잡았는데 실제로는 **팀 코드 텍스트의 라인 박스**(13px Pretendard, 22 남짓)가 결정한다. 월즈 오버플로우 테스트가 `skip: true` 라(칩 비활성이라 도달 불가) 아무도 못 잡고 있었다. 72 로 올리고, ASIAN_GAMES 대진으로 8강~결승 전체를 그리는 오버플로우 회귀 테스트를 추가했다. 이 값은 연결선 좌표(`centerY`)에도 쓰여서 상수로 유지한다.
 * **ASIAN_GAMES 순위표에서 국기 이미지가 안 뜨던 버그 수정**: 순위표 배지(`TeamCodeBadge`)가 응답의 `imageUrl` 을 **버리고** 사전(`TeamLogoDirectory`)만 봤다. 프로팀 로고 크기를 통일하려는 기존 결정이었는데(두 소스의 여백·비율이 달라 배지가 들쭉날쭉했다), 사전은 온보딩 **팀** 목록이라 **국가대표가 없다** — ASIAN_GAMES 는 국기(`https://api.nar.kr/images/flags/kor.png`, 응답에 정상적으로 실려 온다. 실측 200 image/png)가 순위표 응답에만 있어서 8개국 배지가 전부 빈 원이었다. `fallbackImageUrl` 파라미터를 추가해 **사전을 먼저 보고 거기에 없을 때만** 응답 이미지를 쓴다 — 프로팀은 사전 값이 이기므로 기존 통일성 결정이 유지되고, 사전에 없는 팀만 백엔드가 준 이미지로 뜬다. 같은 이유로 응답 이미지를 버리고 있던 **홈 커뮤니티 작성자 배지**(`CommunityAuthor.teamImageUrl`)에도 같은 폴백을 걸었고(사전에 없는 팀의 작성자 배지가 비었다), `TeamLogo` 에도 대칭으로 파라미터를 뒀다. 나머지 호출부(오늘 경기·경기 상세·마이페이지 등)는 이미 서버 URL 을 직접 넘기고 있어 손댈 게 없었고, 솔랭·한줄평·쇼츠 모델은 애초에 팀 이미지 필드가 없어 사전이 유일한 소스다.
-* **순위표 그룹 이름이 서버 코드(`LEGEND`·`A`)로 그대로 보이던 것 수정**: 그룹 헤더는 `name.isEmpty ? '레전드 그룹' : name` 이었는데 서버가 **빈 문자열이 아니라 코드**를 준다(실측: LCK `LEGEND`·`RISE`, ASIAN_GAMES `A`·`B`). 그래서 폴백이 한 번도 안 걸리고 헤더에 "LEGEND" 가 그대로 떠 있었다. `standingsGroupLabel`(`lib/util/standings_group_label.dart`)을 만들어 아는 코드는 한국어 그룹명으로, 한두 글자 기호는 `stageGroup` 을 붙여 "그룹 A" 로, 처음 보는 값은 그대로 둔다(모르는 리그가 열려도 빈칸보다 서버 값이 낫다). 헤더·더보기 라벨이 같은 함수를 쓴다.
+* **순위표 그룹 이름이 서버 코드(`LEGEND`·`A`)로 그대로 보이던 것 수정**: 그룹 헤더는 `name.isEmpty ? '레전드 그룹' : name` 이었는데 서버가 **빈 문자열이 아니라 코드**를 준다(실측: LCK `LEGEND`·`RISE`, ASIAN_GAMES `A`·`B`). 그래서 폴백이 한 번도 안 걸리고 헤더에 "LEGEND" 가 그대로 떠 있었다. `standingsGroupLabel`(`lib/core/util/standings_group_label.dart`)을 만들어 아는 코드는 한국어 그룹명으로, 한두 글자 기호는 `stageGroup` 을 붙여 "그룹 A" 로, 처음 보는 값은 그대로 둔다(모르는 리그가 열려도 빈칸보다 서버 값이 낫다). 헤더·더보기 라벨이 같은 함수를 쓴다.
 * **순위표 "더보기" 라벨의 그룹 이름을 서버 응답에서 가져오게 함**: 카드 하단 펼치기 버튼이 `homeStandingsExpandMore` = "라이즈 그룹 {count}팀 더보기" 로 그룹 이름까지 박아 둬서, 레전드·라이즈가 아닌 리그에서 틀린 이름이 떴다 — warding-docs `features/home/spec.md` 기준 ASIAN_GAMES 도 `groups` 2개("그룹 스테이지", nar-back-repo#547로 열렸다)라 이미 실제로 어긋나는 조건이었다. `StandingGroup.name` 은 서버가 이미 내려주고 그룹 **헤더**는 그 값을 쓰고 있었는데(`main.name.isEmpty ? ... : main.name`) 버튼 라벨만 하드코딩이었다. 이제 숨은 그룹이 하나면 서버 이름을 넣어 "〈그룹 이름〉 N팀 더보기", 둘 이상이면 이름 나열 대신 `homeStandingsExpandMoreGroups` = "M개 그룹 N팀 더보기" 로 줄인다(그룹이 3개 이상인 리그에서 버튼이 한 줄을 넘기지 않게). 서버가 이름을 빈 문자열로 주면 기존 "라이즈 그룹" 폴백을 유지해 LCK 동작은 그대로다. `HomeFakeApi.standingsGroups` 를 추가해 그룹 2개 이상 응답을 테스트에서 만들 수 있게 하고, 위젯 테스트 4개(서버 이름 사용·그룹 개수로 축약·빈 이름 폴백·그룹 1개면 버튼 없음)를 더했다.
 
 ## 2026-10-05
-* **리그 메타를 서버에서 받게 연결(순위표 칩·알림 벨·아이콘)**: 백엔드 nar-back-repo#548 이 `/mobile/schedules/filters` 의 `LeagueOption` 에 `standings`·`alarm`·`iconUrl` 을 추가했다(warding-docs#11 요청). `FilterLeague` 가 세 필드를 파싱하고, 받은 값은 `LeagueMeta`(`lib/util/league_meta.dart`)에 보관한다 — 경기 카드 알림 벨(`match_card`)과 리그 아이콘(`leagueIconWidget`: 서버 PNG URL 우선, 없으면 번들)이 이걸 쓴다. 홈 순위표 칩은 `HomeViewModel._loadLeagueChips` 가 서버 `standings` 로 만든다(null=숨김·false=점선·true=선택 가능, `supported:false` 리그는 점선). 서버가 메타를 안 주면(`alarm` 필드 없음 = 구버전) 기존 하드코딩 값으로 폴백한다. **동작 변화:** 서버가 LPL·LEC·LCS·WORLDS 에 `null` 을 줘서 이 칩 4개가 사라지고, ASIAN_GAMES 칩이 새로 생긴다.
-* **Mixpanel SDK 세팅**: `mixpanel_flutter` 를 추가하고 `lib/util/analytics.dart`(`Analytics`) 래퍼를 만들었다. 프로젝트 토큰(US 데이터 센터)은 Sentry DSN 처럼 코드 기본값으로 두고 `--dart-define=MIXPANEL_TOKEN=...` 로 덮어쓸 수 있다(릴리즈 명령에 플래그를 안 붙여도 켜진다). 디버그 빌드에서는 init 을 건너뛰어 모든 호출이 무시된다(운영 데이터 오염 방지) — 시뮬레이터는 release 모드를 못 돌리므로 동작 확인은 `flutter run --dart-define=MIXPANEL_DEBUG=true` 로 디버그에서 켜서 한다. `main()` 의 시작 초기화 `Future.wait` 에 `Analytics.init()` 를 넣었고, Sentry 사용자 설정과 같은 지점에서 로그인 시 `identify(memberId)`, 로그아웃 시 `reset()` 을 부른다. 네이티브 플러그인이라 코드 푸시로는 못 나가고 스토어 재배포가 필요하다.
-* **모든 API 요청에 `X-App-Version` 헤더를 붙임**: 서버 로그에 앱 버전이 없어 "배포 후 업데이트 비율"과 버전별 오류를 잴 수 없었다. 요청 경로가 `util/api_client.dart` 하나라 `VersionedClient`(`http.BaseClient` 래퍼)로 한 번만 붙인다. 버전(`<버전>+<빌드>`)은 `main.dart` 시작 때 `loadAppVersion()` 이 한 번 읽어 두고 요청 경로에서는 기다리지 않는다 — 요청마다 플랫폼 채널을 `await` 하면 위젯 테스트(가짜 비동기)에서 요청이 끝나지 않아 타임아웃 타이머가 남아 테스트 7개가 깨졌다. 읽기 실패 시 헤더만 빠진다. **이 조회는 시작 `Future.wait` 에 넣지 않고 `unawaited` 로 띄운다** — 거기 넣으면 플랫폼 채널이 응답하지 않을 때 첫 화면이 최대 8초(그 묶음의 타임아웃) 늦어지는데, 로그용 헤더가 그만한 값이 아니다. 조회 전 요청은 헤더 없이 나가고 끝난 뒤부터 실린다. `VersionedClient` 는 `close()` 를 재정의해 감싼 클라이언트까지 닫는다(`http.BaseClient.close` 기본 구현은 아무것도 안 해서, 안 두면 안쪽 연결 풀이 남는다). Dart 만 바뀌어 코드 푸시로 나간다. 단 패치는 릴리즈 버전을 그대로 보고하므로 패치 번호는 구분하지 못한다.
+* **리그 메타를 서버에서 받게 연결(순위표 칩·알림 벨·아이콘)**: 백엔드 nar-back-repo#548 이 `/mobile/schedules/filters` 의 `LeagueOption` 에 `standings`·`alarm`·`iconUrl` 을 추가했다(warding-docs#11 요청). `FilterLeague` 가 세 필드를 파싱하고, 받은 값은 `LeagueMeta`(`lib/core/util/league_meta.dart`)에 보관한다 — 경기 카드 알림 벨(`match_card`)과 리그 아이콘(`leagueIconWidget`: 서버 PNG URL 우선, 없으면 번들)이 이걸 쓴다. 홈 순위표 칩은 `HomeViewModel._loadLeagueChips` 가 서버 `standings` 로 만든다(null=숨김·false=점선·true=선택 가능, `supported:false` 리그는 점선). 서버가 메타를 안 주면(`alarm` 필드 없음 = 구버전) 기존 하드코딩 값으로 폴백한다. **동작 변화:** 서버가 LPL·LEC·LCS·WORLDS 에 `null` 을 줘서 이 칩 4개가 사라지고, ASIAN_GAMES 칩이 새로 생긴다.
+* **Mixpanel SDK 세팅**: `mixpanel_flutter` 를 추가하고 `lib/core/util/analytics.dart`(`Analytics`) 래퍼를 만들었다. 프로젝트 토큰(US 데이터 센터)은 Sentry DSN 처럼 코드 기본값으로 두고 `--dart-define=MIXPANEL_TOKEN=...` 로 덮어쓸 수 있다(릴리즈 명령에 플래그를 안 붙여도 켜진다). 디버그 빌드에서는 init 을 건너뛰어 모든 호출이 무시된다(운영 데이터 오염 방지) — 시뮬레이터는 release 모드를 못 돌리므로 동작 확인은 `flutter run --dart-define=MIXPANEL_DEBUG=true` 로 디버그에서 켜서 한다. `main()` 의 시작 초기화 `Future.wait` 에 `Analytics.init()` 를 넣었고, Sentry 사용자 설정과 같은 지점에서 로그인 시 `identify(memberId)`, 로그아웃 시 `reset()` 을 부른다. 네이티브 플러그인이라 코드 푸시로는 못 나가고 스토어 재배포가 필요하다.
+* **모든 API 요청에 `X-App-Version` 헤더를 붙임**: 서버 로그에 앱 버전이 없어 "배포 후 업데이트 비율"과 버전별 오류를 잴 수 없었다. 요청 경로가 `core/util/api_client.dart` 하나라 `VersionedClient`(`http.BaseClient` 래퍼)로 한 번만 붙인다. 버전(`<버전>+<빌드>`)은 `main.dart` 시작 때 `loadAppVersion()` 이 한 번 읽어 두고 요청 경로에서는 기다리지 않는다 — 요청마다 플랫폼 채널을 `await` 하면 위젯 테스트(가짜 비동기)에서 요청이 끝나지 않아 타임아웃 타이머가 남아 테스트 7개가 깨졌다. 읽기 실패 시 헤더만 빠진다. **이 조회는 시작 `Future.wait` 에 넣지 않고 `unawaited` 로 띄운다** — 거기 넣으면 플랫폼 채널이 응답하지 않을 때 첫 화면이 최대 8초(그 묶음의 타임아웃) 늦어지는데, 로그용 헤더가 그만한 값이 아니다. 조회 전 요청은 헤더 없이 나가고 끝난 뒤부터 실린다. `VersionedClient` 는 `close()` 를 재정의해 감싼 클라이언트까지 닫는다(`http.BaseClient.close` 기본 구현은 아무것도 안 해서, 안 두면 안쪽 연결 풀이 남는다). Dart 만 바뀌어 코드 푸시로 나간다. 단 패치는 릴리즈 버전을 그대로 보고하므로 패치 번호는 구분하지 못한다.
 
 ## 2026-10-02
 * **홈 솔랭 카드: 1초 타이머가 섹션 전체를 매초 다시 그리던 것 수정**: 경과 시간 카운트업 타이머가 틱마다 `setState(() {})` 로 솔랭 섹션 전체(챔피언 스플래시·선수 사진 3장·`PageView`·끝난 경기 칩 줄)를 재구성했다. 게다가 조건이 `soloState == active` 였는데 **끝난 경기만 있어도 active** 라(`HomeViewModel.soloState`), 카운트업할 대상이 하나도 없는 흔한 상태에서도 매초 돌았다 — 빌드 메서드에 카운터를 심어 실측하니 두 경우 모두 10초에 섹션 빌드 10회였다. (1) 타이머 조건을 `soloLive.isNotEmpty` 로 바꿔 진행 중 카드가 있을 때만 돌리고, (2) 틱을 `ValueNotifier` 로 바꿔 `ValueListenableBuilder` 로 감싼 경과 시간 텍스트만 갱신하게 하고, (3) `WidgetsBindingObserver` 를 붙여 백그라운드에서는 타이머를 끈다(솔랭 5초 폴링이 `pauseSoloPolling` 으로 멈추는 것과 같은 맥락 — 폴링은 멈추는데 이 타이머만 계속 돌고 있었다). 재측정 결과 두 경우 모두 10초에 0회.
@@ -394,7 +552,7 @@
 * **홈 순위표: "전체 경기" 링크를 월즈 전용에서 모든 리그로 되돌림**: 월즈 재비활성화(출시 보류) 작업 때 "전체 대진" 버튼을 `isWorlds` 조건부로 만들어 뒀는데, 월즈 칩이 다시 `live:false`라 이 버튼에 영원히 도달할 수 없었다. 리그와 무관하게 항상 보이는 "전체 경기" 버튼(경기 리스트로 이동)으로 되돌렸다. l10n 키를 `homeStandingsWorldsSeeAllBracket`에서 범용 `homeStandingsSeeAllMatches`로 교체.
 * **홈 커뮤니티·평점 섹션 텍스트 크기 축소**: mockup.html 기준(`.post .ti` 14px, `.post .me` 11px, `.rv .c` 13.5px, `.rv .m` 11px)보다 커 보이던 글 제목·한줄평 본문(16→14)과 메타 텍스트(13→11)를 맞춰 줄였다.
 * **홈 솔랭 폴링: 조회가 5초 넘게 걸리면 카드가 멈추고 요청이 쌓이던 버그 수정**: `Timer.periodic(5초)`가 이전 `_loadSolo()` 응답을 기다리지 않고 다음 틱을 쏘는 구조였다. 솔랭 API 응답이 폴링 간격(5초)보다 오래 걸리면, 다음 틱이 `_soloGen`을 먼저 올려 버려서 느리게 돌아온 응답까지 전부 "세대 불일치"로 버려지고 솔랭 카드가 갱신을 멈추는데, 동시에 5초마다 새 요청만 계속 쌓이는 문제가 있었다(CodeRabbit 리뷰 지적). `_soloPollInFlight` 플래그로 이전 조회가 끝나기 전엔 새 틱을 건너뛰도록 수정.
-* **경기 리스트·필터: 데마시안컵(DEMACIA_CUP) 리그 아이콘 추가 + 알림 버튼 노출**: ASIAN_GAMES 추가 선례(2026-09-24/29)와 같은 패턴 — `assets/icons/leagues/demacia-cup.svg` 아이콘 추가, `lib/util/league_icon.dart`의 `_leagueIcons` 맵에 등록(경기 리스트 리그 헤더·필터 시트·경기 상세 Total Kills 영역이 모두 이 맵 하나를 공유해 재사용), `ApiConfig._allRealLeagueCodes`(league=ALL 펼침 목록)에도 추가해 이 리그만 있는 날 "오늘의 경기"가 조용히 비는 버그를 사전 차단. `MatchCard._isAlarmEligibleLeague` 화이트리스트(LCK·MSI·EWC·KeSPA·ASIAN_GAMES)에도 추가해 데마시안컵 경기에 알림 벨 버튼이 뜨게 함.
+* **경기 리스트·필터: 데마시안컵(DEMACIA_CUP) 리그 아이콘 추가 + 알림 버튼 노출**: ASIAN_GAMES 추가 선례(2026-09-24/29)와 같은 패턴 — `assets/icons/leagues/demacia-cup.svg` 아이콘 추가, `lib/core/util/league_icon.dart`의 `_leagueIcons` 맵에 등록(경기 리스트 리그 헤더·필터 시트·경기 상세 Total Kills 영역이 모두 이 맵 하나를 공유해 재사용), `ApiConfig._allRealLeagueCodes`(league=ALL 펼침 목록)에도 추가해 이 리그만 있는 날 "오늘의 경기"가 조용히 비는 버그를 사전 차단. `MatchCard._isAlarmEligibleLeague` 화이트리스트(LCK·MSI·EWC·KeSPA·ASIAN_GAMES)에도 추가해 데마시안컵 경기에 알림 벨 버튼이 뜨게 함.
 * **홈 순위표: 월즈(롤드컵) 카드 구현 — 스위스 전적 버킷 + 토너먼트 대진 (칩은 비활성 유지)**: 리그 테이블(`StandingsResult`)과 형식이 달라 전용 모델(`WorldsStandings`·`WorldsBracketRow`·`WorldsKnockoutRound`·`WorldsMatch`)을 새로 두고, warding-docs `features/home/mockup.html`의 `bodySwiss()`/`bodyTree()` 시안을 따라 스위스 스테이지 전적 버킷(3-0~0-3, 진출/탈락 색 구분)과 토너먼트 대진(8강→4강→결승, 라운드 간 브래킷 연결선·오늘 경기 강조·결승 그라디언트 테두리)을 카드 하단 버튼으로 전환하게 구현(`HomeViewModel.worldsView`/`toggleWorldsView`). 백엔드가 월즈를 지원하지 않고 포맷도 리그 테이블과 달라, `StandingsRepository.fetchWorldsStandings()`는 `HOME_MOCKS` 게이트 뒤의 목업만 반환한다. 코드는 완성했지만 **리그 칩은 출시 보류로 다시 `live: false`** — 사용자에게는 아직 안 보인다(LPL·LEC·LCS와 같은 비활성 점선 칩). 리그 칩 코드값은 `ApiConfig`의 리그 코드 체계와 맞춰 `'월즈'`에서 `'WORLDS'`로 변경해 뒀다(라벨은 한글 유지) — 나중에 켤 때는 `live: true`만 뒤집으면 된다.
 * **홈 평점 한줄평: 독립 섹션 신설 + 백엔드 연동**: nar-back-repo#542 배포로 `GET /api/mobile/ratings/recent`가 열려 `ApiReviewSource`를 추가하고 `defaultReviewSource()` 기본값을 `EmptyReviewSource`에서 교체. 평점을 커뮤니티 섹션의 탭(최신/평점 토글)에서 떼어내 커뮤니티 섹션 바로 아래 독립 섹션(`HomeReviewSection`)으로 신설 — 커뮤니티와 같은 레이아웃(헤더 + 부제 "최신순" + `HomeListBox`, 커뮤니티 `_ListBox`를 공용화)을 쓰고 최대 5건만 보여준다(`HomeViewModel.reviews`). `HomeCommunitySort`에서 `review`를 제거하고 커뮤니티 기본 정렬은 `latest`로 바꿈. 한줄평이 없으면 `HomeReviewSection`이 섹션 전체(헤더 포함)를 그리지 않는다.
 

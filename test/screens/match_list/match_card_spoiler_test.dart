@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/screens/match_list/component/match_card.dart';
+import 'package:warding/features/match_list/presentation/widgets/match_card.dart';
 
 import '../../support/l10n_test_setup.dart';
 

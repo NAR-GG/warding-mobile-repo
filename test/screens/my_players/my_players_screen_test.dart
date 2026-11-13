@@ -1,16 +1,17 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/components/nar_chip_multi_select.dart';
+import 'package:warding/core/ui/nar_chip_multi_select.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/home/component/home_solo_rank_section.dart';
-import 'package:warding/screens/my_players/component/my_player_tile.dart';
-import 'package:warding/screens/my_players/my_players_screen.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
+import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart';
+import 'package:warding/features/my_players/presentation/screens/my_players_screen.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 import '../home/home_test_harness.dart';
@@ -60,13 +61,13 @@ List<PlayerSubscription> _hundred() {
 
 const _solo = SoloRankSnapshot(
   live: [
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Faker',
       teamCode: 'T1',
       champion: '아리',
       elapsedSeconds: 1452,
     ),
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Chovy',
       teamCode: 'GEN',
       champion: '신드라',
@@ -74,13 +75,13 @@ const _solo = SoloRankSnapshot(
     ),
   ],
   finished: [
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Oner',
       teamCode: 'T1',
       won: true,
       minutesAgo: 12,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Canyon',
       teamCode: 'GEN',
       won: false,
@@ -95,7 +96,7 @@ Future<MyPlayersViewModel> _buildVm(
 }) async {
   final repo = MockSubscriptionRepository();
   final list = players ?? _hundred();
-  when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => list);
+  when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(list));
   late MyPlayersViewModel vm;
   await tester.runAsync(() async {
     vm = MyPlayersViewModel(

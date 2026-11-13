@@ -1,9 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/match_game.dart';
-import 'package:warding/model/match_live_event.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/viewmodel/match_detail/match_detail_viewmodel.dart';
+import 'package:warding/features/match_detail/domain/match_game.dart';
+import 'package:warding/features/match_detail/domain/match_live_event.dart';
+import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';
 
@@ -49,8 +50,9 @@ void main() {
     required MatchLiveEvents liveEvents,
     required ScheduleMatch? initialMatch,
   }) {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (games, null));
-    when(() => match.fetchLiveEvents(any())).thenAnswer((_) async => liveEvents);
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((games, null)));
+    when(() => match.fetchLiveEvents(any()))
+        .thenAnswer((_) async => Right(liveEvents));
     return MatchDetailViewModel(
       matchId: 'm-1',
       initialMatch: initialMatch,
@@ -177,7 +179,7 @@ void main() {
 
   test('라이브 이벤트 조회 자체가 실패했으면(liveEventsData 없음) 붙이지 않는다', () async {
     when(() => match.fetchGames('m-1')).thenAnswer(
-      (_) async => (
+      (_) async => Right((
         const [
           MatchGame(
             gameId: 'g1',
@@ -187,7 +189,7 @@ void main() {
           ),
         ],
         null,
-      ),
+      )),
     );
     when(() => match.fetchLiveEvents(any())).thenThrow(Exception('network'));
     final vm = MatchDetailViewModel(

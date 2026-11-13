@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/calendar_week_start.dart';
-import 'package:warding/screens/schedule/component/calendar_day_cell.dart';
-import 'package:warding/screens/schedule/component/calendar_weekday_header.dart';
-import 'package:warding/screens/schedule/component/schedule_calendar.dart';
-import 'package:warding/screens/schedule/component/schedule_calendar_skeleton.dart';
+import 'package:warding/domain/calendar_week_start.dart';
+import 'package:warding/features/schedule/presentation/widgets/calendar_day_cell.dart';
+import 'package:warding/features/schedule/presentation/widgets/calendar_weekday_header.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_calendar_skeleton.dart';
 
 /// 스켈레톤과 실제 그리드는 같은 자리에 번갈아 그려진다. 로딩이 끝나는
 /// 순간 줄 수나 칸 높이가 바뀌면 화면이 튀므로, 둘의 레이아웃이 같은지

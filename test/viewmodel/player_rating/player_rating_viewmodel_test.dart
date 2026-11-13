@@ -1,8 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/game_rating.dart';
-import 'package:warding/model/match_game.dart';
-import 'package:warding/viewmodel/player_rating/player_rating_viewmodel.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
+import 'package:warding/features/match_detail/domain/match_game.dart';
+import 'package:warding/features/player_rating/presentation/viewmodels/player_rating_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';
 
@@ -68,11 +69,11 @@ void main() {
   test('load(): 상세를 받아 detail·reviews 채움', () async {
     when(() => repo.fetchPlayerRating('g1', 3,
             page: any(named: 'page'), size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(
+        .thenAnswer((_) async => Right(_detail(
               gameId: 'g1',
               participantId: 3,
               reviews: [_review(1), _review(2)],
-            ));
+            )));
 
     final vm = _vm(repo);
     await vm.load();
@@ -84,19 +85,19 @@ void main() {
 
   test('loadMoreReviews(): 다음 페이지를 누적', () async {
     when(() => repo.fetchPlayerRating('g1', 3, page: 0, size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(
+        .thenAnswer((_) async => Right(_detail(
             gameId: 'g1',
             participantId: 3,
             page: 0,
             totalPages: 2,
-            reviews: [_review(1)]));
+            reviews: [_review(1)])));
     when(() => repo.fetchPlayerRating('g1', 3, page: 1, size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(
+        .thenAnswer((_) async => Right(_detail(
             gameId: 'g1',
             participantId: 3,
             page: 1,
             totalPages: 2,
-            reviews: [_review(2)]));
+            reviews: [_review(2)])));
 
     final vm = _vm(repo);
     await vm.load();
@@ -110,9 +111,9 @@ void main() {
       () async {
     when(() => repo.fetchPlayerRating('g1', 3,
             page: any(named: 'page'), size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(gameId: 'g1', participantId: 3));
+        .thenAnswer((_) async => Right(_detail(gameId: 'g1', participantId: 3)));
     when(() => repo.fetchGameRatings('g2', teamSide: any(named: 'teamSide')))
-        .thenAnswer((_) async => GameRatings(
+        .thenAnswer((_) async => Right(GameRatings(
               gameId: 'g2',
               rateable: true,
               teams: const [],
@@ -130,10 +131,10 @@ void main() {
                   myRating: 0,
                 ),
               ],
-            ));
+            )));
     when(() => repo.fetchPlayerRating('g2', 8,
             page: any(named: 'page'), size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(gameId: 'g2', participantId: 8));
+        .thenAnswer((_) async => Right(_detail(gameId: 'g2', participantId: 8)));
 
     final vm = _vm(repo);
     await vm.load();
@@ -148,10 +149,10 @@ void main() {
   test('saveMyRating(): 저장 후 상세를 다시 로드', () async {
     when(() => repo.fetchPlayerRating('g1', 3,
             page: any(named: 'page'), size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(gameId: 'g1', participantId: 3));
+        .thenAnswer((_) async => Right(_detail(gameId: 'g1', participantId: 3)));
     when(() => repo.putMyRating('g1', 3,
             rating: any(named: 'rating'), comment: any(named: 'comment')))
-        .thenAnswer((_) async => const MyRating(ratingId: 9, rating: 5));
+        .thenAnswer((_) async => const Right(MyRating(ratingId: 9, rating: 5)));
 
     final vm = _vm(repo);
     await vm.load();
@@ -165,8 +166,8 @@ void main() {
   test('deleteMyRating(): 삭제 후 상세를 다시 로드', () async {
     when(() => repo.fetchPlayerRating('g1', 3,
             page: any(named: 'page'), size: any(named: 'size')))
-        .thenAnswer((_) async => _detail(gameId: 'g1', participantId: 3));
-    when(() => repo.deleteMyRating('g1', 3)).thenAnswer((_) async {});
+        .thenAnswer((_) async => Right(_detail(gameId: 'g1', participantId: 3)));
+    when(() => repo.deleteMyRating('g1', 3)).thenAnswer((_) async => const Right(unit));
 
     final vm = _vm(repo);
     await vm.load();

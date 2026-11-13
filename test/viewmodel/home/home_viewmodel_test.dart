@@ -1,26 +1,37 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
+import 'package:warding/core/config/home_mocks.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'dart:async';
 
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/notice.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/model/schedule_match.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/repository/subscription/subscription_repository.dart';
-import 'package:warding/repository/team/team_logo_directory.dart';
-import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/features/notice/domain/notice.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/news/data/news_source.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
+import 'package:warding/core/util/api_client.dart' as api;
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 
@@ -51,20 +62,20 @@ class _GatedSolo implements SoloRankSource {
 
 class _SwitchableReviews implements ReviewSource {
   _SwitchableReviews(this.items);
-  List<HomeReviewItem> items;
+  List<ReviewItem> items;
   @override
-  Future<List<HomeReviewItem>> fetchRecent() async => items;
+  Future<List<ReviewItem>> fetchRecent() async => items;
 }
 
-HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
+LiveSoloPlayer live(String name, int elapsed) => LiveSoloPlayer(
   name: name,
   teamCode: 'T1',
   champion: '아리',
   elapsedSeconds: elapsed,
 );
 
-HomeFinishedSoloPlayer done(String name, int minutesAgo) =>
-    HomeFinishedSoloPlayer(
+FinishedSoloPlayer done(String name, int minutesAgo) =>
+    FinishedSoloPlayer(
       name: name,
       teamCode: 'T1',
       won: true,
@@ -321,9 +332,11 @@ void main() {
 
   setUp(() {
     server = _FakeApi();
-    NoticeRepository.instance.resetPromotedCacheForTesting();
+    (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
-    SubscriptionRepository.instance.resetCacheForTesting();
+    (di<SubscriptionRepository>() as SubscriptionRepositoryImpl)
+        .resetCacheForTesting();
     TeamLogoDirectory.instance.resetForTesting();
     setUpServer();
   });
@@ -334,7 +347,7 @@ void main() {
   });
 
   group('월즈 솔랭', () {
-    HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
+    LiveSoloPlayer live(String name, int elapsed) => LiveSoloPlayer(
       name: name,
       teamCode: 'GEN',
       champion: '키아나',
@@ -377,13 +390,13 @@ void main() {
           solo: const SoloRankSnapshot(
             live: [],
             finished: [
-              HomeFinishedSoloPlayer(
+              FinishedSoloPlayer(
                 name: 'Ruler',
                 teamCode: 'GEN',
                 won: true,
                 minutesAgo: 50,
               ),
-              HomeFinishedSoloPlayer(
+              FinishedSoloPlayer(
                 name: 'Faker',
                 teamCode: 'T1',
                 won: false,
@@ -556,7 +569,8 @@ void main() {
 
       // AuthService.signOut 이 하는 일 — 토큰 삭제 + 구독 캐시 비우기.
       setUpServer();
-      SubscriptionRepository.instance.clearCache();
+      (di<SubscriptionRepository>() as SubscriptionRepositoryImpl)
+          .clearCache();
       await vm.refreshSubscriptionsOnReturn();
       expect(vm.subscribedTotal, 0);
       expect(vm.soloState, SoloCardState.noSubscription);
@@ -603,7 +617,7 @@ void main() {
 
     test('구독하지 않은 선수의 솔랭은 홈에 나오지 않는다', () async {
       final repo = MockSubscriptionRepository();
-      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(subs));
       final vm = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),
@@ -621,7 +635,7 @@ void main() {
 
     test('홈과 내 선수 화면이 같은 fixture 에서 같은 결과를 낸다', () async {
       final repo = MockSubscriptionRepository();
-      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => subs);
+      when(() => repo.fetchSubscribedPlayers()).thenAnswer((_) async => Right(subs));
       final home = HomeViewModel(
         subscriptions: repo,
         soloRank: _FakeSolo(fixture),
@@ -691,8 +705,10 @@ void main() {
       'alarm': false,
     };
 
-    setUp(() => ScheduleRepository.instance.resetCacheForTesting());
-    tearDown(() => ScheduleRepository.instance.resetCacheForTesting());
+    setUp(() => (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting());
+    tearDown(() => (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting());
 
     test('standings 가 null 인 리그는 칩에서 빠지고 false 는 점선, true 는 live', () async {
       server.filterLeagues = [
@@ -768,7 +784,8 @@ void main() {
 
       // 사용자가 직접 바꾼 뒤 앱 복귀 등으로 칩을 다시 불러도 유지돼야 한다.
       vm.selectLeague('LCK');
-      ScheduleRepository.instance.resetCacheForTesting();
+      (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
       await vm.refreshAll();
       await pumpEventQueue();
 
@@ -794,7 +811,8 @@ void main() {
         league('ASIAN_GAMES', standings: true),
         league('LCK', standings: false),
       ];
-      ScheduleRepository.instance.resetCacheForTesting();
+      (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
       await vm.refreshAll();
       await pumpEventQueue();
 
@@ -1208,7 +1226,7 @@ void main() {
       const notice = Notice(id: 7, title: '점검 안내', content: '', pinned: false);
       final notices = _MockNotices();
       final prefs = _MockNoticePrefs();
-      final fetch = Completer<List<Notice>>();
+      final fetch = Completer<Either<Failure, List<Notice>>>();
       when(() => notices.cachedPromoted).thenReturn(const [notice]);
       when(() => notices.fetchPromoted()).thenAnswer((_) => fetch.future);
       when(() => prefs.cachedValue).thenReturn(null);
@@ -1230,7 +1248,7 @@ void main() {
       vm.dismissBanner();
       expect(vm.bannerVisible, isFalse);
 
-      fetch.complete(const [notice]);
+      fetch.complete(const Right([notice]));
       await pumpEventQueue();
       expect(vm.bannerVisible, isFalse);
     });
@@ -1241,12 +1259,12 @@ void main() {
 
     test('오늘 경기: 늦게 도착한 옛 응답이 새 응답을 덮지 않는다', () async {
       final schedule = _MockSchedule();
-      final gates = <Completer<List<ScheduleMatch>>>[];
+      final gates = <Completer<Either<Failure, List<ScheduleMatch>>>>[];
       when(
         () =>
             schedule.fetchMatchesByDate(any(), leagues: any(named: 'leagues')),
       ).thenAnswer((_) {
-        final c = Completer<List<ScheduleMatch>>();
+        final c = Completer<Either<Failure, List<ScheduleMatch>>>();
         gates.add(c);
         return c.future;
       });
@@ -1266,9 +1284,11 @@ void main() {
       expect(gates.length, 2);
 
       // 새 요청이 먼저 끝나고, 옛 요청이 뒤늦게 끝난다.
-      gates[1].complete([ScheduleMatch.fromJson(_match('new', 'inProgress'))]);
+      gates[1].complete(
+          Right([ScheduleMatch.fromJson(_match('new', 'inProgress'))]));
       await second;
-      gates[0].complete([ScheduleMatch.fromJson(_match('old', 'inProgress'))]);
+      gates[0].complete(
+          Right([ScheduleMatch.fromJson(_match('old', 'inProgress'))]));
       await pumpEventQueue();
 
       expect(vm.todayMatchesSorted.map((m) => m.matchId), ['new']);

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:warding/model/player.dart';
+import 'package:warding/features/onboarding/domain/player.dart';
 
 Player _player(String name, String role) =>
     Player(id: name.hashCode, name: name, imageUrl: '', role: role);

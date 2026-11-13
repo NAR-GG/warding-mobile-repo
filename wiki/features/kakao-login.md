@@ -19,7 +19,7 @@ timestamp: 2026-06-21T00:00:00Z
 # 관련
 
 - 로그인 후 신규 사용자는 [온보딩](/features/onboarding.md)으로 진입.
-- 화면은 `screens/login/`에 위치 → [파일 생성 규칙](/architecture/file-conventions.md).
+- 화면은 `lib/features/login/presentation/screens/`에 위치 → [파일 생성 규칙](/architecture/file-conventions.md).
 
 # Citations
 

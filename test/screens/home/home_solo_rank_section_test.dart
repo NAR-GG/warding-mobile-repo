@@ -1,9 +1,10 @@
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/dashed_border.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/home/component/home_solo_rank_section.dart';
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/core/ui/dashed_border.dart';
+import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import 'home_test_harness.dart';
 

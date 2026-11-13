@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:warding/repository/community/community_api_exception.dart';
+import 'package:warding/features/community/data/community_api_exception.dart';
 
 void main() {
   test('code·message·Retry-After 헤더를 파싱한다', () {

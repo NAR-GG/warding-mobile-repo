@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_badge.dart';
-import 'package:warding/util/rating_mapping.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/util/rating_mapping.dart';
 
 import '../support/l10n_test_setup.dart';
 

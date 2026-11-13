@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/schedule/component/schedule_week_calendar.dart';
+import 'package:warding/features/schedule/presentation/widgets/schedule_week_calendar.dart';
 
 /// 주간 캘린더 — 목록 스크롤을 따라 주가 넘어가고, 좌우로 쓸면 전주/다음주.
 ///

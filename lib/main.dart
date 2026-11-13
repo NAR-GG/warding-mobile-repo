@@ -8,25 +8,28 @@ import 'package:home_widget/home_widget.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import 'config/api_config.dart';
-import 'config/app_globals.dart';
-import 'config/app_language.dart';
-import 'firebase_options.dart';
-import 'l10n/app_localizations.dart';
-import 'repository/ad/ad_repository.dart';
-import 'repository/fcm/fcm_service.dart';
-import 'repository/live_activity/live_activity_logo_prefetcher.dart';
-import 'repository/live_activity/live_activity_service.dart';
-import 'repository/live_activity/live_match_activity_controller.dart';
-import 'repository/notification/live_match_notification_store.dart';
-import 'repository/notification/solo_rank_notification_store.dart';
-import 'screens/splash_screen.dart';
-import 'styles/app_colors.dart';
-import 'util/analytics.dart';
-import 'util/analytics_route_observer.dart';
-import 'util/api_client.dart' show loadAppVersion;
-import 'util/champion_image.dart';
-import 'util/home_widget_service.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/app/app_hooks.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/core/config/app_globals.dart';
+import 'package:warding/core/config/app_language.dart';
+import 'package:warding/firebase_options.dart';
+import 'package:warding/l10n/app_localizations.dart';
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
+import 'package:warding/app/deeplink/fcm_service.dart';
+import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
+import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
+import 'package:warding/core/infrastructure/live_activity/live_match_activity_controller.dart';
+import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
+import 'package:warding/core/infrastructure/notification/solo_rank_notification_store.dart';
+import 'package:warding/features/splash/presentation/screens/splash_screen.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_route_observer.dart';
+import 'package:warding/core/util/api_client.dart' show loadAppVersion;
+import 'package:warding/core/util/champion_image.dart';
+import 'package:warding/app/deeplink/home_widget_service.dart';
+import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 홈 화면 위젯 백그라운드 갱신 콜백.
 ///
@@ -36,7 +39,7 @@ import 'util/home_widget_service.dart';
 Future<void> _homeWidgetBackgroundCallback(Uri? uri) async {
   WidgetsFlutterBinding.ensureInitialized();
   await HomeWidgetService.init();
-  await HomeWidgetService.handleBackgroundWidgetAction(uri);
+  await ScheduleWidgetWriter.handleBackgroundWidgetAction(uri);
 }
 
 /// 앱이 백그라운드/종료 상태일 때 도착하는 FCM 메시지 핸들러.
@@ -72,6 +75,12 @@ Future<void> _initFirebaseMessaging() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 의존성 등록. ViewModel 이 생성될 때 이미 등록돼 있어야 하므로 아래
+  // 초기화들보다 먼저 부른다 — 등록 자체는 lazy 라 객체를 만들지 않으니 비용이
+  // 없다(첫 참조 시점에 생성된다).
+  configureDependencies();
+  configureAppHooks();
 
   // 디코딩된 이미지 캐시 상한. Flutter 기본값은 100MB 인데, 이 앱이 다루는
   // 이미지는 팀 로고·선수 사진·챔피언 아이콘처럼 작은 것들이라 그만큼 필요
@@ -116,7 +125,7 @@ Future<void> main() async {
   // 백그라운드 위젯 갱신 콜백 등록
   HomeWidget.registerInteractivityCallback(_homeWidgetBackgroundCallback);
   // 앱 시작 시 위젯에 최신 캘린더 데이터 전달 (경기일정 탭 안 들어가도 동작)
-  HomeWidgetService.refreshFromApi();
+  ScheduleWidgetWriter.refreshFromApi();
 
   // 위젯 딥링크: MethodChannel로 Swift에서 전달받음
   HomeWidgetService.listenWidgetActions();

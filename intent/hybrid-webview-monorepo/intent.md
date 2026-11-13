@@ -1,12 +1,17 @@
 # Intent: 웹뷰 점진 전환과 디자인 시스템 단일 출처
 
+> 경로 주석: 이 문서는 `lib/` 이 레이어 단위였던 시점에 썼다. 2026-11-10 에 feature 단위
+> 구조로 바뀌어 `lib/styles/` → `lib/core/theme/` 가 됐고, 본문 경로는 현재 기준으로
+> 고쳐 두었다. 판단과 근거는 작성 당시 그대로다.
+> → [폴더 구조](../../wiki/architecture/folder-structure.md)
+
 ## Problem
 
 컨텐츠성 화면(커뮤니티 글 본문·공지·뉴스 등)을 웹으로 옮겨 스토어 심사 없이 배포하고, 같은
 화면을 웹과 앱에서 함께 쓰고 싶다. 그런데 웹 화면을 새로 만들기 시작하면 디자인 시스템이
 두 벌로 갈린다.
 
-지금 색 토큰의 단일 출처는 `lib/styles/app_colors.dart` 하나다. 웹이 생기면 CSS 쪽에
+지금 색 토큰의 단일 출처는 `lib/core/theme/app_colors.dart` 하나다. 웹이 생기면 CSS 쪽에
 같은 색을 다시 적게 되고, 손으로 맞추는 동기화는 반드시 깨진다. 이미 그 징후가 있다 —
 `CLAUDE.md`는 목업의 `assets/tokens.css`가 `app_colors.dart`에서 자동 생성된다고
 적어 뒀지만, 이 레포에 그 생성 스크립트가 없다. 문서가 앞서갔거나 생성기가 다른 곳에 있다.
@@ -50,7 +55,7 @@ Flutter 앱을 유지한 채 컨텐츠성 화면부터 웹뷰로 점진 전환�
 
 - **사용자**: 네이티브와 웹뷰가 섞인 화면을 보게 된다. 이음새의 배경색·폰트·치수 차이가
   그대로 체감 품질이 된다. 현재 앱이 다크 테마라 흰 플래시가 특히 눈에 띈다.
-- **`lib/styles/app_colors.dart`**: 손으로 쓰는 파일에서 생성물로 성격이 바뀐다. 현재 279줄,
+- **`lib/core/theme/app_colors.dart`**: 손으로 쓰는 파일에서 생성물로 성격이 바뀐다. 279줄,
   대부분 단색이고 `LinearGradient`가 여러 개 섞여 있다. 그라데이션은 Dart 전용 표현
   (`begin`/`end`/`stops`)을 써서 중립 포맷으로 옮길 때 별도 설계가 필요하다.
 - **릴리즈·패치 자동화**: `release/<pubspec version>` 태그 규약, 네이티브 변경 차단 가드,
@@ -74,7 +79,7 @@ Flutter 앱을 유지한 채 컨텐츠성 화면부터 웹뷰로 점진 전환�
   범위는 비교적 좁다 — Dart 코드에 Shorebird SDK 의존이 없다(`shorebird_code_push` 를 쓰지
   않고, 코드의 Shorebird 언급은 모두 "이 변경은 패치로 못 나간다"를 설명하는 주석이다).
   걷어낼 것은 배포 파이프라인과 문서, 그리고 asset 으로 등록된 설정 파일이다.
-- **생성물은 커밋한다.** `app_colors.dart`가 사라지면 Flutter 빌드·analyze가 생성 단계에
+- **생성물은 커밋한다.** `core/theme/app_colors.dart`가 사라지면 Flutter 빌드·analyze가 생성 단계에
   의존하게 되고, 전환 기간의 Shorebird 패치 가드도 영향을 받는다. 커밋한 뒤 CI로 일치만
   검증한다. 이 제약은 Shorebird 제거 후에도 유지한다 — 생성 단계를 빌드 선행 조건으로
   만들지 않는 것 자체가 목적이다.
@@ -94,7 +99,7 @@ Flutter 앱을 유지한 채 컨텐츠성 화면부터 웹뷰로 점진 전환�
   고치는 것인지. 후자면 디자인 변경이 코드 PR로만 들어온다.
 - 목업 `tokens.css`의 기존 생성 경로가 실제로 어디에 있는가. warding-docs 쪽에 스크립트가
   있는지, 수동인지. 이미 드리프트가 있다면 그 정리가 출발점이다.
-- `app_colors.dart`의 그라데이션(방향·stops 포함)을 중립 포맷에서 어떻게 표현할까.
+- `core/theme/app_colors.dart`의 그라데이션(방향·stops 포함)을 중립 포맷에서 어떻게 표현할까.
   CSS `linear-gradient`와 Dart `LinearGradient`가 각도·정렬 표현이 달라 변환 규칙이 필요하다.
 - 토큰 이름을 원시(`narDark800`) 그대로 둘지, 의미 계층(`surface.elevated` 등)을 한 겹
   올릴지. 지금 이름은 용도가 코드에 남지 않아, 웹에서 같은 색을 다른 용도로 쓰기 시작하면

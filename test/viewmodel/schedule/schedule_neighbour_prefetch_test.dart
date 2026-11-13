@@ -1,13 +1,16 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/match_calendar_day.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/repository/preference/filter_preference_repository.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/viewmodel/schedule/schedule_viewmodel.dart';
+import 'package:warding/features/schedule/domain/match_calendar_day.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/schedule/presentation/viewmodels/schedule_viewmodel.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
 
@@ -43,7 +46,8 @@ void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
     AuthService.instance.resetJwtCacheForTesting();
-    NoticeRepository.instance.resetPromotedCacheForTesting();
+    (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
     NoticePreferenceRepository.instance.resetCacheForTesting();
 
     prefs = MockFilterPreferenceRepository();
@@ -62,7 +66,7 @@ void main() {
       ),
     ).thenAnswer((invocation) async {
       final month = invocation.positionalArguments.first as DateTime;
-      return [dayOf(month)];
+      return Right([dayOf(month)]);
     });
   });
 
@@ -143,8 +147,10 @@ void main() {
         ),
       ).thenAnswer((invocation) async {
         final month = invocation.positionalArguments.first as DateTime;
-        if (month.year == 2026 && month.month == 12) return <MatchCalendarDay>[];
-        return [dayOf(month)];
+        if (month.year == 2026 && month.month == 12) {
+          return const Right(<MatchCalendarDay>[]);
+        }
+        return Right([dayOf(month)]);
       });
 
       final vm = createViewModel(DateTime(2026, 12));
@@ -171,8 +177,10 @@ void main() {
         ),
       ).thenAnswer((invocation) async {
         final month = invocation.positionalArguments.first as DateTime;
-        if (month.year == 2026 && month.month == 12) return <MatchCalendarDay>[];
-        return [dayOf(month)];
+        if (month.year == 2026 && month.month == 12) {
+          return const Right(<MatchCalendarDay>[]);
+        }
+        return Right([dayOf(month)]);
       });
 
       final vm = createViewModel(DateTime(2026, 12));

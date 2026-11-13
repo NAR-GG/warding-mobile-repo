@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_draft.dart';
+import 'package:warding/features/community/domain/community_draft.dart';
 
 void main() {
   test('toJson/fromJson 라운드트립으로 모든 필드가 보존된다', () {

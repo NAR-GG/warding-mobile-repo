@@ -13,8 +13,8 @@ timestamp: 2026-10-25T00:00:00Z
 # 구현됨 / 관련 코드
 
 - API 3개(비로그인 가능, 로그인 시 개인화 필드): `GET /api/mobile/players/{id}`, `/worlds`, `/solo-rank`.
-- `model/player_detail.dart`, `repository/player/player_repository.dart`(+ `player_mock_source.dart`),
-  `viewmodel/player/player_viewmodel.dart`, `screens/player/`.
+- `lib/features/player/domain/player_detail.dart`, `lib/features/player/data/player_repository.dart`(+ `player_mock_source.dart`),
+  `lib/features/player/presentation/viewmodels/player_viewmodel.dart`, `lib/features/player/presentation/screens/`.
 - 솔랭 중이면 홈 큰 카드(`HomeSoloHeroCard`)+`SoloCheerCard` 를 그대로 쓴다. 홈에서 들어오면
   **홈의 `SoloCheerController` 를 넘겨** 응원 수가 함께 움직인다(키는 선수 이름). 월즈 솔랭에서
   들어오면 자기 컨트롤러를 만든다.

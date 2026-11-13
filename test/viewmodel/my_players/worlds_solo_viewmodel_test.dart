@@ -1,9 +1,10 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 
@@ -44,7 +45,7 @@ void main() {
     ],
     solo: const SoloRankSnapshot(
       live: [
-        HomeLiveSoloPlayer(
+        LiveSoloPlayer(
           name: 'Canyon',
           teamCode: 'GEN',
           champion: '키아나',
@@ -53,7 +54,7 @@ void main() {
         ),
       ],
       finished: [
-        HomeFinishedSoloPlayer(
+        FinishedSoloPlayer(
           name: 'Faker',
           teamCode: 'T1',
           won: true,
@@ -66,16 +67,18 @@ void main() {
   setUp(() {
     repo = MockSubscriptionRepository();
     when(() => repo.subscribePlayer(any())).thenAnswer(
-      (inv) async => _player(inv.positionalArguments.first as int, '', ''),
+      (inv) async =>
+          Right(_player(inv.positionalArguments.first as int, '', '')),
     );
-    when(() => repo.unsubscribePlayer(any())).thenAnswer((_) async {});
+    when(() => repo.unsubscribePlayer(any()))
+        .thenAnswer((_) async => const Right(unit));
     when(
       () => repo.updatePlayerAlarm(
         any(),
         startEnabled: any(named: 'startEnabled'),
         endEnabled: any(named: 'endEnabled'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => const Right(unit));
   });
 
   Future<MyPlayersViewModel> build() async {

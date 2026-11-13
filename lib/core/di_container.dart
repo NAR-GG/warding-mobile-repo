@@ -1,0 +1,100 @@
+import 'package:get_it/get_it.dart';
+
+import 'package:warding/features/my_review/data/repositories/my_review_repository_impl.dart';
+import 'package:warding/features/standings/data/repositories/standings_repository_impl.dart';
+import 'package:warding/features/standings/domain/repositories/standings_repository.dart';
+import 'package:warding/features/match_list/data/repositories/category_repository_impl.dart';
+import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/domain/repositories/member_notification_repository.dart';
+import 'package:warding/domain/repositories/quiet_hours_repository.dart';
+import 'package:warding/core/infrastructure/notification/member_notification_repository_impl.dart';
+import 'package:warding/core/infrastructure/notification/quiet_hours_repository_impl.dart';
+import 'package:warding/features/match_detail/data/repositories/match_detail_repository_impl.dart';
+import 'package:warding/features/match_detail/data/repositories/match_subscription_repository_impl.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
+import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
+import 'package:warding/features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
+import 'package:warding/features/player_rating/data/repositories/rating_repository_impl.dart';
+import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
+import 'package:warding/features/profile_edit/data/repositories/profile_image_repository_impl.dart';
+import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/shorts/data/repositories/shorts_repository_impl.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
+import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
+import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
+
+/// 의존성 컨테이너.
+///
+/// ViewModel 이 구현체를 직접 `new` 하지 않게 한다. 그래야 테스트에서
+/// 인터페이스 Mock 을 끼울 수 있고, 플랫폼·환경별로 구현을 갈아끼울 수 있다.
+final GetIt di = GetIt.instance;
+
+/// `main()` 에서 `runApp` 전에 한 번 부른다.
+///
+/// `registerLazySingleton` 을 쓰는 이유는 앱이 켜질 때 쓰지 않는 기능의 객체까지
+/// 만들 필요가 없어서다 — 첫 참조 시점에 생성된다.
+void configureDependencies() {
+  // 이미 등록돼 있으면 (테스트에서 두 번 부르는 경우) 지우고 다시 세운다.
+  if (di.isRegistered<MyReviewRepository>()) return;
+
+  // ── my_review ────────────────────────────────────────────────
+  di.registerLazySingleton<MyReviewRepository>(MyReviewRepositoryImpl.new);
+
+  // ── schedule ─────────────────────────────────────────────────
+  di.registerLazySingleton<ScheduleRepository>(ScheduleRepositoryImpl.new);
+
+  // ── shorts ───────────────────────────────────────────────────
+  di.registerLazySingleton<ShortsRepository>(ShortsRepositoryImpl.new);
+
+  // ── subscription ─────────────────────────────────────────────
+  di.registerLazySingleton<SubscriptionRepository>(
+    SubscriptionRepositoryImpl.new,
+  );
+
+  // ── core/notification ────────────────────────────────────────
+  di.registerLazySingleton<MemberNotificationRepository>(
+    MemberNotificationRepositoryImpl.new,
+  );
+  di.registerLazySingleton<QuietHoursRepository>(
+    QuietHoursRepositoryImpl.new,
+  );
+
+  // ── home ─────────────────────────────────────────────────────
+  di.registerLazySingleton<StandingsRepository>(StandingsRepositoryImpl.new);
+
+  // ── match_list ───────────────────────────────────────────────
+  di.registerLazySingleton<CategoryRepository>(CategoryRepositoryImpl.new);
+
+  // ── notice ───────────────────────────────────────────────────
+  di.registerLazySingleton<NoticeRepository>(NoticeRepositoryImpl.new);
+
+  // ── match_detail ─────────────────────────────────────────────
+  di.registerLazySingleton<MatchDetailRepository>(
+    MatchDetailRepositoryImpl.new,
+  );
+  di.registerLazySingleton<MatchSubscriptionRepository>(
+    MatchSubscriptionRepositoryImpl.new,
+  );
+
+  // ── onboarding ───────────────────────────────────────────────
+  di.registerLazySingleton<OnboardingRepository>(
+    OnboardingRepositoryImpl.new,
+  );
+
+  // ── player_rating ────────────────────────────────────────────
+  di.registerLazySingleton<RatingRepository>(RatingRepositoryImpl.new);
+
+  // ── profile_edit ─────────────────────────────────────────────
+  di.registerLazySingleton<ProfileImageRepository>(
+    ProfileImageRepositoryImpl.new,
+  );
+}
+
+/// 테스트에서 등록을 비운다. 앱 코드는 부르지 않는다.
+Future<void> resetDependenciesForTest() => di.reset();

@@ -1,14 +1,15 @@
 // test/viewmodel/onboarding/onboarding_viewmodel_test.dart
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/onboarding_selection.dart';
-import 'package:warding/model/team.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/onboarding/onboarding_repository.dart';
-import 'package:warding/repository/preference/onboarding_preference_repository.dart';
-import 'package:warding/repository/preference/team_preference_repository.dart';
-import 'package:warding/viewmodel/onboarding/onboarding_viewmodel.dart';
+import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
+import 'package:warding/domain/team.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
+import 'package:warding/features/onboarding/data/onboarding_preference_repository.dart';
+import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
+import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
 
 class MockOnboardingRepository extends Mock implements OnboardingRepository {}
 
@@ -56,13 +57,14 @@ void main() {
     onboardingPrefs = MockOnboardingPreferenceRepository();
     auth = MockAuthService();
 
-    when(() => repo.fetchLeagues()).thenAnswer((_) async => const []);
-    when(() => repo.fetchTeams()).thenAnswer(
-        (_) async => const [Team(id: 1, name: 'T1', code: 'T1', imageUrl: '')]);
+    when(() => repo.fetchLeagues())
+        .thenAnswer((_) async => const Right([]));
+    when(() => repo.fetchTeams()).thenAnswer((_) async =>
+        const Right([Team(id: 1, name: 'T1', code: 'T1', imageUrl: '')]));
     when(() => repo.fetchPlayers(
           year: any(named: 'year'),
           teamId: any(named: 'teamId'),
-        )).thenAnswer((_) async => const []);
+        )).thenAnswer((_) async => const Right([]));
     when(() => teamPrefs.savePreferredTeam(any())).thenAnswer((_) async {});
     when(() => teamPrefs.clearPreferredTeam()).thenAnswer((_) async {});
     when(() => onboardingPrefs.saveSelection(any())).thenAnswer((_) async {});
@@ -117,7 +119,7 @@ void main() {
           favoriteTeamId: any(named: 'favoriteTeamId'),
           favoritePlayerIds: any(named: 'favoritePlayerIds'),
           jwt: any(named: 'jwt'),
-        )).thenAnswer((_) async {});
+        )).thenAnswer((_) async => const Right(unit));
 
     final vm = build();
     await completeFlow(vm);

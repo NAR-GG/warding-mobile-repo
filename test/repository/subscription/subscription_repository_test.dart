@@ -2,9 +2,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/subscription/subscription_repository.dart';
-import 'package:warding/util/api_client.dart' as api;
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/core/util/api_client.dart' as api;
 
 /// 2026-08-18 버그 회귀 테스트.
 ///
@@ -19,7 +19,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final auth = AuthService.instance;
-  final repo = SubscriptionRepository.instance;
+  final repo = SubscriptionRepositoryImpl();
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({

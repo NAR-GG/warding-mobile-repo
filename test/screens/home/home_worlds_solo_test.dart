@@ -1,11 +1,12 @@
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/home/component/home_solo_rank_section.dart';
-import 'package:warding/screens/home/component/home_worlds_solo.dart';
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
+import 'package:warding/features/home/presentation/widgets/home_worlds_solo.dart';
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import 'home_test_harness.dart';
 
@@ -24,7 +25,7 @@ PlayerSubscription _roster(int id, String name, String team) =>
       endEnabled: false,
     );
 
-HomeLiveSoloPlayer _worldsLive(int id, String name) => HomeLiveSoloPlayer(
+LiveSoloPlayer _worldsLive(int id, String name) => LiveSoloPlayer(
   name: name,
   teamCode: 'GEN',
   champion: '',
@@ -118,7 +119,7 @@ void main() {
         solo: const SoloRankSnapshot(
           live: [],
           finished: [
-            HomeFinishedSoloPlayer(
+            FinishedSoloPlayer(
               name: 'Faker',
               teamCode: 'T1',
               won: true,

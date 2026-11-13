@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/screens/home/component/home_content_section.dart';
+import 'package:warding/features/home/presentation/widgets/home_content_section.dart';
 
 /// 쇼츠 카드는 https 주소만 외부로 연다 — 서버가 준 임의 스킴(javascript:,
 /// intent:, file: 등)이나 깨진 주소는 열지 않는다.

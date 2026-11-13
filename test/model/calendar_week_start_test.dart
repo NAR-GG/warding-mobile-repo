@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 
 void main() {
   group('CalendarWeekStart.dateTimeWeekday', () {

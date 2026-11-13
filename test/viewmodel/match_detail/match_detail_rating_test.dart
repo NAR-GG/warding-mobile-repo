@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/game_rating.dart';
-import 'package:warding/model/match_game.dart';
-import 'package:warding/viewmodel/match_detail/match_detail_viewmodel.dart';
+import 'package:warding/features/player_rating/domain/game_rating.dart';
+import 'package:warding/features/match_detail/domain/match_game.dart';
+import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';
 
@@ -27,12 +29,13 @@ void main() {
   });
 
   test('load(): 현재 세트 gameId로 평점을 로드해 ratings에 채운다', () async {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (const [
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((const [
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
           MatchGame(gameId: 'g2', gameOrder: 2, status: 'ENDED'),
-        ], null));
+        ], null)));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -49,11 +52,12 @@ void main() {
   });
 
   test('reloadRatings(): 현재 세트 평점을 다시 가져온다', () async {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (const [
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((const [
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
-        ], null));
+        ], null)));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -71,12 +75,13 @@ void main() {
   });
 
   test('selectSet(): 세트 전환 시 평점을 비우고 새 세트로 다시 로드', () async {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (const [
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((const [
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
           MatchGame(gameId: 'g2', gameOrder: 2, status: 'ENDED'),
-        ], null));
+        ], null)));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenAnswer((inv) async => _ratings(inv.positionalArguments.first as String));
+        .thenAnswer((inv) async =>
+            Right(_ratings(inv.positionalArguments.first as String)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',
@@ -91,11 +96,11 @@ void main() {
   });
 
   test('평점 로드 실패 시 ratingsError 세팅', () async {
-    when(() => match.fetchGames('m-1')).thenAnswer((_) async => (const [
+    when(() => match.fetchGames('m-1')).thenAnswer((_) async => Right((const [
           MatchGame(gameId: 'g1', gameOrder: 1, status: 'ENDED'),
-        ], null));
+        ], null)));
     when(() => rating.fetchGameRatings(any(), teamSide: any(named: 'teamSide')))
-        .thenThrow(Exception('boom'));
+        .thenAnswer((_) async => const Left(ServerFailure(statusCode: 500)));
 
     final vm = MatchDetailViewModel(
       matchId: 'm-1',

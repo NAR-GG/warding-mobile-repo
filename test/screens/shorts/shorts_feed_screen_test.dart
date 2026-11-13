@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/story_video.dart';
-import 'package:warding/repository/shorts/shorts_repository.dart';
-import 'package:warding/screens/shorts/shorts_feed_screen.dart';
-import 'package:warding/viewmodel/shorts/shorts_feed_viewmodel.dart';
+import 'package:warding/features/shorts/domain/entities/story_video.dart';
+import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
+import 'package:warding/features/shorts/presentation/screens/shorts_feed_screen.dart';
+import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';
 
 StoryVideo _v(int id) => StoryVideo(
   videoId: id,
@@ -19,19 +21,13 @@ StoryVideo _v(int id) => StoryVideo(
 
 class _EmptyRepo implements ShortsRepository {
   @override
-  Future<ShortsPage> fetchShortsPage({
+  Future<Either<Failure, ShortsPage>> fetchShortsPage({
     String sort = 'latest',
     int size = 20,
     int page = 0,
     String? teamCode,
-  }) async => const ShortsPage(items: [], isLast: true);
+  }) async => const Right(ShortsPage(items: [], isLast: true));
 
-  @override
-  Future<List<StoryVideo>> fetchShorts({
-    String sort = 'latest',
-    int size = 20,
-    String? teamCode,
-  }) async => const [];
 }
 
 /// WebView 없이 영상 ID 만 그리는 가짜 임베드. 만들어진 ID 를 기록한다.

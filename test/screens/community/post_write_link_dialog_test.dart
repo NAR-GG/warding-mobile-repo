@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/community/post_write_screen.dart';
+import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
 
 /// 링크 추가 다이얼로그 — 확인을 누르면 다이얼로그가 닫히는 전환 애니메이션이
 /// 끝나기 전에 입력창의 TextEditingController를 dispose하면, 그 사이 몇 프레임

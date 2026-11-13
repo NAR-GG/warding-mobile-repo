@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/community_remote_post.dart';
-import 'package:warding/repository/community/community_draft_repository.dart';
-import 'package:warding/screens/community/post_write_screen.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
+import 'package:warding/features/community/data/community_draft_repository.dart';
+import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
 
 /// 뒤로가기 아이콘 — 작성 중인 내용이 있으면 임시저장 확인 팝업을 띄우고,
 /// 선택(취소/나가기/임시저장)에 따라 다르게 동작해야 한다.

@@ -1,3 +1,6 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,16 +8,19 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/repository/notice/notice_repository.dart';
-import 'package:warding/repository/preference/notice_preference_repository.dart';
-import 'package:warding/repository/schedule/schedule_repository.dart';
-import 'package:warding/repository/subscription/subscription_repository.dart';
-import 'package:warding/repository/team/team_logo_directory.dart';
-import 'package:warding/util/api_client.dart' as api;
-import 'package:warding/viewmodel/home/home_viewmodel.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/news/data/news_source.dart';
+import 'package:warding/core/di_container.dart';
+import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
+import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/subscription/data/repositories/subscription_repository_impl.dart';
+import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
+import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
+import 'package:warding/core/util/api_client.dart' as api;
+import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 
 import '../../support/l10n_test_setup.dart';
 
@@ -203,10 +209,13 @@ HomeFakeApi setUpHomeApi({bool loggedIn = false}) {
     loggedIn ? {'jwt': 'test-jwt'} : {},
   );
   AuthService.instance.resetJwtCacheForTesting();
-  NoticeRepository.instance.resetPromotedCacheForTesting();
+  (di<NoticeRepository>() as NoticeRepositoryImpl)
+      .resetPromotedCacheForTesting();
   NoticePreferenceRepository.instance.resetCacheForTesting();
-  SubscriptionRepository.instance.resetCacheForTesting();
-  ScheduleRepository.instance.resetCacheForTesting();
+  (di<SubscriptionRepository>() as SubscriptionRepositoryImpl)
+        .resetCacheForTesting();
+  (di<ScheduleRepository>() as ScheduleRepositoryImpl)
+        .resetCacheForTesting();
   TeamLogoDirectory.instance.resetForTesting();
   api.setApiClientForTesting(server.client);
   addTearDown(() => api.setApiClientForTesting(null));
@@ -256,8 +265,8 @@ Future<HomeViewModel> pumpHomeSection(
   return vm;
 }
 
-HomeLiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
-    HomeLiveSoloPlayer(
+LiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
+    LiveSoloPlayer(
       name: name,
       teamCode: 'GEN',
       // 빈 챔피언 = 스플래시 아트 없음. 테스트에서 네트워크 이미지를 띄우지 않는다.
@@ -265,12 +274,12 @@ HomeLiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
       elapsedSeconds: elapsedSeconds,
     );
 
-HomeFinishedSoloPlayer finishedPlayer(
+FinishedSoloPlayer finishedPlayer(
   String name,
   int minutesAgo, {
   bool won = true,
   int? durationMinutes,
-}) => HomeFinishedSoloPlayer(
+}) => FinishedSoloPlayer(
   name: name,
   teamCode: 'GEN',
   won: won,

@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/inner_shadow.dart';
+import 'package:warding/core/ui/inner_shadow.dart';
 
 /// 인너 섀도우.
 ///

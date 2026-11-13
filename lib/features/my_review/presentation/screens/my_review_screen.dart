@@ -1,0 +1,189 @@
+import 'package:flutter/material.dart';
+import 'package:warding/l10n/app_localizations.dart';
+
+import 'package:warding/core/ui/cumulative_count_bar.dart';
+import 'package:warding/core/ui/date_group_header.dart';
+import 'package:warding/core/ui/nar_alert_dialog.dart';
+import 'package:warding/core/ui/nar_badge.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
+import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/core/util/rating_mapping.dart';
+import 'package:warding/features/my_review/presentation/viewmodels/my_review_viewmodel.dart';
+import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_rating_section.dart';
+import 'package:warding/features/player_rating/presentation/screens/player_rating_screen.dart';
+import 'package:warding/features/my_review/presentation/widgets/review_card.dart';
+
+/// 내 리뷰/평점 화면.
+///
+/// 마이페이지 '내 리뷰/평점' 행에서 진입한다.
+/// 헤더는 공용 [NarDetailHeader] 로 chevron-left 뒤로가기 + '내 리뷰/평점' 타이틀.
+class MyReviewScreen extends StatefulWidget {
+  const MyReviewScreen({super.key});
+
+  @override
+  State<MyReviewScreen> createState() => _MyReviewScreenState();
+}
+
+class _MyReviewScreenState extends State<MyReviewScreen> {
+  final MyReviewViewModel _vm = MyReviewViewModel();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _vm.load();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        _vm.loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _vm.dispose();
+    super.dispose();
+  }
+
+  /// 응답 항목을 기존 ReviewCard 입력(MyReview)으로 변환.
+  MyReview _toReview(MyReviewItem item) => MyReview(
+    league: item.match?.leagueName ?? '',
+    teamName: item.match == null
+        ? ''
+        : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
+              ? item.match!.blueTeamCode
+              : item.match!.redTeamCode),
+    playerName: item.playerName,
+    position: positionFromRole(item.role),
+    side: sideFromTeamSide(item.teamSide),
+    username: AppLocalizations.of(context)!.me,
+    timeAgo: ratingTimeAgo(item.createdAt),
+    rating: item.rating.toDouble(),
+    comment: (item.comment != null && item.comment!.isNotEmpty)
+        ? item.comment
+        : null,
+    profileImageUrl: item.profileImageUrl,
+    teamImageUrl: item.teamImageUrl,
+  );
+
+  /// 리뷰보기 — 선수 평점 상세로 이동. 돌아오면 목록을 다시 불러온다
+  /// (상세에서 평가를 수정·삭제했을 수 있으므로).
+  Future<void> _openPlayerRating(MyReviewItem item) async {
+    // 리뷰가 남겨진 세트 번호(gameOrder)로 헤더 세트 라벨('세트 N')을 채운다.
+    final l = AppLocalizations.of(context)!;
+    final setNumber = item.match?.gameOrder ?? 0;
+    final setLabel = setNumber > 0 ? l.setLabel(setNumber) : '';
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        // 이름이 없으면 observer 가 시트로 보고 무시한다(경기 상세 쪽과 같은
+        // 이유 — `page_view` 누락 + 복귀 시 `prev_page` 가 안 맞는다).
+        settings: const RouteSettings(name: AnalyticsPage.playerRating),
+        builder: (_) => PlayerRatingScreen(
+          player: PlayerRating(
+            name: item.playerName,
+            position: positionFromRole(item.role),
+            rating: item.rating.toDouble(),
+            raterCount: 0,
+            participantId: item.participantId,
+            playerId: item.playerId,
+          ),
+          teamName: item.match == null
+              ? ''
+              : (sideFromTeamSide(item.teamSide) == BadgeSide.blue
+                    ? item.match!.blueTeamCode
+                    : item.match!.redTeamCode),
+          side: sideFromTeamSide(item.teamSide),
+          sets: setLabel.isEmpty ? const [] : [setLabel],
+          initialSet: setLabel,
+          currentSetNumber: setNumber > 0 ? setNumber : 1,
+          gameId: item.gameId,
+          participantId: item.participantId,
+          playerId: item.playerId,
+        ),
+      ),
+    );
+    if (mounted) _vm.load();
+  }
+
+  /// 리뷰삭제 — 확인 후 VM 삭제.
+  Future<void> _confirmDelete(MyReviewItem item) async {
+    final l = AppLocalizations.of(context)!;
+    final ok = await showNarConfirmDialog(
+      context: context,
+      title: l.deleteMyRatingConfirm,
+      message: l.deleteMyRatingMessage,
+      cancelLabel: l.cancel,
+      confirmLabel: l.delete,
+    );
+    if (ok != true) return;
+    // ViewModel 은 예외를 던지지 않고 성공 여부를 돌려준다 — 실패 종류는
+    // Failure 로 이미 분류돼 있고, 화면은 "실패했는지" 만 알면 된다.
+    final deleted = await _vm.deleteRating(item);
+    if (deleted || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.deleteFailed2)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+
+    return Scaffold(
+      backgroundColor: AppColors.narDark800,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            NarDetailHeader(
+              title: l.myReviewRating,
+              backIconAsset: 'assets/icons/chevron-left.svg',
+              scale: scale,
+            ),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: _vm,
+                builder: (context, _) {
+                  final groups = _vm.grouped;
+                  return SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        CumulativeCountBar(
+                          label: l.cumulativeReviewRating,
+                          count: _vm.totalElements,
+                          scale: scale,
+                        ),
+                        for (final entry in groups.entries) ...[
+                          SizedBox(height: 16 * scale),
+                          DateGroupHeader(date: entry.key, scale: scale),
+                          for (final item in entry.value) ...[
+                            SizedBox(height: 2 * scale),
+                            ReviewCard(
+                              review: _toReview(item),
+                              scale: scale,
+                              onView: () => _openPlayerRating(item),
+                              onDelete: () => _confirmDelete(item),
+                            ),
+                          ],
+                        ],
+                        SizedBox(height: 24 * scale),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

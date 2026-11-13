@@ -1,9 +1,10 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 
@@ -61,16 +62,16 @@ List<PlayerSubscription> hundred() {
   ];
 }
 
-HomeLiveSoloPlayer live(String name, String team, int elapsed) =>
-    HomeLiveSoloPlayer(
+LiveSoloPlayer live(String name, String team, int elapsed) =>
+    LiveSoloPlayer(
       name: name,
       teamCode: team,
       champion: '아리',
       elapsedSeconds: elapsed,
     );
 
-HomeFinishedSoloPlayer done(String name, String team, int minutesAgo) =>
-    HomeFinishedSoloPlayer(
+FinishedSoloPlayer done(String name, String team, int minutesAgo) =>
+    FinishedSoloPlayer(
       name: name,
       teamCode: team,
       won: true,
@@ -85,7 +86,7 @@ void main() {
     repo = MockSubscriptionRepository();
     when(
       () => repo.fetchSubscribedPlayers(),
-    ).thenAnswer((_) async => hundred());
+    ).thenAnswer((_) async => Right(hundred()));
     solo = _FakeSolo(
       SoloRankSnapshot(
         live: [live('Faker', 'T1', 300), live('Chovy', 'GEN', 100)],

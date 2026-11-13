@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/cheer_ad_banner.dart';
+import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/repository/ad/ad_repository.dart';
+import 'package:warding/core/infrastructure/ad/ad_repository.dart';
 
 /// 응원 광고 배너의 좌우 여백. 홈은 기본값 16 을 쓰고, 경기 리스트·경기 상세는
 /// 0 을 넘겨 폭을 꽉 채운다.

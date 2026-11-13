@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 
 import '../support/l10n_test_setup.dart';
 

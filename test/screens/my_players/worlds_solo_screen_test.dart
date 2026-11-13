@@ -1,15 +1,16 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/model/home_models.dart';
-import 'package:warding/model/player_subscription.dart';
-import 'package:warding/repository/auth/auth_service.dart';
-import 'package:warding/repository/home/home_sources.dart';
-import 'package:warding/screens/my_players/component/worlds_player_sheet.dart';
-import 'package:warding/screens/my_players/my_players_screen.dart';
-import 'package:warding/viewmodel/my_players/my_players_viewmodel.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/my_players/presentation/widgets/worlds_player_sheet.dart';
+import 'package:warding/features/my_players/presentation/screens/my_players_screen.dart';
+import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 import '../../support/fake_subscription_repository.dart';
 
@@ -44,7 +45,7 @@ void main() {
     AuthService.instance.resetJwtCacheForTesting();
     repo = MockSubscriptionRepository();
     when(() => repo.subscribePlayer(any())).thenAnswer(
-      (inv) async => _player(inv.positionalArguments.first as int, ''),
+      (inv) async => Right(_player(inv.positionalArguments.first as int, '')),
     );
     when(
       () => repo.updatePlayerAlarm(
@@ -52,7 +53,7 @@ void main() {
         startEnabled: any(named: 'startEnabled'),
         endEnabled: any(named: 'endEnabled'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => const Right(unit));
     late MyPlayersViewModel vm;
     await tester.runAsync(() async {
       vm = MyPlayersViewModel(
@@ -65,7 +66,7 @@ void main() {
             ],
             solo: const SoloRankSnapshot(
               live: [
-                HomeLiveSoloPlayer(
+                LiveSoloPlayer(
                   name: 'Canyon',
                   teamCode: 'GEN',
                   champion: '키아나',
@@ -174,7 +175,7 @@ void main() {
             players: [_player(1, 'Chovy', subscribed: true)],
             solo: SoloRankSnapshot(
               live: [
-                HomeLiveSoloPlayer(
+                LiveSoloPlayer(
                   name: 'Chovy',
                   teamCode: 'GEN',
                   champion: '아리',

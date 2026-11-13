@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_report.dart';
+import 'package:warding/features/community/domain/community_report.dart';
 
 void main() {
   test('CommunityReportTargetType.apiValue는 서버 문자열과 일치한다', () {
