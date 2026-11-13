@@ -1,8 +1,9 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/core/ui/dashed_border.dart';
-import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/news/data/news_source.dart';
 import 'package:warding/features/home/presentation/widgets/home_community_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_content_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_review_section.dart';
@@ -164,7 +165,7 @@ void main() {
 
     testWidgets('탭하면 onTapReview 로 그 한줄평을 넘긴다', (tester) async {
       setUpHomeApi();
-      HomeReviewItem? tapped;
+      ReviewItem? tapped;
       await pumpHomeSection(
         tester,
         section: (vm) => HomeReviewSection(

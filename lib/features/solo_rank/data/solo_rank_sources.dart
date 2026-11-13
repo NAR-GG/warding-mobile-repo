@@ -1,6 +1,6 @@
 import 'package:warding/core/config/home_mocks.dart';
 import 'package:warding/domain/player_subscription.dart';
-import 'package:warding/features/home/data/home_api_sources.dart';
+import 'package:warding/features/solo_rank/data/api_solo_rank_sources.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 
 // 솔로 랭크·월즈 솔랭·응원 데이터 소스.

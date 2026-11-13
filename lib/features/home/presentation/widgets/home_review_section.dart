@@ -1,8 +1,9 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
@@ -26,7 +27,7 @@ class HomeReviewSection extends StatelessWidget {
   /// 한줄평 탭 — 그 선수의 평점 상세(한줄평 목록)로 이동한다. 식별자
   /// (`gameId`·`participantId`·`playerId`) 가 없는 항목은 탭해도 아무 일도
   /// 하지 않는다.
-  final void Function(HomeReviewItem review)? onTapReview;
+  final void Function(ReviewItem review)? onTapReview;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +73,7 @@ class HomeReviewSection extends StatelessWidget {
 class _ReviewTile extends StatelessWidget {
   const _ReviewTile({required this.review, required this.scale, this.onTap});
 
-  final HomeReviewItem review;
+  final ReviewItem review;
   final double scale;
   final VoidCallback? onTap;
 

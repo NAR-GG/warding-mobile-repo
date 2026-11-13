@@ -1,3 +1,4 @@
+import 'package:warding/features/player_rating/domain/review_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -10,7 +11,6 @@ import 'package:warding/core/ui/nar_banner.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/core/util/tab_route.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// 평점 한줄평 타일 — 그 선수의 평점 상세(한줄평 목록)로 바로 이동한다.
   /// `gameId`·`participantId`·`playerId` 가 모두 있어야 라우팅할 수 있다.
-  void _openReview(HomeReviewItem review) {
+  void _openReview(ReviewItem review) {
     final gameId = review.gameId;
     final participantId = review.participantId;
     final playerId = review.playerId;

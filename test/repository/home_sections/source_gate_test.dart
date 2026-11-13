@@ -1,8 +1,11 @@
+import 'package:warding/features/news/data/api_news_source.dart';
+import 'package:warding/features/player_rating/data/api_review_source.dart';
+import 'package:warding/features/player_rating/data/review_source.dart';
 import 'package:warding/core/config/home_mocks.dart';
 import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/home/data/home_api_sources.dart';
-import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/solo_rank/data/api_solo_rank_sources.dart';
+import 'package:warding/features/news/data/news_source.dart';
 
 void main() {
   test('MockSoloRankSource: 진행 중과 끝난 경기를 따로 준다', () async {

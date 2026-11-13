@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/home/data/home_api_sources.dart';
+import 'package:warding/features/solo_rank/data/api_solo_rank_sources.dart';
 import 'package:warding/features/solo_rank/presentation/widgets/solo_cheer.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/core/util/api_client.dart' as api;

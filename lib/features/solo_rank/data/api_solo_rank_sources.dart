@@ -1,17 +1,12 @@
-import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
-import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:convert';
 
 import 'package:warding/core/config/api_config.dart';
-import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/util/server_time.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/home/data/home_sources.dart';
-
-int _minutesSince(DateTime? at, DateTime now) =>
-    at == null ? 0 : now.difference(at).inMinutes.clamp(0, 1 << 30);
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 
 /// 구독 선수 솔랭 상태 (`GET /api/mobile/me/solo-rank`, 로그인 필수).
 ///
@@ -86,7 +81,7 @@ FinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
     name: j['playerName'] as String? ?? '',
     teamCode: j['teamCode'] as String? ?? '',
     won: j['win'] as bool,
-    minutesAgo: _minutesSince(parseServerTime(j['endedAt']), now),
+    minutesAgo: minutesSince(parseServerTime(j['endedAt']), now),
     durationMinutes: seconds == null ? null : seconds ~/ 60,
     playerImageUrl: j['playerImageUrl'] as String?,
     cheerTotal: (j['cheerTotal'] as num?)?.toInt() ?? 0,
@@ -179,67 +174,3 @@ class ApiCheerSource implements CheerSource {
 }
 
 /// 최근 평점 한줄평 (`GET /api/mobile/ratings/recent`, 인증 불필요).
-class ApiReviewSource implements ReviewSource {
-  ApiReviewSource({DateTime Function()? now}) : _now = now ?? DateTime.now;
-
-  final DateTime Function() _now;
-
-  @override
-  Future<List<HomeReviewItem>> fetchRecent() async {
-    final response = await http.get(Uri.parse(ApiConfig.recentRatingsUrl()));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('최근 한줄평 조회 실패 (${response.statusCode})');
-    }
-    final data =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-    final now = _now();
-    return [
-      for (final e in data['ratings'] as List<dynamic>? ?? const [])
-        _review(e as Map<String, dynamic>, now),
-    ];
-  }
-
-  HomeReviewItem _review(Map<String, dynamic> j, DateTime now) {
-    return HomeReviewItem(
-      playerName: j['playerName'] as String? ?? '',
-      champion: j['championName'] as String? ?? '',
-      stars: (j['rating'] as num?)?.toInt() ?? 0,
-      comment: j['comment'] as String? ?? '',
-      nickname: j['nickname'] as String? ?? '',
-      teamCode: j['playerTeamCode'] as String? ?? '',
-      minutesAgo: _minutesSince(parseServerTime(j['createdAt']), now),
-      gameId: j['gameId'] as String?,
-      participantId: (j['participantId'] as num?)?.toInt(),
-      playerId: (j['playerId'] as num?)?.toInt(),
-      teamSide: j['teamSide'] as String?,
-      ratingId: (j['ratingId'] as num?)?.toInt(),
-    );
-  }
-}
-
-/// 홈 뉴스 (`GET /api/home/news`, 인증 불필요). 최신 TOP 5 고정.
-class ApiNewsSource implements NewsSource {
-  ApiNewsSource({DateTime Function()? now}) : _now = now ?? DateTime.now;
-
-  final DateTime Function() _now;
-
-  @override
-  Future<List<HomeNewsArticle>> fetchTop() async {
-    final response = await http.get(Uri.parse(ApiConfig.homeNewsUrl));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('홈 뉴스 조회 실패 (${response.statusCode})');
-    }
-    final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-    final now = _now();
-    return [
-      for (final e in data)
-        HomeNewsArticle(
-          title: (e as Map<String, dynamic>)['title'] as String? ?? '',
-          office: e['officeName'] as String? ?? '',
-          minutesAgo: _minutesSince(parseServerTime(e['createdAt']), now),
-          thumbnailUrl: e['thumbnail'] as String?,
-          postUrl: e['postUrl'] as String?,
-        ),
-    ];
-  }
-}

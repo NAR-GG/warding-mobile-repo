@@ -1,3 +1,4 @@
+import 'package:warding/features/news/domain/news_article.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -82,7 +83,7 @@ class HomeContentSection extends StatelessWidget {
 class _NewsList extends StatelessWidget {
   const _NewsList({required this.articles, required this.scale});
 
-  final List<HomeNewsArticle> articles;
+  final List<NewsArticle> articles;
   final double scale;
 
   String _ago(AppLocalizations l, int minutes) {
@@ -92,7 +93,7 @@ class _NewsList extends StatelessWidget {
   }
 
   /// 기사 원문을 외부 브라우저로 연다. URL 이 없으면 아무 일도 하지 않는다.
-  Future<void> _open(HomeNewsArticle article) async {
+  Future<void> _open(NewsArticle article) async {
     final url = article.postUrl;
     if (url == null || url.isEmpty) return;
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);

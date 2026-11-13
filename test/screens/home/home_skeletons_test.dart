@@ -1,3 +1,6 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/news/domain/news_article.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
 import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'dart:async';
 
@@ -5,8 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/news/data/news_source.dart';
 import 'package:warding/features/home/presentation/widgets/home_community_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_content_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_review_section.dart';
@@ -24,9 +26,9 @@ import 'home_test_harness.dart';
 class _GatedReviews implements ReviewSource {
   _GatedReviews(this.gate, this.items);
   final Future<void> gate;
-  final List<HomeReviewItem> items;
+  final List<ReviewItem> items;
   @override
-  Future<List<HomeReviewItem>> fetchRecent() async {
+  Future<List<ReviewItem>> fetchRecent() async {
     await gate;
     return items;
   }
@@ -35,9 +37,9 @@ class _GatedReviews implements ReviewSource {
 class _GatedNews implements NewsSource {
   _GatedNews(this.gate, this.items);
   final Future<void> gate;
-  final List<HomeNewsArticle> items;
+  final List<NewsArticle> items;
   @override
-  Future<List<HomeNewsArticle>> fetchTop() async {
+  Future<List<NewsArticle>> fetchTop() async {
     await gate;
     return items;
   }
@@ -77,7 +79,7 @@ void main() {
       soloRank: _GatedSolo(gate.future),
       worlds: const EmptyWorldsSoloSource(),
       reviews: _GatedReviews(gate.future, const [
-        HomeReviewItem(
+        ReviewItem(
           playerName: 'Faker',
           champion: '아리',
           stars: 4,
@@ -88,7 +90,7 @@ void main() {
         ),
       ]),
       news: _GatedNews(gate.future, const [
-        HomeNewsArticle(title: '뉴스 제목', office: '매체', minutesAgo: 3),
+        NewsArticle(title: '뉴스 제목', office: '매체', minutesAgo: 3),
       ]),
     );
     addTearDown(vm.dispose);

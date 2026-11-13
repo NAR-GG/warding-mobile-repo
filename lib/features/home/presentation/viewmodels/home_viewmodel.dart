@@ -6,6 +6,12 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/home/domain/home_models.dart';
+import 'package:warding/features/news/data/news_source.dart';
+import 'package:warding/features/news/domain/news_article.dart';
+import 'package:warding/features/news/presentation/viewmodels/news_viewmodel.dart';
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
+import 'package:warding/features/player_rating/presentation/viewmodels/review_summary_viewmodel.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/domain/schedule_match.dart';
@@ -15,7 +21,6 @@ import 'package:warding/features/standings/domain/worlds_standings.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/community/presentation/viewmodels/community_summary_viewmodel.dart';
-import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/features/notice/presentation/viewmodels/notice_banner_viewmodel.dart';
 import 'package:warding/domain/repositories/member_notification_repository.dart';
@@ -87,9 +92,9 @@ class HomeViewModel extends ChangeNotifier {
     SoloRankViewModel? soloRankViewModel,
     ShortsSummaryViewModel? shortsSummary,
     StandingsViewModel? standingsViewModel,
+    ReviewSummaryViewModel? reviewSummaryViewModel,
+    NewsViewModel? newsViewModel,
   }) : // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
-       _reviewSource = reviews ?? defaultReviewSource(),
-       _newsSource = news ?? defaultNewsSource(),
        // 응원팀을 정하는 규칙은 UseCase 가 갖는다 — repository 3개를 조합하고
        // 폴백 순서가 규칙이라서다. 세 파라미터는 그 UseCase 로 넘긴다(테스트가
        // 개별 fake 를 주입하던 경로를 그대로 유지한다).
@@ -119,7 +124,10 @@ class HomeViewModel extends ChangeNotifier {
            SubscribedPlayersViewModel(repository: subscriptions, auth: auth),
        standings_ =
            standingsViewModel ??
-           StandingsViewModel(repository: standings, schedule: schedule) {
+           StandingsViewModel(repository: standings, schedule: schedule),
+       reviewSummary =
+           reviewSummaryViewModel ?? ReviewSummaryViewModel(source: reviews),
+       newsVm = newsViewModel ?? NewsViewModel(source: news) {
     // 솔랭 VM 은 **위에서 만든 구독 VM 과 같은 인스턴스**를 받아야 한다 —
     // initializer 에서 양쪽을 만들면 두 벌이 생겨, refreshAll 이 로드한 쪽과
     // 솔랭이 보는 쪽이 달라진다(카드가 loading 에서 안 벗어난다).
@@ -151,6 +159,8 @@ class HomeViewModel extends ChangeNotifier {
     solo.addListener(_notify);
     shorts.addListener(_notify);
     standings_.addListener(_notify);
+    reviewSummary.addListener(_notify);
+    newsVm.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     unawaited(refreshAll());
@@ -165,8 +175,6 @@ class HomeViewModel extends ChangeNotifier {
   }
 
 
-  final ReviewSource _reviewSource;
-  final NewsSource _newsSource;
   final GetPreferredTeam _getPreferredTeam;
 
   bool _disposed = false;
@@ -192,6 +200,10 @@ class HomeViewModel extends ChangeNotifier {
     shorts.dispose();
     standings_.removeListener(_notify);
     standings_.dispose();
+    reviewSummary.removeListener(_notify);
+    reviewSummary.dispose();
+    newsVm.removeListener(_notify);
+    newsVm.dispose();
     super.dispose();
   }
 
@@ -232,8 +244,8 @@ class HomeViewModel extends ChangeNotifier {
       todayMatches.load(),
       standings_.loadLeagueChips(),
       standings_.loadStandings(),
-      _loadReviews(),
-      _loadNews(),
+      reviewSummary.load(),
+      newsVm.load(),
       shorts.load(),
     ]);
   }
@@ -372,36 +384,12 @@ class HomeViewModel extends ChangeNotifier {
   void applyCommunityPostUpdate(CommunityRemotePost updated) =>
       community.applyPostUpdate(updated);
 
-  static const int _reviewCount = 4;
+  // 평점 한줄평 — 로직은 `features/player_rating` 이 갖는다.
+  final ReviewSummaryViewModel reviewSummary;
 
-  List<HomeReviewItem> _reviews = const [];
-
-  /// 평점 한줄평(한줄평이 달린 것만 — [ReviewSource] 계약) 최대
-  /// [_reviewCount]건. 비어 있으면 평점 섹션 전체를 숨긴다([HomeReviewSection]).
-  List<HomeReviewItem> get reviews => _reviews.take(_reviewCount).toList();
-
-  int _reviewsGen = 0;
-
-  /// 첫 한줄평 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다. 끝난 뒤
-  /// 비어 있으면 섹션 전체를 숨긴다.
-  bool _reviewsFirstLoadPending = true;
-  bool get reviewsLoading => _reviewsFirstLoadPending;
-
-  Future<void> _loadReviews() async {
-    final gen = ++_reviewsGen;
-    try {
-      final reviews = await _reviewSource.fetchRecent();
-      if (_disposed || gen != _reviewsGen) return;
-      _reviews = reviews;
-      _reviewsFirstLoadPending = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 평점 한줄평 조회 실패: $e');
-      if (_disposed || gen != _reviewsGen) return;
-      _reviewsFirstLoadPending = false;
-      _notify();
-    }
-  }
+  /// 평점 한줄평. 비어 있으면 평점 섹션 전체를 숨긴다([HomeReviewSection]).
+  List<ReviewItem> get reviews => reviewSummary.items;
+  bool get reviewsLoading => reviewSummary.loading;
 
   // ---- 섹션 5: 콘텐츠 (뉴스 / 쇼츠) ----
   // 기본 탭은 뉴스 — 쇼츠는 호불호가 갈리고 뉴스를 보는 사람이 더 많다(spec 결정).
@@ -417,7 +405,7 @@ class HomeViewModel extends ChangeNotifier {
   /// 뉴스 첫 응답을 기다리는 동안은 뉴스 탭을 둔다(스켈레톤) — 그래야 비었을 때
   /// 쇼츠로 넘어가는 한 번의 전환만 생긴다.
   List<HomeContentTab> get availableContentTabs =>
-      _news.isEmpty && !_newsFirstLoadPending
+      newsVm.articles.isEmpty && !newsVm.loading
       ? const [HomeContentTab.shorts]
       : HomeContentTab.values;
 
@@ -428,31 +416,11 @@ class HomeViewModel extends ChangeNotifier {
     _notify();
   }
 
-  List<HomeNewsArticle> _news = const [];
-  List<HomeNewsArticle> get news => _news;
+  // 뉴스 — 로직은 `features/news` 가 갖는다.
+  final NewsViewModel newsVm;
 
-  int _newsGen = 0;
-
-  /// 첫 뉴스 응답(성공·실패 모두)이 오기 전 true — 뉴스 탭 자리에 스켈레톤을
-  /// 그린다. 끝난 뒤 비어 있으면 뉴스 탭을 숨기고 쇼츠가 실제 탭이 된다.
-  bool _newsFirstLoadPending = true;
-  bool get newsLoading => _newsFirstLoadPending;
-
-  Future<void> _loadNews() async {
-    final gen = ++_newsGen;
-    try {
-      final articles = await _newsSource.fetchTop();
-      if (_disposed || gen != _newsGen) return;
-      _news = articles;
-      _newsFirstLoadPending = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 뉴스 조회 실패: $e');
-      if (_disposed || gen != _newsGen) return;
-      _newsFirstLoadPending = false;
-      _notify();
-    }
-  }
+  List<NewsArticle> get news => newsVm.articles;
+  bool get newsLoading => newsVm.loading;
 
   /// 홈 쇼츠 카드 수. 이어서 보는 건 전체화면 피드(후속)가 맡는다.
   // 쇼츠 — 로직은 `features/shorts` 가 갖는다. 전체화면 피드와 같은 기능이고

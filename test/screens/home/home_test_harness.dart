@@ -1,3 +1,4 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
 import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:convert';
@@ -8,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/news/data/news_source.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';

@@ -1,3 +1,5 @@
+import 'package:warding/features/player_rating/data/review_source.dart';
+import 'package:warding/features/player_rating/domain/review_item.dart';
 import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
 import 'package:warding/core/config/home_mocks.dart';
 import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
@@ -13,12 +15,11 @@ import 'package:http/testing.dart';
 import 'package:mocktail/mocktail.dart';
 import 'dart:async';
 
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/home/data/home_sources.dart';
+import 'package:warding/features/news/data/news_source.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
@@ -61,9 +62,9 @@ class _GatedSolo implements SoloRankSource {
 
 class _SwitchableReviews implements ReviewSource {
   _SwitchableReviews(this.items);
-  List<HomeReviewItem> items;
+  List<ReviewItem> items;
   @override
-  Future<List<HomeReviewItem>> fetchRecent() async => items;
+  Future<List<ReviewItem>> fetchRecent() async => items;
 }
 
 LiveSoloPlayer live(String name, int elapsed) => LiveSoloPlayer(
