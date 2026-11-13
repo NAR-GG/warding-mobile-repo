@@ -26,7 +26,7 @@ import 'package:warding/features/my_subscription_setting/presentation/screens/my
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
 import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
 import 'package:warding/features/profile_edit/presentation/screens/profile_edit_screen.dart';
-import 'package:warding/app/nav_tab_navigation.dart';
+import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/core/util/analytics_events.dart';
 
 /// 마이페이지. 하단 네비 '마이페이지' 탭에 해당한다.

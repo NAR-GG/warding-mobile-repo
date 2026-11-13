@@ -33,7 +33,7 @@ import 'package:warding/features/home/presentation/widgets/home_solo_rank_sectio
 import 'package:warding/features/home/presentation/widgets/home_standings_section.dart';
 import 'package:warding/features/home/presentation/widgets/home_today_matches_section.dart';
 import 'package:warding/core/util/analytics_events.dart';
-import 'package:warding/app/nav_tab_navigation.dart';
+import 'package:warding/app/navigation/tab_navigation.dart';
 
 /// 홈 화면 — 구독 선수 솔랭 상태 · 오늘 경기 · 순위표 · 커뮤니티 · 콘텐츠 ·
 /// 평점 한줄평 6개 섹션 + 하단 네비 '홈' 탭에 해당한다.

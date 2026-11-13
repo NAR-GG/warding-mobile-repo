@@ -7,7 +7,7 @@ import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/match_status.dart';
 import 'package:warding/core/util/match_title_l10n.dart';
-import 'package:warding/app/match_detail_router.dart';
+import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_list_viewmodel.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card_skeleton.dart';

@@ -1,12 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/error/failure_exception.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/domain/team_notification_subscription.dart';
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
-import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
-import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
 
 /// 잠금화면에 잘못 남은 Live Activity 카드를 정리하는 컨트롤러.
@@ -24,6 +19,29 @@ class LiveMatchActivityController {
       : _service = service ?? LiveActivityService.instance;
 
   final LiveActivityService _service;
+
+  /// 경기 상태 조회·구독 목록 조회를 꽂는 자리. 앱이 채운다
+  /// (`app/app_hooks.dart`).
+  ///
+  /// 이 판단에는 경기 상세·경기 구독·일정·팀 구독 네 기능의 repository 가
+  /// 필요한데, core 는 기능을 알면 안 되므로 비워 두고 주입받는다. 반환 타입은
+  /// 전부 `lib/domain/` 의 공용 모델이라 기능 모델이 core 로 새지 않는다.
+  ///
+  /// 안 채워져 있으면 스캔을 건너뛴다 — 카드를 **잘못 지우는 것보다 늦게
+  /// 지우는 쪽이 싸다**(아래 [_isOngoing] 주석 참고).
+  static Future<ScheduleMatch?> Function(String matchId)? matchLoader;
+
+  /// 알림을 켠 경기 ID. 조회에 실패하면 null 을 돌려줘야 한다 — 빈 집합(대상
+  /// 없음)과 구분하지 못하면 멀쩡한 카드를 내린다.
+  static Future<Set<String>?> Function()? subscribedMatchIdsLoader;
+
+  /// 그 날짜의 전체 리그 경기. 실패하면 null.
+  static Future<List<ScheduleMatch>?> Function(DateTime date)?
+      matchesByDateLoader;
+
+  /// 팀 알림 구독 목록. 실패하면 빈 목록.
+  static Future<List<TeamNotificationSubscription>> Function()?
+      teamNotificationsLoader;
 
   /// 진행 중인 구독 경기가 없는데 카드가 남아 있으면 정리한다.
   ///
@@ -108,7 +126,9 @@ class LiveMatchActivityController {
   /// 알리지 않으므로 서버는 카드가 살아있다고 믿고 그 경기 내내 재생성하지 못한다 —
   /// 늦게 닫는 건 만회되고 잘못 닫는 건 복구 불가라, 의심스러우면 두는 쪽이 싸다.
   Future<bool> _isOngoing(String matchId) async {
-    final match = await di<MatchDetailRepository>().fetchMatch(matchId);
+    final loader = matchLoader;
+    if (loader == null) return true; // 모르면 카드를 남긴다(아래 주석)
+    final match = await loader(matchId);
     if (match == null) return false;
     return !isScheduledStatus(match.matchStatus) &&
         !isFinishedStatus(match.matchStatus);
@@ -120,11 +140,10 @@ class LiveMatchActivityController {
   /// 빈 목록(대상 없음)과 실패를 구분해야 조회 실패를 '진행 중인 경기
   /// 없음'으로 오해하고 멀쩡한 카드를 내리지 않는다.
   Future<Set<String>?> _subscribedMatchIds() async {
+    final loader = subscribedMatchIdsLoader;
+    if (loader == null) return null;
     try {
-      // 실패를 null 로 바꿔 아래 catch 와 같은 의미로 만든다 — 호출부가
-      // "구독 목록을 모른다" 와 "구독이 없다" 를 구분해야 하기 때문이다.
-      return (await di<MatchSubscriptionRepository>().subscribedMatchIds())
-          .getOrElse((f) => throw FailureException(f));
+      return await loader();
     } catch (e) {
       debugPrint('[LiveActivity] 경기 구독 목록 조회 실패: $e');
       return null;
@@ -142,23 +161,20 @@ class LiveMatchActivityController {
     };
     if (codes.isEmpty) return const [];
 
+    final loader = matchesByDateLoader;
+    if (loader == null) return null;
     try {
       final now = DateTime.now();
-      // 아래 catch 가 null 을 돌려준다 — "목록을 모른다" 와 "경기가 없다" 를
-      // 구분해야 멀쩡한 라이브 카드를 내리지 않는다. 그래서 실패를 그 경로로
-      // 보낸다.
+      // 어느 한쪽이라도 null 이면 null 을 돌려준다 — "목록을 모른다" 와
+      // "경기가 없다" 를 구분해야 멀쩡한 라이브 카드를 내리지 않는다.
       final days = await Future.wait([
-        di<ScheduleRepository>()
-            .fetchMatchesByDate(now, leagues: const ['ALL'])
-            .then((r) => r.getOrElse((f) => throw FailureException(f))),
-        di<ScheduleRepository>()
-            .fetchMatchesByDate(now.subtract(const Duration(days: 1)),
-                leagues: const ['ALL'])
-            .then((r) => r.getOrElse((f) => throw FailureException(f))),
+        loader(now),
+        loader(now.subtract(const Duration(days: 1))),
       ]);
+      if (days.any((d) => d == null)) return null;
       return [
         for (final matches in days)
-          for (final m in matches)
+          for (final m in matches!)
             if (codes.contains(m.teamA.teamCode) ||
                 codes.contains(m.teamB.teamCode))
               m.matchId,
@@ -183,10 +199,10 @@ class LiveMatchActivityController {
         DateTime.now().difference(cachedAt) < _teamSubsTtl) {
       return cached;
     }
+    final loader = teamNotificationsLoader;
+    if (loader == null) return cached ?? const [];
     try {
-      final list =
-          (await di<SubscriptionRepository>().fetchTeamNotifications())
-          .getOrElse((f) => throw FailureException(f));
+      final list = await loader();
       _teamSubs = list;
       _teamSubsAt = DateTime.now();
       return list;

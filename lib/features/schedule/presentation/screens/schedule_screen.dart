@@ -13,7 +13,7 @@ import 'package:warding/features/match_day/presentation/screens/match_day_screen
 import 'package:warding/features/match_list/presentation/widgets/match_list_view.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_month_label.dart';
 import 'package:warding/features/schedule/presentation/widgets/filter_sheet.dart';
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/app/deeplink/home_widget_service.dart';
 import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 import 'package:warding/features/schedule/presentation/widgets/month_picker_sheet.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_calendar.dart';
@@ -21,7 +21,7 @@ import 'package:warding/features/schedule/presentation/widgets/schedule_calendar
 import 'package:warding/features/schedule/presentation/widgets/schedule_header.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_week_calendar.dart';
 import 'package:warding/features/schedule/presentation/widgets/schedule_list_filter_sheet.dart';
-import 'package:warding/app/nav_tab_navigation.dart';
+import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';
 

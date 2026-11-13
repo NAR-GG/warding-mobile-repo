@@ -16,10 +16,10 @@ import 'package:warding/core/config/app_language.dart';
 import 'package:warding/firebase_options.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/infrastructure/ad/ad_repository.dart';
-import 'package:warding/app/fcm_service.dart';
+import 'package:warding/app/deeplink/fcm_service.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
 import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
-import 'package:warding/app/live_match_activity_controller.dart';
+import 'package:warding/core/infrastructure/live_activity/live_match_activity_controller.dart';
 import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
 import 'package:warding/core/infrastructure/notification/solo_rank_notification_store.dart';
 import 'package:warding/features/splash/presentation/screens/splash_screen.dart';
@@ -28,7 +28,7 @@ import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';
 import 'package:warding/core/util/api_client.dart' show loadAppVersion;
 import 'package:warding/core/util/champion_image.dart';
-import 'package:warding/app/home_widget_service.dart';
+import 'package:warding/app/deeplink/home_widget_service.dart';
 import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 홈 화면 위젯 백그라운드 갱신 콜백.

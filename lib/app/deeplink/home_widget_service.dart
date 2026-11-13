@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
-import 'package:warding/app/match_detail_router.dart';
+import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/features/schedule/presentation/screens/schedule_screen.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';

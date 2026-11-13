@@ -23,7 +23,7 @@ import 'package:warding/features/schedule/domain/repositories/schedule_repositor
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/tab_route.dart';
-import 'package:warding/app/match_detail_router.dart';
+import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_layout.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';

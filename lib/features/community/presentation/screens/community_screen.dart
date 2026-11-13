@@ -19,7 +19,7 @@ import 'package:warding/features/community/presentation/widgets/post_list_item_s
 import 'package:warding/features/community/presentation/widgets/write_lock_bar.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
-import 'package:warding/app/nav_tab_navigation.dart';
+import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics_route_observer.dart';

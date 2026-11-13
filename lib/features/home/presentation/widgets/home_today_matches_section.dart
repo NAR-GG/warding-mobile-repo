@@ -6,7 +6,7 @@ import 'package:warding/core/ui/team_logo.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/app/match_detail_router.dart';
+import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/core/util/match_status.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
