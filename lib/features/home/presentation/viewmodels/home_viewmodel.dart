@@ -278,8 +278,8 @@ class HomeViewModel extends ChangeNotifier {
   List<PlayerSubscription> get subscribedFaces => solo.subscribedFaces;
   static const int quietFaceCount = SoloRankViewModel.quietFaceCount;
 
-  List<HomeLiveSoloPlayer> get soloLive => solo.live;
-  List<HomeFinishedSoloPlayer> get soloFinished => solo.finished;
+  List<LiveSoloPlayer> get soloLive => solo.live;
+  List<FinishedSoloPlayer> get soloFinished => solo.finished;
   int get soloHiddenCount => solo.hiddenCount;
   SoloCardState get soloState => solo.cardState;
 
@@ -307,9 +307,9 @@ class HomeViewModel extends ChangeNotifier {
 
   bool get worldsVisible => solo.worldsVisible;
   int get worldsTeamCount => solo.worldsTeamCount;
-  List<HomeLiveSoloPlayer> get worldsLiveAll => solo.worldsLiveAll;
-  List<HomeLiveSoloPlayer> get worldsLive => solo.worldsLive;
-  HomeFinishedSoloPlayer? get worldsLastFinished => solo.worldsLastFinished;
+  List<LiveSoloPlayer> get worldsLiveAll => solo.worldsLiveAll;
+  List<LiveSoloPlayer> get worldsLive => solo.worldsLive;
+  FinishedSoloPlayer? get worldsLastFinished => solo.worldsLastFinished;
 
   // 폴링 — 솔랭 카드만 실시간성이 필요하다.
   void pauseSoloPolling() => solo.pausePolling();
@@ -334,7 +334,7 @@ class HomeViewModel extends ChangeNotifier {
   // 한 덩어리라 홈 밖에서도 그대로 쓸 수 있어야 한다.
   final StandingsViewModel standings_;
 
-  List<HomeLeagueChip> get leagueChips => standings_.leagueChips;
+  List<LeagueChip> get leagueChips => standings_.leagueChips;
   String get selectedLeague => standings_.selectedLeague;
   void selectLeague(String code) => standings_.selectLeague(code);
 

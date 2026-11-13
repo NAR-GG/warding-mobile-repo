@@ -119,15 +119,15 @@ class SoloRankViewModel extends ChangeNotifier {
   SoloRankSnapshot? _snapshot;
   int _gen = 0;
 
-  List<HomeLiveSoloPlayer> _live = const [];
-  List<HomeFinishedSoloPlayer> _finished = const [];
+  List<LiveSoloPlayer> _live = const [];
+  List<FinishedSoloPlayer> _finished = const [];
 
   /// 위쪽 큰 카드 — 지금 진행 중인 선수만. 핀 고정 선수가 먼저, 그 안팎에서는
   /// 가장 최근에 시작한(경과 시간이 짧은) 선수가 먼저.
-  List<HomeLiveSoloPlayer> get live => _live;
+  List<LiveSoloPlayer> get live => _live;
 
   /// 아래 줄 — 오늘 끝난 경기. 선수당 최신 1건, 최대 [maxFinished]명.
-  List<HomeFinishedSoloPlayer> get finished => _finished;
+  List<FinishedSoloPlayer> get finished => _finished;
 
   /// 구독 수 — 실제 구독 목록 길이만 센다.
   int get subscribedTotal => subscriptions.total;
@@ -227,7 +227,7 @@ class SoloRankViewModel extends ChangeNotifier {
 
   /// 서버 응원 수를 컨트롤러에 합치고, 카드가 사라진 선수의 미결은 보낸다.
   /// 전송 대상 id 는 솔랭 응답에 있으면 그것, 없으면 구독 목록에서 이름으로 찾는다.
-  void _syncCheers(List<HomeLiveSoloPlayer> live) {
+  void _syncCheers(List<LiveSoloPlayer> live) {
     final idByName = {
       for (final p in _subscribed)
         SoloRankClassification.soloKey(p.playerName): p.playerId,
@@ -282,13 +282,13 @@ class SoloRankViewModel extends ChangeNotifier {
       SoloRankClassification.of(_worldsSnapshot?.solo);
 
   /// 지금 솔랭 중인 월즈 선수 전체(구독 포함). 최근 시작 먼저.
-  List<HomeLiveSoloPlayer> get worldsLiveAll =>
+  List<LiveSoloPlayer> get worldsLiveAll =>
       _worldsSolo.liveByName.values.toList()
         ..sort(SoloRankClassification.compareLive);
 
   /// 지금 솔랭 중인 월즈 선수 중 구독하지 않은 선수 — 구독 선수는 위 큰 카드에
   /// 이미 나오므로 월즈 카드에서는 뺀다.
-  List<HomeLiveSoloPlayer> get worldsLive {
+  List<LiveSoloPlayer> get worldsLive {
     final subscribed = {
       for (final p in _subscribed)
         SoloRankClassification.soloKey(p.playerName),
@@ -300,7 +300,7 @@ class SoloRankViewModel extends ChangeNotifier {
   }
 
   /// 월즈 선수가 아무도 솔랭 중이 아닐 때 한 줄에 보여줄 "마지막" 판.
-  HomeFinishedSoloPlayer? get worldsLastFinished {
+  FinishedSoloPlayer? get worldsLastFinished {
     final finished = _worldsSolo.finishedByName.values.toList()
       ..sort(SoloRankClassification.compareFinished);
     return finished.isEmpty ? null : finished.first;

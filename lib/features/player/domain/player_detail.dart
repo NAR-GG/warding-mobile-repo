@@ -91,11 +91,11 @@ class PlayerDetail {
   );
 
   /// 공용 솔랭 큰 카드(`SoloHeroCard`)를 그대로 쓰려고 홈 모델로 옮긴다.
-  HomeLiveSoloPlayer? get liveAsHome {
+  LiveSoloPlayer? get liveAsHome {
     final l = live;
     if (l == null) return null;
     final startedAt = l.startedAt;
-    return HomeLiveSoloPlayer(
+    return LiveSoloPlayer(
       name: playerName,
       teamCode: teamCode,
       champion: l.championName,

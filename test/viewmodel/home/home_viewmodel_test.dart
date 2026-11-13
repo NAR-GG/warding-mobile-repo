@@ -66,15 +66,15 @@ class _SwitchableReviews implements ReviewSource {
   Future<List<HomeReviewItem>> fetchRecent() async => items;
 }
 
-HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
+LiveSoloPlayer live(String name, int elapsed) => LiveSoloPlayer(
   name: name,
   teamCode: 'T1',
   champion: '아리',
   elapsedSeconds: elapsed,
 );
 
-HomeFinishedSoloPlayer done(String name, int minutesAgo) =>
-    HomeFinishedSoloPlayer(
+FinishedSoloPlayer done(String name, int minutesAgo) =>
+    FinishedSoloPlayer(
       name: name,
       teamCode: 'T1',
       won: true,
@@ -346,7 +346,7 @@ void main() {
   });
 
   group('월즈 솔랭', () {
-    HomeLiveSoloPlayer live(String name, int elapsed) => HomeLiveSoloPlayer(
+    LiveSoloPlayer live(String name, int elapsed) => LiveSoloPlayer(
       name: name,
       teamCode: 'GEN',
       champion: '키아나',
@@ -389,13 +389,13 @@ void main() {
           solo: const SoloRankSnapshot(
             live: [],
             finished: [
-              HomeFinishedSoloPlayer(
+              FinishedSoloPlayer(
                 name: 'Ruler',
                 teamCode: 'GEN',
                 won: true,
                 minutesAgo: 50,
               ),
-              HomeFinishedSoloPlayer(
+              FinishedSoloPlayer(
                 name: 'Faker',
                 teamCode: 'T1',
                 won: false,

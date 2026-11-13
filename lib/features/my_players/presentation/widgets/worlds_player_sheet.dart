@@ -280,7 +280,7 @@ class _LiveBanner extends StatelessWidget {
 
   final ValueListenable<int> tick;
 
-  final HomeLiveSoloPlayer live;
+  final LiveSoloPlayer live;
   final double scale;
 
   @override
@@ -410,7 +410,7 @@ class _ElapsedClock extends StatelessWidget {
     required this.style,
   });
 
-  final HomeLiveSoloPlayer live;
+  final LiveSoloPlayer live;
   final ValueListenable<int> tick;
   final TextStyle style;
 

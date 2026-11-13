@@ -289,7 +289,7 @@ class PlayerViewModel extends ChangeNotifier implements PlayerSheetSource {
           : MyPlayerStatus.quiet,
       live: live,
       finished: live == null && today
-          ? HomeFinishedSoloPlayer(
+          ? FinishedSoloPlayer(
               name: d.playerName,
               teamCode: d.teamCode,
               won: last!.win,

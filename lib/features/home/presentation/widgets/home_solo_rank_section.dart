@@ -159,9 +159,9 @@ class _HomeSoloRankSectionState extends State<HomeSoloRankSection>
     super.dispose();
   }
 
-  /// [player.elapsedSeconds] 의 조회 시점 스냅샷을, [HomeLiveSoloPlayer.startedAt]
+  /// [player.elapsedSeconds] 의 조회 시점 스냅샷을, [LiveSoloPlayer.startedAt]
   /// 이 있으면 기기 시계로 다시 계산해 매초 카운트업한다.
-  int _liveElapsedSeconds(HomeLiveSoloPlayer player) {
+  int _liveElapsedSeconds(LiveSoloPlayer player) {
     final startedAt = player.startedAt;
     if (startedAt == null) return player.elapsedSeconds;
     final seconds = DateTime.now().difference(startedAt).inSeconds;

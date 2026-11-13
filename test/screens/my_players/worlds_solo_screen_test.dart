@@ -66,7 +66,7 @@ void main() {
             ],
             solo: const SoloRankSnapshot(
               live: [
-                HomeLiveSoloPlayer(
+                LiveSoloPlayer(
                   name: 'Canyon',
                   teamCode: 'GEN',
                   champion: '키아나',
@@ -175,7 +175,7 @@ void main() {
             players: [_player(1, 'Chovy', subscribed: true)],
             solo: SoloRankSnapshot(
               live: [
-                HomeLiveSoloPlayer(
+                LiveSoloPlayer(
                   name: 'Chovy',
                   teamCode: 'GEN',
                   champion: '아리',

@@ -46,21 +46,21 @@ class StandingsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  static const List<HomeLeagueChip> _fallbackLeagueChips = [
-    HomeLeagueChip(code: 'LCK', label: 'LCK', live: true),
-    HomeLeagueChip(code: 'LPL', label: 'LPL', live: false),
-    HomeLeagueChip(code: 'LEC', label: 'LEC', live: false),
-    HomeLeagueChip(code: 'LCS', label: 'LCS', live: false),
-    HomeLeagueChip(code: 'WORLDS', label: '월즈', live: false),
+  static const List<LeagueChip> _fallbackLeagueChips = [
+    LeagueChip(code: 'LCK', label: 'LCK', live: true),
+    LeagueChip(code: 'LPL', label: 'LPL', live: false),
+    LeagueChip(code: 'LEC', label: 'LEC', live: false),
+    LeagueChip(code: 'LCS', label: 'LCS', live: false),
+    LeagueChip(code: 'WORLDS', label: '월즈', live: false),
   ];
 
   /// 서버 응답을 받기 전에는 기본 리그 칩 하나만 둔다 — 폴백 5개를 먼저 그렸다가
   /// 서버가 지운 칩이 사라지는 깜빡임을 피한다.
-  List<HomeLeagueChip> _leagueChips = const [
-    HomeLeagueChip(code: 'LCK', label: 'LCK', live: true),
+  List<LeagueChip> _leagueChips = const [
+    LeagueChip(code: 'LCK', label: 'LCK', live: true),
   ];
 
-  List<HomeLeagueChip> get leagueChips => _leagueChips;
+  List<LeagueChip> get leagueChips => _leagueChips;
 
   /// 칩 라벨 **폴백** — 서버 `name` 이 비었을 때만 쓴다. 월즈만 한글,
   /// 나머지는 리그 코드 그대로. 서버가 표시명을 주면 그쪽이 이긴다.
@@ -97,7 +97,7 @@ class StandingsViewModel extends ChangeNotifier {
   }
 
   Future<void> loadLeagueChips() async {
-    List<HomeLeagueChip> chips;
+    List<LeagueChip> chips;
     // 서버가 준 기본 리그. 메타를 못 받으면 비어 있고, 그때는 기존 기본값을
     // 그대로 둔다.
     String serverDefault = '';
@@ -120,7 +120,7 @@ class StandingsViewModel extends ChangeNotifier {
             () async {
               final live =
                   l.standings == true && await _isStandingsSupported(l.code);
-              return HomeLeagueChip(
+              return LeagueChip(
                 code: l.code,
                 // 서버가 준 표시명을 쓴다. 비어 있을 때만 앱 라벨로 폴백 —
                 // 예전엔 서버 `name` 을 버리고 코드로만 라벨을 만들어서,

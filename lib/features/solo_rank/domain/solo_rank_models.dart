@@ -3,8 +3,8 @@
 // 원래 `features/home/domain/home_models.dart` 에 있었는데, 홈 전용이 아니라
 // `player`·`my_players` 도 쓰는 것이 드러나 솔랭 기능으로 올렸다.
 /// 지금 솔로 랭크 중인 선수 카드 한 장.
-class HomeLiveSoloPlayer {
-  const HomeLiveSoloPlayer({
+class LiveSoloPlayer {
+  const LiveSoloPlayer({
     required this.name,
     required this.teamCode,
     required this.champion,
@@ -66,8 +66,8 @@ class HomeLiveSoloPlayer {
 }
 
 /// 오늘 솔로 랭크를 끝낸 선수 한 명(최신 1건).
-class HomeFinishedSoloPlayer {
-  const HomeFinishedSoloPlayer({
+class FinishedSoloPlayer {
+  const FinishedSoloPlayer({
     required this.name,
     required this.teamCode,
     required this.won,

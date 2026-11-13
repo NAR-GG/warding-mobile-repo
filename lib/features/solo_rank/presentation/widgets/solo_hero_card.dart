@@ -33,7 +33,7 @@ class SoloHeroCard extends StatelessWidget {
     this.showRegion = false,
   });
 
-  final HomeLiveSoloPlayer player;
+  final LiveSoloPlayer player;
 
   /// 선수 페이지 — 팀 옆에 포지션("T1 · MID")을 붙인다. 홈은 null.
   final String? role;
@@ -47,7 +47,7 @@ class SoloHeroCard extends StatelessWidget {
 
   /// 지금 보여줄 경과 초를 계산한다(기기 시계 기준).
   /// [tick] 이 바뀔 때마다 다시 불러 초를 갱신한다.
-  /// [HomeLiveSoloPlayer.startedAt] 참고.
+  /// [LiveSoloPlayer.startedAt] 참고.
   final int Function() secondsOf;
 
   /// 1초마다 값이 바뀌는 카운터. 이 카드에서 경과 시간 텍스트만 구독한다 —

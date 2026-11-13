@@ -23,12 +23,12 @@ class SoloRankClassification {
   }) {
     bool keep(String name) => subscribed == null || subscribed.contains(name);
 
-    final live = <String, HomeLiveSoloPlayer>{
-      for (final p in snap?.live ?? const <HomeLiveSoloPlayer>[])
+    final live = <String, LiveSoloPlayer>{
+      for (final p in snap?.live ?? const <LiveSoloPlayer>[])
         if (keep(soloKey(p.name))) soloKey(p.name): p,
     };
-    final finished = <String, HomeFinishedSoloPlayer>{};
-    for (final p in snap?.finished ?? const <HomeFinishedSoloPlayer>[]) {
+    final finished = <String, FinishedSoloPlayer>{};
+    for (final p in snap?.finished ?? const <FinishedSoloPlayer>[]) {
       final key = soloKey(p.name);
       if (!keep(key) || live.containsKey(key)) continue;
       final prev = finished[key];
@@ -41,18 +41,18 @@ class SoloRankClassification {
   static String soloKey(String name) => name;
 
   /// 진행 중인 선수 — 키별 1건.
-  final Map<String, HomeLiveSoloPlayer> liveByName;
+  final Map<String, LiveSoloPlayer> liveByName;
 
   /// 오늘 끝난 경기 — 진행 중 선수를 뺀, 키별 가장 최근 1건.
-  final Map<String, HomeFinishedSoloPlayer> finishedByName;
+  final Map<String, FinishedSoloPlayer> finishedByName;
 
   /// 진행 중: 가장 최근에 시작한(경과 시간 짧은) 선수가 먼저.
-  static int compareLive(HomeLiveSoloPlayer a, HomeLiveSoloPlayer b) =>
+  static int compareLive(LiveSoloPlayer a, LiveSoloPlayer b) =>
       a.elapsedSeconds.compareTo(b.elapsedSeconds);
 
   /// 끝난 경기: 가장 최근에 끝난 선수가 먼저.
   static int compareFinished(
-    HomeFinishedSoloPlayer a,
-    HomeFinishedSoloPlayer b,
+    FinishedSoloPlayer a,
+    FinishedSoloPlayer b,
   ) => a.minutesAgo.compareTo(b.minutesAgo);
 }

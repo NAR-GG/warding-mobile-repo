@@ -45,7 +45,7 @@ void main() {
     ],
     solo: const SoloRankSnapshot(
       live: [
-        HomeLiveSoloPlayer(
+        LiveSoloPlayer(
           name: 'Canyon',
           teamCode: 'GEN',
           champion: '키아나',
@@ -54,7 +54,7 @@ void main() {
         ),
       ],
       finished: [
-        HomeFinishedSoloPlayer(
+        FinishedSoloPlayer(
           name: 'Faker',
           teamCode: 'T1',
           won: true,

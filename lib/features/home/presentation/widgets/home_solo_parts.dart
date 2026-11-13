@@ -111,7 +111,7 @@ class HomeWorldsSubscribeBar extends StatelessWidget {
     this.onSubscribe,
   });
 
-  final HomeLiveSoloPlayer player;
+  final LiveSoloPlayer player;
   final double scale;
   final VoidCallback? onSubscribe;
 
@@ -252,7 +252,7 @@ class HomeSoloFinishedChip extends StatelessWidget {
     required this.scale,
   });
 
-  final HomeFinishedSoloPlayer player;
+  final FinishedSoloPlayer player;
   final double scale;
 
   @override

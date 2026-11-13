@@ -33,7 +33,7 @@ class HomeWorldsEntryRow extends StatelessWidget {
   static const Key rowKey = ValueKey('homeWorldsEntry');
   static const int _maxFaces = 3;
 
-  final List<HomeLiveSoloPlayer> live;
+  final List<LiveSoloPlayer> live;
 
   /// 월즈 명단의 팀 수("16팀 선수 8명 솔랭 중").
   final int teamCount;
@@ -260,8 +260,8 @@ class HomeWorldsMiniCards extends StatelessWidget {
   static Key cardKey(String name) => ValueKey('homeWorldsMini-$name');
   static Key bellKey(String name) => ValueKey('homeWorldsMiniBell-$name');
 
-  final List<HomeLiveSoloPlayer> live;
-  final int Function(HomeLiveSoloPlayer) secondsOf;
+  final List<LiveSoloPlayer> live;
+  final int Function(LiveSoloPlayer) secondsOf;
   final ValueListenable<int> tick;
   final double scale;
   final ValueChanged<int>? onSubscribe;
@@ -311,7 +311,7 @@ class _MiniCard extends StatelessWidget {
     this.onOpenPlayer,
   });
 
-  final HomeLiveSoloPlayer player;
+  final LiveSoloPlayer player;
   final int Function() secondsOf;
   final ValueListenable<int> tick;
   final double scale;
@@ -503,7 +503,7 @@ class HomeWorldsLine extends StatelessWidget {
 
   static const Key lineKey = ValueKey('homeWorldsLine');
 
-  final HomeFinishedSoloPlayer? last;
+  final FinishedSoloPlayer? last;
   final double scale;
   final VoidCallback? onTap;
 

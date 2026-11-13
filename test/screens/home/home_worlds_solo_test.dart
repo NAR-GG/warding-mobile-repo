@@ -25,7 +25,7 @@ PlayerSubscription _roster(int id, String name, String team) =>
       endEnabled: false,
     );
 
-HomeLiveSoloPlayer _worldsLive(int id, String name) => HomeLiveSoloPlayer(
+LiveSoloPlayer _worldsLive(int id, String name) => LiveSoloPlayer(
   name: name,
   teamCode: 'GEN',
   champion: '',
@@ -119,7 +119,7 @@ void main() {
         solo: const SoloRankSnapshot(
           live: [],
           finished: [
-            HomeFinishedSoloPlayer(
+            FinishedSoloPlayer(
               name: 'Faker',
               teamCode: 'T1',
               won: true,

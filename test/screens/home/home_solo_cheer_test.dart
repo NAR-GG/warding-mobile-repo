@@ -41,7 +41,7 @@ void main() {
       tester,
       solo: const SoloRankSnapshot(
         live: [
-          HomeLiveSoloPlayer(
+          LiveSoloPlayer(
             name: 'Faker',
             teamCode: 'T1',
             champion: '',
@@ -149,7 +149,7 @@ void main() {
       solo: SoloRankSnapshot(
         live: const [],
         finished: [
-          const HomeFinishedSoloPlayer(
+          const FinishedSoloPlayer(
             name: 'Oner',
             teamCode: 'T1',
             won: true,

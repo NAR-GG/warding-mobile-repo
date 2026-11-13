@@ -49,20 +49,20 @@ class ApiSoloRankSource implements SoloRankSource {
 /// `live`·`finished` 두 목록을 [SoloRankSnapshot] 으로 — 구독 솔랭과 월즈 솔랭이
 /// 같은 모양이라 함께 쓴다.
 SoloRankSnapshot soloSnapshotFromJson(Map<String, dynamic> data, DateTime now) {
-  final live = <HomeLiveSoloPlayer>[
+  final live = <LiveSoloPlayer>[
     for (final e in data['live'] as List<dynamic>? ?? const [])
       _live(e as Map<String, dynamic>, now),
   ];
-  final finished = <HomeFinishedSoloPlayer>[
+  final finished = <FinishedSoloPlayer>[
     for (final e in data['finished'] as List<dynamic>? ?? const [])
       if ((e as Map<String, dynamic>)['win'] is bool) _finished(e, now),
   ];
   return SoloRankSnapshot(live: live, finished: finished);
 }
 
-HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
+LiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
   final startedAt = parseServerTime(j['startedAt']);
-  return HomeLiveSoloPlayer(
+  return LiveSoloPlayer(
     name: j['playerName'] as String? ?? '',
     teamCode: j['teamCode'] as String? ?? '',
     champion: j['championName'] as String? ?? '',
@@ -80,9 +80,9 @@ HomeLiveSoloPlayer _live(Map<String, dynamic> j, DateTime now) {
   );
 }
 
-HomeFinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
+FinishedSoloPlayer _finished(Map<String, dynamic> j, DateTime now) {
   final seconds = (j['durationSeconds'] as num?)?.toInt();
-  return HomeFinishedSoloPlayer(
+  return FinishedSoloPlayer(
     name: j['playerName'] as String? ?? '',
     teamCode: j['teamCode'] as String? ?? '',
     won: j['win'] as bool,

@@ -48,14 +48,14 @@ PlayerSubscription _sub(String name) => PlayerSubscription(
   endEnabled: true,
 );
 
-HomeLiveSoloPlayer _live(String name, int elapsed) => HomeLiveSoloPlayer(
+LiveSoloPlayer _live(String name, int elapsed) => LiveSoloPlayer(
   name: name,
   teamCode: 'T1',
   champion: '아리',
   elapsedSeconds: elapsed,
 );
 
-HomeFinishedSoloPlayer _fin(String name) => HomeFinishedSoloPlayer(
+FinishedSoloPlayer _fin(String name) => FinishedSoloPlayer(
   name: name,
   teamCode: 'T1',
   won: true,

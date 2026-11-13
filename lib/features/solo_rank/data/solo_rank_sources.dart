@@ -12,8 +12,8 @@ import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 class SoloRankSnapshot {
   const SoloRankSnapshot({required this.live, required this.finished});
 
-  final List<HomeLiveSoloPlayer> live;
-  final List<HomeFinishedSoloPlayer> finished;
+  final List<LiveSoloPlayer> live;
+  final List<FinishedSoloPlayer> finished;
 }
 
 /// 구독 선수 솔랭 상태 소스.
@@ -106,7 +106,7 @@ class MockWorldsSoloSource implements WorldsSoloSource {
     ],
     solo: const SoloRankSnapshot(
       live: [
-        HomeLiveSoloPlayer(
+        LiveSoloPlayer(
           name: 'Canyon',
           teamCode: 'GEN',
           champion: '키아나',
@@ -114,7 +114,7 @@ class MockWorldsSoloSource implements WorldsSoloSource {
           playerId: 101,
           platform: 'NA1',
         ),
-        HomeLiveSoloPlayer(
+        LiveSoloPlayer(
           name: 'ShowMaker',
           teamCode: 'DK',
           champion: '아지르',
@@ -124,7 +124,7 @@ class MockWorldsSoloSource implements WorldsSoloSource {
         ),
       ],
       finished: [
-        HomeFinishedSoloPlayer(
+        FinishedSoloPlayer(
           name: 'Kanavi',
           teamCode: 'HLE',
           won: true,
@@ -183,8 +183,8 @@ class EmptySoloRankSource implements SoloRankSource {
 class MockSoloRankSource implements SoloRankSource {
   const MockSoloRankSource();
 
-  static const List<HomeLiveSoloPlayer> live = [
-    HomeLiveSoloPlayer(
+  static const List<LiveSoloPlayer> live = [
+    LiveSoloPlayer(
       name: 'Faker',
       teamCode: 'T1',
       champion: '아리',
@@ -192,7 +192,7 @@ class MockSoloRankSource implements SoloRankSource {
       playerId: 1,
       cheerTotal: 1284,
     ),
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Chovy',
       teamCode: 'GEN',
       champion: '신드라',
@@ -200,13 +200,13 @@ class MockSoloRankSource implements SoloRankSource {
       playerId: 2,
       cheerTotal: 432,
     ),
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Zeus',
       teamCode: 'HLE',
       champion: '그웬',
       elapsedSeconds: 422,
     ),
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Keria',
       teamCode: 'T1',
       champion: '레나타 글라스크',
@@ -214,8 +214,8 @@ class MockSoloRankSource implements SoloRankSource {
     ),
   ];
 
-  static const List<HomeFinishedSoloPlayer> finished = [
-    HomeFinishedSoloPlayer(
+  static const List<FinishedSoloPlayer> finished = [
+    FinishedSoloPlayer(
       name: 'Oner',
       teamCode: 'T1',
       won: true,
@@ -224,7 +224,7 @@ class MockSoloRankSource implements SoloRankSource {
       cheerTotal: 871,
       playerId: 11,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Ruler',
       teamCode: 'HLE',
       won: false,
@@ -232,42 +232,42 @@ class MockSoloRankSource implements SoloRankSource {
       durationMinutes: 28,
       playerId: 12,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Canyon',
       teamCode: 'GEN',
       won: true,
       minutesAgo: 63,
       durationMinutes: 35,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Peyz',
       teamCode: 'KT',
       won: false,
       minutesAgo: 95,
       durationMinutes: 24,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Doran',
       teamCode: 'DK',
       won: true,
       minutesAgo: 118,
       durationMinutes: 31,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Gumayusi',
       teamCode: 'T1',
       won: false,
       minutesAgo: 140,
       durationMinutes: 27,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Kiin',
       teamCode: 'GEN',
       won: true,
       minutesAgo: 167,
       durationMinutes: 33,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Showmaker',
       teamCode: 'DK',
       won: true,
@@ -285,7 +285,7 @@ class MockSoloRankSource implements SoloRankSource {
     return SoloRankSnapshot(
       live: [
         for (final p in live)
-          HomeLiveSoloPlayer(
+          LiveSoloPlayer(
             name: p.name,
             teamCode: p.teamCode,
             champion: p.champion,

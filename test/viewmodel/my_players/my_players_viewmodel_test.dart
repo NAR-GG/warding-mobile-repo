@@ -62,16 +62,16 @@ List<PlayerSubscription> hundred() {
   ];
 }
 
-HomeLiveSoloPlayer live(String name, String team, int elapsed) =>
-    HomeLiveSoloPlayer(
+LiveSoloPlayer live(String name, String team, int elapsed) =>
+    LiveSoloPlayer(
       name: name,
       teamCode: team,
       champion: '아리',
       elapsedSeconds: elapsed,
     );
 
-HomeFinishedSoloPlayer done(String name, String team, int minutesAgo) =>
-    HomeFinishedSoloPlayer(
+FinishedSoloPlayer done(String name, String team, int minutesAgo) =>
+    FinishedSoloPlayer(
       name: name,
       teamCode: team,
       won: true,

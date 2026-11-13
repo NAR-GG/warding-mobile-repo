@@ -264,8 +264,8 @@ Future<HomeViewModel> pumpHomeSection(
   return vm;
 }
 
-HomeLiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
-    HomeLiveSoloPlayer(
+LiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
+    LiveSoloPlayer(
       name: name,
       teamCode: 'GEN',
       // 빈 챔피언 = 스플래시 아트 없음. 테스트에서 네트워크 이미지를 띄우지 않는다.
@@ -273,12 +273,12 @@ HomeLiveSoloPlayer livePlayer(String name, int elapsedSeconds) =>
       elapsedSeconds: elapsedSeconds,
     );
 
-HomeFinishedSoloPlayer finishedPlayer(
+FinishedSoloPlayer finishedPlayer(
   String name,
   int minutesAgo, {
   bool won = true,
   int? durationMinutes,
-}) => HomeFinishedSoloPlayer(
+}) => FinishedSoloPlayer(
   name: name,
   teamCode: 'GEN',
   won: won,

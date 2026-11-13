@@ -61,10 +61,10 @@ class MyPlayerEntry {
   final MyPlayerStatus status;
 
   /// [MyPlayerStatus.liveSolo] 일 때 진행 중인 게임.
-  final HomeLiveSoloPlayer? live;
+  final LiveSoloPlayer? live;
 
   /// [MyPlayerStatus.playedToday] 일 때 오늘 가장 최근에 끝난 게임.
-  final HomeFinishedSoloPlayer? finished;
+  final FinishedSoloPlayer? finished;
 }
 
 /// 선수 구독 시트([WorldsPlayerSheet])가 읽고 쓰는 것. 월즈 솔랭과 선수

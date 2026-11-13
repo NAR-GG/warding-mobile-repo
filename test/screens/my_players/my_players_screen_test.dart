@@ -61,13 +61,13 @@ List<PlayerSubscription> _hundred() {
 
 const _solo = SoloRankSnapshot(
   live: [
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Faker',
       teamCode: 'T1',
       champion: '아리',
       elapsedSeconds: 1452,
     ),
-    HomeLiveSoloPlayer(
+    LiveSoloPlayer(
       name: 'Chovy',
       teamCode: 'GEN',
       champion: '신드라',
@@ -75,13 +75,13 @@ const _solo = SoloRankSnapshot(
     ),
   ],
   finished: [
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Oner',
       teamCode: 'T1',
       won: true,
       minutesAgo: 12,
     ),
-    HomeFinishedSoloPlayer(
+    FinishedSoloPlayer(
       name: 'Canyon',
       teamCode: 'GEN',
       won: false,
