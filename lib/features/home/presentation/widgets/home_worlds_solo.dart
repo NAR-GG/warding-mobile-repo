@@ -1,3 +1,4 @@
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,6 @@ import 'package:warding/core/ui/nar_live_dot.dart';
 import 'package:warding/core/ui/solo_face.dart';
 import 'package:warding/core/ui/team_code_badge.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart';

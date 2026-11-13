@@ -1,6 +1,6 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/home/data/home_sources.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
 
 /// 보낸 호출을 기록하고, 서버처럼 누적해 돌려주는 가짜 응원 소스.
 class _FakeCheer implements CheerSource {

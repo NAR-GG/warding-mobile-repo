@@ -1,3 +1,6 @@
+import 'package:warding/core/config/home_mocks.dart';
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -28,8 +31,8 @@ import 'package:warding/features/home/domain/repositories/standings_repository.d
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
 import 'package:warding/core/util/match_status.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_rank_rules.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
 
 /// 커뮤니티 섹션 정렬 기준. [hot] 은 칩에서 뺀 상태다([HomeViewModel.availableCommunitySorts]).
 enum HomeCommunitySort { latest, hot }

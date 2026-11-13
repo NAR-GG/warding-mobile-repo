@@ -1,8 +1,8 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/features/home/data/home_sources.dart';
 
 /// 솔랭 카드 응원의 낙관적 집계와 묶음 전송.
 ///

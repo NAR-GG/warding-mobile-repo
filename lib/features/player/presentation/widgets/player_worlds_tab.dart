@@ -12,7 +12,7 @@ import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/rating_mapping.dart';
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
-import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart' show formatCheerCount;
+import 'package:warding/features/solo_rank/presentation/widgets/solo_cheer.dart' show formatCheerCount;
 import 'package:warding/features/player_rating/presentation/widgets/rating_distribution_section.dart';
 import 'package:warding/features/player/presentation/widgets/player_parts.dart';
 

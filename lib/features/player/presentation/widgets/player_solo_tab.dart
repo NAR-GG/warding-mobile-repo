@@ -11,7 +11,7 @@ import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/core/util/rating_mapping.dart' show ratingTimeAgo;
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
-import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart' show formatCheerCount;
+import 'package:warding/features/solo_rank/presentation/widgets/solo_cheer.dart' show formatCheerCount;
 import 'package:warding/features/my_players/presentation/widgets/my_player_tile.dart' show RegionChip;
 import 'package:warding/features/player/presentation/widgets/player_parts.dart';
 

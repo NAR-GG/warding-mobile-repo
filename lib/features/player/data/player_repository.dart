@@ -1,10 +1,10 @@
+import 'package:warding/core/config/home_mocks.dart';
 import 'dart:convert';
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/home/data/home_sources.dart' show kHomeMocks;
 import 'package:warding/features/player/data/player_mock_source.dart';
 
 /// 선수 페이지 데이터 소스. 세 API 모두 비로그인 호출 가능하다.

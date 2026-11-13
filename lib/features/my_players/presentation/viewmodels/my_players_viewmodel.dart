@@ -1,16 +1,16 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/domain/player_subscription.dart';
-import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_rank_rules.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
 
 /// 월즈 출전 팀 → 소속 리그(리그 칩). 리그 칩 순서도 이 맵 순서를 따른다.
 /// 서버 응답에 리그가 없고, DB 의 팀별 경기 리그는 국제전·컵 대회가 섞여 못 쓴다.

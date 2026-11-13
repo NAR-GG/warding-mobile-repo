@@ -1,5 +1,28 @@
 # Bundle Update Log
 
+## 2026-11-13 (2)
+* **솔랭을 `features/solo_rank/` 로 독립시켰다** (6파일). `player`·`my_players` 가
+  `features/home/` 을 17곳에서 당겨 쓰던 것을 0건으로 만들었다. 모델 2개
+  (`HomeLiveSoloPlayer`·`HomeFinishedSoloPlayer`)·소스 3종(`SoloRankSource`·
+  `WorldsSoloSource`·`CheerSource`)·규칙(`solo_rank_rules`)·응원 컨트롤러·위젯 2개가
+  대상이다. `home_sources.dart` 434줄은 솔랭을 빼고 122줄(뉴스·평점만), `home_models.dart`
+  201줄은 104줄이 됐다. 양쪽이 공유하던 `kHomeMocks` 는 `core/config/home_mocks.dart` 로
+  올렸다 — `player_repository` 도 같은 플래그로 목업을 가르므로 홈 전용이 아니다.
+  홈 레이아웃 전용 위젯 4개(`home_solo_parts`·`home_solo_rank_section`·`home_solo_states`·
+  `home_worlds_solo`)는 `home` 만 쓰므로 그대로 뒀다. 클래스명의 `Home` 접두어는 93곳이라
+  이 작업에 섞지 않았다(이동 실패와 이름 변경 실패를 가릴 수 없게 된다).
+  analyze 통과, 테스트 902 통과.
+* **응원팀 결정 규칙을 UseCase 로 뺐다** — `features/home/domain/usecases/
+  get_preferred_team.dart`. repository 3개(`auth`·`onboarding`·`teamPreferences`)를
+  조합하고 폴백 순서가 규칙인데 ViewModel 안에 있어 테스트가 없었다. 분리하고 5개를
+  붙였다. 반대로 홈의 다른 섹션 로더 12개는 빼지 않았다 — 실측하니 10개가 repository
+  1개만 쓰고 나머지는 경쟁 조건 검사·로딩 플래그·notify 로, 화면 상태 관리라 ViewModel 의
+  일이다.
+* **`home_widget_service` 1035줄을 책임 둘로 쪼갰다** — `app/home_widget_service.dart`
+  259줄(위젯 탭 → 화면 열기) + `features/schedule/data/schedule_widget_writer.dart`
+  809줄(위젯에 데이터 쓰기). `features → app` 역참조 18건 중 4건이 사라졌다(18 → 14).
+  분할선은 static 가변 상태 5개가 전부 딥링크 영역에만 있다는 실측으로 정했다.
+
 ## 2026-11-13
 * **`core/domain/` 을 `lib/domain/` 으로 올렸다** (모델 10개 + repository 인터페이스 2개,
   import 126 파일 수정). 도메인 모델이 기술 인프라(`core/`) 의 하위로 읽히던 것을 최상위

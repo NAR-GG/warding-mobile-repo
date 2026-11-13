@@ -1,21 +1,21 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/player/data/player_repository.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_rank_rules.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
 import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 
 enum PlayerTab { worlds, solo }

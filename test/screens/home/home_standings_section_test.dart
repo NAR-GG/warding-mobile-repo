@@ -1,9 +1,9 @@
+import 'package:warding/core/config/home_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/core/ui/dashed_border.dart';
 import 'package:warding/core/ui/nar_chip.dart';
 import 'package:warding/core/ui/team_code_badge.dart';
-import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/home/presentation/widgets/home_standings_section.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';

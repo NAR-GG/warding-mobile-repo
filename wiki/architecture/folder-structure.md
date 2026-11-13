@@ -15,7 +15,7 @@ timestamp: 2026-11-10T00:00:00Z
 
 ```
 lib/
-├── features/     기능별 27개
+├── features/     기능별 28개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
@@ -140,10 +140,15 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
   둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓴다.
 - 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` — `user_profile`(`mypage`·
   `profile_edit`).
+- **집계 화면 안에 다른 기능이 쓰는 코드가 들어 있으면 독립 기능으로 뺀다.** `home` 은
+  소비처로 세지 않는다는 규칙이 반대로 작용해, 솔랭 코드가 `features/home/` 에 쌓여
+  있었다. 그런데 `player`·`my_players` 가 그걸 17곳에서 당겨 써서 남의 폴더를 들여다보던
+  상태였다 — `features/solo_rank/` 로 올려 0건으로 만들었다. 판단은 "홈이 만든 코드인가"
+  가 아니라 "홈 밖에서도 쓰는가"다.
 
 # presentation 만 있는 기능이 많은 이유
 
-27개 중 13개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
+28개 중 13개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
 
 - **데이터가 공용이라서** — `mypage` 는 `domain/user_profile`,
   `my_subscription_setting` 은 `domain/player_subscription` 을 쓴다. 한 기능 소유가

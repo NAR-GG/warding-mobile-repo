@@ -1,17 +1,17 @@
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:warding/features/home/presentation/widgets/solo_hero_card.dart';
+import 'package:warding/features/solo_rank/presentation/widgets/solo_hero_card.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 import 'package:warding/features/my_players/presentation/widgets/worlds_player_sheet.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';
-import 'package:warding/features/home/presentation/widgets/home_solo_cheer.dart';
+import 'package:warding/features/solo_rank/presentation/widgets/solo_cheer.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_parts.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_states.dart';
 import 'package:warding/features/home/presentation/widgets/home_worlds_solo.dart';

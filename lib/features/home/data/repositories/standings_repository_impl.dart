@@ -1,3 +1,4 @@
+import 'package:warding/core/config/home_mocks.dart';
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
@@ -10,7 +11,6 @@ import 'package:warding/features/home/domain/repositories/standings_repository.d
 import 'package:warding/features/home/domain/standing.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
 import 'package:warding/core/util/api_client.dart' as http;
-import 'package:warding/features/home/data/home_sources.dart' show kHomeMocks;
 import 'package:warding/features/home/data/worlds_standings_mock.dart';
 
 /// [StandingsRepository] 의 원격 구현 (`/api/standings`).

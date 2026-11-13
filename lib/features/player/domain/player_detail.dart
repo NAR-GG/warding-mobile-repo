@@ -1,5 +1,5 @@
+import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:warding/core/util/server_time.dart';
-import 'package:warding/features/home/domain/home_models.dart';
 
 int _int(Object? v) => (v as num?)?.toInt() ?? 0;
 double? _double(Object? v) => (v as num?)?.toDouble();

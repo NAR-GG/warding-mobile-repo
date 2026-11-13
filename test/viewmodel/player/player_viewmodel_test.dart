@@ -1,9 +1,9 @@
+import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/player/data/player_mock_source.dart';
 import 'package:warding/features/player/presentation/widgets/player_next_match_card.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
 import 'package:warding/features/my_players/presentation/viewmodels/my_players_viewmodel.dart';
 import 'package:warding/features/player/presentation/viewmodels/player_viewmodel.dart';
 

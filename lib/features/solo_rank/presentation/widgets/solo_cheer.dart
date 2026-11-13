@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/features/home/presentation/viewmodels/solo_cheer_controller.dart';
+import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
 
 /// 천 단위 쉼표 — 응원 수는 수천~수만 단위로 커진다.
 String formatCheerCount(int n) => NumberFormat.decimalPattern().format(n);
