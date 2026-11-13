@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/config/app_globals.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/presentation/screens/match_detail_screen.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';

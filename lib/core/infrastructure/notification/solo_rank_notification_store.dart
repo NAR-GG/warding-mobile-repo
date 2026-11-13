@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/config/secure_storage.dart';
 
-import 'package:warding/core/domain/solo_rank_notification.dart';
+import 'package:warding/domain/solo_rank_notification.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_notification_types.dart';
 
 /// 수신한 '선수 솔랭 시작' 푸시를 기기에 로컬 저장한다.

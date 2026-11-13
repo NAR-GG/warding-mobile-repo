@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/match_list/domain/category_tree.dart';
 
 /// 카테고리(리그/시즌/팀) 트리 조회.

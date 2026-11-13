@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/core/domain/member_notification.dart';
+import 'package:warding/domain/member_notification.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/subscription/presentation/widgets/rank_end_notification.dart';
 import 'package:warding/features/subscription/presentation/widgets/rank_start_notification.dart';

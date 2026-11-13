@@ -4,7 +4,7 @@ import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/ui/nar_tab_bar.dart';
 import 'package:warding/core/ui/nar_toggle.dart';
-import 'package:warding/core/domain/team_notification_subscription.dart';
+import 'package:warding/domain/team_notification_subscription.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/player_alarm_viewmodel.dart';

@@ -4,7 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/core/domain/player_subscription.dart';
+import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';

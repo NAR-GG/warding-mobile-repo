@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/match_list/domain/category_tree.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
 import 'package:warding/features/schedule/domain/match_page.dart';

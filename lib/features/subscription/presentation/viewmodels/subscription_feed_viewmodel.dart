@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:warding/core/domain/member_notification.dart';
+import 'package:warding/domain/member_notification.dart';
 import 'package:warding/core/di_container.dart';
-import 'package:warding/core/domain/repositories/member_notification_repository.dart';
+import 'package:warding/domain/repositories/member_notification_repository.dart';
 
 /// 마이구독 피드 ViewModel — 서버 알림 리스트(`/api/mobile/me/notifications`)를
 /// 들고 있다. 화면 진입·복귀 시 다시 읽는다.

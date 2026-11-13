@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/home/domain/standing.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
 

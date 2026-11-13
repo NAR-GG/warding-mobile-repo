@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/util/match_status.dart';
 import 'package:warding/core/util/match_title_l10n.dart';
 import 'package:warding/core/util/rating_mapping.dart';

@@ -239,7 +239,7 @@ result.match(
 ## Left 를 예외로 되돌려야 할 때는 FailureException 을 쓴다
 
 기존 `try/catch` 가 의미 있는 복구를 하면 `Left` 를 그 경로로 보내는 편이 안전하다.
-그때 **`StateError` 를 쓰지 않는다** — `core/domain/failure_exception.dart` 의
+그때 **`StateError` 를 쓰지 않는다** — `core/error/failure_exception.dart` 의
 `FailureException` 을 쓴다.
 
 ```dart

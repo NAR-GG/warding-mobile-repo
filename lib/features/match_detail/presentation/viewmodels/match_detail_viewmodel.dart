@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';

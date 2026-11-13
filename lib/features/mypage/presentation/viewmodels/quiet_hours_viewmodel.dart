@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
-import 'package:warding/core/domain/quiet_hours.dart';
+import 'package:warding/domain/quiet_hours.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/di_container.dart';
-import 'package:warding/core/domain/repositories/quiet_hours_repository.dart';
+import 'package:warding/domain/repositories/quiet_hours_repository.dart';
 
 /// 마이페이지 알림 잠자기 섹션 ViewModel.
 class QuietHoursViewModel extends ChangeNotifier {

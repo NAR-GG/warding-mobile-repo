@@ -23,18 +23,53 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결)
-├── core/         기능 소유가 아닌 모든 것
-│   ├── domain/             여러 기능이 쓰는 모델 12개
-│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 9개
-│   ├── ui/                 앱 전역 공용 위젯 59개
+├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결) 7개
+├── domain/       여러 기능이 쓰는 모델 10개 + repository 인터페이스 2개
+├── core/         기능 소유가 아닌 기술 인프라
+│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 19개
+│   ├── ui/                 앱 전역 공용 위젯 52개
 │   ├── theme/              디자인 토큰 (app_colors 등)
 │   ├── config/             앱 설정 (API URL, 키 등)
-│   └── util/               유틸리티
+│   ├── error/              Failure 계층, FailureException
+│   ├── usecase/            UseCase 기반 타입
+│   ├── data/               예외 → Failure 매퍼
+│   └── util/               유틸리티 21개
 ├── l10n/         생성물 (아래 예외 참고)
 ├── main.dart     진입점
 └── firebase_options.dart   생성물
 ```
+
+# domain 이 최상위인 이유
+
+**도메인 모델은 기술 인프라 안에 종속되지 않는다.** 처음에는 `core/domain/` 이었는데, 그러면
+"도메인이 `core` 의 하위 개념"으로 읽힌다. Clean Architecture 원전
+([Robert C. Martin, 2012](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html))
+에서 도메인은 가장 안쪽 원이고 아무것도 참조하지 않는 중심이다.
+
+실제 앱 5개를 조사한 결과 **4개가 공유 도메인 모델을 최상위 공유 위치에 둔다.**
+
+| 레포 | 공유 모델 위치 | 예 |
+|---|---|---|
+| nowinandroid (Google 공식) | `core/model/` 모듈 | NewsResource, Topic |
+| compass_app (Flutter 공식) | `lib/domain/models/` | Destination, ItineraryConfig |
+| Immich | `lib/domain/models/` | Asset, Album, Person |
+| LocalSend | `lib/model/` + 별도 패키지 | Device, FileDto |
+| AppFlowy | `features/share_tab/data/models/` (유일한 예외) | ShareAccessLevel |
+
+**"공유 위치는 도메인 중립이어야 한다"를 지키는 레포는 0/5 다.** `core:model` 에
+`NewsResource` 가, `domain/models/` 에 `Asset` 이 그냥 들어간다. 그래서 `schedule_match` 처럼
+명백한 e스포츠 도메인 개념이 `domain/` 에 있는 것이 정상이다.
+
+**compass_app 의 `ItineraryConfig` 가 판단 기준의 교과서다.** 5개 화면 중 4개가 쓰는 모델인데
+가장 소유자처럼 보이는 `search_form` 안에 두지 않고 `domain/models/` 로 올렸다 — Flutter 공식
+샘플이 "여러 기능이 쓰면 올린다"를 명시적으로 선택한 지점이다.
+
+**`domain/` 은 `core/` 조차 import 하지 않는다.** 모델이 인프라를 알면 방향이 뒤집힌다.
+현재 `l10n`(생성물) 외 참조 0건.
+
+반대로 **인프라 서비스는 5/5 전원 공유 위치**다 — AppFlowy 조차 모델은 feature 에 두면서
+auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/auth` 는 19개 기능이
+쓰더라도 `features/auth/` 로 내리지 않는다.
 
 **규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.** 처음에는 `components`·
 `styles`·`config`·`util` 을 최상위에 뒀는데, 그러면 `core/` 에 들어간 `team`(2곳에서 사용)
@@ -56,7 +91,7 @@ lib/
 | core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`, `AuthService.onSignedOut`, `TeamLogoDirectory.defaultLoader` |
 
 반대로 `features` 가 소유하던 것이 사실은 공용이라 `core` 로 올린 것도 있다:
-`quiet_hours`(→`core/domain`), `team_logo_directory`(→`core/infrastructure/team`),
+`quiet_hours`(→`domain`), `team_logo_directory`(→`core/infrastructure/team`),
 `parseServerTime`(→`core/util/server_time.dart`).
 
 # core 밖에 남는 예외
@@ -84,8 +119,10 @@ lib/
 | `fcm`, `ad`, `live_activity` | 2~3 |
 | `device` | 0 (`auth_service`·`fcm_service` 만 씀) |
 
-`core/domain` 에는 모델 9개 — `schedule_match`(6곳), `team`(6곳),
-`player_subscription`(5곳), `user_profile`(2곳) 등.
+`domain/` 에는 모델 10개 + repository 인터페이스 2개 — `schedule_match`(6곳), `team`(6곳),
+`player_subscription`(5곳), `user_profile`(2곳), `member_notification`(2곳),
+`team_notification_subscription`(2곳), `calendar_week_start`(2곳), `quiet_hours`(1곳),
+`live_match_notification`·`solo_rank_notification`(기능 소비처 0, core store 전용).
 
 # 소유자 판단 기준
 
@@ -93,13 +130,13 @@ lib/
 
 - **`core/` 안에서의 참조는 세지 않는다.** core 끼리 쓰는 건 당연하다. `device` 는 기능
   소비처가 0 이고 인프라끼리만 쓰므로 `core/` 가 맞다. `live_match_notification`·
-  `solo_rank_notification` 모델도 같은 이유로 자기 store 옆(`core/domain`)에 있다.
+  `solo_rank_notification` 모델도 같은 이유로 자기 store 옆(`domain`)에 있다.
 - **이름이 같은 기능이 있으면 그 기능 소유로 본다.** `rating` repository 는 4곳이 쓰지만
   `player_rating` 기능이 있어 `features/player_rating/data/` 에 둔다.
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면
   repository 대부분이 `core/` 로 가 버린다.
 - 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `core/domain` 에
+  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `domain` 에
   둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓴다.
 - 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` — `user_profile`(`mypage`·
   `profile_edit`).
@@ -108,8 +145,8 @@ lib/
 
 27개 중 13개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
 
-- **데이터가 공용이라서** — `mypage` 는 `core/domain/user_profile`,
-  `my_subscription_setting` 은 `core/domain/player_subscription` 을 쓴다. 한 기능 소유가
+- **데이터가 공용이라서** — `mypage` 는 `domain/user_profile`,
+  `my_subscription_setting` 은 `domain/player_subscription` 을 쓴다. 한 기능 소유가
   아니니 `core/` 가 맞고, 그 기능 폴더가 비는 것이 정상이다.
 - **애초에 자기 데이터가 없어서** — `login`·`withdraw`·`account_setting`·`splash`·`guide`·
   `cheer_ad` 는 설정·플로우·안내 화면이라 공용 서비스만 호출한다. `guide` 11개 파일은 전부

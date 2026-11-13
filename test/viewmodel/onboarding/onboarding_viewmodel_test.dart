@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/features/onboarding/data/onboarding_preference_repository.dart';

@@ -8,12 +8,12 @@ import 'package:fpdart/fpdart.dart';
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/schedule/domain/match_page.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/app/home_widget_service.dart';
 import 'package:warding/features/schedule/domain/league_meta.dart';
 import 'package:warding/core/util/match_status.dart';

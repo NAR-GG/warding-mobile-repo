@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
-import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/core/domain/team_notification_subscription.dart';
+import 'package:warding/core/error/failure.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/domain/team_notification_subscription.dart';
 
 /// 선수·팀 구독과 알림 설정. 인증이 필요하다.
 abstract interface class SubscriptionRepository {

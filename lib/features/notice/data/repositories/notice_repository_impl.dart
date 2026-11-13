@@ -7,7 +7,7 @@ import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/core/infrastructure/api_status_exception.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';

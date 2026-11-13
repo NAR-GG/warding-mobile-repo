@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/player_rating/domain/game_rating.dart';

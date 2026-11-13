@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/core/domain/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';

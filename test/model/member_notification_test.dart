@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/core/domain/member_notification.dart';
+import 'package:warding/domain/member_notification.dart';
 
 import '../support/l10n_test_setup.dart';
 

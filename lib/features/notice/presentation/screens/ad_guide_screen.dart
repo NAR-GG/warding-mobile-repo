@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/notice/domain/notice.dart';

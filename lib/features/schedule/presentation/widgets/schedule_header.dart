@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/ui/nar_spoiler_toggle.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 

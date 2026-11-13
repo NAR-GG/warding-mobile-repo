@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/shorts/presentation/viewmodels/shorts_feed_viewmodel.dart';

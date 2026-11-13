@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
 
 /// 내 평가 목록 조회·삭제.

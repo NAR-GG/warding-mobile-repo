@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/core/domain/team_notification_subscription.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/domain/team_notification_subscription.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/util/analytics.dart';

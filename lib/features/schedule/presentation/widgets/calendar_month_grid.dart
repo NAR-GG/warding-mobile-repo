@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/domain/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_day_cell.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_match.dart';
 import 'package:warding/features/schedule/presentation/widgets/calendar_today_badge.dart';

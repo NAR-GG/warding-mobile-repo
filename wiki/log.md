@@ -1,5 +1,19 @@
 # Bundle Update Log
 
+## 2026-11-13
+* **`core/domain/` 을 `lib/domain/` 으로 올렸다** (모델 10개 + repository 인터페이스 2개,
+  import 126 파일 수정). 도메인 모델이 기술 인프라(`core/`) 의 하위로 읽히던 것을 최상위
+  형제로 바꿨다. 같은 작업에서 `core/domain/` 에 섞여 있던 기술 계약을 성격별로 분리했다 —
+  `failure`·`failure_exception` → `core/error/`, `usecase` → `core/usecase/`.
+  판단 근거는 실제 앱 5개 조사다: 공유 도메인 모델을 최상위 공유 위치에 두는 레포가 4
+  (nowinandroid `core:model`, compass_app·Immich `lib/domain/models/`, LocalSend `lib/model/`),
+  소유 feature 에 두는 레포가 1 (AppFlowy). "공유 위치는 도메인 중립이어야 한다" 를 지키는
+  레포는 0/5 라서, `schedule_match` 처럼 명백한 도메인 개념이 `domain/` 에 있는 것이 정상이다.
+  반대로 인프라 서비스는 5/5 전원 공유 위치이므로 `core/infrastructure/auth` 는 19개 기능이
+  쓰더라도 `features/auth/` 로 내리지 않는다. `domain/` 은 `core/` 조차 import 하지 않는다
+  (현재 `l10n` 생성물 외 참조 0건). analyze 통과, 테스트 897 통과.
+  [폴더 구조](/architecture/folder-structure.md)의 "domain 이 최상위인 이유" 참고.
+
 ## 2026-11-10
 * **`core → features` 역방향 참조를 없앴다** (66건 → DI 컨테이너 24건만 남김). 앱 셸 코드 6개를
   새 `lib/app/` 로 옮기고, 한 기능 전용 위젯·모델 9개를 그 기능으로 내렸다. core 가 화면·구현을

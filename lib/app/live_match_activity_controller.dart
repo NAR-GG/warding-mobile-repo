@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
-import 'package:warding/core/domain/team_notification_subscription.dart';
+import 'package:warding/core/error/failure_exception.dart';
+import 'package:warding/domain/team_notification_subscription.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';

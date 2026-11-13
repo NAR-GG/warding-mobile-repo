@@ -5,7 +5,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/ui/app_select_box.dart';
 import 'package:warding/core/ui/labeled_field.dart';
 import 'package:warding/core/ui/load_error.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';

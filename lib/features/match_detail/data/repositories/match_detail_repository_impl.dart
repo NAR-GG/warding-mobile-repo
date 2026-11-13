@@ -6,14 +6,14 @@ import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/core/infrastructure/api_status_exception.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 
 /// 경기 상세 관련 API (`/api/mobile/matches/{matchId}/games`,
 /// `/api/mobile/live/games/{gameId}/{champions,events}`). 모두 인증 불필요.

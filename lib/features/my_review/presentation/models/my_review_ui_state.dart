@@ -1,4 +1,4 @@
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
 import 'package:warding/l10n/app_strings.dart';
 

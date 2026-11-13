@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 
 /// 비즈니스 로직 한 단위.
 ///

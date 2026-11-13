@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 
 /// 라이브 경기 선수 평점 (`/api/mobile/live/games/...`).

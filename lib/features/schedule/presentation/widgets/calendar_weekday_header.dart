@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/core/domain/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/core/theme/app_colors.dart';
 
 /// 요일 헤더 — [weekStart]로 설정한 시작 요일부터 순서대로 표시한다

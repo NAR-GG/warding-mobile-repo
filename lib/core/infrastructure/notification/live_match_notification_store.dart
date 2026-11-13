@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:warding/core/config/secure_storage.dart';
 
-import 'package:warding/core/domain/live_match_notification.dart';
+import 'package:warding/domain/live_match_notification.dart';
 import 'package:warding/core/infrastructure/fcm/fcm_notification_types.dart';
 
 /// 수신한 '라이브 경기' 푸시(세트 시작/종료/경기 이벤트)를 기기에 로컬 저장한다.

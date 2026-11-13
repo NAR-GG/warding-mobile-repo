@@ -1,5 +1,5 @@
 import 'package:warding/features/home/domain/home_models.dart';
-import 'package:warding/core/domain/player_subscription.dart';
+import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/features/home/data/home_api_sources.dart';
 
 /// 솔로 랭크 상태 한 번의 조회 결과.

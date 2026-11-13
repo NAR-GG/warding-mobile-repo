@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
-import 'package:warding/core/domain/player_subscription.dart';
+import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/core/di_container.dart';

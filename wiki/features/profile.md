@@ -14,7 +14,7 @@ timestamp: 2026-06-21T00:00:00Z
 
 - 프로필 저장 연동 (#20).
 - 관련 화면: `lib/features/mypage/presentation/screens/mypage_screen.dart`, `lib/features/profile_edit/presentation/screens/profile_edit_screen.dart`.
-- 모델: `lib/core/domain/user_profile.dart`.
+- 모델: `lib/domain/user_profile.dart`.
 
 # 진행 중 (#35)
 

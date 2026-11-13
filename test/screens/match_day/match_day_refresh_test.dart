@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/match_day/presentation/widgets/match_day_view.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 import 'package:warding/app/home_widget_service.dart';
 

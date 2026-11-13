@@ -14,7 +14,7 @@ timestamp: 2026-06-21T00:00:00Z
 
 | 계층 | 위치 | 역할 |
 |------|------|------|
-| **Model** | `features/{기능}/domain/`, `features/{기능}/data/` | 데이터 모델 클래스, 데이터 소스(API). 여러 기능이 쓰면 `core/domain/`·`core/infrastructure/` |
+| **Model** | `features/{기능}/domain/`, `features/{기능}/data/` | 데이터 모델 클래스, 데이터 소스(API). 여러 기능이 쓰면 `domain/`·`core/infrastructure/` |
 | **ViewModel** | `features/{기능}/presentation/viewmodels/` | `ChangeNotifier` 상속. 화면 상태·비즈니스 로직 담당, `notifyListeners()`로 변경 통지 |
 | **View** | `features/{기능}/presentation/screens/`, `widgets/` | UI만 담당 |
 

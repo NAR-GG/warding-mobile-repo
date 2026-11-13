@@ -1,4 +1,4 @@
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 
 /// [Failure] 를 예외로 감싼다.
 ///

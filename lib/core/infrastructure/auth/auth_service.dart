@@ -15,7 +15,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_strings.dart';
-import 'package:warding/core/domain/user_profile.dart';
+import 'package:warding/domain/user_profile.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 import 'package:warding/core/infrastructure/device/device_repository.dart';

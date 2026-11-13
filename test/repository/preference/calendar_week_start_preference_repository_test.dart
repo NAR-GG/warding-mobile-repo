@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/core/domain/calendar_week_start.dart';
+import 'package:warding/domain/calendar_week_start.dart';
 import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}

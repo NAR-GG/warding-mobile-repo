@@ -7,8 +7,8 @@ import 'package:warding/features/match_list/data/repositories/category_repositor
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
-import 'package:warding/core/domain/repositories/member_notification_repository.dart';
-import 'package:warding/core/domain/repositories/quiet_hours_repository.dart';
+import 'package:warding/domain/repositories/member_notification_repository.dart';
+import 'package:warding/domain/repositories/quiet_hours_repository.dart';
 import 'package:warding/core/infrastructure/notification/member_notification_repository_impl.dart';
 import 'package:warding/core/infrastructure/notification/quiet_hours_repository_impl.dart';
 import 'package:warding/features/match_detail/data/repositories/match_detail_repository_impl.dart';

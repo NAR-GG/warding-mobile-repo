@@ -3,11 +3,11 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/match_list/domain/category_tree.dart';
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';

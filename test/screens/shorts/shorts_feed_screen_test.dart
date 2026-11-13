@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';

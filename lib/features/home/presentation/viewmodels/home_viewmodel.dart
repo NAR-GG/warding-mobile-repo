@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/core/domain/player_subscription.dart';
-import 'package:warding/core/domain/schedule_match.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/features/home/domain/standing.dart';
 import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
@@ -16,7 +16,7 @@ import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
-import 'package:warding/core/domain/repositories/member_notification_repository.dart';
+import 'package:warding/domain/repositories/member_notification_repository.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';

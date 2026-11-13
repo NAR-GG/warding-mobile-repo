@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 import 'package:warding/features/my_review/presentation/viewmodels/my_review_viewmodel.dart';

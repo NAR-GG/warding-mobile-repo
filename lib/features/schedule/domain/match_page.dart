@@ -1,4 +1,4 @@
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 
 class MatchPage {
   const MatchPage({

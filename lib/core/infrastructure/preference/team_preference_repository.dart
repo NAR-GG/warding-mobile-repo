@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:warding/core/config/secure_storage.dart';
 
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 
 /// 비회원 선호 팀을 기기에 로컬 저장한다.
 ///

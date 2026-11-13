@@ -52,21 +52,33 @@ lib/
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
 ├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결)
-├── core/         기능 소유가 아닌 모든 것
-│   ├── domain/             여러 기능이 쓰는 모델
+├── domain/       여러 기능이 쓰는 모델 + 그 repository 인터페이스
+├── core/         기능 소유가 아닌 기술 인프라
 │   ├── infrastructure/     여러 기능이 쓰는 서비스·repository
 │   ├── ui/                 앱 전역 공용 위젯
 │   ├── theme/              디자인 토큰 (app_colors 등)
 │   ├── config/             앱 설정 (API URL, 키 등)
+│   ├── error/              Failure 계층, FailureException
+│   ├── usecase/            UseCase 기반 타입
+│   ├── data/               예외 → Failure 매퍼
 │   └── util/               유틸리티
 ├── l10n/         생성물 (아래 참고)
 ├── main.dart     진입점
 └── firebase_options.dart   생성물
 ```
 
-**의존 방향은 `app → features → core` 한 방향이다.** `core/` 는 `features/`·`app/` 을
-import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container.dart` 다 — repository 구현체를
-등록하려면 알 수밖에 없다). 화면을 띄우거나 기능의 구현을 알아야 하는 코드는 둘 중 하나로 푼다.
+**`domain/` 이 최상위인 이유.** 도메인 모델은 앱의 중심이라 기술 인프라(`core/`) 안에
+종속되지 않는다. Flutter 공식 샘플 compass_app 의 `lib/domain/models/`, Immich 의
+`lib/domain/models/`, nowinandroid 의 `core:model` 모듈과 같은 배치다. 조사한 실제 앱 5개 중
+4개가 "여러 기능이 쓰는 도메인 모델을 공유 위치에 올린다" — `schedule_match` 가 6개 기능이
+쓰면서도 `features/schedule/` 안에 없는 근거가 이것이다(compass_app 도 4개 화면이 쓰는
+`ItineraryConfig` 를 `search_form` 안에 두지 않고 `domain/models/` 로 올렸다).
+
+**의존 방향은 `app → features → core`·`domain` 한 방향이다.** `core/`·`domain/` 은
+`features/`·`app/` 을 import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container.dart`
+다 — repository 구현체를 등록하려면 알 수밖에 없다). `domain/` 은 `core/` 도 import 하지
+않는다 — 모델이 인프라를 알면 방향이 뒤집힌다. 화면을 띄우거나 기능의 구현을 알아야 하는
+코드는 둘 중 하나로 푼다.
 
 - **앱 셸이면 `app/` 에 둔다.** FCM·홈 위젯·Live Activity 의 딥링크 처리(`fcm_service`·
   `home_widget_service`·`live_match_activity_controller`), 경기 상세로 가는 유일한 창구
@@ -100,8 +112,8 @@ import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면 대부분이
   `core/` 로 가 버린다.
 - 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `core/domain` 에
-  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓰므로 `core/domain` 이다.
+  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `domain` 에
+  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓰므로 `domain` 이다.
 - 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` 에 둔다 — `user_profile` 은 `mypage`·
   `profile_edit` 둘이 쓴다.
 
@@ -120,7 +132,7 @@ import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container
 | ViewModel | `features/{기능}/presentation/viewmodels/` | `features/community/presentation/viewmodels/community_list_viewmodel.dart` |
 | 모델·규칙·상수 | `features/{기능}/domain/` | `features/community/domain/community_remote_post.dart` |
 | 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
-| 여러 기능이 쓰는 모델 | `core/domain/` | — |
+| 여러 기능이 쓰는 모델 | `domain/` | — |
 | 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
 | 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 

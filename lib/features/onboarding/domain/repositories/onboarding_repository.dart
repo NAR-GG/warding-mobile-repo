@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 
-import 'package:warding/core/domain/failure.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/core/error/failure.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/features/onboarding/domain/league.dart';
 import 'package:warding/features/onboarding/domain/player.dart';
 

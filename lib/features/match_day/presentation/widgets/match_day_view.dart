@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/core/domain/schedule_match.dart';
+import 'package:warding/domain/schedule_match.dart';
 import 'package:warding/core/ui/app_refresh_indicator.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/app/match_detail_router.dart';

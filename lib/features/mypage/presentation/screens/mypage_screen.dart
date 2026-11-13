@@ -8,7 +8,7 @@ import 'package:warding/core/ui/app_bottom_nav.dart';
 import 'package:warding/features/login/presentation/widgets/guest_lock_overlay.dart';
 import 'package:warding/features/guide/presentation/widgets/guide_popup.dart';
 import 'package:warding/core/ui/nar_banner.dart';
-import 'package:warding/core/domain/team.dart';
+import 'package:warding/domain/team.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/config/app_language.dart';
 import 'package:warding/core/theme/app_colors.dart';

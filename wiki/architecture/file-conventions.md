@@ -18,7 +18,7 @@ timestamp: 2026-11-10T00:00:00Z
 | ViewModel | `features/{기능}/presentation/viewmodels/` | `features/community/presentation/viewmodels/community_list_viewmodel.dart` |
 | 모델·규칙·상수 | `features/{기능}/domain/` | `features/community/domain/community_remote_post.dart` |
 | 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
-| 여러 기능이 쓰는 모델 | `core/domain/` | — |
+| 여러 기능이 쓰는 모델 | `domain/` | — |
 | 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
 | 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 

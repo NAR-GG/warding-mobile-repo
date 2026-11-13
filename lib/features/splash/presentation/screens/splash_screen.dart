@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/core/domain/failure_exception.dart';
+import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/features/cheer_ad/presentation/widgets/cheer_ad_banner.dart';
 import 'package:warding/core/config/app_language.dart';
 import 'package:warding/core/config/secure_storage.dart';

@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 
 import 'package:warding/core/config/api_config.dart';
-import 'package:warding/core/domain/failure.dart';
+import 'package:warding/core/error/failure.dart';
 import 'package:warding/core/infrastructure/api_status_exception.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/core/util/api_client.dart' as http;
