@@ -28,12 +28,12 @@ import 'package:warding/features/onboarding/domain/repositories/onboarding_repos
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
 import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:warding/features/schedule/presentation/viewmodels/today_matches_viewmodel.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 import 'package:warding/features/home/domain/repositories/standings_repository.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
-import 'package:warding/core/util/match_status.dart';
 import 'package:warding/features/solo_rank/presentation/viewmodels/solo_cheer_controller.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_rules.dart';
 
@@ -92,6 +92,7 @@ class HomeViewModel extends ChangeNotifier {
     CommunitySummaryViewModel? communitySummary,
     NoticeBannerViewModel? noticeBannerViewModel,
     NotificationBadgeViewModel? notificationBadgeViewModel,
+    TodayMatchesViewModel? todayMatchesViewModel,
   }) : _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
        _shortsRepo = shorts ?? di<ShortsRepository>(),
@@ -124,13 +125,16 @@ class HomeViewModel extends ChangeNotifier {
            ),
        notificationBadge =
            notificationBadgeViewModel ??
-           NotificationBadgeViewModel(repository: memberNotifications) {
+           NotificationBadgeViewModel(repository: memberNotifications),
+       todayMatches =
+           todayMatchesViewModel ?? TodayMatchesViewModel(repository: schedule) {
     // 섹션 ViewModel 의 통지를 홈 통지로 올린다 — 홈 위젯들이 HomeViewModel
     // 하나만 구독하는 기존 구조를 유지한다. 섹션을 독립 구독하는 화면은
     // 그 ViewModel 을 직접 쓰면 된다.
     community.addListener(_notify);
     noticeBanner.addListener(_notify);
     notificationBadge.addListener(_notify);
+    todayMatches.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     unawaited(refreshAll());
@@ -204,6 +208,8 @@ class HomeViewModel extends ChangeNotifier {
     noticeBanner.dispose();
     notificationBadge.removeListener(_notify);
     notificationBadge.dispose();
+    todayMatches.removeListener(_notify);
+    todayMatches.dispose();
     _soloPollTimer?.cancel();
     // 남은 응원은 화면이 닫혀도 보낸다. 컨트롤러는 dispose 뒤에도 안전하다.
     unawaited(cheers.flushAll());
@@ -245,7 +251,7 @@ class HomeViewModel extends ChangeNotifier {
       _loadSubscriptions(),
       _loadSolo(),
       _loadWorlds(),
-      loadTodayMatches(),
+      todayMatches.load(),
       _loadLeagueChips(),
       _loadStandings(),
       _loadReviews(),
@@ -540,41 +546,17 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> flushCheers() => cheers.flushAll();
 
   // ---- 섹션 2: 오늘 경기 ----
-  List<ScheduleMatch> _todayMatches = const [];
+  //
+  // 로직은 `features/schedule` 이 갖는다 — 오늘 경기 요약이 필요한 화면은
+  // 어디서든 [TodayMatchesViewModel] 을 구독하면 된다.
+  final TodayMatchesViewModel todayMatches;
 
   /// 오늘 경기 — 진행 중인 경기를 앞으로, 그 밖에는 서버 순서 그대로.
-  List<ScheduleMatch> get todayMatchesSorted => [
-    ..._todayMatches.where((m) => isLiveMatchStatus(m.matchStatus)),
-    ..._todayMatches.where((m) => !isLiveMatchStatus(m.matchStatus)),
-  ];
+  List<ScheduleMatch> get todayMatchesSorted => todayMatches.sorted;
+  bool get todayMatchesLoading => todayMatches.loading;
 
   /// 오늘 모든 리그의 경기를 불러온다. 실패하면 마지막 값을 유지한다.
-  int _todayGen = 0;
-
-  /// 첫 응답(성공·실패 모두)이 오기 전 true — 스켈레톤을 그린다. 이후 새로고침은
-  /// 마지막 값을 유지하고 스켈레톤을 다시 띄우지 않는다.
-  bool _todayFirstLoadPending = true;
-  bool get todayMatchesLoading => _todayFirstLoadPending;
-
-  Future<void> loadTodayMatches() async {
-    final gen = ++_todayGen;
-    try {
-      final matches = (await _schedule.fetchMatchesByDate(
-        DateTime.now(),
-        leagues: const ['ALL'],
-      ))
-          .getOrElse((f) => throw FailureException(f));
-      if (_disposed || gen != _todayGen) return;
-      _todayMatches = matches;
-      _todayFirstLoadPending = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 오늘 경기 조회 실패: $e');
-      if (_disposed || gen != _todayGen) return;
-      _todayFirstLoadPending = false;
-      _notify();
-    }
-  }
+  Future<void> loadTodayMatches() => todayMatches.load();
 
   // ---- 섹션 3: 순위표 ----
   // 표인지 대진인지는 **응답이 정한다** — `/api/standings` 의
