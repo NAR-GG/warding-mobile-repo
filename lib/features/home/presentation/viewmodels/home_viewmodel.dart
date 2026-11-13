@@ -11,7 +11,6 @@ import 'package:warding/features/home/domain/home_models.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/domain/schedule_match.dart';
-import 'package:warding/domain/team.dart';
 import 'package:warding/features/home/domain/standing.dart';
 import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/home/domain/worlds_standings.dart';
@@ -31,6 +30,7 @@ import 'package:warding/features/schedule/domain/repositories/schedule_repositor
 import 'package:warding/features/schedule/presentation/viewmodels/today_matches_viewmodel.dart';
 import 'package:warding/core/di_container.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
+import 'package:warding/features/shorts/presentation/viewmodels/shorts_summary_viewmodel.dart';
 import 'package:warding/features/home/domain/repositories/standings_repository.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
@@ -45,8 +45,8 @@ typedef HomeCommunitySort = CommunitySummarySort;
 /// 콘텐츠 섹션 탭.
 enum HomeContentTab { news, shorts }
 
-/// 쇼츠 탭 필터.
-enum HomeShortsFilter { all, team }
+/// 쇼츠 탭 필터. 정의는 쇼츠 기능이 갖는다 ([ShortsSummaryFilter]).
+typedef HomeShortsFilter = ShortsSummaryFilter;
 
 /// 월즈 순위표 카드가 보여주는 뷰. 하단 버튼으로 전환한다.
 enum WorldsStandingsView { swiss, knockout }
@@ -68,7 +68,7 @@ class HomeViewModel extends ChangeNotifier {
     ScheduleRepository? schedule,
     StandingsRepository? standings,
     CommunityRepository? communityRepository,
-    ShortsRepository? shorts,
+    ShortsRepository? shortsRepository,
     SubscriptionRepository? subscriptions,
     MemberNotificationRepository? memberNotifications,
     SoloRankSource? soloRank,
@@ -86,9 +86,9 @@ class HomeViewModel extends ChangeNotifier {
     TodayMatchesViewModel? todayMatchesViewModel,
     SubscribedPlayersViewModel? subscribedPlayersViewModel,
     SoloRankViewModel? soloRankViewModel,
+    ShortsSummaryViewModel? shortsSummary,
   }) : _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
-       _shortsRepo = shorts ?? di<ShortsRepository>(),
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _reviewSource = reviews ?? defaultReviewSource(),
        _newsSource = news ?? defaultNewsSource(),
@@ -130,6 +130,15 @@ class HomeViewModel extends ChangeNotifier {
           worlds: worlds,
           cheer: cheer,
         );
+    // 쇼츠는 응원팀을 알아야 "내 팀" 필터가 된다. 그 결정 규칙은 쇼츠 기능
+    // 소유가 아니라 UseCase 가 가지므로 콜백으로 넘긴다.
+    shorts =
+        shortsSummary ??
+        ShortsSummaryViewModel(
+          repository: shortsRepository,
+          resolveTeamCode: () async => (await _getPreferredTeam())?.code,
+          cardCount: shortsCardCount,
+        );
     // 섹션 ViewModel 의 통지를 홈 통지로 올린다 — 홈 위젯들이 HomeViewModel
     // 하나만 구독하는 기존 구조를 유지한다. 섹션을 독립 구독하는 화면은
     // 그 ViewModel 을 직접 쓰면 된다.
@@ -139,6 +148,7 @@ class HomeViewModel extends ChangeNotifier {
     todayMatches.addListener(_notify);
     subscribedPlayers.addListener(_notify);
     solo.addListener(_notify);
+    shorts.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
     unawaited(refreshAll());
@@ -154,7 +164,6 @@ class HomeViewModel extends ChangeNotifier {
 
   final ScheduleRepository _schedule;
   final StandingsRepository _standingsRepo;
-  final ShortsRepository _shortsRepo;
 
   final ReviewSource _reviewSource;
   final NewsSource _newsSource;
@@ -179,6 +188,8 @@ class HomeViewModel extends ChangeNotifier {
     solo.dispose();
     subscribedPlayers.removeListener(_notify);
     subscribedPlayers.dispose();
+    shorts.removeListener(_notify);
+    shorts.dispose();
     super.dispose();
   }
 
@@ -221,7 +232,7 @@ class HomeViewModel extends ChangeNotifier {
       _loadStandings(),
       _loadReviews(),
       _loadNews(),
-      _loadShorts(),
+      shorts.load(),
     ]);
   }
 
@@ -679,114 +690,33 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   /// 홈 쇼츠 카드 수. 이어서 보는 건 전체화면 피드(후속)가 맡는다.
+  // 쇼츠 — 로직은 `features/shorts` 가 갖는다. 전체화면 피드와 같은 기능이고
+  // 피드가 이 목록을 initialVideos 로 이어받는다.
+  late final ShortsSummaryViewModel shorts;
+
   static const int shortsCardCount = 10;
 
-  /// 응원팀 필터는 서버가 아직 팀을 안 거르는 동안에도 카드 10개가 남도록
-  /// 넉넉히 받아 클라이언트에서 거른다.
-  static const int _shortsTeamFetchSize = 30;
-
-  HomeShortsFilter _shortsFilter = HomeShortsFilter.all;
-  HomeShortsFilter get shortsFilter => _shortsFilter;
-
-  /// "내 팀" 필터로 바꾼 직후 응원팀·영상 목록을 다시 받는 동안 true.
-  /// 이 플래그가 없으면 필터를 바꾼 첫 프레임에 이전(전체) 목록을 새
-  /// 필터로 걸러 빈 리스트가 되고, 아직 응원팀 조회 전이라 "응원팀 미설정"
-  /// 안내가 한 프레임 잘못 떴다가 실제 결과로 바뀌는 깜빡임이 있었다.
-  bool _shortsLoading = false;
-  bool get shortsLoading => _shortsLoading;
-
-  void setShortsFilter(HomeShortsFilter filter) {
-    if (filter == _shortsFilter) return;
-    _shortsFilter = filter;
-    _shortsLoading = true;
-    _notify();
-    unawaited(_loadShorts());
-  }
-
-  /// "내 팀" 기준인 마이페이지 응원팀. 없거나 아직 모르면 null.
-  Team? _preferredTeam;
-  bool _preferredTeamLoaded = false;
+  HomeShortsFilter get shortsFilter => shorts.filter;
+  bool get shortsLoading => shorts.loading;
+  void setShortsFilter(HomeShortsFilter filter) => shorts.setFilter(filter);
 
   /// "내 팀" 필터에 쓸 응원팀이 있는지. 없으면 화면이 설정 안내를 보인다.
-  bool get hasPreferredTeam => _preferredTeam != null;
-
-  Future<void> _loadPreferredTeam() async {
-    if (_preferredTeamLoaded) return;
-    // 어느 출처를 쓸지·실패하면 무엇으로 폴백할지는 UseCase 가 정한다.
-    // 여기서는 한 번만 받는다는 화면 쪽 사정만 본다.
-    _preferredTeam = await _getPreferredTeam();
-    _preferredTeamLoaded = true;
-  }
-
-  List<StoryVideo> _shorts = const [];
-
-  int _shortsGen = 0;
-
-  Future<void> _loadShorts() async {
-    final gen = ++_shortsGen;
-    try {
-      final onlyTeam = _shortsFilter == HomeShortsFilter.team;
-      String? teamCode;
-      if (onlyTeam) {
-        await _loadPreferredTeam();
-        if (_disposed || gen != _shortsGen) return;
-        teamCode = _preferredTeam?.code;
-        if (teamCode == null) {
-          _shorts = const [];
-          _shortsLoading = false;
-          _notify();
-          return;
-        }
-      }
-      final result = await _shortsRepo.fetchShortsPage(
-        sort: 'latest',
-        size: onlyTeam ? _shortsTeamFetchSize : shortsCardCount,
-        teamCode: teamCode,
-      );
-      if (_disposed || gen != _shortsGen) return;
-      // 실패하면 빈 목록으로 둔다 — 홈의 한 섹션이고 다른 섹션은 영향이 없다.
-      final videos = result.getOrElse((_) => const ShortsPage(
-            items: [],
-            isLast: true,
-          )).items;
-      _shorts = videos;
-      _shortsLoading = false;
-      _notify();
-    } catch (e) {
-      debugPrint('[Home] 쇼츠 조회 실패: $e');
-      _shortsLoading = false;
-      _notify();
-    }
-  }
+  bool get hasPreferredTeam => shorts.hasTeam;
 
   /// 현재 필터를 적용한 쇼츠 — 순수 최신순(서버 순서) 최대 [shortsCardCount] 개.
-  ///
-  /// "내 팀"은 응원팀 채널의 쇼츠만이다. 응답의 `teamCode` 로 한 번 더 거르니
-  /// LCK 공식 채널(팀 코드 없음)은 "전체"에만 나온다.
   List<HomeShortsVideo> get shortsFiltered => [
     for (final v in shortsVideosFiltered) _toShortsVideo(v),
   ];
 
   /// [shortsFiltered] 와 같은 순서의 원본 영상 — 전체화면 피드가 이어받는다.
-  List<StoryVideo> get shortsVideosFiltered {
-    final team = _preferredTeam?.code;
-    final source = _shortsFilter == HomeShortsFilter.team
-        ? _shorts.where((v) => team != null && v.teamCode == team)
-        : _shorts;
-    return source.take(shortsCardCount).toList();
-  }
+  List<StoryVideo> get shortsVideosFiltered => shorts.videos;
 
   /// 홈이 마지막으로 받은 쇼츠 목록의 페이지 크기 — 피드가 다음 페이지부터
   /// 같은 크기로 이어 받는다.
-  int get shortsFetchSize => _shortsFilter == HomeShortsFilter.team
-      ? _shortsTeamFetchSize
-      : shortsCardCount;
+  int get shortsFetchSize => shorts.fetchSize;
 
   /// 응원팀 코드. 없으면 null. 피드가 "내 팀" 필터를 고를 때 쓴다.
-  Future<String?> preferredTeamCode() async {
-    await _loadPreferredTeam();
-    return _preferredTeam?.code;
-  }
+  Future<String?> preferredTeamCode() => shorts.teamCode();
 
   HomeShortsVideo _toShortsVideo(StoryVideo video) {
     return HomeShortsVideo(
