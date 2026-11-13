@@ -1,5 +1,24 @@
 # Bundle Update Log
 
+## 2026-11-13 (4)
+* **`app/` 을 5파일로 줄이고 폴더로 갈랐다.** `live_activity_logo_prefetcher`·
+  `live_match_activity_controller` 는 화면을 띄우지 않으므로(Screen·Navigator 참조 0건)
+  앱 셸이 아니었다 — 기능 repository 를 쓰는 것이 유일한 이유였는데 반환 타입이 전부
+  `lib/domain/` 공용 모델이라 훅 5개로 끊어 `core/infrastructure/live_activity/` 로 내렸다.
+  남은 5개는 `app/deeplink/`(푸시·위젯 진입)·`app/navigation/`(경기 상세 창구·탭 전환)·
+  `app_hooks.dart`(조립)로 나눴다. 클래스명은 유지했다 — `FcmService` 는 딥링크만 하는 게
+  아니라 토큰 등록도 하고, `HomeWidgetService` 는 App Group 설정도 한다.
+  판별 기준을 한 줄로 고정했다: **"기능 2개 이상의 화면이나 구현을 알아야 하나"**.
+* **공용 컴포넌트와 앱 셸의 배치를 실제 앱 4개로 검증했다**(nowinandroid·compass_app·
+  Immich·AppFlowy). 같은 위치에 두는 레포 0개, 라우터·탭을 앱 셸에 두는 레포 4/4.
+  공용 폴더가 feature 를 참조하는 사례 2개(AppFlowy `lib/shared/`, Immich
+  `lib/widgets/common/`)는 둘 다 부채로 취급해 순수 패키지로 이동 중이다. 지금 `core/ui`
+  52개는 features·app·domain 참조 0건이라 그 오염이 없다. 다음 개선은 빌드 단위 격리 —
+  4개 중 3개가 디자인 시스템을 모듈·패키지로 떼어 역참조를 컴파일 에러로 막는다.
+  [폴더 구조](/architecture/folder-structure.md)의 "app/ 과 core/ui/ 는 왜 다른 자리인가" 참고.
+* 옮긴 모델에서 `Home` 접두어를 뗐다 — `HomeLiveSoloPlayer`→`LiveSoloPlayer`,
+  `HomeFinishedSoloPlayer`→`FinishedSoloPlayer`, `HomeLeagueChip`→`LeagueChip`(26파일).
+
 ## 2026-11-13 (3)
 * **홈 섹션 8개를 각 기능으로 내렸다.** 홈 ViewModel 이 1141줄로 섹션 9개를 직접 들고
   있었고, 그중 7개는 이미 대응 기능이 있는데도 홈이 그 repository 를 직접 불러서 다른

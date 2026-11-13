@@ -23,10 +23,13 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결) 7개
+├── app/          앱 셸 — 기능 2개 이상의 화면·구현을 알아야 하는 코드 5개
+│   ├── deeplink/           푸시·홈 위젯 → 앱 진입
+│   ├── navigation/         경기 상세 창구, 탭 전환
+│   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
 ├── domain/       여러 기능이 쓰는 모델 10개 + repository 인터페이스 2개
 ├── core/         기능 소유가 아닌 기술 인프라
-│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 19개
+│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 21개
 │   ├── ui/                 앱 전역 공용 위젯 52개
 │   ├── theme/              디자인 토큰 (app_colors 등)
 │   ├── config/             앱 설정 (API URL, 키 등)
@@ -86,13 +89,60 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 
 | 상황 | 해법 | 예 |
 |---|---|---|
-| 앱 셸 코드 (모든 기능을 알아야 한다) | `lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `live_match_activity_controller`, `live_activity_logo_prefetcher`, `match_detail_router`, `nav_tab_navigation` |
+| 앱 셸 코드 (기능 2개 이상의 화면을 안다) | `lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `match_detail_router`, `tab_navigation` |
+| 기능 repository 만 쓰고 화면은 안 띄운다 | 훅으로 끊고 `core/` 로 | `live_activity_logo_prefetcher`, `live_match_activity_controller` (2026-11-13 재분류) |
 | 한 기능 전용 위젯·모델이 core 에 있었다 | 그 기능으로 이동 | `guide_popup`→`guide`, `cheer_ad_popup`·`cheer_ad_banner`→`cheer_ad`, `notification_feed_card`→`subscription`, `guest_lock_overlay`→`login`, `solo_hero_card`→`home`, `advertiser_banner`→`notice`, `league_meta`·`league_icon`→`schedule`, `onboarding_preference_repository`→`onboarding` |
-| core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`, `AuthService.onSignedOut`, `TeamLogoDirectory.defaultLoader` |
+| core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`·`onSignedOut`, `TeamLogoDirectory.defaultLoader`, `LiveActivityLogoPrefetcher.teamTargetsLoader`, `LiveMatchActivityController` 의 로더 4개 |
 
 반대로 `features` 가 소유하던 것이 사실은 공용이라 `core` 로 올린 것도 있다:
 `quiet_hours`(→`domain`), `team_logo_directory`(→`core/infrastructure/team`),
 `parseServerTime`(→`core/util/server_time.dart`).
+
+# app/ 과 core/ui/ 는 왜 다른 자리인가
+
+**둘은 의존 방향이 반대다.** 공용 컴포넌트는 아무것도 모르고 많이 쓰이며, 앱 셸은 많이 알고
+적게 쓰인다.
+
+| 대상 | 쓰는 곳 | 아는 기능 |
+|---|---|---|
+| `core/theme/app_colors` | 142파일 | 0개 |
+| `core/ui/nar_card` | 6파일 | 0개 |
+| `app/navigation/tab_navigation` | 4파일 | **6개** |
+| `app/app_hooks` | 2파일 | **3개** |
+
+`core/ui` 52개는 현재 `features`·`app`·`domain` 참조가 **전부 0건**이다. 거기에 앱 셸 코드를
+섞으면 `core` 가 기능을 알게 되어 의존 방향이 무너진다.
+
+**탭 네비게이션은 "위젯"과 "목적지"가 이미 갈려 있다.** 하단 바를 그리는 `AppBottomNav` 와
+`AppNavTab` enum 은 `core/ui/app_bottom_nav.dart`(기능 0개)에 있고, 그 탭이 어느 화면으로
+가는지는 `app/navigation/tab_navigation.dart`(기능 6개)가 안다. nowinandroid 도 같다 —
+위젯은 `core:designsystem/component/Navigation.kt`, 목적지 목록은
+`app/navigation/TopLevelNavItem.kt` 다.
+
+실제 앱 4개를 조사한 결과 **공용 UI 와 앱 셸을 같은 위치에 두는 레포는 0개**였다.
+
+| 레포 | 공용 UI | 앱 셸(라우팅·DI) |
+|---|---|---|
+| nowinandroid | `core/designsystem/`, `core/ui/` | `app/` 모듈 |
+| compass_app | `lib/ui/core/` | `lib/routing/`, `lib/config/` |
+| Immich | `packages/ui/`, `lib/widgets/` | `lib/routing/`, `lib/providers/` |
+| AppFlowy | `packages/appflowy_ui/` | `lib/startup/` |
+
+**여러 기능 화면을 직접 아는 코드(라우터·탭)는 4/4 전부 앱 셸에 있다.** compass_app
+`routing/router.dart` 는 화면 12개를, Immich 는 70개 이상을, AppFlowy
+`startup/tasks/generate_router.dart` 는 20개 이상을 직접 import 한다.
+
+**공용 폴더가 오염된 레포도 있었고, 둘 다 그걸 부채로 보고 있다.** AppFlowy `lib/shared/` 는
+`plugins/`·`workspace/` 의 화면과 DI 로케이터까지 import 하고, Immich
+`lib/widgets/common/` 은 `pages/common/settings.page.dart` 와 `routing/router.dart` 를
+끌어온다. 두 레포 모두 나중에 feature 의존 0건인 순수 패키지(`appflowy_ui`, `immich_ui`)를
+추가해 거기로 옮겨가는 중이다. 역참조가 생긴 쪽은 전부 "앱 패키지 안의 공용 폴더"였고,
+깨끗한 쪽은 별도 빌드 단위였다.
+
+**그래서 다음 개선은 빌드 단위 격리다.** 4개 중 3개가 디자인 시스템을 Gradle 모듈 또는 Dart
+패키지로 떼어내 역참조를 컴파일 에러로 막는다. 지금은 폴더 분리뿐이라 컨벤션에 의존한다 —
+웹뷰 전환에서 모노레포를 도입할 때 `packages/` 로 빼는 것이 자연스럽다
+([웹뷰 전환 Spec](../../intent/hybrid-webview-monorepo/spec.md)의 토큰 패키지 계획 참고).
 
 # core 밖에 남는 예외
 

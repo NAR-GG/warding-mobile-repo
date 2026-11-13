@@ -51,7 +51,10 @@ lib/
 │           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
 │           ├── viewmodels/ ViewModel
 │           └── widgets/    그 화면 전용 위젯
-├── app/          앱 셸 — 모든 기능을 알아도 되는 코드 (딥링크·탭 이동·훅 연결)
+├── app/          앱 셸 — 기능 2개 이상의 화면·구현을 알아야 하는 코드
+│   ├── deeplink/           외부(푸시·홈 위젯) → 앱 진입
+│   ├── navigation/         화면 이동 (경기 상세 창구, 탭 전환)
+│   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
 ├── domain/       여러 기능이 쓰는 모델 + 그 repository 인터페이스
 ├── core/         기능 소유가 아닌 기술 인프라
 │   ├── infrastructure/     여러 기능이 쓰는 서비스·repository
@@ -80,13 +83,22 @@ lib/
 않는다 — 모델이 인프라를 알면 방향이 뒤집힌다. 화면을 띄우거나 기능의 구현을 알아야 하는
 코드는 둘 중 하나로 푼다.
 
-- **앱 셸이면 `app/` 에 둔다.** FCM·홈 위젯·Live Activity 의 딥링크 처리(`fcm_service`·
-  `home_widget_service`·`live_match_activity_controller`), 경기 상세로 가는 유일한 창구
-  (`match_detail_router`), 탭 이동(`nav_tab_navigation`)이 여기 있다.
+- **앱 셸이면 `app/` 에 둔다. 판별은 한 줄 — "기능 2개 이상의 화면이나 구현을 알아야 하나".**
+  푸시·홈 위젯 딥링크(`app/deeplink/`), 경기 상세로 가는 유일한 창구와 탭 이동
+  (`app/navigation/`)이 여기 있다. 라우터·탭 네비게이션을 앱 셸에 두는 것은 조사한 실제
+  앱 4개가 예외 없이 따르는 관행이다(nowinandroid `app/navigation/`, compass_app
+  `lib/routing/`, Immich `lib/routing/`, AppFlowy `lib/startup/tasks/`).
+- **화면을 안 띄우면 `app/` 이 아니다.** 기능 repository 를 쓰더라도 반환 타입이
+  `domain/` 의 공용 모델이면 훅으로 끊어 `core/` 로 내린다 —
+  `live_activity_logo_prefetcher`·`live_match_activity_controller` 가 그렇게
+  `core/infrastructure/live_activity/` 로 갔다.
 - **core 가 필요로 하는 화면·구현은 훅으로 받는다.** `AuthService.loginScreenBuilder`·
-  `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader` 는 core 쪽에 비워 둔 자리고,
-  `app/app_hooks.dart` 의 `configureAppHooks()` 가 `main.dart`·`test/flutter_test_config.dart`
-  에서 채운다. 새 훅을 만들면 거기에 연결하는 것을 잊지 않는다.
+  `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader`·
+  `LiveActivityLogoPrefetcher.teamTargetsLoader`·`LiveMatchActivityController` 의 로더 4개는
+  core 쪽에 비워 둔 자리고, `app/app_hooks.dart` 의 `configureAppHooks()` 가 `main.dart`·
+  `test/flutter_test_config.dart` 에서 채운다. 새 훅을 만들면 거기에 연결하는 것을 잊지
+  않는다. **훅이 비어 있을 때의 동작을 정해 둔다** — 화면 전환은 건너뛰고, 카드 정리는
+  "모른다" 로 보고 멈춘다(잘못 지우는 것이 늦게 지우는 것보다 비싸다).
 - 한 기능 전용 위젯은 `core/ui/` 에 두지 않는다 — `guide_popup` 은 `guide`, `cheer_ad_*` 는
   `cheer_ad` 가 소유한다.
 
