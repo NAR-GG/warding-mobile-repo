@@ -20,7 +20,9 @@ import 'package:warding/features/community/data/community_repository.dart';
 import 'package:warding/features/community/presentation/viewmodels/community_summary_viewmodel.dart';
 import 'package:warding/features/home/data/home_sources.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
+import 'package:warding/features/notice/presentation/viewmodels/notice_banner_viewmodel.dart';
 import 'package:warding/domain/repositories/member_notification_repository.dart';
+import 'package:warding/features/notification/presentation/viewmodels/notification_badge_viewmodel.dart';
 import 'package:warding/features/home/domain/usecases/get_preferred_team.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
@@ -88,15 +90,12 @@ class HomeViewModel extends ChangeNotifier {
     TeamPreferenceRepository? teamPreferences,
     GetPreferredTeam? getPreferredTeam,
     CommunitySummaryViewModel? communitySummary,
-  }) : _notices = notices ?? di<NoticeRepository>(),
-       _noticePreferences =
-           noticePreferences ?? NoticePreferenceRepository.instance,
-       _schedule = schedule ?? di<ScheduleRepository>(),
+    NoticeBannerViewModel? noticeBannerViewModel,
+    NotificationBadgeViewModel? notificationBadgeViewModel,
+  }) : _schedule = schedule ?? di<ScheduleRepository>(),
        _standingsRepo = standings ?? di<StandingsRepository>(),
        _shortsRepo = shorts ?? di<ShortsRepository>(),
        _subscriptions = subscriptions ?? di<SubscriptionRepository>(),
-       _memberNotifications =
-           memberNotifications ?? di<MemberNotificationRepository>(),
        // 솔랭·뉴스는 실제 API, 평점은 빈 소스. 목업은 HOME_MOCKS=true 일 때만.
        _soloRank = soloRank ?? defaultSoloRankSource(),
        _worlds = worlds ?? defaultWorldsSoloSource(),
@@ -116,15 +115,24 @@ class HomeViewModel extends ChangeNotifier {
            ),
        community =
            communitySummary ??
-           CommunitySummaryViewModel(repository: communityRepository) {
+           CommunitySummaryViewModel(repository: communityRepository),
+       noticeBanner =
+           noticeBannerViewModel ??
+           NoticeBannerViewModel(
+             repository: notices,
+             preferences: noticePreferences,
+           ),
+       notificationBadge =
+           notificationBadgeViewModel ??
+           NotificationBadgeViewModel(repository: memberNotifications) {
     // 섹션 ViewModel 의 통지를 홈 통지로 올린다 — 홈 위젯들이 HomeViewModel
     // 하나만 구독하는 기존 구조를 유지한다. 섹션을 독립 구독하는 화면은
     // 그 ViewModel 을 직접 쓰면 된다.
     community.addListener(_notify);
+    noticeBanner.addListener(_notify);
+    notificationBadge.addListener(_notify);
     // 스플래시가 미리 받아 둔 공지가 있으면 첫 프레임부터 그 상태로 그린다
     // ([ScheduleViewModel] 과 같은 이유 — 뒤늦게 끼어들면 아래 섹션을 민다).
-    _promotedNotices = _notices.cachedPromoted ?? const [];
-    _dismissedNoticeIds = _noticePreferences.cachedValue ?? const {};
     unawaited(refreshAll());
     // 순위표·솔랭·커뮤니티 섹션이 모두 이 싱글톤 캐시로 팀 로고를 그린다.
     // 홈 진입 시점에 한 번 당겨두면 나중에 빌드되는 위젯(라이즈 그룹 등)도
@@ -170,13 +178,10 @@ class HomeViewModel extends ChangeNotifier {
     unawaited(_loadWorlds());
   }
 
-  final NoticeRepository _notices;
-  final NoticePreferenceRepository _noticePreferences;
   final ScheduleRepository _schedule;
   final StandingsRepository _standingsRepo;
   final ShortsRepository _shortsRepo;
   final SubscriptionRepository _subscriptions;
-  final MemberNotificationRepository _memberNotifications;
   final SoloRankSource _soloRank;
   final WorldsSoloSource _worlds;
 
@@ -195,6 +200,10 @@ class HomeViewModel extends ChangeNotifier {
     _disposed = true;
     community.removeListener(_notify);
     community.dispose();
+    noticeBanner.removeListener(_notify);
+    noticeBanner.dispose();
+    notificationBadge.removeListener(_notify);
+    notificationBadge.dispose();
     _soloPollTimer?.cancel();
     // 남은 응원은 화면이 닫혀도 보낸다. 컨트롤러는 dispose 뒤에도 안전하다.
     unawaited(cheers.flushAll());
@@ -230,9 +239,9 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> refreshAll() async {
     _lastRefreshAt = DateTime.now();
     await Future.wait([
-      _loadPromotedNotice(),
+      noticeBanner.load(),
       community.load(),
-      refreshUnreadNotifications(),
+      notificationBadge.refresh(),
       _loadSubscriptions(),
       _loadSolo(),
       _loadWorlds(),
@@ -246,75 +255,28 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   // ---- 공지 배너 ----
-  List<Notice> _promotedNotices = const [];
-  Set<int> _dismissedNoticeIds = const {};
+  //
+  // 로직은 `features/notice` 가 갖는다 — 배너가 필요한 화면은 어디서든
+  // [NoticeBannerViewModel] 을 구독하면 된다.
+  final NoticeBannerViewModel noticeBanner;
 
-  /// 배너에 노출할 공지 — 닫지 않은 것 중 최신 발행. null 이면 배너 미표시.
-  Notice? get promotedNotice {
-    for (final notice in _promotedNotices) {
-      if (!_dismissedNoticeIds.contains(notice.id)) return notice;
-    }
-    return null;
-  }
-
-  bool get bannerVisible => promotedNotice != null;
+  Notice? get promotedNotice => noticeBanner.notice;
+  bool get bannerVisible => noticeBanner.visible;
 
   /// 배너 ✕ — 닫은 공지는 일정 화면 배너와 같은 저장소에 기록한다.
-  void dismissBanner() {
-    final notice = promotedNotice;
-    if (notice == null) return;
-    _dismissedNoticeIds = {..._dismissedNoticeIds, notice.id};
-    _notify();
-    unawaited(_noticePreferences.addDismissedId(notice.id));
-  }
-
-  Future<void> _loadPromotedNotice() async {
-    try {
-      // 배너 실패는 홈의 한 줄이고 다른 섹션과 무관하다 — 빈 목록으로 둔다.
-      final notices =
-          (await _notices.fetchPromoted()).getOrElse((_) => const []);
-      final dismissed = await _noticePreferences.loadDismissedIds();
-      if (_disposed) return;
-      final before = promotedNotice;
-      _promotedNotices = notices;
-      // 조회하는 사이 ✕ 로 닫은 id 가 저장값 응답에 아직 없을 수 있다 —
-      // 덮어쓰면 닫은 배너가 다시 뜨므로 합친다.
-      _dismissedNoticeIds = {...dismissed, ..._dismissedNoticeIds};
-      if (promotedNotice?.id != before?.id) _notify();
-    } catch (e) {
-      debugPrint('[Home] 배너 공지 조회 실패: $e');
-    }
-  }
+  void dismissBanner() => noticeBanner.dismiss();
 
   // ---- 상단 알림 배지 ----
-  int _unreadNotificationCount = 0;
+  //
+  // 로직은 `features/notification` 이 갖는다 — 벨 배지가 필요한 화면은
+  // 어디서든 [NotificationBadgeViewModel] 을 구독하면 된다.
+  final NotificationBadgeViewModel notificationBadge;
 
   /// 헤더 벨 배지용 미읽음 수. 0 이면 배지를 숨긴다.
-  ///
-  /// 벨이 여는 화면(마이구독)의 피드와 **같은 범위**로 세야 한다 — 거기서
-  /// 다 읽었는데 배지가 남으면 유저는 지울 방법이 없다. 그 피드는
-  /// `SubscriptionFeedViewModel` 을 group 없이(=전체) 쓰므로 여기도 전체다.
-  /// 벨 목적지를 바꾸면 이 범위도 함께 맞춘다.
-  int get unreadNotificationCount => _unreadNotificationCount;
+  int get unreadNotificationCount => notificationBadge.unreadCount;
 
   /// 미읽음 수를 다시 센다. 알림 화면에서 돌아올 때도 부른다.
-  /// 비회원(JWT 없음)·실패는 0(배지 숨김)으로 조용히 넘어간다.
-  Future<void> refreshUnreadNotifications() async {
-    var count = 0;
-    try {
-      final page = (await _memberNotifications.fetchNotifications(
-        page: 0,
-        size: 1,
-      ))
-          .getOrElse((f) => throw FailureException(f));
-      count = page.unreadCount;
-    } catch (e) {
-      debugPrint('[Home] 알림 미읽음 수 조회 실패(비회원 포함): $e');
-    }
-    if (_disposed || count == _unreadNotificationCount) return;
-    _unreadNotificationCount = count;
-    _notify();
-  }
+  Future<void> refreshUnreadNotifications() => notificationBadge.refresh();
 
   // ---- 구독 선수 (솔랭 구독 수·쇼츠 매칭에 함께 쓴다) ----
 
