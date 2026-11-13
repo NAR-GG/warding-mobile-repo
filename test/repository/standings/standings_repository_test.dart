@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/features/home/data/repositories/standings_repository_impl.dart';
+import 'package:warding/features/standings/data/repositories/standings_repository_impl.dart';
 import 'package:warding/core/util/api_client.dart' as api;
 
 void main() {

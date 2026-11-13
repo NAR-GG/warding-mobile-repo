@@ -7,11 +7,11 @@ import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/error/failure.dart';
 import 'package:warding/core/infrastructure/api_status_exception.dart';
-import 'package:warding/features/home/domain/repositories/standings_repository.dart';
-import 'package:warding/features/home/domain/standing.dart';
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/repositories/standings_repository.dart';
+import 'package:warding/features/standings/domain/standing.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 import 'package:warding/core/util/api_client.dart' as http;
-import 'package:warding/features/home/data/worlds_standings_mock.dart';
+import 'package:warding/features/standings/data/worlds_standings_mock.dart';
 
 /// [StandingsRepository] 의 원격 구현 (`/api/standings`).
 class StandingsRepositoryImpl implements StandingsRepository {

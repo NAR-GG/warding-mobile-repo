@@ -1,17 +1,5 @@
 // 홈 화면 전용 데이터 모델. ViewModel과 데이터 소스가 함께 참조한다.
 
-class HomeLeagueChip {
-  const HomeLeagueChip({
-    required this.code,
-    required this.label,
-    required this.live,
-  });
-
-  final String code;
-  final String label;
-  final bool live;
-}
-
 /// 콘텐츠 · 뉴스 탭 한 건.
 class HomeNewsArticle {
   const HomeNewsArticle({

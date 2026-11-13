@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/features/home/domain/standing.dart';
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/standing.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 
 /// 리그 순위표 조회.
 abstract interface class StandingsRepository {

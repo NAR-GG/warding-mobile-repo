@@ -1,8 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import 'package:warding/features/my_review/data/repositories/my_review_repository_impl.dart';
-import 'package:warding/features/home/data/repositories/standings_repository_impl.dart';
-import 'package:warding/features/home/domain/repositories/standings_repository.dart';
+import 'package:warding/features/standings/data/repositories/standings_repository_impl.dart';
+import 'package:warding/features/standings/domain/repositories/standings_repository.dart';
 import 'package:warding/features/match_list/data/repositories/category_repository_impl.dart';
 import 'package:warding/features/match_list/domain/repositories/category_repository.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';

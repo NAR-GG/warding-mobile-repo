@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/features/home/domain/standing.dart';
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/standing.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 
 /// `/api/standings` 의 `bracket` 파싱 — warding-docs
 /// `features/home/spec.md` "요청: 토너먼트 대진 응답" 에 올린 형식.

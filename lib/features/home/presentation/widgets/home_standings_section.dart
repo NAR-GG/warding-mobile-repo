@@ -6,8 +6,8 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/standings_group_label.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
-import 'package:warding/features/home/domain/standing.dart';
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/standing.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 import 'package:warding/features/home/presentation/widgets/home_section_header.dart';
 import 'package:warding/features/home/presentation/widgets/home_skeletons.dart';
 

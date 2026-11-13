@@ -1,4 +1,4 @@
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 
 /// 월즈 순위표 목업(`HOME_MOCKS=true`일 때만 쓰인다).
 ///

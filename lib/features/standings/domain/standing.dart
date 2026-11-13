@@ -1,4 +1,4 @@
-import 'package:warding/features/home/domain/worlds_standings.dart';
+import 'package:warding/features/standings/domain/worlds_standings.dart';
 
 /// 리그 순위표 조회 결과 (`GET /api/standings`).
 class StandingsResult {
