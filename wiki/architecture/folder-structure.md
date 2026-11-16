@@ -80,6 +80,42 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 보다 더 광범위하게 공유되는 것들(`styles` 27곳, `components` 25곳, `util` 22곳,
 `config` 16곳)이 밖에 남아 기준이 어긋났다.
 
+# Entity 레벨은 어디인가
+
+Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리는 **두 곳**이다.
+
+| 위치 | 수 | 범위 |
+|---|---|---|
+| `lib/domain/` | 모델 10 + repository 인터페이스 2 | 여러 기능이 쓴다 |
+| `features/{기능}/domain/` | 모델 36 + repository 인터페이스 | 그 기능만 쓴다 |
+
+**그런데 46개 중 실제 비즈니스 규칙을 가진 것은 5개뿐이다.** 나머지는 "필드 +
+`fromJson` + `copyWith`" 로, 엄밀히는 Entity 가 아니라 DTO 에 가깝다.
+
+| 파일 | 규칙 |
+|---|---|
+| `features/solo_rank/domain/solo_rank_rules.dart` | 솔랭 선수를 진행/종료로 분류, 정렬 순서, 구독 필터 |
+| `features/community/domain/community_permission.dart` | `canWriteToBoard` — 비로그인 금지, 전체 게시판 허용, 팀 게시판은 내 팀만 |
+| `features/community/domain/community_rules.dart` | 이용규칙 본문 + 버전(`2026.08`) |
+| `domain/calendar_week_start.dart` | `leadingDays`·`weekCount`·`orderedWeekdayLabels` — 달력 격자 계산 |
+| `domain/quiet_hours.dart` | `isSameTime` — 시작=종료면 24시간 |
+
+**그게 정상이다. 이 앱의 비즈니스 규칙 대부분이 백엔드에 있다.** 경기 상태 판정·평점 집계·
+구독 처리가 전부 API 다. 클라이언트에 남는 규칙은 **표시 방식**(달력 격자, 솔랭 정렬)과
+**권한 판정**(글쓰기)이라, Entity 가 얇은 것이 구조 결함이 아니다. UseCase 가 1개뿐인
+([`GetPreferredTeam`](../../lib/features/home/domain/usecases/get_preferred_team.dart))
+것도 같은 이유다 — 나머지는 repository 1개 호출이라 빼면 빈 껍데기가 된다.
+
+`member_notification` 의 getter 13개는 규칙처럼 보이지만 payload 접근자(`_d('playerName')`)다.
+
+**Entity 레벨의 역방향 참조는 0건이다.** `features/*/domain` → `data`·`presentation`·`app`,
+`lib/domain` → `features`·`app` 전부 0. 2026-11-16 점검에서 한 건
+(`solo_rank_rules` → `data/solo_rank_sources`)이 나와 모델·계약을 `domain/` 으로 올렸다.
+
+**예외 1건: `domain/quiet_hours.dart` 가 `TimeOfDay` 를 쓴다.** 원전대로면 Entity 가 UI
+프레임워크를 몰라야 하지만, 자체 Time 타입을 만들면 화면마다 변환이 붙는다. `TimeOfDay` 는
+위젯이 아닌 값 타입이라 그대로 둔다.
+
 # 의존 방향: app → features → core
 
 `core/` 는 `features/`·`app/` 을 import 하지 않는다. 유일한 예외는 조립 지점인

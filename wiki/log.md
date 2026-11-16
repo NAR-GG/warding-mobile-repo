@@ -1,5 +1,20 @@
 # Bundle Update Log
 
+## 2026-11-16
+* **Entity 레벨(domain)의 역방향 참조를 없앴다.** `solo_rank_rules`(domain)가
+  `solo_rank_sources`(data)를 참조하던 한 건이다 — 모델 5개
+  (`SoloRankSnapshot`·`WorldsSoloSnapshot`·`WorldsTodayRecord`·`CheerResult`·
+  `CheerRejected`)가 파싱 로직 없는 순수 모델인데 `data/` 에 있었다. 모델은
+  `domain/solo_rank_snapshot.dart`, 소스 계약 3개는 `domain/repositories/` 로 올렸고
+  `data/` 에는 구현만 남았다. 이제 `features/*/domain` → `data`·`presentation`·`app` 과
+  `lib/domain` → `features`·`app` 전부 0건이다.
+* **Entity 레벨이 어디인지 문서화했다.** `lib/domain/`(12) + `features/*/domain/`(36) = 46개가
+  그 자리인데, 실제 비즈니스 규칙을 가진 것은 5개뿐이다(솔랭 분류·커뮤니티 글쓰기 권한·
+  이용규칙·달력 격자·조용한 시간대). 나머지는 DTO 에 가깝다 — 이 앱의 규칙 대부분이
+  백엔드에 있어서 정상이고, UseCase 가 1개뿐인 것도 같은 이유다.
+  예외 1건으로 `quiet_hours` 가 `TimeOfDay` 를 쓴다(값 타입이라 그대로 둔다).
+  [폴더 구조](/architecture/folder-structure.md)의 "Entity 레벨은 어디인가" 참고.
+
 ## 2026-11-13 (5)
 * **뉴스·평점을 각 기능으로 옮겨 홈을 비웠다.** "백엔드 대기 중" 으로 보고 보류했던 둘인데
   실제로는 `ApiReviewSource`·`ApiNewsSource` 가 실 API(`/mobile/ratings/recent`,
