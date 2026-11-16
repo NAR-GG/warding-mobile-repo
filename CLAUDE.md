@@ -43,7 +43,7 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 
 ```
 lib/
-├── features/     기능별 30개
+├── features/     기능별 32개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
@@ -54,17 +54,15 @@ lib/
 ├── app/          앱 셸 — 기능 2개 이상의 화면·구현을 알아야 하는 코드
 │   ├── deeplink/           외부(푸시·홈 위젯) → 앱 진입
 │   ├── navigation/         화면 이동 (경기 상세 창구, 탭 전환)
+│   ├── di_container.dart   인터페이스 ↔ 구현 등록
 │   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
-├── domain/       여러 기능이 쓰는 모델 + 그 repository 인터페이스
-├── core/         기능 소유가 아닌 기술 인프라
-│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository
-│   ├── ui/                 앱 전역 공용 위젯
-│   ├── theme/              디자인 토큰 (app_colors 등)
+├── core/         기술만 — 도메인 개념이 없다
+│   ├── ui/                 앱 전역 공용 위젯 48개
+│   ├── util/               순수 함수·포맷터 17개
 │   ├── config/             앱 설정 (API URL, 키 등)
-│   ├── error/              Failure 계층, FailureException
-│   ├── usecase/            UseCase 기반 타입
-│   ├── data/               예외 → Failure 매퍼
-│   └── util/               유틸리티
+│   ├── error/              Failure 계층, API 상태 예외
+│   ├── theme/              디자인 토큰 (app_colors)
+│   └── data/               예외 → Failure 매퍼
 ├── l10n/         생성물 (아래 참고)
 ├── main.dart     진입점
 └── firebase_options.dart   생성물
@@ -89,10 +87,9 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
   (`app/navigation/`)이 여기 있다. 라우터·탭 네비게이션을 앱 셸에 두는 것은 조사한 실제
   앱 4개가 예외 없이 따르는 관행이다(nowinandroid `app/navigation/`, compass_app
   `lib/routing/`, Immich `lib/routing/`, AppFlowy `lib/startup/tasks/`).
-- **화면을 안 띄우면 `app/` 이 아니다.** 기능 repository 를 쓰더라도 반환 타입이
-  `domain/` 의 공용 모델이면 훅으로 끊어 `core/` 로 내린다 —
-  `live_activity_logo_prefetcher`·`live_match_activity_controller` 가 그렇게
-  `core/infrastructure/live_activity/` 로 갔다.
+- **화면을 안 띄우면 `app/` 이 아니다.** 기능 repository 를 쓰더라도 화면을 만들지 않으면
+  그 도메인의 기능으로 내린다 — `live_activity_logo_prefetcher`·
+  `live_match_activity_controller` 가 `features/live_activity/data/` 로 갔다.
 - **core 가 필요로 하는 화면·구현은 훅으로 받는다.** `AuthService.loginScreenBuilder`·
   `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader`·
   `LiveActivityLogoPrefetcher.teamTargetsLoader`·`LiveMatchActivityController` 의 로더 4개는
@@ -113,22 +110,35 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 
 `firebase.json` 은 FlutterFire CLI 가 관리하므로 손으로 고치지 않는다.
 
-**`core/infrastructure/`에 있는 것**: `auth`(18곳), `preference`(8곳), `notification`(4곳),
-`fcm`, `ad`, `live_activity`, `device`. 소유 기능이 없는 횡단 관심사다.
+**`core/` 에 도메인 개념을 두지 않는다.** 소비처가 몇 곳이든 "경기·팀·선수·알림·인증"
+같은 이름이 붙으면 그 도메인의 기능으로 간다. 2026-11-16 에 `core/domain/`(모델 9) 과
+`core/infrastructure/`(21파일) 를 전부 해체했다 — 폴더 이름뿐 아니라 내용도 도메인이었다
+(알림 피드 API·잠자기 설정·실시간 카드·선호 팀 저장).
 
-**소유자 판단은 소비처를 세서 한다.** 세는 규칙:
+| 원래 위치 | 간 곳 | 이유 |
+|---|---|---|
+| `infrastructure/auth` + `device` + `domain/user_profile` | `features/auth/` | 상호 참조라 한 묶음. 20기능이 쓰지만 도메인이다 |
+| `infrastructure/notification` 4 + 모델 4 + 인터페이스 2 + `fcm_notification_types` | `features/notification/` | 알림 도메인 |
+| `infrastructure/live_activity` 4 | `features/live_activity/` | 실시간 카드 도메인 |
+| `infrastructure/preference` 7 + `ad` | 각 소유 기능 | cheer_ad·guide·calendar_setting·notice·match_list_setting·schedule·onboarding |
+| `domain/schedule_match`·`team`·`calendar_week_start`·`team_notification_subscription` | 각 소유 기능 | — |
 
-- **`core/` 안에서의 참조는 세지 않는다.** core 끼리 쓰는 건 당연하다. `device` 는 기능
-  소비처가 0 이고 `auth_service`·`fcm_service` 만 쓰므로 `core/` 가 맞다.
+**`core/` 에 남는 것은 기술뿐이다.** `ui`(공용 위젯 48) · `util`(순수 함수·포맷터 17) ·
+`config` · `error`(Failure·API 상태 예외) · `theme` · `data`(예외→Failure 매퍼).
+
+- **순수 함수·포맷터는 도메인 이름이어도 `core/util/` 이다.** `match_status(String)` 는
+  문자열 판정이고 `rating_mapping` 은 수치 변환이다 — 모델도 repository 도 없어서 성격이
+  다르다. 단 1기능만 쓰면 내린다(`dragon_type`·`gold_format`·`live_elapsed`·
+  `standings_group_label`).
+- **공용 위젯은 도메인 이름이어도 `core/ui/` 다.** `team_logo`·`team_code_badge` 는 "팀
+  로고를 그리는 위젯"이고, `team_logo_directory` 는 그 위젯이 쓰는 URL 캐시다.
 - **이름이 같은 기능이 있으면 그 기능 소유로 본다.** `rating` repository 는 4곳이 쓰지만
   `player_rating` 기능이 있어 `features/player_rating/data/` 에 둔다.
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면 대부분이
-  `core/` 로 가 버린다.
-- 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `domain` 에
-  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓰므로 `domain` 이다.
-- 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` 에 둔다 — `user_profile` 은 `mypage`·
-  `profile_edit` 둘이 쓴다.
+  공유 위치로 가 버린다.
+- 여러 기능이 쓰는데 주 소유가 애매하면 **가장 본질적으로 쓰는 쪽**이다 —
+  `filter_preference` 는 match_list·schedule·splash 가 쓰지만 필터를 정의하는 곳이
+  `schedule` 이라 그쪽이다. 다른 기능이 그걸 참조하는 것은 허용한다.
 
 **import 는 `package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을
 옮길 때 대량으로 깨진다 — 이 전환에서 실측으로 540건이 났다. `export` 도 마찬가지다.
@@ -145,8 +155,7 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 | ViewModel | `features/{기능}/presentation/viewmodels/` | `features/community/presentation/viewmodels/community_list_viewmodel.dart` |
 | 모델·규칙·상수 | `features/{기능}/domain/` | `features/community/domain/community_remote_post.dart` |
 | 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
-| 여러 기능이 쓰는 모델 | `domain/` | — |
-| 여러 기능이 쓰는 서비스·리포지토리 | `core/infrastructure/` | — |
+| 여러 기능이 쓰는 모델·서비스 | 그 **도메인의 기능** | `features/auth/data/auth_service.dart` (20기능이 쓴다) |
 | 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.

@@ -1,5 +1,27 @@
 # Bundle Update Log
 
+## 2026-11-16 (2)
+* **`core` 에서 도메인 개념을 전부 빼냈다** (114 → 75파일). `core/domain/`(모델 9) 과
+  `core/infrastructure/`(21파일) 를 해체했다 — 폴더 이름뿐 아니라 내용도 도메인이었다
+  (마이구독 알림 피드 API·알림 잠자기 설정·실시간 경기 카드 제어·선호 팀 저장).
+  `features/auth/`·`features/notification/`·`features/live_activity/` 를 신설하고,
+  preference 7개와 ad 는 각 소유 기능으로, 모델 4개(schedule_match·team·
+  calendar_week_start·team_notification_subscription)도 소유 기능으로 내렸다.
+  `auth_service` ↔ `device_repository` 는 상호 참조라 한 묶음으로 옮겼다.
+  **`core` 에 남는 것은 기술뿐** — ui(48)·util(17)·config(5)·error(3)·theme(1)·data(1).
+  `api_status_exception` 은 `core/error/`, `team_logo_directory` 는 `core/ui/` 로 갔다
+  (공용 위젯 2개가 쓰는 URL 캐시다).
+* **`core` → `features`·`app` 참조가 0건이 됐다.** `di_container` 를 `app/` 으로 옮겨
+  마지막 예외도 없앴다 — 조사한 레포 4개 전부 DI 를 앱 셸에 둔다.
+* **판단 기준이 뒤바뀌었다.** 전에는 "소비처 2곳 이상 → `core`" 였는데 그 규칙이 `core`
+  안을 도메인으로 채웠다. 이제 **"어느 도메인인가"가 먼저**다 — `auth_service` 는 20개
+  기능이 쓰지만 인증 도메인이라 `features/auth/` 다. 조사한 레포 5개는 인프라를 공유
+  위치에 두는데(5/5) 그 관행을 따르지 않았다. 대가는 `features/auth/` 가 20기능이 참조하는
+  기능이 된 것이고, 얻은 것은 `core` 를 열었을 때 경기·팀·알림이 보이지 않는 것이다.
+  순수 함수·포맷터(`match_status`·`rating_mapping`)와 공용 위젯(`team_logo`)은 도메인
+  이름이어도 `core` 에 남는다 — 모델도 repository 도 없어서 성격이 다르다.
+  [폴더 구조](/architecture/folder-structure.md)의 "core 에 도메인 개념을 두지 않는다" 참고.
+
 ## 2026-11-16
 * **Entity 레벨(domain)의 역방향 참조를 없앴다.** `solo_rank_rules`(domain)가
   `solo_rank_sources`(data)를 참조하던 한 건이다 — 모델 5개

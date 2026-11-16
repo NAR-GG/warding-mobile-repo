@@ -15,7 +15,7 @@ timestamp: 2026-11-10T00:00:00Z
 
 ```
 lib/
-├── features/     기능별 30개
+├── features/     기능별 32개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
 │       ├── domain/         모델, 규칙·상수
@@ -26,63 +26,67 @@ lib/
 ├── app/          앱 셸 — 기능 2개 이상의 화면·구현을 알아야 하는 코드 5개
 │   ├── deeplink/           푸시·홈 위젯 → 앱 진입
 │   ├── navigation/         경기 상세 창구, 탭 전환
+│   ├── di_container.dart   인터페이스 ↔ 구현 등록 (기능 12개를 안다)
 │   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
-├── core/         기능 소유가 아닌 모든 것
-│   ├── domain/             core 와 여러 기능이 함께 쓰는 모델 9개 + repository 인터페이스 2개
-│   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 21개
-│   ├── ui/                 앱 전역 공용 위젯 52개
-│   ├── theme/              디자인 토큰 (app_colors 등)
-│   ├── config/             앱 설정 (API URL, 키 등)
-│   ├── error/              Failure 계층, FailureException
-│   ├── usecase/            UseCase 기반 타입
-│   ├── data/               예외 → Failure 매퍼
-│   └── util/               유틸리티 21개
+├── core/         기술만 — 도메인 개념이 없다 (75파일)
+│   ├── ui/                 앱 전역 공용 위젯 48개
+│   ├── util/               순수 함수·포맷터 17개
+│   ├── config/             앱 설정 (API URL, 키 등) 5개
+│   ├── error/              Failure 계층, API 상태 예외 3개
+│   ├── theme/              디자인 토큰 (app_colors)
+│   └── data/               예외 → Failure 매퍼
 ├── l10n/         생성물 (아래 예외 참고)
 ├── main.dart     진입점
 └── firebase_options.dart   생성물
 ```
 
-# 공유 모델은 core/domain 에 둔다
+# core 에 도메인 개념을 두지 않는다
 
-**`core/` 가 쓰는 모델은 `core/` 안에 있어야 한다.** 그러지 않으면 `core` 가 자기 밖을
-import 하게 되고, `core` 만 떼어내거나 패키지로 빼는 것이 불가능해진다.
+**소비처가 몇 곳이든 "경기·팀·선수·알림·인증" 같은 이름이 붙으면 그 도메인의 기능으로
+간다.** 2026-11-16 에 `core/domain/`(모델 9) 과 `core/infrastructure/`(21파일) 를 전부
+해체했다.
 
-2026-11-16 에 공유 모델을 `lib/domain/` 으로 올렸다가 되돌렸다. 올린 이유는 "도메인이
-`core`(기술 인프라) 의 하위로 읽힌다" 였는데, 실측하니 **`core` 가 그 모델들을 13건
-import하고 있었다** — `auth_service` → `user_profile`, `team_preference_repository` →
-`team`, notification store 3개 → 알림 모델. 이름보다 의존 방향이 먼저다.
+해체 전에는 "소비처를 세서 2곳 이상이면 `core`" 였는데, 그 규칙이 `core` 안을 도메인으로
+채웠다 — 폴더 이름뿐 아니라 내용도 그랬다. `notification/` 에 마이구독 알림 피드 API 와
+알림 잠자기 설정이, `live_activity/` 에 실시간 경기 카드 제어가, `preference/` 에 선호 팀
+저장과 스포방지 설정이 있었다.
 
-| 모델 | core 안의 사용처 |
-|---|---|
-| `user_profile` | `infrastructure/auth/auth_service` (68파일이 쓰는 핵심) |
-| `team` | `infrastructure/preference/team_preference_repository` |
-| `schedule_match` | `infrastructure/live_activity/live_match_activity_controller` |
-| `calendar_week_start` | `infrastructure/preference/calendar_week_start_preference_repository` |
-| `member_notification`·`quiet_hours` | `infrastructure/notification/*_repository_impl` |
-| `live_match_notification`·`solo_rank_notification` | `infrastructure/notification/*_store` |
-| `team_notification_subscription` | `infrastructure/live_activity/live_match_activity_controller` |
+| 원래 위치 | 간 곳 | 판단 |
+|---|---|---|
+| `infrastructure/auth` + `device` + `domain/user_profile` | `features/auth/` | 상호 참조라 한 묶음(auth→device 1건, device→auth 2건). 20개 기능이 쓰지만 인증은 도메인이다 |
+| `infrastructure/notification` 4 + 모델 4 + 인터페이스 2 + `fcm_notification_types` | `features/notification/` | 알림 도메인 |
+| `infrastructure/live_activity` 4 | `features/live_activity/` | 실시간 카드 도메인. 2026-11-13 에 `app/` 에서 `core/` 로 내렸던 둘이 여기로 왔다 |
+| `infrastructure/preference` 7 + `ad` | 각 소유 기능 | cheer_ad·guide·calendar_setting·notice·match_list_setting·schedule·onboarding |
+| `domain/` 모델 4 | 각 소유 기능 | schedule_match→schedule, team→onboarding, calendar_week_start→calendar_setting, team_notification_subscription→subscription |
 
-**`core` 가 안 쓰는 공유 모델은 소유 기능으로 내린다.** `player_subscription` 이 그 사례다 —
-6개 기능(home·my_players·my_subscription_setting·player·solo_rank·subscription)이 쓰지만
-`core` 는 안 쓰므로 `features/subscription/domain/` 에 있다. 다른 기능이 그걸 참조하는 것은
-허용한다(아래 "기능 간 참조" 참고).
+**`core` 에 남는 것은 기술뿐이다** — `ui`(48) · `util`(17) · `config`(5) · `error`(3) ·
+`theme`(1) · `data`(1). 114 → 75파일.
 
-**`core/domain/` 은 위층을 import 하지 않는다** — `features`·`app` 참조 0건. Clean
-Architecture 원전의 가장 안쪽 원이라는 성질은 폴더 깊이가 아니라 이 의존 방향이 보장한다.
+## core 에 남아도 되는 도메인 이름
 
-조사한 실제 앱 5개 중 4개가 공유 모델을 "최상위 공유 위치"에 두는데, 그 4개에서도 **공유
-모델과 인프라가 같은 묶음**이다 — nowinandroid 는 `core:model` 과 `core:data` 가 형제
-모듈이고 `core:data` 가 `core:model` 을 의존한다. 여기서 `core/domain` ← `core/infrastructure`
-와 같은 관계다. compass_app 의 `lib/domain/models/` 도 `lib/data/` 와 형제다.
+- **순수 함수·포맷터는 `core/util/`.** `match_status(String)` 는 문자열 판정이고
+  `rating_mapping` 은 수치 변환이다 — 모델도 repository 도 없어서 성격이 다르다. 단
+  1기능만 쓰면 내린다(`dragon_type`·`gold_format`·`live_elapsed`·`standings_group_label`
+  이 그렇게 갔다).
+- **공용 위젯은 `core/ui/`.** `team_logo`·`team_code_badge` 는 "팀 로고를 그리는 위젯"이고
+  `team_logo_directory` 는 그 위젯이 쓰는 URL 캐시다. `core/ui` 위젯 2개가 참조한다.
+- **`api_status_exception` 은 `core/error/`.** HTTP 상태코드 예외라 기술이고,
+  `failure_mapper` 가 그걸 `Failure` 로 바꾼다.
 
-**"공유 위치는 도메인 중립이어야 한다"를 지키는 레포는 0/5 다.** `core:model` 에
-`NewsResource` 가, `domain/models/` 에 `Asset` 이 그냥 들어간다. 그래서 `schedule_match` 처럼
-명백한 e스포츠 도메인 개념이 `core/domain/` 에 있는 것이 정상이다.
+## 조사한 레포와의 차이
 
-반대로 **인프라 서비스는 5/5 전원 공유 위치**다 — AppFlowy 조차 모델은 feature 에 두면서
-auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/auth` 는 20개 기능이
-쓰더라도 `features/auth/` 로 내리지 않는다. 내리면 20개 기능이 참조하는 feature 가 되어
-이름만 feature 이고 역할은 core 가 된다.
+조사한 실제 앱 5개는 **인프라를 공유 위치에 둔다(5/5)** — AppFlowy 조차 모델은 feature 에
+두면서 auth 는 `user/application/auth/` 로 뺐다. 여기서는 그 관행을 따르지 않고 "core 에
+도메인 이름이 없어야 한다"를 우선했다.
+
+대가는 `features/auth/` 가 20개 기능이 참조하는 기능이 된 것이다. 그게 사실상 공유 코드와
+같은 역할이지만, **적어도 `core` 를 열었을 때 경기·팀·알림이 보이지 않는다.** 어느 쪽이
+나은지는 취향이 갈리는 지점이고, 이 레포는 후자를 골랐다.
+
+**`core` → `features`·`app` 참조 0건.** `di_container` 를 `app/` 으로 옮겨 마지막 예외도
+없앴다(조사한 레포 4개 전부 DI 를 앱 셸에 둔다 — nowinandroid `app/di/`, compass_app
+`lib/config/dependencies.dart`, Immich `lib/providers/`, AppFlowy
+`lib/startup/deps_resolver.dart`).
 
 **규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.** 처음에는 `components`·
 `styles`·`config`·`util` 을 최상위에 뒀는데, 그러면 `core/` 에 들어간 `team`(2곳에서 사용)
@@ -93,10 +97,8 @@ auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/aut
 
 Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리는 **두 곳**이다.
 
-| 위치 | 수 | 범위 |
-|---|---|---|
-| `lib/domain/` | 모델 10 + repository 인터페이스 2 | 여러 기능이 쓴다 |
-| `features/{기능}/domain/` | 모델 36 + repository 인터페이스 | 그 기능만 쓴다 |
+**`features/{기능}/domain/`** 한 곳이다 — 2026-11-16 에 `core/domain/` 을 해체해서
+공유 모델도 각 소유 기능으로 갔다. 모델 약 50개 + repository 인터페이스 15개.
 
 **그런데 46개 중 실제 비즈니스 규칙을 가진 것은 5개뿐이다.** 나머지는 "필드 +
 `fromJson` + `copyWith`" 로, 엄밀히는 Entity 가 아니라 DTO 에 가깝다.
@@ -106,8 +108,8 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 | `features/solo_rank/domain/solo_rank_rules.dart` | 솔랭 선수를 진행/종료로 분류, 정렬 순서, 구독 필터 |
 | `features/community/domain/community_permission.dart` | `canWriteToBoard` — 비로그인 금지, 전체 게시판 허용, 팀 게시판은 내 팀만 |
 | `features/community/domain/community_rules.dart` | 이용규칙 본문 + 버전(`2026.08`) |
-| `domain/calendar_week_start.dart` | `leadingDays`·`weekCount`·`orderedWeekdayLabels` — 달력 격자 계산 |
-| `domain/quiet_hours.dart` | `isSameTime` — 시작=종료면 24시간 |
+| `features/calendar_setting/domain/calendar_week_start.dart` | `leadingDays`·`weekCount`·`orderedWeekdayLabels` — 달력 격자 계산 |
+| `features/notification/domain/quiet_hours.dart` | `isSameTime` — 시작=종료면 24시간 |
 
 **그게 정상이다. 이 앱의 비즈니스 규칙 대부분이 백엔드에 있다.** 경기 상태 판정·평점 집계·
 구독 처리가 전부 API 다. 클라이언트에 남는 규칙은 **표시 방식**(달력 격자, 솔랭 정렬)과
@@ -117,18 +119,18 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 
 `member_notification` 의 getter 13개는 규칙처럼 보이지만 payload 접근자(`_d('playerName')`)다.
 
-**Entity 레벨의 역방향 참조는 0건이다.** `features/*/domain` → `data`·`presentation`·`app`,
-`lib/domain` → `features`·`app` 전부 0. 2026-11-16 점검에서 한 건
-(`solo_rank_rules` → `data/solo_rank_sources`)이 나와 모델·계약을 `domain/` 으로 올렸다.
+**Entity 레벨의 역방향 참조는 0건이다.** `features/*/domain` → `data`·`presentation`·`app`
+전부 0. 2026-11-16 점검에서 한 건(`solo_rank_rules` → `data/solo_rank_sources`)이 나와
+모델·계약을 `domain/` 으로 올렸다.
 
-**예외 1건: `domain/quiet_hours.dart` 가 `TimeOfDay` 를 쓴다.** 원전대로면 Entity 가 UI
+**예외 1건: `features/notification/domain/quiet_hours.dart` 가 `TimeOfDay` 를 쓴다.** 원전대로면 Entity 가 UI
 프레임워크를 몰라야 하지만, 자체 Time 타입을 만들면 화면마다 변환이 붙는다. `TimeOfDay` 는
 위젯이 아닌 값 타입이라 그대로 둔다.
 
 # 의존 방향: app → features → core
 
-`core/` 는 `features/`·`app/` 을 import 하지 않는다. 유일한 예외는 조립 지점인
-`core/di_container.dart` 로, repository 구현체를 등록하느라 24개 기능 파일을 안다.
+**`core/` 는 `features/`·`app/` 을 import 하지 않는다 — 예외 0건.** 조립 지점인
+`di_container.dart` 가 기능 12개의 repository 를 알아야 해서 `app/` 에 있다.
 
 2026-11-10 점검에서 `core` 가 `features` 를 거꾸로 참조하는 곳이 66건(DI 24 + 42)
 나왔고, 전부 풀었다. 푸는 방법은 세 가지였다.
@@ -136,13 +138,13 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 | 상황 | 해법 | 예 |
 |---|---|---|
 | 앱 셸 코드 (기능 2개 이상의 화면을 안다) | `lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `match_detail_router`, `tab_navigation` |
-| 기능 repository 만 쓰고 화면은 안 띄운다 | 훅으로 끊고 `core/` 로 | `live_activity_logo_prefetcher`, `live_match_activity_controller` (2026-11-13 재분류) |
+| 기능 repository 만 쓰고 화면은 안 띄운다 | 그 도메인의 기능으로 | `live_activity_logo_prefetcher`, `live_match_activity_controller` → `features/live_activity/data/` (2026-11-13 `core` 로, 11-16 기능으로 재분류) |
 | 한 기능 전용 위젯·모델이 core 에 있었다 | 그 기능으로 이동 | `guide_popup`→`guide`, `cheer_ad_popup`·`cheer_ad_banner`→`cheer_ad`, `notification_feed_card`→`subscription`, `guest_lock_overlay`→`login`, `solo_hero_card`→`home`, `advertiser_banner`→`notice`, `league_meta`·`league_icon`→`schedule`, `onboarding_preference_repository`→`onboarding` |
 | core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`·`onSignedOut`, `TeamLogoDirectory.defaultLoader`, `LiveActivityLogoPrefetcher.teamTargetsLoader`, `LiveMatchActivityController` 의 로더 4개 |
 
-반대로 `features` 가 소유하던 것이 사실은 공용이라 `core` 로 올린 것도 있다:
-`quiet_hours`(→`domain`), `team_logo_directory`(→`core/infrastructure/team`),
-`parseServerTime`(→`core/util/server_time.dart`).
+반대로 `features` 가 소유하던 것이 사실은 기술이라 `core` 로 올린 것도 있다:
+`team_logo_directory`(→`core/ui/`, 공용 위젯 2개가 쓴다),
+`parseServerTime`·`minutesSince`(→`core/util/server_time.dart`).
 
 # app/ 과 core/ui/ 는 왜 다른 자리인가
 
@@ -156,7 +158,7 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 | `app/navigation/tab_navigation` | 4파일 | **6개** |
 | `app/app_hooks` | 2파일 | **3개** |
 
-`core/ui` 52개는 현재 `features`·`app`·`domain` 참조가 **전부 0건**이다. 거기에 앱 셸 코드를
+`core/ui` 48개는 현재 `features`·`app` 참조가 **전부 0건**이다. 거기에 앱 셸 코드를
 섞으면 `core` 가 기능을 알게 되어 의존 방향이 무너진다.
 
 **탭 네비게이션은 "위젯"과 "목적지"가 이미 갈려 있다.** 하단 바를 그리는 `AppBottomNav` 와
@@ -205,40 +207,25 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 옮기려면 그 설정부터 바꿔야 하는데 이득이 없다. 특히 `firebase.json` 은 FlutterFire CLI 가
 관리하는 파일이라 손으로 고치면 다음 `flutterfire configure` 에 덮일 수 있다.
 
-# core 에 있는 것
-
-| 대상 | 기능 소비처 수 |
-|---|---|
-| `auth` | 18 |
-| `preference` | 8 |
-| `notification` | 4 |
-| `fcm`, `ad`, `live_activity` | 2~3 |
-| `device` | 0 (`auth_service`·`fcm_service` 만 씀) |
-
-`domain/` 에는 모델 10개 + repository 인터페이스 2개 — `schedule_match`(6곳), `team`(6곳),
-`player_subscription`(5곳), `user_profile`(2곳), `member_notification`(2곳),
-`team_notification_subscription`(2곳), `calendar_week_start`(2곳), `quiet_hours`(1곳),
-`live_match_notification`·`solo_rank_notification`(기능 소비처 0, core store 전용).
-
 # 소유자 판단 기준
 
-**소비처를 세서 정한다.** 세는 규칙:
+**"어느 도메인인가" 가 먼저고 소비처 수는 그다음이다.** 2026-11-16 전에는 순서가 반대여서
+(소비처 2곳 이상 → `core`) `core` 안이 도메인으로 찼다.
 
-- **`core/` 안에서의 참조는 세지 않는다.** core 끼리 쓰는 건 당연하다. `device` 는 기능
-  소비처가 0 이고 인프라끼리만 쓰므로 `core/` 가 맞다. `live_match_notification`·
-  `solo_rank_notification` 모델도 같은 이유로 자기 store 옆(`domain`)에 있다.
-- **이름이 같은 기능이 있으면 그 기능 소유로 본다.** `rating` repository 는 4곳이 쓰지만
+- **도메인 이름이 붙으면 그 기능이다.** 소비처가 20곳이어도 마찬가지 —
+  `auth_service` 가 `features/auth/` 에 있는 이유다.
+- **이름이 같은 기능이 있으면 그 기능 소유.** `rating` repository 는 4곳이 쓰지만
   `player_rating` 기능이 있어 `features/player_rating/data/` 에 둔다.
 - **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면
-  repository 대부분이 `core/` 로 가 버린다.
-- 소비처가 1곳이면 그 기능으로 내린다 — `team` repository(`home` 만),
-  `onboarding_selection`(`onboarding` 만). 단 repository 가 `core/` 에 있는 모델은 `domain` 에
-  둔다 — `quiet_hours` 는 `mypage` 만 쓰지만 `core` 의 repository 가 쓴다.
-- 소유자가 둘이고 어느 쪽도 주 소유가 아니면 `core/` — `user_profile`(`mypage`·
-  `profile_edit`).
+  대부분이 공유 위치로 가 버린다.
+- 여러 기능이 쓰는데 주 소유가 애매하면 **가장 본질적으로 쓰는 쪽**이다 —
+  `filter_preference` 는 match_list·schedule·splash 가 쓰지만 필터를 정의하는 곳이
+  `schedule` 이라 그쪽이다. 다른 기능이 참조하는 것은 허용한다.
+- **상호 참조하는 것은 한 묶음으로 옮긴다.** `auth_service` ↔ `device_repository` 가
+  서로를 참조해서(1건·2건) 함께 `features/auth/` 로 갔다.
 - **집계 화면 안에 다른 기능이 쓰는 코드가 들어 있으면 독립 기능으로 뺀다.** `home` 은
   소비처로 세지 않는다는 규칙이 반대로 작용해, 솔랭 코드가 `features/home/` 에 쌓여
-  있었다. 그런데 `player`·`my_players` 가 그걸 17곳에서 당겨 써서 남의 폴더를 들여다보던
+  있었다. `player`·`my_players` 가 그걸 17곳에서 당겨 써서 남의 폴더를 들여다보던
   상태였다 — `features/solo_rank/` 로 올려 0건으로 만들었다. 판단은 "홈이 만든 코드인가"
   가 아니라 "홈 밖에서도 쓰는가"다.
 
@@ -289,7 +276,7 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 
 # presentation 만 있는 기능이 많은 이유
 
-30개 중 12개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
+32개 중 7개는 `data/`·`domain/` 이 비어 있다. 억지로 만들지 않는다.
 
 - **데이터가 공용이라서** — `mypage` 는 `domain/user_profile`,
   `my_subscription_setting` 은 `domain/player_subscription` 을 쓴다. 한 기능 소유가
