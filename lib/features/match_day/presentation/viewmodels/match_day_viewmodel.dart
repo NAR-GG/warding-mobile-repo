@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/domain/schedule_match.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 경기 일정 캘린더에서 특정 날짜를 탭했을 때 여는 '그 날의 경기 리스트' 화면 ViewModel.

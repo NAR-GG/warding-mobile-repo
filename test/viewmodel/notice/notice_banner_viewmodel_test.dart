@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/notice/data/notice_preference_repository.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/features/notice/presentation/viewmodels/notice_banner_viewmodel.dart';

@@ -3,7 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/schedule/presentation/viewmodels/today_matches_viewmodel.dart';
 

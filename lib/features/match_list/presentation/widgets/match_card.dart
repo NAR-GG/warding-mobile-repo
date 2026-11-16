@@ -8,7 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_live_badge.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/match_list/presentation/viewmodels/match_alarm_bell_viewmodel.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';

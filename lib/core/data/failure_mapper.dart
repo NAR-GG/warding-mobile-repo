@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/api_status_exception.dart';
+import 'package:warding/core/error/api_status_exception.dart';
 
 /// 예외 → [Failure].
 ///

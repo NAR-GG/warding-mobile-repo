@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/infrastructure/preference/spoiler_preference_repository.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/match_list_setting/data/spoiler_preference_repository.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/match_day/presentation/viewmodels/match_day_viewmodel.dart';
 

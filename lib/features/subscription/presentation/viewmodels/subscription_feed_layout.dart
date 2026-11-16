@@ -1,4 +1,4 @@
-import 'package:warding/domain/member_notification.dart';
+import 'package:warding/features/notification/domain/member_notification.dart';
 
 /// 마이구독 피드 목록의 한 칸 — 날짜 헤더이거나 알림 카드.
 ///

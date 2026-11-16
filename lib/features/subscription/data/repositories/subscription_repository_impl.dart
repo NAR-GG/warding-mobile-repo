@@ -10,10 +10,10 @@ import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/error/failure.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
-import 'package:warding/domain/player_subscription.dart';
-import 'package:warding/domain/team_notification_subscription.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
+import 'package:warding/features/subscription/domain/team_notification_subscription.dart';
 import 'package:warding/core/util/sentry_logger.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 
 /// 선수 구독·팀 알림 구독 관련 API (`/api/mobile/me/...`).
 ///

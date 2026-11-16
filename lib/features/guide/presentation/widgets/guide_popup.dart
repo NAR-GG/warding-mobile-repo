@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/core/infrastructure/preference/guide_popup_preference_repository.dart';
+import 'package:warding/features/guide/data/guide_popup_preference_repository.dart';
 import 'package:warding/features/guide/presentation/screens/guide_screen.dart';
 import 'package:warding/features/guide/presentation/screens/page/guide_page_1.dart';
 import 'package:warding/features/guide/presentation/screens/page/guide_page_2.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/my_review/domain/entities/my_review_item.dart';
 import 'package:warding/features/my_review/domain/repositories/my_review_repository.dart';
 import 'package:warding/features/my_review/presentation/models/my_review_ui_state.dart';

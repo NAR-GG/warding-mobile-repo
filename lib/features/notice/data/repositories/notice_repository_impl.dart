@@ -8,10 +8,10 @@ import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/api_status_exception.dart';
+import 'package:warding/core/error/api_status_exception.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/core/config/secure_storage.dart';
 
 /// 공지사항 API (`/api/notices`). 공개 API라 인증이 필수는 아니지만,

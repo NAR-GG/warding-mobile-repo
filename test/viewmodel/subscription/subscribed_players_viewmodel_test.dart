@@ -3,8 +3,8 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscribed_players_viewmodel.dart';
 

@@ -1,4 +1,4 @@
-import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 
 // 솔랭 조회 결과 모델. 소스가 돌려주고 규칙(solo_rank_rules)이 해석한다.

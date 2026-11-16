@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/core/infrastructure/ad/ad_repository.dart';
+import 'package:warding/features/cheer_ad/data/ad_repository.dart';
 import 'package:warding/features/cheer_ad/presentation/screens/cheer_ad_screen.dart';
 import 'package:warding/core/theme/app_colors.dart';
 

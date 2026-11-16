@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/app/deeplink/fcm_service.dart';
 import 'package:warding/features/onboarding/data/onboarding_sync_service.dart';
 import 'package:warding/core/theme/app_colors.dart';

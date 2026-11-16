@@ -1,8 +1,8 @@
-import 'package:warding/core/di_container.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
-import 'package:warding/core/infrastructure/live_activity/live_match_activity_controller.dart';
-import 'package:warding/core/infrastructure/team/team_logo_directory.dart';
+import 'package:warding/app/di_container.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/features/live_activity/data/live_activity_logo_prefetcher.dart';
+import 'package:warding/features/live_activity/data/live_match_activity_controller.dart';
+import 'package:warding/core/ui/team_logo_directory.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';

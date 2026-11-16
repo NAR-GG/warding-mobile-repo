@@ -6,7 +6,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/api_status_exception.dart';
+import 'package:warding/core/error/api_status_exception.dart';
 import 'package:warding/features/standings/domain/repositories/standings_repository.dart';
 import 'package:warding/features/standings/domain/standing.dart';
 import 'package:warding/features/standings/domain/worlds_standings.dart';

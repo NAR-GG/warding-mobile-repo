@@ -4,7 +4,7 @@ import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
-import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/presentation/viewmodels/match_detail_viewmodel.dart';
 
 import '../../support/fake_rating_repository.dart';

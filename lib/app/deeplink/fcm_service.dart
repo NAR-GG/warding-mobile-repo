@@ -11,10 +11,10 @@ import 'package:warding/features/community/presentation/screens/post_detail_scre
 import 'package:warding/features/subscription/presentation/screens/subscription_screen.dart';
 import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/core/util/sentry_logger.dart';
-import 'package:warding/core/infrastructure/device/device_repository.dart';
-import 'package:warding/core/infrastructure/notification/live_match_notification_store.dart';
-import 'package:warding/core/infrastructure/notification/solo_rank_notification_store.dart';
-import 'package:warding/core/infrastructure/fcm/fcm_notification_types.dart';
+import 'package:warding/features/auth/data/device_repository.dart';
+import 'package:warding/features/notification/data/live_match_notification_store.dart';
+import 'package:warding/features/notification/data/solo_rank_notification_store.dart';
+import 'package:warding/features/notification/domain/fcm_notification_types.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 

@@ -5,7 +5,7 @@ import 'package:warding/core/util/api_client.dart' as http;
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/util/sentry_logger.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 
 /// 실시간 경기 카드 푸시 토큰 등록 API (`/api/mobile/me/live-activities`).
 ///

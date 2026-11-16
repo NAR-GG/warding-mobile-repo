@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/domain/member_notification.dart';
+import 'package:warding/features/notification/domain/member_notification.dart';
 
 /// 받은 알림 피드. 인증이 필요하다.
 abstract interface class MemberNotificationRepository {

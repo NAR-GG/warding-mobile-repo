@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/core/util/gold_format.dart';
+import 'package:warding/features/match_detail/domain/gold_format.dart';
 
 /// 경기 상세 — 챔피언픽 탭 하단의 "Player Stats" 섹션.
 ///

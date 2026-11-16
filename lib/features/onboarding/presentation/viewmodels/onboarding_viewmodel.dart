@@ -7,13 +7,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:warding/features/onboarding/domain/league.dart';
 import 'package:warding/features/onboarding/domain/onboarding_selection.dart';
 import 'package:warding/features/onboarding/domain/player.dart';
-import 'package:warding/domain/team.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/core/util/analytics.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:warding/features/onboarding/data/onboarding_preference_repository.dart';
-import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
+import 'package:warding/features/onboarding/data/team_preference_repository.dart';
 
 /// 온보딩 단계.
 enum OnboardingStep { league, team, player, notification }

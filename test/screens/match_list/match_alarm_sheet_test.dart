@@ -7,7 +7,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/error/failure.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/core/ui/nar_toggle.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_alarm_sheet.dart';
 import 'package:warding/features/match_list/presentation/widgets/match_card.dart';

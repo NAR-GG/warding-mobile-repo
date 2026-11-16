@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/domain/repositories/member_notification_repository.dart';
+import 'package:warding/features/notification/domain/repositories/member_notification_repository.dart';
 
 /// 헤더 벨 아이콘의 미읽음 배지 상태.
 ///

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
 
 /// 경기 카드의 알림 벨 하나의 구독 상태.

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/domain/calendar_week_start.dart';
-import 'package:warding/core/infrastructure/preference/calendar_week_start_preference_repository.dart';
+import 'package:warding/features/calendar_setting/domain/calendar_week_start.dart';
+import 'package:warding/features/calendar_setting/data/calendar_week_start_preference_repository.dart';
 import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 
 /// 캘린더 설정 화면 ViewModel.

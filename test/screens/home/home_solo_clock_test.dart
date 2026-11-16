@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
 import 'package:warding/features/news/data/news_source.dart';
 import 'package:warding/features/home/presentation/widgets/home_solo_rank_section.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';

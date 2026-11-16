@@ -13,7 +13,7 @@ import 'package:warding/features/schedule/domain/match_page.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
 import 'package:warding/features/schedule/data/schedule_widget_writer.dart';
 import 'package:warding/features/schedule/domain/league_meta.dart';
 import 'package:warding/core/util/match_status.dart';

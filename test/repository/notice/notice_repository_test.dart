@@ -6,7 +6,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:warding/core/error/failure.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/core/util/api_client.dart' as api;
 

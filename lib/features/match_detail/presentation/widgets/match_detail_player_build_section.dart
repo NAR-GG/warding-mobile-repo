@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/core/util/gold_format.dart';
+import 'package:warding/features/match_detail/domain/gold_format.dart';
 import 'package:warding/core/util/lane_asset.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_build_items.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_build_runes.dart';

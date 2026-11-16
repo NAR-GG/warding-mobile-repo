@@ -7,10 +7,10 @@ import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/data/failure_mapper.dart';
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/domain/repositories/member_notification_repository.dart';
-import 'package:warding/core/infrastructure/api_status_exception.dart';
-import 'package:warding/domain/member_notification.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/notification/domain/repositories/member_notification_repository.dart';
+import 'package:warding/core/error/api_status_exception.dart';
+import 'package:warding/features/notification/domain/member_notification.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 
 /// 마이구독 알림 피드 API (`/api/mobile/me/notifications`).
 ///

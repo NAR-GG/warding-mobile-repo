@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 
-import 'package:warding/domain/player_subscription.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 
 /// 마이 구독 설정 '선수' 탭 ViewModel.

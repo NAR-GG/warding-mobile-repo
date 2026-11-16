@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/shorts/domain/entities/story_video.dart';
 import 'package:warding/features/shorts/domain/repositories/shorts_repository.dart';
 

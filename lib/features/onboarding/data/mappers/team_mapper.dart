@@ -1,4 +1,4 @@
-import 'package:warding/domain/team.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
 import 'package:warding/features/onboarding/data/models/team_dto.dart';
 
 /// DTO → Entity 변환. 추상화하지 않는다.

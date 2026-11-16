@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/domain/schedule_match.dart';
-import 'package:warding/domain/team_notification_subscription.dart';
-import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
+import 'package:warding/features/subscription/domain/team_notification_subscription.dart';
+import 'package:warding/features/live_activity/data/live_activity_service.dart';
 
 /// 잠금화면에 잘못 남은 Live Activity 카드를 정리하는 컨트롤러.
 ///

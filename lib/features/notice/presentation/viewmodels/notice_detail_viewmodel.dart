@@ -1,7 +1,7 @@
 import 'dart:async';
 
 
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 

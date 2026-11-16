@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/util/app_image.dart';
-import 'package:warding/core/infrastructure/live_activity/live_activity_service.dart';
+import 'package:warding/features/live_activity/data/live_activity_service.dart';
 
 /// 서버가 만들 카드에 쓸 팀 로고를 미리 App Group 에 캐싱한다.
 ///

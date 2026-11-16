@@ -3,10 +3,10 @@ import 'package:warding/features/solo_rank/domain/solo_rank_snapshot.dart';
 import 'dart:convert';
 
 import 'package:warding/core/config/api_config.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/util/server_time.dart';
-import 'package:warding/domain/player_subscription.dart';
+import 'package:warding/features/subscription/domain/player_subscription.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 
 /// 구독 선수 솔랭 상태 (`GET /api/mobile/me/solo-rank`, 로그인 필수).

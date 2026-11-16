@@ -5,7 +5,7 @@ import 'package:warding/core/util/api_client.dart' as http;
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/community/domain/community_report.dart';
 import 'package:warding/core/util/sentry_logger.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/community/data/community_api_exception.dart';
 
 /// 커뮤니티 신고·차단 API (`/api/mobile/community/reports`, `/blocks`).

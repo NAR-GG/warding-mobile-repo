@@ -9,9 +9,9 @@ import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_champion_pick.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
 import 'package:warding/features/match_detail/domain/match_live_event.dart';
-import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
 import 'package:warding/features/match_detail/domain/repositories/match_detail_repository.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 
 /// 경기 상세 화면(챔피언 픽 · 라이브 이벤트 탭) 상태·로직.

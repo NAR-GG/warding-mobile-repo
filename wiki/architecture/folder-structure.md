@@ -27,8 +27,8 @@ lib/
 │   ├── deeplink/           푸시·홈 위젯 → 앱 진입
 │   ├── navigation/         경기 상세 창구, 탭 전환
 │   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
-├── domain/       여러 기능이 쓰는 모델 10개 + repository 인터페이스 2개
-├── core/         기능 소유가 아닌 기술 인프라
+├── core/         기능 소유가 아닌 모든 것
+│   ├── domain/             core 와 여러 기능이 함께 쓰는 모델 9개 + repository 인터페이스 2개
 │   ├── infrastructure/     여러 기능이 쓰는 서비스·repository 21개
 │   ├── ui/                 앱 전역 공용 위젯 52개
 │   ├── theme/              디자인 토큰 (app_colors 등)
@@ -42,38 +42,47 @@ lib/
 └── firebase_options.dart   생성물
 ```
 
-# domain 이 최상위인 이유
+# 공유 모델은 core/domain 에 둔다
 
-**도메인 모델은 기술 인프라 안에 종속되지 않는다.** 처음에는 `core/domain/` 이었는데, 그러면
-"도메인이 `core` 의 하위 개념"으로 읽힌다. Clean Architecture 원전
-([Robert C. Martin, 2012](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html))
-에서 도메인은 가장 안쪽 원이고 아무것도 참조하지 않는 중심이다.
+**`core/` 가 쓰는 모델은 `core/` 안에 있어야 한다.** 그러지 않으면 `core` 가 자기 밖을
+import 하게 되고, `core` 만 떼어내거나 패키지로 빼는 것이 불가능해진다.
 
-실제 앱 5개를 조사한 결과 **4개가 공유 도메인 모델을 최상위 공유 위치에 둔다.**
+2026-11-16 에 공유 모델을 `lib/domain/` 으로 올렸다가 되돌렸다. 올린 이유는 "도메인이
+`core`(기술 인프라) 의 하위로 읽힌다" 였는데, 실측하니 **`core` 가 그 모델들을 13건
+import하고 있었다** — `auth_service` → `user_profile`, `team_preference_repository` →
+`team`, notification store 3개 → 알림 모델. 이름보다 의존 방향이 먼저다.
 
-| 레포 | 공유 모델 위치 | 예 |
-|---|---|---|
-| nowinandroid (Google 공식) | `core/model/` 모듈 | NewsResource, Topic |
-| compass_app (Flutter 공식) | `lib/domain/models/` | Destination, ItineraryConfig |
-| Immich | `lib/domain/models/` | Asset, Album, Person |
-| LocalSend | `lib/model/` + 별도 패키지 | Device, FileDto |
-| AppFlowy | `features/share_tab/data/models/` (유일한 예외) | ShareAccessLevel |
+| 모델 | core 안의 사용처 |
+|---|---|
+| `user_profile` | `infrastructure/auth/auth_service` (68파일이 쓰는 핵심) |
+| `team` | `infrastructure/preference/team_preference_repository` |
+| `schedule_match` | `infrastructure/live_activity/live_match_activity_controller` |
+| `calendar_week_start` | `infrastructure/preference/calendar_week_start_preference_repository` |
+| `member_notification`·`quiet_hours` | `infrastructure/notification/*_repository_impl` |
+| `live_match_notification`·`solo_rank_notification` | `infrastructure/notification/*_store` |
+| `team_notification_subscription` | `infrastructure/live_activity/live_match_activity_controller` |
+
+**`core` 가 안 쓰는 공유 모델은 소유 기능으로 내린다.** `player_subscription` 이 그 사례다 —
+6개 기능(home·my_players·my_subscription_setting·player·solo_rank·subscription)이 쓰지만
+`core` 는 안 쓰므로 `features/subscription/domain/` 에 있다. 다른 기능이 그걸 참조하는 것은
+허용한다(아래 "기능 간 참조" 참고).
+
+**`core/domain/` 은 위층을 import 하지 않는다** — `features`·`app` 참조 0건. Clean
+Architecture 원전의 가장 안쪽 원이라는 성질은 폴더 깊이가 아니라 이 의존 방향이 보장한다.
+
+조사한 실제 앱 5개 중 4개가 공유 모델을 "최상위 공유 위치"에 두는데, 그 4개에서도 **공유
+모델과 인프라가 같은 묶음**이다 — nowinandroid 는 `core:model` 과 `core:data` 가 형제
+모듈이고 `core:data` 가 `core:model` 을 의존한다. 여기서 `core/domain` ← `core/infrastructure`
+와 같은 관계다. compass_app 의 `lib/domain/models/` 도 `lib/data/` 와 형제다.
 
 **"공유 위치는 도메인 중립이어야 한다"를 지키는 레포는 0/5 다.** `core:model` 에
 `NewsResource` 가, `domain/models/` 에 `Asset` 이 그냥 들어간다. 그래서 `schedule_match` 처럼
-명백한 e스포츠 도메인 개념이 `domain/` 에 있는 것이 정상이다.
-
-**compass_app 의 `ItineraryConfig` 가 판단 기준의 교과서다.** 5개 화면 중 4개가 쓰는 모델인데
-가장 소유자처럼 보이는 `search_form` 안에 두지 않고 `domain/models/` 로 올렸다 — Flutter 공식
-샘플이 "여러 기능이 쓰면 올린다"를 명시적으로 선택한 지점이다.
-
-**`domain/` 은 `features/`·`app/` 을 import 하지 않는다** (현재 0건). 모델이 기능을 알면
-방향이 뒤집힌다. `core/` 는 repository 인터페이스가 `Either<Failure, T>` 를 돌려주느라
-`core/error/failure.dart` 만 참조한다(2파일) — 실패 표현은 기술 계약이고 인프라가 아니다.
+명백한 e스포츠 도메인 개념이 `core/domain/` 에 있는 것이 정상이다.
 
 반대로 **인프라 서비스는 5/5 전원 공유 위치**다 — AppFlowy 조차 모델은 feature 에 두면서
-auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/auth` 는 19개 기능이
-쓰더라도 `features/auth/` 로 내리지 않는다.
+auth 는 `user/application/auth/` 로 뺐다. 그래서 `core/infrastructure/auth` 는 20개 기능이
+쓰더라도 `features/auth/` 로 내리지 않는다. 내리면 20개 기능이 참조하는 feature 가 되어
+이름만 feature 이고 역할은 core 가 된다.
 
 **규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.** 처음에는 `components`·
 `styles`·`config`·`util` 을 최상위에 뒀는데, 그러면 `core/` 에 들어간 `team`(2곳에서 사용)

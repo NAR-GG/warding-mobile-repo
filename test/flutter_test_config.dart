@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:warding/app/app_hooks.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 
 /// `test/` 하위 모든 테스트 실행 전에 Flutter 가 자동으로 부르는 훅.
 ///

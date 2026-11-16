@@ -6,11 +6,11 @@ import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_strings.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:warding/domain/team.dart';
-import 'package:warding/domain/user_profile.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
+import 'package:warding/features/auth/domain/user_profile.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/profile_edit/domain/repositories/profile_image_repository.dart';
 
 /// 프로필 수정 화면 ViewModel.

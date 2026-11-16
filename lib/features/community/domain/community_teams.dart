@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:warding/core/error/failure_exception.dart';
-import 'package:warding/domain/team.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 커뮤니티 팀 게시판 목록.

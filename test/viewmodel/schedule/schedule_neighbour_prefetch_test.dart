@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:warding/features/schedule/domain/match_calendar_day.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/notice/data/repositories/notice_repository_impl.dart';
 import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
-import 'package:warding/core/infrastructure/preference/filter_preference_repository.dart';
-import 'package:warding/core/infrastructure/preference/notice_preference_repository.dart';
+import 'package:warding/features/schedule/data/filter_preference_repository.dart';
+import 'package:warding/features/notice/data/notice_preference_repository.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:warding/features/schedule/presentation/viewmodels/schedule_viewmodel.dart';
 

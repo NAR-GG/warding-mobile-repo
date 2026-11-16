@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 import 'package:warding/core/config/secure_storage.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/ui/nar_button.dart';

@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/core/ui/nar_select_dropdown_field.dart';
 import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
-import 'package:warding/core/infrastructure/live_activity/live_activity_logo_prefetcher.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/features/live_activity/data/live_activity_logo_prefetcher.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 필터 모달에서 펼쳐진 드롭다운 식별자.

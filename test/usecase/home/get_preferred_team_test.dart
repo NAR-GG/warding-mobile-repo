@@ -3,10 +3,10 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:warding/core/error/failure.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
-import 'package:warding/domain/team.dart';
-import 'package:warding/domain/user_profile.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/features/onboarding/data/team_preference_repository.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
+import 'package:warding/features/auth/domain/user_profile.dart';
 import 'package:warding/features/home/domain/usecases/get_preferred_team.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 

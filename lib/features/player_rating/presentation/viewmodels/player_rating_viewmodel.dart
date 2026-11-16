@@ -5,9 +5,9 @@ import 'package:warding/l10n/app_strings.dart';
 
 import 'package:warding/features/player_rating/domain/game_rating.dart';
 import 'package:warding/features/match_detail/domain/match_game.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/features/player_rating/domain/repositories/rating_repository.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';
 

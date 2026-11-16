@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
+import 'package:warding/app/di_container.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/core/util/match_status.dart';
-import 'package:warding/domain/schedule_match.dart';
+import 'package:warding/features/schedule/domain/schedule_match.dart';
 import 'package:warding/features/schedule/domain/repositories/schedule_repository.dart';
 
 /// 다른 화면에 끼워 넣는 "오늘 경기" 요약 목록의 상태.

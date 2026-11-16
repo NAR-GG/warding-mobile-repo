@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/infrastructure/preference/spoiler_preference_repository.dart';
+import 'package:warding/features/match_list_setting/data/spoiler_preference_repository.dart';
 
 /// 경기리스트 설정 화면 ViewModel.
 ///

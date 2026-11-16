@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:warding/core/di_container.dart';
-import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/infrastructure/preference/team_preference_repository.dart';
-import 'package:warding/domain/team.dart';
+import 'package:warding/app/di_container.dart';
+import 'package:warding/features/auth/data/auth_service.dart';
+import 'package:warding/features/onboarding/data/team_preference_repository.dart';
+import 'package:warding/features/onboarding/domain/team.dart';
 import 'package:warding/features/onboarding/domain/repositories/onboarding_repository.dart';
 
 /// 응원팀 하나를 정하는 규칙.
