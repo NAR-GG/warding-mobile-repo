@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/features/notice/domain/notice.dart';
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/notice/domain/repositories/notice_repository.dart';
 import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/features/notice/presentation/viewmodels/ad_guide_viewmodel.dart';
 import 'package:warding/features/notice/presentation/screens/notice_detail_screen.dart';
 
 /// 광고 안내 화면. 마이페이지 > 고객 지원에서 연다.
@@ -25,34 +22,28 @@ class AdGuideScreen extends StatefulWidget {
 }
 
 class _AdGuideScreenState extends State<AdGuideScreen> {
-  late Future<Notice> _page;
+  late final AdGuideViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _page = _load();
+    _viewModel = AdGuideViewModel(slug: AdGuideScreen.slug);
+    _viewModel.load();
   }
 
-  /// `FutureBuilder` 는 에러를 예외로 받으므로 Left 를 예외로 되돌린다.
-  /// 이 화면은 실패 종류를 구분하지 않고 재시도 버튼만 보여준다.
-  Future<Notice> _load() async {
-    final result = await di<NoticeRepository>().fetchPage(AdGuideScreen.slug);
-    return result.getOrElse((failure) => throw FailureException(failure));
-  }
-
-  void _retry() {
-    setState(() {
-      _page = _load();
-    });
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return FutureBuilder<Notice>(
-      future: _page,
-      builder: (context, snapshot) {
-        final notice = snapshot.data;
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        final notice = _viewModel.notice;
         if (notice != null) {
           // 로드가 끝나면 공지 상세 화면이 헤더부터 통째로 이어받는다.
           return NoticeDetailScreen(
@@ -64,7 +55,7 @@ class _AdGuideScreenState extends State<AdGuideScreen> {
         }
         final width = MediaQuery.of(context).size.width;
         final scale = width.clamp(320.0, 430.0) / 375;
-        final failed = snapshot.hasError;
+        final failed = _viewModel.failed;
         return Scaffold(
           backgroundColor: AppColors.narDark800,
           body: SafeArea(
@@ -89,7 +80,7 @@ class _AdGuideScreenState extends State<AdGuideScreen> {
                               SizedBox(height: 12 * scale),
                               GestureDetector(
                                 behavior: HitTestBehavior.opaque,
-                                onTap: _retry,
+                                onTap: _viewModel.load,
                                 child: Padding(
                                   padding: EdgeInsets.all(8 * scale),
                                   child: Text(

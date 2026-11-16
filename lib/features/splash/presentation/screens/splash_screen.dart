@@ -272,6 +272,9 @@ class _SplashScreenState extends State<SplashScreen>
                 : ['ALL'];
         teamIds = (json['teamIds'] as List?)?.cast<int>() ?? const [];
       }
+      // 스플래시는 화면이 뜨기 전에 데이터를 미리 받아 두는 자리라
+      // ViewModel 로 빼지 않았다 — 상태를 들고 그릴 화면이 없고, 받아 둔
+      // 값은 repository 캐시로 다음 화면이 이어받는다.
       (await di<ScheduleRepository>().fetchCalendar(
         DateTime.now(),
         leagues: leagues,

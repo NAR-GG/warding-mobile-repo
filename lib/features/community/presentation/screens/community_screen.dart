@@ -94,6 +94,11 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   Future<void> _refreshUnreadCount() async {
     try {
+      // 벨 배지 미읽음 수 — 화면이 repository 를 직접 읽는다.
+      // ViewModel 로 빼지 않은 이유: 이 화면의 CommunityListViewModel 은 글
+      // 목록만 담당하고, 배지는 커뮤니티와 무관한 횡단 관심사다. 벨 배지
+      // 전용 VM 은 `features/notification/.../notification_badge_viewmodel`
+      // 에 이미 있으므로, 이 화면도 그걸 구독하도록 바꾸는 것이 맞다.
       final page = (await di<MemberNotificationRepository>()
               .fetchNotifications(group: 'COMMUNITY', page: 0, size: 1))
           .getOrElse((f) => throw FailureException(f));

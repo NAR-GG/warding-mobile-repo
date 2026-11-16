@@ -3,15 +3,13 @@ import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_live_badge.dart';
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
-import 'package:warding/core/di_container.dart';
-import 'package:warding/features/match_detail/domain/repositories/match_subscription_repository.dart';
+import 'package:warding/features/match_list/presentation/viewmodels/match_alarm_bell_viewmodel.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/schedule/domain/league_meta.dart';
@@ -259,27 +257,19 @@ class _AlarmBell extends StatefulWidget {
 }
 
 class _AlarmBellState extends State<_AlarmBell> {
-  final _repo = di<MatchSubscriptionRepository>();
-  bool _subscribed = false;
+  late final MatchAlarmBellViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialState();
+    _viewModel = MatchAlarmBellViewModel(matchId: widget.matchId);
+    _viewModel.load();
   }
 
-  Future<void> _loadInitialState() async {
-    try {
-      final jwt = await AuthService.instance.jwt;
-      if (jwt == null || jwt.isEmpty) return; // 비회원은 정적 상태로 둔다.
-      final ids = (await _repo.subscribedMatchIds())
-          .getOrElse((f) => throw FailureException(f));
-      if (mounted && ids.contains(widget.matchId)) {
-        setState(() => _subscribed = true);
-      }
-    } catch (_) {
-      // 조회 실패 시 기본값(미구독) 유지.
-    }
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   Future<void> _handleTap() async {
@@ -297,7 +287,7 @@ class _AlarmBellState extends State<_AlarmBell> {
         context,
       ).push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
       // 로그인하고 돌아왔으면 구독 상태를 다시 읽는다(벨을 다시 탭해 설정 진행).
-      _loadInitialState();
+      _viewModel.load();
       return;
     }
 
@@ -305,30 +295,32 @@ class _AlarmBellState extends State<_AlarmBell> {
     final after = await runMatchAlarmFlow(
       context,
       matchId: widget.matchId,
-      subscribed: _subscribed,
+      subscribed: _viewModel.subscribed,
       homeName: widget.homeName,
       homeLogoUrl: widget.homeLogoUrl,
       homeCode: widget.homeCode,
       awayName: widget.awayName,
       awayLogoUrl: widget.awayLogoUrl,
       awayCode: widget.awayCode,
-      repository: _repo,
     );
-    if (after != null && mounted) setState(() => _subscribed = after);
+    if (after != null) _viewModel.applyResult(subscribed: after);
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      key: const Key('matchCardAlarmBell'),
-      behavior: HitTestBehavior.opaque,
-      onTap: _handleTap,
-      child: SvgPicture.asset(
-        _subscribed
-            ? 'assets/icons/bell-check.svg'
-            : 'assets/icons/bell-plus.svg',
-        width: 24 * widget.scale,
-        height: 24 * widget.scale,
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) => GestureDetector(
+        key: const Key('matchCardAlarmBell'),
+        behavior: HitTestBehavior.opaque,
+        onTap: _handleTap,
+        child: SvgPicture.asset(
+          _viewModel.subscribed
+              ? 'assets/icons/bell-check.svg'
+              : 'assets/icons/bell-plus.svg',
+          width: 24 * widget.scale,
+          height: 24 * widget.scale,
+        ),
       ),
     );
   }
