@@ -42,7 +42,7 @@ class TeamPreferenceRepository {
     final raw = await readOrNull(_key);
     if (raw == null || raw.isEmpty) return null;
     try {
-      return Team.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return Team.fromStorage(jsonDecode(raw) as Map<String, dynamic>);
     } catch (e) {
       debugPrint('[TeamPreference] 저장값 파싱 실패: $e');
       return null;

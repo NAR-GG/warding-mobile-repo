@@ -12,6 +12,8 @@ import 'package:warding/core/config/api_config.dart';
 import 'package:warding/features/onboarding/domain/league.dart';
 import 'package:warding/features/onboarding/domain/player.dart';
 import 'package:warding/domain/team.dart';
+import 'package:warding/features/onboarding/data/mappers/team_mapper.dart';
+import 'package:warding/features/onboarding/data/models/team_dto.dart';
 import 'package:warding/core/util/sentry_logger.dart';
 
 /// 온보딩 관련 API.
@@ -91,7 +93,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
 
     final list = jsonDecode(response.body) as List<dynamic>;
     return list
-        .map((e) => Team.fromJson(e as Map<String, dynamic>))
+        .map((e) => TeamMapper.toDomain(TeamDto.fromJson(e as Map<String, dynamic>)))
         .toList();
   }
 

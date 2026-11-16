@@ -1,3 +1,13 @@
+// 경기 종료 알림 카드 — **아직 피드에 연결되지 않았다.**
+//
+// 서버는 이미 이 알림들을 보낸다 — `MemberNotificationType` 의 setStart·
+// setEnd·liveEvent 이고 `notification_feed_card.dart` 의
+// `notificationIconFor` 에 아이콘도 정의돼 있다. 다만 피드 카드의 타입 분기가
+// 솔랭(RankStart·RankEnd)만 그려서 이 위젯들이 아직 안 쓰인다.
+//
+// **미사용이라고 지우지 않는다** — 붙이기만 하면 되는 미완성 기능이다.
+// 연결할 때는 실제 알림 payload 와 필드가 맞는지 먼저 확인한다.
+
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
