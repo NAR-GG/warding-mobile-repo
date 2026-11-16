@@ -1,10 +1,11 @@
+import 'package:warding/features/solo_rank/domain/repositories/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:warding/core/infrastructure/auth/auth_service.dart';
 import 'package:warding/domain/player_subscription.dart';
-import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:warding/features/solo_rank/presentation/viewmodels/solo_rank_viewmodel.dart';
 import 'package:warding/features/subscription/domain/repositories/subscription_repository.dart';

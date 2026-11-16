@@ -1,65 +1,16 @@
+import 'package:warding/features/solo_rank/domain/repositories/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_snapshot.dart';
 import 'package:warding/core/config/home_mocks.dart';
 import 'package:warding/domain/player_subscription.dart';
 import 'package:warding/features/solo_rank/data/api_solo_rank_sources.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 
-// 솔로 랭크·월즈 솔랭·응원 데이터 소스.
+// 솔로 랭크·월즈 솔랭·응원 데이터 소스 구현.
 //
-// 원래 `features/home/data/home_sources.dart` 에 뉴스·평점 소스와 함께
-// 있었는데, 솔랭은 홈 전용이 아니라 `player`·`my_players` 도 쓰는 것이
-// 드러나 솔랭 기능으로 올렸다. 백엔드가 아직 없어 목업·빈 소스를
-// `kHomeMocks` 로 가르는 구조는 그대로다.
-class SoloRankSnapshot {
-  const SoloRankSnapshot({required this.live, required this.finished});
-
-  final List<LiveSoloPlayer> live;
-  final List<FinishedSoloPlayer> finished;
-}
-
-/// 구독 선수 솔랭 상태 소스.
-abstract class SoloRankSource {
-  Future<SoloRankSnapshot> fetch();
-}
-
-/// 월즈 솔랭 한 번의 조회 결과 — 명단(구독 여부 포함)과 그 선수들의 솔랭 상태.
-class WorldsSoloSnapshot {
-  const WorldsSoloSnapshot({
-    required this.players,
-    required this.solo,
-    this.today = const {},
-  });
-
-  static const WorldsSoloSnapshot empty = WorldsSoloSnapshot(
-    players: [],
-    solo: SoloRankSnapshot(live: [], finished: []),
-  );
-
-  /// 월즈 부트캠프 계정이 등록된 선수 전체. 비면 월즈 솔랭을 통째로 숨긴다 —
-  /// 대회가 끝나 서버가 보조 계정을 끄면 앱 배포 없이 사라진다.
-  final List<PlayerSubscription> players;
-  final SoloRankSnapshot solo;
-
-  /// 선수별 오늘 전적(playerId → 전적). 서버가 최근 24시간으로 센다. 옛 서버면 비어 있다.
-  final Map<int, WorldsTodayRecord> today;
-}
-
-/// 월즈 선수 한 명의 오늘 전적. [games] 는 지금 하는 판을 포함한다.
-class WorldsTodayRecord {
-  const WorldsTodayRecord({
-    required this.games,
-    required this.wins,
-    required this.losses,
-  });
-
-  final int games;
-  final int wins;
-  final int losses;
-}
-
-/// 월즈 솔랭 소스.
-abstract class WorldsSoloSource {
-  Future<WorldsSoloSnapshot> fetch();
-}
+// 계약은 `domain/repositories/solo_rank_sources.dart` 에, 모델은
+// `domain/solo_rank_snapshot.dart` 에 있다. 여기는 그걸 어디서 받아오는지만
+// 안다 — 실 API(`api_solo_rank_sources.dart`)·목업·빈 소스를 `kHomeMocks` 로
+// 가른다.
 
 /// [HomeViewModel]·월즈 솔랭 화면의 기본 소스.
 WorldsSoloSource defaultWorldsSoloSource({bool mocks = kHomeMocks}) =>
@@ -137,29 +88,6 @@ class MockWorldsSoloSource implements WorldsSoloSource {
   );
 }
 
-/// 응원 전송 결과 — 서버 기준 이 판 합계와 내가 보낸 수.
-class CheerResult {
-  const CheerResult({required this.total, required this.mine});
-
-  final int total;
-  final int mine;
-}
-
-/// 서버가 응원을 받지 않는다고 답했다(409 솔랭 중 아님 / 400 count 범위 밖).
-/// 재시도해도 같은 결과라 호출부는 미결 응원을 버린다.
-class CheerRejected implements Exception {
-  const CheerRejected(this.statusCode);
-
-  final int statusCode;
-
-  @override
-  String toString() => 'CheerRejected($statusCode)';
-}
-
-/// 솔랭 응원 전송 소스. [count] 는 1..30 이다.
-abstract class CheerSource {
-  Future<CheerResult> send(int playerId, int count);
-}
 
 /// 최근 평점 한줄평 소스. 한줄평이 달린 것만 반환한다는 계약.
 SoloRankSource defaultSoloRankSource({bool mocks = kHomeMocks}) =>

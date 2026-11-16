@@ -1,4 +1,5 @@
-import 'package:warding/features/solo_rank/data/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/repositories/solo_rank_sources.dart';
+import 'package:warding/features/solo_rank/domain/solo_rank_snapshot.dart';
 import 'package:warding/features/solo_rank/domain/solo_rank_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
