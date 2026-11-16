@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:warding/core/ui/profile_avatar.dart';
+import 'package:warding/features/community/presentation/widgets/profile_avatar.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';
 import 'package:warding/core/theme/app_colors.dart';

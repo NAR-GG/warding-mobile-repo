@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/core/ui/notification_card.dart';
+import 'package:warding/features/subscription/presentation/widgets/notification_card.dart';
 import 'package:warding/core/config/app_language.dart';
 import 'package:warding/core/util/champion_name_map.dart';
 import 'package:warding/core/util/korean_particle.dart';

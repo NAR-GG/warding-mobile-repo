@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:warding/core/ui/app_refresh_indicator.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
-import 'package:warding/core/ui/profile_avatar.dart';
+import 'package:warding/features/community/presentation/widgets/profile_avatar.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/domain/community_post_block.dart';
 import 'package:warding/features/community/domain/community_remote_comment.dart';

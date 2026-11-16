@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
-import 'package:warding/core/ui/cumulative_count_bar.dart';
-import 'package:warding/core/ui/date_group_header.dart';
+import 'package:warding/features/my_review/presentation/widgets/cumulative_count_bar.dart';
+import 'package:warding/features/my_review/presentation/widgets/date_group_header.dart';
 import 'package:warding/core/ui/nar_alert_dialog.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';

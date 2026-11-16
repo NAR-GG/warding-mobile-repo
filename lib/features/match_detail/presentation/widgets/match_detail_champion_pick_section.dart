@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:warding/core/ui/inner_shadow.dart';
+import 'package:warding/features/match_detail/presentation/widgets/inner_shadow.dart';
 import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
