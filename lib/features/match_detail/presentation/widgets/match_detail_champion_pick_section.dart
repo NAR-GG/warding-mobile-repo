@@ -476,7 +476,7 @@ class _VsText extends StatelessWidget {
         // 시안 121.5deg ≈ 좌상단 → 우하단 방향에 가까움.
         begin: Alignment(-0.85, -0.52),
         end: Alignment(0.85, 0.52),
-        colors: [Color(0xFF1971C2), Color(0xFFF03E3E)],
+        colors: [AppColors.matchTeamBlue, AppColors.matchTeamRed],
       ).createShader(bounds),
       child: Text(
         'vs',

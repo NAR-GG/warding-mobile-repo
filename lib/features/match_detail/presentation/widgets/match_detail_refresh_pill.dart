@@ -106,10 +106,10 @@ class _MatchDetailRefreshPillState extends State<MatchDetailRefreshPill> {
                   // 피그마 스펙(4921:7781)은 #141517 70%지만, 피그마의 background blur 를
                   // 얹으면 실기기에선 뒤가 거의 안 비쳐서 55%로 낮춘다(글래스 감).
                   decoration: BoxDecoration(
-                    color: const Color(0x73141517),
+                    color: AppColors.narDark800.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(10 * scale),
                     border: Border.all(
-                      color: const Color(0x26FFFFFF),
+                      color: AppColors.narText.withValues(alpha: 0.15),
                       width: 0.5,
                     ),
                   ),
@@ -126,7 +126,7 @@ class _MatchDetailRefreshPillState extends State<MatchDetailRefreshPill> {
                             fontWeight: FontWeight.w500,
                             fontSize: 14 * scale,
                             height: 1.55,
-                            color: const Color(0xFFF1F3F5),
+                            color: AppColors.scoreTextSub,
                           ),
                         ),
                       ),

@@ -423,7 +423,10 @@ class _LoadingSkeletonState extends State<_LoadingSkeleton>
             gradient: LinearGradient(
               begin: Alignment(-1 - shift, 0),
               end: Alignment(1 - shift, 0),
-              colors: const [Color(0x801A1B1E), Color(0x80727784)],
+              colors: [
+                AppColors.narBgSecondary.withValues(alpha: 0.5),
+                AppColors.narGray600.withValues(alpha: 0.5),
+              ],
             ),
           ),
         );
@@ -605,7 +608,7 @@ class _ActorSide extends StatelessWidget {
           height: 1.45,
           // 오브젝트 이름은 흰색 70% 불투명도, 챔피언(선수)명은 단색 흰색.
           color: actor.isObjective
-              ? const Color(0xB3FFFFFF)
+              ? AppColors.narText.withValues(alpha: 0.7)
               : AppColors.narText,
         ),
       ),

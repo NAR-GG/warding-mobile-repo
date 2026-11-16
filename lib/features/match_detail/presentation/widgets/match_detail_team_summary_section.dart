@@ -257,7 +257,7 @@ class _KillsBlock extends StatelessWidget {
       fontWeight: FontWeight.w400,
       fontSize: 28 * scale,
       height: 1.3,
-      color: const Color(0xFFFCFDFE),
+      color: AppColors.narButton2Text,
     );
     final labelStyle = TextStyle(
       fontFamily: 'Pretendard',
@@ -374,7 +374,7 @@ class _StatBarRow extends StatelessWidget {
       fontWeight: FontWeight.w400,
       fontSize: 14 * scale,
       height: 1.55,
-      color: const Color(0xFFFCFDFE),
+      color: AppColors.narButton2Text,
     );
     final labelStyle = valueStyle.copyWith(color: AppColors.narText2);
     final percentStyle = TextStyle(
@@ -382,7 +382,7 @@ class _StatBarRow extends StatelessWidget {
       fontWeight: FontWeight.w500,
       fontSize: 12 * scale,
       height: 1.55,
-      color: const Color(0xFFFCFDFE),
+      color: AppColors.narButton2Text,
     );
 
     final total = leftAmount + rightAmount;

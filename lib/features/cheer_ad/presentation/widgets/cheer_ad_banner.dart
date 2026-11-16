@@ -254,7 +254,7 @@ class CheerAdBannerCard extends StatelessWidget {
       shaderCallback: (rect) => LinearGradient(
         begin: portrait ? Alignment.bottomCenter : Alignment.centerLeft,
         end: portrait ? Alignment.topCenter : Alignment.centerRight,
-        colors: const [Color(0x00FFFFFF), Color(0xFFFFFFFF)],
+        colors: [AppColors.narText.withValues(alpha: 0), AppColors.narText],
         stops: const [0, 0.5],
       ).createShader(rect),
       child: LayoutBuilder(

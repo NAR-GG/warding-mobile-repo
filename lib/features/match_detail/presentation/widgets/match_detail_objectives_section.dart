@@ -124,7 +124,7 @@ class _ObjectiveRow extends StatelessWidget {
       fontWeight: FontWeight.w600,
       fontSize: 16 * scale,
       height: 1.55,
-      color: const Color(0xFFFFFEFE),
+      color: AppColors.narText,
     );
     final iconWidget = SvgPicture.asset(
       icon,

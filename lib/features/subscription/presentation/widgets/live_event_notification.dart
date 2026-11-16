@@ -419,7 +419,7 @@ class _ActorSide extends StatelessWidget {
           fontWeight: FontWeight.w600,
           fontSize: 14 * scale,
           height: 1.45,
-          color: isLeftSide ? AppColors.narText : const Color(0xB3FFFFFF),
+          color: isLeftSide ? AppColors.narText : AppColors.narText.withValues(alpha: 0.7),
         ),
       ),
     );

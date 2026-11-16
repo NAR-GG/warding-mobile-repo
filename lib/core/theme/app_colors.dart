@@ -276,4 +276,15 @@ class AppColors {
 
   /// 쇼츠 "내 팀" 배지 배경 — 흰색 14%.
   static const Color narWhite14 = Color(0x24FFFFFF);
+
+  // 경기 상세 — 진영 색. 챔피언 픽 'vs' 그라데이션에 쓴다.
+  /// 블루 진영.
+  static const Color matchTeamBlue = Color(0xFF1971C2);
+
+  /// 레드 진영. [narTextScore] 와 같은 값이지만 의미가 달라 따로 둔다 —
+  /// 점수 텍스트 색이 바뀌어도 진영 색은 그대로여야 한다.
+  static const Color matchTeamRed = Color(0xFFF03E3E);
+
+  /// 라이브 이벤트 스켈레톤 흐름의 밝은 쪽. [narBgSecondary] 에서 밝아진다.
+  static const Color narGray600 = Color(0xFF727784);
 }

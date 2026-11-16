@@ -510,7 +510,7 @@ class _ChampionBlock extends StatelessWidget {
               height: 18 * scale,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0x9E141517), // rgba(20,21,23,0.62)
+                color: AppColors.narDark800.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(6 * scale),
               ),
               child: Text(
@@ -520,7 +520,7 @@ class _ChampionBlock extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   fontSize: 12 * scale,
                   height: 14 / 12,
-                  color: const Color(0xFFFCFDFE),
+                  color: AppColors.narButton2Text,
                 ),
               ),
             ),

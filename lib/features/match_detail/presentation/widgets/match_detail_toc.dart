@@ -285,7 +285,9 @@ class _TocRow extends StatelessWidget {
             decoration: BoxDecoration(
               // 스크롤 중 콘텐츠를 가리지 않게 반투명으로 둔다.
               color:
-                  isActive ? const Color(0xCCFCFDFE) : const Color(0x66FCFDFE),
+                  isActive
+                      ? AppColors.narButton2Text.withValues(alpha: 0.8)
+                      : AppColors.narButton2Text.withValues(alpha: 0.4),
               // shape:circle 대신 borderRadius 로 통일해야 AnimatedContainer 가
               // 두 상태 사이를 매끄럽게 보간한다(circle↔rect 는 안 섞인다).
               // 11×11 일 때 반지름 5.5 면 정원이 된다.
@@ -362,7 +364,7 @@ class _TocChip extends StatelessWidget {
           vertical: 5 * scale,
         ),
         decoration: BoxDecoration(
-          color: const Color(0x99FCFDFE),
+          color: AppColors.narButton2Text.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(10 * scale),
         ),
         child: Text(

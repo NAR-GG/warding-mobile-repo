@@ -360,7 +360,7 @@ class _LaneIconColorMapper extends ColorMapper {
 
   final bool selected;
 
-  static const _frameColor = Color(0xFF343A40);
+  static const _frameColor = AppColors.narLine;
 
   @override
   Color substitute(
