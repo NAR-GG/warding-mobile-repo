@@ -9,7 +9,7 @@ import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/mypage/presentation/viewmodels/mypage_viewmodel.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 import 'package:warding/core/util/analytics_events.dart';
 import 'package:warding/core/util/analytics.dart';
 

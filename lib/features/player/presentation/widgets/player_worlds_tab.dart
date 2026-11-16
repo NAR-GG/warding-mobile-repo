@@ -6,7 +6,7 @@ import 'package:warding/core/ui/nar_chip_multi_select.dart';
 import 'package:warding/core/ui/nar_more_button.dart';
 import 'package:warding/core/ui/nar_star_rating.dart';
 import 'package:warding/core/ui/team_code_badge.dart';
-import 'package:warding/core/ui/win_loss_text.dart';
+import 'package:warding/features/player/presentation/widgets/win_loss_text.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/player/domain/player_detail.dart';
 import 'package:warding/core/theme/app_colors.dart';

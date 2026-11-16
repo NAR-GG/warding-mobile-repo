@@ -7,7 +7,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/ui/nar_word_break_text.dart';
 
-/// 마이페이지 카드 섹션의 행 하나.
+/// 설정 화면 카드 섹션의 행 하나 — 마이페이지·계정·캘린더·경기리스트 설정이 함께 쓴다.
 ///
 /// [leadingIcon] 을 주면 타이틀 왼쪽에 44 칩 안에 24 아이콘을 그린다
 /// (화면 설정 섹션). 없으면 타이틀만 좌측 12 패딩으로 시작한다(내 활동 섹션).

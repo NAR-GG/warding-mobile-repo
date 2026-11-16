@@ -8,7 +8,7 @@ import 'package:warding/features/auth/data/auth_service.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/mypage/presentation/viewmodels/mypage_viewmodel.dart';
 import 'package:warding/features/login/presentation/screens/login_screen.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 import 'package:warding/features/withdraw/presentation/screens/withdraw_screen.dart';
 
 /// 계정 설정 화면. 마이페이지 '고객 지원' 섹션의 '계정' 진입점.

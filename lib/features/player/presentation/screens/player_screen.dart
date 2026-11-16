@@ -9,7 +9,7 @@ import 'package:warding/core/ui/nar_badge.dart';
 import 'package:warding/core/ui/nar_card.dart';
 import 'package:warding/core/ui/nar_stat_box.dart';
 import 'package:warding/features/solo_rank/presentation/widgets/solo_hero_card.dart';
-import 'package:warding/core/ui/subscribe_bell.dart';
+import 'package:warding/features/player/presentation/widgets/subscribe_bell.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/core/ui/nar_tab_bar.dart';
 import 'package:warding/core/ui/team_code_badge.dart';

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/mypage/presentation/viewmodels/quiet_hours_viewmodel.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 import 'package:warding/features/mypage/presentation/widgets/quiet_hours_time_sheet.dart';
 
 /// 마이페이지 — '일반 설정' 섹션. 현재 방해 금지 모드 한 항목을 담는다.

@@ -5,7 +5,7 @@ import 'package:warding/core/ui/nar_setting_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/match_list_setting/presentation/viewmodels/match_list_setting_viewmodel.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 
 /// 경기리스트 설정 화면. 마이페이지 '화면 설정' 섹션의 '경기 리스트' 진입점.
 ///

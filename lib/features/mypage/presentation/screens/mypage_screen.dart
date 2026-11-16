@@ -15,7 +15,7 @@ import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/util/app_image.dart';
 import 'package:warding/features/mypage/presentation/viewmodels/mypage_viewmodel.dart';
 import 'package:warding/features/mypage/presentation/widgets/language_setting_sheet.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 import 'package:warding/features/mypage/presentation/widgets/quiet_hours_section.dart';
 import 'package:warding/features/account_setting/presentation/screens/account_setting_screen.dart';
 import 'package:warding/features/calendar_setting/presentation/screens/calendar_setting_screen.dart';

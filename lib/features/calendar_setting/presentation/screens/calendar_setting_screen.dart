@@ -6,7 +6,7 @@ import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/calendar_setting/domain/calendar_week_start.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/features/calendar_setting/presentation/viewmodels/calendar_setting_viewmodel.dart';
-import 'package:warding/features/mypage/presentation/widgets/mypage_card_section.dart';
+import 'package:warding/core/ui/settings_card_section.dart';
 
 /// 캘린더 설정 화면. 마이페이지 '화면 설정' 섹션의 '캘린더' 진입점.
 ///
