@@ -164,14 +164,35 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 - **`data` 와 `domain` 의 구분**: `domain`은 그 기능의 개념(모델·규칙·상수), `data`는 그것을
   가져오는 수단(repository·API 예외)과 그 기능 전용 DTO다. `community_permission.dart`처럼
   화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
-- **공유되면 `core/` 로 올린다.** 한 기능 소유가 아닌 것을 `features/` 안에 두면 다른 기능이
-  남의 폴더를 들여다봐야 한다. 쓰는 기능이 둘 이상이면 `core/` 후보다.
+- **공유되는 기술 코드는 `core/` 로 올린다.** 단 도메인 개념이면 소비처가 몇 곳이든 그
+  도메인의 기능에 둔다(위 "소유자 판단 기준" 참고). 다른 기능이 참조하는 것은 허용한다.
 - **import·export 는 `package:warding/...` 절대경로.** 상대경로는 파일을 옮길 때 깨진다.
 - **repository 는 `domain/repositories/` 에 인터페이스를 두고 `Either<Failure, T>` 를
   돌려준다.** `try/catch` 없이 실패 분기가 컴파일 단계에서 강제되고, 테스트에서
   `mocktail` Mock 을 쓸 수 있다. 예외를 던지던 때는 `catch` 를 빠뜨려도 아무도 몰랐다.
   판단 기준과 예외(로컬 저장소·도메인 예외를 쓰는 경우 등)는
   [Clean Architecture 전환 플레이북](./wiki/playbooks/clean-architecture-migration.md) 참고.
+- **새 모델은 DTO 를 분리한다. 기존 모델은 서버 응답이 바뀔 때 전환한다.**
+
+  ```
+  features/{기능}/data/models/{x}_dto.dart      서버 응답 형식 그대로 + fromJson
+  features/{기능}/data/mappers/{x}_mapper.dart  DTO → Entity 변환
+  features/{기능}/domain/{x}.dart               Entity (fromJson 없음)
+  ```
+
+  선례는 `shorts`·`my_review`·`onboarding` 3개다. 나머지 모델(약 50개)은 Entity 가
+  `fromJson` 을 직접 갖는다 — **일괄 전환하지 않는다.** `fromJson` 호출이 repository
+  구현에서만 일어나므로(실측 `data/` 31파일, `presentation` 2건은 로컬 임시저장,
+  `core`·`app` 0건) 서버 형식이 화면으로 새지 않고, 인터페이스가 이미
+  `Either<Failure, Entity>` 로 변경을 흡수한다. DTO 를 97개 만들어 얻는 것은 "Entity
+  파일에서 `fromJson` 이 사라지는 것" 뿐이라 비용이 맞지 않는다.
+
+  **서버 응답과 화면 모델의 형태가 다를 때는 처음부터 분리한다** — 필드명이 다르거나,
+  응답 하나를 여러 Entity 로 쪼개거나, 널 처리가 복잡한 경우다. 1:1 매핑이면 매퍼가
+  필드 복사만 하므로 분리 이득이 없다.
+- **로컬 저장 직렬화는 서버 DTO 와 구분한다.** `Team.fromStorage`·`toJson` 은 앱이 정한
+  형식이라 Entity 에 둬도 외부 변경에 노출되지 않는다. 서버 응답은
+  `TeamDto.fromJson` + `TeamMapper` 를 거친다.
 - 이름이 공용처럼 보여도 한 기능만 쓰면 그 기능 안에 둔다 — `community_my_activity` 는
   접두어가 `community_` 지만 `my_community_activity` 기능만 쓰므로 그 기능의 `data/` 에 있다.
 

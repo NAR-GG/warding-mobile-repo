@@ -287,6 +287,41 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 
 빈 폴더는 구조가 아니라 소음이다. 필요할 때 만든다.
 
+# 우아한형제들 글과의 격차
+
+구조의 출발점은 [우아한형제들 기술블로그 24337](https://techblog.woowahan.com/24337/) 이다.
+7개 규칙 중 4개는 따르고 3개는 의도적으로 다르게 간다.
+
+| 글의 규칙 | 지금 | |
+|---|---|---|
+| repository 인터페이스/구현 분리 | Interface 15 / Impl 12 | ✅ |
+| `Either` + sealed `Failure` | repository 28개가 `Either<Failure, T>` | ✅ |
+| `di_container.dart` | `lib/app/di_container.dart` | ✅ |
+| `fetch{Data}` 네이밍 | fetch 20 / 비-fetch 2 | ✅ |
+| **BLoC + Event/State** | `ChangeNotifier` 41개, Bloc 0개 | ❌ |
+| **비즈니스 로직은 UseCase** | UseCase 구현체 1개 | ❌ |
+| **DTO → Entity → UI State** | DTO 분리 3기능 / 나머지는 Entity 가 `fromJson` | ❌ |
+
+**BLoC 을 안 쓰는 이유.** Flutter 공식 가이드가 `ChangeNotifier` 를 권하고
+([docs.flutter.dev/app-architecture](https://docs.flutter.dev/app-architecture)), Mixpanel
+이 이미 있어 BLoC 의 이벤트 추적 이점이 중복이다. 실측으로 `notifyListeners` 가 VM 당
+평균 1.4회(최대 6회)라 상태 전이가 단순하다 — BLoC 이 이기는 조건(같은 이벤트가 상태에
+따라 다르게 동작)에 해당하는 화면이 없다. 폴더명은 `presentation/` 그대로 둬서 나중에
+바꿀 때 이동이 없다.
+
+**UseCase 가 1개인 이유.** 뺄 가치가 있는 것이 실측으로 1개였다 — `GetPreferredTeam` 은
+repository 3개를 조합하고 폴백 순서(서버 우선 → 로컬 캐시)가 규칙이다. 홈의 섹션 로더
+12개를 검사하니 10개가 repository 1개만 쓰고 나머지 코드는 경쟁 조건 검사·로딩 플래그라
+화면 상태 관리였다. 빼면 파라미터만 넘기는 빈 껍데기가 된다.
+
+**DTO 를 일괄 분리하지 않는 이유.** `fromJson` 호출이 repository 구현(31파일)에서만
+일어나 서버 형식이 화면으로 새지 않는다. 자세한 실측과 "새 모델은 분리한다" 기준은
+[Clean Architecture 전환 플레이북](/playbooks/clean-architecture-migration.md)의
+"DTO/Entity 분리도 생략할 수 있다" 참고.
+
+**글에 있고 여기 없는 것**: `features/{기능}/infrastructure/` 0개. 기능별 기술 구현이
+필요한 경우가 없었다 — 플랫폼 코드는 전부 `core/` 또는 그 도메인의 기능에 있다.
+
 # import 규칙
 
 **`package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을 옮길 때

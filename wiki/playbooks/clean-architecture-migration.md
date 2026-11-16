@@ -159,6 +159,31 @@ mapper 까지만 번진다" 하나뿐이다.
 반대로 분리하는 편이 나은 경우: 파생 getter 가 있다(`hasMore`), 필드가 많아 서버 변경이
 잦다, 한 Entity 를 여러 응답이 조립한다.
 
+**2026-11-16 결론: 기존 모델 약 50개를 일괄 전환하지 않는다.** 우아한형제들 글은
+`DTO → Entity → UI State` 3단을 쓰는데, 여기서는 2개 기능(`shorts`·`my_review`)과
+`onboarding/team` 만 그 형태고 나머지는 Entity 가 `fromJson` 을 직접 갖는다.
+
+전환하지 않는 근거는 **`fromJson` 호출 경계가 이미 지켜져 있다**는 실측이다.
+
+| 호출 위치 | 건수 | 판단 |
+|---|---|---|
+| `features/*/data/` (repository 구현) | 31파일 | 정상 — 여기서만 서버 형식을 안다 |
+| `features/*/domain/` (모델끼리 중첩) | 164건 | 정상 |
+| `features/*/presentation/` | 2건 | `DraftBlock` — 로컬 임시저장 형식이라 서버 응답이 아니다 |
+| `core/` · `app/` | 0건 | — |
+
+즉 서버 응답 형식이 화면으로 새지 않고, repository 인터페이스가 이미
+`Either<Failure, Entity>` 로 변경을 흡수한다. DTO 를 97개(중첩 클래스 포함) 만들어 얻는
+것은 "Entity 파일에서 `fromJson` 메서드가 사라지는 것" 뿐이고, 비용은 DTO+매퍼 194클래스
+약 4,000줄 + 테스트 fixture 115건 수정이다.
+
+**새로 만드는 모델은 처음부터 분리한다.** 그때는 복제 비용이 없다 — 어차피 한 번
+쓰는 코드다.
+
+**로컬 저장 직렬화는 서버 DTO 와 구분한다.** `Team` 이 그 사례다 — `fromStorage`·`toJson`
+은 앱이 정한 형식이라 Entity 에 남기고, 서버 응답만 `TeamDto.fromJson` + `TeamMapper` 를
+거친다. 로컬 형식은 서버가 바꿀 수 없으므로 Entity 에 둬도 외부 변경에 노출되지 않는다.
+
 # 절차
 
 ## 1. 소유권·호출부를 먼저 센다

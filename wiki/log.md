@@ -1,5 +1,27 @@
 # Bundle Update Log
 
+## 2026-11-16 (3)
+* **`core/ui` 오배치 3개를 정리했다.** `subscribe_bell`·`win_loss_text`(player 전용)를
+  내리고, `mypage_card_section` 을 `core/ui/settings_card_section.dart` 로 올렸다 — 설정
+  화면 4곳이 쓰는데 `mypage` 가 소유해서 남의 폴더를 보던 상태였다. 클래스명도
+  `MypageCard*` → `SettingsCard*`. `core/ui` 48 → 47개.
+* **외부 위젯 참조 37건을 분류해 전부 정당하다고 판단했다.** 같은 도메인 계열
+  (match_day ← match_list 4건, league_icon 3곳), 의도적 공유 기능(solo_rank·my_players),
+  배너 제공 구조(cheer_ad_banner 4곳), 화면을 띄우므로 소유가 맞는 것
+  (login/guest_lock_overlay — `core/ui` 로 올리면 역참조), 주석에 의도가 명시된 것
+  (notification_feed_card — "마이구독 피드와 알림함이 같은 카드를 그리도록 여기로 뺐다").
+* **DTO 를 일괄 분리하지 않기로 하고 기준을 문서화했다.** 우아한형제들 글의
+  `DTO → Entity → UI State` 3단 중 지금은 3기능만 그 형태다. 전환하지 않는 근거는
+  `fromJson` 호출이 repository 구현(31파일)에서만 일어난다는 실측이다 —
+  `presentation` 2건은 로컬 임시저장이고 `core`·`app` 은 0건이라 서버 형식이 화면으로
+  새지 않는다. 97클래스를 만들어 얻는 것은 "Entity 에서 `fromJson` 이 사라지는 것" 뿐이고
+  비용은 194클래스·4,000줄 + 테스트 fixture 115건이다. **새 모델은 처음부터 분리**하고,
+  로컬 저장 직렬화(`Team.fromStorage`)는 서버 DTO 와 구분한다.
+* **우아한형제들 글과의 격차를 한 절로 정리했다** — 7개 규칙 중 4개 준수(repository
+  인터페이스 분리·Either·di_container·fetch 네이밍), 3개 의도적 차이(BLoC 미사용·
+  UseCase 1개·DTO 부분 적용). 각각의 실측 근거를 적었다.
+  [폴더 구조](/architecture/folder-structure.md)의 "우아한형제들 글과의 격차" 참고.
+
 ## 2026-11-16 (2)
 * **`core` 에서 도메인 개념을 전부 빼냈다** (114 → 75파일). `core/domain/`(모델 9) 과
   `core/infrastructure/`(21파일) 를 해체했다 — 폴더 이름뿐 아니라 내용도 도메인이었다
