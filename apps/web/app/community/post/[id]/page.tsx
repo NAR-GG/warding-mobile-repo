@@ -1,8 +1,7 @@
 import { fetchPostDetail, parseBlocks } from 'warding-api';
 import { BoardBadge } from 'warding-ui';
 
-import { PostBody } from './PostBody';
-import { PostHeader } from './PostHeader';
+import { PostBody, PostHeader } from '@/screens/community-post';
 
 /**
  * 커뮤니티 글 상세 — 첫 웹뷰 전환 화면.

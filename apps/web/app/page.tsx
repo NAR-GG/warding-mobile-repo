@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 
-import { ComponentPreview } from './ComponentPreview';
+import { ComponentPreview } from '@/screens/home';
 
 /**
  * 스캐폴드 확인용 루트. 실제 전환 대상은 `/community/post/[id]` 다.
