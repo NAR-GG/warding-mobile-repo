@@ -181,19 +181,38 @@ required 가 0개라 전부 optional 로 읽히지만, 실제 응답은 대부�
 | DDD(레이어드) | **과하다.** entity·aggregate·도메인 서비스는 비즈니스 규칙이 클라이언트에 있을 때 값이 있다. 여기 규칙은 전부 서버에 있고 웹은 받아서 그린다 |
 | FSD | **얕게 쓴다.** 의존 방향이 한 방향이고 Flutter 쪽 규칙(`app → features → core`)과 같은 사고 모델이라 두 플랫폼을 같은 머리로 읽는다 |
 
+구조는 [FSD 공식 Next.js 가이드](https://feature-sliced.design/docs/guides/tech/with-nextjs)를
+그대로 따른다.
+
 ```
 apps/web/
-├── app/            라우팅·전역만 (page · layout · globals.css)
-├── screens/{화면}/   그 화면 전용 컴포넌트
-└── lib/            브리지 등 웹 전용 유틸
-packages/ui         화면 2개 이상이 쓰는 공용 컴포넌트   (FSD 의 shared/ui)
-packages/api        서버 호출 + 도메인 타입 + 매퍼       (FSD 의 shared/api)
+├── app/                  Next 라우트. 화면을 re-export 만 한다
+└── src/
+    ├── _pages/{화면}/
+    │   ├── index.ts      공개 API
+    │   └── ui/           화면 컴포넌트
+    └── shared/           웹 전용 공용 코드 (브리지 등)
+packages/ui               여러 화면이 쓰는 공용 컴포넌트   (FSD 의 shared/ui)
+packages/api              서버 호출 + 도메인 타입 + 매퍼   (FSD 의 shared/api)
 ```
 
 **레이어를 다 만들지 않는다.** FSD 는 7개 레이어를 정의하지만 화면이 하나뿐인
 지금 전부 만들면 빈 폴더가 구조가 아니라 소음이 된다.
 
-- **`pages/` 대신 `screens/`** — Next 에서 `pages/` 는 레거시 라우터 디렉터리다.
+- **`_pages` 의 밑줄은 공식 권장이다.** Next 가 `app/`·`pages/` 를 라우터
+  디렉터리로 쓰므로 FSD 레이어 이름과 충돌한다. 공식이 `_app`·`_pages` 접두사를
+  안내하고 공식 린터도 인식한다. 회피책 3개를 실측했고 **전부 빌드가 깨진다**:
+
+  | 시도 | 결과 |
+  |---|---|
+  | 루트에 `pages/` | Next 가 라우트로 인식 → `pages/x/index.ts` 를 `/x` 로 보고 "default export 없음" |
+  | 라우트를 `src/app` 으로 이동 | Next 15 가 타입 검증기 상대경로를 잘못 생성 |
+  | `pageExtensions` 로 좁히기 | App Router 라우트가 전부 소멸, 404 만 남는다 |
+
+  `app/` 을 **루트에 남기고** FSD 레이어만 `src/` 로 내리면 셋 다 피한다.
+- **라우트는 re-export 한 줄이다** —
+  `export { CommunityPostPage as default } from '@/_pages/community-post';`
+  조립을 라우트에 두면 `app/` 이 다시 두꺼워진다.
 - **`entities` 를 두지 않는다.** FSD 는 `entities/{도메인}/model` 에 도메인
   타입을 두지만, 여기서는 **서버 응답을 아는 코드를 `packages/api` 한 곳**에
   모은다. 타입과 매퍼가 붙어 있어야 서버 형식이 바뀔 때 한 군데만 고친다 —

@@ -138,28 +138,37 @@ Dart 로 뽑을 경로가 없다. 대신 **Dart 쪽 모델의 널 판단을 복�
 - **매퍼 회귀 테스트가 PR마다 돈다**(`pnpm test`). 타입 체크는 런타임 응답을 보지
   않아서, `viewer` 를 null 가능으로 잘못 설계한 것을 실측 응답으로 잡았다.
 
-**웹(`apps/web`)의 구조는 FSD 를 얕게 적용한다.**
+**웹(`apps/web`)은 FSD 를 쓴다.** 구조는
+[FSD 공식 Next.js 가이드](https://feature-sliced.design/docs/guides/tech/with-nextjs)를
+따른다.
 
 ```
 apps/web/
-├── app/           라우팅·전역만 (page · layout · globals.css)
-├── screens/{화면}/  그 화면 전용 컴포넌트
-└── lib/           브리지 등 웹 전용 유틸
-packages/ui        화면 2개 이상이 쓰는 공용 컴포넌트
-packages/api       서버 호출 + 도메인 타입 + 매퍼
+├── app/                  Next 라우트. 화면을 re-export 만 한다
+└── src/
+    ├── _pages/{화면}/
+    │   ├── index.ts      공개 API
+    │   └── ui/           화면 컴포넌트
+    └── shared/           웹 전용 공용 코드 (브리지 등)
+packages/ui               여러 화면이 쓰는 공용 컴포넌트
+packages/api              서버 호출 + 도메인 타입 + 매퍼
 ```
 
-- **`pages/` 가 아니라 `screens/`** — Next 에서 `pages/` 는 레거시 라우터
-  디렉터리라 그 이름을 쓰면 라우팅이 꼬인다.
+- **`_pages` 의 밑줄은 공식 권장이다.** Next 가 `app/`·`pages/` 를 라우터
+  디렉터리로 쓰므로 FSD 레이어 이름과 충돌한다. 공식이 `_app`·`_pages` 접두사를
+  안내하고 공식 린터도 그 이름을 인식한다. 회피책 3개(루트 `pages/`,
+  라우트를 `src/app` 으로 이동, `pageExtensions`)를 실측했고 **전부 빌드가
+  깨진다** — 근거는 [`_pages/README.md`](./apps/web/src/_pages/README.md).
+- **`app/` 은 루트에 남긴다.** `src/app` 으로 내리면 Next 15 가 타입 검증기
+  상대경로를 잘못 생성한다(실측).
+- **라우트는 re-export 한 줄이다** —
+  `export { CommunityPostPage as default } from '@/_pages/community-post';`
+  조립을 라우트에 두면 `app/` 이 다시 두꺼워진다.
 - **`entities` 레이어를 두지 않는다.** 서버 응답을 아는 코드를 `packages/api`
-  한 곳에 모은다 — 타입(`types.ts`)과 변환(`mappers.ts`)이 붙어 있어야 서버
+  한 곳에 모은다 — 타입(`types.ts`)과 매퍼(`mappers.ts`)가 붙어 있어야 서버
   형식이 바뀔 때 한 군데만 고친다.
-- **`features` 는 필요해질 때 만든다.** 좋아요·스크랩처럼 사용자 행동과 상태가
-  생기면 그때다. 지금은 읽기 전용이라 없다 — 빈 폴더는 소음이다.
-- 올리는 기준은 Flutter 와 같다 — **화면 2개 이상이 쓸 때** `packages/ui` 로
-  올린다. 미리 올리지 않는다.
-
-자세한 판별은 [apps/web/screens/README.md](./apps/web/screens/README.md) 참고.
+- **`features`·`widgets` 는 필요해질 때 만든다.** 지금은 읽기 전용 화면뿐이다.
+- `packages/ui` 로 올리는 기준은 **화면 2개 이상**. 미리 올리지 않는다.
 
 **`packages/ui` 를 쓸 때 걸린 함정 3개를 적어 둔다 — 전부 빌드는 통과하고 실행해야
 드러난다.**
