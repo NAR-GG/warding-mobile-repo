@@ -94,12 +94,42 @@ warding-mobile-repo/
 |---|---|---|
 | `shared-types` | Flutter 가 코드생성을 안 쓴다 (`pubspec.yaml` 에 openapi·json_serializable·freezed 전부 없음) | 스키마 254개를 Dart 로 뽑는 경로가 없다. 만들면 TS 전용 타입 모음이 되고, 그건 `apps/web/` 안에 둘 것이다 |
 | `shared-api` | `apps/web` 의 API 호출 0건 | 공유할 클라이언트가 없다 |
-| `ui-components` | Flutter 위젯 47 vs Next 컴포넌트 2 | Dart 위젯과 React 컴포넌트는 코드를 공유할 수 없다. 실제로 공유되는 것은 **토큰**이고 그게 `design-tokens` 다 |
+| `ui-components` | Flutter 위젯 47 vs Next 컴포넌트 2 | **2026-11-17에 `packages/ui` 로 만들었다** — 아래 "웹 중심 전환" 참고. Dart 와 React 가 코드를 공유하는 것이 아니라, 화면이 웹으로 옮겨가면서 **React 쪽이 단일 구현이 되는** 방향이다 |
 | 브리지 메시지 타입 | 웹에 Stage A 있음, Flutter 쪽 `WardingBridge` 참조 0건 | 가장 유망하지만 양쪽 구현이 생긴 뒤다. 그리고 Dart 가 선언을 읽으려면 다시 코드생성이 필요하므로, **Stage 표에 적고 양쪽에 손으로 쓰는 쪽이 싸다** |
 
-**이 판단의 공통 원인은 Flutter 가 코드생성을 쓰지 않는다는 것이다.** 그래서 "선언 하나를
-두 언어가 읽는" 형태는 토큰(JSON → Dart·CSS 생성)에서만 성립한다. 그 생성기를 이미
-직접 짰으므로, 같은 방식이 필요해지면 `packages/` 에 패키지를 더하는 식으로 넓힌다.
+**타입·API 공유가 불가한 공통 원인은 Flutter 가 코드생성을 쓰지 않는다는 것이다.**
+"선언 하나를 두 언어가 읽는" 형태는 토큰(JSON → Dart·CSS 생성)에서만 성립한다.
+
+#### 웹 중심 전환과 `packages/ui`
+
+**전환 범위를 "컨텐츠성 화면만" 에서 "목록·상세·폼까지 웹, Flutter 는 셸만" 으로
+넓혔다.** 그러면 UI 공유의 성격이 바뀐다 — Dart 와 React 가 같은 코드를 쓰는 것이
+아니라, **화면이 옮겨가는 만큼 React 쪽이 유일한 구현이 된다.** 그래서
+`ui-components` 를 "불가"에서 `packages/ui` 로 뒤집었다.
+
+받아들인 것: 오프라인 동작과 네이티브 수준의 즉각적 화면 전환을 포기한다. 얻는 것:
+레이아웃 변경에 스토어 심사가 필요 없다 — Shorebird 패치가 과금 때문에 막힌 지금
+그 자리를 메우는 유일한 수단이다.
+
+`packages/ui` 는 **빌드하지 않는다.** 소스(`.tsx`)를 그대로 내보내고 Next 가
+`transpilePackages` 로 컴파일한다. 패키지마다 번들러를 두면 토큰 → UI → 웹으로 단계가
+늘고 중간 산출물을 또 캐시 앵커로 관리해야 한다(토큰 쪽에서 겪은 문제다).
+
+**첫 3개 컴포넌트(`BoardBadge`·`Button`·`DetailHeader`)는 Dart 위젯에서 수치를 그대로
+옮겼고, 실제 렌더로 값을 대조했다**(375 뷰포트에서 버튼 34×110.5·radius 8·14px, 배지
+padding 2/6·radius 4·11px, 헤더 34 + padding 18.5/20/22·18px — 전부 Dart 명세와 일치).
+
+**겪은 함정 3개. 전부 빌드는 통과하고 실행해야 드러난다.**
+
+| 함정 | 증상 | 규칙 |
+|---|---|---|
+| `calc(34px * var(--scale))` | 그 선언이 통째로 무효. 콘솔도 조용하다 | `--scale` 자체가 px 단위(`clamp(...)/375`)다. **단위 없이** `calc(34 * var(--scale))` |
+| 서버 컴포넌트가 `onClick` 전달 | 런타임 500 `Event handlers cannot be passed to Client Component props` | 클라이언트 경계는 **호출부**에 둔다. 라이브러리에 `'use client'` 를 붙여도 안 풀린다 |
+| 전역 `* { padding: 0 }` | 버튼 높이·여백이 무너진다 | `@import` 는 CSS 규격상 맨 앞으로 끌어올려져 **순서로 못 이긴다**. 리셋을 좁힌다(폼 요소 제외) |
+
+구독 버튼은 폭을 고정하지 않는다 — Dart 가 `TextPainter` 로 '구독'/'구독중' 을 재서 더 긴
+쪽에 맞추는 것과 같은 목적으로, CSS 는 더 긴 라벨을 `::before` 로 숨겨 깔아 폭을 잡고
+실제 라벨을 그 위에 겹친다. 로케일이 늘어도 CSS 를 고치지 않는다.
 
 `tools/discord-bridge` 도 패키지로 옮기지 않는다 — npm + Vercel 배포로 독립 운영 중이라
 pnpm 워크스페이스에 묶으면 lock 충돌과 배포 경로 변경이 따라온다.

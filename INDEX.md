@@ -27,6 +27,7 @@ status: living
 | [apps/mobile/](./apps/mobile/) | Flutter 앱. **Flutter 명령은 이 폴더에서 돌립니다** |
 | [apps/web/](./apps/web/) | 웹뷰용 Next.js 앱 |
 | [packages/design-tokens/](./packages/design-tokens/) | 디자인 토큰 단일 출처 → Dart·CSS 생성 |
+| [packages/ui/](./packages/ui/) | 웹 공용 React 컴포넌트. 빌드 없이 소스를 내보냅니다 |
 | [tools/](./tools/) | 운영 스크립트 + Discord 브릿지 |
 | [distribution/](./distribution/) | 스토어 패치노트 |
 
@@ -42,7 +43,7 @@ status: living
 | 슬러그 | 내용 |
 |--------|------|
 | [loop-engineering-workflow](./intent/loop-engineering-workflow/) | 이 intent/spec/plan 체계 자체(+ Discord 자동화)의 설계. 셀프 도그푸딩 사례입니다 |
-| [hybrid-webview-monorepo](./intent/hybrid-webview-monorepo/) | 컨텐츠성 화면의 웹뷰 전환. 모노레포 배치(`apps/` + `packages/`)와 디자인 토큰 단일 출처를 정합니다 |
+| [hybrid-webview-monorepo](./intent/hybrid-webview-monorepo/) | 웹뷰 전환(웹 중심). 모노레포 배치(`apps/` + `packages/`), 디자인 토큰·공용 UI 패키지를 정합니다 |
 | [release-build-automation](./intent/release-build-automation/) | 태그를 밀면 빌드·e2e·업로드가 도는 릴리즈 자동화 설계 |
 | [discord-release-approval](./intent/discord-release-approval/) | Discord 버튼 2단계 확인으로 스토어 심사를 제출하는 흐름 |
 | [youtube-shorts](./intent/youtube-shorts/) | 쇼츠 앱 내 재생(세로 피드) |

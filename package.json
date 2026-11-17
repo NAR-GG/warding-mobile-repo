@@ -5,8 +5,9 @@
   "scripts": {
     "build": "turbo run build",
     "tokens:build": "turbo run build sync:dart --filter=warding-design-tokens",
-    "web:dev": "turbo run dev --filter=warding-web",
-    "web:build": "turbo run build --filter=warding-web"
+    "typecheck": "turbo run typecheck",
+    "web:build": "turbo run build --filter=warding-web",
+    "web:dev": "turbo run dev --filter=warding-web"
   },
   "devDependencies": {
     "turbo": "^2.11.11"

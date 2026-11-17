@@ -23,6 +23,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.3.1(react@19.3.1)
+      warding-ui:
+        specifier: workspace:*
+        version: link:../../packages/ui
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -41,6 +44,22 @@ importers:
         version: link:../../packages/design-tokens
 
   packages/design-tokens: {}
+
+  packages/ui:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.3.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      warding-design-tokens:
+        specifier: workspace:*
+        version: link:../design-tokens
 
 packages:
 

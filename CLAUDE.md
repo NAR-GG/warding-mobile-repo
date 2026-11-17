@@ -78,11 +78,13 @@ warding-mobile-repo/
 │   ├── mobile/                      Flutter 앱 (lib · ios · android · test · assets)
 │   └── web/                         웹뷰용 Next.js 앱
 ├── packages/
-│   └── design-tokens/               토큰 단일 출처
-│       ├── source/{common,theme}.json   사람이 고치는 곳
-│       ├── build/                   생성물 (tokens.css · app_colors.dart)
-│       ├── build.mjs                Dart·CSS 생성기
-│       └── sync-dart.mjs            생성된 Dart → apps/mobile 복사
+│   ├── design-tokens/               토큰 단일 출처 (값)
+│   │   ├── source/{common,theme}.json   사람이 고치는 곳
+│   │   ├── build/                   생성물 (tokens.css · app_colors.dart)
+│   │   ├── build.mjs                Dart·CSS 생성기
+│   │   └── sync-dart.mjs            생성된 Dart → apps/mobile 복사
+│   └── ui/                          웹 공용 React 컴포넌트
+│       └── src/                     빌드 없이 소스를 내보낸다 (Next 가 컴파일)
 ├── tools/                           운영 스크립트 (api 스펙 동기화 등)
 │   └── discord-bridge/              npm 으로 독립 운영 (워크스페이스 밖)
 ├── wiki/ · intent/ · distribution/  문서
@@ -108,16 +110,32 @@ pubspec 을 못 찾는다. 워크플로우도 그 스텝들에 `working-director
 
 **태스크 러너는 turbo 다.** `pnpm build` 가 토큰 → 웹 순서를 보장한다 —
 `apps/web` 이 `warding-design-tokens` 를 `workspace:*` 로 의존 선언해서 그래프가 잡힌다.
-Flutter 는 turbo 그래프 밖이다(Dart 를 모른다). `packages/` 에 JS 패키지가 쌓이고 서로
-import 하기 시작하면 Nx 를 재검토할 지점이지만, 지금은 JS 패키지가 2개뿐이라 turbo 로
-충분하다.
+Flutter 는 turbo 그래프 밖이다(Dart 를 모른다). `pnpm typecheck` 도 같은 그래프를 탄다.
+`packages/` 에 JS 패키지가 더 쌓이고 서로 import 하기 시작하면 Nx 를 재검토할 지점이지만,
+지금은 turbo 로 충분하다.
 
-**`packages/` 에는 `design-tokens` 하나만 둔다.** `shared-types`·`shared-api`·
-`ui-components` 를 만들지 않은 이유는 **Flutter 가 코드생성을 쓰지 않아서**다
-(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다). "선언 하나를 두 언어가
-읽는" 형태가 성립하는 것은 토큰(JSON → Dart·CSS 생성)뿐이다. 후보별 실측 근거는
-[웹뷰 전환 spec](./intent/hybrid-webview-monorepo/spec.md)의 "packages 에 design-tokens
-하나만 두는 이유" 표에 있다. 같은 방식이 필요해지면 그때 패키지를 더한다.
+**`packages/ui` 는 빌드하지 않는다.** 소스(`.tsx`)를 그대로 내보내고 Next 가
+`transpilePackages` 로 컴파일한다 — 패키지마다 번들러를 두면 토큰 → UI → 웹으로 단계가
+늘고, 그 중간 산출물을 또 캐시 앵커로 관리해야 한다(토큰 쪽에서 겪은 문제다).
+
+**`packages/` 는 `design-tokens`(값) + `ui`(React 컴포넌트) 둘이다.**
+웹뷰 전환이 **웹 중심**(목록·상세·폼까지 웹, Flutter 는 셸만)이라, 화면이 옮겨가는
+만큼 `packages/ui` 가 점점 **진짜 단일 구현**이 된다. 지금은 첫 전환 화면이 쓰는
+`BoardBadge`·`Button`·`DetailHeader` 3개가 있다.
+
+**`shared-types`·`shared-api` 는 만들지 않았다.** Flutter 가 코드생성을 쓰지 않아
+(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다) 스키마 254개를 Dart 로
+뽑는 경로가 없고, 웹의 API 호출도 아직 0건이다. 근거 표는
+[웹뷰 전환 spec](./intent/hybrid-webview-monorepo/spec.md) 참고.
+
+**`packages/ui` 를 쓸 때 걸린 함정 3개를 적어 둔다 — 전부 빌드는 통과하고 실행해야
+드러난다.**
+
+| 함정 | 증상 | 규칙 |
+|---|---|---|
+| `calc(34px * var(--scale))` | 선언이 통째로 무효. 콘솔도 조용하다 | `--scale` 이 px 단위다. **단위 없이** `calc(34 * var(--scale))` |
+| 서버 컴포넌트가 `onClick` 전달 | 런타임 500 `Event handlers cannot be passed` | 경계는 **호출부**에 둔다. 라이브러리에 `'use client'` 를 붙여도 안 풀린다 |
+| 전역 `* { padding: 0 }` | 버튼 높이·여백이 무너진다 | `@import` 는 맨 앞으로 끌어올려지므로 순서로 못 이긴다. **리셋을 좁힌다** |
 
 **빌드 타깃은 iOS·Android 뿐이다.** `windows/`·`linux/`·`macos/`·`web/` 은 `flutter
 create` 가 만든 템플릿이었고 빌드에 쓰이지 않아 2026-11-17 에 지웠다. 다시 필요하면

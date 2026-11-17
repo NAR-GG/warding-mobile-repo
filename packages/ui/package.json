@@ -1,0 +1,22 @@
+{
+  "name": "warding-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "웹뷰 화면이 쓰는 React 컴포넌트. 빌드하지 않고 소스를 그대로 내보낸다.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0",
+    "warding-design-tokens": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

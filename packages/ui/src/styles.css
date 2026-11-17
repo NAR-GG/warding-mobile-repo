@@ -1,0 +1,263 @@
+/* warding-ui 컴포넌트 스타일.
+ *
+ * 수치는 모두 375 기준 원시값에 `var(--scale)` 을 곱한다 — Flutter 가
+ * `수치 * scale` 을 하는 것과 같은 결과다(→ 토큰 CSS 의 `--scale` 정의).
+ * 색은 하드코딩하지 않고 `--color-*` 토큰만 참조한다.
+ *
+ * **단위를 붙이지 않는다 — `calc(34 * var(--scale))` 이지 `calc(34px * ...)` 이
+ * 아니다.** `--scale` 자체가 `clamp(320px, 100vw, 430px) / 375` 라 px 단위를
+ * 갖는다. px 를 또 붙이면 `px * px` 가 되어 그 선언이 통째로 무효가 되는데,
+ * 빌드도 콘솔도 조용하다 — 화면이 무너져야 안다(실측으로 겪었다).
+ * 단위가 필요한데 scale 을 안 곱하는 값(테두리 1px 등)만 px 를 쓴다.
+ *
+ * 이 파일을 쓰려면 먼저 토큰 CSS 를 import 해야 한다:
+ *   @import 'warding-design-tokens/build/tokens.css';
+ *   @import 'warding-ui/styles.css';
+ */
+
+/* ── 게시판 배지 ──────────────────────────────────────────
+ * Flutter: core/ui/board_badge.dart
+ * padding 6/2 · radius 4 · w600 · 11px · line 1.3
+ */
+.wd-board-badge {
+  display: inline-block;
+  padding: calc(2 * var(--scale)) calc(6 * var(--scale));
+  /* 테두리는 scale 을 곱하지 않는다 — Dart 도 1.0 고정이다. */
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(4 * var(--scale));
+  background: var(--color-nar-dark500);
+  color: var(--color-nar-text3);
+  font-family: Pretendard, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: calc(11 * var(--scale));
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ── 상세 화면 헤더 ────────────────────────────────────────
+ * Flutter: core/ui/nar_detail_header.dart
+ * padding top 18.5 / left·right 20 / bottom 22 · 내부 높이 34
+ * 제목 w700 18px line 21/18 · 뒤로가기 24
+ *
+ * 기본은 제목 가운데 고정(`centerTitle`). 제목이 길어도 좌우 슬롯(뒤로가기 24,
+ * 우측 아이콘)을 침범하지 않게 양쪽 44 를 비워 둔다 — Dart 주석과 같은 이유로,
+ * 제약이 없으면 긴 제목이 아이콘 위로 넘어가 겹친다.
+ */
+.wd-detail-header {
+  position: relative;
+  height: calc(34 * var(--scale));
+  box-sizing: content-box;
+  padding: calc(18.5 * var(--scale)) calc(20 * var(--scale))
+    calc(22 * var(--scale));
+  background: var(--color-nar-dark800);
+}
+
+.wd-detail-header__back {
+  position: absolute;
+  top: calc(18.5 * var(--scale));
+  left: calc(20 * var(--scale));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(24 * var(--scale));
+  height: calc(34 * var(--scale));
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text);
+  cursor: pointer;
+  /* 네이티브 탭 느낌에 맞춘다 — 웹뷰 안에서 파란 하이라이트가 보이면 안 된다 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wd-detail-header__back svg {
+  display: block;
+  width: calc(24 * var(--scale));
+  height: calc(24 * var(--scale));
+}
+
+.wd-detail-header__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0;
+  padding: 0 calc(44 * var(--scale));
+  color: var(--color-nar-text);
+  font-family: Pretendard, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: calc(18 * var(--scale));
+  line-height: calc(21 / 18);
+  text-align: center;
+  /* 제목이 길면 줄바꿈 대신 잘라낸다 — 헤더 높이가 밀리면 본문 높이 통지가
+   * 어긋난다(브리지 Stage A 가 높이를 네이티브에 알린다). */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-detail-header__trailing {
+  position: absolute;
+  top: calc(18.5 * var(--scale));
+  right: calc(20 * var(--scale));
+  display: flex;
+  align-items: center;
+  height: calc(34 * var(--scale));
+}
+
+/* 좌측 정렬 변형 — Dart 의 `centerTitle: false`. 뒤로가기 바로 옆(간격 16)에
+ * 제목을 붙이고 우측 슬롯과 양끝 정렬한다(예: 경기 일정 상세 헤더). */
+.wd-detail-header--start {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(8 * var(--scale));
+}
+
+.wd-detail-header--start .wd-detail-header__back,
+.wd-detail-header--start .wd-detail-header__trailing {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+}
+
+/* Dart 는 간격이 두 종류다 — 뒤로가기↔(제목 또는 leading) 16, leading↔제목 6.
+ * gap 하나로는 표현이 안 되므로 margin 으로 나눈다. */
+.wd-detail-header--start .wd-detail-header__lead {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.wd-detail-header--start .wd-detail-header__back {
+  margin-right: calc(16 * var(--scale));
+}
+
+.wd-detail-header--start .wd-detail-header__leading {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-right: calc(6 * var(--scale));
+}
+
+.wd-detail-header--start .wd-detail-header__title {
+  padding: 0;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+/* ── 버튼 ─────────────────────────────────────────────────
+ * Flutter: core/ui/nar_button.dart — variant 6개를 1:1로 옮긴다.
+ *
+ * 공통: 높이 34 · 14px · line 1
+ * type1/type2  폭 110.5 고정 · radius 8 · Open Sans 400 · padding 10
+ * set1/set1Disabled  부모 폭 채움 · radius 8 · Open Sans 400 · padding 10
+ * subscribe/subscribed  폭 64(ko) · radius 10 · Pretendard 500 · padding 16
+ *
+ * type1/type2 의 110.5 는 시안 고정값이다. 구독형은 **고정 폭이 아니다** —
+ * Dart 는 '구독'/'구독중' 두 라벨을 TextPainter 로 재서 더 긴 쪽에 패딩을
+ * 더한다. 짧은 라벨일 때 버튼이 줄었다 늘었다 하지 않게 하려는 것이다.
+ * 웹은 그 측정을 `ch` 단위로 근사하지 않고 **더 긴 라벨을 숨겨 놓고 폭을
+ * 잡는다**(`::after` 로 '구독중' 을 투명하게 깔고 실제 라벨은 그 위에 겹친다).
+ * 그래야 로케일이 늘어도 CSS 를 고치지 않는다.
+ */
+.wd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: calc(34 * var(--scale));
+  padding: 0 calc(10 * var(--scale));
+  border: 0;
+  border-radius: calc(8 * var(--scale));
+  font-family: 'Open Sans', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: calc(14 * var(--scale));
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* 눌림 전환은 토큰의 모션 값을 쓴다 */
+  transition: opacity var(--motion-fast) ease-out;
+}
+
+.wd-button:active:not(:disabled) {
+  opacity: 0.7;
+}
+
+.wd-button:disabled {
+  cursor: default;
+}
+
+.wd-button--type1,
+.wd-button--type2 {
+  width: calc(110.5 * var(--scale));
+}
+
+.wd-button--set1,
+.wd-button--set1-disabled {
+  width: 100%;
+}
+
+.wd-button--type1 {
+  background: var(--color-nar-button1-bg);
+  color: var(--color-nar-button1-text);
+}
+
+.wd-button--type2 {
+  background: var(--color-nar-button2-bg);
+  color: var(--color-nar-button2-text);
+  border: calc(1.5 * var(--scale)) solid var(--color-nar-button2-line);
+}
+
+.wd-button--set1 {
+  background: var(--color-nar-dark300);
+  color: var(--color-nar-text);
+}
+
+.wd-button--set1-disabled {
+  background: var(--color-nar-dark600);
+  color: var(--color-nar-dark300);
+  border: calc(1.5 * var(--scale)) solid var(--color-nar-dark300);
+}
+
+.wd-button--subscribe,
+.wd-button--subscribed {
+  /* 폭은 고정하지 않는다 — 아래 `--wd-subscribe-widest` 로 잡는다. */
+  position: relative;
+  padding: 0 calc(16 * var(--scale));
+  border-radius: calc(10 * var(--scale));
+  font-family: Pretendard, system-ui, sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 더 긴 라벨을 숨겨 깔아 폭을 고정한다 — '구독' ↔ '구독중' 을 오갈 때 버튼이
+ * 흔들리지 않게 하려는 것이고, Dart 가 TextPainter 로 재는 것과 같은 목적이다.
+ * 라벨 문자열은 호출부가 `--wd-subscribe-widest` 로 넘긴다(로케일 때문).
+ *
+ * 숨김 라벨은 flex 흐름에 남겨 폭을 만들고, 실제 라벨을 absolute 로 그 위에
+ * 겹친다. 반대로 하면(숨김을 absolute) 폭이 0 이 되어 효과가 없다. */
+.wd-button--subscribe::before,
+.wd-button--subscribed::before {
+  content: var(--wd-subscribe-widest, '구독중');
+  visibility: hidden;
+}
+
+.wd-button--subscribe > .wd-button__label,
+.wd-button--subscribed > .wd-button__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.wd-button--subscribe {
+  background: var(--color-nar-subscribe-bg);
+  color: var(--color-nar-line2);
+}
+
+.wd-button--subscribed {
+  background: var(--color-nar-chip-selected-bg);
+  color: var(--color-nar-text-tertiary);
+}

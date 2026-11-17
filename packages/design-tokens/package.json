@@ -6,5 +6,9 @@
   "scripts": {
     "build": "node build.mjs",
     "sync:dart": "node sync-dart.mjs"
+  },
+  "exports": {
+    "./build/tokens.css": "./build/tokens.css",
+    "./build/app_colors.dart": "./build/app_colors.dart"
   }
 }

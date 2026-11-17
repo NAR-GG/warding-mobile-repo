@@ -70,3 +70,7 @@ apps/web/.next/
 apps/web/next-env.d.ts
 .pnpm-store/
 .turbo
+.playwright-mcp
+
+# tsc --incremental 캐시
+*.tsbuildinfo

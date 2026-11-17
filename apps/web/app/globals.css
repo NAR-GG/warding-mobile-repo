@@ -1,12 +1,52 @@
-/* 토큰은 생성물이다. packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`. */
-@import '../../../packages/design-tokens/build/tokens.css';
+/* 토큰은 생성물이다. packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`.
+ * 상대경로가 아니라 패키지 이름으로 참조한다 — 폴더가 움직이면 상대경로가 깨진다
+ * (Flutter 를 apps/mobile 로 내릴 때 실제로 깨졌다). */
+@import 'warding-design-tokens/build/tokens.css';
+/* 공용 컴포넌트 스타일. 토큰 뒤에 와야 var(--*) 가 정의된 상태가 된다. */
+@import 'warding-ui/styles.css';
 
-* {
+/* ── 전역 리셋 ────────────────────────────────────────────
+ *
+ * `@import` 는 CSS 규격상 파일 맨 앞으로 끌어올려진다 — 리셋을 위에 적어도
+ * 번들에서는 컴포넌트 스타일이 **앞**에 온다. 그래서 `* { padding: 0 }` 같은
+ * 규칙이 `.wd-button` 의 padding 을 덮어 높이·여백이 통째로 무너졌다(실측).
+ * 상세도가 같으면(0,0,0 대 0,1,0 이 아니라 둘 다 사실상 낮다) 순서가 이긴다.
+ *
+ * 그래서 리셋에서 컴포넌트를 제외한다. `:not()` 로 빼는 대신 리셋 자체를
+ * 좁히는 쪽을 택했다 — 컴포넌트가 늘어날 때마다 선택자를 고치지 않아도 된다.
+ */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
   /* 웹뷰에서 탭할 때 뜨는 회색 하이라이트를 없앤다 — 네이티브엔 없다. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/* margin·padding 리셋은 문서 요소에만 건다. 버튼·입력처럼 자체 치수를 갖는
+ * 폼 요소는 컴포넌트가 정한 값을 쓴다. */
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
 }
 
 html,

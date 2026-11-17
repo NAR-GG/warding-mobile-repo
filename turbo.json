@@ -3,20 +3,40 @@
   "ui": "stream",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "warding-design-tokens#sync:dart"],
-      "outputs": ["build/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": [
+        "^build",
+        "warding-design-tokens#sync:dart"
+      ],
+      "outputs": [
+        "build/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "warding-design-tokens#build": {
-      "inputs": ["source/**", "build.mjs"],
-      "outputs": ["build/**"]
+      "inputs": [
+        "source/**",
+        "build.mjs"
+      ],
+      "outputs": [
+        "build/**"
+      ]
     },
     "warding-design-tokens#sync:dart": {
-      "dependsOn": ["warding-design-tokens#build"],
+      "dependsOn": [
+        "warding-design-tokens#build"
+      ],
       "cache": false
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": [
+        "warding-design-tokens#sync:dart"
+      ],
+      "outputs": []
     }
   }
 }
