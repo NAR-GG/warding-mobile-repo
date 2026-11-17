@@ -31,6 +31,9 @@ jobs:
       # 타입 오류는 빌드보다 먼저 잡는다 — 실패 지점이 더 좁다.
       - run: pnpm typecheck
 
+      # 매퍼 회귀 테스트. 타입 체크는 런타임 응답을 보지 않으므로 별도로 돈다.
+      - run: pnpm test
+
       # `pnpm build` 가 토큰 → 웹 순서를 보장한다(turbo 그래프).
       # 토큰 CSS 가 있어야 globals.css 의 @import 가 풀린다.
       - run: pnpm build

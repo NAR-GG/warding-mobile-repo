@@ -37,6 +37,10 @@
         "warding-design-tokens#sync:dart"
       ],
       "outputs": []
+    },
+    "test": {
+      "dependsOn": [],
+      "outputs": []
     }
   }
 }

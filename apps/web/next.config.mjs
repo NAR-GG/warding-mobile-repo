@@ -8,6 +8,6 @@ const nextConfig = {
   // 패키지마다 두면 토큰 변경 → UI 빌드 → 웹 빌드로 단계가 늘고, 그 중간
   // 산출물을 캐시 앵커로 또 관리해야 한다(토큰 쪽에서 겪은 문제다).
   // Next 가 직접 컴파일하게 두는 편이 단계가 하나 적다.
-  transpilePackages: ['warding-ui'],
+  transpilePackages: ['warding-ui', 'warding-api'],
 };
 export default nextConfig;

@@ -83,8 +83,10 @@ warding-mobile-repo/
 │   │   ├── build/                   생성물 (tokens.css · app_colors.dart)
 │   │   ├── build.mjs                Dart·CSS 생성기
 │   │   └── sync-dart.mjs            생성된 Dart → apps/mobile 복사
-│   └── ui/                          웹 공용 React 컴포넌트
-│       └── src/                     빌드 없이 소스를 내보낸다 (Next 가 컴파일)
+│   ├── ui/                          웹 공용 React 컴포넌트
+│   │   └── src/                     빌드 없이 소스를 내보낸다 (Next 가 컴파일)
+│   └── api/                         웹용 API 클라이언트
+│       └── src/                     Result<T> 반환, 매퍼 + 회귀 테스트
 ├── tools/                           운영 스크립트 (api 스펙 동기화 등)
 │   └── discord-bridge/              npm 으로 독립 운영 (워크스페이스 밖)
 ├── wiki/ · intent/ · distribution/  문서
@@ -123,10 +125,18 @@ Flutter 는 turbo 그래프 밖이다(Dart 를 모른다). `pnpm typecheck` 도 
 만큼 `packages/ui` 가 점점 **진짜 단일 구현**이 된다. 지금은 첫 전환 화면이 쓰는
 `BoardBadge`·`Button`·`DetailHeader` 3개가 있다.
 
-**`shared-types`·`shared-api` 는 만들지 않았다.** Flutter 가 코드생성을 쓰지 않아
-(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다) 스키마 254개를 Dart 로
-뽑는 경로가 없고, 웹의 API 호출도 아직 0건이다. 근거 표는
-[웹뷰 전환 spec](./intent/hybrid-webview-monorepo/spec.md) 참고.
+**`packages/api` 는 웹 전용이다.** Flutter 와 타입을 공유하지 않는다 — 코드생성을
+쓰지 않아(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다) 스키마 254개를
+Dart 로 뽑을 경로가 없다. 대신 **Dart 쪽 모델의 널 판단을 복제한다** — 같은 응답에서
+두 플랫폼이 다른 화면을 그리면 안 되기 때문이다.
+
+- `Result<T>` 를 돌려준다. Flutter 의 `Either<Failure, T>` 와 같은 계약이고,
+  `Failure` 분류(`server`·`network`·`parse`·`unauthorized`·`noData`)도 같다.
+- **OpenAPI 스펙의 `required` 를 그대로 믿지 않는다.** 커뮤니티 글 상세는 스펙상
+  required 가 0개지만 실제로는 대부분 온다. Dart 모델이 실전 기준으로 정해 둔 널
+  여부를 따르고, 어긋나면 매퍼 테스트가 잡는다.
+- **매퍼 회귀 테스트가 PR마다 돈다**(`pnpm test`). 타입 체크는 런타임 응답을 보지
+  않아서, `viewer` 를 null 가능으로 잘못 설계한 것을 실측 응답으로 잡았다.
 
 **`packages/ui` 를 쓸 때 걸린 함정 3개를 적어 둔다 — 전부 빌드는 통과하고 실행해야
 드러난다.**

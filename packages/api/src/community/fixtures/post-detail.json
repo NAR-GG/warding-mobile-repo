@@ -1,0 +1,47 @@
+{
+  "id": 1,
+  "boardTeamId": null,
+  "boardTeamCode": null,
+  "title": "샘플 제목",
+  "body": "[{\"type\": \"text\", \"text\": \"샘플 본문\"}]",
+  "bodyFormat": "BLOCKS",
+  "author": {
+    "memberId": 1,
+    "nickname": "샘플유저#KR1",
+    "profileImageUrl": null,
+    "teamId": 39,
+    "teamCode": "T1",
+    "teamImageUrl": "https://example.test/teamImageUrl.png"
+  },
+  "viewCount": 6,
+  "likeCount": 0,
+  "commentCount": 0,
+  "edited": true,
+  "createdAt": "2026-11-17T08:57:54.006",
+  "viewer": {
+    "liked": false,
+    "scrapped": false,
+    "mine": false,
+    "blockedAuthor": false,
+    "notificationEnabled": true
+  },
+  "images": [
+    {
+      "id": 1,
+      "url": "https://example.test/image-1.jpg"
+    },
+    {
+      "id": 2,
+      "url": "https://example.test/image-2.jpg"
+    },
+    {
+      "id": 3,
+      "url": "https://example.test/image-3.jpg"
+    },
+    {
+      "id": 4,
+      "url": "https://example.test/image-4.jpg"
+    }
+  ],
+  "poll": null
+}

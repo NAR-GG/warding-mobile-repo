@@ -63,3 +63,113 @@ body {
 body {
   font-size: calc(14 * var(--scale) * 1px);
 }
+
+/* ── 커뮤니티 글 상세 (첫 전환 화면) ──────────────────────
+ * 화면 전용 스타일이라 `packages/ui` 가 아니라 여기 둔다 — 공용이 되면
+ * 그때 올린다(`core/ui` 에 한 기능 전용 위젯을 두지 않는 규칙과 같다). */
+
+.post {
+  padding: calc(20 * var(--scale) * 1px);
+}
+
+.post__meta {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale) * 1px);
+}
+
+.post__author {
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale) * 1px);
+}
+
+.post__title {
+  margin-top: calc(12 * var(--scale) * 1px);
+  font-size: calc(18 * var(--scale) * 1px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.post__stats {
+  margin-top: calc(8 * var(--scale) * 1px);
+  color: var(--color-nar-text3);
+  font-size: calc(12 * var(--scale) * 1px);
+}
+
+/* 본문 블록. 수치는 Flutter `post_block_renderer.dart` 와 맞춘다 —
+ * 블록 간격 12, 제목 16/1.45 w700, 평문 14/1.65 w400. */
+.post__body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--scale) * 1px);
+  margin-top: calc(16 * var(--scale) * 1px);
+}
+
+.post__heading {
+  color: var(--color-nar-text);
+  font-size: calc(16 * var(--scale) * 1px);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.post__text {
+  color: var(--color-nar-text3);
+  font-size: calc(14 * var(--scale) * 1px);
+  font-weight: 400;
+  line-height: 1.65;
+  /* 긴 URL 이 가로 스크롤을 만들지 않게 한다 — 웹뷰에서 가로 스크롤은
+   * 네이티브 제스처와 충돌한다. */
+  overflow-wrap: anywhere;
+}
+
+.post__link {
+  display: flex;
+  gap: calc(10 * var(--scale) * 1px);
+  padding: calc(10 * var(--scale) * 1px);
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(8 * var(--scale) * 1px);
+  background: var(--color-nar-dark500);
+  color: inherit;
+  text-decoration: none;
+}
+
+.post__link-thumb {
+  flex: 0 0 auto;
+  width: calc(64 * var(--scale) * 1px);
+  height: calc(64 * var(--scale) * 1px);
+  border-radius: calc(6 * var(--scale) * 1px);
+  object-fit: cover;
+}
+
+.post__link-text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--scale) * 1px);
+  min-width: 0;
+}
+
+.post__link-title {
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale) * 1px);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.post__link-desc,
+.post__link-site {
+  color: var(--color-nar-text3);
+  font-size: calc(12 * var(--scale) * 1px);
+  overflow-wrap: anywhere;
+}
+
+.post__image {
+  width: 100%;
+  height: auto;
+  border-radius: calc(8 * var(--scale) * 1px);
+}
+
+.post-error {
+  padding: calc(40 * var(--scale) * 1px) calc(20 * var(--scale) * 1px);
+  color: var(--color-nar-text2);
+  text-align: center;
+}

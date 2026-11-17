@@ -93,7 +93,7 @@ warding-mobile-repo/
 | 후보 | 실측 | 판단 |
 |---|---|---|
 | `shared-types` | Flutter 가 코드생성을 안 쓴다 (`pubspec.yaml` 에 openapi·json_serializable·freezed 전부 없음) | 스키마 254개를 Dart 로 뽑는 경로가 없다. 만들면 TS 전용 타입 모음이 되고, 그건 `apps/web/` 안에 둘 것이다 |
-| `shared-api` | `apps/web` 의 API 호출 0건 | 공유할 클라이언트가 없다 |
+| `shared-api` | `apps/web` 의 API 호출 0건 | **2026-11-17에 `packages/api` 로 만들었다** — Flutter 와 *공유*하는 게 아니라 **웹 전용** 클라이언트다. 아래 참고 |
 | `ui-components` | Flutter 위젯 47 vs Next 컴포넌트 2 | **2026-11-17에 `packages/ui` 로 만들었다** — 아래 "웹 중심 전환" 참고. Dart 와 React 가 코드를 공유하는 것이 아니라, 화면이 웹으로 옮겨가면서 **React 쪽이 단일 구현이 되는** 방향이다 |
 | 브리지 메시지 타입 | 웹에 Stage A 있음, Flutter 쪽 `WardingBridge` 참조 0건 | 가장 유망하지만 양쪽 구현이 생긴 뒤다. 그리고 Dart 가 선언을 읽으려면 다시 코드생성이 필요하므로, **Stage 표에 적고 양쪽에 손으로 쓰는 쪽이 싸다** |
 
@@ -130,6 +130,45 @@ padding 2/6·radius 4·11px, 헤더 34 + padding 18.5/20/22·18px — 전부 Dar
 구독 버튼은 폭을 고정하지 않는다 — Dart 가 `TextPainter` 로 '구독'/'구독중' 을 재서 더 긴
 쪽에 맞추는 것과 같은 목적으로, CSS 는 더 긴 라벨을 `::before` 로 숨겨 깔아 폭을 잡고
 실제 라벨을 그 위에 겹친다. 로케일이 늘어도 CSS 를 고치지 않는다.
+
+#### `packages/api` — 웹 전용 클라이언트
+
+**Flutter 와 타입을 공유하지 않는다.** 코드생성이 없어 Dart 쪽을 생성할 수 없다.
+대신 **Dart 모델의 널 판단을 복제한다** — 같은 응답에서 두 플랫폼이 다른 화면을
+그리면 안 되기 때문이다.
+
+- `Result<T>` 를 돌려준다(`{ok:true,value} | {ok:false,failure}`). Flutter 의
+  `Either<Failure, T>` 와 같은 계약이고, `Failure` 분류도 같다
+  (`server`·`network`·`parse`·`unauthorized`·`noData`). 401·403 을 따로 가르는
+  이유도 Dart 와 같다 — "다시 로그인" 과 "잠시 후 다시" 는 다른 안내다.
+- 타임아웃 15초. Flutter `kDefaultApiTimeout` 과 같은 값이다.
+- 토큰을 스스로 갖지 않는다. 호출부가 `options.token` 으로 넘긴다.
+
+**OpenAPI 스펙의 `required` 를 그대로 믿지 않는다.** 커뮤니티 글 상세는 스펙상
+required 가 0개라 전부 optional 로 읽히지만, 실제 응답은 대부분 값이 온다. Dart
+모델이 실전 기준으로 정해 둔 널 여부를 따른다.
+
+**그 판단이 틀린 것을 실측으로 잡았다.** `viewer` 를 "비회원이면 null" 로 설계했는데,
+비회원 조회에서도 서버는 `viewer` 를 객체로 내려준다(전부 false). Dart 도
+`CommunityPostViewer._empty` 로 메워 non-null 로 노출하고 있었다. **타입 체크는
+런타임 응답을 보지 않으므로** 매퍼 회귀 테스트를 붙였고 PR마다 돈다.
+
+**첫 전환 화면(커뮤니티 글 상세)을 SSR 로 띄워 설계를 검증했다.**
+
+| 확인한 것 | 결과 |
+|---|---|
+| 비회원 조회가 열려 있나 | ✅ HTTP 200 (SSR 의 전제) |
+| 서버가 보낸 HTML 에 실데이터가 있나 | ✅ 제목·작성자·조회수·좋아요 전부 포함 |
+| 스펙 ↔ 실제 응답 | ✅ 필드 누락·추가 0건 |
+| 라우트 모드 | ✅ `ƒ /community/post/[id]` (SSR) |
+
+**본문은 `body` 블록만 그린다.** `images` 배열에 같은 이미지가 또 오는데 둘 다
+그리면 사진이 두 번 나온다(실측). Flutter `post_block_renderer.dart` 도 블록만 쓴다.
+블록 타입은 text·image·link·embed 4개고, 모르는 타입은 건너뛴다 — 서버가 타입을
+추가해도 화면이 안 깨진다.
+
+**없는 글은 404 이고 "삭제되었거나 없는 글" 로 안내한다.** `noData` 와 묶는 이유는
+재시도해도 소용없다는 점이 같아서다. 네트워크 실패만 "다시 시도" 를 권한다.
 
 `tools/discord-bridge` 도 패키지로 옮기지 않는다 — npm + Vercel 배포로 독립 운영 중이라
 pnpm 워크스페이스에 묶으면 lock 충돌과 배포 경로 변경이 따라온다.
