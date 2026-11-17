@@ -154,11 +154,14 @@ packages/ui               여러 화면이 쓰는 공용 컴포넌트
 packages/api              서버 호출 + 도메인 타입 + 매퍼
 ```
 
-- **`_pages` 의 밑줄은 공식 권장이다.** Next 가 `app/`·`pages/` 를 라우터
-  디렉터리로 쓰므로 FSD 레이어 이름과 충돌한다. 공식이 `_app`·`_pages` 접두사를
-  안내하고 공식 린터도 그 이름을 인식한다. 회피책 3개(루트 `pages/`,
-  라우트를 `src/app` 으로 이동, `pageExtensions`)를 실측했고 **전부 빌드가
-  깨진다** — 근거는 [`_pages/README.md`](./apps/web/src/_pages/README.md).
+- **`_pages` 의 밑줄은 공식 권장이다.** 공식 문서가 경고 박스로 못박는다 —
+  "쓰는 라우터와 무관하게 `app`·`pages` FSD 레이어를 **둘 다** `_app`·`_pages` 로
+  바꿔라." 공식 린터(Steiger)도 그 이름만 인식하므로 **`views`·`screens` 로 바꾸면
+  안 된다.** 회피책 3개(루트 `pages/`, 라우트를 `src/app` 으로 이동,
+  `pageExtensions`)를 실측했고 **전부 빌드가 깨진다** — 근거는
+  [`_pages/README.md`](./apps/web/src/_pages/README.md).
+- **`_app` 은 담을 것이 생기면 만든다.** 공식 트리에서 `_app` 은 API 라우트 구현을
+  담는데 지금 API 라우트가 0개다.
 - **`app/` 은 루트에 남긴다.** `src/app` 으로 내리면 Next 15 가 타입 검증기
   상대경로를 잘못 생성한다(실측).
 - **라우트는 re-export 한 줄이다** —
