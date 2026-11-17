@@ -63,26 +63,26 @@ check "버전 형식 깨짐" "INVALID_VERSION" "$(parse_tag 'patch/1.0+92/1')"
 # ── 패치로 나갈 수 없는 변경 차단 ──────────────────────────────────────────
 # workflow 의 '패치로 나갈 수 없는 변경이 섞였는지 확인' 스텝과 같은 패턴.
 blocked_paths() {
-  grep -E '^(ios/|android/|assets/)' || true
+  grep -E '^(apps/mobile/ios/|apps/mobile/android/|apps/mobile/assets/)' || true
 }
 
 echo
 echo "네이티브·에셋 변경 차단"
 check "Dart 만 바뀌면 통과" "" \
-  "$(printf 'lib/screens/home/home_screen.dart\nlib/util/update_prompt.dart\ntest/util/x_test.dart\n' | blocked_paths)"
-check "iOS 네이티브 차단" "ios/Runner/Info.plist" \
-  "$(printf 'lib/a.dart\nios/Runner/Info.plist\n' | blocked_paths)"
-check "Android 네이티브 차단" "android/app/build.gradle.kts" \
-  "$(printf 'android/app/build.gradle.kts\nlib/a.dart\n' | blocked_paths)"
+  "$(printf 'apps/mobile/lib/screens/home/home_screen.dart\napps/mobile/lib/util/update_prompt.dart\napps/mobile/test/util/x_test.dart\n' | blocked_paths)"
+check "iOS 네이티브 차단" "apps/mobile/ios/Runner/Info.plist" \
+  "$(printf 'apps/mobile/lib/a.dart\napps/mobile/ios/Runner/Info.plist\n' | blocked_paths)"
+check "Android 네이티브 차단" "apps/mobile/android/app/build.gradle.kts" \
+  "$(printf 'apps/mobile/android/app/build.gradle.kts\napps/mobile/lib/a.dart\n' | blocked_paths)"
 # 에셋은 패치에 안 실린다 — 티어 엠블럼처럼 이미지를 추가한 변경이 해당.
-check "에셋 추가 차단" "assets/images/tier.png" \
-  "$(printf 'assets/images/tier.png\nlib/a.dart\n' | blocked_paths)"
+check "에셋 추가 차단" "apps/mobile/assets/images/tier.png" \
+  "$(printf 'apps/mobile/assets/images/tier.png\napps/mobile/lib/a.dart\n' | blocked_paths)"
 # iOS 홈 위젯 extension 도 네이티브 타깃이다.
-check "홈 위젯 extension 차단" "ios/WardingScheduleWidget/Info.plist" \
-  "$(printf 'ios/WardingScheduleWidget/Info.plist\n' | blocked_paths)"
-# 'lib/' 안에 ios 라는 글자가 들어가도 걸리면 안 된다(앵커가 ^ 여야 한다).
+check "홈 위젯 extension 차단" "apps/mobile/ios/WardingScheduleWidget/Info.plist" \
+  "$(printf 'apps/mobile/ios/WardingScheduleWidget/Info.plist\n' | blocked_paths)"
+# 'apps/mobile/lib/' 안에 ios 라는 글자가 들어가도 걸리면 안 된다(앵커가 ^ 여야 한다).
 check "경로 중간의 ios 는 통과" "" \
-  "$(printf 'lib/util/ios_helper.dart\nlib/screens/android_tip.dart\n' | blocked_paths)"
+  "$(printf 'apps/mobile/lib/util/ios_helper.dart\napps/mobile/lib/screens/android_tip.dart\n' | blocked_paths)"
 
 # ── pubspec 의존성 변경 감지 ───────────────────────────────────────────────
 # version 줄만 바뀐 건 통과, dependencies 가 바뀌면 걸린다.
@@ -137,9 +137,9 @@ r=yaml.safe_load(open('.github/workflows/release-deploy.yml'))['env']['SHOREBIRD
 print('same' if p==r else f'{p} != {r}')")"
 # 서명 키 파일명이 다르면 build.gradle.kts 가 조용히 debug 서명으로 떨어진다.
 check "서명 키 경로가 릴리즈와 같다" "yes" \
-  "$(grep -q 'android/upload-keystore.jks' "$WF" && echo yes || echo no)"
+  "$(grep -q 'apps/mobile/android/upload-keystore.jks' "$WF" && echo yes || echo no)"
 check "Secrets.xcconfig 경로가 릴리즈와 같다" "yes" \
-  "$(grep -q 'ios/Flutter/Secrets.xcconfig' "$WF" && echo yes || echo no)"
+  "$(grep -q 'apps/mobile/ios/Flutter/Secrets.xcconfig' "$WF" && echo yes || echo no)"
 
 echo
 if [ "$fail" -eq 0 ]; then

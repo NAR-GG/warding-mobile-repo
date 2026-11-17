@@ -83,8 +83,8 @@ function dartGradient(name, token) {
 
 function buildDart() {
   const lines = [
-    '// GENERATED — design_tokens/build.mjs 가 만든다. 직접 고치지 않는다.',
-    '// 값을 바꾸려면 design_tokens/source/*.json 을 고치고 `pnpm tokens:build`.',
+    '// GENERATED — packages/design-tokens/build.mjs 가 만든다. 직접 고치지 않는다.',
+    '// 값을 바꾸려면 packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`.',
     '',
     "import 'package:flutter/material.dart';",
     '',
@@ -157,8 +157,8 @@ function buildCss() {
     ...flatten(common),
   ];
   const lines = [
-    '/* GENERATED — design_tokens/build.mjs 가 만든다. 직접 고치지 않는다. */',
-    '/* 값을 바꾸려면 design_tokens/source/*.json 을 고치고 `pnpm tokens:build`. */',
+    '/* GENERATED — packages/design-tokens/build.mjs 가 만든다. 직접 고치지 않는다. */',
+    '/* 값을 바꾸려면 packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`. */',
     '',
     ':root {',
     '  /* Flutter 의 `수치 * scale` 과 같은 결과를 내는 배율 */',
@@ -178,9 +178,11 @@ function buildCss() {
 
 mkdirSync(join(root, 'build'), { recursive: true });
 writeFileSync(join(root, 'build', 'tokens.css'), buildCss());
-writeFileSync(join(root, '..', 'lib', 'core', 'theme', 'app_colors.dart'), buildDart());
+// Dart 는 패키지 안(build/)에만 낸다. Flutter 트리로의 복사는 `sync-dart.mjs` 가
+// 맡는다 — 이유는 그 파일 주석 참고(turbo 캐시가 패키지 밖을 복원하지 못한다).
+writeFileSync(join(root, 'build', 'app_colors.dart'), buildDart());
 
 const n = Object.keys(theme.color).length + Object.keys(theme.gradient).length;
 console.log(`생성 완료 — 색·그라데이션 ${n}개`);
-console.log('  lib/core/theme/app_colors.dart');
-console.log('  design_tokens/build/tokens.css');
+console.log('  packages/design-tokens/build/app_colors.dart');
+console.log('  packages/design-tokens/build/tokens.css');

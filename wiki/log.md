@@ -1,5 +1,44 @@
 # Bundle Update Log
 
+## 2026-11-17
+* **Flutter 를 루트에서 `apps/mobile/` 로 내려 `apps/` + `packages/` 표준 모노레포가 됐다.**
+  그 전에는 Flutter 가 루트를 차지하고 Node 쪽만 하위에 있는 비대칭 구조였다 — 앱이 둘인데
+  한쪽만 특별 대우를 받았다. 웹뷰 전환 spec 이 이것을 Out of scope 로 둔 근거("워크플로우
+  전면 수정이 따라오고 태그를 밀어야 검증된다")를 실측으로 다시 재 보니, 경로 참조는
+  워크플로우 6개에 36곳이고 cwd 를 바꿔야 하는 것은 13곳이었다. analyze·test·iOS 빌드·셸
+  회귀로 대부분 검증돼서 뒤집었다. **검증되지 않는 범위는 `shorebird release`·`patch` 실행과
+  스토어 업로드뿐이고, 남은 위험으로 받아들였다.**
+* **셸 회귀 테스트가 치환 오탐 1건을 잡았다.** `patch-deploy-test.sh` 의 입력 문자열 중
+  줄바꿈(`\n`) 뒤에 있던 `ios/Runner/Info.plist` 가 접두어 없이 남아, 네이티브 변경 차단
+  가드가 통과해 버렸다. 태그를 밀어야 도는 워크플로우라 눈으로는 못 봤을 자리다.
+* **`packages/design-tokens/` 로 토큰을 패키지화하고 turbo 를 넣었다.** `pnpm build` 가
+  토큰 → 웹 순서를 보장한다(`apps/web` 이 `workspace:*` 로 의존 선언).
+* **turbo 캐시가 패키지 밖 생성물을 잃는 함정을 발견해 막았다.** `outputs` 는 패키지 밖을
+  캐시하지 못하는데, 생성기가 `apps/mobile/` 에 Dart 를 직접 쓰면 **캐시 적중 시 그 파일이
+  사라진 채 `FULL TURBO` 로 성공이 보고된다**(실측 재현). 생성(`build`, 캐시됨)과
+  복사(`sync:dart`, `cache: false`)를 분리하고 `turbo-cache-test.sh` 로 PR마다 3가지를
+  검증한다 — 복원 여부, 캐시 적중 여부, 소스 변경의 Dart 반영 여부.
+* **`Nx` 는 넣지 않기로 했다.** Nx 의 강점(프로젝트 그래프 기반 affected, 플러그인 추론)은
+  JS/TS import 그래프에서 나오는데 JS 패키지가 2개뿐이고 실제 빌드 주체는 Flutter 다.
+* **`packages/` 에 `shared-types`·`shared-api`·`ui-components` 를 만들지 않았다.** 후보 4개를
+  실측했고 전부 "한쪽만 존재"였다 — 공통 원인은 **Flutter 가 코드생성을 쓰지 않는 것**이다
+  (openapi·json_serializable·freezed 전부 없음). "선언 하나를 두 언어가 읽는" 형태는
+  토큰에서만 성립한다. 근거 표는 웹뷰 전환 spec 에 남겼다.
+* **문서 정리.** `docs/` 를 `wiki/` 로 합쳤다(policies·references). `scripts/`·
+  `wiki/sync_github.py` 를 `tools/` 로 옮기고 산출물 경로를 고쳤다. `INDEX.md` 의 intent
+  표가 7개 중 2개만 적혀 낙후돼 있던 것과, `AGENTS.md` 를 "CodeRabbit 용"이라 적은
+  부정확한 설명(`.coderabbit.yaml` 에 그런 설정이 없다)을 고쳤다.
+* **현행 문서가 가리키는 없는 파일 6건을 정정했다.** `fcm_service`·`standings_group_label`·
+  `user_profile`·`solo_rank_rules` 는 2026-11-16 전환으로 위치가 바뀐 것이고,
+  `home_sources` 는 섹션별로 쪼개져 사라졌고, `team_chip_rail` 은 죽은 코드로 삭제됐다
+  (`shared-components.md` 의 개선 제안이 무효가 돼 그렇게 표시했다). `log.md`·`plans/`·
+  `specs/` 의 옛 경로는 **과거 기록이라 그대로 뒀다.**
+* **지우지 않은 것도 기록한다.** 미참조 에셋 16개(오브젝트·스펠·룬 아이콘)는 경기 상세·팀
+  통계 화면용 선반입이다 — 서버에 `heralds`·`voidGrubs` 필드가 이미 있고 화면만 없다.
+  `subscription` 의 알림 카드 3개도 "붙이기만 하면 되는 미완성"이라 주석에 명시돼 있다.
+  `integration_test/` 는 `test/` 로 합치지 않았다 — `IntegrationTestWidgetsFlutterBinding`
+  이 기기 타깃을 요구해서 `flutter test` 로는 못 돌고, 폴더 분리가 그대로 안전장치다.
+
 ## 2026-11-16 (3)
 * **`core/ui` 오배치 3개를 정리했다.** `subscribe_bell`·`win_loss_text`(player 전용)를
   내리고, `mypage_card_section` 을 `core/ui/settings_card_section.dart` 로 올렸다 — 설정

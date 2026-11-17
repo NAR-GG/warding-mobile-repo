@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NAR API 서버(https://api.nar.kr)에서 OpenAPI 스펙을 받아 docs/openapi_spec.json에 저장한다.
+"""NAR API 서버(https://api.nar.kr)에서 OpenAPI 스펙을 받아 wiki/references/openapi_spec.json에 저장한다.
 
 사용법:
     NAR_SWAGGER_USER=아이디 NAR_SWAGGER_PASS=비밀번호 python3 scripts/fetch_api_spec.py
@@ -16,7 +16,7 @@ import urllib.error
 import urllib.request
 
 SPEC_URL = "https://api.nar.kr/v3/api-docs"
-OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "docs", "openapi_spec.json")
+OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "wiki", "references", "openapi_spec.json")
 
 
 def main():

@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/web/**'
-      - 'design_tokens/**'
+      - 'packages/design-tokens/**'
       - 'pnpm-workspace.yaml'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ci-web-build.yml'

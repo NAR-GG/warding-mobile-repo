@@ -3,8 +3,12 @@
   "private": true,
   "packageManager": "pnpm@10.8.1",
   "scripts": {
-    "tokens:build": "pnpm --filter warding-design-tokens build",
-    "web:dev": "pnpm --filter warding-web dev",
-    "web:build": "pnpm --filter warding-web build"
+    "build": "turbo run build",
+    "tokens:build": "turbo run build sync:dart --filter=warding-design-tokens",
+    "web:dev": "turbo run dev --filter=warding-web",
+    "web:build": "turbo run build --filter=warding-web"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.11"
   }
 }

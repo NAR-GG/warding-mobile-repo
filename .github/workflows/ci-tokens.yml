@@ -7,8 +7,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'design_tokens/**'
-      - 'lib/core/theme/app_colors.dart'
+      - 'packages/design-tokens/**'
+      - 'apps/mobile/lib/core/theme/app_colors.dart'
       - '.github/workflows/ci-tokens.yml'
 
 permissions:
@@ -29,11 +29,19 @@ jobs:
       - run: pnpm tokens:build
       - name: 생성물이 커밋된 것과 같은지
         run: |
-          if ! git diff --exit-code --stat -- \
-            lib/core/theme/app_colors.dart \
-            design_tokens/build/tokens.css; then
+          GENERATED=(
+            apps/mobile/lib/core/theme/app_colors.dart
+            packages/design-tokens/build/tokens.css
+            packages/design-tokens/build/app_colors.dart
+          )
+          if ! git diff --exit-code --stat -- "${GENERATED[@]}"; then
             echo "::error::토큰 생성물이 소스와 어긋난다. 'pnpm tokens:build' 후 커밋해라."
-            git diff -- lib/core/theme/app_colors.dart design_tokens/build/tokens.css | head -40
+            git diff -- "${GENERATED[@]}" | head -40
             exit 1
           fi
           echo "생성물 일치 ✅"
+
+      # turbo 캐시가 패키지 밖 생성물을 복원하지 못하는 함정을 막는다.
+      # 눈으로는 안 보이고 `FULL TURBO` 로 성공처럼 찍힌다 — 스크립트 주석 참고.
+      - name: turbo 캐시 회귀 테스트
+        run: bash .github/workflows/turbo-cache-test.sh

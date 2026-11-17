@@ -1,5 +1,5 @@
-// GENERATED — design_tokens/build.mjs 가 만든다. 직접 고치지 않는다.
-// 값을 바꾸려면 design_tokens/source/*.json 을 고치고 `pnpm tokens:build`.
+// GENERATED — packages/design-tokens/build.mjs 가 만든다. 직접 고치지 않는다.
+// 값을 바꾸려면 packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`.
 
 import 'package:flutter/material.dart';
 

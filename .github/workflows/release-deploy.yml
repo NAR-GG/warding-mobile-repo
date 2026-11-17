@@ -60,7 +60,7 @@ jobs:
           # 태그는 release/1.0.33+78 — 앞의 'release/' 를 떼면 pubspec 의 version 과
           # 글자까지 같아야 한다 (CLAUDE.md 태그 규칙).
           TAG_VERSION="${GITHUB_REF_NAME#release/}"
-          PUBSPEC_VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
+          PUBSPEC_VERSION=$(grep -E '^version:' apps/mobile/pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
           echo "태그: $TAG_VERSION / pubspec: $PUBSPEC_VERSION"
           if [ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]; then
             echo "::error::태그 버전($TAG_VERSION)과 pubspec version($PUBSPEC_VERSION)이 다르다. 태그를 지우고 pubspec 과 같은 이름으로 다시 찍어라."
@@ -87,8 +87,11 @@ jobs:
           channel: 'stable'
 
       - run: flutter pub get
+        working-directory: apps/mobile
       - run: flutter analyze
+        working-directory: apps/mobile
       - run: flutter test
+        working-directory: apps/mobile
 
   # ── [2] e2e — 빌드와 **동시에** 돌고, 스토어 업로드 앞에서 결과를 본다 ─────
   # 기존 e2e-release-check.yml 을 그대로 호출한다(workflow_call). "릴리즈 직전 e2e
@@ -215,7 +218,7 @@ jobs:
       - name: Release 구성을 수동 서명으로 전환
         run: |
           set -euo pipefail
-          PBX=ios/Runner.xcodeproj/project.pbxproj
+          PBX=apps/mobile/ios/Runner.xcodeproj/project.pbxproj
           python3 - "$PBX" <<'PYEOF'
           import re, sys
           path = sys.argv[1]
@@ -265,7 +268,7 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          # ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
+          # apps/mobile/ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
           # Release.xcconfig 의 '#include?' 는 파일이 없어도 조용히 넘어가서
           # NidClientSecret 이 빈 값으로 빌드된다 — 1.0.14+21 때 네이버 로그인만
           # 침묵 실패한 사고의 원인이다. 그 뒤 프로젝트에 Release 면 빌드를
@@ -275,7 +278,7 @@ jobs:
             echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다. 등록하지 않으면 Release 아카이브가 실패한다."
             exit 1
           fi
-          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > ios/Flutter/Secrets.xcconfig
+          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > apps/mobile/ios/Flutter/Secrets.xcconfig
 
       # Shorebird 공식 액션을 쓴다 (직접 'run: shorebird release' 하지 않는다).
       # --export-options-plist 로 Manual 서명 설정을 넘기는 건 Shorebird 문서가
@@ -288,7 +291,7 @@ jobs:
         with:
           platform: ios
           flutter-version: ${{ env.SHOREBIRD_FLUTTER_VERSION }}
-          args: '--export-options-plist=ios/ExportOptions-ci.plist'
+          args: '--export-options-plist=apps/mobile/ios/ExportOptions-ci.plist'
 
       # Sentry 에 디버그 심볼을 올린다. 안 올리면 크래시 스택이 난독화된 채로
       # 쌓여서 어느 코드인지 알 수 없다(지금 그 상태다).
@@ -302,6 +305,7 @@ jobs:
       - name: Sentry 심볼 업로드
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        working-directory: apps/mobile
         run: |
           set -euo pipefail
           if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
@@ -419,15 +423,15 @@ jobs:
           # 빌드는 upload-keystore.jks + alias 'upload' 로 서명된다. 1.0.33+79 를
           # 직접 뽑아 aab 서명을 확인해(CN=Changha.Jeon, OU=NAR.GG) 이쪽이 맞는 것을
           # 확인했다. 다른 쪽을 쓰면 Play 가 업로드 키 불일치로 거부한다.
-          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > apps/mobile/android/upload-keystore.jks
           # heredoc 대신 printf 를 쓴다 — YAML 블록 안에서 heredoc 을 쓰면 들여쓰기가
           # 그대로 파일 내용에 들어가 'storePassword=' 앞에 공백이 붙고, 닫는 EOF 도
           # 0번 칼럼이 아니어서 heredoc 이 끝나지 않는다.
-          # storeFile 은 rootProject(=android/) 기준 상대경로다 — 로컬 key.properties
+          # storeFile 은 rootProject(=apps/mobile/android/) 기준 상대경로다 — 로컬 key.properties
           # 와 같은 './upload-keystore.jks' 형식을 쓴다.
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=./upload-keystore.jks\n' \
-            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
-          for f in android/upload-keystore.jks android/key.properties; do
+            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > apps/mobile/android/key.properties
+          for f in apps/mobile/android/upload-keystore.jks apps/mobile/android/key.properties; do
             if [ ! -s "$f" ]; then
               echo "::error::$f 복원 실패 — debug 서명으로 빌드될 수 있어 중단한다."
               exit 1
@@ -439,7 +443,7 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          # android/app/src/main/res/values/naver_secrets.xml 도 .gitignore 라 CI 에
+          # apps/mobile/android/app/src/main/res/values/naver_secrets.xml 도 .gitignore 라 CI 에
           # 없다. iOS 와 달리 Android 쪽에는 빈 값을 막는 가드가 없어, 없으면 리소스
           # 참조가 깨져 빌드가 실패하거나 네이버 로그인만 조용히 안 되는 aab 가 나온다.
           if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
@@ -449,7 +453,7 @@ jobs:
           # heredoc 을 쓰지 않는 이유는 위 서명 키 복원 스텝의 주석과 같다.
           printf '%s\n<resources>\n    <string name="naver_client_secret">%s</string>\n</resources>\n' \
             '<?xml version="1.0" encoding="utf-8"?>' "$NAVER_CLIENT_SECRET" \
-            > android/app/src/main/res/values/naver_secrets.xml
+            > apps/mobile/android/app/src/main/res/values/naver_secrets.xml
 
       - name: shorebird release android
         uses: shorebirdtech/shorebird-release@v1
@@ -466,6 +470,7 @@ jobs:
       - name: Sentry 심볼 업로드
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        working-directory: apps/mobile
         run: |
           set -euo pipefail
           if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then

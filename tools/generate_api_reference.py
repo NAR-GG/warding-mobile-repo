@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""docs/openapi_spec.json을 읽어 docs/api-reference.md 요약본을 다시 생성한다.
+"""wiki/references/openapi_spec.json을 읽어 wiki/references/api-reference.md 요약본을 다시 생성한다.
 
 사용법:
     python3 scripts/generate_api_reference.py
@@ -10,8 +10,8 @@ import os
 from collections import defaultdict
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
-SPEC_PATH = os.path.join(BASE_DIR, "docs", "openapi_spec.json")
-OUTPUT_PATH = os.path.join(BASE_DIR, "docs", "api-reference.md")
+SPEC_PATH = os.path.join(BASE_DIR, "wiki", "references", "openapi_spec.json")
+OUTPUT_PATH = os.path.join(BASE_DIR, "wiki", "references", "api-reference.md")
 
 HTTP_METHODS = ("get", "post", "put", "delete", "patch")
 
@@ -40,7 +40,7 @@ def main():
         "# NAR API 레퍼런스",
         "",
         "백엔드(`https://api.nar.kr`)의 Swagger(OpenAPI 3.0.1) 스펙을 태그별로 정리한 목록이다.",
-        "요청/응답 스키마 등 전체 상세는 원본 스펙 `docs/openapi_spec.json`을 참고한다 (이 문서는 요약).",
+        "요청/응답 스키마 등 전체 상세는 원본 스펙 `wiki/references/openapi_spec.json`을 참고한다 (이 문서는 요약).",
         "",
         f"- 스펙 버전: `{spec['info']['version']}`",
         f"- 총 {len(paths)}개 경로, {total_ops}개 엔드포인트",

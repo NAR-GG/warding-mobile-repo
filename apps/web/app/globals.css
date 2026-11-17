@@ -1,5 +1,5 @@
-/* 토큰은 생성물이다. design_tokens/source/*.json 을 고치고 `pnpm tokens:build`. */
-@import '../../../design_tokens/build/tokens.css';
+/* 토큰은 생성물이다. packages/design-tokens/source/*.json 을 고치고 `pnpm tokens:build`. */
+@import '../../../packages/design-tokens/build/tokens.css';
 
 * {
   box-sizing: border-box;

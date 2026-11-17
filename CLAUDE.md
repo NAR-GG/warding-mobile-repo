@@ -42,7 +42,7 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 **규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.**
 
 ```
-lib/
+apps/mobile/lib/
 ├── features/     기능별 32개
 │   └── {기능}/
 │       ├── data/           repository, API 예외, 그 기능 전용 DTO
@@ -68,23 +68,56 @@ lib/
 └── firebase_options.dart   생성물
 ```
 
-**레포 루트는 Flutter + Node 워크스페이스의 비대칭 모노레포다.**
+**레포 루트는 `apps/` + `packages/` 표준 모노레포다.** 2026-11-17 에 Flutter 를 루트에서
+`apps/mobile/` 로 내렸다 — 그 전에는 Flutter 가 루트를 차지하고 Node 쪽만 하위 폴더에
+있는 비대칭 구조여서, 앱이 둘인데 한쪽만 특별 대우를 받았다.
 
 ```
 warding-mobile-repo/
-├── lib/ · ios/ · android/ · test/   Flutter (루트 그대로)
-├── design_tokens/                   토큰 단일 출처
-│   ├── source/{common,theme}.json   사람이 고치는 곳
-│   ├── build/tokens.css             생성물 (웹이 읽는다)
-│   └── build.mjs                    Dart·CSS 생성기
-├── apps/web/                        웹뷰용 Next.js 앱
-├── tools/discord-bridge/            npm 으로 독립 운영 (워크스페이스 밖)
-└── pnpm-workspace.yaml
+├── apps/
+│   ├── mobile/                      Flutter 앱 (lib · ios · android · test · assets)
+│   └── web/                         웹뷰용 Next.js 앱
+├── packages/
+│   └── design-tokens/               토큰 단일 출처
+│       ├── source/{common,theme}.json   사람이 고치는 곳
+│       ├── build/                   생성물 (tokens.css · app_colors.dart)
+│       ├── build.mjs                Dart·CSS 생성기
+│       └── sync-dart.mjs            생성된 Dart → apps/mobile 복사
+├── tools/                           운영 스크립트 (api 스펙 동기화 등)
+│   └── discord-bridge/              npm 으로 독립 운영 (워크스페이스 밖)
+├── wiki/ · intent/ · distribution/  문서
+├── turbo.json                       태스크 러너
+└── pnpm-workspace.yaml              apps/* · packages/*
 ```
 
-`lib/core/theme/app_colors.dart` 는 **생성물이다.** 색을 바꾸려면
-`design_tokens/source/theme.json` 을 고치고 `pnpm tokens:build` 를 돌린 뒤 둘 다
+**Flutter 명령은 `apps/mobile/` 에서 돌린다.** `fvm flutter test` 를 루트에서 돌리면
+pubspec 을 못 찾는다. 워크플로우도 그 스텝들에 `working-directory: apps/mobile` 이 붙어
+있다(13곳).
+
+`apps/mobile/lib/core/theme/app_colors.dart` 는 **생성물이다.** 색을 바꾸려면
+`packages/design-tokens/source/theme.json` 을 고치고 `pnpm tokens:build` 를 돌린 뒤 둘 다
 커밋한다 — CI(`ci-tokens.yml`)가 재생성해서 diff 가 비었는지 본다.
+
+**토큰 생성은 2단계다 — `build` 와 `sync:dart`.** turbo 의 `outputs` 는 패키지 밖을
+캐시하지 못한다. 생성기가 `apps/mobile/` 에 Dart 를 직접 쓰면, 캐시 적중 시 그 파일이
+복원되지 않는데 turbo 는 `FULL TURBO` 로 성공을 보고한다(실측으로 재현했다). 그래서
+생성은 패키지 안 `build/` 에 하고 — 그건 캐시된다 — Flutter 트리로의 복사만
+`cache: false` 로 매번 돈다. `build/app_colors.dart` 를 커밋하는 이유도 이것이다(캐시
+앵커). 이 함정은 눈에 보이지 않으므로 `.github/workflows/turbo-cache-test.sh` 가 PR마다
+회귀 검증한다.
+
+**태스크 러너는 turbo 다.** `pnpm build` 가 토큰 → 웹 순서를 보장한다 —
+`apps/web` 이 `warding-design-tokens` 를 `workspace:*` 로 의존 선언해서 그래프가 잡힌다.
+Flutter 는 turbo 그래프 밖이다(Dart 를 모른다). `packages/` 에 JS 패키지가 쌓이고 서로
+import 하기 시작하면 Nx 를 재검토할 지점이지만, 지금은 JS 패키지가 2개뿐이라 turbo 로
+충분하다.
+
+**`packages/` 에는 `design-tokens` 하나만 둔다.** `shared-types`·`shared-api`·
+`ui-components` 를 만들지 않은 이유는 **Flutter 가 코드생성을 쓰지 않아서**다
+(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다). "선언 하나를 두 언어가
+읽는" 형태가 성립하는 것은 토큰(JSON → Dart·CSS 생성)뿐이다. 후보별 실측 근거는
+[웹뷰 전환 spec](./intent/hybrid-webview-monorepo/spec.md)의 "packages 에 design-tokens
+하나만 두는 이유" 표에 있다. 같은 방식이 필요해지면 그때 패키지를 더한다.
 
 **빌드 타깃은 iOS·Android 뿐이다.** `windows/`·`linux/`·`macos/`·`web/` 은 `flutter
 create` 가 만든 템플릿이었고 빌드에 쓰이지 않아 2026-11-17 에 지웠다. 다시 필요하면
@@ -116,8 +149,8 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
   `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader`·
   `LiveActivityLogoPrefetcher.teamTargetsLoader`·`LiveMatchActivityController` 의 로더 4개는
   core 쪽에 비워 둔 자리고, `app/app_hooks.dart` 의 `configureAppHooks()` 가 `main.dart`·
-  `test/flutter_test_config.dart` 에서 채운다. 새 훅을 만들면 거기에 연결하는 것을 잊지
-  않는다. **훅이 비어 있을 때의 동작을 정해 둔다** — 화면 전환은 건너뛰고, 카드 정리는
+  `test/flutter_test_config.dart` 에서 채운다(둘 다 `apps/mobile/` 아래다). 새 훅을
+  만들면 거기에 연결하는 것을 잊지 않는다. **훅이 비어 있을 때의 동작을 정해 둔다** — 화면 전환은 건너뛰고, 카드 정리는
   "모른다" 로 보고 멈춘다(잘못 지우는 것이 늦게 지우는 것보다 비싸다).
 - 한 기능 전용 위젯은 `core/ui/` 에 두지 않는다 — `guide_popup` 은 `guide`, `cheer_ad_*` 는
   `cheer_ad` 가 소유한다.
@@ -127,8 +160,8 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 
 | 대상 | 경로를 못박는 설정 |
 |---|---|
-| `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
-| `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
+| `apps/mobile/lib/l10n/` | `apps/mobile/l10n.yaml` 의 `arb-dir`·`output-dir` |
+| `apps/mobile/lib/firebase_options.dart` | `apps/mobile/firebase.json` 의 `flutter.platforms.dart` 키 |
 
 `firebase.json` 은 FlutterFire CLI 가 관리하므로 손으로 고치지 않는다.
 
@@ -182,7 +215,7 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.
 - 한 화면에서만 쓰는 위젯은 그 기능의 `presentation/widgets/`에, 여러 기능에서 쓰면
-  `lib/core/ui/`에 둔다.
+  `apps/mobile/lib/core/ui/`에 둔다.
 - **`data` 와 `domain` 의 구분**: `domain`은 그 기능의 개념(모델·규칙·상수), `data`는 그것을
   가져오는 수단(repository·API 예외)과 그 기능 전용 DTO다. `community_permission.dart`처럼
   화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
@@ -220,7 +253,7 @@ import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (r
 
 ## 색상 / 디자인 토큰
 
-모든 색은 `lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
+모든 색은 `apps/mobile/lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
 
 - 위젯에 색을 **하드코딩하지 않는다**. 항상 `AppColors.xxx`를 참조한다.
 - 디자인 시안의 토큰 이름을 그대로 쓴다 (`narText`, `narDark800`, `narButton1Bg` 등).
@@ -300,7 +333,7 @@ Discord를 못 쓰는 상황이면 Actions 탭의
 
 **`shorebird release` 실행 전에 `e2e-release-check.yml`을 수동으로 돌려 통과를 확인한다**
 (`gh workflow run e2e-release-check.yml` 또는 Actions 탭에서 직접 실행). PR마다 도는
-`ci-flutter-test.yml`은 유닛/위젯 테스트(`flutter test`)만 돌리고, `integration_test/`의
+`ci-flutter-test.yml`은 유닛/위젯 테스트(`flutter test`)만 돌리고, `apps/mobile/integration_test/`의
 e2e는 iOS 시뮬레이터가 필요해 macOS 러너로 별도 워크플로우에 분리해 뒀다. 매 PR이 아니라
 릴리즈 직전에만 도는 이유는 macOS 러너가 느리고 비싸기 때문이다.
 
@@ -309,10 +342,13 @@ e2e가 실패하면(릴리즈 직전 1회성 실행이라 "연속 실패" 개념
 초안과 PR을 자동 생성한다. 코드 자동 수정은 하지 않고 다음 스텝 문서까지만 준비해 둔다.
 
 ```bash
+# shorebird 는 pubspec 이 있는 곳에서 돌려야 한다
+cd apps/mobile
+
 # 스토어 릴리즈 (버전은 pubspec.yaml의 version 사용)
 git tag -a release/1.0.13+20 -m "shorebird release ios+android"   # 빌드 직전에 (아래 태그 규칙)
-shorebird release ios        # → build/ios/ipa/*.ipa 를 Transporter로 업로드
-shorebird release android    # → build/app/outputs/bundle/release/*.aab 를 Play Console에 업로드
+shorebird release ios        # → apps/mobile/build/ios/ipa/*.ipa 를 Transporter로 업로드
+shorebird release android    # → apps/mobile/build/app/outputs/bundle/release/*.aab 를 Play Console에 업로드
 git push --follow-tags
 
 # 제출 전 확인: 해당 버전이 목록에 있어야 shorebird 빌드가 맞음
@@ -455,7 +491,7 @@ PR을 만들거나 본문을 고칠 때는 **항상 먼저 `.github/pull_request
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
 - 쇼츠 앱 내 재생: 홈 카드 탭 → 전체화면 세로 피드(`screens/shorts/`, 유튜브 IFrame 임베드·항상 무음). 네이티브 WebView라 스토어 릴리스 필요, Android·실기기 미확인
-- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/features/home/data/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
+- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`apps/mobile/lib/core/config/home_mocks.dart` 가 플래그를 읽고, 섹션별 소스는 각 기능의 `data/` 에 있다). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
 - 선수 페이지(`screens/player/`): 홈 솔랭 카드·끝난 경기 칩·월즈 솔랭 타일에서 진입. 화면은 `HOME_MOCKS` 목업으로 완성, 백엔드 `GET /api/mobile/players/{id}`(+`/worlds`, `/solo-rank`) 배포 후 실 API 확인 필요
 

@@ -5,12 +5,13 @@ Reads the NAR-GG `warding` project board (and open issues) via the `gh` CLI,
 rewrites references/github-project.md grouped by status.
 One-directional: GitHub is the source of truth; this only mirrors it into the bundle.
 
-Usage:  python3 wiki/sync_github.py
+Usage:  python3 tools/sync_github.py
 """
 import json, os, subprocess, sys
 from datetime import datetime, timezone
 
-BUNDLE = os.path.dirname(os.path.abspath(__file__))
+# 이 스크립트는 tools/ 에 있고 산출물은 wiki/references/ 로 나간다.
+BUNDLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "wiki")
 OUT = os.path.join(BUNDLE, "references", "github-project.md")
 
 OWNER = "NAR-GG"
@@ -81,7 +82,7 @@ def main():
     lines.append("")
     lines.append(f"`gh`로 NAR-GG `warding` 보드에서 자동 생성됨 (최종 동기화: **{date}**). "
                  "GitHub이 진실(source of truth)이며 이 문서는 단방향 미러다. "
-                 "`python3 wiki/sync_github.py`로 갱신한다.")
+                 "`python3 tools/sync_github.py`로 갱신한다.")
     lines.append("")
 
     def section(heading, key, emoji=""):

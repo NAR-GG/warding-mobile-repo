@@ -9,12 +9,24 @@ Flutter 앱을 유지한 채 컨텐츠성 화면을 웹뷰로 점진 전환한�
 
 1. **토큰 단일 출처** — JSON 소스 하나에서 Dart와 CSS를 생성하고, 생성물 일치를 CI로 검증한다.
 2. **브리지 규약** — 웹↔네이티브 통신을 단계(Stage)로 쪼개 누적 호환으로 넓힌다.
-3. **레포 배치** — 모노레포로 간다. 단 Flutter 프로젝트 루트는 옮기지 않는다.
+3. **레포 배치** — `apps/` + `packages/` 표준 모노레포로 간다.
 
-3번이 이 Spec의 핵심 결정이다. "모노레포"의 통상적인 형태는 `apps/mobile/`, `apps/web/`으로
-나란히 내리는 것인데, 이 레포에서는 그렇게 하지 않는다. 릴리즈·패치 자동화가 레포 루트를
-Flutter 루트로 가정하고 있고 그 가정은 태그를 밀어야 검증되기 때문이다. 대신 **Flutter는
-루트에 그대로 두고, 웹과 토큰을 하위 디렉터리로 더한다.**
+3번이 이 Spec의 핵심 결정이다. **처음에는 Flutter를 루트에 두는 비대칭 배치로 결정했다가,
+2026-11-17에 `apps/mobile/`로 내리는 쪽으로 뒤집었다.**
+
+원래 근거는 "릴리즈·패치 자동화가 레포 루트를 Flutter 루트로 가정하고, 그 가정은 태그를
+밀어야 검증된다"였다. 실제로 세어 보니 경로 참조는 워크플로우 6개에 36곳이었고, 그중
+cwd를 바꿔야 하는 것은 13곳이었다. 기계적 치환으로 끝나는 분량이고, **태그를 밀지 않고도
+검증되는 경로가 대부분이었다** — `flutter analyze`·`flutter test`·`flutter build ios`,
+그리고 셸 회귀 테스트(`patch-deploy-test.sh`)가 패치 가드 정규식을 직접 검증한다. 실제로
+그 테스트가 치환 오탐 1건을 잡아냈다(`ios/Runner/Info.plist`가 접두어 없이 남았다).
+
+검증되지 않는 범위는 **`shorebird release`·`shorebird patch` 실행과 스토어 업로드**뿐이다.
+이건 태그를 밀어야 돈다. 남은 위험으로 받아들이고, 다음 릴리즈를 **빌드 번호를 올려
+한 번 더 밀 수 있는 여유가 있을 때** 하는 것으로 둔다.
+
+바꾼 이유는 비대칭 배치가 앱이 둘인데 한쪽만 특별 대우하는 구조여서다. 웹이 커질수록
+"Flutter만 루트"라는 예외를 계속 설명해야 한다.
 
 ## Requirements
 
@@ -32,7 +44,9 @@ Flutter 루트로 가정하고 있고 그 가정은 태그를 밀어야 검증�
 
 ### 비기능
 
-- 릴리즈·패치 워크플로우의 경로 가정을 변경하지 않는다.
+- ~~릴리즈·패치 워크플로우의 경로 가정을 변경하지 않는다.~~ → **변경했다.** 대신
+  `apps/mobile/` 접두어 치환 + `working-directory` 13곳으로 끝내고, 셸 회귀 테스트가
+  패치 가드 정규식을 검증한다.
 - 웹 디렉터리 추가가 Flutter 빌드·analyze·test에 영향을 주지 않는다.
 - 토큰 생성이 Flutter 빌드의 선행 조건이 되지 않는다 (생성물을 커밋하므로).
 - 네이티브↔웹뷰 이음새에서 배경 플래시가 보이지 않는다.
@@ -42,39 +56,81 @@ Flutter 루트로 가정하고 있고 그 가정은 태그를 밀어야 검증�
 ### 레포 배치
 
 ```
-warding-mobile-repo/            ← Flutter 루트 (그대로)
-  pubspec.yaml
-  lib/
-    core/theme/
-      app_colors.dart           ← 생성물 (커밋됨, 수정 금지 헤더)
-  design_tokens/                ← 신규: 토큰 단일 출처
-    source/
-      common.json               간격·모서리·그림자·모션·타이포
-      theme.json                색·컴포넌트 토큰
-    build/
-      tokens.css                웹 소비용
-    config.mjs                  생성 설정 + 커스텀 Dart 포맷터
-    package.json
-  web/                          ← 신규: 웹뷰용 웹 앱
-    ...
-  pnpm-workspace.yaml           ← 신규: design_tokens + web + tools/discord-bridge
+warding-mobile-repo/
+  apps/
+    mobile/                     ← Flutter (2026-11-17에 루트에서 내렸다)
+      pubspec.yaml
+      lib/core/theme/
+        app_colors.dart         ← 생성물 (커밋됨, 수정 금지 헤더)
+    web/                        ← 웹뷰용 Next.js 앱
+  packages/
+    design-tokens/              ← 토큰 단일 출처
+      source/
+        common.json             간격·모서리·그림자·모션·타이포
+        theme.json              색·컴포넌트 토큰
+      build/
+        tokens.css              웹 소비용
+        app_colors.dart         turbo 캐시 앵커 (아래 참고)
+      build.mjs                 생성기 + 커스텀 Dart 포맷터
+      sync-dart.mjs             생성된 Dart → apps/mobile 복사
+  tools/discord-bridge/         npm 으로 독립 운영 (워크스페이스 밖)
+  turbo.json                    태스크 러너
+  pnpm-workspace.yaml           apps/* + packages/*
 ```
 
-Flutter가 루트에 있고 Node 워크스페이스가 하위에 얹히는 **비대칭 모노레포**다. 통상적인
-모양은 아니지만, 이 레포에서는 이 비대칭이 비용을 가장 낮춘다.
-
-- 릴리즈·패치 워크플로우, Shorebird 설정, e2e, 태그 규약이 손대지 않은 상태로 유지된다.
-- `tools/discord-bridge/`에 이미 Node 프로젝트가 있어, 워크스페이스로 묶을 대상이 하나 더
-  늘어나는 것에 가깝다.
-- 토큰 PR 하나로 Dart 생성물과 CSS 생성물이 같이 바뀌므로, 드리프트가 구조적으로 막힌다.
-  이것이 모노레포에서 실제로 얻는 이득이다.
+**토큰 PR 하나로 Dart 생성물과 CSS 생성물이 같이 바뀌므로, 드리프트가 구조적으로
+막힌다.** 이것이 모노레포에서 실제로 얻는 이득이다.
 
 웹을 별도 레포로 두는 안도 검토했다. 토큰만 패키지로 공유하면 되지만, 그러면 토큰 변경이
 두 레포에 걸친 PR 두 개가 되고 버전 어긋남이 생긴다. 지금 막으려는 문제가 그것이므로
 같은 레포를 택한다.
 
-`web/`은 뒤에 `apps/web/`으로 옮겨도 Flutter 쪽에 영향이 없다. 반대 방향(Flutter를 내리는 것)
-만 비싸다. 즉 이 배치는 나중에 통상적인 모노레포로 가는 길을 막지 않는다.
+#### `packages/` 에 design-tokens 하나만 두는 이유
+
+표준 모노레포 예시에는 `shared-types`·`shared-api`·`ui-components` 가 흔히 나온다.
+후보 4개를 실측으로 평가했고, **전부 "한쪽만 존재"라 공유할 대상이 없었다.**
+
+| 후보 | 실측 | 판단 |
+|---|---|---|
+| `shared-types` | Flutter 가 코드생성을 안 쓴다 (`pubspec.yaml` 에 openapi·json_serializable·freezed 전부 없음) | 스키마 254개를 Dart 로 뽑는 경로가 없다. 만들면 TS 전용 타입 모음이 되고, 그건 `apps/web/` 안에 둘 것이다 |
+| `shared-api` | `apps/web` 의 API 호출 0건 | 공유할 클라이언트가 없다 |
+| `ui-components` | Flutter 위젯 47 vs Next 컴포넌트 2 | Dart 위젯과 React 컴포넌트는 코드를 공유할 수 없다. 실제로 공유되는 것은 **토큰**이고 그게 `design-tokens` 다 |
+| 브리지 메시지 타입 | 웹에 Stage A 있음, Flutter 쪽 `WardingBridge` 참조 0건 | 가장 유망하지만 양쪽 구현이 생긴 뒤다. 그리고 Dart 가 선언을 읽으려면 다시 코드생성이 필요하므로, **Stage 표에 적고 양쪽에 손으로 쓰는 쪽이 싸다** |
+
+**이 판단의 공통 원인은 Flutter 가 코드생성을 쓰지 않는다는 것이다.** 그래서 "선언 하나를
+두 언어가 읽는" 형태는 토큰(JSON → Dart·CSS 생성)에서만 성립한다. 그 생성기를 이미
+직접 짰으므로, 같은 방식이 필요해지면 `packages/` 에 패키지를 더하는 식으로 넓힌다.
+
+`tools/discord-bridge` 도 패키지로 옮기지 않는다 — npm + Vercel 배포로 독립 운영 중이라
+pnpm 워크스페이스에 묶으면 lock 충돌과 배포 경로 변경이 따라온다.
+
+#### 태스크 러너: turbo, 그리고 캐시 함정
+
+`pnpm build` 가 토큰 → 웹 순서를 보장한다. `apps/web` 이 `warding-design-tokens` 를
+`workspace:*` 로 의존 선언해서 그래프가 잡힌다. Flutter 는 turbo 그래프 밖이다(Dart 를
+모른다).
+
+**turbo 의 `outputs` 는 패키지 밖을 캐시하지 못한다.** 생성기가
+`apps/mobile/lib/core/theme/app_colors.dart` 를 직접 쓰게 두면, 캐시 적중 시 그 파일이
+복원되지 않는데 turbo 는 `FULL TURBO` 로 성공을 보고한다 — 실측으로 재현했다. 생성물이
+사라진 채 "성공"이 찍히고 그 뒤 `flutter analyze` 가 터진다.
+
+그래서 **생성과 복사를 분리했다.**
+
+| 태스크 | 하는 일 | 캐시 |
+|---|---|---|
+| `build` | `packages/design-tokens/build/` 에 CSS·Dart 생성 | 캐시된다 |
+| `sync:dart` | `build/app_colors.dart` → `apps/mobile/` 복사 | `cache: false` (매번 돈다) |
+
+`build/app_colors.dart` 를 커밋하는 이유가 이것이다 — 캐시 앵커다. 이 함정은 눈에
+보이지 않으므로 `.github/workflows/turbo-cache-test.sh` 가 PR마다 3가지를 검증한다:
+캐시 적중 상태에서 Dart 가 복원되는지, `build` 가 실제로 캐시되는지, 소스 변경이 Dart 까지
+반영되는지.
+
+**Nx 는 지금 넣지 않는다.** Nx 가 turbo 를 이기는 지점(프로젝트 그래프 기반 affected,
+플러그인 추론)은 JS/TS import 그래프에서 나오는데, 여기 JS 패키지는 2개뿐이고 실제 빌드
+주체는 Flutter 다. `packages/` 에 JS 패키지가 쌓이고 서로 import 하기 시작하면 재검토할
+지점이다 — `apps/*`·`packages/*` 레이아웃이 그대로라 `nx init` 한 번이면 올라탈 수 있다.
 
 ### 토큰 파이프라인
 
@@ -122,12 +178,12 @@ Dart는 `Alignment` 쌍으로, CSS는 `deg`로 각각 변환한다. 좌→우·�
 CI에서 생성을 재실행하고 작업 트리가 깨끗한지 본다.
 
 ```
-pnpm --filter design_tokens tokens
+pnpm tokens:build
 git diff --exit-code
 ```
 
 이것만으로 손으로 고친 생성물이 전부 걸린다. 생성물에 "수정 금지, 소스는
-`design_tokens/source/`" 헤더를 넣어 의도를 코드에 남긴다.
+`packages/design-tokens/source/`" 헤더를 넣어 의도를 코드에 남긴다.
 
 여기에 **대비(contrast) 검증**을 더한다. 텍스트 색과 배경 색 쌍을 토큰 기준으로 계산해
 기준 미달이면 실패시킨다. 다크 테마에서 회색 계열이 여러 단계 있어 사람 눈으로는 놓친다.
@@ -158,7 +214,7 @@ git diff --exit-code
 이렇게 얹는다.
 
 ```
-lib/
+apps/mobile/lib/
 ├── core/
 │   └── ui/
 │       └── webview/
@@ -337,8 +393,10 @@ Discord 알림 잡도 재사용 후보로 검토했으나, 재사용 가치가 �
 
 ## Out of scope
 
-- Flutter 프로젝트 루트 이동 (`apps/mobile/`). 릴리즈·패치 워크플로우 전면 수정이 따라오고
-  태그를 밀어야 검증되므로, 필요해지면 별도 작업으로 분리한다.
+- ~~Flutter 프로젝트 루트 이동 (`apps/mobile/`)~~ — **2026-11-17에 했다.** 제외 근거였던
+  "워크플로우 전면 수정"이 실측 36곳(cwd 변경 13곳)으로 기계적 치환 분량이었고, 태그를
+  밀지 않고도 analyze·test·iOS 빌드·셸 회귀로 대부분 검증됐다. 근거와 남은 위험은
+  Summary 참고.
 - **Shorebird 제거.** 웹뷰 전환이 끝나면 걷어내기로 방향은 정했다(→ [intent.md](./intent.md)
   의 "Shorebird 의 향방"). 배포 파이프라인 변경 범위가 커서 별도 슬러그로 분리한다.
 

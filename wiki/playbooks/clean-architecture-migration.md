@@ -248,7 +248,7 @@ XViewModel({XRepository? repository}) : _repo = repository ?? di<XRepository>();
 못한다.** 실제로 `ShortsRepository` 를 바꿨을 때 111 개가 한꺼번에 깨졌다 — 화면 테스트들이
 repository 를 주입하는 대신 HTTP 클라이언트만 가짜로 갈아끼우기 때문이다.
 
-`test/flutter_test_config.dart` 가 모든 테스트 전에 `configureDependencies()` 를 부르므로
+`apps/mobile/test/flutter_test_config.dart` 가 모든 테스트 전에 `configureDependencies()` 를 부르므로
 이제는 한 곳에서 해결된다. 개별 테스트에 추가하지 않는다.
 
 ## 5. ViewModel 의 try/catch 를 Either 분기로
@@ -331,7 +331,7 @@ _teams = (await teamsFuture).getOrElse((f) => throw StateError('$f'));
 - `Future<T>` 를 돌려주던 Fake 는 `Right(...)`/`Left(...)` 로 바꾼다
 - **실패 경로 테스트를 새로 추가한다** — 이게 이 작업의 핵심 이득이다
   (`my_review` 는 4 개 → 7 개가 됐고 네트워크·401·부분 실패를 처음 덮었다)
-- DTO 파싱 테스트는 `test/features/{기능}/data/` 로 옮긴다
+- DTO 파싱 테스트는 `apps/mobile/test/features/{기능}/data/` 로 옮긴다
 - **정규식으로 스텁을 일괄 치환하지 않는다.** 한 테스트 파일에 전환된 repository 와 아직
   전환 안 된 repository 의 스텁이 섞여 있어서, `thenAnswer`·`thenThrow` 를 통째로 바꾸면
   건드리면 안 되는 쪽까지 깨진다(`match_detail_rating_test` 에서 에러가 13 → 30 개로 늘었다).
@@ -388,7 +388,7 @@ Entity 이름 충돌 | `player_rating` 에 이미 `MyRating` 이 있었다 | Ent
 스낵바가 안 뜸 | 반환형이 바뀌어 `catch` 가 죽은 코드가 됐다 | 6 번 참고 |
 유닛 테스트가 바인딩 오류로 죽음 | `appStrings` 가 navigator context 를 거친다 | `try/catch` 로 fallback |
 `sed` 치환이 안 먹음 | 긴 이름(`MyRatingPage`)을 짧은 이름(`MyRating`)보다 먼저 치환해야 한다 | Python 으로 순서 지정
-테스트 111 개가 `GetIt is not registered` 로 깨짐 | 기본값을 `di<X>()` 로 바꿨는데 테스트가 주입을 안 한다. `analyze` 는 못 잡는다 | `test/flutter_test_config.dart` 가 전역으로 등록한다 (4 번 참고)
+테스트 111 개가 `GetIt is not registered` 로 깨짐 | 기본값을 `di<X>()` 로 바꿨는데 테스트가 주입을 안 한다. `analyze` 는 못 잡는다 | `apps/mobile/test/flutter_test_config.dart` 가 전역으로 등록한다 (4 번 참고)
 `match_list` 만 돌려 보고 "통과" 라고 보고 | 하위 디렉터리 테스트만 확인했다 | **커밋 전에 반드시 `fvm flutter test` 전체를 돌리고 마지막 줄을 확인한다** |
 
 # 새 repository 를 추가할 때

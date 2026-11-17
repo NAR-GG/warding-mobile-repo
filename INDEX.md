@@ -15,7 +15,22 @@ status: living
 | 파일 | 역할 |
 |------|------|
 | [CLAUDE.md](./CLAUDE.md) | 실제 규칙 본문: 아키텍처, 폴더 구조, 색상·UI 규칙, 릴리즈 절차, intent/wiki 안내 |
-| [AGENTS.md](./AGENTS.md) | CodeRabbit 등 다른 도구용 안내. 중복 방지를 위해 본문은 CLAUDE.md를 참조하도록 링크만 걸어두었습니다 |
+| [AGENTS.md](./AGENTS.md) | `AGENTS.md`를 읽는 다른 코딩 에이전트용 포인터. 본문을 복제하지 않고 CLAUDE.md로 넘깁니다 — 규칙은 한 곳에서만 고치면 됩니다 |
+
+## 레포 배치
+
+`apps/` + `packages/` 모노레포입니다. 2026-11-17에 Flutter를 루트에서 `apps/mobile/`로
+내렸습니다.
+
+| 경로 | 내용 |
+|------|------|
+| [apps/mobile/](./apps/mobile/) | Flutter 앱. **Flutter 명령은 이 폴더에서 돌립니다** |
+| [apps/web/](./apps/web/) | 웹뷰용 Next.js 앱 |
+| [packages/design-tokens/](./packages/design-tokens/) | 디자인 토큰 단일 출처 → Dart·CSS 생성 |
+| [tools/](./tools/) | 운영 스크립트 + Discord 브릿지 |
+| [distribution/](./distribution/) | 스토어 패치노트 |
+
+구조의 근거와 폴더 규칙은 [CLAUDE.md](./CLAUDE.md)의 "폴더 구조" 절에 있습니다.
 
 ## 왜 만드는가: `intent/`
 
@@ -26,8 +41,13 @@ status: living
 
 | 슬러그 | 내용 |
 |--------|------|
-| [loop-engineering-workflow](./intent/loop-engineering-workflow/) | 이 intent/spec/plan 체계 자체(+ Discord 자동화)의 설계. 셀프 다잉푸딩 사례입니다 |
+| [loop-engineering-workflow](./intent/loop-engineering-workflow/) | 이 intent/spec/plan 체계 자체(+ Discord 자동화)의 설계. 셀프 도그푸딩 사례입니다 |
+| [hybrid-webview-monorepo](./intent/hybrid-webview-monorepo/) | 컨텐츠성 화면의 웹뷰 전환. 모노레포 배치(`apps/` + `packages/`)와 디자인 토큰 단일 출처를 정합니다 |
+| [release-build-automation](./intent/release-build-automation/) | 태그를 밀면 빌드·e2e·업로드가 도는 릴리즈 자동화 설계 |
+| [discord-release-approval](./intent/discord-release-approval/) | Discord 버튼 2단계 확인으로 스토어 심사를 제출하는 흐름 |
+| [youtube-shorts](./intent/youtube-shorts/) | 쇼츠 앱 내 재생(세로 피드) |
 | [lck-2026-summer-viewing-points](./intent/lck-2026-summer-viewing-points/) | LCK 2026 서머 콘텐츠 기획 산출물(리서치 보고서·카드뉴스 기획서·html). intent.md 형식이 아닌 콘텐츠 기획 문서입니다 |
+| [_template](./intent/_template/) | 새 슬러그를 만들 때 복사하는 빈 양식 |
 
 Spec을 승인(머지)할 때, 그 설계가 아키텍처·기능 구조를 바꾼다면 아래 `wiki/`도
 함께 갱신해야 합니다. [.github/PULL_REQUEST_TEMPLATE/spec.md](./.github/PULL_REQUEST_TEMPLATE/spec.md)
@@ -52,15 +72,39 @@ Spec을 승인(머지)할 때, 그 설계가 아키텍처·기능 구조를 바�
 - [architecture/](./wiki/architecture/): MVVM, 폴더 구조, 파일 생성 규칙
 - [design/](./wiki/design/): 색상 토큰, UI 스케일 규칙
 - [features/](./wiki/features/): 기능별 지식(로그인·온보딩·경기·라이브 알림 등)
-- [playbooks/](./wiki/playbooks/): 반복 작업 절차
-- [references/](./wiki/references/): GitHub 프로젝트 보드 동기화 문서
+- [playbooks/](./wiki/playbooks/): 반복 작업 절차(새 기능 추가, Clean Architecture 전환)
+- [references/](./wiki/references/): 백엔드 API 스펙(`api-reference.md`·`openapi_spec.json`),
+  GitHub 프로젝트 보드 미러
+- [policies/](./wiki/policies/): 개인정보처리방침·이용약관·계정 삭제 안내(법적 문서 보관본)
+- [plans/](./wiki/plans/) · [specs/](./wiki/specs/): 지난 작업의 설계·계획 기록(과거 시점 그대로 둡니다)
 - [log.md](./wiki/log.md): 번들 변경 이력
 
 ## 자동화
 
+워크플로우 15개가 있습니다. 성격별로 묶으면 다음과 같습니다.
+
+| 묶음 | 파일 | 역할 |
+|------|------|------|
+| PR 검증 | `ci-flutter-test` · `ci-tokens` · `ci-web-build` · `ci-bridge-test` · `ci-doc-lint` | analyze·test, 토큰 생성물 일치 + turbo 캐시 회귀, Next 빌드, 브릿지 테스트, intent/spec 필수 섹션 검증 |
+| 릴리즈 | `release-deploy` · `patch-deploy` · `e2e-release-check` · `submit-for-review` · `release-submit-dispatch` | 태그를 밀면 도는 빌드·패치·e2e, Discord 버튼으로 심사 제출 |
+| 문서 자동화 | `intent-autodraft` · `spec-autodraft` · `intent-merge-continue` | Discord `/intent` → 초안 PR, 머지 후 다음 단계 이어가기 |
+| 알림·집계 | `pr-discord-notify` · `mixpanel-daily-dau` | PR 알림, DAU 일일 집계 |
+
+태그를 밀어야 도는 워크플로우는 눈으로 검증할 수 없어 **셸 회귀 테스트**를 붙여 뒀고,
+이것들은 PR마다 돕니다.
+
+| 스크립트 | 검증 대상 |
+|---|---|
+| [patch-deploy-test.sh](./.github/workflows/patch-deploy-test.sh) | 패치 태그 파싱, 네이티브·에셋 변경 차단 정규식, pubspec 의존성 감지 |
+| [turbo-cache-test.sh](./.github/workflows/turbo-cache-test.sh) | turbo 캐시가 `apps/mobile/` 쪽 생성물을 잃지 않는지 |
+| [mixpanel-dau-summary-test.sh](./.github/workflows/mixpanel-dau-summary-test.sh) | DAU 요약 집계 |
+
+그 밖에:
+
 | 파일 | 역할 |
 |------|------|
 | [.github/scripts/check-intent-docs.sh](./.github/scripts/check-intent-docs.sh) | intent.md/spec.md 필수 섹션 검증(doc-lint) |
-| [.github/workflows/](./.github/workflows/) | Intent/Spec 자동 초안, Flutter CI, CI 반복 실패 에스컬레이션 |
 | [tools/discord-bridge/](./tools/discord-bridge/) | Discord `/intent` 슬래시 커맨드 → GitHub PR 자동 생성 브릿지 |
-| [.claude/commands/sync-github.md](./.claude/commands/sync-github.md) | GitHub 프로젝트 보드 → `wiki/references/github-project.md` 동기화 |
+| [tools/sync_github.py](./tools/sync_github.py) | GitHub 프로젝트 보드 → `wiki/references/github-project.md` 동기화 (`/sync-github`) |
+| [tools/fetch_api_spec.py](./tools/fetch_api_spec.py) · [generate_api_reference.py](./tools/generate_api_reference.py) | 백엔드 Swagger → `wiki/references/` 갱신 (`/sync-api-docs`) |
+| [packages/design-tokens/](./packages/design-tokens/) | 토큰 소스 → Dart·CSS 생성 (`pnpm tokens:build`) |

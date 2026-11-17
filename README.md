@@ -94,10 +94,10 @@ lib/
 
 ## 클라이언트 기본 설정
 
-- `lib/config/api_config.dart` - API base URL 등 환경 설정
-- `lib/config/secure_storage.dart` - 토큰 저장/조회 (Keychain 잠금 중 읽기 실패 등 함정이 있어
+- `apps/mobile/lib/config/api_config.dart` - API base URL 등 환경 설정
+- `apps/mobile/lib/config/secure_storage.dart` - 토큰 저장/조회 (Keychain 잠금 중 읽기 실패 등 함정이 있어
   민감하지 않은 값은 `shared_preferences`로 분리해 둡니다)
-- `lib/config/app_globals.dart` / `app_language.dart` - 전역 상태·언어 설정
+- `apps/mobile/lib/config/app_globals.dart` / `app_language.dart` - 전역 상태·언어 설정
 
 ## Contributing
 

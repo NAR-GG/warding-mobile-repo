@@ -30,8 +30,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
+/apps/mobile/build/
+/apps/mobile/coverage/
 
 # Symbolication related
 app.*.symbols
@@ -40,20 +40,20 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+/apps/mobile/android/app/debug
+/apps/mobile/android/app/profile
+/apps/mobile/android/app/release
 
 # Android signing — never commit!
-/android/key.properties
+/apps/mobile/android/key.properties
 *.jks
 *.keystore
 
 # FVM Version Cache
 .fvm/
 # 빌드 시 주입되는 시크릿 (Secrets.xcconfig.example 참고)
-ios/Flutter/Secrets.xcconfig
-android/app/src/main/res/values/naver_secrets.xml
+apps/mobile/ios/Flutter/Secrets.xcconfig
+apps/mobile/android/app/src/main/res/values/naver_secrets.xml
 
 sentry.properties
 
@@ -69,3 +69,4 @@ node_modules/
 apps/web/.next/
 apps/web/next-env.d.ts
 .pnpm-store/
+.turbo

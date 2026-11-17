@@ -1,7 +1,7 @@
 # NAR API 레퍼런스
 
 백엔드(`https://api.nar.kr`)의 Swagger(OpenAPI 3.0.1) 스펙을 태그별로 정리한 목록이다.
-요청/응답 스키마 등 전체 상세는 원본 스펙 `docs/openapi_spec.json`을 참고한다 (이 문서는 요약).
+요청/응답 스키마 등 전체 상세는 원본 스펙 `wiki/references/openapi_spec.json`을 참고한다 (이 문서는 요약).
 
 - 스펙 버전: `v3.0.0`
 - 총 144개 경로, 168개 엔드포인트

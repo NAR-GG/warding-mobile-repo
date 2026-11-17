@@ -9,7 +9,7 @@ timestamp: 2026-06-21T00:00:00Z
 
 # 규칙
 
-모든 색은 `lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
+모든 색은 `apps/mobile/lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
 
 - 위젯에 색을 **하드코딩하지 않는다.** 항상 `AppColors.xxx`를 참조한다.
 - 디자인 시안의 토큰 이름을 그대로 쓴다 (`narText`, `narDark800`, `narButton1Bg` 등).

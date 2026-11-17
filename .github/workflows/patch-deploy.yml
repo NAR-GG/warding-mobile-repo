@@ -100,7 +100,7 @@ jobs:
           # 패치는 그 릴리즈 빌드 위에 붙는다. pubspec 이 이미 다음 버전으로
           # 올라가 있으면 다른 릴리즈를 패치하려는 것이다 — shorebird 가
           # "release not found" 로 끊기기 전에 여기서 막는다.
-          PUBSPEC_VERSION=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
+          PUBSPEC_VERSION=$(grep -E '^version:' apps/mobile/pubspec.yaml | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
           TARGET="${{ steps.parse.outputs.release_version }}"
           echo "pubspec: $PUBSPEC_VERSION / 패치 대상: $TARGET"
           if [ "$PUBSPEC_VERSION" != "$TARGET" ]; then
@@ -128,7 +128,7 @@ jobs:
           echo "── 릴리즈 이후 바뀐 파일 ──"
           echo "$CHANGED"
 
-          BLOCKED=$(printf '%s\n' "$CHANGED" | grep -E '^(ios/|android/|assets/)' || true)
+          BLOCKED=$(printf '%s\n' "$CHANGED" | grep -E '^(apps/mobile/ios/|apps/mobile/android/|apps/mobile/assets/)' || true)
           if [ -n "$BLOCKED" ]; then
             echo "::error::패치로 나갈 수 없는 변경이 있다 — 네이티브·에셋은 스토어 재제출이 필요하다:"
             printf '%s\n' "$BLOCKED" | while read -r f; do echo "::error::  $f"; done
@@ -138,8 +138,8 @@ jobs:
           # pubspec 의 dependencies 가 바뀌었으면 네이티브 의존성일 수 있다.
           # version 줄만 바뀐 경우는 통과시킨다(패치는 version 을 올리지 않지만,
           # 릴리즈 준비 커밋이 섞여 들어올 수 있다).
-          if printf '%s\n' "$CHANGED" | grep -qx 'pubspec.yaml'; then
-            DEP_DIFF=$(git diff "refs/tags/$RELEASE_TAG" HEAD -- pubspec.yaml | grep -E '^[+-][[:space:]]+[a-z_0-9]+:' || true)
+          if printf '%s\n' "$CHANGED" | grep -qx 'apps/mobile/pubspec.yaml'; then
+            DEP_DIFF=$(git diff "refs/tags/$RELEASE_TAG" HEAD -- apps/mobile/pubspec.yaml | grep -E '^[+-][[:space:]]+[a-z_0-9]+:' || true)
             if [ -n "$DEP_DIFF" ]; then
               echo "::error::pubspec 의존성이 바뀌었다. 순수 Dart 패키지면 넘겨도 되지만, 네이티브 의존성이면 패치로 못 나간다:"
               printf '%s\n' "$DEP_DIFF" | while read -r l; do echo "::error::  $l"; done
@@ -156,8 +156,11 @@ jobs:
           channel: 'stable'
 
       - run: flutter pub get
+        working-directory: apps/mobile
       - run: flutter analyze
+        working-directory: apps/mobile
       - run: flutter test
+        working-directory: apps/mobile
 
   # ── [2] e2e — 패치는 통과를 **기다린다** ──────────────────────────────────
   # 릴리즈는 빌드와 병렬로 돌리고 업로드 직전에 결과를 본다(macOS 러너가 느리고
@@ -188,14 +191,14 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          # ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
+          # apps/mobile/ios/Flutter/Secrets.xcconfig 는 .gitignore 라 CI 체크아웃에 없다.
           # 프로젝트에 Release 면 빌드를 실패시키는 가드가 들어가 있어, 복원하지
           # 않으면 빌드 단계에서 멈춘다(release-deploy.yml 과 같은 이유).
           if [ -z "${NAVER_CLIENT_SECRET:-}" ]; then
             echo "::error::NAVER_CLIENT_SECRET Secret 이 비어 있다."
             exit 1
           fi
-          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > ios/Flutter/Secrets.xcconfig
+          printf 'NAVER_CLIENT_SECRET = %s\n' "$NAVER_CLIENT_SECRET" > apps/mobile/ios/Flutter/Secrets.xcconfig
 
       - name: shorebird patch ios
         id: patch
@@ -250,12 +253,12 @@ jobs:
             echo "::error::ANDROID_KEYSTORE_BASE64 Secret 이 비어 있다."
             exit 1
           fi
-          echo -n "$KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          echo -n "$KEYSTORE_BASE64" | base64 --decode > apps/mobile/android/upload-keystore.jks
           # heredoc 을 쓰지 않는다 — YAML 블록 안에서는 들여쓰기가 파일 내용에
           # 그대로 들어가고 닫는 토큰이 0번 칼럼이 아니어서 끝나지 않는다.
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=./upload-keystore.jks\n' \
-            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
-          for f in android/upload-keystore.jks android/key.properties; do
+            "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > apps/mobile/android/key.properties
+          for f in apps/mobile/android/upload-keystore.jks apps/mobile/android/key.properties; do
             if [ ! -s "$f" ]; then
               echo "::error::$f 복원 실패 — debug 서명으로 빌드될 수 있어 중단한다."
               exit 1
@@ -274,7 +277,7 @@ jobs:
           # heredoc 을 쓰지 않는 이유는 위 서명 키 복원 스텝의 주석과 같다.
           printf '%s\n<resources>\n    <string name="naver_client_secret">%s</string>\n</resources>\n' \
             '<?xml version="1.0" encoding="utf-8"?>' "$NAVER_CLIENT_SECRET" \
-            > android/app/src/main/res/values/naver_secrets.xml
+            > apps/mobile/android/app/src/main/res/values/naver_secrets.xml
 
       - name: shorebird patch android
         id: patch

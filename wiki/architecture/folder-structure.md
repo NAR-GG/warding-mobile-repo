@@ -1,13 +1,13 @@
 ---
 type: Architecture Reference
 title: 폴더 구조
-description: lib/ 하위 디렉토리별 역할 정의. feature 단위 구조.
-resource: https://github.com/NAR-GG/warding-mobile-repo/tree/main/lib
+description: apps/mobile/lib/ 하위 디렉토리별 역할 정의. feature 단위 구조.
+resource: https://github.com/NAR-GG/warding-mobile-repo/tree/main/apps/mobile/lib
 tags: [architecture, structure]
 timestamp: 2026-11-10T00:00:00Z
 ---
 
-# lib/ 구조
+# apps/mobile/lib/ 구조
 
 **feature 단위 구조다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를 한 폴더에
 모은다. 이전에는 레이어가 최상위 축이어서 한 기능을 작업할 때 네 군데
@@ -137,7 +137,7 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 
 | 상황 | 해법 | 예 |
 |---|---|---|
-| 앱 셸 코드 (기능 2개 이상의 화면을 안다) | `lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `match_detail_router`, `tab_navigation` |
+| 앱 셸 코드 (기능 2개 이상의 화면을 안다) | `apps/mobile/lib/app/` 로 이동 | `fcm_service`, `home_widget_service`, `match_detail_router`, `tab_navigation` |
 | 기능 repository 만 쓰고 화면은 안 띄운다 | 그 도메인의 기능으로 | `live_activity_logo_prefetcher`, `live_match_activity_controller` → `features/live_activity/data/` (2026-11-13 `core` 로, 11-16 기능으로 재분류) |
 | 한 기능 전용 위젯·모델이 core 에 있었다 | 그 기능으로 이동 | `guide_popup`→`guide`, `cheer_ad_popup`·`cheer_ad_banner`→`cheer_ad`, `notification_feed_card`→`subscription`, `guest_lock_overlay`→`login`, `solo_hero_card`→`home`, `advertiser_banner`→`notice`, `league_meta`·`league_icon`→`schedule`, `onboarding_preference_repository`→`onboarding` |
 | core 가 기능의 화면·구현이 필요하다 | core 에 훅 자리를 두고 `app/app_hooks.dart` 에서 채운다 | `AuthService.loginScreenBuilder`·`onSignedOut`, `TeamLogoDirectory.defaultLoader`, `LiveActivityLogoPrefetcher.teamTargetsLoader`, `LiveMatchActivityController` 의 로더 4개 |
@@ -188,9 +188,15 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 깨끗한 쪽은 별도 빌드 단위였다.
 
 **그래서 다음 개선은 빌드 단위 격리다.** 4개 중 3개가 디자인 시스템을 Gradle 모듈 또는 Dart
-패키지로 떼어내 역참조를 컴파일 에러로 막는다. 지금은 폴더 분리뿐이라 컨벤션에 의존한다 —
-웹뷰 전환에서 모노레포를 도입할 때 `packages/` 로 빼는 것이 자연스럽다
-([웹뷰 전환 Spec](../../intent/hybrid-webview-monorepo/spec.md)의 토큰 패키지 계획 참고).
+패키지로 떼어내 역참조를 컴파일 에러로 막는다. **Dart 쪽은 아직 폴더 분리뿐이라 컨벤션에
+의존한다** — `core/` → `features/` 참조 0건을 지금은 사람이 지킨다.
+
+**디자인 토큰은 2026-11-17에 패키지로 떼어냈다** — `packages/design-tokens/` 가 JSON
+소스에서 `app_colors.dart` 와 `tokens.css` 를 생성하고, 생성물이 소스와 어긋나면
+`ci-tokens.yml` 이 실패한다. 다만 이것은 **값의 단일 출처**를 만든 것이고, Dart 위젯
+계층의 역참조를 컴파일 에러로 막는 것은 아니다(그러려면 `core/ui` 를 별도 Dart 패키지로
+떼어내야 한다). 배치와 캐시 함정은
+[웹뷰 전환 Spec](../../intent/hybrid-webview-monorepo/spec.md) 참고.
 
 # core 밖에 남는 예외
 
@@ -199,10 +205,10 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 
 | 대상 | 경로를 못박는 설정 |
 |---|---|
-| `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
-| `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
-| `lib/main.dart` | 진입점 |
-| `lib/app/` | 앱 셸. 의존 방향상 `core` 밖이어야 한다 (위 절) |
+| `apps/mobile/lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
+| `apps/mobile/lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
+| `apps/mobile/lib/main.dart` | 진입점 |
+| `apps/mobile/lib/app/` | 앱 셸. 의존 방향상 `core` 밖이어야 한다 (위 절) |
 
 옮기려면 그 설정부터 바꿔야 하는데 이득이 없다. 특히 `firebase.json` 은 FlutterFire CLI 가
 관리하는 파일이라 손으로 고치면 다음 `flutterfire configure` 에 덮일 수 있다.
@@ -296,7 +302,7 @@ Clean Architecture 원전의 가장 안쪽 원(Entities)에 해당하는 자리�
 |---|---|---|
 | repository 인터페이스/구현 분리 | Interface 15 / Impl 12 | ✅ |
 | `Either` + sealed `Failure` | repository 28개가 `Either<Failure, T>` | ✅ |
-| `di_container.dart` | `lib/app/di_container.dart` | ✅ |
+| `di_container.dart` | `apps/mobile/lib/app/di_container.dart` | ✅ |
 | `fetch{Data}` 네이밍 | fetch 20 / 비-fetch 2 | ✅ |
 | **BLoC + Event/State** | `ChangeNotifier` 41개, Bloc 0개 | ❌ |
 | **비즈니스 로직은 UseCase** | UseCase 구현체 1개 | ❌ |
