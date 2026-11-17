@@ -318,7 +318,11 @@ shorebird patch android --release-version <pubspec의 version>
 - 날짜순으로 보려면:
   `git tag --sort=-creatordate --format='%(creatordate:short)  %(refname:short)  %(contents:subject)'`
 
-**2026-09-29부터 shorebird 패치를 다시 쓴다** (한동안 미사용이었다가 재개 결정). 패치 직전에도
+**2026-09-29에 shorebird 패치를 재개했으나 10-19 이후 다시 미사용이다.** 과금이 패치 설치
+수 기준(Free 5,000/월)인데 MAU 가 9,000 이라 한 번 내보내면 한도가 찬다. 마지막 패치는
+`patch/1.0.34+84/1` 이고 그 뒤로 릴리즈만 나갔다 — **Dart 수정도 스토어 심사를 거치는
+상태다.** 웹뷰 전환이 그 자리를 메우는 방향이다(→
+[웹뷰 전환 intent](./intent/hybrid-webview-monorepo/intent.md)). 패치를 쓸 때는 직전에도
 릴리즈와 같은 방식으로 태그를 찍는다 — `patch/<release version>/<번호>`, `-a` 필수. 번호는
 같은 릴리즈 버전에 패치를 낼 때마다 1부터 순서대로 올린다.
 
@@ -351,7 +355,7 @@ git push --follow-tags
 - 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출이 필요하다.
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시가 발생할 위험이 있다.
 - 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
-- 과금은 **패치 설치 수** 기준이라(Free 5,000/월) 패치를 남발하면 한도가 찬다. 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
+- 과금은 **패치 설치 수** 기준이다(Free 5,000/월 — 위 "미사용" 서술 참고). 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
 
 ## 지식 번들 (wiki)
 
