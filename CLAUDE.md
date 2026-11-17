@@ -68,6 +68,28 @@ lib/
 └── firebase_options.dart   생성물
 ```
 
+**레포 루트는 Flutter + Node 워크스페이스의 비대칭 모노레포다.**
+
+```
+warding-mobile-repo/
+├── lib/ · ios/ · android/ · test/   Flutter (루트 그대로)
+├── design_tokens/                   토큰 단일 출처
+│   ├── source/{common,theme}.json   사람이 고치는 곳
+│   ├── build/tokens.css             생성물 (웹이 읽는다)
+│   └── build.mjs                    Dart·CSS 생성기
+├── apps/web/                        웹뷰용 Next.js 앱
+├── tools/discord-bridge/            npm 으로 독립 운영 (워크스페이스 밖)
+└── pnpm-workspace.yaml
+```
+
+`lib/core/theme/app_colors.dart` 는 **생성물이다.** 색을 바꾸려면
+`design_tokens/source/theme.json` 을 고치고 `pnpm tokens:build` 를 돌린 뒤 둘 다
+커밋한다 — CI(`ci-tokens.yml`)가 재생성해서 diff 가 비었는지 본다.
+
+**빌드 타깃은 iOS·Android 뿐이다.** `windows/`·`linux/`·`macos/`·`web/` 은 `flutter
+create` 가 만든 템플릿이었고 빌드에 쓰이지 않아 2026-11-17 에 지웠다. 다시 필요하면
+`flutter create --platforms=<target> .` 로 되살린다.
+
 **`domain/` 이 최상위인 이유.** 도메인 모델은 앱의 중심이라 기술 인프라(`core/`) 안에
 종속되지 않는다. Flutter 공식 샘플 compass_app 의 `lib/domain/models/`, Immich 의
 `lib/domain/models/`, nowinandroid 의 `core:model` 모듈과 같은 배치다. 조사한 실제 앱 5개 중

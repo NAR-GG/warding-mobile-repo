@@ -1,0 +1,39 @@
+name: Design Tokens
+
+# 토큰 소스를 고치고 생성물을 커밋하지 않으면 Dart 와 CSS 가 갈린다.
+# 생성을 빌드 선행 조건으로 만들지 않고(→ spec "생성물을 커밋하고 CI 로 일치만
+# 검증한다"), 여기서 재생성 후 diff 가 비었는지만 본다.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'design_tokens/**'
+      - 'lib/core/theme/app_colors.dart'
+      - '.github/workflows/ci-tokens.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generated-in-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tokens:build
+      - name: 생성물이 커밋된 것과 같은지
+        run: |
+          if ! git diff --exit-code --stat -- \
+            lib/core/theme/app_colors.dart \
+            design_tokens/build/tokens.css; then
+            echo "::error::토큰 생성물이 소스와 어긋난다. 'pnpm tokens:build' 후 커밋해라."
+            git diff -- lib/core/theme/app_colors.dart design_tokens/build/tokens.css | head -40
+            exit 1
+          fi
+          echo "생성물 일치 ✅"

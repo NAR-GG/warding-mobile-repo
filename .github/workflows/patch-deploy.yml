@@ -128,7 +128,7 @@ jobs:
           echo "── 릴리즈 이후 바뀐 파일 ──"
           echo "$CHANGED"
 
-          BLOCKED=$(printf '%s\n' "$CHANGED" | grep -E '^(ios/|android/|assets/|macos/|windows/|linux/)' || true)
+          BLOCKED=$(printf '%s\n' "$CHANGED" | grep -E '^(ios/|android/|assets/)' || true)
           if [ -n "$BLOCKED" ]; then
             echo "::error::패치로 나갈 수 없는 변경이 있다 — 네이티브·에셋은 스토어 재제출이 필요하다:"
             printf '%s\n' "$BLOCKED" | while read -r f; do echo "::error::  $f"; done

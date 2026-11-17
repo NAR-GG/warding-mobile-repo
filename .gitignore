@@ -63,3 +63,9 @@ sentry.properties
 
 # tapflow MCP config (machine-specific path)
 .mcp.json
+
+# Node 워크스페이스 (design_tokens · apps/web)
+node_modules/
+apps/web/.next/
+apps/web/next-env.d.ts
+.pnpm-store/

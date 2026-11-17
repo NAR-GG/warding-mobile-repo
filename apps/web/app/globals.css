@@ -1,0 +1,25 @@
+/* 토큰은 생성물이다. design_tokens/source/*.json 을 고치고 `pnpm tokens:build`. */
+@import '../../../design_tokens/build/tokens.css';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* 웹뷰에서 탭할 때 뜨는 회색 하이라이트를 없앤다 — 네이티브엔 없다. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  /* 로드 전 흰 플래시를 막는다. 네이티브 배경과 같은 토큰을 쓴다. */
+  background: var(--color-nar-dark800);
+  color: var(--color-nar-text);
+  font-family: var(--font-family-base), -apple-system, BlinkMacSystemFont, sans-serif;
+  /* iOS 웹뷰의 스크롤 바운스를 끈다 — 네이티브 스크롤과 겹쳐 이중으로 튄다. */
+  overscroll-behavior: none;
+}
+
+/* 치수는 375 기준 원시값이다. 소비할 때 scale 을 곱한다. */
+body {
+  font-size: calc(14 * var(--scale) * 1px);
+}

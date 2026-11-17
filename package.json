@@ -1,0 +1,10 @@
+{
+  "name": "warding-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.8.1",
+  "scripts": {
+    "tokens:build": "pnpm --filter warding-design-tokens build",
+    "web:dev": "pnpm --filter warding-web dev",
+    "web:build": "pnpm --filter warding-web build"
+  }
+}

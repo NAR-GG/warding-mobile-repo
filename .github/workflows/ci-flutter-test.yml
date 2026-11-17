@@ -3,6 +3,15 @@ name: Flutter CI
 on:
   pull_request:
     branches: [main]
+    # 웹·도구만 고친 PR 에는 돌지 않는다. Flutter SDK 설치부터 테스트까지
+    # 몇 분이 걸려서 웹 변경마다 도는 것은 낭비다.
+    #
+    # `design_tokens/` 는 제외하지 않는다 — 토큰을 고치면 생성물인
+    # `lib/core/theme/app_colors.dart` 가 바뀌고 그건 앱 코드다.
+    paths-ignore:
+      - 'apps/web/**'
+      - 'tools/**'
+      - '**/*.md'
 
 permissions:
   contents: read

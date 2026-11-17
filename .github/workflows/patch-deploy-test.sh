@@ -63,7 +63,7 @@ check "버전 형식 깨짐" "INVALID_VERSION" "$(parse_tag 'patch/1.0+92/1')"
 # ── 패치로 나갈 수 없는 변경 차단 ──────────────────────────────────────────
 # workflow 의 '패치로 나갈 수 없는 변경이 섞였는지 확인' 스텝과 같은 패턴.
 blocked_paths() {
-  grep -E '^(ios/|android/|assets/|macos/|windows/|linux/)' || true
+  grep -E '^(ios/|android/|assets/)' || true
 }
 
 echo

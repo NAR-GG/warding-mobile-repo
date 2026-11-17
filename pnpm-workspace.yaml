@@ -1,0 +1,10 @@
+# Flutter 루트에 얹은 Node 워크스페이스.
+#
+# `tools/discord-bridge` 는 포함하지 않는다 — npm(package-lock.json)으로
+# 독립 운영 중이고 CI 도 `npm install` 을 쓴다. 묶으면 lock 파일이 충돌하고
+# 배포 경로를 함께 바꿔야 한다. 필요해지면 별도 작업으로 옮긴다.
+# `web/` 은 Flutter 가 예약한 경로다(flutter create 가 만든 템플릿이 커밋돼
+# 있다). Flutter Web 을 쓰지 않더라도 그 자리를 비켜 `apps/web/` 에 둔다.
+packages:
+  - 'design_tokens'
+  - 'apps/web'

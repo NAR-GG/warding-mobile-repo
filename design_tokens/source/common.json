@@ -1,0 +1,35 @@
+{
+  "scale": {
+    "$description": "디자인 시안 기준 폭 375. 소비 지점에서 clamp(320,100vw,430)/375 를 곱한다",
+    "base": { "$value": 375, "$type": "dimension" },
+    "min": { "$value": 320, "$type": "dimension" },
+    "max": { "$value": 430, "$type": "dimension" }
+  },
+  "radius": {
+    "sm": { "$value": 6, "$type": "dimension" },
+    "md": { "$value": 12, "$type": "dimension" },
+    "lg": { "$value": 16, "$type": "dimension" },
+    "full": { "$value": 999, "$type": "dimension" }
+  },
+  "space": {
+    "xs": { "$value": 4, "$type": "dimension" },
+    "sm": { "$value": 8, "$type": "dimension" },
+    "md": { "$value": 12, "$type": "dimension" },
+    "lg": { "$value": 20, "$type": "dimension" }
+  },
+  "font": {
+    "family": {
+      "base": { "$value": "Pretendard", "$type": "fontFamily" }
+    },
+    "weight": {
+      "regular": { "$value": 400, "$type": "fontWeight" },
+      "medium": { "$value": 500, "$type": "fontWeight" },
+      "semibold": { "$value": 600, "$type": "fontWeight" },
+      "bold": { "$value": 700, "$type": "fontWeight" }
+    }
+  },
+  "motion": {
+    "fast": { "$value": 150, "$type": "duration" },
+    "base": { "$value": 250, "$type": "duration" }
+  }
+}

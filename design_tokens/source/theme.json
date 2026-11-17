@@ -1,0 +1,545 @@
+{
+  "color": {
+    "gray100": {
+      "$value": "#000000",
+      "$type": "color"
+    },
+    "narDark400": {
+      "$value": "#373A40",
+      "$type": "color"
+    },
+    "narDark500": {
+      "$value": "#2C2E33",
+      "$type": "color",
+      "$description": "nar_dark_500"
+    },
+    "narDark300": {
+      "$value": "#5C5F66",
+      "$type": "color"
+    },
+    "narDark600": {
+      "$value": "#25262B",
+      "$type": "color"
+    },
+    "narDark800": {
+      "$value": "#141517",
+      "$type": "color"
+    },
+    "narDarkOpacity62": {
+      "$value": "#1415179E",
+      "$type": "color",
+      "$description": "nar_dark_opacity62 — narDark800 62%. 시안의 인너 섀도우 색."
+    },
+    "narGray500": {
+      "$value": "#ADB5BD",
+      "$type": "color",
+      "$description": "gray/5"
+    },
+    "narText": {
+      "$value": "#FFFFFF",
+      "$type": "color"
+    },
+    "narText2": {
+      "$value": "#A6A7AB",
+      "$type": "color"
+    },
+    "narLine2": {
+      "$value": "#495057",
+      "$type": "color"
+    },
+    "narLine": {
+      "$value": "#343A40",
+      "$type": "color",
+      "$description": "nar_line"
+    },
+    "kakaoBg": {
+      "$value": "#FEE500",
+      "$type": "color"
+    },
+    "kakaoText": {
+      "$value": "#000000D9",
+      "$type": "color"
+    },
+    "naverBg": {
+      "$value": "#03C75A",
+      "$type": "color"
+    },
+    "naverText": {
+      "$value": "#FFFFFF",
+      "$type": "color"
+    },
+    "chzzkBrand": {
+      "$value": "#00FFA3",
+      "$type": "color",
+      "$description": "중계 플랫폼 브랜드색 — 중계 채널 선택 시트의 로고 칩에 쓴다."
+    },
+    "soopBrand": {
+      "$value": "#6E9BFF",
+      "$type": "color"
+    },
+    "googleBg": {
+      "$value": "#FFFFFF",
+      "$type": "color"
+    },
+    "appleBg": {
+      "$value": "#FFFFFF",
+      "$type": "color"
+    },
+    "narButton1Bg": {
+      "$value": "#DEE2E6",
+      "$type": "color"
+    },
+    "narButton1Text": {
+      "$value": "#101113",
+      "$type": "color"
+    },
+    "narButton2Bg": {
+      "$value": "#5C5F66",
+      "$type": "color"
+    },
+    "narButton2Line": {
+      "$value": "#373A40",
+      "$type": "color"
+    },
+    "narButton2Text": {
+      "$value": "#FCFDFE",
+      "$type": "color"
+    },
+    "narNavBg": {
+      "$value": "#25262B80",
+      "$type": "color",
+      "$description": "rgba(37,38,43,0.5)"
+    },
+    "narNavSelectedBg": {
+      "$value": "#10111380",
+      "$type": "color",
+      "$description": "rgba(16,17,19,0.5)"
+    },
+    "narGray400": {
+      "$value": "#CED4DA",
+      "$type": "color",
+      "$description": "활성 아이콘·텍스트"
+    },
+    "narDark200": {
+      "$value": "#909296",
+      "$type": "color",
+      "$description": "비활성 아이콘"
+    },
+    "narBgSecondary": {
+      "$value": "#1A1B1E",
+      "$type": "color",
+      "$description": "nar_BG_secondary"
+    },
+    "narBottomSheetShadow": {
+      "$value": "#1011131F",
+      "$type": "color",
+      "$description": "#1011131F"
+    },
+    "narPopupBarrier": {
+      "$value": "#000000B3",
+      "$type": "color"
+    },
+    "narGuideOverlay": {
+      "$value": "#7048E840",
+      "$type": "color",
+      "$description": "가이드 배경 위에 덮는 보라 오버레이. rgba(112,72,232,0.25)"
+    },
+    "narGuideCallout": {
+      "$value": "#2B02A4",
+      "$type": "color",
+      "$description": "설명 말풍선 배경."
+    },
+    "narGuideAccent": {
+      "$value": "#EAC5FF",
+      "$type": "color",
+      "$description": "하단 패널의 강조 텍스트·아이콘(섹션명, 페이지 표시)."
+    },
+    "narButtonDisabledText": {
+      "$value": "#5C5F66",
+      "$type": "color"
+    },
+    "narTextSecondary": {
+      "$value": "#FFFFFF",
+      "$type": "color",
+      "$description": "nar_text_secondary"
+    },
+    "narBgLast": {
+      "$value": "#25262B",
+      "$type": "color",
+      "$description": "nar_BG_last"
+    },
+    "narText3": {
+      "$value": "#C1C2C5",
+      "$type": "color",
+      "$description": "nar_text_3"
+    },
+    "narRedOpacity25": {
+      "$value": "#FA525240",
+      "$type": "color",
+      "$description": "nar_red_opacity25"
+    },
+    "narBgTertiary": {
+      "$value": "#1F2024",
+      "$type": "color",
+      "$description": "nar_BG_tertiary"
+    },
+    "narTextGnbDefault": {
+      "$value": "#CED4DA",
+      "$type": "color"
+    },
+    "narTextTertiary": {
+      "$value": "#FCFDFE",
+      "$type": "color",
+      "$description": "nar_text_tertiary"
+    },
+    "narText4": {
+      "$value": "#A6A7AB",
+      "$type": "color",
+      "$description": "nar_text_4"
+    },
+    "narTextScore": {
+      "$value": "#F03E3E",
+      "$type": "color",
+      "$description": "nar_text_score"
+    },
+    "narTextRed": {
+      "$value": "#FF6B6B",
+      "$type": "color",
+      "$description": "nar_text_red"
+    },
+    "narRed500": {
+      "$value": "#FF6B6B",
+      "$type": "color",
+      "$description": "nar_red_500"
+    },
+    "narTextTertiarySub": {
+      "$value": "#A6A7AB",
+      "$type": "color"
+    },
+    "narSearchSelectShadow": {
+      "$value": "#0000000A",
+      "$type": "color",
+      "$description": "#0000000A"
+    },
+    "narChipSelectedBg": {
+      "$value": "#7048E880",
+      "$type": "color"
+    },
+    "narChipActive": {
+      "$value": "#7048E8",
+      "$type": "color",
+      "$description": "활성 필터칩 보더·텍스트"
+    },
+    "narChipBadgeBg": {
+      "$value": "#7048E84D",
+      "$type": "color"
+    },
+    "narAdBadgeBg": {
+      "$value": "#00000099",
+      "$type": "color",
+      "$description": "rgba(0,0,0,0.6)"
+    },
+    "narAdBadgeText": {
+      "$value": "#FFFFFFCC",
+      "$type": "color",
+      "$description": "rgba(255,255,255,0.8)"
+    },
+    "liveBadgeBg": {
+      "$value": "#E031311A",
+      "$type": "color",
+      "$description": "rgba(224,49,49,0.1)"
+    },
+    "liveAccent": {
+      "$value": "#E03131",
+      "$type": "color",
+      "$description": "점/LIVE 텍스트"
+    },
+    "liveSideBorder": {
+      "$value": "#DB6F47",
+      "$type": "color",
+      "$description": "카드 왼쪽 3px"
+    },
+    "scoreWin": {
+      "$value": "#FA5252",
+      "$type": "color",
+      "$description": "라이브 승자 스코어"
+    },
+    "liveBadgeLightBg": {
+      "$value": "#FFF5F5",
+      "$type": "color",
+      "$description": "red/0"
+    },
+    "liveBadgeLightBorder": {
+      "$value": "#FFA8A8",
+      "$type": "color",
+      "$description": "red/3"
+    },
+    "sideBlueBorder": {
+      "$value": "#91A7FF",
+      "$type": "color",
+      "$description": "indigo/3"
+    },
+    "sideBlueText": {
+      "$value": "#3B5BDB",
+      "$type": "color",
+      "$description": "indigo/8"
+    },
+    "sideRedBorder": {
+      "$value": "#FFA8A8",
+      "$type": "color",
+      "$description": "red/3"
+    },
+    "sideRedText": {
+      "$value": "#E03131",
+      "$type": "color",
+      "$description": "red/8"
+    },
+    "scoreTextSub": {
+      "$value": "#F1F3F5",
+      "$type": "color",
+      "$description": "gray/1"
+    },
+    "narBgContent": {
+      "$value": "#101113",
+      "$type": "color"
+    },
+    "narGray100": {
+      "$value": "#F1F3F5",
+      "$type": "color",
+      "$description": "gray/1"
+    },
+    "narPink700": {
+      "$value": "#D6336C",
+      "$type": "color",
+      "$description": "mantine pink/7"
+    },
+    "narPlayedChampBg": {
+      "$value": "{color.narDark800}",
+      "$type": "color",
+      "$description": "카드 배경(선수 이미지 자리)"
+    },
+    "narSpoilerOverlayBg": {
+      "$value": "#14151766",
+      "$type": "color",
+      "$description": "스포방지 오버레이 배경 — 시안의 narDark800 40%.\n\n아래 더미 스코어가 이 반투명 너머로 흐릿하게 비쳐야 하므로 불투명으로\n바꾸지 않는다(흐림 자체는 더미 쪽 ImageFiltered 가 만든다)."
+    },
+    "narYellow6": {
+      "$value": "#FAB005",
+      "$type": "color",
+      "$description": "yellow/6"
+    },
+    "narSubscribeBg": {
+      "$value": "#DEE2E6E6",
+      "$type": "color"
+    },
+    "narInputBorder": {
+      "$value": "#424242",
+      "$type": "color"
+    },
+    "narLinkText": {
+      "$value": "#74C0FC",
+      "$type": "color"
+    },
+    "narSpoilerKnobOff": {
+      "$value": "#14151766",
+      "$type": "color"
+    },
+    "narSpoilerTrackShadow": {
+      "$value": "#00000024",
+      "$type": "color",
+      "$description": "스포방지 토글 트랙 inset 그림자 — inset 0 2px 4px rgba(0,0,0,0.14)."
+    },
+    "narViolet3": {
+      "$value": "#B197FC",
+      "$type": "color",
+      "$description": "mantine violet/3"
+    },
+    "narGreenWin": {
+      "$value": "#34C759",
+      "$type": "color"
+    },
+    "narBuildStatsBg": {
+      "$value": "#14151766",
+      "$type": "color",
+      "$description": "rgba(20,21,23,0.4) — KDA·CS·GOLD 등 통계 바 배경."
+    },
+    "narWhiteBorder15": {
+      "$value": "#FFFFFF26",
+      "$type": "color",
+      "$description": "rgba(255,255,255,0.15) — 아이템·룬·능력치 칩 보더."
+    },
+    "narWhiteBorder62": {
+      "$value": "#FFFFFF9E",
+      "$type": "color",
+      "$description": "rgba(255,255,255,0.62) — 룬 트리 헤더(결의/영감 등) 왼쪽 보더."
+    },
+    "narSoloLine": {
+      "$value": "#C865C999",
+      "$type": "color",
+      "$description": "솔랭 강조 테두리 — narBg 가운데 색(#C865C9) 60%."
+    },
+    "narSoloText": {
+      "$value": "#F3BEDC",
+      "$type": "color",
+      "$description": "솔랭 강조 글자 — narBg 가운데 색을 밝힌 핑크."
+    },
+    "narSoloDot": {
+      "$value": "#E9A0C8",
+      "$type": "color",
+      "$description": "솔랭 진행 중 점."
+    },
+    "narSoloHeroBg": {
+      "$value": "#1B1C21",
+      "$type": "color",
+      "$description": "솔랭 히어로 카드 스플래시 아래 바탕 — 목업 #1B1C21."
+    },
+    "narWhite14": {
+      "$value": "#FFFFFF24",
+      "$type": "color",
+      "$description": "쇼츠 \"내 팀\" 배지 배경 — 흰색 14%."
+    },
+    "matchTeamBlue": {
+      "$value": "#1971C2",
+      "$type": "color",
+      "$description": "블루 진영."
+    },
+    "matchTeamRed": {
+      "$value": "#F03E3E",
+      "$type": "color",
+      "$description": "레드 진영. [narTextScore] 와 같은 값이지만 의미가 달라 따로 둔다 —\n점수 텍스트 색이 바뀌어도 진영 색은 그대로여야 한다."
+    },
+    "narGray600": {
+      "$value": "#727784",
+      "$type": "color",
+      "$description": "라이브 이벤트 스켈레톤 흐름의 밝은 쪽. [narBgSecondary] 에서 밝아진다."
+    }
+  },
+  "gradient": {
+    "narBg": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#E87558",
+          "#C865C9",
+          "#791BB8"
+        ],
+        "stops": [
+          0.0076,
+          0.5153,
+          1.0
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narTodayBg": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#E8755814",
+          "#C865C914",
+          "#791BB814"
+        ],
+        "stops": [
+          0.0076,
+          0.5153,
+          1.0
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narRatingBannerBg": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#E8755833",
+          "#C865C933",
+          "#791BB833"
+        ],
+        "stops": [
+          0.0076,
+          0.5153,
+          1.0
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narTimelineLine": {
+      "$value": {
+        "angle": 180,
+        "colors": [
+          "#E87558",
+          "#C865C9",
+          "#791BB8"
+        ],
+        "stops": [
+          0.0076,
+          0.5153,
+          1.0
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narFadeLine": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#FFFFFF",
+          "#141517"
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narPlayedChampOverlay": {
+      "$value": {
+        "angle": 180,
+        "colors": [
+          "#14151700",
+          "#14151752",
+          "#141517B3"
+        ],
+        "stops": [
+          0.0,
+          0.45,
+          1.0
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narSoloTint": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#E875584D",
+          "#C865C942",
+          "#791BB84D"
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narSoloTintSoft": {
+      "$value": {
+        "angle": 90,
+        "colors": [
+          "#E8755824",
+          "#C865C91F",
+          "#791BB824"
+        ]
+      },
+      "$type": "gradient"
+    },
+    "narShortsScrim": {
+      "$value": {
+        "angle": 0,
+        "colors": [
+          "#0B0C0EB8",
+          "#0B0C0E00"
+        ],
+        "stops": [
+          0.0,
+          0.38
+        ]
+      },
+      "$type": "gradient"
+    }
+  }
+}
