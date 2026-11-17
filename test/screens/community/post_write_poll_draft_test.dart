@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/repository/community/community_draft_repository.dart';
-import 'package:warding/screens/community/post_write_screen.dart';
+import 'package:warding/features/community/data/community_draft_repository.dart';
+import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
 
 /// 투표 컴포저 상태(질문/선택지/복수선택/결과공개)도 임시저장 대상이어야 한다 —
 /// 저장 시 함께 담기고, 드래프트를 불러오면 컴포저에 그대로 복원돼야 한다.

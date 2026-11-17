@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/schedule_filter_options.dart';
+import 'package:warding/features/schedule/domain/schedule_filter_options.dart';
 
 /// `/api/mobile/schedules/filters` 응답 파싱.
 ///

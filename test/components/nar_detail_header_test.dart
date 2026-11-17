@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_detail_header.dart';
+import 'package:warding/core/ui/nar_detail_header.dart';
 
 /// 헤더 높이는 `34 * scale` 로 고정이다. 가운데 제목에 제약이 없으면 긴 제목이
 /// 두 줄로 접히면서 그 상자를 넘어 위아래로 삐져나온다 — 커뮤니티 게시판 이름이

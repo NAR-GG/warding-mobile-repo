@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/config/api_config.dart';
-import 'package:warding/util/app_image.dart';
+import 'package:warding/core/config/api_config.dart';
+import 'package:warding/core/util/app_image.dart';
 
 /// 원격 이미지 URL 정규화.
 ///

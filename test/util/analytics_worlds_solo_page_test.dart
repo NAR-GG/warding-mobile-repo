@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 월즈 솔랭이 **내 선수와 다른 화면으로 집계**되는지 고정한다.
 ///

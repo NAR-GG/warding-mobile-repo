@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_post_block.dart';
+import 'package:warding/features/community/domain/community_post_block.dart';
 
 void main() {
   group('CommunityPostBlock', () {

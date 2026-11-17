@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:warding/model/community_draft.dart';
-import 'package:warding/repository/community/community_draft_repository.dart';
+import 'package:warding/features/community/domain/community_draft.dart';
+import 'package:warding/features/community/data/community_draft_repository.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 

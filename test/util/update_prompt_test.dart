@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:upgrader/upgrader.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/util/update_prompt.dart';
+import 'package:warding/core/util/update_prompt.dart';
 
 /// 조회 결과를 고정하는 가짜 upgrader. 실제 구현은 스토어 HTTP 조회와
 /// SharedPreferences 를 타므로 테스트에서 띄우지 않는다.

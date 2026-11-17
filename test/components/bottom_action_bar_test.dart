@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/bottom_action_bar.dart';
-import 'package:warding/components/common_button.dart';
-import 'package:warding/components/nar_filter_sheet.dart';
+import 'package:warding/core/ui/bottom_action_bar.dart';
+import 'package:warding/core/ui/common_button.dart';
+import 'package:warding/core/ui/nar_filter_sheet.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/styles/app_colors.dart';
+import 'package:warding/core/theme/app_colors.dart';
 
 /// 하단 고정 버튼이 앱 공용 [CommonButton] 과 같은 규격인지 본다.
 /// 응원 광고 신청은 경기리스트 설정의 '완료'(light), 광고 안내는 경기 일정 필터

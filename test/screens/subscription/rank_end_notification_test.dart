@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/screens/subscription/component/rank_end_notification.dart';
+import 'package:warding/features/subscription/presentation/widgets/rank_end_notification.dart';
 
 import '../../support/l10n_test_setup.dart';
 

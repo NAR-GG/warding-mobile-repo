@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_my_activity.dart';
+import 'package:warding/features/my_community_activity/data/community_my_activity.dart';
 
 Map<String, dynamic> _postJson({int id = 1}) => {
   'id': id,

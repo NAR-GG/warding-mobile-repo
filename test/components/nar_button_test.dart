@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/nar_button.dart';
+import 'package:warding/core/ui/nar_button.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 import '../support/l10n_test_setup.dart';

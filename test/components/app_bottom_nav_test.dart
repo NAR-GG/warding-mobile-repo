@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/components/app_bottom_nav.dart';
+import 'package:warding/core/ui/app_bottom_nav.dart';
 import 'package:warding/l10n/app_localizations.dart';
 
 /// 하단 네비게이션의 유리 효과 렌더 회귀 테스트.

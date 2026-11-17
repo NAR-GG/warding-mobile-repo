@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/player_detail.dart';
+import 'package:warding/features/player/domain/player_detail.dart';
 
 PlayerSoloAccount _a(String? tier) =>
     PlayerSoloAccount(region: 'KR', riotId: 'x#1', live: false, tier: tier);

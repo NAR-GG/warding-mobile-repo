@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/live_elapsed.dart';
+import 'package:warding/features/my_players/domain/live_elapsed.dart';
 
 void main() {
   group('liveElapsedSeconds', () {

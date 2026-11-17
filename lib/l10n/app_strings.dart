@@ -1,6 +1,6 @@
 import 'app_localizations.dart';
 
-import '../config/app_globals.dart';
+import 'package:warding/core/config/app_globals.dart';
 
 /// BuildContext 없이 현재 언어의 문자열을 가져오는 헬퍼.
 ///

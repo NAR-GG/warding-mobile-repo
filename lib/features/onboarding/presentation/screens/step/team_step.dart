@@ -1,0 +1,74 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:warding/l10n/app_localizations.dart';
+
+import 'package:warding/core/ui/load_error.dart';
+import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/util/app_image.dart';
+import 'package:warding/features/onboarding/presentation/viewmodels/onboarding_viewmodel.dart';
+import 'package:warding/features/onboarding/presentation/widgets/onboarding_select_card.dart';
+import 'package:warding/features/onboarding/presentation/widgets/onboarding_title.dart';
+
+/// 선호 팀 선택 단계 (View).
+///
+/// 팀 목록·선택 상태는 [OnboardingViewModel] 에서 가져온다.
+class TeamStep extends StatelessWidget {
+  const TeamStep({super.key, required this.viewModel, this.scale = 1.0});
+
+  final OnboardingViewModel viewModel;
+
+  /// 디자인 시안 대비 스케일.
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(height: 48 * scale),
+        OnboardingTitle(
+          mainTitle: l.favoriteTeamQuestion,
+          subTitle: l.domesticTeamNote,
+          scale: scale,
+        ),
+        SizedBox(height: 32 * scale), // 타이틀 ↔ 그리드 고정 간격 (스크롤해도 유지)
+        Expanded(child: _buildGrid(context)),
+      ],
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    if (viewModel.teamsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (viewModel.teamsError != null) {
+      return LoadError(message: l.teamLoadFailed, onRetry: viewModel.loadTeams);
+    }
+
+    return GridView.count(
+      padding: EdgeInsets.fromLTRB(60 * scale, 0, 60 * scale, 0),
+      crossAxisCount: 2,
+      childAspectRatio: 119 / 152,
+      crossAxisSpacing: 16 * scale,
+      mainAxisSpacing: 16 * scale,
+      children: [
+        for (final team in viewModel.teams)
+          OnboardingSelectCard(
+            scale: scale,
+            selected: team.id == viewModel.selectedTeamId,
+            image: CachedNetworkImage(
+              imageUrl: resolveImageUrl(team.imageUrl)!,
+              fit: BoxFit.contain,
+              fadeInDuration: const Duration(milliseconds: 150),
+              errorWidget: (_, _, _) =>
+                  const Icon(Icons.shield_outlined, color: AppColors.narText2),
+            ),
+            mainTitle: team.name,
+            onTap: () => viewModel.selectTeam(team.id),
+          ),
+      ],
+    );
+  }
+}

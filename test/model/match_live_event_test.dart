@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/match_live_event.dart';
+import 'package:warding/features/match_detail/domain/match_live_event.dart';
 
 void main() {
   // objectiveLabel() 이 내부적으로 appStrings(→ navigatorKey.currentContext →

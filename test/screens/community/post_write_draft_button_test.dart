@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/community/post_write_screen.dart';
+import 'package:warding/features/community/presentation/screens/post_write_screen.dart';
 
 /// 헤더의 "임시" 버튼이 실제로 탭에 반응하는지 — 사용자가 "버튼 동작 안 함"을
 /// 보고해서 실제 위젯 트리(레이아웃·히트테스트 포함)로 재현한다.

@@ -35,38 +35,170 @@ Anthropic API를 직접 호출해 문서를 생성하는 `intent-autodraft.yml`,
 
 ## 폴더 구조
 
+**feature 단위 구조다.** 기능별로 `data`·`domain`·`presentation` 세 레이어를 한 폴더에
+모은다. 이전에는 레이어가 최상위 축(`model`·`repository`·`viewmodel`·`screens`)이어서
+한 기능을 작업할 때 네 군데를 오가야 했다.
+
+**규칙은 한 문장이다 — 기능 소유면 `features/`, 아니면 `core/`.**
+
 ```
 lib/
-├── config/       앱 설정 (API URL, 키 등)
-├── model/        데이터 모델 클래스
-├── repository/   API 통신·데이터 소스 (기능별 하위 폴더)
-├── viewmodel/    ViewModel (기능별 하위 폴더)
-├── screens/      화면 (기능별 폴더)
-├── components/   앱 전역 공용 위젯
-├── styles/       디자인 토큰 (app_colors 등)
-└── util/         유틸리티
+├── features/     기능별 32개
+│   └── {기능}/
+│       ├── data/           repository, API 예외, 그 기능 전용 DTO
+│       ├── domain/         모델, 규칙·상수
+│       └── presentation/
+│           ├── screens/    화면 (멀티스텝은 step/, guide 는 page/)
+│           ├── viewmodels/ ViewModel
+│           └── widgets/    그 화면 전용 위젯
+├── app/          앱 셸 — 기능 2개 이상의 화면·구현을 알아야 하는 코드
+│   ├── deeplink/           외부(푸시·홈 위젯) → 앱 진입
+│   ├── navigation/         화면 이동 (경기 상세 창구, 탭 전환)
+│   ├── di_container.dart   인터페이스 ↔ 구현 등록
+│   └── app_hooks.dart      core 에 비워 둔 자리를 채우는 조립
+├── core/         기술만 — 도메인 개념이 없다
+│   ├── ui/                 앱 전역 공용 위젯 48개
+│   ├── util/               순수 함수·포맷터 17개
+│   ├── config/             앱 설정 (API URL, 키 등)
+│   ├── error/              Failure 계층, API 상태 예외
+│   ├── theme/              디자인 토큰 (app_colors)
+│   └── data/               예외 → Failure 매퍼
+├── l10n/         생성물 (아래 참고)
+├── main.dart     진입점
+└── firebase_options.dart   생성물
 ```
+
+**`domain/` 이 최상위인 이유.** 도메인 모델은 앱의 중심이라 기술 인프라(`core/`) 안에
+종속되지 않는다. Flutter 공식 샘플 compass_app 의 `lib/domain/models/`, Immich 의
+`lib/domain/models/`, nowinandroid 의 `core:model` 모듈과 같은 배치다. 조사한 실제 앱 5개 중
+4개가 "여러 기능이 쓰는 도메인 모델을 공유 위치에 올린다" — `schedule_match` 가 6개 기능이
+쓰면서도 `features/schedule/` 안에 없는 근거가 이것이다(compass_app 도 4개 화면이 쓰는
+`ItineraryConfig` 를 `search_form` 안에 두지 않고 `domain/models/` 로 올렸다).
+
+**의존 방향은 `app → features → core`·`domain` 한 방향이다.** `core/`·`domain/` 은
+`features/`·`app/` 을 import 하지 않는다 (유일한 예외는 조립 지점인 `core/di_container.dart`
+다 — repository 구현체를 등록하려면 알 수밖에 없다). `domain/` 은 `features/`·`app/` 을
+import 하지 않는다 — 모델이 기능을 알면 방향이 뒤집힌다 (repository 인터페이스가 쓰는
+`core/error/failure.dart` 는 예외다). 화면을 띄우거나 기능의 구현을 알아야 하는
+코드는 둘 중 하나로 푼다.
+
+- **앱 셸이면 `app/` 에 둔다. 판별은 한 줄 — "기능 2개 이상의 화면이나 구현을 알아야 하나".**
+  푸시·홈 위젯 딥링크(`app/deeplink/`), 경기 상세로 가는 유일한 창구와 탭 이동
+  (`app/navigation/`)이 여기 있다. 라우터·탭 네비게이션을 앱 셸에 두는 것은 조사한 실제
+  앱 4개가 예외 없이 따르는 관행이다(nowinandroid `app/navigation/`, compass_app
+  `lib/routing/`, Immich `lib/routing/`, AppFlowy `lib/startup/tasks/`).
+- **화면을 안 띄우면 `app/` 이 아니다.** 기능 repository 를 쓰더라도 화면을 만들지 않으면
+  그 도메인의 기능으로 내린다 — `live_activity_logo_prefetcher`·
+  `live_match_activity_controller` 가 `features/live_activity/data/` 로 갔다.
+- **core 가 필요로 하는 화면·구현은 훅으로 받는다.** `AuthService.loginScreenBuilder`·
+  `AuthService.onSignedOut`·`TeamLogoDirectory.defaultLoader`·
+  `LiveActivityLogoPrefetcher.teamTargetsLoader`·`LiveMatchActivityController` 의 로더 4개는
+  core 쪽에 비워 둔 자리고, `app/app_hooks.dart` 의 `configureAppHooks()` 가 `main.dart`·
+  `test/flutter_test_config.dart` 에서 채운다. 새 훅을 만들면 거기에 연결하는 것을 잊지
+  않는다. **훅이 비어 있을 때의 동작을 정해 둔다** — 화면 전환은 건너뛰고, 카드 정리는
+  "모른다" 로 보고 멈춘다(잘못 지우는 것이 늦게 지우는 것보다 비싸다).
+- 한 기능 전용 위젯은 `core/ui/` 에 두지 않는다 — `guide_popup` 은 `guide`, `cheer_ad_*` 는
+  `cheer_ad` 가 소유한다.
+
+**`core/` 밖에 남는 예외는 생성물과 진입점이다.** 생성물은 생성 도구가 경로를 정하므로
+옮겨도 도구가 원래 자리에 다시 만든다.
+
+| 대상 | 경로를 못박는 설정 |
+|---|---|
+| `lib/l10n/` | `l10n.yaml` 의 `arb-dir`·`output-dir` |
+| `lib/firebase_options.dart` | `firebase.json` 의 `flutter.platforms.dart` 키 |
+
+`firebase.json` 은 FlutterFire CLI 가 관리하므로 손으로 고치지 않는다.
+
+**`core/` 에 도메인 개념을 두지 않는다.** 소비처가 몇 곳이든 "경기·팀·선수·알림·인증"
+같은 이름이 붙으면 그 도메인의 기능으로 간다. 2026-11-16 에 `core/domain/`(모델 9) 과
+`core/infrastructure/`(21파일) 를 전부 해체했다 — 폴더 이름뿐 아니라 내용도 도메인이었다
+(알림 피드 API·잠자기 설정·실시간 카드·선호 팀 저장).
+
+| 원래 위치 | 간 곳 | 이유 |
+|---|---|---|
+| `infrastructure/auth` + `device` + `domain/user_profile` | `features/auth/` | 상호 참조라 한 묶음. 20기능이 쓰지만 도메인이다 |
+| `infrastructure/notification` 4 + 모델 4 + 인터페이스 2 + `fcm_notification_types` | `features/notification/` | 알림 도메인 |
+| `infrastructure/live_activity` 4 | `features/live_activity/` | 실시간 카드 도메인 |
+| `infrastructure/preference` 7 + `ad` | 각 소유 기능 | cheer_ad·guide·calendar_setting·notice·match_list_setting·schedule·onboarding |
+| `domain/schedule_match`·`team`·`calendar_week_start`·`team_notification_subscription` | 각 소유 기능 | — |
+
+**`core/` 에 남는 것은 기술뿐이다.** `ui`(공용 위젯 48) · `util`(순수 함수·포맷터 17) ·
+`config` · `error`(Failure·API 상태 예외) · `theme` · `data`(예외→Failure 매퍼).
+
+- **순수 함수·포맷터는 도메인 이름이어도 `core/util/` 이다.** `match_status(String)` 는
+  문자열 판정이고 `rating_mapping` 은 수치 변환이다 — 모델도 repository 도 없어서 성격이
+  다르다. 단 1기능만 쓰면 내린다(`dragon_type`·`gold_format`·`live_elapsed`·
+  `standings_group_label`).
+- **공용 위젯은 도메인 이름이어도 `core/ui/` 다.** `team_logo`·`team_code_badge` 는 "팀
+  로고를 그리는 위젯"이고, `team_logo_directory` 는 그 위젯이 쓰는 URL 캐시다.
+- **이름이 같은 기능이 있으면 그 기능 소유로 본다.** `rating` repository 는 4곳이 쓰지만
+  `player_rating` 기능이 있어 `features/player_rating/data/` 에 둔다.
+- **`home` 은 소비처로 세지 않는다.** 집계 화면이라 거의 모든 기능을 당겨서, 세면 대부분이
+  공유 위치로 가 버린다.
+- 여러 기능이 쓰는데 주 소유가 애매하면 **가장 본질적으로 쓰는 쪽**이다 —
+  `filter_preference` 는 match_list·schedule·splash 가 쓰지만 필터를 정의하는 곳이
+  `schedule` 이라 그쪽이다. 다른 기능이 그걸 참조하는 것은 허용한다.
+
+**import 는 `package:warding/...` 절대경로로 쓴다.** 상대경로(`../../model/...`)는 파일을
+옮길 때 대량으로 깨진다 — 이 전환에서 실측으로 540건이 났다. `export` 도 마찬가지다.
 
 ## 파일 생성 규칙
 
-새 기능을 추가할 때 종류별 위치:
+**새 기능은 `features/` 에 만든다.**
 
 | 종류 | 위치 | 예 |
 |------|------|-----|
-| 화면 | `screens/{기능}/{기능}_screen.dart` | `screens/onboarding/onboarding_screen.dart` |
-| 화면 전용 위젯 | `screens/{기능}/component/` | `screens/onboarding/component/onboarding_header.dart` |
-| 단계별 화면 (멀티 스텝) | `screens/{기능}/step/` | `screens/onboarding/step/team_step.dart` |
-| 앱 공용 위젯 | `components/` | `components/common_button.dart` |
-| ViewModel | `viewmodel/{기능}/{기능}_viewmodel.dart` | `viewmodel/onboarding/onboarding_viewmodel.dart` |
-| 모델 | `model/{이름}.dart` | `model/team.dart` |
-| 리포지토리 | `repository/{기능}/{기능}_repository.dart` | `repository/onboarding/onboarding_repository.dart` |
+| 화면 | `features/{기능}/presentation/screens/` | `features/community/presentation/screens/community_screen.dart` |
+| 화면 전용 위젯 | `features/{기능}/presentation/widgets/` | `features/community/presentation/widgets/post_list_item.dart` |
+| 단계별 화면 (멀티 스텝) | `features/{기능}/presentation/screens/step/` | `.../presentation/screens/step/team_step.dart` |
+| ViewModel | `features/{기능}/presentation/viewmodels/` | `features/community/presentation/viewmodels/community_list_viewmodel.dart` |
+| 모델·규칙·상수 | `features/{기능}/domain/` | `features/community/domain/community_remote_post.dart` |
+| 리포지토리 | `features/{기능}/data/` | `features/community/data/community_repository.dart` |
+| 여러 기능이 쓰는 모델·서비스 | 그 **도메인의 기능** | `features/auth/data/auth_service.dart` (20기능이 쓴다) |
+| 앱 공용 위젯 | `core/ui/` | `core/ui/common_button.dart` |
 
 - 파일명은 `snake_case`, 클래스명은 `PascalCase`.
-- 한 화면에서만 쓰는 위젯은 그 화면 폴더의 `component/`에, 여러 화면에서 쓰면 `lib/components/`에 둔다.
+- 한 화면에서만 쓰는 위젯은 그 기능의 `presentation/widgets/`에, 여러 기능에서 쓰면
+  `lib/core/ui/`에 둔다.
+- **`data` 와 `domain` 의 구분**: `domain`은 그 기능의 개념(모델·규칙·상수), `data`는 그것을
+  가져오는 수단(repository·API 예외)과 그 기능 전용 DTO다. `community_permission.dart`처럼
+  화면이 아닌 규칙 파일은 `screens`가 아니라 `domain`에 둔다.
+- **공유되는 기술 코드는 `core/` 로 올린다.** 단 도메인 개념이면 소비처가 몇 곳이든 그
+  도메인의 기능에 둔다(위 "소유자 판단 기준" 참고). 다른 기능이 참조하는 것은 허용한다.
+- **import·export 는 `package:warding/...` 절대경로.** 상대경로는 파일을 옮길 때 깨진다.
+- **repository 는 `domain/repositories/` 에 인터페이스를 두고 `Either<Failure, T>` 를
+  돌려준다.** `try/catch` 없이 실패 분기가 컴파일 단계에서 강제되고, 테스트에서
+  `mocktail` Mock 을 쓸 수 있다. 예외를 던지던 때는 `catch` 를 빠뜨려도 아무도 몰랐다.
+  판단 기준과 예외(로컬 저장소·도메인 예외를 쓰는 경우 등)는
+  [Clean Architecture 전환 플레이북](./wiki/playbooks/clean-architecture-migration.md) 참고.
+- **새 모델은 DTO 를 분리한다. 기존 모델은 서버 응답이 바뀔 때 전환한다.**
+
+  ```
+  features/{기능}/data/models/{x}_dto.dart      서버 응답 형식 그대로 + fromJson
+  features/{기능}/data/mappers/{x}_mapper.dart  DTO → Entity 변환
+  features/{기능}/domain/{x}.dart               Entity (fromJson 없음)
+  ```
+
+  선례는 `shorts`·`my_review`·`onboarding` 3개다. 나머지 모델(약 50개)은 Entity 가
+  `fromJson` 을 직접 갖는다 — **일괄 전환하지 않는다.** `fromJson` 호출이 repository
+  구현에서만 일어나므로(실측 `data/` 31파일, `presentation` 2건은 로컬 임시저장,
+  `core`·`app` 0건) 서버 형식이 화면으로 새지 않고, 인터페이스가 이미
+  `Either<Failure, Entity>` 로 변경을 흡수한다. DTO 를 97개 만들어 얻는 것은 "Entity
+  파일에서 `fromJson` 이 사라지는 것" 뿐이라 비용이 맞지 않는다.
+
+  **서버 응답과 화면 모델의 형태가 다를 때는 처음부터 분리한다** — 필드명이 다르거나,
+  응답 하나를 여러 Entity 로 쪼개거나, 널 처리가 복잡한 경우다. 1:1 매핑이면 매퍼가
+  필드 복사만 하므로 분리 이득이 없다.
+- **로컬 저장 직렬화는 서버 DTO 와 구분한다.** `Team.fromStorage`·`toJson` 은 앱이 정한
+  형식이라 Entity 에 둬도 외부 변경에 노출되지 않는다. 서버 응답은
+  `TeamDto.fromJson` + `TeamMapper` 를 거친다.
+- 이름이 공용처럼 보여도 한 기능만 쓰면 그 기능 안에 둔다 — `community_my_activity` 는
+  접두어가 `community_` 지만 `my_community_activity` 기능만 쓰므로 그 기능의 `data/` 에 있다.
 
 ## 색상 / 디자인 토큰
 
-모든 색은 `lib/styles/app_colors.dart`의 `AppColors` 클래스에 정의한다.
+모든 색은 `lib/core/theme/app_colors.dart`의 `AppColors` 클래스에 정의한다.
 
 - 위젯에 색을 **하드코딩하지 않는다**. 항상 `AppColors.xxx`를 참조한다.
 - 디자인 시안의 토큰 이름을 그대로 쓴다 (`narText`, `narDark800`, `narButton1Bg` 등).
@@ -186,7 +318,11 @@ shorebird patch android --release-version <pubspec의 version>
 - 날짜순으로 보려면:
   `git tag --sort=-creatordate --format='%(creatordate:short)  %(refname:short)  %(contents:subject)'`
 
-**2026-09-29부터 shorebird 패치를 다시 쓴다** (한동안 미사용이었다가 재개 결정). 패치 직전에도
+**2026-09-29에 shorebird 패치를 재개했으나 10-19 이후 다시 미사용이다.** 과금이 패치 설치
+수 기준(Free 5,000/월)인데 MAU 가 9,000 이라 한 번 내보내면 한도가 찬다. 마지막 패치는
+`patch/1.0.34+84/1` 이고 그 뒤로 릴리즈만 나갔다 — **Dart 수정도 스토어 심사를 거치는
+상태다.** 웹뷰 전환이 그 자리를 메우는 방향이다(→
+[웹뷰 전환 intent](./intent/hybrid-webview-monorepo/intent.md)). 패치를 쓸 때는 직전에도
 릴리즈와 같은 방식으로 태그를 찍는다 — `patch/<release version>/<번호>`, `-a` 필수. 번호는
 같은 릴리즈 버전에 패치를 낼 때마다 1부터 순서대로 올린다.
 
@@ -219,7 +355,7 @@ git push --follow-tags
 - 패치는 **Dart 코드만** 배포한다. 네이티브 플러그인 추가·에셋 추가·pubspec 네이티브 의존성 변경은 패치로 못 나가고 스토어 재제출이 필요하다.
 - 구버전 릴리즈(예: 1.0.1+7)에 패치를 낼 때는 현재 main이 아니라 **그 릴리즈의 마지막 패치가 빌드된 시점의 커밋**을 worktree로 checkout 해서 픽스만 cherry-pick 한다. main으로 내면 그 사이 추가된 네이티브 의존성(sentry 등) 때문에 시작 크래시가 발생할 위험이 있다.
 - 태그가 없던 시절 릴리즈는 `shorebird patches list --release-version <버전> --json`의 artifact `created_at`으로 역추적해야 한다. 태그 규칙이 이걸 없애려는 것이다.
-- 과금은 **패치 설치 수** 기준이라(Free 5,000/월) 패치를 남발하면 한도가 찬다. 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
+- 과금은 **패치 설치 수** 기준이다(Free 5,000/월 — 위 "미사용" 서술 참고). 릴리즈 빌드 자체는 과금 대상이 아니므로, 패치를 안 쓰더라도 빌드는 계속 `shorebird release` 로 뽑아 비상구를 열어 둔다.
 
 ## 지식 번들 (wiki)
 
@@ -297,7 +433,7 @@ PR을 만들거나 본문을 고칠 때는 **항상 먼저 `.github/pull_request
 - 온보딩 4단계 (선호 리그·팀·선수·알림 권한): MVVM 구조로 구현
 - 온보딩 리그·선수 선택 그리드, 완료 API(`POST /api/auth/onboarding`)에 리그·팀·선수 연동
 - 쇼츠 앱 내 재생: 홈 카드 탭 → 전체화면 세로 피드(`screens/shorts/`, 유튜브 IFrame 임베드·항상 무음). 네이티브 WebView라 스토어 릴리스 필요, Android·실기기 미확인
-- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/repository/home/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
+- 홈 화면 (앱 진입 화면, 5개 섹션·내 선수 화면): 일정·순위표·커뮤니티 글·공지·쇼츠·구독은 실데이터, 솔랭·평점·뉴스는 백엔드 대기(`lib/features/home/data/home_sources.dart`). 목업은 `HOME_MOCKS` dart-define(기본값 `kDebugMode`) 뒤에 있어 디버그·시뮬레이터에서만 보이고, 릴리즈 빌드는 빈 소스(솔랭 조용한 행, 뉴스·평점 탭 숨김)가 나간다. 릴리즈에서 목업을 보려면 `--dart-define=HOME_MOCKS=true`
 
 - 선수 페이지(`screens/player/`): 홈 솔랭 카드·끝난 경기 칩·월즈 솔랭 타일에서 진입. 화면은 `HOME_MOCKS` 목업으로 완성, 백엔드 `GET /api/mobile/players/{id}`(+`/worlds`, `/solo-rank`) 배포 후 실 API 확인 필요
 

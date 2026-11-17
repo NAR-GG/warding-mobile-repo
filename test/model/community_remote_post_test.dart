@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/community_remote_post.dart';
+import 'package:warding/features/community/domain/community_remote_post.dart';
 
 void main() {
   group('CommunityRemotePost.fromJson', () {

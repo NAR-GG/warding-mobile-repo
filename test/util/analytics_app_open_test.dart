@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/util/analytics.dart';
-import 'package:warding/util/analytics_events.dart';
+import 'package:warding/core/util/analytics.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// `app_open` 진입 경로의 **선점 규칙**을 고정한다.
 ///

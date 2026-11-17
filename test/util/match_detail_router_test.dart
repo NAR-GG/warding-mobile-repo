@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/config/app_globals.dart';
+import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/l10n/app_localizations.dart';
-import 'package:warding/screens/match_detail/match_detail_screen.dart';
-import 'package:warding/util/match_detail_router.dart';
+import 'package:warding/features/match_detail/presentation/screens/match_detail_screen.dart';
+import 'package:warding/app/navigation/match_detail_router.dart';
 
 /// 경기 상세가 스택에 겹쳐 쌓이지 않는지.
 ///

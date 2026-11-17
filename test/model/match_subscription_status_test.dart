@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/model/match_subscription_status.dart';
+import 'package:warding/features/match_detail/domain/match_subscription_status.dart';
 
 void main() {
   test('fromJson: 구독 중인 경기의 토글 상태를 읽는다', () {

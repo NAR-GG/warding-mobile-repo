@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/config/api_config.dart';
+import 'package:warding/core/config/api_config.dart';
 
 void main() {
   // 서버 목록은 static 상태라 테스트 사이에 넘어간다 — 매번 되돌린다.

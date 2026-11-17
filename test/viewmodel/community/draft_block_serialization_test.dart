@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:warding/viewmodel/community/post_write_viewmodel.dart';
+import 'package:warding/features/community/presentation/viewmodels/post_write_viewmodel.dart';
 
 /// 임시저장은 [DraftBlock] 을 JSON 으로 직렬화해 기기에 보관한다 — 서버로 나가는
 /// [CommunityPostBlock] 과 달리 아직 업로드 전인 localPath 도 함께 보존해야 한다.
