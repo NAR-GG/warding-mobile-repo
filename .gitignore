@@ -74,3 +74,6 @@ apps/web/next-env.d.ts
 
 # tsc --incremental 캐시
 *.tsbuildinfo
+
+# 웹뷰 확인용 임시 진입점 (run-webview 스킬)
+apps/mobile/lib/webview_probe.dart
