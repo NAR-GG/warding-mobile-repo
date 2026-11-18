@@ -5,22 +5,47 @@ description: 웹뷰 전환 화면(커뮤니티 글 상세·공지)을 로컬 Nex
 
 # 웹뷰 화면 실행 & 브리지 확인
 
-웹 서버와 앱을 **둘 다** 띄워야 한다. 순서가 중요하다 — 서버가 먼저다.
+## 먼저 — 시뮬레이터가 필요한가
+
+**UI 만 고친다면 맥 브라우저로 보는 쪽이 훨씬 빠르다.** 개발자도구로 바로
+만질 수 있고 앱을 띄울 필요가 없다.
+
+```bash
+pnpm web:dev
+open http://localhost:3100/community/post/114
+```
+
+> 브라우저 반응형을 **375px** 로 맞추면 시뮬레이터와 거의 같다 — 치수가
+> `calc(n * var(--scale))` 이고 `--scale` 이 375 기준이라서다.
+
+**시뮬레이터가 필요한 경우는 브리지가 걸릴 때뿐이다** — 뒤로가기, 사진 뷰어,
+로그인 상태(쿠키). 브라우저에서는 브리지가 없어 그 동작들이 무시된다.
+
+아래는 그 경우의 절차다. 웹 서버와 앱을 **둘 다** 띄우고, 서버가 먼저다.
 
 ## 1. 웹 서버 띄우기
 
+**UI 를 고치며 반복할 때** — 고치면 즉시 반영된다. 이쪽을 기본으로 쓴다.
+
 ```bash
-cd apps/web
-pnpm exec next build && pnpm exec next start -p 3210
+pnpm web:dev
 ```
 
-개발 중이라 자주 고친다면 `pnpm dev` 가 낫다(기본 3100 포트).
-단, **SSR 성능을 보려면 `next start`** 를 써야 한다 — `dev` 는 매 요청 컴파일한다.
+**첫 페인트 속도를 재려면** 프로덕션 빌드로 띄운다. `dev` 는 매 요청 컴파일해서
+느리다.
+
+```bash
+pnpm web:build && pnpm --filter warding-web start
+```
+
+> **SSR 은 둘 다 똑같이 돈다.** `dev` 든 `start` 든 서버가 완성된 HTML 을
+> 보낸다 — SSR 은 별도 모드가 아니라 이 앱의 기본 동작이다. 차이는 컴파일
+> 시점뿐이다.
 
 살아 있는지 확인:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3210/community/post/114
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3100/community/post/114
 ```
 
 > 글 id 는 바뀐다. 404 가 나오면 살아 있는 id 를 찾는다:
@@ -67,7 +92,7 @@ DEVICE=$(xcrun simctl list devices booted -j \
 cd apps/mobile
 fvm flutter run -d "$DEVICE" \
   -t lib/webview_probe.dart \
-  --dart-define=WEBVIEW_HOST=http://localhost:3210
+  --dart-define=WEBVIEW_HOST=http://localhost:3100
 ```
 
 > 시뮬레이터가 안 떠 있으면 `run-warding` 스킬의 1번 절차로 먼저 띄운다.
@@ -102,17 +127,32 @@ xcrun simctl io "$DEVICE" screenshot /tmp/webview.png
 서버가 토큰을 쓰는지만 보려면 쿠키를 직접 넣어 본다:
 
 ```bash
-curl -s -H 'Cookie: warding_jwt=<토큰>' http://localhost:3210/community/post/114 | grep -c "내가 좋아요함"
+curl -s -H 'Cookie: warding_jwt=<토큰>' http://localhost:3100/community/post/114 | grep -c "내가 좋아요함"
 ```
 
 > 백엔드는 **잘못된 토큰에도 200** 을 준다. 응답 코드로는 토큰이 실제로
 > 쓰였는지 알 수 없으니, 헤더 전달은 `packages/api` 의 `client.test.ts` 가
 > 로컬 HTTP 서버로 검증한다.
 
-## 6. 정리
+## 6. 고친 뒤 뭘 다시 켜야 하나
+
+앱은 **URL 을 띄우는 껍데기**다. 화면 내용은 전부 웹 서버가 만든다.
+
+| 고친 것 | 할 일 |
+|---|---|
+| 웹 UI (`apps/web/`, `packages/ui`) | **없음** — 화면 새로고침만 (`web:dev` 기준) |
+| 브리지 웹 쪽 (`shared/bridge/`) | 화면 새로고침만 |
+| 브리지 Dart 쪽 (`app/bridge/`) | 앱 터미널에서 `r` (핫리로드) |
+| `webview_routes.dart`·`api_config.dart` | 앱 터미널에서 `R` (핫리스타트) |
+| `WEBVIEW_HOST` 를 바꿔야 할 때 | `flutter run` 을 다시 띄운다 |
+
+> **`web:build && start` 로 띄웠다면 웹을 고쳐도 반영되지 않는다.** 고정된
+> 빌드 결과를 서빙하기 때문이다. UI 를 반복해 고칠 거면 `web:dev` 를 쓴다.
+
+## 7. 정리
 
 ```bash
 pkill -f "flutter run"
-pkill -f "next start -p 3210"
+pkill -f "next dev"; pkill -f "next start"
 rm -f apps/mobile/lib/webview_probe.dart
 ```
