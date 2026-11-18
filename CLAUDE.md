@@ -183,6 +183,23 @@ packages/api              서버 호출 + 도메인 타입 + 매퍼
 - **`features`·`widgets` 는 필요해질 때 만든다.** 지금은 읽기 전용 화면뿐이다.
 - `packages/ui` 로 올리는 기준은 **화면 2개 이상**. 미리 올리지 않는다.
 
+**웹 ↔ 네이티브 브리지는 Stage A·B·C 를 전부 쓴다.** 규약을 양쪽에 짝으로 둔다 —
+`apps/web/src/shared/bridge/protocol.ts` ↔
+`apps/mobile/lib/app/bridge/bridge_protocol.dart`. **코드 생성이 없으므로 한쪽을
+고치면 반드시 다른 쪽도 본다.**
+
+- **인증 토큰은 쿠키로 넘긴다.** 네이티브가 `WebViewCookieManager` 로 심고 Next
+  서버가 `cookies()` 로 읽는다 — **첫 요청부터 토큰을 들고** API 를 불러 로그인
+  상태까지 SSR 로 그려진다. URL 쿼리는 로그에 남고, 로드 후 JS 주입은 깜빡인다.
+  `webview_flutter` 쿠키 API 에 `httpOnly` 가 없어 JS 로 읽히는 것이 한계다.
+- **로그인 상태에서는 캐시하지 않는다**(`cache: 'no-store'`). `viewer` 가
+  사용자마다 달라 공유 캐시에 담으면 남의 좋아요 상태가 보인다.
+- **웹뷰 컨테이너는 하나다**(`core/ui/webview/`). 기능별로 복제하면 URL 만 다른
+  파일이 수십 개가 된다. 어느 화면이 웹으로 갔는지는
+  `app/navigation/webview_routes.dart` 가 단일 출처다.
+- **쿠키를 심기 전에는 로드하지 않는다.** 토큰 없이 로드되면 SSR 이 비로그인
+  화면을 그려 버려 전환의 이점이 사라진다.
+
 **`packages/ui` 를 쓸 때 걸린 함정 3개를 적어 둔다 — 전부 빌드는 통과하고 실행해야
 드러난다.**
 

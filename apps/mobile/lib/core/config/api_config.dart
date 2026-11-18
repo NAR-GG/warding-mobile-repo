@@ -519,6 +519,15 @@ class ApiConfig {
   /// 가리킨다.** 앱에 외부 서비스 URL 을 직접 박으면 그쪽 주소가 바뀔 때
   /// 링크가 죽고, 고치려면 앱을 다시 심사받아야 한다. 도메인을 앞에 두면
   /// 리다이렉트 대상만 갈아끼우면 된다.
+  /// 웹뷰가 여는 웹앱의 오리진.
+  ///
+  /// 호스팅이 아직 안 정해져 빌드 때 넘긴다(미지정이면 [webHost]).
+  /// 로컬 개발은 `--dart-define=WEBVIEW_HOST=http://localhost:3000`.
+  static const String webViewHost = String.fromEnvironment(
+    'WEBVIEW_HOST',
+    defaultValue: webHost,
+  );
+
   static const String termsUrl = '$webHost/terms';
 
   /// 개인정보처리방침. [termsUrl] 과 같은 이유로 우리 도메인을 쓴다.

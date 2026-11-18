@@ -3,6 +3,8 @@ import { parseBlocks } from 'warding-api';
 import { fetchPostDetail } from 'warding-api/server';
 import { BoardBadge } from 'warding-ui';
 
+import { readAuthToken } from '@/shared/auth/index.server';
+
 import { PostBody } from './PostBody';
 import { PostHeader } from './PostHeader';
 
@@ -13,8 +15,9 @@ import { PostHeader } from './PostHeader';
  * 없이도 서버가 글을 받을 수 있다. 웹뷰가 빈 HTML 을 받고 JS 를 기다리는
  * CSR 대비 첫 페인트가 빠른 것이 전환의 목적이다.
  *
- * 토큰은 아직 넘기지 않는다 — 브리지 Stage A 의 Flutter 쪽 구현이 없다.
- * 그래서 지금은 좋아요·스크랩 상태가 항상 false 로 온다.
+ * **토큰은 쿠키로 온다.** 네이티브가 웹뷰 쿠키스토어에 심어 주므로 첫 요청부터
+ * 서버가 토큰을 들고 API 를 부른다 — 좋아요·스크랩 상태까지 SSR 로 그려져
+ * 깜빡임이 없다. 브라우저로 직접 열면 토큰이 없어 비로그인 화면이 된다.
  */
 export async function CommunityPostPage({
   params,
@@ -28,8 +31,15 @@ export async function CommunityPostPage({
     return <main className="post-error">잘못된 주소입니다.</main>;
   }
 
+  const token = await readAuthToken();
+
   // 글은 자주 바뀌지 않지만 조회수·댓글수가 있어 길게 캐시하지 않는다.
-  const result = await fetchPostDetail(postId, { revalidate: 30 });
+  // 로그인 상태에서는 캐시하지 않는다 — `viewer` 가 사용자마다 달라서
+  // 공유 캐시에 담으면 남의 좋아요 상태가 보인다.
+  const result = await fetchPostDetail(
+    postId,
+    token === null ? { revalidate: 30 } : { token, cache: 'no-store' },
+  );
 
   if (!result.ok) {
     const { kind, statusCode } = result.failure;
@@ -67,6 +77,10 @@ export async function CommunityPostPage({
         <div className="post__stats">
           조회 {post.viewCount} · 좋아요 {post.likeCount} · 댓글 {post.commentCount}
           {post.edited ? ' · 수정됨' : ''}
+          {/* 토큰이 있을 때만 내 상태를 보여준다. 비로그인은 서버가 전부
+              false 로 주므로 "안 누름" 과 구분이 안 된다. */}
+          {token !== null && post.viewer.liked ? ' · 내가 좋아요함' : ''}
+          {token !== null && post.viewer.scrapped ? ' · 스크랩함' : ''}
         </div>
 
         {blocks.length > 0 ? (

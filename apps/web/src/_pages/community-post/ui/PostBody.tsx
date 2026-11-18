@@ -1,4 +1,8 @@
+'use client';
+
 import { isHeading, type PostBlock } from 'warding-api';
+
+import { openPhotoViewer } from '@/shared/bridge';
 
 /**
  * 블록 본문 렌더러 — Flutter `post_block_renderer.dart` 의 웹 구현.
@@ -10,6 +14,12 @@ import { isHeading, type PostBlock } from 'warding-api';
  */
 export function PostBody({ blocks }: { blocks: PostBlock[] }) {
   if (blocks.length === 0) return null;
+
+  // 사진 뷰어에 넘길 전체 목록. 네이티브가 좌우 스와이프로 넘기므로
+  // 탭한 한 장이 아니라 글 전체의 이미지를 준다(Flutter 도 같다).
+  const imageUrls = blocks
+    .filter((b) => b.type === 'image' && b.url)
+    .map((b) => b.url as string);
 
   return (
     <div className="post__body">
@@ -29,9 +39,21 @@ export function PostBody({ blocks }: { blocks: PostBlock[] }) {
         }
 
         if (b.type === 'image' && b.url) {
+          const at = imageUrls.indexOf(b.url);
           return (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={key} src={b.url} alt="" className="post__image" />
+            <img
+              key={key}
+              src={b.url}
+              alt=""
+              className="post__image"
+              onClick={() => {
+                // 웹뷰 밖에서는 브리지가 없어 거부된다 — 그때는 아무 일도
+                // 일어나지 않는 편이 낫다. 웹 자체 뷰어를 만들면 네이티브와
+                // 동작이 갈린다.
+                void openPhotoViewer(imageUrls, at < 0 ? 0 : at).catch(() => {});
+              }}
+            />
           );
         }
 

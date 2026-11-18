@@ -1,5 +1,7 @@
 import '../styles/globals.css';
 
+import { BridgeProvider } from './BridgeProvider';
+
 /**
  * 루트 레이아웃 본체. `app/layout.tsx` 가 이것을 re-export 한다.
  *
@@ -9,7 +11,9 @@ import '../styles/globals.css';
 export function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <BridgeProvider>{children}</BridgeProvider>
+      </body>
     </html>
   );
 }

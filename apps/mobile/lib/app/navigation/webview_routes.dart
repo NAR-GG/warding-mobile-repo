@@ -1,0 +1,47 @@
+/// 웹으로 간 화면의 **단일 출처**.
+///
+/// 어느 화면이 웹으로 갔는지 한 파일에서 보인다. 네이티브 화면 단위와 웹
+/// 라우트가 **1:1이어야** 뒤로가기가 어긋나지 않는다 — 웹 안에서 자유롭게
+/// 라우팅하면 네이티브 스택과 틀어진다.
+library;
+
+import 'package:warding/core/config/api_config.dart';
+
+/// 전환된 화면 한 건.
+class WebRoute {
+  const WebRoute({required this.path, required this.stage});
+
+  /// 웹 경로. 호스트를 뺀 부분이다.
+  final String path;
+
+  /// 이 화면이 요구하는 브리지 단계. 네이티브가 무엇을 준비해야 하는지 보인다.
+  final BridgeStage stage;
+
+  /// 전체 URL.
+  String url({Map<String, String> params = const {}}) {
+    var p = path;
+    params.forEach((k, v) => p = p.replaceAll(':$k', Uri.encodeComponent(v)));
+    return '${ApiConfig.webViewHost}$p';
+  }
+}
+
+/// 브리지 단계. 뒤 단계는 앞 단계를 포함한다.
+enum BridgeStage {
+  /// 웹 → 네이티브 단방향만 쓴다.
+  a,
+
+  /// 네이티브 → 웹 브로드캐스트까지 쓴다(로그인 상태 반영 등).
+  b,
+
+  /// 양방향 호출까지 쓴다(사진 뷰어·공유).
+  c,
+}
+
+/// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
+const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
+
+/// 공지 상세. 읽기 전용이라 Stage A 로 충분하다.
+const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
+
+/// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
+const webviewRoutes = <WebRoute>[communityPostRoute, noticeRoute];
