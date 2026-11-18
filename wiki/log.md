@@ -1,5 +1,23 @@
 # Bundle Update Log
 
+## 2026-11-18 (3)
+* **앱 환경 전환을 `tool/run.sh local|prod` 로 만들었다.** 매번
+  `--dart-define=WEBVIEW_HOST=...` 를 치지 않게 한 것이다.
+* **flavor 를 쓰지 않기로 했다 — 실제 앱 8개를 조사한 결과다.** dev/prod 분리에
+  flavor 를 쓴 앱은 **0개**였고, flavor 를 쓰는 3개(aves·Musify·ente)는 전부
+  **번들ID가 갈리는 배포 채널**(Play/F-Droid) 문제였다. aves 는 dimension 이름이
+  아예 `"store"` 다. 결정적인 것은 ente 인데, flavor 와 dart-define 을 **동시에**
+  쓰면서 flavor 는 배포 채널로 고정하고 환경만 `--dart-define endpoint=...` 로
+  바꾼다 — 두 축을 의도적으로 분리했다.
+* **이 레포에서 flavor 가 특히 비싼 이유.** `shorebird release`·`patch` 네 곳에
+  `--flavor` 를 붙여야 하는데 **그건 태그를 밀어야 검증된다**. iOS scheme·
+  xcconfig 수동 작업도 따라온다. URL 한 줄 때문에 치를 비용이 아니다.
+* Flutter 공식 문서가 두 갈래라는 것도 확인했다 — flavors 문서는 flavor 로 API
+  URL 까지 바꾸라 하고, **CD 문서는 같은 목적에 `--dart-define` 을 권한다.**
+  이 레포는 `HOME_MOCKS` 로 이미 후자를 쓰고 있어 같은 축에 얹었다.
+* **기본값이 운영이라 플래그를 빼먹어도 안전하다.** 릴리즈·패치 워크플로우가
+  dart-define 을 안 넘기는 것도 확인했다 — 둘 다 기본값이라 일관성이 깨지지 않는다.
+
 ## 2026-11-18 (2)
 * **브리지 Stage A·B·C 를 전부 구현하고 시뮬레이터에서 웹뷰를 띄웠다.** 규약을 양쪽에
   짝으로 둔다 — `apps/web/src/shared/bridge/protocol.ts` ↔

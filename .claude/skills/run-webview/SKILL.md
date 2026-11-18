@@ -57,7 +57,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3100/community/post/11
 ## 2. 진입점 만들기
 
 앱에는 아직 웹뷰 화면으로 가는 버튼이 없다. 임시 진입점을 만든다
-(**커밋하지 않는다** — 확인이 끝나면 지운다).
+(**커밋되지 않는다** — gitignore 에 있다).
 
 ```bash
 cat > apps/mobile/lib/webview_probe.dart <<'DART'
@@ -81,23 +81,22 @@ DART
 
 ## 3. 앱 실행
 
-`WEBVIEW_HOST` 로 로컬 서버를 가리킨다. 기본값은 운영(`https://nar.kr`)이라
-**반드시 넘겨야** 로컬을 본다.
-
 ```bash
-DEVICE=$(xcrun simctl list devices booted -j \
-  | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; \
-    print([x['udid'] for v in d.values() for x in v][0])")
-
 cd apps/mobile
-fvm flutter run -d "$DEVICE" \
-  -t lib/webview_probe.dart \
-  --dart-define=WEBVIEW_HOST=http://localhost:3100
+./tool/run.sh local -t lib/webview_probe.dart
 ```
 
-> 시뮬레이터가 안 떠 있으면 `run-warding` 스킬의 1번 절차로 먼저 띄운다.
-> 실기기는 `localhost` 가 기기 자신을 가리키므로 **맥의 LAN IP** 를 넣는다
-> (`ipconfig getifaddr en0`).
+`local` 은 웹뷰가 `localhost:3100` 을 보게 한다. `prod` 면 배포된 웹을 본다
+(인자를 생략해도 `prod` 다 — **기본값이 운영이라 빼먹어도 안전하다**).
+
+> **flavor 를 쓰지 않는다.** 조사한 실제 앱 8개 중 dev/prod 분리에 flavor 를
+> 쓴 곳은 0개였고, flavor 를 쓰는 3개는 전부 번들ID가 갈리는 배포 채널
+> (Play/F-Droid) 문제였다. flavor 를 넣으면 `shorebird release`·`patch` 네
+> 곳에 `--flavor` 를 붙여야 하고 **태그를 밀어야 검증된다.** Flutter 공식 CD
+> 문서가 권하는 `--dart-define` 을 쓴다.
+
+> 실기기는 `localhost` 가 기기 자신을 가리키므로 맥의 LAN IP 를 넣는다:
+> `LOCAL_WEB_HOST=http://$(ipconfig getifaddr en0):3100 ./tool/run.sh local ...`
 
 ## 4. 브리지가 도는지 확인
 

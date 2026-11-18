@@ -183,6 +183,24 @@ packages/api              서버 호출 + 도메인 타입 + 매퍼
 - **`features`·`widgets` 는 필요해질 때 만든다.** 지금은 읽기 전용 화면뿐이다.
 - `packages/ui` 로 올리는 기준은 **화면 2개 이상**. 미리 올리지 않는다.
 
+**앱을 환경별로 띄울 때는 `apps/mobile/tool/run.sh` 를 쓴다.**
+
+```bash
+./tool/run.sh local   # 웹뷰가 로컬 Next 서버(localhost:3100)를 본다
+./tool/run.sh prod    # 배포된 웹 (기본값)
+```
+
+**flavor 를 쓰지 않는다.** 조사한 실제 앱 8개 중 dev/prod 분리에 flavor 를 쓴
+곳은 0개였고, flavor 를 쓰는 3개(aves·Musify·ente)는 전부 **번들ID가 갈리는
+배포 채널**(Play/F-Droid) 문제였다 — aves 는 dimension 이름이 아예 `"store"` 다.
+flavor 를 넣으면 `shorebird release`·`patch` 네 곳에 `--flavor` 를 붙여야 하고
+**그건 태그를 밀어야 검증된다.** 대신 Flutter 공식 CD 문서가 권하는
+`--dart-define` 을 쓴다 — `HOME_MOCKS` 가 이미 그 축이고, **기본값이 운영이라
+플래그를 빼먹어도 안전하다.**
+
+판별 기준 한 줄: **두 버전이 한 기기에 동시에 설치돼야 하면 flavor, 아니면
+`--dart-define`.**
+
 **웹 ↔ 네이티브 브리지는 Stage A·B·C 를 전부 쓴다.** 규약을 양쪽에 짝으로 둔다 —
 `apps/web/src/shared/bridge/protocol.ts` ↔
 `apps/mobile/lib/app/bridge/bridge_protocol.dart`. **코드 생성이 없으므로 한쪽을
