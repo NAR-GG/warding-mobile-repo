@@ -33,6 +33,7 @@ jobs:
             apps/mobile/lib/core/theme/app_colors.dart
             packages/design-tokens/build/tokens.css
             packages/design-tokens/build/app_colors.dart
+            packages/design-tokens/build/colors.json
           )
           if ! git diff --exit-code --stat -- "${GENERATED[@]}"; then
             echo "::error::토큰 생성물이 소스와 어긋난다. 'pnpm tokens:build' 후 커밋해라."

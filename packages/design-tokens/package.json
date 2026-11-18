@@ -9,6 +9,7 @@
   },
   "exports": {
     "./build/tokens.css": "./build/tokens.css",
-    "./build/app_colors.dart": "./build/app_colors.dart"
+    "./build/app_colors.dart": "./build/app_colors.dart",
+    "./build/colors.json": "./build/colors.json"
   }
 }

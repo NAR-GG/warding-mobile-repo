@@ -174,10 +174,37 @@ function buildCss() {
   return lines.join('\n');
 }
 
+// ── JSON ────────────────────────────────────────────────
+
+/** CSS 밖에서 값을 읽어야 하는 곳을 위한 출력.
+ *
+ * `<meta name="theme-color">` 처럼 **CSS 변수를 쓸 수 없는 자리**가 있다.
+ * 거기에 색을 손으로 적으면 토큰이 바뀔 때 조용히 갈린다(실제로 `#141517` 이
+ * 하드코딩돼 있었다). 색만 내보낸다 — 치수는 `var(--scale)` 로 CSS 에서 쓰는
+ * 것이 맞고, JS 로 꺼내 쓰기 시작하면 계산이 두 곳으로 갈린다.
+ */
+function buildJson() {
+  const out = {};
+  for (const [name, token] of Object.entries(theme.color)) {
+    const alias = aliasOf(token.$value);
+    if (alias) {
+      out[name] = out[alias];
+      continue;
+    }
+    const { rgb, alpha } = parseHex(token.$value);
+    out[name] =
+      alpha === 255
+        ? `#${rgb.toLowerCase()}`
+        : `#${rgb.toLowerCase()}${alpha.toString(16).padStart(2, '0')}`;
+  }
+  return JSON.stringify(out, null, 2) + '\n';
+}
+
 // ── 실행 ────────────────────────────────────────────────
 
 mkdirSync(join(root, 'build'), { recursive: true });
 writeFileSync(join(root, 'build', 'tokens.css'), buildCss());
+writeFileSync(join(root, 'build', 'colors.json'), buildJson());
 // Dart 는 패키지 안(build/)에만 낸다. Flutter 트리로의 복사는 `sync-dart.mjs` 가
 // 맡는다 — 이유는 그 파일 주석 참고(turbo 캐시가 패키지 밖을 복원하지 못한다).
 writeFileSync(join(root, 'build', 'app_colors.dart'), buildDart());
@@ -186,3 +213,4 @@ const n = Object.keys(theme.color).length + Object.keys(theme.gradient).length;
 console.log(`생성 완료 — 색·그라데이션 ${n}개`);
 console.log('  packages/design-tokens/build/app_colors.dart');
 console.log('  packages/design-tokens/build/tokens.css');
+console.log('  packages/design-tokens/build/colors.json');
