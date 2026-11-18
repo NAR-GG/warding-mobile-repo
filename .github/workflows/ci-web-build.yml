@@ -28,6 +28,9 @@ jobs:
           node-version: '22'
       - run: pnpm install --frozen-lockfile
 
+      # FSD 레이어 규칙. 자동 검증이 없으면 규칙은 반드시 썩는다.
+      - run: pnpm lint:fsd
+
       # 타입 오류는 빌드보다 먼저 잡는다 — 실패 지점이 더 좁다.
       - run: pnpm typecheck
 

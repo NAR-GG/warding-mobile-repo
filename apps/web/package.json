@@ -5,7 +5,9 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3100",
+    "lint:fsd": "steiger ./src",
     "start": "next start -p 3100",
+    "test": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,10 +18,14 @@
     "warding-ui": "workspace:*"
   },
   "devDependencies": {
+    "@feature-sliced/steiger-plugin": "^0.8.2",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "steiger": "^0.10.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.0",
     "warding-design-tokens": "workspace:*"
-  }
+  },
+  "type": "module"
 }

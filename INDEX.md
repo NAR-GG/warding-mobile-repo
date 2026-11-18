@@ -28,7 +28,7 @@ status: living
 | [apps/web/](./apps/web/) | 웹뷰용 Next.js 앱 |
 | [packages/design-tokens/](./packages/design-tokens/) | 디자인 토큰 단일 출처 → Dart·CSS 생성 |
 | [packages/ui/](./packages/ui/) | 웹 공용 React 컴포넌트. 빌드 없이 소스를 내보냅니다 |
-| [packages/api/](./packages/api/) | 웹용 API 클라이언트(`Result<T>` 반환). 매퍼 회귀 테스트를 포함합니다 |
+| [packages/api/](./packages/api/) | 웹용 API 클라이언트(`Result<T>` 반환). 서버 전용은 `warding-api/server` 로 갈라져 있습니다 |
 | [tools/](./tools/) | 운영 스크립트 + Discord 브릿지 |
 | [distribution/](./distribution/) | 스토어 패치노트 |
 

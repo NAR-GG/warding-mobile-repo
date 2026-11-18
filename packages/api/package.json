@@ -5,13 +5,15 @@
   "description": "웹이 NAR 백엔드를 부르는 클라이언트. 빌드하지 않고 소스를 그대로 내보낸다.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./server": "./src/index.server.ts"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "server-only": "^0.0.1",
     "tsx": "^4.23.15",
     "typescript": "^5.7.0"
   }

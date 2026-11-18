@@ -10,14 +10,9 @@
 //    엔드포인트는 토큰 없이 부른다 — SSR 첫 페인트가 거기에 기댄다.
 // 3. **실패를 던지지 않는다.** `Result<T>` 로 돌려 호출부가 분기를 빠뜨리면
 //    타입에서 걸리게 한다(Flutter 의 `Either<Failure, T>` 와 같은 계약).
-
-export {
-  API_BASE_URL,
-  API_HOST,
-  DEFAULT_TIMEOUT_MS,
-  getJson,
-} from './client';
-export type { RequestOptions } from './client';
+//
+// **이 파일은 클라이언트에서도 안전한 것만 내보낸다** — 타입과 순수 함수다.
+// 서버 호출은 `index.server.ts` 에 있고 `server-only` 가 걸려 있다.
 
 export {
   err,
@@ -32,4 +27,26 @@ export {
 } from './failure';
 export type { Failure, FailureKind, Result } from './failure';
 
-export * from './community/index';
+export {
+  isHeading,
+  parseBlocks,
+  toAuthor,
+  toPoll,
+  toPollOption,
+  toPostBlock,
+  toPostDetail,
+  toPostImage,
+  toPostViewer,
+} from './community';
+export type {
+  Author,
+  Poll,
+  PollOption,
+  PostBlock,
+  PostDetail,
+  PostImage,
+  PostViewer,
+} from './community';
+
+export { toNotice, toNoticePage } from './notice';
+export type { Notice, NoticePage } from './notice';

@@ -51,13 +51,42 @@ export { CommunityPostPage as default } from '@/_pages/community-post';
 조립 로직을 라우트에 두면 `app/` 이 다시 두꺼워진다. 화면은 `_pages` 가 갖고
 라우트는 경로 ↔ 화면 연결만 한다.
 
-## `_app` 레이어는 아직 없다
+## 세그먼트는 목적별로 나눈다
 
-공식은 `app`·`pages` **둘 다** 개명하라고 하지만, `_app` 에 담을 것이 생겼을 때
-만든다. 공식 트리에서 `_app` 은 API 라우트(`app/api/*/route.ts` 의 실제 구현)를
-담는데 **지금 API 라우트가 0개**다. 전역 설정은 `app/layout.tsx` 에만 있다.
+`ui`·`model`·`api`·`lib`·`config` 처럼 **무엇을 위한 코드인지**로 가른다.
+`components`·`hooks`·`providers` 같은 **종류별** 이름은 쓰지 않는다 — 한 기능의
+코드가 종류별로 흩어져 결국 "그 외 전부" 폴더가 생긴다.
 
-API 라우트를 추가하거나 전역 프로바이더가 생기면 `src/_app/` 을 만든다.
+`_app` 은 예외가 하나 있다: **`ui` 세그먼트를 두지 않는다.** 린터
+(`fsd/no-ui-in-app`)가 잡는다. 대신 `layout`·`styles`·`config` 처럼 역할로 쓴다.
+
+```
+src/_app/
+├── config/metadata.ts     metadata · viewport
+├── layout/RootLayout.tsx  루트 레이아웃
+└── styles/globals.css     전역 CSS
+```
+
+## 서버 전용 코드는 `index.server.ts` 로 가른다
+
+한 슬라이스에 클라이언트·서버 모듈이 섞인 채 `index.ts` 하나로 내보내면,
+**클라이언트 컴포넌트가 그 슬라이스를 import 하는 순간** 서버 전용
+사이드이펙트가 클라이언트 모듈 그래프로 번져 빌드가 깨진다.
+
+`packages/api` 가 그렇게 갈라져 있다.
+
+| 경로 | 내용 |
+|---|---|
+| `warding-api` | 타입 · 매퍼 · 순수 함수 (클라이언트 OK) |
+| `warding-api/server` | `fetch*` · `getJson` (`import 'server-only'`) |
+
+실수하면 **빌드가 깨진다** — 클라이언트 컴포넌트에서 `warding-api/server` 를
+당겨 보고 확인했다. 타입이 아니라 번들러가 막는다.
+
+## `export *` 를 쓰지 않는다
+
+무엇이 공개되는지 `index.ts` 만 보고 알 수 있어야 하고, 내부 구현이 늘 때
+조용히 새지 않는다. 내부 `lib/` 은 기본 비공개다.
 
 ## 레이어를 다 만들지 않는다
 

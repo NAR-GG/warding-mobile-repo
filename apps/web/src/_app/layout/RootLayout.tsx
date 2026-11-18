@@ -1,4 +1,4 @@
-import './globals.css';
+import '../styles/globals.css';
 
 /**
  * 루트 레이아웃 본체. `app/layout.tsx` 가 이것을 re-export 한다.

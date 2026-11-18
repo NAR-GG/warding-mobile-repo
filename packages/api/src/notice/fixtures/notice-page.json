@@ -1,0 +1,53 @@
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "샘플 공지 1",
+      "content": "# 제목\n\n샘플 본문입니다.\n\n- 항목 1\n- 항목 2",
+      "pinned": true,
+      "publishedAt": "2026-10-15T14:17:56",
+      "actionUrl": null
+    },
+    {
+      "id": 2,
+      "title": "샘플 공지 2",
+      "content": "# 제목\n\n샘플 본문입니다.\n\n- 항목 1\n- 항목 2",
+      "pinned": false,
+      "publishedAt": "2026-09-02T23:27:02",
+      "actionUrl": null
+    },
+    {
+      "id": 3,
+      "title": "샘플 공지 3",
+      "content": "# 제목\n\n샘플 본문입니다.\n\n- 항목 1\n- 항목 2",
+      "pinned": false,
+      "publishedAt": "2026-08-13T11:15:21",
+      "actionUrl": null
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 3,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "last": false,
+  "totalElements": 7,
+  "totalPages": 3,
+  "size": 3,
+  "number": 0,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "first": true,
+  "numberOfElements": 3,
+  "empty": false
+}

@@ -160,8 +160,18 @@ packages/api              서버 호출 + 도메인 타입 + 매퍼
   안 된다.** 회피책 3개(루트 `pages/`, 라우트를 `src/app` 으로 이동,
   `pageExtensions`)를 실측했고 **전부 빌드가 깨진다** — 근거는
   [`_pages/README.md`](./apps/web/src/_pages/README.md).
-- **`_app` 은 담을 것이 생기면 만든다.** 공식 트리에서 `_app` 은 API 라우트 구현을
-  담는데 지금 API 라우트가 0개다.
+- **세그먼트는 목적별(`config`·`layout`·`styles`·`api`·`model`·`lib`), 종류별
+  (`components`·`hooks`·`providers`) 금지.** `_app/ui/` 를 만들었다가 린터가
+  잡았다 — `app` 레이어에는 `ui` 세그먼트를 두지 않는다.
+- **`steiger` 가 PR마다 레이어 규칙을 검증한다**(`pnpm lint:fsd`). 자동 검증이
+  없으면 규칙은 반드시 썩는다.
+- **서버 전용 코드는 `index.server.ts` 로 가른다.** 한 슬라이스에 클라이언트·서버
+  모듈이 섞인 채 `index.ts` 하나로 내보내면, 클라이언트 컴포넌트가 그걸 import 하는
+  순간 서버 전용 사이드이펙트가 클라이언트 번들로 번진다. `packages/api` 는
+  `warding-api`(타입·순수 함수) ↔ `warding-api/server`(fetch) 로 갈라져 있고,
+  서버 쪽에 `import 'server-only'` 가 걸려 **실수하면 빌드가 깨진다**(실측 확인).
+- **`export *` 를 쓰지 않는다.** 무엇이 공개되는지 `index.ts` 만 보고 알 수 있어야
+  하고, 내부 구현이 늘 때 조용히 새지 않는다.
 - **`app/` 은 루트에 남긴다.** `src/app` 으로 내리면 Next 15 가 타입 검증기
   상대경로를 잘못 생성한다(실측).
 - **라우트는 re-export 한 줄이다** —

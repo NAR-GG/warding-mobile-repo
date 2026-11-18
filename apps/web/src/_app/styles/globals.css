@@ -173,3 +173,110 @@ body {
   color: var(--color-nar-text2);
   text-align: center;
 }
+
+/* ── 공지 상세 ────────────────────────────────────────────
+ * 수치는 Flutter `notice_detail_screen.dart` 와 맞춘다. */
+
+.notice {
+  padding: calc(20 * var(--scale) * 1px);
+}
+
+.notice__title {
+  font-size: calc(18 * var(--scale) * 1px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.notice__date {
+  display: block;
+  margin-top: calc(6 * var(--scale) * 1px);
+  color: var(--color-nar-text3);
+  font-size: calc(12 * var(--scale) * 1px);
+}
+
+.notice__body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--scale) * 1px);
+  margin-top: calc(18 * var(--scale) * 1px);
+}
+
+.notice__h1,
+.notice__h2,
+.notice__h3 {
+  color: var(--color-nar-text);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.notice__h1 { font-size: calc(18 * var(--scale) * 1px); }
+.notice__h2 { font-size: calc(16 * var(--scale) * 1px); }
+.notice__h3 { font-size: calc(14 * var(--scale) * 1px); }
+
+.notice__p,
+.notice__li {
+  color: var(--color-nar-text3);
+  font-size: calc(14 * var(--scale) * 1px);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+/* 목록 표식은 Flutter 처럼 텍스트 앞에 직접 붙인다 — `list-style` 을 쓰면
+ * 들여쓰기가 네이티브와 어긋난다. */
+.notice__li::before {
+  content: '· ';
+  color: var(--color-nar-text3);
+}
+
+.notice__image {
+  max-width: 100%;
+  height: auto;
+  border-radius: calc(10 * var(--scale) * 1px);
+}
+
+/* 가로 스크롤 스트립. 이 요소 안에서만 가로 스크롤이 생기고 페이지 본문은
+ * 가로로 밀리지 않는다 — 웹뷰에서 본문 가로 스크롤은 네이티브 제스처와
+ * 충돌한다. */
+.notice__strip {
+  display: flex;
+  gap: calc(10 * var(--scale) * 1px);
+  overflow-x: auto;
+  /* 네이티브 느낌에 맞춘 관성 스크롤 */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.notice__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.notice__strip-item {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.notice__strip-img {
+  width: 100%;
+  height: auto;
+  border-radius: calc(10 * var(--scale) * 1px);
+}
+
+.notice__caption {
+  margin-top: calc(6 * var(--scale) * 1px);
+  color: var(--color-nar-text3);
+  font-size: calc(12 * var(--scale) * 1px);
+}
+
+.notice__action {
+  display: inline-block;
+  margin-top: calc(18 * var(--scale) * 1px);
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale) * 1px);
+  text-decoration: underline;
+}
+
+.notice__link {
+  color: var(--color-nar-link-text);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}

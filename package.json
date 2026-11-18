@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.8.1",
   "scripts": {
     "build": "turbo run build",
+    "lint:fsd": "turbo run lint:fsd",
     "test": "turbo run test",
     "tokens:build": "turbo run build sync:dart --filter=warding-design-tokens",
     "typecheck": "turbo run typecheck",

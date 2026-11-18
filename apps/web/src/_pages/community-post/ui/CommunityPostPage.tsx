@@ -1,4 +1,6 @@
-import { fetchPostDetail, parseBlocks } from 'warding-api';
+import { parseBlocks } from 'warding-api';
+// 서버 호출은 `/server` 서브경로다 — 클라이언트 번들로 새지 않게 갈라 뒀다.
+import { fetchPostDetail } from 'warding-api/server';
 import { BoardBadge } from 'warding-ui';
 
 import { PostBody } from './PostBody';

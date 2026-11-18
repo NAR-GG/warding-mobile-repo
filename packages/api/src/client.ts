@@ -1,3 +1,7 @@
+// 서버 전용. 클라이언트가 당기면 빌드가 실패한다 — 토큰이 섞인 fetch 가
+// 클라이언트 번들로 새는 것을 타입이 아니라 번들러가 막게 한다.
+import 'server-only';
+
 import {
   type Failure,
   type Result,
