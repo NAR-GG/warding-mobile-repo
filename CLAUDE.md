@@ -122,8 +122,22 @@ Flutter 는 turbo 그래프 밖이다(Dart 를 모른다). `pnpm typecheck` 도 
 
 **`packages/` 는 `design-tokens`(값) + `ui`(React 컴포넌트) 둘이다.**
 웹뷰 전환이 **웹 중심**(목록·상세·폼까지 웹, Flutter 는 셸만)이라, 화면이 옮겨가는
-만큼 `packages/ui` 가 점점 **진짜 단일 구현**이 된다. 지금은 첫 전환 화면이 쓰는
-`BoardBadge`·`Button`·`DetailHeader` 3개가 있다.
+만큼 `packages/ui` 가 점점 **진짜 단일 구현**이 된다. 지금은
+`Badge`·`BoardBadge`·`Button`·`CommonButton`·`DetailHeader` 5개가 있다.
+
+**`packages/ui` 는 `core/ui/` 의 짝이다.** Dart 원본이 `core/ui/` 면 올리고,
+`features/*/presentation/widgets/` 면 올리지 않는다 — 한 기능 전용 위젯을 공용
+자리에 두지 않는 규칙이 웹에서도 그대로다. 커뮤니티 목록의 `PostListItem` 이
+`_pages/community-list/ui/` 에 있는 이유가 이것이다(Dart 원본이
+`features/community/presentation/widgets/post_list_item.dart` 다).
+
+**`packages/` 는 TS 전용이다. Flutter 는 `packages/ui`·`packages/api` 를 못 읽는다.**
+Dart ↔ TS 가 실제로 공유하는 것은 `design-tokens` 의 **값**뿐이고, 그것도 코드가
+아니라 JSON 한 벌에서 각 언어로 생성한 산출물이다. 포맷터·컴포넌트·브리지 규약은
+전부 **복제**이고 주석으로 짝을 묶는다. 조사한 공개 레포 중 Flutter+Next 가
+한 레포에 공존하는 곳은 2건 찾았지만(`tutur3u/platform`·`MITOM06/platform`),
+**둘 다 `packages/` 에 Dart 가 읽는 것이 0개였다** — 패키지 레벨 공유까지 간
+선례를 찾지 못했다.
 
 **`packages/api` 는 웹 전용이다.** Flutter 와 타입을 공유하지 않는다 — 코드생성을
 쓰지 않아(`pubspec.yaml` 에 openapi·json_serializable·freezed 가 없다) 스키마 254개를

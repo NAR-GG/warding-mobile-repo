@@ -37,6 +37,15 @@ enum BridgeStage {
   c,
 }
 
+/// 커뮤니티 글 목록.
+///
+/// 웹이 가져가는 것은 **목록 본문뿐이다** — 하단 탭·알림 벨·검색·글쓰기 FAB 는
+/// 앱 셸이라 네이티브에 남는다. 웹뷰가 탭을 그리면 네이티브 탭과 두 겹이 된다.
+///
+/// 목록 → 상세가 둘 다 웹이라 항목 탭은 브리지를 거치지 않고 웹 안에서
+/// 이동한다. 그래서 읽기 전용이고 Stage A 로 충분하다.
+const communityListRoute = WebRoute(path: '/community', stage: BridgeStage.a);
+
 /// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
 const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
 
@@ -44,4 +53,8 @@ const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeSt
 const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
-const webviewRoutes = <WebRoute>[communityPostRoute, noticeRoute];
+const webviewRoutes = <WebRoute>[
+  communityListRoute,
+  communityPostRoute,
+  noticeRoute,
+];

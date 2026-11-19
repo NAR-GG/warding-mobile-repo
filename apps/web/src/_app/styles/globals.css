@@ -174,6 +174,148 @@ body {
   text-align: center;
 }
 
+/* ── 커뮤니티 글 목록 ──────────────────────────────────────
+ * 수치는 Flutter `post_list_item.dart` 와 맞춘다 — 패딩 20/18, 제목 16/1.4 w700,
+ * 미리보기 14/1.5 2줄, 메타 12.5/1.45, 썸네일 62. */
+
+/* 목록 자체는 여백을 갖지 않는다 — 구분선이 화면 끝까지 닿아야 네이티브
+ * 목록과 같은 밀도가 된다(한 줄의 좌우 여백은 항목 안쪽 패딩이 만든다). */
+.post-list {
+  margin: 0;
+  padding: 0;
+}
+
+.post-item {
+  border-bottom: 1px solid var(--color-nar-line);
+}
+
+.post-item__link {
+  display: flex;
+  align-items: flex-start;
+  padding: calc(18 * var(--scale) * 1px) calc(20 * var(--scale) * 1px);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 제목·미리보기가 길어도 썸네일을 밀어내지 않게 한다. `min-width: 0` 이 없으면
+ * flex 아이템의 기본 최소 폭(auto)이 내용 폭이라 줄바꿈 대신 칸이 넘친다. */
+.post-item__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 제목·미리보기는 2줄에서 자른다. `line-clamp` 는 아직 `-webkit-` 접두사가
+ * 필요하다 — iOS 웹뷰가 표준 속성을 받지 않는다. */
+.post-item__title,
+.post-item__preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.post-item__title {
+  color: var(--color-nar-text);
+  font-size: calc(16 * var(--scale) * 1px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.post-item__poll {
+  display: inline-block;
+  margin-right: calc(6 * var(--scale) * 1px);
+  padding: calc(2 * var(--scale) * 1px) calc(6 * var(--scale) * 1px);
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(4 * var(--scale) * 1px);
+  background: var(--color-nar-dark500);
+  color: var(--color-nar-violet3);
+  font-size: calc(11 * var(--scale) * 1px);
+  font-weight: 600;
+  line-height: 1.3;
+  vertical-align: middle;
+}
+
+.post-item__preview {
+  margin-top: calc(4 * var(--scale) * 1px);
+  color: var(--color-nar-text3);
+  font-size: calc(14 * var(--scale) * 1px);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.post-item__meta {
+  display: flex;
+  align-items: center;
+  gap: calc(9 * var(--scale) * 1px);
+  margin-top: calc(10 * var(--scale) * 1px);
+  /* 작성자 닉네임이 길면 이 줄만 줄어든다 — 글자 크기는 고정이다. */
+  min-width: 0;
+  font-size: calc(12.5 * var(--scale) * 1px);
+  line-height: 1.45;
+}
+
+.post-item__stat {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: calc(3 * var(--scale) * 1px);
+  font-weight: 600;
+}
+
+.post-item__stat svg {
+  width: calc(14.5 * var(--scale) * 1px);
+  height: calc(14.5 * var(--scale) * 1px);
+}
+
+.post-item__stat--like {
+  color: var(--color-nar-text-red);
+}
+
+.post-item__stat--comment {
+  color: var(--color-nar-chip-active);
+}
+
+.post-item__time {
+  flex: 0 0 auto;
+  color: var(--color-nar-text2);
+}
+
+/* 작성자만 줄어든다 — 추천·댓글·시각은 짧고 고정이라 먼저 밀릴 이유가 없다. */
+.post-item__author {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--scale) * 1px);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-nar-text3);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 팀 로고는 장식이라 실패해도 자리가 비면 안 된다 — 배경색을 깔아 Dart 의
+ * 회색 원 폴백과 같은 모양을 유지한다. */
+.post-item__team {
+  flex: 0 0 auto;
+  width: calc(13 * var(--scale) * 1px);
+  height: calc(13 * var(--scale) * 1px);
+  border-radius: 50%;
+  background: var(--color-nar-dark500);
+  object-fit: cover;
+}
+
+.post-item__thumb {
+  flex: 0 0 auto;
+  width: calc(62 * var(--scale) * 1px);
+  height: calc(62 * var(--scale) * 1px);
+  margin-left: calc(12 * var(--scale) * 1px);
+  border-radius: calc(6 * var(--scale) * 1px);
+  background: var(--color-nar-dark500);
+  object-fit: cover;
+}
+
 /* ── 공지 상세 ────────────────────────────────────────────
  * 수치는 Flutter `notice_detail_screen.dart` 와 맞춘다. */
 
