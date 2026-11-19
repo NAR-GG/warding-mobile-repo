@@ -16,5 +16,5 @@ export {
 } from './client';
 export type { RequestOptions } from './client';
 
-export { fetchPostDetail } from './community/index.server';
+export { fetchPostDetail, fetchPosts } from './community/index.server';
 export { fetchNotices, fetchPromotedNotices } from './notice/index.server';

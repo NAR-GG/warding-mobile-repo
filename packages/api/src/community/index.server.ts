@@ -1,6 +1,6 @@
 import { API_BASE_URL, getJson, type RequestOptions, type Result } from '../client';
-import { toPostDetail } from './mappers';
-import type { PostDetail } from './types';
+import { toPostDetail, toPostList } from './mappers';
+import type { PostDetail, PostList } from './types';
 
 /**
  * 커뮤니티 글 상세.
@@ -21,6 +21,33 @@ export function fetchPostDetail(
   return getJson(
     `${API_BASE_URL}/mobile/community/posts/${postId}`,
     toPostDetail,
+    options,
+  );
+}
+
+/**
+ * 커뮤니티 글 목록.
+ *
+ * `GET /api/mobile/community/posts` — **비회원 조회가 열려 있다**
+ * (실측 2026-11-19, HTTP 200). 커서 기반이라 글이 추가돼도 목록이 밀리지 않는다.
+ *
+ * `boardTeamId` 를 주면 그 팀 게시판, 없으면 전체다.
+ */
+export function fetchPosts(
+  {
+    cursor,
+    size = 20,
+    boardTeamId,
+  }: { cursor?: number; size?: number; boardTeamId?: number } = {},
+  options: RequestOptions = {},
+): Promise<Result<PostList>> {
+  const q = new URLSearchParams({ size: String(size) });
+  if (cursor !== undefined) q.set('cursor', String(cursor));
+  if (boardTeamId !== undefined) q.set('boardTeamId', String(boardTeamId));
+
+  return getJson(
+    `${API_BASE_URL}/mobile/community/posts?${q}`,
+    toPostList,
     options,
   );
 }

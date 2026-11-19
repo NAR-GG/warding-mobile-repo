@@ -18,6 +18,8 @@ import type {
   PollOption,
   PostDetail,
   PostImage,
+  PostList,
+  PostSummary,
   PostViewer,
 } from './types';
 
@@ -144,4 +146,31 @@ export function parseBlocks(body: string): PostBlock[] {
   } catch {
     return [];
   }
+}
+
+export function toPostSummary(json: Json): PostSummary {
+  return {
+    id: numOr(json.id, 0),
+    boardTeamId: num(json.boardTeamId),
+    boardTeamCode: str(json.boardTeamCode),
+    title: strOr(json.title, ''),
+    bodyPreview: strOr(json.bodyPreview, ''),
+    author: obj(json.author, toAuthor),
+    viewCount: numOr(json.viewCount, 0),
+    likeCount: numOr(json.likeCount, 0),
+    commentCount: numOr(json.commentCount, 0),
+    edited: boolOr(json.edited, false),
+    createdAt: date(json.createdAt),
+    thumbnailUrl: str(json.thumbnailUrl),
+    imageCount: numOr(json.imageCount, 0),
+    hasPoll: boolOr(json.hasPoll, false),
+  };
+}
+
+export function toPostList(json: unknown): PostList {
+  if (!isObject(json)) throw new TypeError('PostList: 객체가 아니다');
+  return {
+    posts: list(json.posts, toPostSummary),
+    nextCursor: num(json.nextCursor),
+  };
 }

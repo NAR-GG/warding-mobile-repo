@@ -110,3 +110,44 @@ export type PostBlock = {
 };
 
 export const isHeading = (b: PostBlock): boolean => b.style === 'heading';
+
+/**
+ * 목록 항목. 상세(`PostDetail`)와 **다른 타입이다.**
+ *
+ * 서버가 목록에는 `bodyPreview`(본문 일부)만 주고 `body`·`viewer`·`poll` 은
+ * 주지 않는다. 한 타입으로 합치면 목록에서 없는 필드를 optional 로 열어야
+ * 하고, 그러면 상세 화면이 "있을 수도 없을 수도" 를 매번 분기하게 된다.
+ *
+ * 널 판단은 Flutter `CommunityRemotePost` 를 복제한다.
+ */
+export type PostSummary = {
+  id: number;
+  /** null 이면 전체 게시판 글. */
+  boardTeamId: number | null;
+  /** 게시판 팀 코드(`GEN`·`HLE` 등). 전체 게시판이면 null. */
+  boardTeamCode: string | null;
+  title: string;
+  /** 본문 일부. 목록에는 전문이 오지 않는다. */
+  bodyPreview: string;
+  /** 탈퇴 회원이면 null. */
+  author: Author | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  edited: boolean;
+  createdAt: Date | null;
+  thumbnailUrl: string | null;
+  imageCount: number;
+  /** 투표가 붙어 있는가 — 목록 배지용. */
+  hasPoll: boolean;
+};
+
+export type PostList = {
+  posts: PostSummary[];
+  /**
+   * 다음 페이지 커서. null 이면 마지막이다.
+   *
+   * 페이지 번호가 아니라 **커서**다 — 글이 추가돼도 목록이 밀리지 않는다.
+   */
+  nextCursor: number | null;
+};

@@ -23,7 +23,7 @@ const fixture = JSON.parse(
   readFileSync(join(here, 'fixtures', 'post-detail.json'), 'utf8'),
 );
 
-import { parseBlocks, toPostDetail } from './mappers';
+import { parseBlocks, toPostDetail, toPostList, toPostSummary } from './mappers';
 import { isHeading } from './types';
 
 test('실제 응답을 도메인 타입으로 옮긴다', () => {
@@ -109,4 +109,57 @@ test('실제 fixture 의 본문은 이미지 블록 4개다', () => {
   const blocks = parseBlocks(toPostDetail(fixture).body);
   assert.ok(blocks.length > 0);
   assert.ok(blocks.every((b) => typeof b.type === 'string'));
+});
+
+// ── 목록 ─────────────────────────────────────────────────
+
+const listFixture = JSON.parse(
+  readFileSync(join(here, 'fixtures', 'post-list.json'), 'utf8'),
+);
+
+test('실제 목록 응답을 옮긴다', () => {
+  const page = toPostList(listFixture);
+  assert.ok(page.posts.length > 0);
+  const p = page.posts[0]!;
+  assert.equal(typeof p.id, 'number');
+  assert.equal(typeof p.title, 'string');
+  assert.equal(typeof p.bodyPreview, 'string');
+  assert.equal(typeof p.hasPoll, 'boolean');
+});
+
+test('목록에는 본문 전문이 없다 (bodyPreview 만)', () => {
+  // 상세와 타입을 합치지 않는 근거. 합치면 상세 화면이 매번 분기하게 된다.
+  const raw = listFixture.posts[0];
+  assert.equal('body' in raw, false);
+  assert.equal('viewer' in raw, false);
+  assert.ok('bodyPreview' in raw);
+});
+
+test('nextCursor 가 없으면 null (마지막 페이지)', () => {
+  assert.equal(toPostList({ posts: [] }).nextCursor, null);
+  assert.equal(toPostList({ posts: [], nextCursor: 124 }).nextCursor, 124);
+});
+
+test('전체 게시판 글은 boardTeamId 가 null', () => {
+  const p = toPostSummary({ boardTeamId: null, boardTeamCode: null });
+  assert.equal(p.boardTeamId, null);
+  assert.equal(p.boardTeamCode, null);
+});
+
+test('탈퇴 회원이면 author 가 null', () => {
+  assert.equal(toPostSummary({}).author, null);
+});
+
+test('목록 필드가 비어도 터지지 않는다', () => {
+  const p = toPostSummary({});
+  assert.equal(p.id, 0);
+  assert.equal(p.title, '');
+  assert.equal(p.imageCount, 0);
+  assert.equal(p.hasPoll, false);
+  assert.equal(p.thumbnailUrl, null);
+});
+
+test('posts 가 배열이 아니면 빈 목록', () => {
+  assert.deepEqual(toPostList({ posts: 'nope' }).posts, []);
+  assert.throws(() => toPostList(null), TypeError);
 });

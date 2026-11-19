@@ -11,6 +11,8 @@ export type {
   PostBlock,
   PostDetail,
   PostImage,
+  PostList,
+  PostSummary,
   PostViewer,
 } from './types';
 export { isHeading } from './types';
@@ -23,5 +25,7 @@ export {
   toPostBlock,
   toPostDetail,
   toPostImage,
+  toPostList,
+  toPostSummary,
   toPostViewer,
 } from './mappers';

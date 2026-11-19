@@ -36,6 +36,8 @@ export {
   toPostBlock,
   toPostDetail,
   toPostImage,
+  toPostList,
+  toPostSummary,
   toPostViewer,
 } from './community';
 export type {
@@ -45,6 +47,8 @@ export type {
   PostBlock,
   PostDetail,
   PostImage,
+  PostList,
+  PostSummary,
   PostViewer,
 } from './community';
 
