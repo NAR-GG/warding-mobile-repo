@@ -61,7 +61,7 @@ body {
 
 /* 치수는 375 기준 원시값이다. 소비할 때 scale 을 곱한다. */
 body {
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
 }
 
 /* ── 커뮤니티 글 상세 (첫 전환 화면) ──────────────────────
@@ -69,31 +69,31 @@ body {
  * 그때 올린다(`core/ui` 에 한 기능 전용 위젯을 두지 않는 규칙과 같다). */
 
 .post {
-  padding: calc(20 * var(--scale) * 1px);
+  padding: calc(20 * var(--scale));
 }
 
 .post__meta {
   display: flex;
   align-items: center;
-  gap: calc(8 * var(--scale) * 1px);
+  gap: calc(8 * var(--scale));
 }
 
 .post__author {
   color: var(--color-nar-text2);
-  font-size: calc(13 * var(--scale) * 1px);
+  font-size: calc(13 * var(--scale));
 }
 
 .post__title {
-  margin-top: calc(12 * var(--scale) * 1px);
-  font-size: calc(18 * var(--scale) * 1px);
+  margin-top: calc(12 * var(--scale));
+  font-size: calc(18 * var(--scale));
   font-weight: 700;
   line-height: 1.4;
 }
 
 .post__stats {
-  margin-top: calc(8 * var(--scale) * 1px);
+  margin-top: calc(8 * var(--scale));
   color: var(--color-nar-text3);
-  font-size: calc(12 * var(--scale) * 1px);
+  font-size: calc(12 * var(--scale));
 }
 
 /* 본문 블록. 수치는 Flutter `post_block_renderer.dart` 와 맞춘다 —
@@ -101,20 +101,20 @@ body {
 .post__body {
   display: flex;
   flex-direction: column;
-  gap: calc(12 * var(--scale) * 1px);
-  margin-top: calc(16 * var(--scale) * 1px);
+  gap: calc(12 * var(--scale));
+  margin-top: calc(16 * var(--scale));
 }
 
 .post__heading {
   color: var(--color-nar-text);
-  font-size: calc(16 * var(--scale) * 1px);
+  font-size: calc(16 * var(--scale));
   font-weight: 700;
   line-height: 1.45;
 }
 
 .post__text {
   color: var(--color-nar-text3);
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
   font-weight: 400;
   line-height: 1.65;
   /* 긴 URL 이 가로 스크롤을 만들지 않게 한다 — 웹뷰에서 가로 스크롤은
@@ -124,10 +124,10 @@ body {
 
 .post__link {
   display: flex;
-  gap: calc(10 * var(--scale) * 1px);
-  padding: calc(10 * var(--scale) * 1px);
+  gap: calc(10 * var(--scale));
+  padding: calc(10 * var(--scale));
   border: 1px solid var(--color-nar-line);
-  border-radius: calc(8 * var(--scale) * 1px);
+  border-radius: calc(8 * var(--scale));
   background: var(--color-nar-dark500);
   color: inherit;
   text-decoration: none;
@@ -135,22 +135,22 @@ body {
 
 .post__link-thumb {
   flex: 0 0 auto;
-  width: calc(64 * var(--scale) * 1px);
-  height: calc(64 * var(--scale) * 1px);
-  border-radius: calc(6 * var(--scale) * 1px);
+  width: calc(64 * var(--scale));
+  height: calc(64 * var(--scale));
+  border-radius: calc(6 * var(--scale));
   object-fit: cover;
 }
 
 .post__link-text {
   display: flex;
   flex-direction: column;
-  gap: calc(2 * var(--scale) * 1px);
+  gap: calc(2 * var(--scale));
   min-width: 0;
 }
 
 .post__link-title {
   color: var(--color-nar-text);
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -158,18 +158,18 @@ body {
 .post__link-desc,
 .post__link-site {
   color: var(--color-nar-text3);
-  font-size: calc(12 * var(--scale) * 1px);
+  font-size: calc(12 * var(--scale));
   overflow-wrap: anywhere;
 }
 
 .post__image {
   width: 100%;
   height: auto;
-  border-radius: calc(8 * var(--scale) * 1px);
+  border-radius: calc(8 * var(--scale));
 }
 
 .post-error {
-  padding: calc(40 * var(--scale) * 1px) calc(20 * var(--scale) * 1px);
+  padding: calc(40 * var(--scale)) calc(20 * var(--scale));
   color: var(--color-nar-text2);
   text-align: center;
 }
@@ -192,7 +192,7 @@ body {
 .post-item__link {
   display: flex;
   align-items: flex-start;
-  padding: calc(18 * var(--scale) * 1px) calc(20 * var(--scale) * 1px);
+  padding: calc(18 * var(--scale)) calc(20 * var(--scale));
   color: inherit;
   text-decoration: none;
 }
@@ -218,29 +218,29 @@ body {
 
 .post-item__title {
   color: var(--color-nar-text);
-  font-size: calc(16 * var(--scale) * 1px);
+  font-size: calc(16 * var(--scale));
   font-weight: 700;
   line-height: 1.4;
 }
 
 .post-item__poll {
   display: inline-block;
-  margin-right: calc(6 * var(--scale) * 1px);
-  padding: calc(2 * var(--scale) * 1px) calc(6 * var(--scale) * 1px);
+  margin-right: calc(6 * var(--scale));
+  padding: calc(2 * var(--scale)) calc(6 * var(--scale));
   border: 1px solid var(--color-nar-line);
-  border-radius: calc(4 * var(--scale) * 1px);
+  border-radius: calc(4 * var(--scale));
   background: var(--color-nar-dark500);
   color: var(--color-nar-violet3);
-  font-size: calc(11 * var(--scale) * 1px);
+  font-size: calc(11 * var(--scale));
   font-weight: 600;
   line-height: 1.3;
   vertical-align: middle;
 }
 
 .post-item__preview {
-  margin-top: calc(4 * var(--scale) * 1px);
+  margin-top: calc(4 * var(--scale));
   color: var(--color-nar-text3);
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
   font-weight: 400;
   line-height: 1.5;
 }
@@ -248,11 +248,11 @@ body {
 .post-item__meta {
   display: flex;
   align-items: center;
-  gap: calc(9 * var(--scale) * 1px);
-  margin-top: calc(10 * var(--scale) * 1px);
+  gap: calc(9 * var(--scale));
+  margin-top: calc(10 * var(--scale));
   /* 작성자 닉네임이 길면 이 줄만 줄어든다 — 글자 크기는 고정이다. */
   min-width: 0;
-  font-size: calc(12.5 * var(--scale) * 1px);
+  font-size: calc(12.5 * var(--scale));
   line-height: 1.45;
 }
 
@@ -260,13 +260,13 @@ body {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: calc(3 * var(--scale) * 1px);
+  gap: calc(3 * var(--scale));
   font-weight: 600;
 }
 
 .post-item__stat svg {
-  width: calc(14.5 * var(--scale) * 1px);
-  height: calc(14.5 * var(--scale) * 1px);
+  width: calc(14.5 * var(--scale));
+  height: calc(14.5 * var(--scale));
 }
 
 .post-item__stat--like {
@@ -286,7 +286,7 @@ body {
 .post-item__author {
   display: flex;
   align-items: center;
-  gap: calc(4 * var(--scale) * 1px);
+  gap: calc(4 * var(--scale));
   min-width: 0;
   overflow: hidden;
   color: var(--color-nar-text3);
@@ -299,8 +299,8 @@ body {
  * 회색 원 폴백과 같은 모양을 유지한다. */
 .post-item__team {
   flex: 0 0 auto;
-  width: calc(13 * var(--scale) * 1px);
-  height: calc(13 * var(--scale) * 1px);
+  width: calc(13 * var(--scale));
+  height: calc(13 * var(--scale));
   border-radius: 50%;
   background: var(--color-nar-dark500);
   object-fit: cover;
@@ -308,10 +308,10 @@ body {
 
 .post-item__thumb {
   flex: 0 0 auto;
-  width: calc(62 * var(--scale) * 1px);
-  height: calc(62 * var(--scale) * 1px);
-  margin-left: calc(12 * var(--scale) * 1px);
-  border-radius: calc(6 * var(--scale) * 1px);
+  width: calc(62 * var(--scale));
+  height: calc(62 * var(--scale));
+  margin-left: calc(12 * var(--scale));
+  border-radius: calc(6 * var(--scale));
   background: var(--color-nar-dark500);
   object-fit: cover;
 }
@@ -320,27 +320,27 @@ body {
  * 수치는 Flutter `notice_detail_screen.dart` 와 맞춘다. */
 
 .notice {
-  padding: calc(20 * var(--scale) * 1px);
+  padding: calc(20 * var(--scale));
 }
 
 .notice__title {
-  font-size: calc(18 * var(--scale) * 1px);
+  font-size: calc(18 * var(--scale));
   font-weight: 700;
   line-height: 1.4;
 }
 
 .notice__date {
   display: block;
-  margin-top: calc(6 * var(--scale) * 1px);
+  margin-top: calc(6 * var(--scale));
   color: var(--color-nar-text3);
-  font-size: calc(12 * var(--scale) * 1px);
+  font-size: calc(12 * var(--scale));
 }
 
 .notice__body {
   display: flex;
   flex-direction: column;
-  gap: calc(10 * var(--scale) * 1px);
-  margin-top: calc(18 * var(--scale) * 1px);
+  gap: calc(10 * var(--scale));
+  margin-top: calc(18 * var(--scale));
 }
 
 .notice__h1,
@@ -351,14 +351,14 @@ body {
   line-height: 1.55;
 }
 
-.notice__h1 { font-size: calc(18 * var(--scale) * 1px); }
-.notice__h2 { font-size: calc(16 * var(--scale) * 1px); }
-.notice__h3 { font-size: calc(14 * var(--scale) * 1px); }
+.notice__h1 { font-size: calc(18 * var(--scale)); }
+.notice__h2 { font-size: calc(16 * var(--scale)); }
+.notice__h3 { font-size: calc(14 * var(--scale)); }
 
 .notice__p,
 .notice__li {
   color: var(--color-nar-text3);
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
   line-height: 1.65;
   overflow-wrap: anywhere;
 }
@@ -373,7 +373,7 @@ body {
 .notice__image {
   max-width: 100%;
   height: auto;
-  border-radius: calc(10 * var(--scale) * 1px);
+  border-radius: calc(10 * var(--scale));
 }
 
 /* 가로 스크롤 스트립. 이 요소 안에서만 가로 스크롤이 생기고 페이지 본문은
@@ -381,7 +381,7 @@ body {
  * 충돌한다. */
 .notice__strip {
   display: flex;
-  gap: calc(10 * var(--scale) * 1px);
+  gap: calc(10 * var(--scale));
   overflow-x: auto;
   /* 네이티브 느낌에 맞춘 관성 스크롤 */
   -webkit-overflow-scrolling: touch;
@@ -400,20 +400,20 @@ body {
 .notice__strip-img {
   width: 100%;
   height: auto;
-  border-radius: calc(10 * var(--scale) * 1px);
+  border-radius: calc(10 * var(--scale));
 }
 
 .notice__caption {
-  margin-top: calc(6 * var(--scale) * 1px);
+  margin-top: calc(6 * var(--scale));
   color: var(--color-nar-text3);
-  font-size: calc(12 * var(--scale) * 1px);
+  font-size: calc(12 * var(--scale));
 }
 
 .notice__action {
   display: inline-block;
-  margin-top: calc(18 * var(--scale) * 1px);
+  margin-top: calc(18 * var(--scale));
   color: var(--color-nar-text);
-  font-size: calc(14 * var(--scale) * 1px);
+  font-size: calc(14 * var(--scale));
   text-decoration: underline;
 }
 
