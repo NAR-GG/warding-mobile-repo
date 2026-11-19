@@ -101,7 +101,7 @@ export async function CommunityPostPage({
           <p className="post__text">{post.body}</p>
         )}
 
-        {post.poll === null ? null : <PollCard poll={post.poll} />}
+        {post.poll === null ? null : <PollCard postId={post.id} poll={post.poll} />}
       </article>
 
       <PostActions

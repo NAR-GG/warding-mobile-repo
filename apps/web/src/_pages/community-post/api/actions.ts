@@ -1,10 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { Poll } from 'warding-api';
 import {
   createComment,
   togglePostLike,
   togglePostScrap,
+  votePoll,
   type LikeResult,
 } from 'warding-api/server';
 
@@ -92,5 +94,31 @@ export async function commentAction(
   }
 
   revalidatePath(`/community/post/${postId}`);
+  return { kind: 'ok', value: r.value };
+}
+
+/**
+ * 투표.
+ *
+ * 서버가 투표 후 **상태를 통째로** 돌려주므로 그 값으로 카드를 교체한다 —
+ * 분포가 막 공개되는 경우(`resultsVisible` 이 투표 뒤에 켜진다)까지 한 번에
+ * 반영된다. 낙관적 업데이트를 하면 그 전환을 손으로 흉내내야 한다.
+ *
+ * **단일 선택은 변경이 안 된다**(서버 계약). 호출부가 이미 고른 상태에서는
+ * 버튼을 잠근다.
+ */
+export async function voteAction(
+  postId: number,
+  optionId: number,
+): Promise<ActionResult<Poll>> {
+  const token = await readAuthToken();
+  if (token === null) return { kind: 'unauthorized' };
+
+  const r = await votePoll(postId, optionId, { token });
+  if (!r.ok) {
+    return r.failure.kind === 'unauthorized'
+      ? { kind: 'unauthorized' }
+      : { kind: 'failed' };
+  }
   return { kind: 'ok', value: r.value };
 }

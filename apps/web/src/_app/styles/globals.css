@@ -207,10 +207,51 @@ body {
   align-items: center;
   gap: calc(8 * var(--scale));
   overflow: hidden;
-  padding: calc(10 * var(--scale)) calc(12 * var(--scale));
   border: 1px solid var(--color-nar-line);
   border-radius: calc(9 * var(--scale));
   background: var(--color-nar-dark600);
+}
+
+/* 패딩은 안쪽 요소가 갖는다 — 누를 수 있을 때는 버튼이, 아니면 li 가 직접
+ * 품는다. li 에 주면 버튼 영역이 패딩만큼 작아져 가장자리가 안 눌린다. */
+.poll__option > .poll__hit,
+.poll__option > .poll__label {
+  padding: calc(10 * var(--scale)) 0;
+}
+
+.poll__option > .poll__label {
+  padding-left: calc(12 * var(--scale));
+}
+
+.poll__option > .poll__count {
+  padding-right: calc(12 * var(--scale));
+}
+
+/* 선택지 전체가 탭 영역이다. */
+.poll__hit {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  min-width: 0;
+  padding-right: calc(12 * var(--scale));
+  padding-left: calc(12 * var(--scale));
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.poll__hit:disabled {
+  opacity: 0.6;
+}
+
+.poll__notice {
+  margin-top: calc(8 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+  text-align: center;
 }
 
 /* 내가 고른 선택지는 테두리로 표시한다. */
