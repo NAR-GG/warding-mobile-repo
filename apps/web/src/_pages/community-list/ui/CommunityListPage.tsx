@@ -2,6 +2,7 @@ import { fetchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
 
+import { LoadMore } from './LoadMore';
 import { PostListItem } from './PostListItem';
 
 /**
@@ -36,7 +37,7 @@ export async function CommunityListPage() {
     return <main className="post-error">{message}</main>;
   }
 
-  const { posts } = result.value;
+  const { posts, nextCursor } = result.value;
 
   if (posts.length === 0) {
     return <main className="post-error">아직 글이 없습니다.</main>;
@@ -48,6 +49,8 @@ export async function CommunityListPage() {
         {posts.map((post) => (
           <PostListItem key={post.id} post={post} />
         ))}
+        {/* 첫 페이지가 마지막이면 버튼 자체를 그리지 않는다. */}
+        {nextCursor === null ? null : <LoadMore cursor={nextCursor} />}
       </ul>
     </main>
   );

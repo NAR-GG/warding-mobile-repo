@@ -316,6 +316,31 @@ body {
   object-fit: cover;
 }
 
+/* 더보기 버튼. **Dart 에는 대응 위젯이 없다** — 네이티브 목록은 바닥 200px
+ * 전에 자동으로 당긴다(`_BoardList`). 웹은 목록을 서버 렌더링으로 두려고
+ * 버튼을 쓰므로, 참조할 원본 없이 목록 톤(구분선·여백)에 맞춰 만든다. */
+.post-more {
+  padding: calc(16 * var(--scale)) calc(20 * var(--scale))
+    calc(28 * var(--scale));
+}
+
+.post-more__button {
+  width: 100%;
+  padding: calc(13 * var(--scale));
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(8 * var(--scale));
+  background: var(--color-nar-dark500);
+  color: var(--color-nar-text3);
+  font-family: inherit;
+  font-size: calc(14 * var(--scale));
+  font-weight: 600;
+}
+
+/* 누르는 동안 비활성이다. 흐리게 해서 두 번 누르는 것을 막는다. */
+.post-more__button:disabled {
+  opacity: 0.6;
+}
+
 /* ── 공지 상세 ────────────────────────────────────────────
  * 수치는 Flutter `notice_detail_screen.dart` 와 맞춘다. */
 
