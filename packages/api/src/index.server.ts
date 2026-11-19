@@ -13,14 +13,22 @@ export {
   API_HOST,
   DEFAULT_TIMEOUT_MS,
   getJson,
+  postJson,
 } from './client';
 export type { RequestOptions } from './client';
 
 export {
   SEARCH_MIN_LENGTH,
+  createComment,
   fetchComments,
   fetchPostDetail,
   fetchPosts,
   searchPosts,
+  toggleCommentLike,
+  togglePostLike,
+  togglePostNotification,
+  togglePostScrap,
+  votePoll,
 } from './community/index.server';
+export type { LikeResult } from './community/index.server';
 export { fetchNotices, fetchPromotedNotices } from './notice/index.server';

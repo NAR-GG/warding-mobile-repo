@@ -1,6 +1,13 @@
-import { API_BASE_URL, getJson, type RequestOptions, type Result } from '../client';
-import { toCommentList, toPostDetail, toPostList } from './mappers';
-import type { CommentList, PostDetail, PostList } from './types';
+import {
+  API_BASE_URL,
+  getJson,
+  postJson,
+  type RequestOptions,
+  type Result,
+} from '../client';
+import { isObject, boolOr, numOr } from '../json';
+import { toCommentList, toPoll, toPostDetail, toPostList } from './mappers';
+import type { CommentList, Poll, PostDetail, PostList } from './types';
 
 /**
  * 커뮤니티 글 상세.
@@ -76,6 +83,134 @@ export function fetchComments(
     `${API_BASE_URL}/mobile/community/posts/${postId}/comments?${q}`,
     toCommentList,
     options,
+  );
+}
+
+// ── 쓰기 ──────────────────────────────────────────────────
+//
+// **전부 로그인이 필요하다**(`token` 필수). 비회원이 부르면 401 이고,
+// 호출부가 그걸 로그인 유도로 바꾼다.
+//
+// **낙관적 업데이트를 하지 않는다.** 서버가 토글 후 최종 상태와 개수를
+// 돌려주므로 그 값으로 교체한다 — 연타해도 서버 값으로 수렴한다(Dart
+// `community_detail_viewmodel.dart` 의 명시적 결정과 같다).
+
+/** 추천 토글 결과. 서버가 최종 상태와 개수를 함께 준다. */
+export type LikeResult = { liked: boolean; likeCount: number };
+
+function toLikeResult(json: unknown): LikeResult {
+  if (!isObject(json)) throw new TypeError('LikeResult: 객체가 아니다');
+  return {
+    liked: boolOr(json.liked, false),
+    likeCount: numOr(json.likeCount, 0),
+  };
+}
+
+/** 글 추천 토글. `POST /posts/{id}/like` */
+export function togglePostLike(
+  postId: number,
+  options: RequestOptions = {},
+): Promise<Result<LikeResult>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/like`,
+    toLikeResult,
+    options,
+  );
+}
+
+/** 글 스크랩 토글. `POST /posts/{id}/scrap` — 토글 후 상태만 준다. */
+export function togglePostScrap(
+  postId: number,
+  options: RequestOptions = {},
+): Promise<Result<boolean>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/scrap`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('scrap: 객체가 아니다');
+      return boolOr(json.scrapped, false);
+    },
+    options,
+  );
+}
+
+/**
+ * 이 글 알림 켬/끔 토글. `POST /posts/{id}/notification`
+ *
+ * 끄면 이 글의 댓글·답글 알림이 오지 않는다. 서버가 안 주면 **true** 로 본다 —
+ * Dart 기본값과 같다(알림이 기본 켜짐이라 모르면 켜진 것으로 본다).
+ */
+export function togglePostNotification(
+  postId: number,
+  options: RequestOptions = {},
+): Promise<Result<boolean>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/notification`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('notification: 객체가 아니다');
+      return boolOr(json.enabled, true);
+    },
+    options,
+  );
+}
+
+/** 댓글 추천 토글. `POST /comments/{id}/like` */
+export function toggleCommentLike(
+  commentId: number,
+  options: RequestOptions = {},
+): Promise<Result<LikeResult>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/comments/${commentId}/like`,
+    toLikeResult,
+    options,
+  );
+}
+
+/**
+ * 댓글 작성. `POST /posts/{id}/comments` — 만들어진 댓글 id 를 돌려준다.
+ *
+ * **`replyToCommentId` 만 넘긴다. `parentId` 는 서버가 정한다.** 답글을 1단으로
+ * 접는 규칙(답글의 답글도 최상위에 붙는다)과 멘션 대상 계산이 서버 몫이라,
+ * 앱이 트리를 직접 계산하면 두 구현이 어긋난다(Dart `createComment` 주석).
+ */
+export function createComment(
+  postId: number,
+  { body, replyToCommentId }: { body: string; replyToCommentId?: number },
+  options: RequestOptions = {},
+): Promise<Result<number>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/comments`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('createComment: 객체가 아니다');
+      return numOr(json.id, 0);
+    },
+    {
+      ...options,
+      body:
+        replyToCommentId === undefined
+          ? { body }
+          : { body, replyToCommentId },
+    },
+  );
+}
+
+/**
+ * 투표. `POST /posts/{id}/poll/vote` — 투표 후 상태를 통째로 돌려준다.
+ *
+ * **단일 선택은 변경이 안 된다**(서버 계약). 복수 선택이면 아직 안 고른
+ * 선택지만 추가로 고를 수 있다.
+ */
+export function votePoll(
+  postId: number,
+  optionId: number,
+  options: RequestOptions = {},
+): Promise<Result<Poll>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/poll/vote`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('votePoll: 객체가 아니다');
+      return toPoll(json);
+    },
+    { ...options, body: { optionId } },
   );
 }
 

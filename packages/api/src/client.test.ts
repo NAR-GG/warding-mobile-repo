@@ -9,7 +9,7 @@ import { createServer, type IncomingMessage, type ServerResponse, type Server } 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { getJson } from './client';
+import { getJson, postJson } from './client';
 
 type Captured = { auth: string | undefined; path: string };
 
@@ -128,3 +128,92 @@ test('parse 함수가 던져도 Result 로 돌아온다', async () => {
     if (!r.ok) assert.equal(r.failure.kind, 'parse');
   });
 });
+
+// ── POST ─────────────────────────────────────────────────
+
+test('postJson 은 POST 로 보낸다', async () => {
+  await withPostServer(okJson, async (base, seen) => {
+    const r = await postJson(`${base}/like`, (j) => j);
+    assert.equal(r.ok, true);
+    assert.equal(seen[0]?.method, 'POST');
+  });
+});
+
+test('body 를 주면 JSON 으로 싣고 Content-Type 을 붙인다', async () => {
+  await withPostServer(okJson, async (base, seen) => {
+    await postJson(`${base}/comments`, (j) => j, {
+      body: { body: '안녕', replyToCommentId: 5 },
+    });
+    assert.equal(seen[0]?.contentType, 'application/json');
+    assert.deepEqual(JSON.parse(seen[0]?.body ?? '{}'), {
+      body: '안녕',
+      replyToCommentId: 5,
+    });
+  });
+});
+
+test('body 가 없으면 Content-Type 을 붙이지 않는다 (토글)', async () => {
+  // Dart 토글들은 본문 없이 POST 만 보낸다. 빈 본문에 헤더만 붙이면
+  // 서버가 JSON 파싱을 시도할 수 있다.
+  await withPostServer(okJson, async (base, seen) => {
+    await postJson(`${base}/like`, (j) => j);
+    assert.equal(seen[0]?.contentType, undefined);
+    assert.equal(seen[0]?.body, '');
+  });
+});
+
+test('POST 도 토큰을 Bearer 로 붙인다', async () => {
+  await withPostServer(okJson, async (base, seen) => {
+    await postJson(`${base}/scrap`, (j) => j, { token: 'T' });
+    assert.equal(seen[0]?.auth, 'Bearer T');
+  });
+});
+
+test('POST 401 은 unauthorized 로 가른다', async () => {
+  const unauthorized: Handler = (_req, res) => {
+    res.writeHead(401, { 'content-type': 'application/json' });
+    res.end('{"message":"no"}');
+  };
+  await withPostServer(unauthorized, async (base) => {
+    const r = await postJson(`${base}/like`, (j) => j);
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.equal(r.failure.kind, 'unauthorized');
+  });
+});
+
+/** POST 검증용 해네스 — 메서드·본문·Content-Type 까지 담는다. */
+type PostCaptured = {
+  auth: string | undefined;
+  method: string | undefined;
+  contentType: string | undefined;
+  body: string;
+};
+
+async function withPostServer(
+  handler: Handler,
+  run: (base: string, seen: PostCaptured[]) => Promise<void>,
+): Promise<void> {
+  const seen: PostCaptured[] = [];
+  const srv: Server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => {
+      body += c;
+    });
+    req.on('end', () => {
+      seen.push({
+        auth: req.headers.authorization,
+        method: req.method,
+        contentType: req.headers['content-type'],
+        body,
+      });
+      handler(req, res);
+    });
+  });
+  await new Promise<void>((r) => srv.listen(0, () => r()));
+  const { port } = srv.address() as { port: number };
+  try {
+    await run(`http://127.0.0.1:${port}`, seen);
+  } finally {
+    srv.close();
+  }
+}

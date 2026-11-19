@@ -60,17 +60,54 @@ export async function getJson<T>(
   parse: (json: unknown) => T,
   options: RequestOptions = {},
 ): Promise<Result<T>> {
-  const { token, timeoutMs = DEFAULT_TIMEOUT_MS, cache, revalidate, signal } = options;
+  return request('GET', url, parse, options);
+}
+
+/**
+ * POST 요청 하나. [getJson] 과 같은 계약이고 메서드만 다르다.
+ *
+ * **쓰기는 캐시하지 않는다** — `cache`·`revalidate` 를 넘기지 않는다. 토글
+ * 같은 호출이 캐시되면 두 번째 탭이 서버에 닿지 않는다.
+ *
+ * 본문이 필요한 호출은 `body` 를 넘긴다. Dart 쪽 토글들(`toggleLike` 등)은
+ * 본문 없이 POST 만 보내므로 기본은 없음이다.
+ */
+export async function postJson<T>(
+  url: string,
+  parse: (json: unknown) => T,
+  options: RequestOptions & { body?: unknown } = {},
+): Promise<Result<T>> {
+  return request('POST', url, parse, options);
+}
+
+async function request<T>(
+  method: 'GET' | 'POST',
+  url: string,
+  parse: (json: unknown) => T,
+  options: RequestOptions & { body?: unknown } = {},
+): Promise<Result<T>> {
+  const {
+    token,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    cache,
+    revalidate,
+    signal,
+    body,
+  } = options;
 
   // 외부에서 준 signal 과 타임아웃을 함께 건다. 둘 중 먼저 끊기는 쪽이 이긴다.
   const timer = AbortSignal.timeout(timeoutMs);
   const abort = signal ? AbortSignal.any([signal, timer]) : timer;
 
+  const headers: Record<string, string> = { ...(headersFor(token) as Record<string, string>) };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+
   try {
     const res = await fetch(url, {
-      method: 'GET',
-      headers: headersFor(token),
+      method,
+      headers,
       signal: abort,
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       ...(cache ? { cache } : {}),
       ...(revalidate !== undefined ? { next: { revalidate } } : {}),
     });
