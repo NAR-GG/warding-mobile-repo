@@ -254,15 +254,126 @@ body {
  * 수치는 Flutter `comment_tile.dart` 와 맞춘다. */
 
 .comments-section {
-  padding: 0 calc(20 * var(--scale)) calc(32 * var(--scale));
+  padding: calc(4 * var(--scale)) calc(20 * var(--scale))
+    calc(24 * var(--scale));
 }
 
-.comments-section__title {
-  padding: calc(16 * var(--scale)) 0 calc(10 * var(--scale));
+/* ── 댓글 입력 바 ─────────────────────────────────────────
+ * Flutter 는 키보드가 올라오면 Scaffold 가 본문을 줄여 바를 밀어 올린다.
+ * 웹뷰에서는 `sticky` 로 같은 모양을 낸다 — 화면 아래에 붙어 있다가 키보드가
+ * 뜨면 그 위로 밀린다. 수치는 Dart `_inputBar` 와 맞춘다(패딩 16/10/16/12). */
+
+.comment-input {
+  position: sticky;
+  bottom: 0;
+  padding: calc(10 * var(--scale)) calc(16 * var(--scale))
+    calc(12 * var(--scale));
   border-top: 1px solid var(--color-nar-line);
+  background: var(--color-nar-dark800);
+}
+
+.comment-input__row {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(8 * var(--scale));
+}
+
+.comment-input__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 여러 줄을 쳐도 너무 길어지지 않게 막는다 — 그 위 본문이 다 가려진다. */
+  max-height: calc(96 * var(--scale));
+  padding: calc(9 * var(--scale)) calc(12 * var(--scale));
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(18 * var(--scale));
+  background: var(--color-nar-dark600);
   color: var(--color-nar-text);
-  font-size: calc(14 * var(--scale));
+  font-family: inherit;
+  font-size: calc(13.5 * var(--scale));
+  line-height: 1.45;
+  /* 기본 세로 리사이즈 핸들은 웹뷰에서 어색하다. */
+  resize: none;
+}
+
+.comment-input__field:focus {
+  outline: none;
+}
+
+.comment-input__field::placeholder {
+  color: var(--color-nar-dark300);
+}
+
+.comment-input__submit {
+  flex: 0 0 auto;
+  padding: calc(9 * var(--scale)) calc(14 * var(--scale));
+  border: 0;
+  border-radius: calc(18 * var(--scale));
+  background: var(--color-nar-violet3);
+  color: var(--color-nar-dark800);
+  font-family: inherit;
+  font-size: calc(13.5 * var(--scale));
   font-weight: 700;
+}
+
+/* 빈 입력이면 누를 수 없다 — 빈 댓글이 서버로 가지 않게 한다. */
+.comment-input__submit:disabled {
+  background: var(--color-nar-dark400);
+  color: var(--color-nar-text2);
+}
+
+.comment-input__notice {
+  padding-bottom: calc(8 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12.5 * var(--scale));
+  text-align: center;
+}
+
+/* ── 액션 행 (추천·댓글·스크랩) ───────────────────────────
+ * Flutter `post_detail_screen.dart` 의 `_actions` — 폭 3등분으로 꽉 채운다.
+ * 칩으로 왼쪽에 몰면 본문과 댓글 사이 경계가 흐려지는데, 균등 분할하면
+ * 그 자체가 구분선 역할을 한다. */
+
+.post-actions {
+  display: flex;
+  padding: calc(4 * var(--scale)) 0;
+  border-top: 1px solid var(--color-nar-line);
+  border-bottom: 1px solid var(--color-nar-line);
+}
+
+.post-actions__cell {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--scale));
+  padding: calc(11 * var(--scale)) 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text3);
+  font-family: inherit;
+  font-size: calc(13 * var(--scale));
+  font-weight: 600;
+}
+
+.post-actions__cell svg {
+  width: calc(17 * var(--scale));
+  height: calc(17 * var(--scale));
+}
+
+/* 누른 상태는 색으로 표시한다. 아이콘도 채워진다(fill). */
+.post-actions__cell.is-active {
+  color: var(--color-nar-violet3);
+}
+
+.post-actions__cell:disabled {
+  opacity: 0.5;
+}
+
+.post-actions__notice {
+  padding: calc(8 * var(--scale)) calc(20 * var(--scale)) 0;
+  color: var(--color-nar-text2);
+  font-size: calc(12.5 * var(--scale));
+  text-align: center;
 }
 
 .comments__empty {
