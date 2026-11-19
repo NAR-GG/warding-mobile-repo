@@ -3,12 +3,16 @@ import type { PostSummary } from 'warding-api';
 import { timeAgo } from '@/shared/lib';
 
 /**
- * 글 목록의 한 줄 — Flutter `features/community/presentation/widgets/
+ * 글 한 줄 — Flutter `features/community/presentation/widgets/
  * post_list_item.dart` 의 웹 구현.
  *
- * **`packages/ui` 가 아니라 여기 둔다.** Dart 원본이 `core/ui/` 가 아니라 그
- * 기능의 `widgets/` 라서다 — 한 기능 전용 위젯을 공용 자리에 두지 않는 규칙과
- * 같다. 마이페이지 "내 활동" 목록이 웹으로 오면 그때 올린다(화면 2개 기준).
+ * **목록과 검색이 같은 카드를 쓴다.** 서버가 두 응답을 같은 모양으로 주므로
+ * (실측 2026-11-19: 필드 14개 동일) Dart 쪽도 `PostListItem` 하나를 재사용한다.
+ * FSD 에서 page 끼리는 서로 import 할 수 없어 아래 레이어인 `shared` 에 둔다.
+ *
+ * **`packages/ui` 가 아닌 이유**는 따로다. 거기는 `core/ui/` 의 짝인데 이
+ * 카드의 Dart 원본은 기능 폴더 안(`features/community/.../widgets/`)이다 —
+ * 한 기능 전용 위젯을 앱 공용 자리에 두지 않는 규칙과 같다.
  *
  * 수치는 Dart 와 맞춘다 — 제목 16/w700, 미리보기 14/w400 2줄, 메타 12.5,
  * 썸네일 62, 패딩 20/18.
@@ -17,7 +21,7 @@ import { timeAgo } from '@/shared/lib';
  * 없고, `<a>` 면 서버 컴포넌트로 남아 클라이언트 번들이 늘지 않는다
  * (`onClick` 을 서버 컴포넌트에서 넘기면 런타임에 터진다).
  */
-export function PostListItem({ post }: { post: PostSummary }) {
+export function PostCard({ post }: { post: PostSummary }) {
   const thumb = post.thumbnailUrl;
 
   return (

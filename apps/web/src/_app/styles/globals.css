@@ -341,6 +341,106 @@ body {
   opacity: 0.6;
 }
 
+/* ── 커뮤니티 검색 ─────────────────────────────────────────
+ * 수치는 Flutter `community_search_screen.dart` 와 맞춘다 — 바 패딩
+ * 8/8/16/10, 뒤로 아이콘 20(패딩 8), 입력 14/1.4, 안내 13.5/1.5. */
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  padding: calc(8 * var(--scale)) calc(16 * var(--scale))
+    calc(10 * var(--scale)) calc(8 * var(--scale));
+}
+
+.search-bar__back {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(8 * var(--scale));
+  border: 0;
+  background: none;
+  color: var(--color-nar-text);
+}
+
+.search-bar__back svg {
+  display: block;
+  width: calc(20 * var(--scale));
+  height: calc(20 * var(--scale));
+}
+
+/* 알약 모양 입력 칸. radius 999 는 Dart 와 같다. */
+.search-bar__field {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: calc(6 * var(--scale));
+  min-width: 0;
+  padding: 0 calc(12 * var(--scale));
+  border-radius: 999px;
+  background: var(--color-nar-dark600);
+}
+
+.search-bar__icon {
+  flex: 0 0 auto;
+  width: calc(18 * var(--scale));
+  height: calc(18 * var(--scale));
+  color: var(--color-nar-text2);
+}
+
+.search-bar__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: calc(11 * var(--scale)) 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text);
+  font-family: inherit;
+  font-size: calc(14 * var(--scale));
+  line-height: 1.4;
+}
+
+.search-bar__input:focus {
+  outline: none;
+}
+
+.search-bar__input::placeholder {
+  color: var(--color-nar-dark300);
+}
+
+/* iOS 가 type=search 에 붙이는 기본 지우기 버튼을 없앤다 — 우리 버튼과
+ * 두 개가 겹친다. */
+.search-bar__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-bar__clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text2);
+}
+
+.search-bar__clear svg {
+  display: block;
+  width: calc(17 * var(--scale));
+  height: calc(17 * var(--scale));
+}
+
+/* 안내·빈 결과·실패 문구. Dart 는 세로 가운데였지만 웹은 문서 흐름이라
+ * 위에서부터 띄운다 — 웹뷰 높이가 콘텐츠에 따라 달라져 가운데 기준이 없다. */
+.search-message {
+  padding: calc(60 * var(--scale)) calc(40 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(13.5 * var(--scale));
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* ── 공지 상세 ────────────────────────────────────────────
  * 수치는 Flutter `notice_detail_screen.dart` 와 맞춘다. */
 

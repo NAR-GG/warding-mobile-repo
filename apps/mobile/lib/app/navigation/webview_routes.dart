@@ -46,6 +46,12 @@ enum BridgeStage {
 /// 이동한다. 그래서 읽기 전용이고 Stage A 로 충분하다.
 const communityListRoute = WebRoute(path: '/community', stage: BridgeStage.a);
 
+/// 커뮤니티 검색.
+///
+/// 뒤로가기만 네이티브에 위임하므로 Stage A 다. 결과 카드를 탭하면 상세로
+/// 가는데 그것도 웹이라 브리지를 거치지 않는다.
+const communitySearchRoute = WebRoute(path: '/community/search', stage: BridgeStage.a);
+
 /// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
 const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
 
@@ -55,6 +61,7 @@ const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
 const webviewRoutes = <WebRoute>[
   communityListRoute,
+  communitySearchRoute,
   communityPostRoute,
   noticeRoute,
 ];

@@ -1,9 +1,9 @@
 import { fetchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
+import { PostCard } from '@/shared/ui';
 
 import { LoadMore } from './LoadMore';
-import { PostListItem } from './PostListItem';
 
 /**
  * 커뮤니티 글 목록.
@@ -47,7 +47,7 @@ export async function CommunityListPage() {
     <main>
       <ul className="post-list">
         {posts.map((post) => (
-          <PostListItem key={post.id} post={post} />
+          <PostCard key={post.id} post={post} />
         ))}
         {/* 첫 페이지가 마지막이면 버튼 자체를 그리지 않는다. */}
         {nextCursor === null ? null : <LoadMore cursor={nextCursor} />}

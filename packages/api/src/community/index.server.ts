@@ -51,3 +51,36 @@ export function fetchPosts(
     options,
   );
 }
+
+/** 검색어 최소 길이. 이보다 짧으면 **서버가 400 을 준다**(실측 2026-11-19). */
+export const SEARCH_MIN_LENGTH = 2;
+
+/**
+ * 커뮤니티 글 검색 — 제목·본문 키워드.
+ *
+ * `GET /api/mobile/community/posts/search` — 응답이 목록(`fetchPosts`)과
+ * **같은 모양이다**(실측 2026-11-19: `posts`·`nextCursor`·`boardViewer`, 글
+ * 필드 14개 동일). 그래서 `PostList` 타입과 매퍼를 그대로 쓴다.
+ *
+ * 비회원 조회가 열려 있다(HTTP 200).
+ *
+ * **짧은 검색어는 부르지 않는다.** 2자 미만이면 서버가 400 이라 호출 자체가
+ * 낭비다 — 호출부가 [SEARCH_MIN_LENGTH] 로 거른다.
+ */
+export function searchPosts(
+  {
+    q,
+    cursor,
+    size = 20,
+  }: { q: string; cursor?: number; size?: number },
+  options: RequestOptions = {},
+): Promise<Result<PostList>> {
+  const params = new URLSearchParams({ q, size: String(size) });
+  if (cursor !== undefined) params.set('cursor', String(cursor));
+
+  return getJson(
+    `${API_BASE_URL}/mobile/community/posts/search?${params}`,
+    toPostList,
+    options,
+  );
+}

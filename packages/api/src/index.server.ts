@@ -16,5 +16,10 @@ export {
 } from './client';
 export type { RequestOptions } from './client';
 
-export { fetchPostDetail, fetchPosts } from './community/index.server';
+export {
+  SEARCH_MIN_LENGTH,
+  fetchPostDetail,
+  fetchPosts,
+  searchPosts,
+} from './community/index.server';
 export { fetchNotices, fetchPromotedNotices } from './notice/index.server';
