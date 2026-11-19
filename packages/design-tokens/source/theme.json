@@ -303,6 +303,11 @@
       "$value": "#101113",
       "$type": "color"
     },
+    "narButtonDisabledBg": {
+      "$value": "#101113CC",
+      "$type": "color",
+      "$description": "비활성 버튼 배경 (narBgContent 80%)"
+    },
     "narGray100": {
       "$value": "#F1F3F5",
       "$type": "color",

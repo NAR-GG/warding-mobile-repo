@@ -65,6 +65,7 @@
   "sideRedText": "#e03131",
   "scoreTextSub": "#f1f3f5",
   "narBgContent": "#101113",
+  "narButtonDisabledBg": "#101113cc",
   "narGray100": "#f1f3f5",
   "narPink700": "#d6336c",
   "narPlayedChampBg": "#141517",

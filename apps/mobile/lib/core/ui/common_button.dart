@@ -51,7 +51,6 @@ class CommonButton extends StatelessWidget {
   final double scale;
 
   /// 비활성 상태 배경색 (#101113CC).
-  static const Color _disabledBg = Color(0xCC101113);
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +131,7 @@ class CommonButton extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16 * scale),
           gradient: enabled ? AppColors.narBg : null,
-          color: enabled ? null : _disabledBg,
+          color: enabled ? null : AppColors.narButtonDisabledBg,
         ),
         child: Text(
           label,

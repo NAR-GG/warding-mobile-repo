@@ -261,3 +261,157 @@
   background: var(--color-nar-chip-selected-bg);
   color: var(--color-nar-text-tertiary);
 }
+
+/* ── 뱃지 ─────────────────────────────────────────────────
+ * Flutter: core/ui/nar_badge.dart — 3종 모두 높이 24 로 같다.
+ * 시간 뱃지와 LIVE 뱃지가 자리를 교체할 수 있어야 하기 때문이다.
+ *
+ * radius 8 은 scale 을 곱하지 않는다 — Dart 도 고정이다. */
+
+.wd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: calc(24 * var(--scale));
+  padding: 0 calc(10 * var(--scale));
+  border: 1px solid var(--color-nar-line2);
+  border-radius: 8px;
+  background: var(--color-nar-bg-tertiary);
+  color: var(--color-nar-text-tertiary);
+  font-size: calc(12 * var(--scale));
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 진영 뱃지 — 폭 59 고정. 두 진영이 나란히 놓였을 때 어긋나지 않게 한다.
+ * 배경이 없고 테두리만 있다(Dart 와 같다). */
+.wd-badge--side {
+  width: calc(59 * var(--scale));
+  padding: 0;
+  background: none;
+  font-family: 'SF Pro', system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.wd-badge--blue {
+  border-color: var(--color-side-blue-border);
+  color: var(--color-side-blue-text);
+}
+
+.wd-badge--red {
+  border-color: var(--color-side-red-border);
+  color: var(--color-side-red-text);
+}
+
+/* LIVE — 옅은 빨강 배경 + 깜박이는 점 */
+.wd-badge--live {
+  gap: calc(4 * var(--scale));
+  border-color: var(--color-live-badge-light-border);
+  background: var(--color-live-badge-light-bg);
+  color: var(--color-live-accent);
+}
+
+.wd-badge__dot {
+  width: calc(6 * var(--scale));
+  height: calc(6 * var(--scale));
+  border-radius: 50%;
+  background: var(--color-live-accent);
+  /* Flutter `NarLiveDot` 과 같은 1.2초 주기, 투명도 1 → 0.3, easeInOut. */
+  animation: wd-live-blink 1200ms ease-in-out infinite alternate;
+}
+
+@keyframes wd-live-blink {
+  from { opacity: 1; }
+  to   { opacity: 0.3; }
+}
+
+/* 동작 줄이기 설정이면 고정한다 — Dart 도 `disableAnimations` 일 때 점을
+ * 깜박이지 않고 그대로 그린다. */
+@media (prefers-reduced-motion: reduce) {
+  .wd-badge__dot {
+    animation: none;
+  }
+}
+
+/* ── 공용 버튼 (큰 계열) ──────────────────────────────────
+ * Flutter: core/ui/common_button.dart
+ *
+ * `.wd-button`(nar_button, 높이 34)과 **다른 계열이다.** 이쪽은 온보딩·
+ * 마이페이지의 큰 버튼(높이 50)이고 Dart 에서도 둘이 공존한다. 합치면 두
+ * 디자인이 섞이므로 그대로 둔다.
+ *
+ * 전체 폭: 높이 50 · radius 16 · 18px · line 48/18 · padding 26/1
+ * 내용 폭: 높이 35 · radius 10 · 14px · line 25/14 · padding 20/5 */
+
+.wd-cbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(6 * var(--scale));
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(50 * var(--scale));
+  padding: calc(1 * var(--scale)) calc(26 * var(--scale));
+  border: 0;
+  border-radius: calc(16 * var(--scale));
+  font-family: Pretendard, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: calc(18 * var(--scale));
+  line-height: calc(48 / 18);
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wd-cbtn:disabled {
+  cursor: default;
+}
+
+/* 내용 폭 variant — logout·dark·text */
+.wd-cbtn--compact {
+  width: auto;
+  height: calc(35 * var(--scale));
+  padding: calc(5 * var(--scale)) calc(20 * var(--scale));
+  border-radius: calc(10 * var(--scale));
+  font-size: calc(14 * var(--scale));
+  line-height: calc(25 / 14);
+}
+
+.wd-cbtn--primary {
+  background: var(--gradient-nar-bg);
+  color: var(--color-naver-text);
+}
+
+.wd-cbtn--primary:disabled {
+  background: var(--color-nar-button-disabled-bg);
+  color: var(--color-nar-dark300);
+}
+
+.wd-cbtn--light {
+  background: var(--color-nar-button1-bg);
+  color: var(--color-nar-button1-text);
+}
+
+.wd-cbtn--light:disabled {
+  background: var(--color-nar-dark600);
+  color: var(--color-nar-dark300);
+}
+
+.wd-cbtn--logout,
+.wd-cbtn--dark {
+  background: var(--color-nar-bg-tertiary);
+  color: var(--color-nar-text);
+}
+
+/* 텍스트 버튼 — 배경 없음 */
+.wd-cbtn--text {
+  background: none;
+  color: var(--color-nar-text-tertiary);
+}
+
+.wd-cbtn__icon {
+  flex: 0 0 auto;
+  width: calc(24 * var(--scale));
+  height: calc(24 * var(--scale));
+}

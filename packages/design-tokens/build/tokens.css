@@ -71,6 +71,7 @@
   --color-side-red-text: #e03131; /* red/8 */
   --color-score-text-sub: #f1f3f5; /* gray/1 */
   --color-nar-bg-content: #101113;
+  --color-nar-button-disabled-bg: rgba(16, 17, 19, 0.8); /* 비활성 버튼 배경 (narBgContent 80%) */
   --color-nar-gray100: #f1f3f5; /* gray/1 */
   --color-nar-pink700: #d6336c; /* mantine pink/7 */
   --color-nar-played-champ-bg: var(--color-nar-dark800); /* 카드 배경(선수 이미지 자리) */

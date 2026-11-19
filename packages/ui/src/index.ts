@@ -4,8 +4,14 @@
 // 주석에 어느 Dart 파일에서 왔는지 적어 두었으니, 한쪽을 고칠 때 다른 쪽도 본다.
 // 색·간격은 `warding-design-tokens` 가 단일 출처다.
 
+export { Badge, BadgeLive, BadgeSide } from './Badge';
+export type { BadgeSideValue } from './Badge';
+
 export { BoardBadge } from './BoardBadge';
 export type { BoardBadgeProps } from './BoardBadge';
+
+export { CommonButton } from './CommonButton';
+export type { CommonButtonProps, CommonButtonVariant } from './CommonButton';
 
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant } from './Button';

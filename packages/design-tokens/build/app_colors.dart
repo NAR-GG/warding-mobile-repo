@@ -93,6 +93,8 @@ class AppColors {
   static const Color sideRedText = Color(0xFFE03131); // red/8
   static const Color scoreTextSub = Color(0xFFF1F3F5); // gray/1
   static const Color narBgContent = Color(0xFF101113);
+  /// 비활성 버튼 배경 (narBgContent 80%)
+  static const Color narButtonDisabledBg = Color(0xCC101113);
   static const Color narGray100 = Color(0xFFF1F3F5); // gray/1
   static const Color narPink700 = Color(0xFFD6336C); // mantine pink/7
   /// 카드 배경(선수 이미지 자리)
