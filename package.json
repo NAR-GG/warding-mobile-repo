@@ -3,6 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.8.1",
   "scripts": {
+    "app:local": "apps/mobile/tool/run.sh local",
+    "app:prod": "apps/mobile/tool/run.sh prod",
     "build": "turbo run build",
     "lint:fsd": "turbo run lint:fsd",
     "test": "turbo run test",

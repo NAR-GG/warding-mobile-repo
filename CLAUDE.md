@@ -183,12 +183,19 @@ packages/api              서버 호출 + 도메인 타입 + 매퍼
 - **`features`·`widgets` 는 필요해질 때 만든다.** 지금은 읽기 전용 화면뿐이다.
 - `packages/ui` 로 올리는 기준은 **화면 2개 이상**. 미리 올리지 않는다.
 
-**앱을 환경별로 띄울 때는 `apps/mobile/tool/run.sh` 를 쓴다.**
+**명령은 루트 `pnpm` 으로 모은다.** Flutter 는 `pubspec.yaml` 에 스크립트
+섹션이 없어서(`package.json` 의 `scripts` 같은 것이 없다) 셸 스크립트를 쓰는데,
+웹은 `pnpm` 이고 앱만 다른 곳이면 명령을 두 군데서 찾게 된다.
 
 ```bash
-./tool/run.sh local   # 웹뷰가 로컬 Next 서버(localhost:3100)를 본다
-./tool/run.sh prod    # 배포된 웹 (기본값)
+pnpm web:dev      # 웹 (로컬 Next 서버, 3100)
+pnpm app:local    # 앱 — 웹뷰가 로컬 서버를 본다
+pnpm app:prod     # 앱 — 배포된 웹 (기본값)
 ```
+
+`app:*` 은 `apps/mobile/tool/run.sh` 로 위임만 한다 — Flutter 는 turbo 그래프
+밖이라(Dart 를 모른다) 캐시 이득이 없다. `apps/mobile/` 안에서 작업 중이면
+`./tool/run.sh local` 을 직접 불러도 같다.
 
 **flavor 를 쓰지 않는다.** 조사한 실제 앱 8개 중 dev/prod 분리에 flavor 를 쓴
 곳은 0개였고, flavor 를 쓰는 3개(aves·Musify·ente)는 전부 **번들ID가 갈리는

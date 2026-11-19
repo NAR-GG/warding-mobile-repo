@@ -82,9 +82,10 @@ DART
 ## 3. 앱 실행
 
 ```bash
-cd apps/mobile
-./tool/run.sh local -t lib/webview_probe.dart
+pnpm app:local -t lib/webview_probe.dart
 ```
+
+`apps/mobile/` 안에서 작업 중이면 `./tool/run.sh local -t ...` 도 같다.
 
 `local` 은 웹뷰가 `localhost:3100` 을 보게 한다. `prod` 면 배포된 웹을 본다
 (인자를 생략해도 `prod` 다 — **기본값이 운영이라 빼먹어도 안전하다**).

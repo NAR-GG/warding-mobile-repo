@@ -1,5 +1,14 @@
 # Bundle Update Log
 
+## 2026-11-19
+* **앱 실행 명령을 루트 `pnpm` 으로 모았다** — `pnpm app:local` · `pnpm app:prod`.
+  **Flutter 에는 `package.json` 의 `scripts` 같은 것이 없다**(`pubspec.yaml` 에
+  스크립트 섹션이 없고 `dart run` 은 Dart 파일 실행이다). 그래서 셸 스크립트를
+  쓰는데, 웹은 `pnpm` 이고 앱만 다른 곳이면 명령을 두 군데서 찾게 된다.
+* `app:*` 은 `tool/run.sh` 로 **위임만 한다** — Flutter 는 turbo 그래프 밖이라
+  (Dart 를 모른다) 캐시 이득이 없다. `apps/mobile/` 안에서 작업 중이면
+  `./tool/run.sh local` 을 직접 불러도 같다.
+
 ## 2026-11-18 (3)
 * **앱 환경 전환을 `tool/run.sh local|prod` 로 만들었다.** 매번
   `--dart-define=WEBVIEW_HOST=...` 를 치지 않게 한 것이다.
