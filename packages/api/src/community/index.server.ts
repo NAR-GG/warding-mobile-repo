@@ -1,6 +1,6 @@
 import { API_BASE_URL, getJson, type RequestOptions, type Result } from '../client';
-import { toPostDetail, toPostList } from './mappers';
-import type { PostDetail, PostList } from './types';
+import { toCommentList, toPostDetail, toPostList } from './mappers';
+import type { CommentList, PostDetail, PostList } from './types';
 
 /**
  * 커뮤니티 글 상세.
@@ -48,6 +48,33 @@ export function fetchPosts(
   return getJson(
     `${API_BASE_URL}/mobile/community/posts?${q}`,
     toPostList,
+    options,
+  );
+}
+
+/**
+ * 글의 댓글 목록.
+ *
+ * `GET /api/mobile/community/posts/{postId}/comments` — **비회원 조회가 열려
+ * 있다**(실측 2026-11-19, HTTP 200).
+ *
+ * **오래된 순이다**(글 목록과 반대). 대화가 위에서 아래로 읽히게 하려는 것이라
+ * 웹도 받은 순서를 그대로 그린다.
+ *
+ * 기본 50건인 것도 Dart 와 같다 — 댓글은 글보다 짧아 한 번에 많이 받아도
+ * 부담이 적고, 대화가 중간에 끊기면 읽기 어렵다. 서버 상한은 100 이다.
+ */
+export function fetchComments(
+  postId: number,
+  { cursor, size = 50 }: { cursor?: number; size?: number } = {},
+  options: RequestOptions = {},
+): Promise<Result<CommentList>> {
+  const q = new URLSearchParams({ size: String(size) });
+  if (cursor !== undefined) q.set('cursor', String(cursor));
+
+  return getJson(
+    `${API_BASE_URL}/mobile/community/posts/${postId}/comments?${q}`,
+    toCommentList,
     options,
   );
 }

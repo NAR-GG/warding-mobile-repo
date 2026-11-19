@@ -1,0 +1,85 @@
+{
+  "comments": [
+    {
+      "id": 50,
+      "parentId": null,
+      "body": "그니까요... 본가는 갔나..",
+      "status": "VISIBLE",
+      "author": {
+        "memberId": 2971,
+        "nickname": "샘플유저1",
+        "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/v1794981478/profiles/2971.jpg",
+        "teamId": 39,
+        "teamCode": "T1",
+        "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png"
+      },
+      "mentionNickname": null,
+      "likeCount": 4,
+      "liked": false,
+      "mine": false,
+      "edited": true,
+      "createdAt": "2026-09-25T15:06:10.089"
+    },
+    {
+      "id": 51,
+      "parentId": 50,
+      "body": "다행이도 본가는 갔구 본가에서 하는중이라네요!!",
+      "status": "VISIBLE",
+      "author": {
+        "memberId": 946,
+        "nickname": "샘플유저2",
+        "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/v1790350339/profiles/946.jpg",
+        "teamId": 39,
+        "teamCode": "T1",
+        "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png"
+      },
+      "mentionNickname": "샘플유저1",
+      "likeCount": 2,
+      "liked": false,
+      "mine": false,
+      "edited": false,
+      "createdAt": "2026-09-25T15:11:56.168"
+    },
+    {
+      "id": 52,
+      "parentId": 50,
+      "body": "헉 정말 다행이네요 그래도 본가에서 쉬다 오면 좋겠어요 !!",
+      "status": "VISIBLE",
+      "author": {
+        "memberId": 2971,
+        "nickname": "샘플유저3",
+        "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/v1794981478/profiles/2971.jpg",
+        "teamId": 39,
+        "teamCode": "T1",
+        "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png"
+      },
+      "mentionNickname": "샘플유저2",
+      "likeCount": 2,
+      "liked": false,
+      "mine": false,
+      "edited": false,
+      "createdAt": "2026-09-25T15:12:27.269"
+    },
+    {
+      "id": 53,
+      "parentId": 50,
+      "body": "그러게나말이에요ㅠㅠ 도란 파이팅…. 월즈의 티원은 다르다",
+      "status": "VISIBLE",
+      "author": {
+        "memberId": 946,
+        "nickname": "샘플유저4",
+        "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/v1790350339/profiles/946.jpg",
+        "teamId": 39,
+        "teamCode": "T1",
+        "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png"
+      },
+      "mentionNickname": "샘플유저3",
+      "likeCount": 1,
+      "liked": false,
+      "mine": false,
+      "edited": false,
+      "createdAt": "2026-09-25T15:13:10.407"
+    }
+  ],
+  "nextCursor": null
+}

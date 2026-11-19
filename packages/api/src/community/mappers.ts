@@ -13,6 +13,9 @@ import {
 } from '../json';
 import type {
   Author,
+  Comment,
+  CommentList,
+  CommentStatus,
   PostBlock,
   Poll,
   PollOption,
@@ -171,6 +174,47 @@ export function toPostList(json: unknown): PostList {
   if (!isObject(json)) throw new TypeError('PostList: 객체가 아니다');
   return {
     posts: list(json.posts, toPostSummary),
+    nextCursor: num(json.nextCursor),
+  };
+}
+
+const COMMENT_STATUSES: CommentStatus[] = [
+  'VISIBLE',
+  'DELETED',
+  'BLOCKED',
+  'HIDDEN',
+];
+
+/** 모르는 값은 'VISIBLE' 이다 — Dart `CommunityCommentStatus.fromApi` 의 default. */
+function toCommentStatus(value: unknown): CommentStatus {
+  const s = str(value);
+  return s !== null && (COMMENT_STATUSES as string[]).includes(s)
+    ? (s as CommentStatus)
+    : 'VISIBLE';
+}
+
+export function toComment(json: Json): Comment {
+  return {
+    id: numOr(json.id, 0),
+    parentId: num(json.parentId),
+    status: toCommentStatus(json.status),
+    // VISIBLE 이 아니면 서버가 null 로 준다. 빈 문자열로 메우면 "지워진 댓글"
+    // 과 "본문이 빈 댓글" 을 화면이 구분할 수 없다.
+    body: str(json.body),
+    author: obj(json.author, toAuthor),
+    mentionNickname: str(json.mentionNickname),
+    likeCount: numOr(json.likeCount, 0),
+    liked: boolOr(json.liked, false),
+    mine: boolOr(json.mine, false),
+    edited: boolOr(json.edited, false),
+    createdAt: date(json.createdAt),
+  };
+}
+
+export function toCommentList(json: unknown): CommentList {
+  if (!isObject(json)) throw new TypeError('CommentList: 객체가 아니다');
+  return {
+    comments: list(json.comments, toComment),
     nextCursor: num(json.nextCursor),
   };
 }

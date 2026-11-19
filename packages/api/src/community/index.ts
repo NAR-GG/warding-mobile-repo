@@ -6,6 +6,9 @@
 
 export type {
   Author,
+  Comment,
+  CommentList,
+  CommentStatus,
   Poll,
   PollOption,
   PostBlock,
@@ -20,6 +23,8 @@ export { isHeading } from './types';
 export {
   parseBlocks,
   toAuthor,
+  toComment,
+  toCommentList,
   toPoll,
   toPollOption,
   toPostBlock,

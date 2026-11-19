@@ -23,7 +23,14 @@ const fixture = JSON.parse(
   readFileSync(join(here, 'fixtures', 'post-detail.json'), 'utf8'),
 );
 
-import { parseBlocks, toPostDetail, toPostList, toPostSummary } from './mappers';
+import {
+  parseBlocks,
+  toComment,
+  toCommentList,
+  toPostDetail,
+  toPostList,
+  toPostSummary,
+} from './mappers';
 import { isHeading } from './types';
 
 test('실제 응답을 도메인 타입으로 옮긴다', () => {
@@ -162,4 +169,75 @@ test('목록 필드가 비어도 터지지 않는다', () => {
 test('posts 가 배열이 아니면 빈 목록', () => {
   assert.deepEqual(toPostList({ posts: 'nope' }).posts, []);
   assert.throws(() => toPostList(null), TypeError);
+});
+
+// ── 댓글 ─────────────────────────────────────────────────
+
+const commentFixture = JSON.parse(
+  readFileSync(join(here, 'fixtures', 'comment-list.json'), 'utf8'),
+);
+
+test('실제 댓글 응답을 옮긴다', () => {
+  const page = toCommentList(commentFixture);
+  assert.ok(page.comments.length > 0);
+
+  const c = page.comments[0]!;
+  assert.equal(typeof c.id, 'number');
+  assert.equal(typeof c.likeCount, 'number');
+  assert.equal(typeof c.liked, 'boolean');
+  assert.equal(typeof c.mine, 'boolean');
+  assert.equal(typeof c.edited, 'boolean');
+  assert.equal(c.status, 'VISIBLE');
+});
+
+test('답글의 parentId 는 최상위 댓글을 가리킨다', () => {
+  // 1단까지만 접는 계약. 답글의 답글도 같은 층에 쌓이므로, parentId 가
+  // 가리키는 댓글은 **그 자체가 최상위**여야 한다.
+  const { comments } = toCommentList(commentFixture);
+  const topLevelIds = new Set(
+    comments.filter((c) => c.parentId === null).map((c) => c.id),
+  );
+  const replies = comments.filter((c) => c.parentId !== null);
+
+  assert.ok(replies.length > 0, '픽스처에 답글이 있어야 의미가 있다');
+  for (const r of replies) {
+    assert.ok(
+      topLevelIds.has(r.parentId as number),
+      `답글 ${r.id} 의 parentId(${r.parentId}) 가 최상위 댓글이 아니다`,
+    );
+  }
+});
+
+test('답글은 mentionNickname 으로 대상을 알린다', () => {
+  const { comments } = toCommentList(commentFixture);
+  const replies = comments.filter((c) => c.parentId !== null);
+  assert.ok(replies.some((r) => r.mentionNickname !== null));
+});
+
+test('VISIBLE 이 아니면 body·author 가 null 이고 행은 남는다', () => {
+  // 자리 보존 계약. 답글이 달린 댓글이 통째로 사라지면 대화가 끊긴다.
+  const deleted = toComment({ id: 7, status: 'DELETED', body: null, author: null });
+  assert.equal(deleted.id, 7);
+  assert.equal(deleted.status, 'DELETED');
+  assert.equal(deleted.body, null);
+  assert.equal(deleted.author, null);
+});
+
+test('모르는 status 는 VISIBLE 로 본다', () => {
+  assert.equal(toComment({ status: 'WHAT_IS_THIS' }).status, 'VISIBLE');
+  assert.equal(toComment({}).status, 'VISIBLE');
+});
+
+test('댓글 필드가 비어도 터지지 않는다', () => {
+  const c = toComment({});
+  assert.equal(c.id, 0);
+  assert.equal(c.parentId, null);
+  assert.equal(c.likeCount, 0);
+  assert.equal(c.liked, false);
+  assert.equal(c.createdAt, null);
+});
+
+test('comments 가 배열이 아니면 빈 목록', () => {
+  assert.deepEqual(toCommentList({ comments: 'nope' }).comments, []);
+  assert.throws(() => toCommentList(null), TypeError);
 });

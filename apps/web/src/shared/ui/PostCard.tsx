@@ -56,7 +56,12 @@ export function PostCard({ post }: { post: PostSummary }) {
             <span className="post-item__time">{timeAgo(post.createdAt)}</span>
 
             <span className="post-item__author">
-              {post.author?.nickname ?? '탈퇴한 사용자'}
+              {/* 닉네임을 따로 감싼다 — `text-overflow: ellipsis` 는 블록
+                  컨테이너의 인라인 콘텐츠에만 걸려서, flex 부모의 텍스트
+                  노드에 직접 주면 잘리기만 하고 말줄임표가 안 나온다. */}
+              <span className="post-item__nickname">
+                {post.author?.nickname ?? '탈퇴한 사용자'}
+              </span>
               {post.author?.teamImageUrl ? (
                 <img
                   className="post-item__team"

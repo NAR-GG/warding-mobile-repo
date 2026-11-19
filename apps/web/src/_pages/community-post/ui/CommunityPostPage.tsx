@@ -1,10 +1,12 @@
 import { parseBlocks } from 'warding-api';
 // 서버 호출은 `/server` 서브경로다 — 클라이언트 번들로 새지 않게 갈라 뒀다.
-import { fetchPostDetail } from 'warding-api/server';
+import { fetchComments, fetchPostDetail } from 'warding-api/server';
 import { BoardBadge } from 'warding-ui';
 
 import { readAuthToken } from '@/shared/auth/index.server';
 
+import { CommentList } from './CommentList';
+import { PollCard } from './PollCard';
 import { PostBody } from './PostBody';
 import { PostHeader } from './PostHeader';
 
@@ -36,10 +38,15 @@ export async function CommunityPostPage({
   // 글은 자주 바뀌지 않지만 조회수·댓글수가 있어 길게 캐시하지 않는다.
   // 로그인 상태에서는 캐시하지 않는다 — `viewer` 가 사용자마다 달라서
   // 공유 캐시에 담으면 남의 좋아요 상태가 보인다.
-  const result = await fetchPostDetail(
-    postId,
-    token === null ? { revalidate: 30 } : { token, cache: 'no-store' },
-  );
+  const options =
+    token === null ? { revalidate: 30 } : { token, cache: 'no-store' as const };
+
+  // **병렬로 부른다.** 댓글은 글에 의존하지 않으므로 줄세우면 왕복이 두 번
+  // 쌓여 첫 페인트가 그만큼 늦어진다.
+  const [result, commentResult] = await Promise.all([
+    fetchPostDetail(postId, options),
+    fetchComments(postId, {}, options),
+  ]);
 
   if (!result.ok) {
     const { kind, statusCode } = result.failure;
@@ -55,8 +62,11 @@ export async function CommunityPostPage({
   }
 
   const post = result.value;
-  // 본문이 블록 형식이면 블록을 그린다. 그 외(PLAIN)는 평문이다.
-  const blocks = post.bodyFormat === 'BLOCKS' ? parseBlocks(post.body) : [];
+  // **분기 기준은 `bodyFormat` 이다**(Dart `isBlocks` 와 같다). 블록 수로
+  // 가르면 투표만 있고 본문이 없는 글(`body: '[]'`)이 평문 분기로 떨어져
+  // `[]` 가 날것으로 보인다 — 실측으로 겪었다(글 47번).
+  const isBlocks = post.bodyFormat === 'BLOCKS';
+  const blocks = isBlocks ? parseBlocks(post.body) : [];
 
   return (
     <>
@@ -83,12 +93,24 @@ export async function CommunityPostPage({
           {token !== null && post.viewer.scrapped ? ' · 스크랩함' : ''}
         </div>
 
-        {blocks.length > 0 ? (
+        {isBlocks ? (
           <PostBody blocks={blocks} />
         ) : (
           <p className="post__text">{post.body}</p>
         )}
+
+        {post.poll === null ? null : <PollCard poll={post.poll} />}
       </article>
+
+      <section className="comments-section">
+        <h2 className="comments-section__title">댓글 {post.commentCount}</h2>
+        {/* 댓글만 실패하면 글은 그대로 보여준다 — 본문을 못 읽을 이유가 없다. */}
+        {commentResult.ok ? (
+          <CommentList comments={commentResult.value.comments} />
+        ) : (
+          <p className="comments__empty">댓글을 불러오지 못했습니다.</p>
+        )}
+      </section>
     </>
   );
 }

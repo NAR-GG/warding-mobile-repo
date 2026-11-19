@@ -174,6 +174,183 @@ body {
   text-align: center;
 }
 
+/* ── 투표 카드 ────────────────────────────────────────────
+ * 수치는 Flutter `poll_card.dart` 와 맞춘다 — 선택지 radius 9. */
+
+.poll {
+  margin-top: calc(18 * var(--scale));
+  padding: calc(14 * var(--scale));
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(10 * var(--scale));
+  background: var(--color-nar-dark500);
+}
+
+.poll__question {
+  color: var(--color-nar-text);
+  font-size: calc(15 * var(--scale));
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.poll__options {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6 * var(--scale));
+  margin-top: calc(12 * var(--scale));
+}
+
+/* 막대를 배경에 깔고 글자를 그 위에 둔다. `position: relative` 가 막대의
+ * 기준이다. */
+.poll__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  overflow: hidden;
+  padding: calc(10 * var(--scale)) calc(12 * var(--scale));
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(9 * var(--scale));
+  background: var(--color-nar-dark600);
+}
+
+/* 내가 고른 선택지는 테두리로 표시한다. */
+.poll__option--mine {
+  border-color: var(--color-nar-violet3);
+}
+
+.poll__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-nar-dark400);
+}
+
+.poll__label,
+.poll__count {
+  position: relative;
+  color: var(--color-nar-text);
+  font-size: calc(13.5 * var(--scale));
+  line-height: 1.45;
+}
+
+.poll__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.poll__count {
+  flex: 0 0 auto;
+  color: var(--color-nar-text3);
+  font-weight: 600;
+}
+
+.poll__footer {
+  margin-top: calc(10 * var(--scale));
+  color: var(--color-nar-text3);
+  font-size: calc(12 * var(--scale));
+  line-height: 1.45;
+}
+
+/* ── 댓글 ─────────────────────────────────────────────────
+ * 수치는 Flutter `comment_tile.dart` 와 맞춘다. */
+
+.comments-section {
+  padding: 0 calc(20 * var(--scale)) calc(32 * var(--scale));
+}
+
+.comments-section__title {
+  padding: calc(16 * var(--scale)) 0 calc(10 * var(--scale));
+  border-top: 1px solid var(--color-nar-line);
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+  font-weight: 700;
+}
+
+.comments__empty {
+  padding: calc(28 * var(--scale)) 0;
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+  text-align: center;
+}
+
+.comment {
+  padding: calc(12 * var(--scale)) 0;
+  border-top: 1px solid var(--color-nar-line2);
+}
+
+/* 답글은 들여쓴다. 1단까지만이라 중첩 들여쓰기는 생기지 않는다. */
+.comment--reply {
+  padding-left: calc(16 * var(--scale));
+}
+
+.comment__head {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--scale));
+}
+
+.comment__author {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--scale));
+  min-width: 0;
+  color: var(--color-nar-text3);
+  font-size: calc(12.5 * var(--scale));
+  font-weight: 600;
+}
+
+/* 말줄임은 감싼 요소에 건다 — `.post-item__nickname` 과 같은 이유다. */
+.comment__nickname {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.comment__team {
+  flex: 0 0 auto;
+  width: calc(13 * var(--scale));
+  height: calc(13 * var(--scale));
+  border-radius: 50%;
+  background: var(--color-nar-dark500);
+  object-fit: cover;
+}
+
+.comment__time {
+  flex: 0 0 auto;
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+}
+
+.comment__body {
+  margin-top: calc(5 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(13.5 * var(--scale));
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  /* 줄바꿈을 보존한다 — 댓글은 사용자가 친 그대로 보여야 한다. */
+  white-space: pre-wrap;
+}
+
+.comment__mention {
+  color: var(--color-nar-violet3);
+  font-weight: 600;
+}
+
+.comment__like {
+  display: inline-block;
+  margin-top: calc(6 * var(--scale));
+  color: var(--color-nar-text-red);
+  font-size: calc(12 * var(--scale));
+  font-weight: 600;
+}
+
+/* 지워진 댓글. 행은 남기되 본문 자리만 비운다. */
+.comment__hidden {
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+  font-style: italic;
+}
+
 /* ── 커뮤니티 글 목록 ──────────────────────────────────────
  * 수치는 Flutter `post_list_item.dart` 와 맞춘다 — 패딩 20/18, 제목 16/1.4 w700,
  * 미리보기 14/1.5 2줄, 메타 12.5/1.45, 썸네일 62. */
@@ -288,9 +465,16 @@ body {
   align-items: center;
   gap: calc(4 * var(--scale));
   min-width: 0;
-  overflow: hidden;
   color: var(--color-nar-text3);
   font-weight: 600;
+}
+
+/* 말줄임은 **감싼 요소**에 건다. flex 컨테이너의 텍스트 노드에 직접 주면
+ * 잘리기만 하고 `…` 가 안 나온다(실측) — ellipsis 는 블록 컨테이너의 인라인
+ * 콘텐츠에만 걸린다. */
+.post-item__nickname {
+  min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }

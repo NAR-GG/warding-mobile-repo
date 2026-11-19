@@ -112,6 +112,50 @@ export type PostBlock = {
 export const isHeading = (b: PostBlock): boolean => b.style === 'heading';
 
 /**
+ * 댓글 상태.
+ *
+ * **VISIBLE 이 아니면 `body`·`author` 가 null 로 온다 — 행은 남는다.** 지우거나
+ * 차단된 댓글의 자리를 보존하는 설계다(Dart `CommunityCommentStatus` 주석).
+ * 답글이 달린 댓글이 통째로 사라지면 대화가 끊겨 읽을 수 없게 된다.
+ *
+ * 모르는 값은 'VISIBLE' 로 본다 — Dart `fromApi` 의 default 와 같다.
+ */
+export type CommentStatus = 'VISIBLE' | 'DELETED' | 'BLOCKED' | 'HIDDEN';
+
+/**
+ * 댓글 한 건.
+ *
+ * **답글은 1단까지만 접는다.** `parentId` 는 항상 **최상위 댓글**을 가리킨다 —
+ * 답글의 답글도 같은 층에 쌓이고, 누구에게 한 말인지는 `mentionNickname` 이
+ * 알려 준다(Dart `CommunityRemoteComment` 주석과 같은 계약).
+ */
+export type Comment = {
+  id: number;
+  /** null 이면 최상위 댓글. 값이 있으면 그 최상위 댓글의 답글이다. */
+  parentId: number | null;
+  status: CommentStatus;
+  /** `status` 가 VISIBLE 이 아니면 null. */
+  body: string | null;
+  /** `status` 가 VISIBLE 이 아니면 null. */
+  author: Author | null;
+  /** 답글이 특정 사용자에게 향할 때 본문 앞에 붙는 `@닉네임`. */
+  mentionNickname: string | null;
+  likeCount: number;
+  liked: boolean;
+  mine: boolean;
+  /** 수정된 적 있으면 시간 옆에 "(수정됨)" 을 붙인다. */
+  edited: boolean;
+  createdAt: Date | null;
+};
+
+/** 댓글 목록 페이지. **오래된 순이다**(글 목록과 반대). */
+export type CommentList = {
+  comments: Comment[];
+  /** 다음 페이지 커서. null 이면 마지막이다. */
+  nextCursor: number | null;
+};
+
+/**
  * 목록 항목. 상세(`PostDetail`)와 **다른 타입이다.**
  *
  * 서버가 목록에는 `bodyPreview`(본문 일부)만 주고 `body`·`viewer`·`poll` 은

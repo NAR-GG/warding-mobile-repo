@@ -18,6 +18,7 @@ export type { RequestOptions } from './client';
 
 export {
   SEARCH_MIN_LENGTH,
+  fetchComments,
   fetchPostDetail,
   fetchPosts,
   searchPosts,
