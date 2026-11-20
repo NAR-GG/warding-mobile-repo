@@ -22,6 +22,20 @@ class WebViewAuth {
 
   final WebViewCookieManager _cookies;
 
+  /// 마지막으로 심은 값. 같은 값이면 다시 심지 않는다.
+  ///
+  /// **`setCookie` 가 생각보다 비싸다 — 실측 314ms**(플랫폼 채널 왕복,
+  /// 2026-11-20 iOS 시뮬레이터). 화면을 열 때마다 심으면 그 시간이 매번
+  /// 로드를 막는다. 쿠키는 도메인 단위라 한 번 심으면 모든 웹뷰 화면에
+  /// 걸리므로, 값이 그대로면 건너뛴다.
+  ///
+  /// `static` 인 이유: 화면마다 `WebViewAuth` 인스턴스가 새로 생기는데,
+  /// 쿠키 저장소는 앱 전체에 하나뿐이다.
+  ///
+  /// **키에 토큰 값이 들어 있어** 로그인·로그아웃·재발급으로 값이 바뀌면
+  /// 저절로 다시 심는다 — 따로 무효화를 부를 필요가 없다.
+  static String? _lastApplied;
+
   /// 토큰을 심는다. `token` 이 null 이면 비로그인 상태로 둔다.
   ///
   /// [webHost] 는 웹이 떠 있는 오리진(`https://nar.kr` 등)이고, 쿠키 도메인은
@@ -35,15 +49,27 @@ class WebViewAuth {
 
     // 비로그인이면 빈 값을 심어 이전 토큰을 덮는다. 쿠키 삭제 API 가 전체
     // 삭제(clearCookies)뿐이라, 다른 쿠키까지 날리지 않으려면 이 편이 낫다.
+    final value = token ?? '';
+
+    // 같은 값이면 건너뛴다 — 심는 데 314ms 가 든다(위 주석).
+    final key = '$host|$value';
+    if (_lastApplied == key) return;
+
     await _cookies.setCookie(
       WebViewCookie(
         name: kAuthCookieName,
-        value: token ?? '',
+        value: value,
         domain: host,
       ),
     );
+    _lastApplied = key;
   }
 
   /// 로그아웃 등으로 모든 쿠키를 지운다.
-  Future<void> clear() => _cookies.clearCookies();
+  Future<void> clear() async {
+    // 캐시를 먼저 비운다 — 안 그러면 다음 `apply` 가 "이미 심었다" 로 보고
+    // 건너뛰어, 지워진 쿠키가 되살아나지 않는다.
+    _lastApplied = null;
+    await _cookies.clearCookies();
+  }
 }

@@ -10,6 +10,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/app/app_hooks.dart';
+import 'package:warding/app/bridge/webview_warmup.dart';
 import 'package:warding/app/di_container.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/core/config/app_language.dart';
@@ -195,6 +196,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 서버가 만든 카드는 앱 없이 렌더되므로 로고를 미리 저장해 둬야 한다.
     // 이미 받아둔 팀은 존재 확인만 하고 넘어간다.
     liveActivityLogoPrefetcher.prefetchLeague();
+
+    // 커뮤니티 웹뷰를 미리 만들어 둔다. 탭을 누를 때 만들면 WKWebView
+    // 생성·JS 하이드레이션으로 1.5초가 걸린다(실측) — 그 비용을 시작 때
+    // 한 번만 치른다. 첫 프레임을 막지 않게 뒤로 미룬다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WebViewWarmup.instance.warm();
+    });
   }
 
   @override

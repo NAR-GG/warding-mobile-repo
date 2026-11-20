@@ -21,6 +21,7 @@ export {
   SEARCH_MIN_LENGTH,
   createComment,
   createPost,
+  fetchCommunityUnreadCount,
   fetchComments,
   fetchPostDetail,
   fetchPosts,

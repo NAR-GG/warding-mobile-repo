@@ -52,6 +52,14 @@ class BridgeHandler {
     );
   }
 
+  /// 채널을 뗀다.
+  ///
+  /// **컨트롤러를 재사용할 때 필요하다**(→ `WebViewWarmup`). 화면이 사라져도
+  /// 컨트롤러가 살아 있으면 채널이 남고, 다음 화면이 `attach` 할 때 같은
+  /// 이름으로 두 번 등록된다. 콜백이 죽은 화면을 붙들고 있어 메시지가
+  /// 엉뚱한 곳으로 간다.
+  void detach() => controller.removeJavaScriptChannel(kBridgeChannel);
+
   /// 테스트에서 채널을 거치지 않고 직접 넣는 통로.
   ///
   /// `attach()` 는 플랫폼 채널이라 단위 테스트에서 쓸 수 없다. 메시지 해석

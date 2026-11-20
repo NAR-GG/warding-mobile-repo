@@ -1,10 +1,11 @@
-import { fetchPosts } from 'warding-api/server';
+import { fetchCommunityUnreadCount, fetchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
 import { WebLink } from '@/shared/ui';
 import { PostCard } from '@/widgets/post-card';
 
 import { LoadMore } from './LoadMore';
+import { NotificationBell } from './NotificationBell';
 
 /**
  * 커뮤니티 글 목록.
@@ -28,10 +29,20 @@ export async function CommunityListPage() {
 
   // 목록은 상세보다 자주 바뀐다(새 글이 위로 쌓인다). 로그인 상태에서는
   // 캐시하지 않는다 — 글마다 내 상태가 섞여 들어갈 여지를 두지 않는다.
-  const result = await fetchPosts(
-    {},
-    token === null ? { revalidate: 15 } : { token, cache: 'no-store' },
-  );
+  const options =
+    token === null ? { revalidate: 15 } : { token, cache: 'no-store' as const };
+
+  // **병렬로 부른다.** 미읽음 수는 목록에 의존하지 않으므로 줄세우면 왕복이
+  // 두 번 쌓인다. 비로그인이면 셀 것이 없어 아예 부르지 않는다.
+  const [result, unread] = await Promise.all([
+    fetchPosts({}, options),
+    token === null
+      ? Promise.resolve(null)
+      : fetchCommunityUnreadCount({ token }),
+  ]);
+
+  // 배지는 장식이라 못 세었다고 화면을 막지 않는다.
+  const unreadCount = unread !== null && unread.ok ? unread.value : 0;
 
   if (!result.ok) {
     const { kind } = result.failure;
@@ -50,14 +61,20 @@ export async function CommunityListPage() {
 
   return (
     <main>
-      {/* 네이티브 커뮤니티 화면과 같은 헤더 — 제목 + 검색. 알림 벨은
-          네이티브에 남는다(커뮤니티 밖 저장소를 읽고 앱 생명주기·푸시 신호에
-          묶여 있다). */}
+      {/* 네이티브 커뮤니티 화면(`_Header`)과 같은 구성 — 제목 + 검색 + 알림. */}
       <header className="board-header">
         <h1 className="board-header__title">커뮤니티</h1>
-        <WebLink className="board-header__action" href="/community/search">
-          <SearchIcon />
-        </WebLink>
+
+        <div className="board-header__actions">
+          <WebLink className="board-header__action" href="/community/search">
+            <SearchIcon />
+          </WebLink>
+
+          {/* 알림함 화면은 아직 네이티브다 — 벨과 배지만 웹이 그리고 탭하면
+              브리지로 넘긴다. 미읽음은 커뮤니티 묶음만 센다(경기 알림은
+              마이구독이 담당). */}
+          <NotificationBell unreadCount={unreadCount} />
+        </div>
       </header>
 
       <ul className="post-list">
@@ -67,6 +84,14 @@ export async function CommunityListPage() {
         {/* 첫 페이지가 마지막이면 버튼 자체를 그리지 않는다. */}
         {nextCursor === null ? null : <LoadMore cursor={nextCursor} />}
       </ul>
+
+      {/* 글쓰기 — 네이티브 FAB(`_WriteFab`)과 같은 자리다. 비로그인은
+          글쓰기 화면이 로그인 안내를 띄운다. 작성 간격 잠금은 아직 없다
+          (네이티브는 남은 초를 버튼에 띄운다). */}
+      <WebLink className="write-fab" href="/community/write">
+        <PencilIcon />
+        글쓰기
+      </WebLink>
     </main>
   );
 }
@@ -76,6 +101,20 @@ function SearchIcon() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
       <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

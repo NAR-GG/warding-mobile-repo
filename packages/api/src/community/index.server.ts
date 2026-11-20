@@ -304,6 +304,31 @@ export function createPost(
   );
 }
 
+/**
+ * 커뮤니티 알림 미읽음 수.
+ *
+ * `GET /api/mobile/me/notifications?group=COMMUNITY&size=1` — 목록이 아니라
+ * **개수만** 필요해서 `size=1` 로 부른다(Dart `community_screen.dart` 와 같다).
+ *
+ * **경기 알림은 세지 않는다** — `group=COMMUNITY` 로 거른다. 그쪽은 마이구독
+ * 이 담당한다.
+ *
+ * 비로그인·실패는 0 으로 본다. 벨 배지는 장식이라 못 세었다고 화면을 막을
+ * 이유가 없다.
+ */
+export function fetchCommunityUnreadCount(
+  options: RequestOptions = {},
+): Promise<Result<number>> {
+  return getJson(
+    `${API_BASE_URL}/mobile/me/notifications?group=COMMUNITY&page=0&size=1`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('unreadCount: 객체가 아니다');
+      return numOr(json.unreadCount, 0);
+    },
+    options,
+  );
+}
+
 /** 검색어 최소 길이. 이보다 짧으면 **서버가 400 을 준다**(실측 2026-11-19). */
 export const SEARCH_MIN_LENGTH = 2;
 
