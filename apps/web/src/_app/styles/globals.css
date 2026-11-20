@@ -813,66 +813,96 @@ body {
   color: var(--color-nar-dark300);
 }
 
-/* 사진 미리보기. 가로 스크롤은 이 줄 안에서만 생긴다 — 본문이 가로로
- * 밀리면 웹뷰에서 네이티브 제스처와 충돌한다. */
-.write__photos {
+/* ── 블록 에디터 ──────────────────────────────────────────
+ * 텍스트 사이에 이미지를 끼우는 구조. 블록마다 오른쪽에 조작 버튼이 붙는다. */
+
+.blocks {
+  flex: 1 1 auto;
+  padding: calc(8 * var(--scale)) 0;
+}
+
+.blocks__row {
   display: flex;
-  gap: calc(8 * var(--scale));
-  overflow-x: auto;
-  padding-bottom: calc(10 * var(--scale));
-  scrollbar-width: none;
+  align-items: flex-start;
+  gap: calc(6 * var(--scale));
 }
 
-.write__photos::-webkit-scrollbar {
-  display: none;
+.blocks__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 짧아도 글 쓰는 자리로 보이게 한다. */
+  min-height: calc(40 * var(--scale));
+  padding: calc(6 * var(--scale)) 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text);
+  font-family: inherit;
+  font-size: calc(14.5 * var(--scale));
+  line-height: 1.6;
+  resize: none;
 }
 
-.write__photo {
-  position: relative;
-  flex: 0 0 auto;
-  width: calc(72 * var(--scale));
-  height: calc(72 * var(--scale));
+/* 제목 스타일. 상세 렌더러(`post__heading`)와 수치를 맞춘다. */
+.blocks__text--heading {
+  font-size: calc(16 * var(--scale));
+  font-weight: 700;
+  line-height: 1.45;
 }
 
-.write__photo img {
-  width: 100%;
-  height: 100%;
+.blocks__text:focus {
+  outline: none;
+}
+
+.blocks__text::placeholder {
+  color: var(--color-nar-dark300);
+}
+
+.blocks__image {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 세로로 긴 사진이 화면을 다 먹지 않게 막는다. */
+  max-height: 60vh;
   border-radius: calc(8 * var(--scale));
   background: var(--color-nar-dark500);
-  object-fit: cover;
+  object-fit: contain;
 }
 
-/* 올리는 중·실패는 사진 위에 덮어 표시한다 — 자리를 따로 쓰면 줄이 흔들린다. */
-.write__photo-state {
-  position: absolute;
-  inset: 0;
+/* 조작 버튼은 세로로 쌓는다 — 가로로 두면 좁은 화면에서 본문을 밀어낸다. */
+.blocks__tools {
+  flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: calc(8 * var(--scale));
-  background: var(--color-nar-dark-opacity62);
-  color: var(--color-nar-text);
-  font-size: calc(11 * var(--scale));
-  font-weight: 600;
+  flex-direction: column;
+  gap: calc(2 * var(--scale));
+  padding-top: calc(6 * var(--scale));
 }
 
-.write__photo--failed .write__photo-state {
-  color: var(--color-nar-text-red);
-}
-
-.write__photo-remove {
-  position: absolute;
-  top: calc(-4 * var(--scale));
-  right: calc(-4 * var(--scale));
-  width: calc(20 * var(--scale));
-  height: calc(20 * var(--scale));
+.blocks__tool {
+  width: calc(24 * var(--scale));
+  height: calc(24 * var(--scale));
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: var(--color-nar-dark400);
-  color: var(--color-nar-text);
+  border-radius: calc(6 * var(--scale));
+  background: var(--color-nar-dark500);
+  color: var(--color-nar-text3);
+  font-family: inherit;
   font-size: calc(11 * var(--scale));
+  font-weight: 700;
   line-height: 1;
+}
+
+.blocks__tool--on {
+  background: var(--color-nar-violet3);
+  color: var(--color-nar-dark800);
+}
+
+.blocks__tool:disabled {
+  opacity: 0.35;
+}
+
+.write__uploading {
+  padding-bottom: calc(8 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
 }
 
 .write__tools {

@@ -12,7 +12,18 @@ import {
   uploadToCloudinary,
 } from '@/shared/lib';
 
+import {
+  ensureTextEdges,
+  hasContent,
+  imageBlock,
+  imageUrlsOf,
+  insertMedia,
+  textBlock,
+  toBodyJson,
+  type EditorBlock,
+} from '../lib/blocks';
 import { createPostAction, signUploadAction } from '../api/actions';
+import { BlockEditor } from './BlockEditor';
 
 /** 한 글에 붙일 수 있는 사진 수. Dart 와 같은 상한이다. */
 const MAX_PHOTOS = 10;
@@ -20,34 +31,34 @@ const MAX_PHOTOS = 10;
 /** 자동 저장 간격. 타이핑마다 쓰면 localStorage 가 과하게 돈다. */
 const AUTOSAVE_MS = 2000;
 
-type Photo =
-  /** 올리는 중. 미리보기는 로컬 objectURL 이다. */
-  | { state: 'uploading'; previewUrl: string }
-  /** 올라감. `url` 이 Cloudinary `secure_url` 이고 이것만 드래프트에 남는다. */
-  | { state: 'done'; previewUrl: string; url: string }
-  | { state: 'failed'; previewUrl: string };
-
 /**
- * 글쓰기 — 제목 · 본문(평문) · 사진.
+ * 글쓰기 — 제목 + 블록 본문(텍스트·사진).
  *
- * **사진은 고르는 즉시 올린다**(선업로드). 사용자가 제목·본문을 쓰는 동안
- * 업로드가 끝나서 등록 버튼은 `createPost` 한 번으로 끝난다 — Flutter 가
- * 쓰는 패턴 그대로다. 대신 글을 안 쓰고 나가면 Cloudinary 에 고아 파일이
- * 남는데, 앱도 이미 같은 비용을 감수하고 있다.
+ * **사진은 고르는 즉시 올린다**(선업로드). 사용자가 글을 쓰는 동안 업로드가
+ * 끝나서 등록은 `createPost` 한 번으로 끝난다 — Flutter 가 쓰는 패턴이다.
+ * 대신 글을 안 쓰고 나가면 Cloudinary 에 고아 파일이 남는데, 앱도 이미 같은
+ * 비용을 감수하고 있다.
  *
- * **리사이즈는 브라우저가 한다**(`resizeImage`). `<input type="file">` 에는
- * `image_picker` 같은 옵션이 없어 원본이 그대로 오고, Cloudinary 의 변환은
- * 파일이 도착한 **뒤** 일어나 업로드 대역폭을 줄이지 못한다.
+ * **업로드가 끝난 뒤에 블록으로 들어간다.** 올리는 중인 사진을 블록에 미리
+ * 넣으면 그 상태가 드래프트에 섞이고, 복원했을 때 이어갈 수 없는 항목이
+ * 된다. 진행 중인 것은 따로 줄에 보여 준다.
  *
- * 블록 에디터·투표·링크 프리뷰는 다음 단계다.
+ * 투표 작성·링크 프리뷰는 아직 없다.
  */
 export function WriteForm() {
   const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [blocks, setBlocks] = useState<EditorBlock[]>(() => [textBlock()]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
+
+  /** 커서가 있는 텍스트 블록과 그 안의 위치 — 사진을 여기에 끼운다. */
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const cursor = useRef(0);
+  /** 삽입 직후 포커스를 옮길 블록. */
+  const [focusAfterInsert, setFocusAfterInsert] = useState<string | null>(null);
 
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -55,36 +66,33 @@ export function WriteForm() {
   useEffect(() => {
     const draft = loadDraft();
     if (draft === null) return;
+
     setTitle(draft.title);
-    setBody(draft.body);
-    setPhotos(
-      draft.imageUrls.map((url) => ({ state: 'done', previewUrl: url, url })),
-    );
+    // 드래프트의 본문은 블록 JSON 이다. 깨졌으면 빈 본문으로 연다 —
+    // 복원 실패로 글쓰기 자체를 막지 않는다.
+    setBlocks(parseDraftBody(draft.body));
     setRestored(true);
   }, []);
 
-  // 자동 저장. 올라간 사진의 URL 만 담는다 — 올리는 중인 것은 복원해도
-  // 이어갈 수 없다.
+  // 자동 저장. 본문은 블록 JSON 으로, 이미지는 이미 URL 이다.
   useEffect(() => {
-    if (title === '' && body === '' && photos.length === 0) return;
+    if (title === '' && !hasContent(blocks)) return;
 
     const timer = setTimeout(() => {
       saveDraft({
         title,
-        body,
-        imageUrls: photos
-          .filter((p): p is Extract<Photo, { state: 'done' }> => p.state === 'done')
-          .map((p) => p.url),
+        body: toBodyJson(blocks),
+        imageUrls: imageUrlsOf(blocks),
       });
     }, AUTOSAVE_MS);
 
     return () => clearTimeout(timer);
-  }, [title, body, photos]);
+  }, [title, blocks]);
 
   async function onPick(files: FileList | null) {
     if (files === null || files.length === 0) return;
 
-    const room = MAX_PHOTOS - photos.length;
+    const room = MAX_PHOTOS - imageUrlsOf(blocks).length - pendingCount;
     if (room <= 0) {
       setNotice(`사진은 ${MAX_PHOTOS}장까지 올릴 수 있어요`);
       return;
@@ -92,69 +100,55 @@ export function WriteForm() {
 
     const picked = Array.from(files).slice(0, room);
     setNotice(null);
+    setPendingCount((n) => n + picked.length);
 
-    // 자리를 먼저 잡아 두고 비동기로 채운다 — 고른 순서가 유지된다.
-    const entries = picked.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }));
-    setPhotos((prev) => [
-      ...prev,
-      ...entries.map(({ previewUrl }) => ({ state: 'uploading' as const, previewUrl })),
-    ]);
-
-    for (const { file, previewUrl } of entries) {
-      void upload(file, previewUrl);
+    for (const file of picked) {
+      void upload(file);
     }
   }
 
-  async function upload(file: File, previewUrl: string) {
-    // **인덱스가 아니라 `previewUrl` 로 찾는다.** 올리는 사이에 사용자가 앞쪽
-    // 사진을 지우면 인덱스가 밀려 엉뚱한 자리를 덮어쓴다.
-    const replace = (next: Photo) =>
-      setPhotos((prev) =>
-        prev.map((p) => (p.previewUrl === previewUrl ? next : p)),
-      );
-
+  async function upload(file: File) {
     try {
       const resized = await resizeImage(file);
 
       const sig = await signUploadAction();
-      if (sig.kind === 'unauthorized') {
-        setNotice('로그인이 필요합니다');
-        replace({ state: 'failed', previewUrl });
-        return;
-      }
-      if (sig.kind === 'failed') {
-        replace({ state: 'failed', previewUrl });
+      if (sig.kind !== 'ok') {
+        setNotice(
+          sig.kind === 'unauthorized'
+            ? '로그인이 필요합니다'
+            : '사진을 올리지 못했어요',
+        );
+        setFailedCount((n) => n + 1);
         return;
       }
 
       const url = await uploadToCloudinary(sig.value, resized.blob);
-      replace({ state: 'done', previewUrl, url });
+
+      // 끝난 것만 블록에 넣는다. 커서 위치는 이 시점 기준이다.
+      setBlocks((prev) => {
+        const r = insertMedia(prev, [imageBlock(url)], focusedId, cursor.current);
+        setFocusAfterInsert(r.focusId);
+        return r.blocks;
+      });
     } catch {
-      // 리사이즈·업로드 어느 쪽이 터져도 그 장만 실패로 둔다 — 나머지는
-      // 계속 올라간다.
-      replace({ state: 'failed', previewUrl });
+      // 리사이즈·업로드 어느 쪽이 터져도 그 장만 실패로 둔다.
+      setFailedCount((n) => n + 1);
+      setNotice('사진을 올리지 못했어요');
+    } finally {
+      setPendingCount((n) => Math.max(0, n - 1));
     }
   }
 
-  function removePhoto(previewUrl: string) {
-    setPhotos((prev) => prev.filter((p) => p.previewUrl !== previewUrl));
-  }
-
-  const uploading = photos.some((p) => p.state === 'uploading');
-  const failed = photos.some((p) => p.state === 'failed');
   const ready =
-    title.trim() !== '' && body.trim() !== '' && !uploading && !submitting;
+    title.trim() !== '' && hasContent(blocks) && pendingCount === 0 && !submitting;
 
   async function onSubmit() {
     if (!ready) return;
 
-    // 실패한 사진이 있으면 멈춘다. 사진이 빠진 채 글만 올라가는 것보다
+    // 실패한 사진이 있으면 멈춘다 — 사진이 빠진 채 글만 올라가는 것보다
     // 낫다는 Dart 의 판단과 같다.
-    if (failed) {
-      setNotice('올리지 못한 사진이 있어요. 지우거나 다시 시도해 주세요');
+    if (failedCount > 0) {
+      setNotice('올리지 못한 사진이 있어요. 다시 시도해 주세요');
       return;
     }
 
@@ -163,10 +157,9 @@ export function WriteForm() {
 
     const r = await createPostAction({
       title,
-      body,
-      imageUrls: photos
-        .filter((p): p is Extract<Photo, { state: 'done' }> => p.state === 'done')
-        .map((p) => p.url),
+      body: toBodyJson(blocks),
+      bodyFormat: 'BLOCKS',
+      imageUrls: imageUrlsOf(blocks),
     });
 
     setSubmitting(false);
@@ -185,6 +178,8 @@ export function WriteForm() {
     // 네이티브 스택과 어긋난다.
     goBack();
   }
+
+  const photoCount = imageUrlsOf(blocks).length;
 
   return (
     <div className="write">
@@ -214,43 +209,19 @@ export function WriteForm() {
         maxLength={100}
       />
 
-      <textarea
-        className="write__body"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="내용을 입력하세요"
+      <BlockEditor
+        blocks={blocks}
+        onChange={setBlocks}
+        onFocusBlock={setFocusedId}
+        onCursor={(p) => {
+          cursor.current = p;
+        }}
+        focusId={focusAfterInsert}
       />
 
-      {photos.length === 0 ? null : (
-        <ul className="write__photos">
-          {photos.map((photo) => (
-            <li
-              key={photo.previewUrl}
-              className={
-                photo.state === 'failed'
-                  ? 'write__photo write__photo--failed'
-                  : 'write__photo'
-              }
-            >
-              <img src={photo.previewUrl} alt="" />
-              {photo.state === 'uploading' ? (
-                <span className="write__photo-state">올리는 중…</span>
-              ) : null}
-              {photo.state === 'failed' ? (
-                <span className="write__photo-state">실패</span>
-              ) : null}
-              <button
-                type="button"
-                className="write__photo-remove"
-                onClick={() => removePhoto(photo.previewUrl)}
-                aria-label="사진 삭제"
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {pendingCount > 0 ? (
+        <p className="write__uploading">사진 {pendingCount}장 올리는 중…</p>
+      ) : null}
 
       <div className="write__tools">
         <button
@@ -258,7 +229,7 @@ export function WriteForm() {
           className="write__tool"
           onClick={() => fileInput.current?.click()}
         >
-          사진 {photos.length}/{MAX_PHOTOS}
+          사진 {photoCount}/{MAX_PHOTOS}
         </button>
 
         {/* `accept` 에 HEIC 을 넣지 않는다 — iOS 가 자동으로 JPEG 로 바꿔
@@ -286,4 +257,29 @@ export function WriteForm() {
       </p>
     </div>
   );
+}
+
+/** 드래프트 본문(블록 JSON) → 편집 블록. 깨졌으면 빈 본문으로 연다. */
+function parseDraftBody(body: string): EditorBlock[] {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (!Array.isArray(parsed)) return [textBlock()];
+
+    const blocks = parsed.flatMap((raw): EditorBlock[] => {
+      if (typeof raw !== 'object' || raw === null) return [];
+      const b = raw as { type?: unknown; text?: unknown; style?: unknown; url?: unknown };
+
+      if (b.type === 'image' && typeof b.url === 'string') return [imageBlock(b.url)];
+      if (b.type === 'text' && typeof b.text === 'string') {
+        return [textBlock(b.text, b.style === 'heading')];
+      }
+      return [];
+    });
+
+    // 저장된 JSON 에는 빈 텍스트 블록이 빠져 있다(`toBodyJson` 이 걷어낸다).
+    // 그대로 열면 이미지가 첫 블록일 수 있으므로 불변식을 다시 맞춘다.
+    return blocks.length === 0 ? [textBlock()] : ensureTextEdges(blocks);
+  } catch {
+    return [textBlock()];
+  }
 }

@@ -42,21 +42,26 @@ export async function signUploadAction(): Promise<WriteResult<UploadSignature>> 
 export async function createPostAction({
   title,
   body,
+  bodyFormat = 'PLAIN',
   imageUrls,
 }: {
   title: string;
   body: string;
+  /** 'BLOCKS' 면 `body` 가 블록 JSON 문자열이다. */
+  bodyFormat?: string;
   imageUrls: string[];
 }): Promise<WriteResult<number>> {
   const t = title.trim();
   const b = body.trim();
   // 서버도 막지만 왕복을 아낀다. 버튼이 비활성이라 정상 경로로는 오지 않는다.
-  if (t === '' || b === '') return { kind: 'failed' };
+  // 블록 본문은 사진만 있어도 성립하므로 빈 배열(`[]`)만 거른다.
+  if (t === '') return { kind: 'failed' };
+  if (bodyFormat === 'BLOCKS' ? b === '[]' : b === '') return { kind: 'failed' };
 
   const token = await readAuthToken();
   if (token === null) return { kind: 'unauthorized' };
 
-  const r = await createPost({ title: t, body: b, imageUrls }, { token });
+  const r = await createPost({ title: t, body: b, bodyFormat, imageUrls }, { token });
   if (!r.ok) {
     return r.failure.kind === 'unauthorized'
       ? { kind: 'unauthorized' }
