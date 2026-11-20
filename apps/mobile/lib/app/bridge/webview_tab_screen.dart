@@ -5,6 +5,7 @@ import 'package:warding/app/bridge/bridge_handler.dart';
 import 'package:warding/app/bridge/webview_screen.dart';
 import 'package:warding/app/bridge/webview_warmup.dart';
 import 'package:warding/app/navigation/tab_navigation.dart';
+import 'package:warding/app/navigation/webview_navigate.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/ui/app_bottom_nav.dart';
@@ -91,8 +92,12 @@ class _WebViewTabScreenState extends State<WebViewTabScreen> {
       // 탭 화면은 되돌아갈 네이티브 화면이 없다 — 웹이 자체 히스토리를
       // 먼저 쓰므로 여기 오는 것은 "웹에서도 되돌릴 곳이 없다" 는 뜻이다.
       onBack: () {},
-      onNavigate: (route) {
-        debugPrint('[Bridge] navigate 요청: $route (미구현)');
+      onNavigate: (route) async {
+        if (!mounted) return;
+        final opened = await openNativeRoute(context, route);
+        // 모르는 이름이면 로그를 남긴다 — 웹이 새 화면을 추가했는데
+        // `kNativeRoutes` 에 안 넣은 경우다.
+        if (!opened) debugPrint('[Bridge] 모르는 navigate 대상: $route');
       },
       openPhotoViewer: (urls, index) async {
         if (!mounted) return;

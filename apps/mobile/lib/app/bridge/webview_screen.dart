@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:warding/app/bridge/bridge_handler.dart';
 import 'package:warding/app/bridge/bridge_protocol.dart';
 import 'package:warding/app/bridge/webview_auth.dart';
+import 'package:warding/app/navigation/webview_navigate.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/theme/app_colors.dart';
@@ -75,9 +76,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
         debugPrint('[Bridge] back');
         if (mounted) Navigator.of(context).maybePop();
       },
-      onNavigate: (route) {
-        // 웹이 요청하는 네이티브 화면 이동. 대상이 늘면 여기서 분기한다.
-        debugPrint('[Bridge] navigate 요청: $route (미구현)');
+      onNavigate: (route) async {
+        if (!mounted) return;
+        final opened = await openNativeRoute(context, route);
+        // 모르는 이름이면 로그를 남긴다 — 웹이 새 화면을 추가했는데
+        // `kNativeRoutes` 에 안 넣은 경우다.
+        if (!opened) debugPrint('[Bridge] 모르는 navigate 대상: $route');
       },
       openPhotoViewer: (urls, index) async {
         if (!mounted) return;
