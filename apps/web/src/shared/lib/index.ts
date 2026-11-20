@@ -2,6 +2,7 @@
 // 보고 알 수 있어야 하고, 내부 구현이 늘 때 조용히 새지 않는다.
 
 export { timeAgo } from './timeAgo';
+export { useDismissKeyboard } from './useDismissKeyboard';
 
 export { cloudinaryScaled } from './cloudinary';
 

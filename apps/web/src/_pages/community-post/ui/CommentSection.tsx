@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import type { Comment } from 'warding-api';
 
+import { useDismissKeyboard } from '@/shared/lib';
+
 import { CommentInput } from './CommentInput';
 import { CommentList } from './CommentList';
 
@@ -24,6 +26,9 @@ export function CommentSection({
   postId: number;
   comments: Comment[];
 }) {
+  // 빈 곳 탭·스크롤로 키보드를 내린다(네이티브와 같은 동작).
+  useDismissKeyboard();
+
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
   return (

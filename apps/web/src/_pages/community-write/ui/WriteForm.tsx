@@ -12,6 +12,7 @@ import {
   resizeImage,
   saveDraft,
   uploadToCloudinary,
+  useDismissKeyboard,
 } from '@/shared/lib';
 
 import {
@@ -48,6 +49,9 @@ const AUTOSAVE_MS = 2000;
  * 투표 작성·링크 프리뷰는 아직 없다.
  */
 export function WriteForm() {
+  // 빈 곳 탭·스크롤로 키보드를 내린다(네이티브와 같은 동작).
+  useDismissKeyboard();
+
   const [title, setTitle] = useState('');
   const [blocks, setBlocks] = useState<EditorBlock[]>(() => [textBlock()]);
   const [pendingCount, setPendingCount] = useState(0);

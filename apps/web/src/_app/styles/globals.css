@@ -59,6 +59,17 @@ body {
   overscroll-behavior: none;
 }
 
+/* 빈 곳을 탭하면 키보드가 내려가게 한다.
+ *
+ * **네이티브와 같은 동작이다** — Dart 글 상세가 `FocusScope.unfocus()` 를
+ * 바깥 탭에 걸어 둔다. 웹뷰에서는 iOS 가 입력창에 "Done" 툴바를 자동으로
+ * 붙이는데, 그게 유일한 닫기 수단이면 네이티브와 조작이 달라진다.
+ *
+ * `cursor: pointer` 가 없으면 iOS 가 body 탭을 클릭으로 안 보낸다. */
+body {
+  cursor: pointer;
+}
+
 /* 치수는 375 기준 원시값이다. 소비할 때 scale 을 곱한다. */
 body {
   font-size: calc(14 * var(--scale));
