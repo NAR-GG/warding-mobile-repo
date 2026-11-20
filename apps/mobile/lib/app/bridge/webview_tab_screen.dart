@@ -9,6 +9,7 @@ import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/ui/app_bottom_nav.dart';
 import 'package:warding/features/community/presentation/widgets/community_photo_viewer.dart';
+import 'package:warding/features/community/presentation/widgets/post_list_item_skeleton.dart';
 
 /// 하단 탭이 붙은 웹뷰 화면.
 ///
@@ -101,6 +102,25 @@ class _WebViewTabScreenState extends State<WebViewTabScreen> {
     )..attach();
   }
 
+  /// 웹이 뜨기 전 자리를 메우는 목록 스켈레톤.
+  ///
+  /// 네이티브 커뮤니티 화면이 쓰던 위젯을 그대로 쓴다 — 전환 중에도 같은
+  /// 모양이 보여야 "다른 화면" 처럼 느껴지지 않는다.
+  Widget _skeleton(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final scale = width.clamp(320.0, 430.0) / 375;
+
+    return ColoredBox(
+      color: AppColors.narDark800,
+      child: ListView.builder(
+        // 아직 받을 데이터가 없다 — 스크롤을 막아 빈 공간이 튀지 않게 한다.
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 6,
+        itemBuilder: (_, _) => PostListItemSkeleton(scale: scale),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _warmup.controller;
@@ -118,11 +138,17 @@ class _WebViewTabScreenState extends State<WebViewTabScreen> {
               child: Stack(
                 children: [
                   WebViewWidget(controller: controller),
-                  if (!_warmup.loaded)
-                    const ColoredBox(
-                      color: AppColors.narDark800,
-                      child: SizedBox.expand(),
-                    ),
+                  // 웹이 아직 안 떴으면 **네이티브 스켈레톤**을 덮는다.
+                  //
+                  // 전에는 불투명 검정이었는데, 워밍업이 끝나기 전에 탭을
+                  // 누르면 빈 화면이 그대로 보였다. 웹 스켈레톤은 웹뷰가
+                  // 로드돼야 그려지므로 이 구간을 덮을 수 없다 — 네이티브가
+                  // 그려야 한다.
+                  //
+                  // 모양이 웹 스켈레톤과 두 벌이 되는 것은 감수한다. 둘 다
+                  // `PostCard`·`PostListItem` 의 수치를 따르므로 어긋나면
+                  // 눈에 띈다.
+                  if (!_warmup.loaded) _skeleton(context),
                 ],
               ),
             ),
