@@ -48,13 +48,21 @@ class WebViewWarmup {
   bool _loaded = false;
   bool get loaded => _loaded;
 
+  /// 로드가 실패했는가.
+  ///
+  /// **이걸 안 보면 스켈레톤이 영원히 떠 있는다.** 네트워크가 끊기거나
+  /// 서버가 죽으면 `onPageFinished` 가 오지 않아 [loaded] 가 false 로
+  /// 남는데, 화면은 "곧 뜨겠지" 하며 계속 기다린다.
+  bool _failed = false;
+  bool get failed => _failed;
+
   /// 준비된 컨트롤러. 아직 데우지 않았으면 null.
   WebViewController? get controller => _controller;
 
   /// 컨트롤러가 만들어졌을 때 호출된다 — 브리지를 붙이는 쪽이 받는다.
   void Function(WebViewController controller)? onControllerCreated;
 
-  /// 첫 로드 완료 통지. 화면이 이미 붙어 있으면 가림막을 걷는다.
+  /// 로드 상태가 바뀌었다(성공·실패). 화면이 붙어 있으면 다시 그린다.
   VoidCallback? onLoaded;
 
   /// 앱이 뜬 뒤 **한 번** 부른다. 두 번째부터는 아무 일도 하지 않는다.
@@ -74,10 +82,20 @@ class WebViewWarmup {
       NavigationDelegate(
         onPageFinished: (_) {
           _loaded = true;
+          _failed = false;
           onLoaded?.call();
           // 능력 목록을 알린다 — 이게 없으면 웹이 `isSupported()` 에서
           // 전부 false 를 받아 브리지를 아예 안 쓴다.
           unawaited(_broadcastEnv());
+        },
+        onWebResourceError: (error) {
+          // **메인 문서가 실패했을 때만 막는다.** 이미지 하나가 404 라고
+          // 화면을 에러로 덮으면 안 된다 — 글은 멀쩡히 읽힌다.
+          if (error.isForMainFrame != true) return;
+
+          debugPrint('[Warmup] 로드 실패: ${error.errorCode} ${error.description}');
+          _failed = true;
+          onLoaded?.call();
         },
       ),
     );
@@ -114,6 +132,19 @@ class WebViewWarmup {
       // 웹 수신기가 아직 없으면 조용히 넘어간다 — 화면이 붙을 때 다시 보낸다.
       debugPrint('[Warmup] env 전달 실패: $e');
     }
+  }
+
+  /// 실패한 로드를 다시 시도한다.
+  ///
+  /// 사용자가 "다시 시도" 를 눌렀을 때 쓴다. 성공하면 `onPageFinished` 가
+  /// [_failed] 를 내린다.
+  Future<void> retry() async {
+    final c = _controller;
+    if (c == null) return;
+
+    _failed = false;
+    onLoaded?.call();
+    await c.loadRequest(Uri.parse(communityListRoute.url()));
   }
 
   /// 탭에 다시 들어왔을 때 데이터를 새로 받는다.

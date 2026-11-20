@@ -8,6 +8,8 @@ import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/theme/app_colors.dart';
 import 'package:warding/core/ui/app_bottom_nav.dart';
+import 'package:warding/core/ui/load_error.dart';
+import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/features/community/presentation/widgets/community_photo_viewer.dart';
 import 'package:warding/features/community/presentation/widgets/post_list_item_skeleton.dart';
 
@@ -121,6 +123,24 @@ class _WebViewTabScreenState extends State<WebViewTabScreen> {
     );
   }
 
+  /// 로드 실패 안내.
+  ///
+  /// **이게 없으면 스켈레톤이 영원히 떠 있는다** — 네트워크가 끊기면
+  /// `onPageFinished` 가 오지 않아 "곧 뜨겠지" 상태로 멈춘다.
+  Widget _loadError(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return ColoredBox(
+      color: AppColors.narDark800,
+      child: LoadError(
+        message: l.communityLoadFailed,
+        onRetry: () async {
+          await _warmup.retry();
+          if (mounted) setState(() {});
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _warmup.controller;
@@ -148,7 +168,10 @@ class _WebViewTabScreenState extends State<WebViewTabScreen> {
                   // 모양이 웹 스켈레톤과 두 벌이 되는 것은 감수한다. 둘 다
                   // `PostCard`·`PostListItem` 의 수치를 따르므로 어긋나면
                   // 눈에 띈다.
-                  if (!_warmup.loaded) _skeleton(context),
+                  if (_warmup.failed)
+                    _loadError(context)
+                  else if (!_warmup.loaded)
+                    _skeleton(context),
                 ],
               ),
             ),
