@@ -1,7 +1,8 @@
 import { fetchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
-import { PostCard, WebLink } from '@/shared/ui';
+import { WebLink } from '@/shared/ui';
+import { PostCard } from '@/widgets/post-card';
 
 import { LoadMore } from './LoadMore';
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -48,6 +49,15 @@ class _WardingWebViewState extends State<WardingWebView> {
           onPageFinished: (_) => widget.onPageFinished?.call(),
         ),
       );
+
+    // 웹 콘솔을 네이티브 로그로 뺀다. 웹뷰 안에서 무슨 일이 나는지 볼
+    // 방법이 이것뿐이다 — Safari 개발자도구를 붙이지 않으면 에러도 조용히
+    // 묻힌다. 디버그 빌드에서만 찍는다.
+    if (kDebugMode) {
+      _controller.setOnConsoleMessage(
+        (msg) => debugPrint('[web] ${msg.level.name}: ${msg.message}'),
+      );
+    }
 
     _enableAndroidFileSelector();
 

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { fetchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
-import { PostCard } from '@/shared/ui';
+import { PostCard } from '@/widgets/post-card';
 
 /**
  * 다음 페이지를 받아 **그려진 항목과 다음 커서**를 돌려준다.

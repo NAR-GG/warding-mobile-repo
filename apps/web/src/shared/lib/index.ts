@@ -9,6 +9,7 @@ export { resizeImage } from './resizeImage';
 export type { ResizeResult } from './resizeImage';
 
 export { uploadToCloudinary } from './uploadImage';
+export type { CloudinarySignature } from './uploadImage';
 
 export { DRAFT_MAX_AGE_DAYS, clearDraft, loadDraft, saveDraft } from './postDraft';
 export type { PostDraft } from './postDraft';

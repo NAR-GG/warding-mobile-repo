@@ -40,6 +40,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
   final _auth = WebViewAuth();
   BridgeHandler? _bridge;
 
+  /// 로딩 구간을 재기 위한 시작 시각. 어디서 시간이 가는지 숫자로 봐야
+  /// 엉뚱한 곳을 고치지 않는다.
+  final Stopwatch _watch = Stopwatch()..start();
+
   /// 첫 페인트 전까지 덮어 두는 가림막. 흰 플래시와 깜빡임을 막는다.
   bool _ready = false;
 
@@ -56,6 +60,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   Future<void> _applyAuth() async {
     final token = await AuthService.instance.jwt;
     await _auth.apply(webHost: ApiConfig.webViewHost, token: token);
+    debugPrint('[WebView] 쿠키 적용 ${_watch.elapsedMilliseconds}ms');
     if (mounted) setState(() => _authApplied = true);
   }
 
@@ -67,7 +72,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         debugPrint('[Bridge] height=$h');
       },
       onReady: (at) {
-        debugPrint('[Bridge] ready at $at');
+        debugPrint('[Bridge] ready ${_watch.elapsedMilliseconds}ms');
         if (mounted) setState(() => _ready = true);
       },
       onBack: () {
@@ -91,6 +96,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Future<void> _onPageFinished() async {
+    // **가림막을 여기서 걷는다.** 브리지 `ready` 를 기다리면 안 된다 — 그건
+    // JS 가 전부 로드되고 하이드레이션이 끝나야 오는 신호라, 서버가 보낸
+    // HTML 이 이미 그려졌는데도 화면을 덮고 있게 된다. SSR 로 얻은 이득을
+    // 통째로 버리는 셈이다(실측으로 겪었다 — "화면이 엄청 느리다").
+    debugPrint('[WebView] pageFinished ${_watch.elapsedMilliseconds}ms');
+    if (mounted && !_ready) setState(() => _ready = true);
+
     // 웹이 `ready` 를 보내기 전에도 환경은 미리 넣어 둔다. 수신 함수가 아직
     // 없으면 `_push` 가 조용히 넘어간다.
     final media = MediaQuery.maybeOf(context);
@@ -128,6 +140,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     onControllerCreated: _onControllerCreated,
                     onPageFinished: _onPageFinished,
                   ),
+                  // 가림막은 **첫 HTML 이 그려지기 전**에만 덮는다
+                  // (`onPageFinished` 에서 걷는다). 웹뷰 배경색이 이미
+                  // 같은 토큰이라 흰 플래시는 그것만으로 막히지만, 직전
+                  // 화면이 잠깐 비치는 것을 막으려고 남겨 둔다.
                   if (!_ready)
                     const ColoredBox(
                       color: AppColors.narDark800,

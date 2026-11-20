@@ -2,7 +2,7 @@ import type { PostSummary } from 'warding-api';
 
 import { cloudinaryScaled, timeAgo } from '@/shared/lib';
 
-import { WebLink } from './WebLink';
+import { WebLink } from '@/shared/ui';
 
 /**
  * 글 한 줄 — Flutter `features/community/presentation/widgets/

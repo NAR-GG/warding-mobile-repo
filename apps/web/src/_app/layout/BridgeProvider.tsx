@@ -20,6 +20,7 @@ export function BridgeProvider({ children }: { children: React.ReactNode }) {
     // 첫 페인트 완료를 알린다 — 네이티브가 로딩 가림막을 걷는 신호다.
     notifyReady(Date.now());
 
+
     // 토큰이 갱신되면 쿠키는 네이티브가 이미 다시 심은 뒤다. 서버 데이터만
     // 다시 받으면 로그인 상태가 반영된다.
     const off = onBroadcast('auth-changed', () => router.refresh());

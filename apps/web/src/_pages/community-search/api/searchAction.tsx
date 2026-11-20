@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { SEARCH_MIN_LENGTH, searchPosts } from 'warding-api/server';
 
 import { readAuthToken } from '@/shared/auth/index.server';
-import { PostCard } from '@/shared/ui';
+import { PostCard } from '@/widgets/post-card';
 
 export type SearchPage = {
   /** 서버가 그린 결과 항목. 데이터가 아니라 JSX 다(→ 아래 주석). */

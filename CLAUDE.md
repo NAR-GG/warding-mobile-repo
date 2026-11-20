@@ -194,8 +194,18 @@ packages/api              서버 호출 + 도메인 타입 + 매퍼
 - **`entities` 레이어를 두지 않는다.** 서버 응답을 아는 코드를 `packages/api`
   한 곳에 모은다 — 타입(`types.ts`)과 매퍼(`mappers.ts`)가 붙어 있어야 서버
   형식이 바뀔 때 한 군데만 고친다.
-- **`features`·`widgets` 는 필요해질 때 만든다.** 지금은 읽기 전용 화면뿐이다.
-- `packages/ui` 로 올리는 기준은 **화면 2개 이상**. 미리 올리지 않는다.
+- **`widgets` 는 "도메인을 아는 재사용 UI" 자리다.** 화면 2개 이상이 쓰면서
+  서버 타입(`PostSummary` 등)을 아는 컴포넌트는 여기다 —
+  `widgets/post-card` 가 목록·검색 양쪽에 쓰인다.
+- **`shared` 에 도메인 타입을 넣지 않는다.** 한 번 어겼다가 되돌렸다 —
+  카드를 `shared/ui` 에 뒀더니 그 레이어가 커뮤니티 글 구조를 알게 됐고,
+  화면이 늘수록 모든 도메인을 아는 레이어가 된다. **steiger 는 이걸 잡지
+  않으므로** 사람이 봐야 한다. 업로드 유틸처럼 구조만 같으면 되는 것은
+  서버 타입을 import 하지 말고 **전송 규격을 따로 적는다**
+  (`CloudinarySignature`).
+- **`features` 는 아직 없다.** 필요해질 때 만든다.
+- `packages/ui` 로 올리는 기준은 **화면 2개 이상 + Dart 원본이 `core/ui/`**.
+  Dart 원본이 기능 폴더 안이면 `widgets` 로 간다.
 
 **명령은 루트 `pnpm` 으로 모은다.** Flutter 는 `pubspec.yaml` 에 스크립트
 섹션이 없어서(`package.json` 의 `scripts` 같은 것이 없다) 셸 스크립트를 쓰는데,
