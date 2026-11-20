@@ -11,7 +11,8 @@
     "tokens:build": "turbo run build sync:dart --filter=warding-design-tokens",
     "typecheck": "turbo run typecheck",
     "web:build": "turbo run build --filter=warding-web",
-    "web:dev": "turbo run dev --filter=warding-web"
+    "web:dev": "turbo run dev --filter=warding-web",
+    "web:prod": "tools/web-prod.sh"
   },
   "devDependencies": {
     "turbo": "^2.11.11"

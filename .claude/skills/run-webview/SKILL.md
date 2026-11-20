@@ -31,16 +31,23 @@ open http://localhost:3100/community/post/114
 pnpm web:dev
 ```
 
-**첫 페인트 속도를 재려면** 프로덕션 빌드로 띄운다. `dev` 는 매 요청 컴파일해서
-느리다.
+**속도를 보려면 프로덕션으로 띄운다.** 빌드까지 한 번에 한다.
 
 ```bash
-pnpm web:build && pnpm --filter warding-web start
+pnpm web:prod
 ```
 
-> **SSR 은 둘 다 똑같이 돈다.** `dev` 든 `start` 든 서버가 완성된 HTML 을
-> 보낸다 — SSR 은 별도 모드가 아니라 이 앱의 기본 동작이다. 차이는 컴파일
-> 시점뿐이다.
+> **`dev` 로 속도를 재면 안 된다.** 번들을 쪼개지 않고 HMR·소스맵을 전부
+> 실어서, 실측(2026-11-20) 같은 화면이 **dev 1,899KB / prod 111KB** 로
+> **17배** 차이였다(로드 423ms 대 75ms). "웹뷰가 느리다" 는 판단을 dev 에서
+> 내리면 엉뚱한 곳을 고치게 된다.
+
+> **SSR 은 둘 다 똑같이 돈다.** `dev` 든 `prod` 든 서버가 완성된 HTML 을
+> 보낸다 — SSR 은 별도 모드가 아니라 이 앱의 기본 동작이다. 차이는 번들과
+> 컴파일 시점이다.
+
+> 포트가 막혀 있으면 `web:prod` 가 **누가 쓰는지 보여 주고 물어본다** —
+> 직전에 띄운 `web:dev` 인 경우가 많은데 `EADDRINUSE` 스택만으로는 모른다.
 
 살아 있는지 확인:
 
@@ -146,7 +153,7 @@ curl -s -H 'Cookie: warding_jwt=<토큰>' http://localhost:3100/community/post/1
 | `webview_routes.dart`·`api_config.dart` | 앱 터미널에서 `R` (핫리스타트) |
 | `WEBVIEW_HOST` 를 바꿔야 할 때 | `flutter run` 을 다시 띄운다 |
 
-> **`web:build && start` 로 띄웠다면 웹을 고쳐도 반영되지 않는다.** 고정된
+> **`web:prod` 로 띄웠다면 웹을 고쳐도 반영되지 않는다.** 고정된
 > 빌드 결과를 서빙하기 때문이다. UI 를 반복해 고칠 거면 `web:dev` 를 쓴다.
 
 ## 7. 정리
