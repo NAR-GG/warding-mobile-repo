@@ -855,46 +855,55 @@ body {
   color: var(--color-nar-dark300);
 }
 
+/* 이미지 블록. 버튼이 이미지 위에 겹치므로 기준점이 된다. */
+.blocks__media {
+  position: relative;
+  margin: calc(6 * var(--scale)) 0;
+}
+
 .blocks__image {
-  flex: 1 1 auto;
-  min-width: 0;
+  display: block;
+  width: 100%;
   /* 세로로 긴 사진이 화면을 다 먹지 않게 막는다. */
   max-height: 60vh;
-  border-radius: calc(8 * var(--scale));
+  border-radius: calc(10 * var(--scale));
   background: var(--color-nar-dark500);
   object-fit: contain;
 }
 
-/* 조작 버튼은 세로로 쌓는다 — 가로로 두면 좁은 화면에서 본문을 밀어낸다. */
-.blocks__tools {
-  flex: 0 0 auto;
+/* 조작 버튼은 **이미지 위 우상단**에 가로로 뜬다(Dart `Positioned` 6/6).
+ * 텍스트 블록에는 붙이지 않는다 — 입력 폭을 먹는다. */
+.blocks__media-actions {
+  position: absolute;
+  top: calc(6 * var(--scale));
+  right: calc(6 * var(--scale));
   display: flex;
-  flex-direction: column;
-  gap: calc(2 * var(--scale));
-  padding-top: calc(6 * var(--scale));
+  gap: calc(5 * var(--scale));
 }
 
-.blocks__tool {
-  width: calc(24 * var(--scale));
-  height: calc(24 * var(--scale));
+/* 원형 26px, 반투명 검정 — 사진 위에서도 읽히게 한다(Dart `_mediaAction`). */
+.blocks__media-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(26 * var(--scale));
+  height: calc(26 * var(--scale));
   padding: 0;
   border: 0;
-  border-radius: calc(6 * var(--scale));
-  background: var(--color-nar-dark500);
-  color: var(--color-nar-text3);
-  font-family: inherit;
-  font-size: calc(11 * var(--scale));
-  font-weight: 700;
-  line-height: 1;
+  border-radius: 50%;
+  /* `rgb(from ...)` 상대 색은 iOS 지원이 불확실해 쓰지 않는다. 토큰에 이미
+   * 반투명 다크가 있으므로 그걸 쓴다. */
+  background: var(--color-nar-dark-opacity62);
+  color: var(--color-nar-text);
 }
 
-.blocks__tool--on {
-  background: var(--color-nar-violet3);
-  color: var(--color-nar-dark800);
+.blocks__media-action svg {
+  width: calc(16 * var(--scale));
+  height: calc(16 * var(--scale));
 }
 
-.blocks__tool:disabled {
-  opacity: 0.35;
+.blocks__media-action:disabled {
+  opacity: 0.4;
 }
 
 .write__uploading {

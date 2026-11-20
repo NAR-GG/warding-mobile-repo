@@ -234,6 +234,8 @@ export function WriteForm() {
           cursor.current = p;
         }}
         focusId={focusAfterInsert}
+        // 내용이 하나라도 생기면 안내를 걷는다(Dart 와 같다).
+        showHint={!hasContent(blocks)}
       />
 
       {pendingCount > 0 ? (

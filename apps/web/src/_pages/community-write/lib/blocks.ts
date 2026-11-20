@@ -135,7 +135,14 @@ export function updateText(
   return blocks.map((b) => (b.id === id && b.type === 'text' ? { ...b, text } : b));
 }
 
-/** 텍스트 블록의 제목 스타일 토글. */
+/**
+ * 텍스트 블록의 제목 스타일 토글.
+ *
+ * **아직 UI 가 없다 — 네이티브도 마찬가지다.** `heading` 은 드래프트 복원과
+ * 서버 전송에만 쓰이고(서식 v1 이 거기까지 가지 않았다), 사용자가 켜는
+ * 방법은 양쪽 다 없다. 한쪽에만 붙이면 같은 글이 플랫폼마다 다르게 보여서
+ * 함수만 두고 UI 는 네이티브가 생길 때 맞춘다.
+ */
 export function toggleHeading(blocks: EditorBlock[], id: string): EditorBlock[] {
   return blocks.map((b) =>
     b.id === id && b.type === 'text' ? { ...b, heading: !b.heading } : b,
