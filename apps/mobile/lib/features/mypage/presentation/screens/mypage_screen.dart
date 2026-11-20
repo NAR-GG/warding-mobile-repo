@@ -24,7 +24,8 @@ import 'package:warding/features/my_community_activity/presentation/screens/my_c
 import 'package:warding/features/my_review/presentation/screens/my_review_screen.dart';
 import 'package:warding/features/my_subscription_setting/presentation/screens/my_subscription_setting_screen.dart';
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
-import 'package:warding/features/notice/presentation/screens/notice_screen.dart';
+import 'package:warding/app/navigation/webview_open.dart';
+import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/features/profile_edit/presentation/screens/profile_edit_screen.dart';
 import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/core/util/analytics_events.dart';
@@ -328,16 +329,14 @@ class _MypageScreenState extends State<MypageScreen> {
                         items: [
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.notice,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  settings: const RouteSettings(
-                                    name: AnalyticsPage.notice,
-                                  ),
-                                  builder: (_) => const NoticeScreen(),
-                                ),
-                              );
-                            },
+                            // 공지는 목록·상세 모두 웹이다. 네이티브
+                            // `NoticeScreen` 은 홈 배너가 여는 상세 경로가
+                            // 아직 남아 있어 지우지 않았다.
+                            onTap: () => openWebRoute(
+                              context,
+                              route: noticeListRoute,
+                              analyticsPage: AnalyticsPage.notice,
+                            ),
                           ),
                           MypageCardItem(
                             title: AppLocalizations.of(context)!.guideMenu,

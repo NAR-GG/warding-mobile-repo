@@ -1316,3 +1316,83 @@ body {
   text-decoration: underline;
   overflow-wrap: anywhere;
 }
+
+/* ── 공지 목록 ────────────────────────────────────────────
+ * 수치는 Flutter `notice_screen.dart` 의 `_NoticeCard` 와 맞춘다 —
+ * 안쪽 패딩 16/14, 제목 14.5/1.4 w600, 날짜 12 w500, 라운드 13(안)·14(밖). */
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--scale));
+  padding: calc(16 * var(--scale));
+}
+
+.notice-list__empty {
+  padding: calc(40 * var(--scale)) calc(20 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(14 * var(--scale));
+  text-align: center;
+}
+
+/* 일반 공지는 1px 실선 보더. 고정 공지는 아래에서 그라데이션으로 덮는다. */
+.notice-card {
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(14 * var(--scale));
+}
+
+/* 고정 공지의 그라데이션 1px 보더.
+ *
+ * **`border-image` 를 쓰지 않는다** — `border-radius` 를 따라가지 못해
+ * 모서리가 각지게 나온다. Dart 와 같은 방법(1px 패딩 + 안쪽 배경)으로
+ * 만든다: 바깥이 그라데이션, 안쪽 블록이 배경색을 덮어 테두리만 남는다. */
+.notice-card--pinned {
+  border: 0;
+  padding: 1px;
+  background: var(--gradient-nar-bg);
+}
+
+.notice-card__inner {
+  display: block;
+  padding: calc(14 * var(--scale)) calc(16 * var(--scale));
+  border-radius: calc(13 * var(--scale));
+  background: var(--color-nar-bg-secondary);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Dart 는 `ShaderMask` 로 글자에 그라데이션을 칠한다. 웹의 짝은
+ * `background-clip: text` 다. */
+.notice-card__pin {
+  display: block;
+  margin-bottom: calc(6 * var(--scale));
+  background: var(--gradient-nar-bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: calc(11 * var(--scale));
+  font-weight: 700;
+}
+
+.notice-card__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--color-nar-text-tertiary);
+  font-size: calc(14.5 * var(--scale));
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.notice-card__date {
+  margin-top: calc(6 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+  font-weight: 500;
+}
+
+/* 임시저장은 ADMIN 검수용으로만 내려온다 — 날짜 대신 노랗게 표시한다. */
+.notice-card__date--draft {
+  color: var(--color-nar-yellow6);
+}

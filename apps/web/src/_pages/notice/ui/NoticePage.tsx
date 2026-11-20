@@ -1,5 +1,7 @@
 import { fetchNotices } from 'warding-api/server';
 
+import { formatDate } from '@/shared/lib';
+
 import { NoticeBody } from './NoticeBody';
 import { NoticeHeader } from './NoticeHeader';
 
@@ -49,7 +51,7 @@ export async function NoticePage({
         <h1 className="notice__title">{notice.title}</h1>
         {notice.publishedAt ? (
           <time className="notice__date" dateTime={notice.publishedAt.toISOString()}>
-            {notice.publishedAt.toISOString().slice(0, 10).replace(/-/g, '.')}
+            {formatDate(notice.publishedAt)}
           </time>
         ) : null}
 

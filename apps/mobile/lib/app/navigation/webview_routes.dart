@@ -63,6 +63,12 @@ const communityWriteRoute = WebRoute(path: '/community/write', stage: BridgeStag
 /// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
 const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
 
+/// 공지 목록. 마이페이지 '공지사항' 행에서 진입한다.
+///
+/// 목록 → 상세가 둘 다 웹이라 항목 탭은 브리지를 거치지 않는다. 뒤로가기만
+/// 네이티브에 위임하므로 Stage A 다.
+const noticeListRoute = WebRoute(path: '/notice', stage: BridgeStage.a);
+
 /// 공지 상세. 읽기 전용이라 Stage A 로 충분하다.
 const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 
@@ -72,5 +78,6 @@ const webviewRoutes = <WebRoute>[
   communitySearchRoute,
   communityWriteRoute,
   communityPostRoute,
+  noticeListRoute,
   noticeRoute,
 ];

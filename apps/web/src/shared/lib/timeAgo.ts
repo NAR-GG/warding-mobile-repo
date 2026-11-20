@@ -1,3 +1,5 @@
+import { formatDate } from './formatDate';
+
 /**
  * 상대 시간 표기 — Flutter `core/util/rating_mapping.dart` 의 `ratingTimeAgo`
  * 를 **복제한 것이다.**
@@ -37,7 +39,5 @@ export function timeAgo(time: Date | null, now: Date = new Date()): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}일 전`;
 
-  const m = String(time.getMonth() + 1).padStart(2, '0');
-  const d = String(time.getDate()).padStart(2, '0');
-  return `${time.getFullYear()}.${m}.${d}`;
+  return formatDate(time);
 }
