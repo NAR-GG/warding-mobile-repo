@@ -5,8 +5,7 @@ import { BoardBadge } from 'warding-ui';
 
 import { readAuthToken } from '@/shared/auth/index.server';
 
-import { CommentInput } from './CommentInput';
-import { CommentList } from './CommentList';
+import { CommentSection } from './CommentSection';
 import { PollCard } from './PollCard';
 import { PostActions } from './PostActions';
 import { PostBody } from './PostBody';
@@ -112,16 +111,14 @@ export async function CommunityPostPage({
         commentCount={post.commentCount}
       />
 
-      <section className="comments-section">
-        {/* 댓글만 실패하면 글은 그대로 보여준다 — 본문을 못 읽을 이유가 없다. */}
-        {commentResult.ok ? (
-          <CommentList comments={commentResult.value.comments} />
-        ) : (
+      {/* 댓글만 실패하면 글은 그대로 보여준다 — 본문을 못 읽을 이유가 없다. */}
+      {commentResult.ok ? (
+        <CommentSection postId={post.id} comments={commentResult.value.comments} />
+      ) : (
+        <section className="comments-section">
           <p className="comments__empty">댓글을 불러오지 못했습니다.</p>
-        )}
-      </section>
-
-      <CommentInput postId={post.id} />
+        </section>
+      )}
     </>
   );
 }

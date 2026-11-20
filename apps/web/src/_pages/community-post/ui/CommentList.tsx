@@ -17,7 +17,14 @@ import { timeAgo } from '@/shared/lib';
  * 서버가 **오래된 순**으로 준다. 대화가 위에서 아래로 읽히도록 그 순서를
  * 그대로 쓴다.
  */
-export function CommentList({ comments }: { comments: Comment[] }) {
+export function CommentList({
+  comments,
+  onReply,
+}: {
+  comments: Comment[];
+  /** 답글 대상을 고른다. 넘기지 않으면 답글 버튼을 그리지 않는다. */
+  onReply?: (comment: Comment) => void;
+}) {
   if (comments.length === 0) {
     return <p className="comments__empty">첫 댓글을 남겨보세요</p>;
   }
@@ -38,9 +45,9 @@ export function CommentList({ comments }: { comments: Comment[] }) {
     <ul className="comments">
       {roots.map((root) => (
         <li key={root.id}>
-          <CommentRow comment={root} />
+          <CommentRow comment={root} onReply={onReply} />
           {(replies.get(root.id) ?? []).map((reply) => (
-            <CommentRow key={reply.id} comment={reply} isReply />
+            <CommentRow key={reply.id} comment={reply} isReply onReply={onReply} />
           ))}
         </li>
       ))}
@@ -48,7 +55,15 @@ export function CommentList({ comments }: { comments: Comment[] }) {
   );
 }
 
-function CommentRow({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) {
+function CommentRow({
+  comment,
+  isReply = false,
+  onReply,
+}: {
+  comment: Comment;
+  isReply?: boolean;
+  onReply?: (comment: Comment) => void;
+}) {
   const hidden = comment.status !== 'VISIBLE';
 
   return (
@@ -88,10 +103,24 @@ function CommentRow({ comment, isReply = false }: { comment: Comment; isReply?: 
             {comment.body}
           </p>
 
-          {/* 추천은 0 이면 그리지 않는다 — 목록 카드와 같은 판단이다. */}
-          {comment.likeCount > 0 ? (
-            <span className="comment__like">추천 {comment.likeCount}</span>
-          ) : null}
+          <div className="comment__foot">
+            {/* 추천은 0 이면 그리지 않는다 — 목록 카드와 같은 판단이다. */}
+            {comment.likeCount > 0 ? (
+              <span className="comment__like">추천 {comment.likeCount}</span>
+            ) : null}
+
+            {/* 답글 버튼은 최상위·답글 양쪽에 둔다(Dart 와 같다). 답글에
+                달아도 서버가 최상위에 붙이고 `@닉네임` 으로 대상을 남긴다. */}
+            {onReply === undefined ? null : (
+              <button
+                type="button"
+                className="comment__reply"
+                onClick={() => onReply(comment)}
+              >
+                답글
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>

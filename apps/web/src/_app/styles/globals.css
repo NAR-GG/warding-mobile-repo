@@ -313,6 +313,42 @@ body {
   background: var(--color-nar-dark800);
 }
 
+/* 답글 대상 표시. 입력창 위에 둬서 누구에게 다는지 화면에 남긴다 —
+ * 없으면 답글 버튼을 눌렀는지 아닌지 알 수 없다(Dart 와 같은 이유). */
+.comment-input__reply-to {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  padding-bottom: calc(8 * var(--scale));
+}
+
+.comment-input__reply-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-nar-violet3);
+  font-size: calc(11.5 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.comment-input__reply-cancel {
+  flex: 0 0 auto;
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text2);
+}
+
+.comment-input__reply-cancel svg {
+  display: block;
+  width: calc(15 * var(--scale));
+  height: calc(15 * var(--scale));
+}
+
 .comment-input__row {
   display: flex;
   align-items: flex-end;
@@ -488,10 +524,25 @@ body {
   font-weight: 600;
 }
 
-.comment__like {
-  display: inline-block;
+.comment__foot {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--scale));
   margin-top: calc(6 * var(--scale));
+}
+
+.comment__like {
   color: var(--color-nar-text-red);
+  font-size: calc(12 * var(--scale));
+  font-weight: 600;
+}
+
+.comment__reply {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text2);
+  font-family: inherit;
   font-size: calc(12 * var(--scale));
   font-weight: 600;
 }

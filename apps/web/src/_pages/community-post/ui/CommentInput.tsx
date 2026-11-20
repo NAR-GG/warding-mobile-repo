@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import type { Comment } from 'warding-api';
 
 import { commentAction } from '../api/actions';
 
@@ -15,9 +16,20 @@ import { commentAction } from '../api/actions';
  * 넣지 않는 이유는 서버가 멘션 대상과 답글 위치를 정하기 때문이다 — 앱이
  * 추측해 그리면 새로고침했을 때 자리가 달라진다.
  *
- * 답글 UI(대상 지정)는 아직 없다. 지금은 최상위 댓글만 쓴다.
+ * **답글 대상이 있으면 입력창 위에 띄운다.** Dart 와 같은 이유다 — 안 그러면
+ * 답글 버튼을 눌렀는지 아닌지가 화면에 남지 않는다.
  */
-export function CommentInput({ postId }: { postId: number }) {
+export function CommentInput({
+  postId,
+  replyTo = null,
+  onCancelReply,
+  onDone,
+}: {
+  postId: number;
+  replyTo?: Comment | null;
+  onCancelReply?: () => void;
+  onDone?: () => void;
+}) {
   const router = useRouter();
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
@@ -31,7 +43,7 @@ export function CommentInput({ postId }: { postId: number }) {
     setPending(true);
     setNotice(null);
 
-    const r = await commentAction(postId, text);
+    const r = await commentAction(postId, text, replyTo?.id);
     setPending(false);
 
     if (r.kind === 'unauthorized') {
@@ -44,6 +56,7 @@ export function CommentInput({ postId }: { postId: number }) {
     }
 
     setText('');
+    onDone?.();
     // 서버가 그린 목록을 다시 받는다 — 멘션·답글 위치가 서버 몫이다.
     router.refresh();
   }
@@ -52,6 +65,23 @@ export function CommentInput({ postId }: { postId: number }) {
     <div className="comment-input">
       {notice === null ? null : (
         <p className="comment-input__notice">{notice}</p>
+      )}
+
+      {/* 답글 대상. 없으면 최상위 댓글을 쓰는 것이다. */}
+      {replyTo === null ? null : (
+        <div className="comment-input__reply-to">
+          <span className="comment-input__reply-label">
+            {replyTo.author?.nickname ?? '탈퇴한 사용자'}님에게 답글
+          </span>
+          <button
+            type="button"
+            className="comment-input__reply-cancel"
+            onClick={onCancelReply}
+            aria-label="답글 취소"
+          >
+            <CloseIcon />
+          </button>
+        </div>
       )}
 
       <div className="comment-input__row">
@@ -75,5 +105,18 @@ export function CommentInput({ postId }: { postId: number }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 6l12 12M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
