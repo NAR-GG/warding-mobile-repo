@@ -63,6 +63,17 @@ const communityWriteRoute = WebRoute(path: '/community/write', stage: BridgeStag
 /// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
 const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
 
+/// 마이페이지 "내 활동" — 내가 쓴 글·내가 쓴 댓글·스크랩.
+///
+/// **탭이 경로로 갈린다**(`:tab` = `posts`·`comments`·`scraps`). 네이티브는
+/// 한 화면 안의 `PageView` 였고 진입점 3개가 초기 탭만 달리 줬는데, 웹은
+/// 그 셋이 URL 3개와 1:1 로 맞는다 — 각 탭이 자기 데이터를 SSR 로 그린다.
+/// 대신 **스와이프 전환이 빠진다**(감수한 차이다).
+///
+/// 항목을 누르면 커뮤니티 글 상세로 가는데 그것도 웹이라 브리지를 거치지
+/// 않는다. 뒤로가기만 위임하므로 Stage A 다.
+const myActivityRoute = WebRoute(path: '/my-activity/:tab', stage: BridgeStage.a);
+
 /// 공지 목록. 마이페이지 '공지사항' 행에서 진입한다.
 ///
 /// 목록 → 상세가 둘 다 웹이라 항목 탭은 브리지를 거치지 않는다. 뒤로가기만
@@ -78,6 +89,7 @@ const webviewRoutes = <WebRoute>[
   communitySearchRoute,
   communityWriteRoute,
   communityPostRoute,
+  myActivityRoute,
   noticeListRoute,
   noticeRoute,
 ];

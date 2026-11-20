@@ -60,3 +60,18 @@ export type {
 
 export { toNotice, toNoticePage } from './notice';
 export type { Notice, NoticePage } from './notice';
+
+export {
+  toMyComment,
+  toMyCommentPage,
+  toMyPostPage,
+  toScrapItem,
+  toScrapPage,
+} from './my-activity';
+export type {
+  MyComment,
+  MyCommentPage,
+  MyPostPage,
+  ScrapItem,
+  ScrapPage,
+} from './my-activity';

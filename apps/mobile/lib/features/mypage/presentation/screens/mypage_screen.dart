@@ -20,7 +20,6 @@ import 'package:warding/features/mypage/presentation/widgets/quiet_hours_section
 import 'package:warding/features/account_setting/presentation/screens/account_setting_screen.dart';
 import 'package:warding/features/calendar_setting/presentation/screens/calendar_setting_screen.dart';
 import 'package:warding/features/match_list_setting/presentation/screens/match_list_setting_screen.dart';
-import 'package:warding/features/my_community_activity/presentation/screens/my_community_activity_screen.dart';
 import 'package:warding/features/my_review/presentation/screens/my_review_screen.dart';
 import 'package:warding/features/my_subscription_setting/presentation/screens/my_subscription_setting_screen.dart';
 import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
@@ -190,69 +189,39 @@ class _MypageScreenState extends State<MypageScreen> {
                                       AppLocalizations.of(
                                         context,
                                       )!.myCommunityPosts,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        settings: const RouteSettings(
-                                          name:
-                                              AnalyticsPage.myCommunityActivity,
-                                        ),
-                                        builder:
-                                            (_) =>
-                                                const MyCommunityActivityScreen(
-                                                  initialTab:
-                                                      MyCommunityActivityTab
-                                                          .posts,
-                                                ),
-                                      ),
-                                    );
-                                  },
+                                  onTap: () => openWebRoute(
+                                    context,
+                                    route: myActivityRoute,
+                                    params: const {'tab': 'posts'},
+                                    analyticsPage:
+                                        AnalyticsPage.myCommunityActivity,
+                                  ),
                                 ),
                                 MypageCardItem(
                                   title:
                                       AppLocalizations.of(
                                         context,
                                       )!.myCommunityComments,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        settings: const RouteSettings(
-                                          name:
-                                              AnalyticsPage.myCommunityActivity,
-                                        ),
-                                        builder:
-                                            (_) =>
-                                                const MyCommunityActivityScreen(
-                                                  initialTab:
-                                                      MyCommunityActivityTab
-                                                          .comments,
-                                                ),
-                                      ),
-                                    );
-                                  },
+                                  onTap: () => openWebRoute(
+                                    context,
+                                    route: myActivityRoute,
+                                    params: const {'tab': 'comments'},
+                                    analyticsPage:
+                                        AnalyticsPage.myCommunityActivity,
+                                  ),
                                 ),
                                 MypageCardItem(
                                   title:
                                       AppLocalizations.of(
                                         context,
                                       )!.communityScrap,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        settings: const RouteSettings(
-                                          name:
-                                              AnalyticsPage.myCommunityActivity,
-                                        ),
-                                        builder:
-                                            (_) =>
-                                                const MyCommunityActivityScreen(
-                                                  initialTab:
-                                                      MyCommunityActivityTab
-                                                          .scraps,
-                                                ),
-                                      ),
-                                    );
-                                  },
+                                  onTap: () => openWebRoute(
+                                    context,
+                                    route: myActivityRoute,
+                                    params: const {'tab': 'scraps'},
+                                    analyticsPage:
+                                        AnalyticsPage.myCommunityActivity,
+                                  ),
                                 ),
                               ],
                             ),

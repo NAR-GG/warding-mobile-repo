@@ -1396,3 +1396,86 @@ body {
 .notice-card__date--draft {
   color: var(--color-nar-yellow6);
 }
+
+/* ── 내 활동 ──────────────────────────────────────────────
+ * 탭은 Flutter `nar_tab_bar.dart`, 댓글 줄은 `my_comment_row.dart` 와
+ * 맞춘다 — 줄 패딩 20/18, 원글 제목 12.5 w500, 본문 14.5 w700, 메타 11. */
+
+.activity-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-nar-line);
+}
+
+.activity-tab {
+  flex: 1;
+  padding: calc(12 * var(--scale)) 0;
+  border-bottom: 2px solid transparent;
+  color: var(--color-nar-text2);
+  font-size: calc(14 * var(--scale));
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+}
+
+.activity-tab--on {
+  border-bottom-color: var(--color-nar-text-tertiary);
+  color: var(--color-nar-text-tertiary);
+  font-weight: 700;
+}
+
+.activity-empty {
+  padding: calc(120 * var(--scale)) calc(40 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(14 * var(--scale));
+  line-height: 1.5;
+  text-align: center;
+}
+
+.activity-comment {
+  border-bottom: 1px solid var(--color-nar-line);
+}
+
+.activity-comment__link {
+  display: block;
+  padding: calc(18 * var(--scale)) calc(20 * var(--scale));
+  color: inherit;
+  text-decoration: none;
+}
+
+.activity-comment__head {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--scale));
+  min-width: 0;
+}
+
+/* flex 안의 텍스트 노드에는 ellipsis 가 안 걸린다 — span 으로 감쌌다. */
+.activity-comment__title {
+  overflow: hidden;
+  color: var(--color-nar-text3);
+  font-size: calc(12.5 * var(--scale));
+  font-weight: 500;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-comment__body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: calc(6 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(14.5 * var(--scale));
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.activity-comment__meta {
+  margin-top: calc(6 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(11 * var(--scale));
+  font-weight: 400;
+  line-height: 1.45;
+}

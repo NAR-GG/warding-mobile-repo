@@ -35,3 +35,8 @@ export {
 } from './community/index.server';
 export type { LikeResult } from './community/index.server';
 export { fetchNotices, fetchPromotedNotices } from './notice/index.server';
+export {
+  fetchMyComments,
+  fetchMyPosts,
+  fetchScraps,
+} from './my-activity/index.server';
