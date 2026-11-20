@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { DetailHeader } from 'warding-ui';
+
 import { goBack } from '@/shared/bridge';
 import {
   DRAFT_MAX_AGE_DAYS,
@@ -139,6 +141,12 @@ export function WriteForm() {
     }
   }
 
+  /** 임시저장 수동 실행. 자동 저장이 2초 뒤라 "지금 저장" 이 필요하다. */
+  function onSaveDraft() {
+    saveDraft({ title, body: toBodyJson(blocks), imageUrls: imageUrlsOf(blocks) });
+    setNotice('임시저장했어요');
+  }
+
   const ready =
     title.trim() !== '' && hasContent(blocks) && pendingCount === 0 && !submitting;
 
@@ -183,19 +191,28 @@ export function WriteForm() {
 
   return (
     <div className="write">
-      <header className="write__header">
-        <button type="button" className="write__cancel" onClick={goBack}>
-          취소
-        </button>
-        <button
-          type="button"
-          className="write__submit"
-          onClick={onSubmit}
-          disabled={!ready}
-        >
-          {submitting ? '등록 중…' : '등록'}
-        </button>
-      </header>
+      {/* 헤더는 상세·공지와 같은 공용 컴포넌트를 쓴다 — 글쓰기만 다른
+          모양이면 화면을 오갈 때 어긋난다. 제목·버튼 구성은 Dart 와 같다
+          (가운데 "전체 게시판", 우측에 임시·등록). */}
+      <DetailHeader
+        title="전체 게시판"
+        onBack={goBack}
+        trailing={
+          <>
+            <button type="button" className="write__header-btn" onClick={onSaveDraft}>
+              임시
+            </button>
+            <button
+              type="button"
+              className="write__header-btn write__header-btn--submit"
+              onClick={onSubmit}
+              disabled={!ready}
+            >
+              {submitting ? '등록 중' : '등록'}
+            </button>
+          </>
+        }
+      />
 
       {restored ? (
         <p className="write__restored">임시저장한 글을 불러왔어요</p>
@@ -205,7 +222,7 @@ export function WriteForm() {
         className="write__title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="제목"
+        placeholder="제목을 입력하세요"
         maxLength={100}
       />
 

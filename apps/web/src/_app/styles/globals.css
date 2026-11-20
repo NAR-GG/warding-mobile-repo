@@ -732,42 +732,40 @@ body {
  * 수치는 Flutter `post_write_screen.dart` 계열과 맞춘다 — 제목 17/w700,
  * 본문 14.5/1.6, 헤더 패딩 16/12. */
 
+/* 헤더는 자체 패딩을 갖는 공용 컴포넌트라 바깥 여백 밖에 둔다 — `write` 에
+ * 좌우 패딩을 주면 헤더만 안쪽으로 밀려 다른 화면과 어긋난다. */
 .write {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 0 calc(16 * var(--scale));
 }
 
-.write__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(12 * var(--scale)) 0;
+.write > :not(.wd-detail-header) {
+  margin-right: calc(16 * var(--scale));
+  margin-left: calc(16 * var(--scale));
 }
 
-.write__cancel {
-  padding: 0;
+/* 헤더는 공용 `DetailHeader` 를 쓰고, 우측 버튼만 여기서 꾸민다.
+ * Dart `_headerButton` 과 같은 모양이다 — 14/w700, 좌우 패딩 4.
+ * **세로 패딩을 주지 않는다**: 헤더 슬롯 높이가 34*scale 이라 글자가
+ * 위아래로 잘린다(Dart 주석에 적힌 실측이다). */
+.write__header-btn {
+  padding: 0 calc(4 * var(--scale));
   border: 0;
   background: none;
-  color: var(--color-nar-text2);
+  color: var(--color-nar-text3);
   font-family: inherit;
   font-size: calc(14 * var(--scale));
-}
-
-.write__submit {
-  padding: calc(7 * var(--scale)) calc(14 * var(--scale));
-  border: 0;
-  border-radius: calc(16 * var(--scale));
-  background: var(--color-nar-violet3);
-  color: var(--color-nar-dark800);
-  font-family: inherit;
-  font-size: calc(13.5 * var(--scale));
   font-weight: 700;
+  line-height: 1.45;
 }
 
-.write__submit:disabled {
-  background: var(--color-nar-dark400);
+/* 등록은 활성일 때 강조한다 — 셋 중 무엇이 주 동작인지 보여야 한다. */
+.write__header-btn--submit {
+  color: var(--color-nar-violet3);
+}
+
+.write__header-btn--submit:disabled {
   color: var(--color-nar-text2);
 }
 
@@ -830,8 +828,8 @@ body {
 .blocks__text {
   flex: 1 1 auto;
   min-width: 0;
-  /* 짧아도 글 쓰는 자리로 보이게 한다. */
-  min-height: calc(40 * var(--scale));
+  /* 높이는 `rows` 가 정한다 — 빈 화면은 4줄, 그 외는 1줄(Dart `minLines`).
+   * 여기서 min-height 를 주면 짧은 문단 밑에 빈 줄이 남는다. */
   padding: calc(6 * var(--scale)) 0;
   border: 0;
   background: none;

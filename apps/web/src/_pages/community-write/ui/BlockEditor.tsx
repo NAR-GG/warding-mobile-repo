@@ -61,8 +61,15 @@ export function BlockEditor({
                 block.heading ? 'blocks__text blocks__text--heading' : 'blocks__text'
               }
               value={block.text}
-              placeholder={i === 0 ? '내용을 입력하세요' : ''}
-              rows={1}
+              // 안내 문구는 첫 블록에만. Dart 와 같은 문장이다.
+              placeholder={
+                i === 0
+                  ? '경기 이야기, 응원, 질문 무엇이든 좋아요.\n비방·도배는 신고 대상입니다.'
+                  : ''
+              }
+              // 블록이 하나뿐인 빈 화면에서만 4줄을 예약한다(Dart `minLines`).
+              // 미디어를 끼운 뒤에도 유지하면 짧은 문단 밑에 빈 줄이 남는다.
+              rows={blocks.length === 1 ? 4 : 1}
               autoCapitalize="off"
               autoCorrect="off"
               onFocus={() => onFocusBlock(block.id)}
