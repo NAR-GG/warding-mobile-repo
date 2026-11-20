@@ -14,7 +14,6 @@ import 'package:warding/features/community/domain/community_remote_post.dart';
 import 'package:warding/features/notice/domain/notice.dart';
 import 'package:warding/core/util/tab_route.dart';
 import 'package:warding/features/home/presentation/viewmodels/home_viewmodel.dart';
-import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import 'package:warding/features/community/presentation/screens/post_detail_screen.dart';
 import 'package:warding/features/match_detail/presentation/widgets/match_detail_team_rating_section.dart';
 import 'package:warding/features/match_list/presentation/screens/match_list_screen.dart';
@@ -99,7 +98,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// "커뮤니티 전체" — 커뮤니티 탭으로 전환한다. push 하면 탭 루트가 쌓인다.
   void _openCommunity() {
-    Navigator.of(context).pushReplacement(tabRoute(const CommunityScreen()));
+    // 커뮤니티는 웹뷰다. 분기를 복사하지 않고 탭 전환 창구를 쓴다.
+    replaceWithTabScreen(context, AppNavTab.community);
   }
 
   /// 커뮤니티 글 타일 — 게시글 상세로 이동한다. 삭제·수정 결과를 홈 목록에도

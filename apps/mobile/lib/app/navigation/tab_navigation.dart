@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:warding/app/bridge/webview_tab_screen.dart';
+import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/ui/app_bottom_nav.dart';
-import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
 import 'package:warding/features/match_list/presentation/screens/match_list_screen.dart';
 import 'package:warding/features/mypage/presentation/screens/mypage_screen.dart';
@@ -37,7 +38,15 @@ void handleNavTabSelected(
     AppNavTab.home => (const HomeScreen(), AnalyticsPage.home),
     AppNavTab.schedule => (const ScheduleScreen(), AnalyticsPage.schedule),
     AppNavTab.matchList => (const MatchListScreen(), AnalyticsPage.matchList),
-    AppNavTab.community => (const CommunityScreen(), AnalyticsPage.community),
+    // 커뮤니티는 웹뷰다. 네이티브 화면(`community_screen.dart`)은 되돌릴
+    // 길을 남겨 두려고 지우지 않았다 — 웹 배포가 막히면 여기만 되돌린다.
+    AppNavTab.community => (
+      const WebViewTabScreen(
+        route: communityListRoute,
+        tab: AppNavTab.community,
+      ),
+      AnalyticsPage.community,
+    ),
     AppNavTab.subscription => (
       const SubscriptionScreen(),
       AnalyticsPage.subscription,
@@ -55,7 +64,15 @@ void replaceWithTabScreen(BuildContext context, AppNavTab tab) {
     AppNavTab.home => (const HomeScreen(), AnalyticsPage.home),
     AppNavTab.schedule => (const ScheduleScreen(), AnalyticsPage.schedule),
     AppNavTab.matchList => (const MatchListScreen(), AnalyticsPage.matchList),
-    AppNavTab.community => (const CommunityScreen(), AnalyticsPage.community),
+    // 커뮤니티는 웹뷰다. 네이티브 화면(`community_screen.dart`)은 되돌릴
+    // 길을 남겨 두려고 지우지 않았다 — 웹 배포가 막히면 여기만 되돌린다.
+    AppNavTab.community => (
+      const WebViewTabScreen(
+        route: communityListRoute,
+        tab: AppNavTab.community,
+      ),
+      AnalyticsPage.community,
+    ),
     AppNavTab.subscription => (
       const SubscriptionScreen(),
       AnalyticsPage.subscription,

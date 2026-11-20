@@ -236,6 +236,14 @@ flavor 를 넣으면 `shorebird release`·`patch` 네 곳에 `--flavor` 를 붙�
 - **웹뷰 컨테이너는 하나다**(`core/ui/webview/`). 기능별로 복제하면 URL 만 다른
   파일이 수십 개가 된다. 어느 화면이 웹으로 갔는지는
   `app/navigation/webview_routes.dart` 가 단일 출처다.
+- **탭 화면은 `app/bridge/webview_tab_screen.dart` 를 쓴다.** 하단 네비를
+  네이티브가 그려 얹는다 — 웹뷰가 탭까지 그리면 두 겹이 되고, 탭 전환이 웹
+  라우팅이라 다른 탭으로 못 간다. push 로 열리는 화면(상세·공지)은
+  `WebViewScreen` 을 그대로 쓴다.
+- **웹으로 간 화면의 네이티브 코드는 지우지 않는다.** 커뮤니티가 웹뷰로
+  갔지만 `features/community/presentation/` 은 남아 있다 — 웹 배포가 막혔을
+  때 `tab_navigation.dart` 의 분기만 되돌리면 복귀한다. 전환이 안정된 뒤에
+  지운다.
 - **쿠키를 심기 전에는 로드하지 않는다.** 토큰 없이 로드되면 SSR 이 비로그인
   화면을 그려 버려 전환의 이점이 사라진다.
 

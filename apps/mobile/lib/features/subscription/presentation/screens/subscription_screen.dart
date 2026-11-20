@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:warding/app/navigation/tab_navigation.dart';
 import 'package:warding/core/error/failure_exception.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,7 +28,6 @@ import 'package:warding/app/navigation/match_detail_router.dart';
 import 'package:warding/core/config/app_globals.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_layout.dart';
 import 'package:warding/features/subscription/presentation/viewmodels/subscription_feed_viewmodel.dart';
-import 'package:warding/features/community/presentation/screens/community_screen.dart';
 import 'package:warding/features/home/presentation/screens/home_screen.dart';
 import 'package:warding/features/match_list/presentation/screens/match_list_screen.dart';
 import 'package:warding/features/mypage/presentation/screens/mypage_screen.dart';
@@ -585,7 +585,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     } else if (tab == AppNavTab.matchList) {
       _leaveTo(const MatchListScreen(), AnalyticsPage.matchList);
     } else if (tab == AppNavTab.community) {
-      _leaveTo(const CommunityScreen(), AnalyticsPage.community);
+      // 커뮤니티는 웹뷰다(`WebViewTabScreen`). 다른 탭과 달리 화면을
+      // 직접 짓지 않고 탭 전환 창구를 쓴다 — 분기가 또 갈리지 않게.
+      replaceWithTabScreen(context, AppNavTab.community);
     } else if (tab == AppNavTab.mypage) {
       _leaveTo(const MypageScreen(), AnalyticsPage.mypage);
     }
