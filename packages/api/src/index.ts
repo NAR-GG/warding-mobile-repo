@@ -55,6 +55,7 @@ export type {
   PostList,
   PostSummary,
   PostViewer,
+  UploadSignature,
 } from './community';
 
 export { toNotice, toNoticePage } from './notice';

@@ -5,9 +5,15 @@ import {
   type RequestOptions,
   type Result,
 } from '../client';
-import { isObject, boolOr, numOr } from '../json';
+import { isObject, boolOr, numOr, strOr } from '../json';
 import { toCommentList, toPoll, toPostDetail, toPostList } from './mappers';
-import type { CommentList, Poll, PostDetail, PostList } from './types';
+import type {
+  CommentList,
+  Poll,
+  PostDetail,
+  PostList,
+  UploadSignature,
+} from './types';
 
 /**
  * 커뮤니티 글 상세.
@@ -211,6 +217,90 @@ export function votePoll(
       return toPoll(json);
     },
     { ...options, body: { optionId } },
+  );
+}
+
+/**
+ * Cloudinary 업로드 서명.
+ *
+ * **백엔드는 서명만 발급하고 파일은 받지 않는다.** 바이너리는 브라우저가
+ * Cloudinary 로 직접 올린다 — 스펙 설명이 *"앱은 업로드 후 받은 secure_url
+ * 목록을 게시글 작성/수정의 imageUrls 로 보낸다"* 로 못박고 있고, Flutter 도
+ * 같은 경로다(`community_image_repository.dart`).
+ *
+ * 그래서 웹도 **백엔드 변경 없이** 같은 경로를 쓴다. Cloudinary 가 임의
+ * Origin 을 반사해 CORS 설정도 필요 없다(실측 2026-11-20: preflight 200,
+ * `access-control-allow-origin` 에 요청 Origin 그대로).
+ *
+ * `api_secret` 은 응답에 없다 — 서명 생성은 서버 몫이다. 타입은 브라우저도
+ * 쓰므로 `types.ts` 에 있다.
+ */
+function toUploadSignature(json: unknown): UploadSignature {
+  if (!isObject(json)) throw new TypeError('UploadSignature: 객체가 아니다');
+  return {
+    uploadUrl: strOr(json.uploadUrl, ''),
+    apiKey: strOr(json.apiKey, ''),
+    timestamp: numOr(json.timestamp, 0),
+    publicId: strOr(json.publicId, ''),
+    overwrite: boolOr(json.overwrite, true),
+    signature: strOr(json.signature, ''),
+  };
+}
+
+/**
+ * 커뮤니티 첨부 사진 업로드 서명.
+ *
+ * **이미지 1장당 1회 호출한다** — `publicId` 가 매번 새로 발급된다(프로필
+ * 이미지와 다른 점이다. 거긴 회원별로 고정이라 덮어쓴다).
+ */
+export function fetchUploadSignature(
+  options: RequestOptions = {},
+): Promise<Result<UploadSignature>> {
+  return postJson(
+    `${API_BASE_URL}/auth/me/community-image/signature`,
+    toUploadSignature,
+    options,
+  );
+}
+
+/**
+ * 글 작성. `POST /mobile/community/posts` — 만들어진 글 id 를 돌려준다.
+ *
+ * **이미지는 URL 로 보낸다.** 바이너리는 이미 Cloudinary 에 올라가 있고
+ * (→ [fetchUploadSignature]) 여기엔 `secure_url` 목록만 싣는다.
+ *
+ * `bodyFormat` 은 지금 'PLAIN' 만 쓴다 — 블록 에디터는 다음 단계다.
+ * 'BLOCKS' 면 `body` 가 블록 JSON 문자열이어야 한다.
+ *
+ * `boardTeamId` 는 null 로 고정이다. 팀별 게시판이 네이티브 쪽에서 보류
+ * 상태라(글 리젠 악순환 우려) 웹도 전체 게시판만 쓴다.
+ */
+export function createPost(
+  {
+    title,
+    body,
+    imageUrls = [],
+    bodyFormat = 'PLAIN',
+    boardTeamId = null,
+  }: {
+    title: string;
+    body: string;
+    imageUrls?: string[];
+    bodyFormat?: string;
+    boardTeamId?: number | null;
+  },
+  options: RequestOptions = {},
+): Promise<Result<number>> {
+  return postJson(
+    `${API_BASE_URL}/mobile/community/posts`,
+    (json) => {
+      if (!isObject(json)) throw new TypeError('createPost: 객체가 아니다');
+      return numOr(json.id, 0);
+    },
+    {
+      ...options,
+      body: { boardTeamId, title, body, bodyFormat, imageUrls },
+    },
   );
 }
 

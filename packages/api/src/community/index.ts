@@ -17,6 +17,7 @@ export type {
   PostList,
   PostSummary,
   PostViewer,
+  UploadSignature,
 } from './types';
 export { isHeading } from './types';
 

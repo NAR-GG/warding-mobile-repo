@@ -2,3 +2,11 @@
 // 보고 알 수 있어야 하고, 내부 구현이 늘 때 조용히 새지 않는다.
 
 export { timeAgo } from './timeAgo';
+
+export { resizeImage } from './resizeImage';
+export type { ResizeResult } from './resizeImage';
+
+export { uploadToCloudinary } from './uploadImage';
+
+export { DRAFT_MAX_AGE_DAYS, clearDraft, loadDraft, saveDraft } from './postDraft';
+export type { PostDraft } from './postDraft';

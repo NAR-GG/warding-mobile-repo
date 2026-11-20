@@ -156,6 +156,25 @@ export type CommentList = {
 };
 
 /**
+ * Cloudinary 업로드 서명.
+ *
+ * **발급은 서버가 하지만 쓰는 쪽은 브라우저다** — 바이너리를 Cloudinary 로
+ * 직접 올리기 때문에 이 타입은 클라이언트 번들에도 들어간다. 그래서 서버
+ * 전용 모듈이 아니라 여기 둔다.
+ *
+ * `api_secret` 은 들어 있지 않다. 노출되는 것은 `apiKey`·`signature` 뿐이고
+ * Flutter 앱도 같은 값을 들고 있다.
+ */
+export type UploadSignature = {
+  uploadUrl: string;
+  apiKey: string;
+  timestamp: number;
+  publicId: string;
+  overwrite: boolean;
+  signature: string;
+};
+
+/**
  * 목록 항목. 상세(`PostDetail`)와 **다른 타입이다.**
  *
  * 서버가 목록에는 `bodyPreview`(본문 일부)만 주고 `body`·`viewer`·`poll` 은

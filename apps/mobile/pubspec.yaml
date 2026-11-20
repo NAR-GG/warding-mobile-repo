@@ -44,6 +44,11 @@ dependencies:
   # 웹뷰 전환용. youtube_player_iframe 이 이미 전이 의존으로 끌고 오지만,
   # 직접 import 하려면 명시해야 한다(implicit dependency 금지).
   webview_flutter: ^4.14.1
+  # Android 파일 선택(`<input type="file">`)을 살리려면 플랫폼 패키지가
+  # 필요하다 — `setOnShowFileSelector` 가 여기에만 있고 webview_flutter 가
+  # 재수출하지 않는다. 플랫폼 기능은 구현 패키지를 직접 의존하고
+  # `controller.platform` 을 캐스팅하는 것이 공식 권장 방식이다.
+  webview_flutter_android: ^4.14.1
   http: ^1.6.0
   flutter_secure_storage: ^10.2.0
   # 필터 등 비민감 로컬 설정용. Keychain 은 잠금 중 읽기 실패(-25308)·접근성

@@ -52,6 +52,14 @@ const communityListRoute = WebRoute(path: '/community', stage: BridgeStage.a);
 /// 가는데 그것도 웹이라 브리지를 거치지 않는다.
 const communitySearchRoute = WebRoute(path: '/community/search', stage: BridgeStage.a);
 
+/// 커뮤니티 글쓰기.
+///
+/// 사진 첨부는 `<input type="file">` 로 한다 — iOS 는 WKWebView 가 파일 선택
+/// 패널을 자체 처리하고, Android 는 `WardingWebView` 가 등록한
+/// `setOnShowFileSelector` 가 받는다. 그래서 브리지 단계는 뒤로가기만 쓰는
+/// Stage A 다.
+const communityWriteRoute = WebRoute(path: '/community/write', stage: BridgeStage.a);
+
 /// 커뮤니티 글 상세. 사진 뷰어를 네이티브로 열어 Stage C 를 쓴다.
 const communityPostRoute = WebRoute(path: '/community/post/:id', stage: BridgeStage.c);
 
@@ -62,6 +70,7 @@ const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 const webviewRoutes = <WebRoute>[
   communityListRoute,
   communitySearchRoute,
+  communityWriteRoute,
   communityPostRoute,
   noticeRoute,
 ];

@@ -20,9 +20,11 @@ export type { RequestOptions } from './client';
 export {
   SEARCH_MIN_LENGTH,
   createComment,
+  createPost,
   fetchComments,
   fetchPostDetail,
   fetchPosts,
+  fetchUploadSignature,
   searchPosts,
   toggleCommentLike,
   togglePostLike,

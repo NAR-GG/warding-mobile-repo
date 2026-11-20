@@ -728,6 +728,187 @@ body {
   opacity: 0.6;
 }
 
+/* ── 글쓰기 ───────────────────────────────────────────────
+ * 수치는 Flutter `post_write_screen.dart` 계열과 맞춘다 — 제목 17/w700,
+ * 본문 14.5/1.6, 헤더 패딩 16/12. */
+
+.write {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 0 calc(16 * var(--scale));
+}
+
+.write__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(12 * var(--scale)) 0;
+}
+
+.write__cancel {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text2);
+  font-family: inherit;
+  font-size: calc(14 * var(--scale));
+}
+
+.write__submit {
+  padding: calc(7 * var(--scale)) calc(14 * var(--scale));
+  border: 0;
+  border-radius: calc(16 * var(--scale));
+  background: var(--color-nar-violet3);
+  color: var(--color-nar-dark800);
+  font-family: inherit;
+  font-size: calc(13.5 * var(--scale));
+  font-weight: 700;
+}
+
+.write__submit:disabled {
+  background: var(--color-nar-dark400);
+  color: var(--color-nar-text2);
+}
+
+.write__restored {
+  padding-bottom: calc(8 * var(--scale));
+  color: var(--color-nar-violet3);
+  font-size: calc(12 * var(--scale));
+}
+
+.write__title,
+.write__body {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: var(--color-nar-text);
+  font-family: inherit;
+}
+
+.write__title {
+  padding: calc(10 * var(--scale)) 0;
+  border-bottom: 1px solid var(--color-nar-line);
+  font-size: calc(17 * var(--scale));
+  font-weight: 700;
+}
+
+.write__body {
+  flex: 1 1 auto;
+  /* 본문이 짧아도 글 쓰는 자리로 보이게 최소 높이를 준다. */
+  min-height: calc(180 * var(--scale));
+  padding: calc(12 * var(--scale)) 0;
+  font-size: calc(14.5 * var(--scale));
+  line-height: 1.6;
+  resize: none;
+}
+
+.write__title:focus,
+.write__body:focus {
+  outline: none;
+}
+
+.write__title::placeholder,
+.write__body::placeholder {
+  color: var(--color-nar-dark300);
+}
+
+/* 사진 미리보기. 가로 스크롤은 이 줄 안에서만 생긴다 — 본문이 가로로
+ * 밀리면 웹뷰에서 네이티브 제스처와 충돌한다. */
+.write__photos {
+  display: flex;
+  gap: calc(8 * var(--scale));
+  overflow-x: auto;
+  padding-bottom: calc(10 * var(--scale));
+  scrollbar-width: none;
+}
+
+.write__photos::-webkit-scrollbar {
+  display: none;
+}
+
+.write__photo {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(72 * var(--scale));
+  height: calc(72 * var(--scale));
+}
+
+.write__photo img {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(8 * var(--scale));
+  background: var(--color-nar-dark500);
+  object-fit: cover;
+}
+
+/* 올리는 중·실패는 사진 위에 덮어 표시한다 — 자리를 따로 쓰면 줄이 흔들린다. */
+.write__photo-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(8 * var(--scale));
+  background: var(--color-nar-dark-opacity62);
+  color: var(--color-nar-text);
+  font-size: calc(11 * var(--scale));
+  font-weight: 600;
+}
+
+.write__photo--failed .write__photo-state {
+  color: var(--color-nar-text-red);
+}
+
+.write__photo-remove {
+  position: absolute;
+  top: calc(-4 * var(--scale));
+  right: calc(-4 * var(--scale));
+  width: calc(20 * var(--scale));
+  height: calc(20 * var(--scale));
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-nar-dark400);
+  color: var(--color-nar-text);
+  font-size: calc(11 * var(--scale));
+  line-height: 1;
+}
+
+.write__tools {
+  display: flex;
+  padding: calc(10 * var(--scale)) 0;
+  border-top: 1px solid var(--color-nar-line);
+}
+
+.write__tool {
+  padding: calc(8 * var(--scale)) calc(12 * var(--scale));
+  border: 1px solid var(--color-nar-line);
+  border-radius: calc(8 * var(--scale));
+  background: var(--color-nar-dark500);
+  color: var(--color-nar-text3);
+  font-family: inherit;
+  font-size: calc(13 * var(--scale));
+  font-weight: 600;
+}
+
+/* 파일 입력은 숨기고 버튼이 대신 연다 — 기본 입력은 모양을 맞출 수 없다. */
+.write__file {
+  display: none;
+}
+
+.write__notice {
+  padding-bottom: calc(8 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12.5 * var(--scale));
+}
+
+.write__draft-note {
+  padding-bottom: calc(20 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(11.5 * var(--scale));
+}
+
 /* ── 커뮤니티 검색 ─────────────────────────────────────────
  * 수치는 Flutter `community_search_screen.dart` 와 맞춘다 — 바 패딩
  * 8/8/16/10, 뒤로 아이콘 20(패딩 8), 입력 14/1.4, 안내 13.5/1.5. */
