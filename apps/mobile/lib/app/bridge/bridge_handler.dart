@@ -80,7 +80,7 @@ class BridgeHandler {
 
     switch (decoded['stage']) {
       case 'a':
-        _handleNotify(decoded);
+        await _handleNotify(decoded);
       case 'c':
         await _handleCall(decoded);
       default:
@@ -88,7 +88,7 @@ class BridgeHandler {
     }
   }
 
-  void _handleNotify(Map<String, dynamic> json) {
+  Future<void> _handleNotify(Map<String, dynamic> json) async {
     switch (BridgeNotify.parse(json['type'] as String?)) {
       case BridgeNotify.height:
         final h = (json['height'] as num?)?.toDouble();
@@ -106,7 +106,13 @@ class BridgeHandler {
         final route = json['route'] as String?;
         if (route != null && route.isNotEmpty) onNavigate(route);
       case null:
-        debugPrint('[Bridge] 모르는 notify: ${json['type']}');
+        // **조용히 삼키지 않는다.** 웹은 배포 즉시 전원에게 가지만 앱은
+        // 업데이트를 기다리므로, 새 메시지를 모르는 구버전이 반드시 생긴다.
+        // 여기서 로그만 찍고 끝내면 웹은 "보냈으니 됐다" 고 믿고 사용자는
+        // 버튼이 안 먹는 이유를 모른다 — 웹에 되돌려 폴백을 고르게 한다.
+        final type = json['type'] as String?;
+        debugPrint('[Bridge] 모르는 notify: $type');
+        await _push({'type': 'unsupported', 'name': type});
     }
   }
 

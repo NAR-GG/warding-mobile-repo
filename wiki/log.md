@@ -1,5 +1,32 @@
 # Bundle Update Log
 
+## 2026-11-20 (6)
+* **브리지에 능력 목록(capability)을 넣었다.** 웹은 배포 즉시 전원에게 가지만
+  앱은 스토어 심사와 사용자 업데이트를 기다린다 — 웹이 새 메시지를 쓰면
+  구버전 앱은 그걸 모른다. 네이티브가 `kBridgeCapabilities` 로 선언하고 웹이
+  `isSupported()` 로 묻는다.
+* **조사한 네 사례가 모두 같은 모양이었다** — Hotwire Native(UA 에
+  `bridge-components: [...]`), 토스(`isMinVersionSupported` + 각 API 의
+  `.isSupported()`), 당근 metabridge(스키마에 `minimumSupportAppVersion` 필수),
+  Capacitor(`cap.PluginHeaders` + `UNIMPLEMENTED`).
+  **메서드명에 `v2` 를 붙이는 곳은 한 곳도 없었다.** 판정 단위는 메서드다.
+* **기본값은 웹 폴백이다**(Hotwire 의 핵심 규칙). 모르면 `isSupported()` 가
+  false 라 구버전 앱도 새 웹도 안전한 쪽으로 떨어진다. `share` 는 네이티브에
+  구현이 없어 **선언하지 않는다** — 선언이 곧 계약이다.
+* **조용한 무시를 없앴다.** `bridge_handler.dart` 의 `case null` 이 로그만
+  찍고 끝냈는데(Stage A 의 유일한 silent failure), 이제 웹에 `unsupported`
+  를 되돌린다. Stage C 는 이미 `ok:false` 를 주고 있었다.
+* **버전 문자열로 분기하지 않는다.** `appVersion` 은 로그·문의 대응용이다 —
+  `1.0.9` vs `1.1.0` 처럼 자릿수를 독립 비교하다 틀리는 사고가 흔하다(실제
+  공개 장애 사례가 그것이다).
+* **환경 조립을 `BridgeEnv.current()` 한 곳으로 모았다.** 웹뷰 화면이 둘(push
+  용·탭 워밍업)이라 각자 만들면 한쪽이 필드를 빠뜨린다 — 실제로 능력 목록을
+  넣을 때 탭 경로가 빠져 있었다.
+* **미룬 것 2개** — UA/쿠키로 SSR 분기(화면이 1~2개라 깜빡임 표면이 작고
+  `webview_flutter` UA API 검증이 선행), CI 배포 가드(**iOS 입력이 약하다** —
+  스토어 라이브 버전 조회 경로가 미검증이고 **버전별 사용자 채택률 API 를
+  찾지 못했다**).
+
 ## 2026-11-20 (5)
 * **웹뷰 워밍업으로 탭 전환을 즉시로 만들었다.** 앱 시작 때 웹뷰를 만들어
   `/community` 를 로드·하이드레이션까지 끝내 두고, 탭에서는 그 컨트롤러를

@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'package:warding/app/bridge/bridge_protocol.dart';
 import 'package:warding/app/bridge/webview_auth.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/config/api_config.dart';
@@ -71,6 +75,9 @@ class WebViewWarmup {
         onPageFinished: (_) {
           _loaded = true;
           onLoaded?.call();
+          // 능력 목록을 알린다 — 이게 없으면 웹이 `isSupported()` 에서
+          // 전부 false 를 받아 브리지를 아예 안 쓴다.
+          unawaited(_broadcastEnv());
         },
       ),
     );
@@ -84,6 +91,29 @@ class WebViewWarmup {
     await controller.loadRequest(
       Uri.parse(communityListRoute.url()),
     );
+  }
+
+  /// 환경(능력 목록·로그인 여부)을 웹에 알린다.
+  ///
+  /// **컨트롤러로 직접 보낸다.** 로드가 끝나는 시점에 탭 화면이 아직 안
+  /// 붙어 있을 수 있어서(워밍업은 백그라운드다) 브리지 핸들러를 기다리면
+  /// 능력 목록을 영영 못 받는 경우가 생긴다.
+  Future<void> _broadcastEnv() async {
+    final c = _controller;
+    if (c == null) return;
+
+    final env = BridgeEnv.current(
+      signedIn: await AuthService.instance.jwt != null,
+    );
+    final payload = jsonEncode(jsonEncode({'type': 'env', 'env': env.toJson()}));
+    try {
+      await c.runJavaScript(
+        'window.__wardingReceive && window.__wardingReceive($payload)',
+      );
+    } catch (e) {
+      // 웹 수신기가 아직 없으면 조용히 넘어간다 — 화면이 붙을 때 다시 보낸다.
+      debugPrint('[Warmup] env 전달 실패: $e');
+    }
   }
 
   /// 탭에 다시 들어왔을 때 데이터를 새로 받는다.

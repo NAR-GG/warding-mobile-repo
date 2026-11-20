@@ -78,6 +78,17 @@ void main() {
       await send({'stage': 'a', 'type': 'nope'});
       expect(log, isEmpty);
     });
+
+    test('모르는 type 은 웹에 되돌린다', () async {
+      // **조용히 삼키면 안 된다.** 웹은 즉시 배포되고 앱은 업데이트를
+      // 기다리므로 구버전이 새 메시지를 받는 일이 반드시 생긴다 — 아무것도
+      // 안 돌려주면 웹은 "보냈으니 됐다" 고 믿는다.
+      await send({'stage': 'a', 'type': 'brandNew'});
+
+      final script = controller.scripts.single;
+      expect(script, contains('unsupported'));
+      expect(script, contains('brandNew'));
+    });
   });
 
   group('Stage C', () {
@@ -150,6 +161,28 @@ void main() {
       final script = controller.scripts.single;
       expect(script, contains('__wardingReceive'));
       expect(script, contains(r'\"signedIn\":true'));
+    });
+
+    test('env 에 능력 목록이 실린다', () async {
+      // 웹이 `isSupported()` 로 읽는 값이다. 안 실리면 웹이 전부 미지원으로
+      // 보고 브리지를 아예 안 쓴다.
+      await bridge.broadcastEnv(
+        const BridgeEnv(
+          signedIn: false,
+          reduceMotion: false,
+          safeAreaTop: 0,
+          safeAreaBottom: 0,
+        ),
+      );
+      final script = controller.scripts.single;
+      expect(script, contains('supports'));
+      expect(script, contains('openPhotoViewer'));
+    });
+
+    test('share 는 아직 선언하지 않는다', () async {
+      // 네이티브에 구현이 없다(UnimplementedError). 선언하면 웹이 브리지를
+      // 믿고 호출했다가 실패한다 — 선언이 곧 계약이다.
+      expect(kBridgeCapabilities, isNot(contains('share')));
     });
 
     test('auth-changed 를 뿌린다', () async {

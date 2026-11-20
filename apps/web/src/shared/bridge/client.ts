@@ -33,6 +33,39 @@ const channel = (): Channel | undefined =>
 /** 웹뷰 안에서 열렸는지. 브리지 객체 존재로 판별한다. */
 export const isInWebView = (): boolean => channel() !== undefined;
 
+/**
+ * 네이티브가 선언한 능력 목록. Stage B `env` 로 온다.
+ *
+ * 아직 안 받았으면 null 이다 — "모른다" 와 "없다" 는 다르다. 모를 때
+ * [isSupported] 가 false 를 주므로 웹 폴백으로 떨어진다.
+ */
+let capabilities: string[] | null = null;
+
+/** @internal 브로드캐스트 수신기가 채운다. */
+export const setCapabilities = (next: string[] | undefined): void => {
+  capabilities = next ?? [];
+};
+
+/**
+ * 이 앱이 해당 브리지 기능을 처리할 수 있는가.
+ *
+ * **웹은 배포 즉시 전원에게 가지만 앱은 스토어 심사와 사용자 업데이트를
+ * 기다린다.** 새 브리지 기능을 쓰기 전에 반드시 묻고, 아니면 **웹 자체
+ * 구현으로 그린다** — 조사한 네 사례(Hotwire Native · 토스 · 당근
+ * metabridge · Capacitor)가 모두 이 모양이고, 메서드명에 `v2` 를 붙이는
+ * 곳은 없었다.
+ *
+ * **기본값이 웹 폴백이다**(Hotwire 의 핵심 규칙). 모르면 false 라, 구버전
+ * 앱도 새 웹도 자동으로 안전한 쪽으로 떨어진다.
+ *
+ * ```ts
+ * if (isSupported('share')) await share(url);
+ * else await navigator.share?.({ url });   // 웹 폴백
+ * ```
+ */
+export const isSupported = (name: string): boolean =>
+  capabilities !== null && capabilities.includes(name);
+
 function send(message: OutgoingMessage): boolean {
   const c = channel();
   if (!c) return false;
@@ -195,6 +228,11 @@ export function installBridgeReceiver(): () => void {
 
     const msg = parsed as BroadcastMessage;
     if (typeof msg.type !== 'string') return;
+
+    // 능력 목록은 이벤트로 뿌리기 전에 먼저 기록한다 — 구독자가 그걸 보고
+    // 바로 분기할 수 있어야 한다.
+    if (msg.type === 'env') setCapabilities(msg.env.supports);
+
     window.dispatchEvent(new CustomEvent(`${EVENT_PREFIX}${msg.type}`, { detail: msg }));
   };
 

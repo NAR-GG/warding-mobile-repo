@@ -100,14 +100,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     // 웹이 `ready` 를 보내기 전에도 환경은 미리 넣어 둔다. 수신 함수가 아직
     // 없으면 `_push` 가 조용히 넘어간다.
-    final media = MediaQuery.maybeOf(context);
+    //
+    // **토큰을 먼저 읽고 그다음에 context 를 쓴다.** 순서를 바꾸면 await
+    // 뒤에 사라진 위젯의 context 를 건드리게 된다.
+    final signedIn = await AuthService.instance.jwt != null;
+    if (!mounted) return;
+
     await _bridge?.broadcastEnv(
-      BridgeEnv(
-        signedIn: await AuthService.instance.jwt != null,
-        reduceMotion: media?.disableAnimations ?? false,
-        safeAreaTop: media?.padding.top ?? 0,
-        safeAreaBottom: media?.padding.bottom ?? 0,
-      ),
+      BridgeEnv.current(signedIn: signedIn, context: context),
     );
   }
 

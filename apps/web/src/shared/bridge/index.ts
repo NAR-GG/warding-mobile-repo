@@ -18,6 +18,7 @@ export {
   goBack,
   installBridgeReceiver,
   isInWebView,
+  isSupported,
   notifyHeight,
   notifyReady,
   onBroadcast,

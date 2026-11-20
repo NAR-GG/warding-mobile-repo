@@ -44,6 +44,13 @@ Future<void> loadAppVersion() async {
   } catch (_) {}
 }
 
+/// 읽어 둔 앱 버전. 아직 안 읽었거나 실패하면 null.
+///
+/// 웹뷰가 환경을 알릴 때도 쓴다(`BridgeEnv.appVersion`) — **기능 판정이
+/// 아니라 로그·문의 대응용이다.** 어떤 브리지 기능을 쓸 수 있는지는
+/// `kBridgeCapabilities` 가 답한다.
+String? get appVersion => _appVersion;
+
 /// 모든 요청에 `X-App-Version` 헤더를 붙인다.
 ///
 /// 서버가 로그로 "어느 버전이 이 API 를 불렀나"를 알아야 업데이트 비율과 버전별 오류를 잴 수 있다.
