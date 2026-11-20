@@ -12,20 +12,39 @@ set -euo pipefail
 
 PORT=3100
 
-# 포트가 막혀 있으면 누가 쓰는지 알려 준다 — EADDRINUSE 스택만 보면
-# 직전에 띄운 dev 서버가 범인인지 알 수 없다.
-if lsof -ti:"$PORT" >/dev/null 2>&1; then
+# 포트를 쓰는 프로세스 id. 없으면 빈 문자열.
+#
+# `|| true` 가 필요하다 — `lsof` 는 못 찾으면 exit 1 이고, `set -e` 아래에서
+# 그대로 두면 "포트가 비어 있다" 는 정상 상황에 스크립트가 죽는다.
+holders() { lsof -ti:"$PORT" 2>/dev/null || true; }
+
+pids="$(holders)"
+if [ -n "$pids" ]; then
   echo "▸ 포트 $PORT 이 이미 사용 중입니다."
-  lsof -i:"$PORT" -sTCP:LISTEN -Pn | tail -n +2 | awk '{print "   " $1 " (pid " $2 ")"}'
+  lsof -i:"$PORT" -sTCP:LISTEN -Pn 2>/dev/null | tail -n +2 \
+    | awk '{print "   " $1 " (pid " $2 ")"}' || true
   echo
-  read -r -p "   종료하고 계속할까요? [y/N] " answer
+
+  # **대화형일 때만 묻는다.** pnpm 으로 감싸 돌리면 stdin 이 터미널이 아닐
+  # 수 있는데, 그때 `read` 가 실패하면 `set -e` 가 스크립트를 조용히
+  # 죽인다 — 질문도 안 보이고 끝난다(실제로 그렇게 겪었다).
+  if [ -t 0 ]; then
+    read -r -p "   종료하고 계속할까요? [y/N] " answer || answer=""
+  else
+    answer=""
+    echo "   (대화형 입력이 아니라 묻지 않습니다)"
+  fi
+
   case "$answer" in
     [yY]*)
-      lsof -ti:"$PORT" | xargs kill -9 2>/dev/null || true
+      # shellcheck disable=SC2046 # 여러 pid 를 각각 넘겨야 한다
+      kill -9 $pids 2>/dev/null || true
       sleep 1
       ;;
     *)
-      echo "   중단합니다."
+      echo
+      echo "   그대로 두려면 이미 떠 있는 서버를 쓰면 됩니다."
+      echo "   직접 끄려면:  lsof -ti:$PORT | xargs kill -9"
       exit 1
       ;;
   esac
