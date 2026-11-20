@@ -60,13 +60,52 @@ export const requestNavigate = (route: string): void => {
 /**
  * 뒤로가기.
  *
- * 웹뷰 안에서 `history.back()` 은 **웹 라우팅만 되돌리고 네이티브 스택은
- * 그대로**라 사용자가 보기엔 아무 일도 안 일어난다. 브리지가 있으면 네이티브에
- * 맡기고, 없으면(브라우저) 평소대로 히스토리를 쓴다.
+ * **웹 히스토리가 먼저다.** 목록 → 상세처럼 웹 안에서 이동한 경우 네이티브
+ * 스택에는 아무것도 쌓이지 않아서, 네이티브에 맡기면 `maybePop()` 이 되돌릴
+ * 화면을 못 찾아 **아무 일도 일어나지 않는다**(실측으로 겪었다 — 탭 화면은
+ * `pushReplacement` 로 열려 스택이 비어 있다).
+ *
+ * 웹에서 되돌아갈 곳이 없을 때만 네이티브에 넘긴다. 그때는 이 화면이
+ * 네이티브가 push 한 첫 화면이므로 `maybePop()` 이 맞게 동작한다.
+ *
+ * **깊이를 `sessionStorage` 에 센다.** 모듈 변수로는 안 된다 — `<a href>` 가
+ * 전체 로드라 값이 날아간다. `history.length` 도 못 쓴다: 웹뷰 세션이 1 에서
+ * 시작한다는 보장이 없다.
  */
+const DEPTH_KEY = 'warding:webview:depth';
+
+const depth = (): number => {
+  if (typeof sessionStorage === 'undefined') return 0;
+  const n = Number(sessionStorage.getItem(DEPTH_KEY) ?? '0');
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+const setDepth = (n: number): void => {
+  if (typeof sessionStorage === 'undefined') return;
+  sessionStorage.setItem(DEPTH_KEY, String(Math.max(0, n)));
+};
+
+/**
+ * 웹 내부 이동 한 단계를 기록한다.
+ *
+ * 링크를 눌러 다른 화면으로 갈 때 호출한다 — 그래야 뒤로가기가 네이티브가
+ * 아니라 웹 히스토리를 되돌린다.
+ */
+export const pushWebDepth = (): void => setDepth(depth() + 1);
+
 export const goBack = (): void => {
+  if (typeof window === 'undefined') return;
+
+  if (depth() > 0) {
+    setDepth(depth() - 1);
+    window.history.back();
+    return;
+  }
+
+  // 웹에서 되돌아갈 곳이 없다 — 네이티브 스택을 되돌린다.
   if (send({ stage: 'a', type: 'back' })) return;
-  if (typeof window !== 'undefined') window.history.back();
+  // 브라우저로 직접 연 경우. 평소대로 히스토리를 쓴다.
+  window.history.back();
 };
 
 // ── Stage C — 요청·응답 ──────────────────────────────────

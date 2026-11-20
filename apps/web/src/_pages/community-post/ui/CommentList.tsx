@@ -1,6 +1,6 @@
 import type { Comment } from 'warding-api';
 
-import { timeAgo } from '@/shared/lib';
+import { cloudinaryScaled, timeAgo } from '@/shared/lib';
 
 /**
  * 댓글 목록 — Flutter `features/community/presentation/widgets/comment_tile.dart`
@@ -83,7 +83,7 @@ function CommentRow({
               {comment.author?.teamImageUrl ? (
                 <img
                   className="comment__team"
-                  src={comment.author.teamImageUrl}
+                  src={cloudinaryScaled(comment.author.teamImageUrl, 26)}
                   alt=""
                   loading="lazy"
                 />

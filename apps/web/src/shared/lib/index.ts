@@ -3,6 +3,8 @@
 
 export { timeAgo } from './timeAgo';
 
+export { cloudinaryScaled } from './cloudinary';
+
 export { resizeImage } from './resizeImage';
 export type { ResizeResult } from './resizeImage';
 

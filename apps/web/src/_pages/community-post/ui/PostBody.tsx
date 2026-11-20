@@ -2,6 +2,8 @@
 
 import { isHeading, type PostBlock } from 'warding-api';
 
+import { cloudinaryScaled } from '@/shared/lib';
+
 import { openPhotoViewer } from '@/shared/bridge';
 
 /**
@@ -44,7 +46,7 @@ export function PostBody({ blocks }: { blocks: PostBlock[] }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={key}
-              src={b.url}
+              src={cloudinaryScaled(b.url, 800)}
               alt=""
               className="post__image"
               onClick={() => {
@@ -69,7 +71,7 @@ export function PostBody({ blocks }: { blocks: PostBlock[] }) {
             >
               {b.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={b.imageUrl} alt="" className="post__link-thumb" />
+                <img src={cloudinaryScaled(b.imageUrl, 128)} alt="" className="post__link-thumb" />
               ) : null}
               <span className="post__link-text">
                 <span className="post__link-title">{b.title ?? b.url}</span>

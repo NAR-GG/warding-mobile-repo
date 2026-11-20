@@ -22,6 +22,7 @@ export {
   notifyReady,
   onBroadcast,
   openPhotoViewer,
+  pushWebDepth,
   requestNavigate,
   share,
 } from './client';

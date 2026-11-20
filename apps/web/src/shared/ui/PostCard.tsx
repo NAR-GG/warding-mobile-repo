@@ -1,6 +1,8 @@
 import type { PostSummary } from 'warding-api';
 
-import { timeAgo } from '@/shared/lib';
+import { cloudinaryScaled, timeAgo } from '@/shared/lib';
+
+import { WebLink } from './WebLink';
 
 /**
  * 글 한 줄 — Flutter `features/community/presentation/widgets/
@@ -17,16 +19,20 @@ import { timeAgo } from '@/shared/lib';
  * 수치는 Dart 와 맞춘다 — 제목 16/w700, 미리보기 14/w400 2줄, 메타 12.5,
  * 썸네일 62, 패딩 20/18.
  *
- * 링크는 `<a>` 다. 목록 → 상세가 둘 다 웹이라 네이티브 브리지를 거칠 이유가
- * 없고, `<a>` 면 서버 컴포넌트로 남아 클라이언트 번들이 늘지 않는다
- * (`onClick` 을 서버 컴포넌트에서 넘기면 런타임에 터진다).
+ * 링크는 `WebLink` 다 — 목록 → 상세가 둘 다 웹이라 네이티브 브리지를 거치지
+ * 않지만, **이동 깊이를 기록해야** 상세의 뒤로가기가 네이티브가 아니라 웹
+ * 히스토리를 되돌린다. 카드 본체는 서버 컴포넌트로 남고 링크만 클라이언트다.
+ *
+ * **이미지는 Cloudinary 변환을 끼운다.** 서버가 변환 없는 원본 URL 을 주기
+ * 때문에 그대로 쓰면 62px 칸에 원본(141KB)을 받는다 — 변환하면 6.6KB 다
+ * (실측 2026-11-20, 21배). Dart `cloudinaryScaled` 와 같은 규칙이다.
  */
 export function PostCard({ post }: { post: PostSummary }) {
   const thumb = post.thumbnailUrl;
 
   return (
     <li className="post-item">
-      <a className="post-item__link" href={`/community/post/${post.id}`}>
+      <WebLink className="post-item__link" href={`/community/post/${post.id}`}>
         <div className="post-item__main">
           <h2 className="post-item__title">
             {/* 투표 글은 제목 앞에 배지 — 목록을 훑을 때 바로 걸린다.
@@ -65,7 +71,7 @@ export function PostCard({ post }: { post: PostSummary }) {
               {post.author?.teamImageUrl ? (
                 <img
                   className="post-item__team"
-                  src={post.author.teamImageUrl}
+                  src={cloudinaryScaled(post.author.teamImageUrl, 26)}
                   alt=""
                   loading="lazy"
                 />
@@ -75,9 +81,14 @@ export function PostCard({ post }: { post: PostSummary }) {
         </div>
 
         {thumb !== null && thumb !== '' ? (
-          <img className="post-item__thumb" src={thumb} alt="" loading="lazy" />
+          <img
+            className="post-item__thumb"
+            src={cloudinaryScaled(thumb, 124)}
+            alt=""
+            loading="lazy"
+          />
         ) : null}
-      </a>
+      </WebLink>
     </li>
   );
 }

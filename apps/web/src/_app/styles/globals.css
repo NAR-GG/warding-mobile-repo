@@ -554,15 +554,107 @@ body {
   font-style: italic;
 }
 
+/* ── 목록 헤더 ────────────────────────────────────────────
+ * 네이티브 커뮤니티 화면(`community_screen.dart` 의 `_Header`)과 같은 모양 —
+ * 제목 왼쪽, 아이콘 오른쪽. 알림 벨은 네이티브에 남는다. */
+
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14 * var(--scale)) calc(20 * var(--scale));
+}
+
+.board-header__title {
+  color: var(--color-nar-text);
+  font-size: calc(22 * var(--scale));
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* 아이콘은 원형 배경 위에 둔다 — 네이티브 헤더와 같은 모양이다. */
+.board-header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(38 * var(--scale));
+  height: calc(38 * var(--scale));
+  border-radius: 50%;
+  background: var(--color-nar-dark600);
+  color: var(--color-nar-text);
+}
+
+.board-header__action svg {
+  width: calc(20 * var(--scale));
+  height: calc(20 * var(--scale));
+}
+
+/* ── 스켈레톤 ─────────────────────────────────────────────
+ * Flutter `post_list_item_skeleton.dart` — 1100ms 동안 투명도 0.3 ↔ 0.6
+ * 펄스. 실데이터로 바뀔 때 목록이 튀지 않게 `PostCard` 와 같은 패딩·구분선
+ * 안에서 그린다. */
+
+.skeleton {
+  border-radius: calc(4 * var(--scale));
+  background: var(--color-nar-dark400);
+  animation: skeleton-pulse 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-pulse {
+  from { opacity: 0.3; }
+  to { opacity: 0.6; }
+}
+
+/* 기기 "동작 줄이기" 를 켰으면 깜빡이지 않는다 — 중간 밝기로 고정한다. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
+.skeleton--title {
+  width: 70%;
+  height: calc(16 * var(--scale));
+}
+
+.skeleton--line {
+  width: 100%;
+  height: calc(13 * var(--scale));
+  margin-top: calc(8 * var(--scale));
+}
+
+.skeleton--short {
+  width: 55%;
+}
+
+.skeleton--meta {
+  width: 40%;
+  height: calc(11 * var(--scale));
+  margin-top: calc(12 * var(--scale));
+}
+
+.skeleton--thumb {
+  flex: 0 0 auto;
+  width: calc(62 * var(--scale));
+  height: calc(62 * var(--scale));
+  margin-left: calc(12 * var(--scale));
+  border-radius: calc(6 * var(--scale));
+}
+
 /* ── 커뮤니티 글 목록 ──────────────────────────────────────
  * 수치는 Flutter `post_list_item.dart` 와 맞춘다 — 패딩 20/18, 제목 16/1.4 w700,
  * 미리보기 14/1.5 2줄, 메타 12.5/1.45, 썸네일 62. */
 
 /* 목록 자체는 여백을 갖지 않는다 — 구분선이 화면 끝까지 닿아야 네이티브
- * 목록과 같은 밀도가 된다(한 줄의 좌우 여백은 항목 안쪽 패딩이 만든다). */
+ * 목록과 같은 밀도가 된다(한 줄의 좌우 여백은 항목 안쪽 패딩이 만든다).
+ *
+ * **아래만 비운다.** 탭 화면에서는 네이티브 하단 네비가 웹뷰 위에 겹쳐
+ * 떠서(`webview_tab_screen.dart`), 여백이 없으면 마지막 글이 탭에 가린다.
+ * 네비 높이 72 + 아래 여백 26 에 여유를 더한 값이다. */
 .post-list {
   margin: 0;
-  padding: 0;
+  padding: 0 0 calc(120 * var(--scale));
 }
 
 .post-item {
