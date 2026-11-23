@@ -116,6 +116,17 @@ const playerRatingRoute = WebRoute(
   stage: BridgeStage.a,
 );
 
+/// 커뮤니티 알림함. 커뮤니티 헤더의 벨에서 진입한다.
+///
+/// **이 화면이 웹으로 오면서 브리지가 하나 줄었다** — 벨이
+/// `requestNavigate('notification')` 로 네이티브를 부르던 것이 웹 안의
+/// 이동(`<Link>`)이 됐다. `kNativeRoutes` 의 `notification` 은 구버전 앱이
+/// 보내올 수 있어 남겨 둔다.
+///
+/// 커뮤니티 알림만 다룬다(`group=COMMUNITY`) — 경기 알림은 마이구독
+/// 피드가 담당한다. 뒤로가기만 위임하므로 Stage A 다.
+const notificationsRoute = WebRoute(path: '/notifications', stage: BridgeStage.a);
+
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
 const webviewRoutes = <WebRoute>[
   communityListRoute,
@@ -128,4 +139,5 @@ const webviewRoutes = <WebRoute>[
   adGuideRoute,
   myReviewRoute,
   playerRatingRoute,
+  notificationsRoute,
 ];

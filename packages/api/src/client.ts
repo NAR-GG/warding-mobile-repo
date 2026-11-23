@@ -81,6 +81,22 @@ export async function postJson<T>(
 }
 
 /**
+ * 본문을 안 돌려주는 POST (읽음 처리 등).
+ *
+ * **204·빈 본문이 정상 응답이다.** `request` 는 그것을 `noData` 실패로
+ * 분류하므로(본문을 기대하는 GET 기준) 여기서 성공으로 되돌린다 —
+ * 안 그러면 성공한 요청이 실패로 보인다.
+ */
+export async function postVoid(
+  url: string,
+  options: RequestOptions & { body?: unknown } = {},
+): Promise<Result<void>> {
+  const res = await request<void>('POST', url, () => undefined, options);
+  if (!res.ok && res.failure.kind === 'noData') return ok(undefined);
+  return res;
+}
+
+/**
  * PUT 요청 하나. [postJson] 과 같은 계약이고 메서드만 다르다.
  *
  * 평점 작성·수정이 **하나의 PUT** 이다(Dart 쪽도 같다 — 신규·수정을 구분하지

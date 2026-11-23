@@ -96,3 +96,22 @@ export type {
   RatingPlayerDetail,
   Review,
 } from './rating';
+export {
+  championName,
+  gameDurationSeconds,
+  isCommunityType,
+  isSoloRankEnd,
+  kda,
+  playerName,
+  postId,
+  queueType,
+  soloRankWin,
+  toMemberNotification,
+  toNotificationPage,
+  toNotificationType,
+} from './notification';
+export type {
+  MemberNotification,
+  NotificationPage,
+  NotificationType,
+} from './notification';

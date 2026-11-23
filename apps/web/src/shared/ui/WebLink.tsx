@@ -25,13 +25,21 @@ export function WebLink({
   href,
   className,
   children,
+  'aria-label': ariaLabel,
 }: {
   href: string;
   className?: string;
   children: ReactNode;
+  /** 아이콘만 있는 링크(알림 벨 등)는 라벨이 있어야 읽힌다. */
+  'aria-label'?: string;
 }) {
   return (
-    <Link className={className} href={href} onClick={pushWebDepth}>
+    <Link
+      className={className}
+      href={href}
+      onClick={pushWebDepth}
+      aria-label={ariaLabel}
+    >
       {children}
     </Link>
   );

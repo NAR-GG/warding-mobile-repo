@@ -1,13 +1,11 @@
-'use client';
-
-import { requestNavigate } from '@/shared/bridge';
+import { WebLink } from '@/shared/ui';
 
 /**
  * 알림 벨 — Flutter `community_screen.dart` 헤더의 벨.
  *
- * **배지는 웹이 그리고 화면은 네이티브가 연다.** 알림함(`NotificationScreen`)
- * 이 아직 네이티브라 탭하면 브리지로 넘긴다 — 그 화면이 웹으로 오면 이
- * 컴포넌트는 `WebLink` 로 바뀐다.
+ * **알림함이 웹으로 와서 브리지를 쓰지 않는다.** 전에는
+ * `requestNavigate('notification')` 로 네이티브를 불렀는데, 이제 웹 안의
+ * 이동이라 `<Link>` 하나다 — 주석이 예고한 그대로 바뀌었다.
  *
  * **푸시가 와도 즉시 갱신되지 않는다.** 네이티브는 `feedRefreshTick` 으로
  * 바로 다시 세지만, 웹은 목록의 `revalidate: 15` 를 따라간다. 배지가 최대
@@ -16,10 +14,9 @@ import { requestNavigate } from '@/shared/bridge';
  */
 export function NotificationBell({ unreadCount }: { unreadCount: number }) {
   return (
-    <button
-      type="button"
+    <WebLink
       className="board-header__action"
-      onClick={() => requestNavigate('notification')}
+      href="/notifications"
       aria-label={
         unreadCount > 0 ? `알림 ${unreadCount}건 안 읽음` : '알림'
       }
@@ -32,7 +29,7 @@ export function NotificationBell({ unreadCount }: { unreadCount: number }) {
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       ) : null}
-    </button>
+    </WebLink>
   );
 }
 

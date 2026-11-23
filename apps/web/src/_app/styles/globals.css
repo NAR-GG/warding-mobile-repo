@@ -2046,3 +2046,183 @@ body {
   opacity: 0;
   cursor: pointer;
 }
+
+/* ── 알림함 ───────────────────────────────────────────────
+ * 수치는 Flutter `notification_card.dart`·`notification_screen.dart` 와
+ * 맞춘다 — 카드 배경 nar-bg-secondary, 패딩 20, 아이콘 44, gap 16,
+ * 제목 15/w600 한 줄, 본문 13/1.45, 시각 12. */
+
+.noti-list {
+  padding-bottom: calc(24 * var(--scale));
+}
+
+.noti-row {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 좌스와이프에서 드러나는 삭제 배경. 카드 아래에 깔고 카드가 밀려나며
+   드러난다 — 네이티브 `Dismissible.background` 와 같은 모양. */
+.noti-row__delete {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: calc(4 * var(--scale));
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: calc(24 * var(--scale));
+  background: var(--color-live-accent);
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+}
+
+.noti-row__trash {
+  width: calc(22 * var(--scale));
+  height: calc(22 * var(--scale));
+}
+
+.noti-row__slide {
+  position: relative;
+  /* 드래그 중에는 전환을 끄고 손가락을 그대로 따라간다. 놓으면 제자리로
+     돌아가는 움직임만 보이게 짧게 준다. */
+  transition: transform 160ms ease-out;
+  /* 가로 제스처를 우리가 처리한다고 브라우저에 알린다 — 세로 스크롤은
+     그대로 넘긴다. */
+  touch-action: pan-y;
+}
+
+.noti-row__hit {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.noti-row__hit:disabled {
+  cursor: default;
+}
+
+.noti-row__error {
+  padding: calc(8 * var(--scale)) calc(20 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+}
+
+.noti-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: calc(16 * var(--scale));
+  padding: calc(20 * var(--scale));
+  background: var(--color-nar-bg-secondary);
+}
+
+/* 아이콘은 종류마다 그리는 크기가 다르지만(22·26·44) 자리는 44 로 같다 —
+   그래야 제목 시작선이 어긋나지 않는다. */
+.noti-card__icon-box {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: calc(44 * var(--scale));
+  height: calc(44 * var(--scale));
+}
+
+/* **마스크로 칠한다.** svg 원본의 stroke 색이 파일마다 달라서
+   (white·#373A40·#CED4DA) `<img>` 로는 네이티브처럼 한 색으로 못 맞춘다. */
+.noti-card__icon {
+  display: block;
+  background: var(--color-nar-text);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+.noti-card__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  /* flex 자식이 내용 폭 아래로 안 줄어드는 기본값을 푼다 — 안 풀면
+     제목 말줄임이 안 걸리고 카드가 가로로 밀린다. */
+  min-width: 0;
+}
+
+/* 한 줄 고정. 긴 닉네임·팀명에서 2줄로 접히면 카드가 무겁다 —
+   잘린 내용은 본문·상세가 보완한다(Dart 주석 그대로). */
+.noti-card__title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-nar-text);
+  font-size: calc(15 * var(--scale));
+  font-weight: 600;
+  line-height: calc(24 / 15);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noti-card__body {
+  margin: calc(4 * var(--scale)) 0 0;
+  color: var(--color-nar-text-tertiary);
+  font-size: calc(13 * var(--scale));
+  line-height: 1.45;
+}
+
+.noti-card__time {
+  display: flex;
+  justify-content: space-between;
+  margin: calc(4 * var(--scale)) 0 0;
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+  line-height: 1.45;
+}
+
+/* 안 읽은 알림 — 보라 틴트를 카드 **위**에 얹는다. 밑에 깔면 카드가
+   자체 불투명 배경을 칠해 완전히 가려진다. */
+.noti-card__tint {
+  position: absolute;
+  inset: 0;
+  background: var(--color-nar-violet3);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.noti-card__dot {
+  position: absolute;
+  top: calc(20 * var(--scale));
+  left: calc(7 * var(--scale));
+  width: calc(6 * var(--scale));
+  height: calc(6 * var(--scale));
+  border-radius: 50%;
+  background: var(--color-nar-violet3);
+}
+
+/* '모두 읽음' — 안 읽은 알림이 없으면 흐리게. */
+.noti-readall {
+  padding: 0 calc(6 * var(--scale));
+  border: 0;
+  background: none;
+  color: var(--color-nar-text3);
+  font-family: inherit;
+  font-size: calc(13 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.noti-readall--idle {
+  color: var(--color-nar-dark300);
+}
+
+/* 빈 상태는 화면 가운데다 — Dart 의 `Center`. */
+.noti-empty {
+  padding: calc(240 * var(--scale)) calc(20 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+  text-align: center;
+}

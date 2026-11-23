@@ -50,3 +50,9 @@ export {
   fetchPlayerRatingDetail,
   saveMyRating,
 } from './rating/index.server';
+export {
+  deleteNotification,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from './notification/index.server';
