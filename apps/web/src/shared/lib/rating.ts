@@ -52,3 +52,43 @@ export function starFills(rating: number): number[] {
     Math.max(0, Math.min(1, rating - i)),
   );
 }
+
+/**
+ * 포지션 표기 → 라인 아이콘 경로 — Flutter `core/util/lane_asset.dart` 와
+ * 같은 정규화다.
+ *
+ * 한국어·영어 표기가 섞여 들어온다(서버 role 은 `mid`, 화면 라벨은 `미드`).
+ * **모르는 값은 null** 이고 호출부는 회색 자리를 그린다.
+ */
+export function laneIconPath(position: string): string | null {
+  switch (position.trim().toLowerCase()) {
+    case '탑':
+    case 'top':
+      return '/lanes/top.svg';
+    case '정글':
+    case 'jungle':
+    case 'jug':
+    case 'jng':
+      return '/lanes/jug.svg';
+    case '미드':
+    case 'mid':
+    case 'middle':
+      return '/lanes/mid.svg';
+    case '원딜':
+    case '바텀':
+    case 'bot':
+    case 'bottom':
+    case 'adc':
+    case 'ad':
+      return '/lanes/bot.svg';
+    case '서폿':
+    case '서포터':
+    case 'sup':
+    case 'support':
+    case 'supporter':
+    case 'utility':
+      return '/lanes/sup.svg';
+    default:
+      return null;
+  }
+}

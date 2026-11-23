@@ -3,6 +3,7 @@ import { fetchPlayerRatingDetail } from 'warding-api/server';
 import { readAuthToken } from '@/shared/auth/index.server';
 import { positionFromRole } from '@/shared/lib';
 
+import { PlayedChampCard } from './PlayedChampCard';
 import { PlayerRatingHeader } from './PlayerRatingHeader';
 import { RatingDistribution } from './RatingDistribution';
 import { RatingSheet } from './RatingSheet';
@@ -71,16 +72,9 @@ export async function PlayerRatingPage({
     <>
       <PlayerRatingHeader />
 
-      <section className="player-rating__head">
-        <h1 className="player-rating__name">{d.player.playerName}</h1>
-        <p className="player-rating__meta">
-          {position ? <span>{position}</span> : null}
-          <span>{d.player.championName}</span>
-          <span>
-            {d.player.kills}/{d.player.deaths}/{d.player.assists}
-          </span>
-        </p>
-      </section>
+      {/* 챔피언 스플래시 아트 카드. 네이티브 화면의 첫인상을 만드는 요소라
+          텍스트 줄로 대체하지 않는다. */}
+      <PlayedChampCard player={d.player} />
 
       <RatingDistribution
         rating={d.averageRating}

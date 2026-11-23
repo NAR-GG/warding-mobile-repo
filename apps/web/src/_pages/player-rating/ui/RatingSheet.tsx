@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { CommonButton, ConfirmDialog } from 'warding-ui';
+import { Button, CommonButton, ConfirmDialog } from 'warding-ui';
 
 import { requestNavigate } from '@/shared/bridge';
 
@@ -88,10 +88,12 @@ export function RatingSheet({
 
   return (
     <>
+      {/* 네이티브는 `NarButtonVariant.set1`(narDark300 회색, 전체 폭)이다 —
+          그라데이션 버튼이 아니다. 양옆 10 도 Dart 와 같다. */}
       <div className="rating-sheet__actions">
-        <CommonButton variant="primary" onClick={openSheet}>
+        <Button variant="set1" onClick={openSheet}>
           {myRating ? '평점 수정하기' : '평점 남기기'}
-        </CommonButton>
+        </Button>
         {myRating ? (
           <button
             type="button"

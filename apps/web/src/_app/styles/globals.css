@@ -1578,8 +1578,7 @@ body {
   list-style: none;
 }
 
-.review-card,
-.player-review {
+.review-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1689,26 +1688,169 @@ body {
  * 수치는 Flutter `features/player_rating/presentation/` 과 맞춘다 —
  * 평균 32/w500, 별 20, 바 높이 4 · radius 5, 점수 폭 10, 퍼센트 폭 28. */
 
-.player-rating__head {
-  padding: calc(20 * var(--scale)) calc(20 * var(--scale)) 0;
+/* ── 플레이한 챔프 카드 ───────────────────────────────────
+ * Flutter `played_champ_card.dart` 와 맞춘다 — 높이 101 · radius 10 ·
+ * 좌우 10, 사진 62 · radius 8, 이름 18/w600, 포지션 16/w600, 라인 14.
+ * 콘텐츠는 하단 정렬(패딩 좌 8 · 우 7 · 아래 10). */
+
+.champ-card {
+  position: relative;
+  display: block;
+  height: calc(101 * var(--scale));
+  margin: calc(28 * var(--scale)) calc(10 * var(--scale)) 0;
+  overflow: hidden;
+  border-radius: calc(10 * var(--scale));
+  background: var(--color-nar-played-champ-bg);
 }
 
-.player-rating__name {
+/* 카드보다 6px 씩 크게 그린다(overscan). `cover` 크롭 여유가 거의 없어
+   서브픽셀 반올림으로 가장자리에 배경이 선으로 비친다 — Dart 와 같은 처리. */
+.champ-card__splash {
+  position: absolute;
+  inset: calc(-6 * var(--scale));
+  width: calc(100% + 12 * var(--scale));
+  height: calc(100% + 12 * var(--scale));
+  object-fit: cover;
+  /* 캐릭터가 잘 보이게 상단 쪽 정렬 — Dart `Alignment(0, -0.2)`. */
+  object-position: center 40%;
+}
+
+/* 배경 위 어두운 세로 그라데이션. stops 0 / 0.45 / 1 은 Dart 와 같다. */
+.champ-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 21, 23, 0) 0%,
+    rgba(20, 21, 23, 0.32) 45%,
+    rgba(20, 21, 23, 0.7) 100%
+  );
+}
+
+.champ-card__content {
+  position: absolute;
+  right: calc(7 * var(--scale));
+  bottom: calc(10 * var(--scale));
+  left: calc(8 * var(--scale));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: calc(62 * var(--scale));
+}
+
+.champ-card__left {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(10 * var(--scale));
+  min-width: 0;
+}
+
+.champ-card__photo {
+  flex: 0 0 auto;
+  width: calc(62 * var(--scale));
+  height: calc(62 * var(--scale));
+  border-radius: calc(8 * var(--scale));
+  object-fit: cover;
+}
+
+/* 사진이 없어도 자리를 비운다 — 레이아웃이 흔들리지 않게. */
+.champ-card__photo--empty {
+  background: none;
+}
+
+.champ-card__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.champ-card__name {
+  color: var(--color-nar-text);
+  font-size: calc(18 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.champ-card__pos {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(16 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.champ-card__lane {
+  flex: 0 0 auto;
+  width: calc(14 * var(--scale));
+  height: calc(14 * var(--scale));
+}
+
+.champ-card__lane--empty {
+  border-radius: calc(2 * var(--scale));
+  background: var(--color-nar-dark300);
+}
+
+.champ-card__kda {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.champ-card__kda-label {
+  color: var(--color-nar-text);
+  font-size: calc(16 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.champ-card__kda-value {
+  color: var(--color-nar-text);
+  font-size: calc(18 * var(--scale));
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* ── 평점·코멘트 ──────────────────────────────────────────
+ * Flutter `player_comment_section.dart` 와 맞춘다 — 양옆 19.5,
+ * 헤더 상하 16, 타일 상하 16 + 하단 narLine2 구분선, gap 8. */
+
+.comment-section {
+  padding: 0 calc(19.5 * var(--scale));
+}
+
+.comment-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(16 * var(--scale)) 0;
+}
+
+.comment-section__title {
   margin: 0;
   color: var(--color-nar-text);
-  font-size: calc(20 * var(--scale));
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: calc(14 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
 }
 
-.player-rating__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(8 * var(--scale));
-  margin: calc(6 * var(--scale)) 0 0;
+.comment-section__count {
   color: var(--color-nar-text2);
-  font-size: calc(13 * var(--scale));
-  line-height: 1.45;
+  font-size: calc(14 * var(--scale));
+  line-height: 1.4;
+}
+
+/* 카드 배경 없이 **구분선으로만** 나눈다 — 내 리뷰 카드와 다른 점이다. */
+.comment-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(8 * var(--scale));
+  padding: calc(16 * var(--scale)) 0;
+  border-bottom: 1px solid var(--color-nar-line2);
 }
 
 .rating-dist {
@@ -1795,11 +1937,12 @@ body {
 
 /* ── 평점 작성 ────────────────────────────────────────────── */
 
+/* 양옆 10 은 Dart 와 같다 — 챔프 카드와 같은 여백에 맞춘다. */
 .rating-sheet__actions {
   display: flex;
   align-items: center;
   gap: calc(12 * var(--scale));
-  padding: 0 calc(20 * var(--scale)) calc(16 * var(--scale));
+  padding: calc(16 * var(--scale)) calc(10 * var(--scale));
 }
 
 .rating-sheet__closed,

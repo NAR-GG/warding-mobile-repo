@@ -7,7 +7,14 @@ export { useDismissKeyboard } from './useDismissKeyboard';
 
 export { cloudinaryScaled } from './cloudinary';
 
-export { positionFromRole, sideFromTeamSide, starFills } from './rating';
+export {
+  laneIconPath,
+  positionFromRole,
+  sideFromTeamSide,
+  starFills,
+} from './rating';
+
+export { championSplashUrl, championToEn } from './champion';
 
 export { resizeImage } from './resizeImage';
 export type { ResizeResult } from './resizeImage';
