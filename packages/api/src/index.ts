@@ -75,3 +75,43 @@ export type {
   ScrapItem,
   ScrapPage,
 } from './my-activity';
+export {
+  hasMore,
+  toMyRating,
+  toMyReviewItem,
+  toMyReviewPage,
+  toPlayerRatingDetail,
+  toRatedMatch,
+  toRatingDistribution,
+  toRatingPlayerDetail,
+  toReview,
+} from './rating';
+export type {
+  MyRating,
+  MyReviewItem,
+  MyReviewPage,
+  PlayerRatingDetail,
+  RatedMatch,
+  RatingDistribution,
+  RatingPlayerDetail,
+  Review,
+} from './rating';
+export {
+  championName,
+  gameDurationSeconds,
+  isCommunityType,
+  isSoloRankEnd,
+  kda,
+  playerName,
+  postId,
+  queueType,
+  soloRankWin,
+  toMemberNotification,
+  toNotificationPage,
+  toNotificationType,
+} from './notification';
+export type {
+  MemberNotification,
+  NotificationPage,
+  NotificationType,
+} from './notification';

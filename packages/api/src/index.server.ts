@@ -34,9 +34,25 @@ export {
   votePoll,
 } from './community/index.server';
 export type { LikeResult } from './community/index.server';
-export { fetchNotices, fetchPromotedNotices } from './notice/index.server';
+export {
+  fetchNoticeBySlug,
+  fetchNotices,
+  fetchPromotedNotices,
+} from './notice/index.server';
 export {
   fetchMyComments,
   fetchMyPosts,
   fetchScraps,
 } from './my-activity/index.server';
+export {
+  deleteMyRating,
+  fetchMyRatings,
+  fetchPlayerRatingDetail,
+  saveMyRating,
+} from './rating/index.server';
+export {
+  deleteNotification,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from './notification/index.server';

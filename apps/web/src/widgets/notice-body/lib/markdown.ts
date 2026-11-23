@@ -14,8 +14,10 @@
  * - 인라인 `**굵게**` 와 `[텍스트](url)` 링크
  * - 그 외는 본문 단락
  *
- * **이 파일은 `_pages/notice` 안에 있다.** 마크다운을 쓰는 화면이 지금
- * 공지 하나뿐이라서다(실측). 두 번째 소비처가 생기면 `packages/ui` 로 올린다.
+ * **이 파일은 `widgets/notice-body` 안에 있다.** 공지 상세와 광고 안내가
+ * 같은 백오피스 공지 본문을 그려서 소비처가 둘이 됐다. `packages/ui` 가
+ * 아닌 이유는 Dart 원본이 `features/notice/` 안이기 때문이다 — 기능 폴더
+ * 안의 위젯은 공용 자리에 두지 않는다.
  */
 
 /** 한 줄 안의 인라인 조각. Dart `_inlineText` 의 span 에 해당한다. */
@@ -100,14 +102,26 @@ export function parseNoticeMarkdown(content: string): NoticeBlock[] {
     const img = IMAGE.exec(line);
 
     // `scroll:` 이미지가 연달아 오면 하나의 가로 스트립으로 묶는다.
+    //
+    // **사이의 빈 줄은 건너뛴다** — Dart `_buildContent` 와 같다. 에디터가
+    // 이미지 사이에 빈 줄을 넣기 때문에(실측: 광고 안내 본문이 그렇다),
+    // 바로 다음 줄만 보면 3장이 각자 스트립 하나씩으로 쪼개져 세로로 쌓인다.
+    // 빌드도 타입 체크도 통과하고 화면에서만 드러난다.
     if (img?.[1]?.startsWith(STRIP_PREFIX) && img[2]) {
       const items = [stripItem(img[1], img[2])];
-      while (i + 1 < lines.length) {
-        const next = (lines[i + 1] ?? '').trim();
+      let j = i + 1;
+      while (j < lines.length) {
+        const next = (lines[j] ?? '').trim();
+        // 빈 줄과 홀로 남은 `\`(에디터가 넣는 줄바꿈)는 묶음을 끊지 않는다.
+        if (next === '' || next === '\\') {
+          j += 1;
+          continue;
+        }
         const m = IMAGE.exec(next);
         if (!m?.[1]?.startsWith(STRIP_PREFIX) || !m[2]) break;
         items.push(stripItem(m[1], m[2]));
-        i += 1;
+        i = j;
+        j += 1;
       }
       blocks.push({ kind: 'strip', items });
       continue;

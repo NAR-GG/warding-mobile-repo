@@ -1,0 +1,88 @@
+{
+  "gameId": "115660540726095137",
+  "rateable": true,
+  "player": {
+    "participantId": 8,
+    "playerId": 401,
+    "playerName": "GEN Chovy",
+    "playerImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_500,c_limit/https://static.lolesports.com/players/1778842975847_LCK_GEN_Chovy_F.png",
+    "teamSide": "Red",
+    "role": "mid",
+    "championName": "Akali",
+    "kills": 5,
+    "deaths": 4,
+    "assists": 1
+  },
+  "averageRating": 2.3,
+  "ratingCount": 3,
+  "distribution": [
+    {
+      "rating": 5,
+      "count": 1,
+      "percentage": 33.3
+    },
+    {
+      "rating": 4,
+      "count": 0,
+      "percentage": 0.0
+    },
+    {
+      "rating": 3,
+      "count": 0,
+      "percentage": 0.0
+    },
+    {
+      "rating": 2,
+      "count": 0,
+      "percentage": 0.0
+    },
+    {
+      "rating": 1,
+      "count": 2,
+      "percentage": 66.7
+    }
+  ],
+  "myRating": null,
+  "reviews": [
+    {
+      "ratingId": 9177,
+      "nickname": "사용자1#0000",
+      "profileImageUrl": null,
+      "favoriteTeamId": 23,
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1773829250929_GENGLOGO_GOLD.png",
+      "rating": 5,
+      "comment": "한줄평 샘플",
+      "mine": false,
+      "createdAt": "2026-11-18T05:38:31.806",
+      "updatedAt": "2026-11-18T05:38:43.871"
+    },
+    {
+      "ratingId": 9168,
+      "nickname": "사용자2#0000",
+      "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/f_webp,q_auto,w_300,h_300,c_fill,g_auto/v1785687641/profiles/3438.jpg",
+      "favoriteTeamId": 23,
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1773829250929_GENGLOGO_GOLD.png",
+      "rating": 1,
+      "comment": null,
+      "mine": false,
+      "createdAt": "2026-11-15T11:12:58.437",
+      "updatedAt": "2026-11-15T11:12:58.437"
+    },
+    {
+      "ratingId": 9166,
+      "nickname": "사용자3#0000",
+      "profileImageUrl": null,
+      "favoriteTeamId": 39,
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+      "rating": 1,
+      "comment": "한줄평 샘플",
+      "mine": false,
+      "createdAt": "2026-11-15T10:08:11.238",
+      "updatedAt": "2026-11-15T10:08:11.238"
+    }
+  ],
+  "page": 0,
+  "size": 3,
+  "totalElements": 3,
+  "totalPages": 1
+}

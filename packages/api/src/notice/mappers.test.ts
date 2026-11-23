@@ -16,6 +16,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixture = JSON.parse(
   readFileSync(join(here, 'fixtures', 'notice-page.json'), 'utf8'),
 );
+const bySlugFixture = JSON.parse(
+  readFileSync(join(here, 'fixtures', 'notice-by-slug.json'), 'utf8'),
+);
 
 test('실제 목록 응답을 옮긴다', () => {
   const page = toNoticePage(fixture);
@@ -67,4 +70,25 @@ test('목록이 배열이 아니면 빈 목록', () => {
 test('객체가 아니면 던진다', () => {
   assert.throws(() => toNoticePage(null), TypeError);
   assert.throws(() => toNoticePage([]), TypeError);
+});
+
+// ── by-slug 응답 (광고 안내) ──────────────────────────────
+//
+// 목록과 **다른 경로**(`/notices/by-slug/{slug}`)인데 응답은 공지 한 건
+// 그대로다. 페이지 래퍼가 없다는 것이 이 테스트의 요점이다 — 목록 매퍼를
+// 잘못 쓰면 빈 화면이 나오고 타입 체크는 통과한다.
+
+test('by-slug 는 페이지 래퍼 없이 공지 한 건이다', () => {
+  const n = toNotice(bySlugFixture);
+  assert.equal(typeof n.id, 'number');
+  assert.ok(n.title.length > 0);
+  assert.ok(n.content.length > 0);
+  assert.equal(n.pinned, false);
+  assert.ok(n.publishedAt instanceof Date);
+});
+
+test('광고 안내는 actionUrl 을 들고 온다 (하단 신청 버튼의 근거)', () => {
+  // 이 값이 null 이면 버튼이 사라진다 — 화면의 주 행동이 없어진다.
+  const n = toNotice(bySlugFixture);
+  assert.ok(n.actionUrl?.startsWith('https://'));
 });

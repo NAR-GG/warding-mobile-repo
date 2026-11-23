@@ -83,6 +83,50 @@ const noticeListRoute = WebRoute(path: '/notice', stage: BridgeStage.a);
 /// 공지 상세. 읽기 전용이라 Stage A 로 충분하다.
 const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 
+/// 광고 안내. 마이페이지 '광고 안내' 행과 응원 광고 상세에서 진입한다.
+///
+/// **본문은 공지 상세와 같은 것을 그린다** — 백오피스가 `slug=ad-guide`
+/// 공지로 관리하고, 네이티브도 `AdGuideScreen` 이 `NoticeDetailScreen` 을
+/// 재사용했다. 그래서 경로에 slug 를 받지 않고 고정이다(진입점 둘 다
+/// 인자가 없다).
+///
+/// 하단 '광고 신청하기' 는 구글폼이라 **바깥 브라우저로 나간다.** 웹이
+/// `<a>` 로 두면 네이티브의 호스트 판정(`shouldOpenInWebView`)이 걸러내므로
+/// 브리지를 쓰지 않는다 — 그래서 뒤로가기만 위임하는 Stage A 다.
+const adGuideRoute = WebRoute(path: '/ad-guide', stage: BridgeStage.a);
+
+/// 마이페이지 '내 리뷰/평점'. 내가 작성한 평가 목록이다.
+///
+/// 항목의 '리뷰보기' 가 선수 평점으로 가는데 **그것도 웹이라 브리지를
+/// 거치지 않는다** — 네이티브는 `PlayerRatingScreen` 에 인자를 8개 넘겨야
+/// 했는데, 웹은 URL 두 조각이면 상세가 나머지를 스스로 받는다.
+///
+/// 삭제가 있지만 웹이 서버 액션으로 처리한다. 뒤로가기만 위임하므로
+/// Stage A 다.
+const myReviewRoute = WebRoute(path: '/my-review', stage: BridgeStage.a);
+
+/// 선수 평점 상세. 내 평점 목록의 '리뷰보기' 에서 들어온다.
+///
+/// **비회원 조회가 열려 있다**(실측 2026-11-23, HTTP 200). 작성·삭제는
+/// 로그인이 필요한데, **웹에 로그인 화면이 없어**(카카오·네이버 SDK 가
+/// 네이티브에 있다) 그 한 건만 `navigate('login')` 으로 네이티브를 부른다.
+/// 그래서 Stage A 다.
+const playerRatingRoute = WebRoute(
+  path: '/rating/:gameId/:participantId',
+  stage: BridgeStage.a,
+);
+
+/// 커뮤니티 알림함. 커뮤니티 헤더의 벨에서 진입한다.
+///
+/// **이 화면이 웹으로 오면서 브리지가 하나 줄었다** — 벨이
+/// `requestNavigate('notification')` 로 네이티브를 부르던 것이 웹 안의
+/// 이동(`<Link>`)이 됐다. `kNativeRoutes` 의 `notification` 은 구버전 앱이
+/// 보내올 수 있어 남겨 둔다.
+///
+/// 커뮤니티 알림만 다룬다(`group=COMMUNITY`) — 경기 알림은 마이구독
+/// 피드가 담당한다. 뒤로가기만 위임하므로 Stage A 다.
+const notificationsRoute = WebRoute(path: '/notifications', stage: BridgeStage.a);
+
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
 const webviewRoutes = <WebRoute>[
   communityListRoute,
@@ -92,4 +136,8 @@ const webviewRoutes = <WebRoute>[
   myActivityRoute,
   noticeListRoute,
   noticeRoute,
+  adGuideRoute,
+  myReviewRoute,
+  playerRatingRoute,
+  notificationsRoute,
 ];

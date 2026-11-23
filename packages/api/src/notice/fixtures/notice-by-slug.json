@@ -1,0 +1,8 @@
+{
+  "id": 7,
+  "title": "광고 안내 (fixture)",
+  "content": "안내 문구 한 줄.\n\n## 소제목\n\n- **굵게** 항목\n\n![scroll:스플래시|274](https://example.test/a.png)\n\n![scroll:배너|272](https://example.test/b.png)\n\n마지막 문단.",
+  "pinned": false,
+  "publishedAt": "2026-10-12T00:50:53",
+  "actionUrl": "https://docs.google.com/forms/d/e/1FAIpQLSf66NkvON3YrFR0n_CSbnzyjXlEEfO8eiIc9W_2TBYulvihMA/viewform?usp=pp_url&entry.694575759=%EA%B4%91%EA%B3%A0+%EC%8B%A0%EC%B2%AD"
+}

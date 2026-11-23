@@ -1,8 +1,8 @@
 import { fetchNotices } from 'warding-api/server';
 
 import { formatDate } from '@/shared/lib';
+import { NoticeBody } from '@/widgets/notice-body';
 
-import { NoticeBody } from './NoticeBody';
 import { NoticeHeader } from './NoticeHeader';
 
 /**

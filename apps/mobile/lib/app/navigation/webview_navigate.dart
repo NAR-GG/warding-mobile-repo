@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:warding/core/util/analytics_events.dart';
+import 'package:warding/features/login/presentation/screens/login_screen.dart';
 import 'package:warding/features/notification/presentation/screens/notification_screen.dart';
 
 /// 웹이 요청하는 네이티브 화면 이동(Stage A `navigate`)의 **단일 출처**.
@@ -33,6 +34,16 @@ final Map<String, NativeRoute> kNativeRoutes = {
   'notification': NativeRoute(
     analyticsPage: AnalyticsPage.notification,
     builder: (_) => const NotificationScreen(),
+  ),
+  // 로그인. **웹에 로그인 화면이 없다** — 카카오·네이버 SDK 가 네이티브에
+  // 있어서 웹으로 옮길 수 없다. 평점 작성처럼 로그인이 필요한 자리에서
+  // 웹이 이 이름을 보낸다.
+  //
+  // 돌아오면 쿠키가 새로 심기므로(`webview_auth.dart`) 웹을 다시 로드해야
+  // 로그인 상태가 반영된다 — 그 일은 `WebViewScreen` 이 복귀 시 한다.
+  'login': NativeRoute(
+    analyticsPage: AnalyticsPage.login,
+    builder: (_) => const LoginScreen(),
   ),
 };
 

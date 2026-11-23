@@ -1,0 +1,92 @@
+{
+  "ratings": [
+    {
+      "ratingId": 9177,
+      "gameId": "115660540726095137",
+      "participantId": 8,
+      "playerId": 401,
+      "playerName": "Chovy",
+      "playerImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_500,c_limit/https://static.lolesports.com/players/1778842975847_LCK_GEN_Chovy_F.png",
+      "teamSide": "Red",
+      "role": "mid",
+      "championName": "아칼리",
+      "rating": 5,
+      "comment": "한줄평 샘플",
+      "createdAt": "2026-11-18T05:38:31.806",
+      "updatedAt": "2026-11-18T05:38:43.871",
+      "profileImageUrl": null,
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1773829250929_GENGLOGO_GOLD.png",
+      "match": {
+        "matchId": "115660540726095133",
+        "gameOrder": 4,
+        "leagueName": "WORLDS",
+        "matchTitle": "결승 | GEN vs BLG",
+        "blueTeamCode": "GEN",
+        "redTeamCode": "BLG",
+        "matchDate": "2026-11-15T04:00:00"
+      },
+      "nickname": "사용자1#0000",
+      "playerTeamCode": "BLG"
+    },
+    {
+      "ratingId": 9173,
+      "gameId": "115660540726095137",
+      "participantId": 9,
+      "playerId": 48,
+      "playerName": "Ruler",
+      "playerImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_500,c_limit/https://static.lolesports.com/players/1778842957393_LCK_GEN_Ruler_F.PNG",
+      "teamSide": "Red",
+      "role": "bottom",
+      "championName": "자야",
+      "rating": 5,
+      "comment": "한줄평 샘플",
+      "createdAt": "2026-11-15T11:14:33.081",
+      "updatedAt": "2026-11-15T11:14:33.081",
+      "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/f_webp,q_auto,w_300,h_300,c_fill,g_auto/v1794981478/profiles/2971.jpg",
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+      "match": {
+        "matchId": "115660540726095133",
+        "gameOrder": 4,
+        "leagueName": "WORLDS",
+        "matchTitle": "결승 | GEN vs BLG",
+        "blueTeamCode": "GEN",
+        "redTeamCode": "BLG",
+        "matchDate": "2026-11-15T04:00:00"
+      },
+      "nickname": "사용자2#0000",
+      "playerTeamCode": "BLG"
+    },
+    {
+      "ratingId": 9169,
+      "gameId": "115660540726095137",
+      "participantId": 6,
+      "playerId": 378,
+      "playerName": "Kiin",
+      "playerImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_500,c_limit/https://static.lolesports.com/players/1778842963805_LCK_GEN_Kiin_F.PNG",
+      "teamSide": "Red",
+      "role": "top",
+      "championName": "오로라",
+      "rating": 2,
+      "comment": "한줄평 샘플",
+      "createdAt": "2026-11-15T11:13:18.911",
+      "updatedAt": "2026-11-15T11:13:18.911",
+      "profileImageUrl": "https://res.cloudinary.com/dvvurdffw/image/upload/f_webp,q_auto,w_300,h_300,c_fill,g_auto/v1785687641/profiles/3438.jpg",
+      "teamImageUrl": "https://res.cloudinary.com/dvvurdffw/image/fetch/f_webp,q_auto,w_200,c_limit/https://static.lolesports.com/teams/1773829250929_GENGLOGO_GOLD.png",
+      "match": {
+        "matchId": "115660540726095133",
+        "gameOrder": 4,
+        "leagueName": "WORLDS",
+        "matchTitle": "결승 | GEN vs BLG",
+        "blueTeamCode": "GEN",
+        "redTeamCode": "BLG",
+        "matchDate": "2026-11-15T04:00:00"
+      },
+      "nickname": "사용자3#0000",
+      "playerTeamCode": "BLG"
+    }
+  ],
+  "page": 0,
+  "size": 3,
+  "totalElements": 3,
+  "totalPages": 1
+}

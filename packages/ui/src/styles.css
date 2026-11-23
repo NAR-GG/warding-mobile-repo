@@ -415,3 +415,81 @@
   width: calc(24 * var(--scale));
   height: calc(24 * var(--scale));
 }
+
+/* ── 별점 ─────────────────────────────────────────────────
+ * Flutter `core/ui/nar_star_rating.dart` 와 맞춘다. 별 크기·간격은
+ * 호출부가 375 기준 원시값으로 넘기고, 여기서 `--scale` 을 곱한다.
+ *
+ * 색은 `star.svg` 의 `#FAB005`(= nar-yellow6)와 빈 별 `nar-line2` 다.
+ * 채움은 fill·stroke 를 **둘 다** 칠한다 — Dart 가 쓰는 svg 가 stroke 로
+ * 모서리를 둥글리고 있어서, fill 만 칠하면 별이 한 겹 작아 보인다. */
+
+.wd-stars {
+  display: inline-flex;
+  align-items: center;
+}
+
+.wd-star {
+  flex: 0 0 auto;
+}
+
+.wd-star__empty {
+  fill: var(--color-nar-line2);
+  stroke: var(--color-nar-line2);
+}
+
+.wd-star__full {
+  fill: var(--color-nar-yellow6);
+  stroke: var(--color-nar-yellow6);
+}
+
+/* ── 확인 알럿 ─────────────────────────────────────────────
+ * Flutter `core/ui/nar_alert_dialog.dart` 와 맞춘다 —
+ * 카드 285 · radius 16 · padding 24, 타이틀 18/w500, 설명 12/w500. */
+
+.wd-dialog {
+  /* 브라우저 기본 테두리·패딩·배경을 지운다. 카드는 안쪽 div 가 그린다. */
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.wd-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.wd-dialog__card {
+  box-sizing: border-box;
+  width: calc(285 * var(--scale));
+  padding: calc(24 * var(--scale));
+  border-radius: calc(16 * var(--scale));
+  background: var(--color-nar-dark600);
+}
+
+.wd-dialog__title {
+  margin: 0;
+  color: var(--color-nar-text);
+  font-size: calc(18 * var(--scale));
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: calc(0.21 * var(--scale));
+  text-align: center;
+}
+
+.wd-dialog__message {
+  margin: calc(8 * var(--scale)) 0 0;
+  color: var(--color-nar-text-tertiary);
+  font-size: calc(12 * var(--scale));
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: calc(0.21 * var(--scale));
+  text-align: center;
+}
+
+.wd-dialog__actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: calc(16 * var(--scale));
+}

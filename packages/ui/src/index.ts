@@ -18,3 +18,9 @@ export type { ButtonProps, ButtonVariant } from './Button';
 
 export { DetailHeader } from './DetailHeader';
 export type { DetailHeaderProps } from './DetailHeader';
+
+export { StarRating } from './StarRating';
+export type { StarRatingProps } from './StarRating';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';
