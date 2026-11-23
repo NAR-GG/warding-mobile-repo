@@ -83,6 +83,18 @@ const noticeListRoute = WebRoute(path: '/notice', stage: BridgeStage.a);
 /// 공지 상세. 읽기 전용이라 Stage A 로 충분하다.
 const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 
+/// 광고 안내. 마이페이지 '광고 안내' 행과 응원 광고 상세에서 진입한다.
+///
+/// **본문은 공지 상세와 같은 것을 그린다** — 백오피스가 `slug=ad-guide`
+/// 공지로 관리하고, 네이티브도 `AdGuideScreen` 이 `NoticeDetailScreen` 을
+/// 재사용했다. 그래서 경로에 slug 를 받지 않고 고정이다(진입점 둘 다
+/// 인자가 없다).
+///
+/// 하단 '광고 신청하기' 는 구글폼이라 **바깥 브라우저로 나간다.** 웹이
+/// `<a>` 로 두면 네이티브의 호스트 판정(`shouldOpenInWebView`)이 걸러내므로
+/// 브리지를 쓰지 않는다 — 그래서 뒤로가기만 위임하는 Stage A 다.
+const adGuideRoute = WebRoute(path: '/ad-guide', stage: BridgeStage.a);
+
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
 const webviewRoutes = <WebRoute>[
   communityListRoute,
@@ -92,4 +104,5 @@ const webviewRoutes = <WebRoute>[
   myActivityRoute,
   noticeListRoute,
   noticeRoute,
+  adGuideRoute,
 ];

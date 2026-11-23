@@ -60,6 +60,48 @@ test('scroll: 이미지가 연달아 오면 한 스트립으로 묶인다', () =
   assert.equal(b[1]?.kind, 'paragraph');
 });
 
+test('사이에 빈 줄이 있어도 한 스트립으로 묶인다', () => {
+  // **실제 본문이 이 모양이다**(광고 안내 slug=ad-guide). 에디터가 이미지
+  // 사이에 빈 줄을 넣는다. 바로 다음 줄만 보면 3장이 각자 스트립이 되어
+  // 가로 스크롤 대신 세로로 쌓인다 — 빌드·타입 체크는 통과하고 화면에서만
+  // 드러난다.
+  const b = parseNoticeMarkdown(
+    '![scroll:스플래시|274](https://x/1.png)\n' +
+      '\n' +
+      '![scroll:배너|272](https://x/2.png)\n' +
+      '\n' +
+      '![scroll:팝업|273](https://x/3.png)\n' +
+      '\n' +
+      '## 다음 소제목',
+  );
+  assert.equal(b[0]?.kind, 'strip');
+  if (b[0]?.kind === 'strip') {
+    assert.equal(b[0].items.length, 3);
+    assert.deepEqual(
+      b[0].items.map((it) => it.label),
+      ['스플래시', '배너', '팝업'],
+    );
+  }
+  // 묶음이 소제목까지 삼키지 않는다.
+  assert.equal(b[1]?.kind, 'heading');
+});
+
+test('스트립은 다른 블록을 만나면 끊긴다', () => {
+  // 빈 줄을 건너뛰더라도 평문·소제목이 오면 거기서 멈춰야 한다.
+  const b = parseNoticeMarkdown(
+    '![scroll:첫째|100](https://x/1.png)\n' +
+      '\n' +
+      '평문\n' +
+      '\n' +
+      '![scroll:둘째|100](https://x/2.png)',
+  );
+  assert.equal(b.length, 3);
+  assert.equal(b[0]?.kind, 'strip');
+  if (b[0]?.kind === 'strip') assert.equal(b[0].items.length, 1);
+  assert.equal(b[1]?.kind, 'paragraph');
+  assert.equal(b[2]?.kind, 'strip');
+});
+
 test('인라인 굵게', () => {
   const s = parseInline('앞 **굵게** 뒤');
   assert.deepEqual(s.map((x) => x.kind), ['text', 'bold', 'text']);

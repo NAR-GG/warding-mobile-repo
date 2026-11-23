@@ -5,7 +5,9 @@ import 'package:warding/core/ui/bottom_action_bar.dart';
 import 'package:warding/core/ui/nar_detail_header.dart';
 import 'package:warding/l10n/app_localizations.dart';
 import 'package:warding/core/theme/app_colors.dart';
-import 'package:warding/features/notice/presentation/screens/ad_guide_screen.dart';
+import 'package:warding/app/navigation/webview_open.dart';
+import 'package:warding/app/navigation/webview_routes.dart';
+import 'package:warding/core/util/analytics_events.dart';
 
 /// 지면별 정가(원, 1일). 오픈 기간에는 [_openDiscount] 를 적용한 값을 판다.
 const _splashPrice = 60000;
@@ -14,14 +16,18 @@ const _bannerPrice = 20000;
 const _openDiscount = 0.5;
 
 /// 응원 광고 신청 상세. 지면(스플래시·팝업·배너)을 2열 그리드로 보이고,
-/// 하단 '상세 보기'로 [AdGuideScreen](서버 공지 본문 + 신청 폼)을 연다.
+/// 하단 '상세 보기'로 광고 안내(서버 공지 본문 + 신청 폼)를 연다 — 그쪽은
+/// 웹으로 갔다([adGuideRoute]).
 class CheerAdScreen extends StatelessWidget {
   const CheerAdScreen({super.key});
 
   void _openDetail(BuildContext context) {
-    Navigator.of(
+    // 마이페이지 진입과 같은 화면이라 분석 이름도 같다.
+    openWebRoute(
       context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const AdGuideScreen()));
+      route: adGuideRoute,
+      analyticsPage: AnalyticsPage.adGuide,
+    );
   }
 
   @override

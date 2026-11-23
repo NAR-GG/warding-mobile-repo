@@ -1223,6 +1223,18 @@ body {
   line-height: 1.4;
 }
 
+/* 안내 페이지(광고 안내)는 날짜 줄이 없어 제목이 한 단계 크다 —
+   Dart `landing` 플래그가 19 → 20 으로 올리는 것과 같은 차이다. */
+.notice__title--landing {
+  font-size: calc(19 * var(--scale));
+}
+
+/* 하단 고정 버튼이 있는 화면은 마지막 줄이 가려지지 않게 비워 둔다.
+   Dart `BottomActionBar.scrollInset`(막 40 + 버튼 50 + 아래 24)과 같다. */
+.notice--landing {
+  padding-bottom: calc(114 * var(--scale));
+}
+
 .notice__date {
   display: block;
   margin-top: calc(6 * var(--scale));
@@ -1315,6 +1327,40 @@ body {
   color: var(--color-nar-link-text);
   text-decoration: underline;
   overflow-wrap: anywhere;
+}
+
+/* ── 하단 고정 행동 버튼 ──────────────────────────────────
+ * Flutter `core/ui/bottom_action_bar.dart` 의 웹 구현. 버튼 뒤로 배경색이
+ * 위로 옅어지는 막을 깔아, 본문이 버튼 밑으로 흐려지며 가려지게 한다.
+ *
+ * **`fixed` 다.** Dart 는 `Stack` 으로 본문 위에 얹지만, 웹은 문서 흐름이
+ * 스크롤이라 `position: fixed` 가 같은 결과를 낸다. 스크롤 여백은
+ * `.notice--landing` 의 `padding-bottom` 이 맡는다. */
+
+.bottom-action {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: calc(40 * var(--scale)) calc(20 * var(--scale))
+    calc(16 * var(--scale));
+  /* stops 0.62 → 1 은 Dart 의 `stops: [0.62, 1]` 과 같다. 아래가 불투명. */
+  background: linear-gradient(
+    to top,
+    var(--color-nar-dark800) 62%,
+    rgba(20, 21, 23, 0) 100%
+  );
+  /* 본문 위에 뜬다. 헤더보다는 아래여도 된다 — 서로 겹치지 않는다. */
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 막은 클릭을 통과시키고 버튼만 받는다 — 막이 본문 위를 덮고 있어서
+   그대로 두면 버튼 주변의 본문 링크가 눌리지 않는다. */
+.bottom-action__button {
+  pointer-events: auto;
+  /* `<a>` 라 전역 링크 밑줄이 따라온다. 버튼 모양에는 밑줄이 없다. */
+  text-decoration: none;
 }
 
 /* ── 공지 목록 ────────────────────────────────────────────
