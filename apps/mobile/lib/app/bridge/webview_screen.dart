@@ -136,6 +136,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 children: [
                   WardingWebView(
                     initialUrl: widget.route.url(params: widget.params),
+                    webHost: ApiConfig.webViewHost,
                     onControllerCreated: _onControllerCreated,
                     onPageFinished: _onPageFinished,
                   ),

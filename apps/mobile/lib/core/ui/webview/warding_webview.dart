@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/ui/webview/external_link.dart';
 
 /// 웹뷰 컨테이너 **하나**.
 ///
@@ -17,11 +19,16 @@ class WardingWebView extends StatefulWidget {
   const WardingWebView({
     super.key,
     required this.initialUrl,
+    required this.webHost,
     this.onControllerCreated,
     this.onPageFinished,
   });
 
   final String initialUrl;
+
+  /// 우리 웹의 주소(스킴 포함). 이 호스트 밖으로 나가는 링크는 바깥
+  /// 브라우저로 보낸다 — `core/ui/` 는 설정을 모르므로 쓰는 쪽이 넘긴다.
+  final String webHost;
 
   /// 컨트롤러가 만들어진 직후. 브리지 채널은 **로드 시작 전에** 붙여야
   /// 첫 메시지를 놓치지 않는다.
@@ -47,6 +54,7 @@ class _WardingWebViewState extends State<WardingWebView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) => widget.onPageFinished?.call(),
+          onNavigationRequest: _onNavigationRequest,
         ),
       );
 
@@ -64,6 +72,30 @@ class _WardingWebViewState extends State<WardingWebView> {
     // 채널 등록이 먼저다. 그 다음에 로드한다.
     widget.onControllerCreated?.call(_controller);
     _controller.loadRequest(Uri.parse(widget.initialUrl));
+  }
+
+  /// 외부 링크를 **바깥 브라우저로** 보낸다.
+  ///
+  /// 규칙 자체는 [shouldOpenInWebView] 에 있다(테스트가 그걸 본다). 여기서는
+  /// 거절한 주소를 실제로 여는 것까지 한다 — 막기만 하고 열지 않으면
+  /// 사용자에겐 "버튼이 안 먹는" 것과 같다.
+  ///
+  /// **여는 데 실패해도 웹뷰 안에서 열지 않는다.** 되돌아갈 길이 없는 화면에
+  /// 가두는 것이 아무 일도 안 일어나는 것보다 나쁘다.
+  Future<NavigationDecision> _onNavigationRequest(NavigationRequest request) async {
+    if (shouldOpenInWebView(request.url, webHost: widget.webHost)) {
+      return NavigationDecision.navigate;
+    }
+
+    try {
+      await launchUrl(
+        Uri.parse(request.url),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('[WebView] 외부 링크를 열지 못했다: ${request.url} ($e)');
+    }
+    return NavigationDecision.prevent;
   }
 
   /// `<input type="file">` 을 Android 에서 살린다.

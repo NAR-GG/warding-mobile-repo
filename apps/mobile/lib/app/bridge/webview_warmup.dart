@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:warding/app/bridge/bridge_protocol.dart';
@@ -9,6 +10,7 @@ import 'package:warding/app/bridge/webview_auth.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
 import 'package:warding/core/config/api_config.dart';
 import 'package:warding/core/theme/app_colors.dart';
+import 'package:warding/core/ui/webview/external_link.dart';
 import 'package:warding/features/auth/data/auth_service.dart';
 
 /// 탭 웹뷰를 **미리 만들어 두고 재사용한다.**
@@ -80,6 +82,27 @@ class WebViewWarmup {
 
     controller.setNavigationDelegate(
       NavigationDelegate(
+        // 외부 링크는 바깥 브라우저로 보낸다. **`WardingWebView` 와 같은
+        // 규칙을 여기도 둔다** — 워밍업은 컨트롤러를 직접 만들어서 그쪽
+        // 델리게이트를 타지 않는다. 빠뜨리면 커뮤니티 탭에서만 외부
+        // 사이트가 웹뷰 안에 열려 돌아올 길이 없어진다.
+        onNavigationRequest: (request) async {
+          if (shouldOpenInWebView(
+            request.url,
+            webHost: ApiConfig.webViewHost,
+          )) {
+            return NavigationDecision.navigate;
+          }
+          try {
+            await launchUrl(
+              Uri.parse(request.url),
+              mode: LaunchMode.externalApplication,
+            );
+          } catch (e) {
+            debugPrint('[Warmup] 외부 링크를 열지 못했다: ${request.url} ($e)');
+          }
+          return NavigationDecision.prevent;
+        },
         onPageFinished: (_) {
           _loaded = true;
           _failed = false;
