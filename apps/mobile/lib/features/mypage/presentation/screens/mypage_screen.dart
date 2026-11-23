@@ -20,7 +20,6 @@ import 'package:warding/features/mypage/presentation/widgets/quiet_hours_section
 import 'package:warding/features/account_setting/presentation/screens/account_setting_screen.dart';
 import 'package:warding/features/calendar_setting/presentation/screens/calendar_setting_screen.dart';
 import 'package:warding/features/match_list_setting/presentation/screens/match_list_setting_screen.dart';
-import 'package:warding/features/my_review/presentation/screens/my_review_screen.dart';
 import 'package:warding/features/my_subscription_setting/presentation/screens/my_subscription_setting_screen.dart';
 import 'package:warding/app/navigation/webview_open.dart';
 import 'package:warding/app/navigation/webview_routes.dart';
@@ -167,13 +166,10 @@ class _MypageScreenState extends State<MypageScreen> {
                                       )!.myReviewRating,
                                   count: _viewModel.reviewCount,
                                   onTap: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        settings: const RouteSettings(
-                                          name: AnalyticsPage.myReview,
-                                        ),
-                                        builder: (_) => const MyReviewScreen(),
-                                      ),
+                                    await openWebRoute(
+                                      context,
+                                      route: myReviewRoute,
+                                      analyticsPage: AnalyticsPage.myReview,
                                     );
                                     // 리뷰 화면에서 삭제했을 수 있으니 건수를 새로고침한다.
                                     await _viewModel.load();

@@ -41,6 +41,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
   final _auth = WebViewAuth();
   BridgeHandler? _bridge;
 
+  /// 로그인에서 돌아왔을 때 다시 로드하려고 들고 있는다.
+  WebViewController? _controller;
+
 
   /// 첫 페인트 전까지 덮어 두는 가림막. 흰 플래시와 깜빡임을 막는다.
   bool _ready = false;
@@ -61,7 +64,19 @@ class _WebViewScreenState extends State<WebViewScreen> {
     if (mounted) setState(() => _authApplied = true);
   }
 
+  /// 쿠키를 다시 심고 웹을 새로 받는다.
+  ///
+  /// **쿠키만 갱신하면 화면은 그대로다** — 이미 그려진 HTML 은 비로그인
+  /// 상태로 SSR 된 것이라, 다시 로드해야 로그인 상태가 반영된다.
+  Future<void> _reloadWithAuth() async {
+    final token = await AuthService.instance.jwt;
+    await _auth.apply(webHost: ApiConfig.webViewHost, token: token);
+    if (!mounted) return;
+    await _controller?.reload();
+  }
+
   void _onControllerCreated(WebViewController controller) {
+    _controller = controller;
     final bridge = BridgeHandler(
       controller: controller,
       onHeight: (h) {
@@ -81,7 +96,14 @@ class _WebViewScreenState extends State<WebViewScreen> {
         final opened = await openNativeRoute(context, route);
         // 모르는 이름이면 로그를 남긴다 — 웹이 새 화면을 추가했는데
         // `kNativeRoutes` 에 안 넣은 경우다.
-        if (!opened) debugPrint('[Bridge] 모르는 navigate 대상: $route');
+        if (!opened) {
+          debugPrint('[Bridge] 모르는 navigate 대상: $route');
+          return;
+        }
+        // **로그인에서 돌아오면 쿠키를 다시 심고 웹을 새로 받는다.**
+        // 안 하면 토큰이 생겼는데도 화면은 비로그인 상태로 남아, 사용자가
+        // 로그인하고 돌아왔는데 버튼이 또 로그인으로 보낸다.
+        if (route == 'login' && mounted) await _reloadWithAuth();
       },
       openPhotoViewer: (urls, index) async {
         if (!mounted) return;

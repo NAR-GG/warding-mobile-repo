@@ -7,6 +7,8 @@ export { useDismissKeyboard } from './useDismissKeyboard';
 
 export { cloudinaryScaled } from './cloudinary';
 
+export { positionFromRole, sideFromTeamSide, starFills } from './rating';
+
 export { resizeImage } from './resizeImage';
 export type { ResizeResult } from './resizeImage';
 

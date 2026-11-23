@@ -75,3 +75,24 @@ export type {
   ScrapItem,
   ScrapPage,
 } from './my-activity';
+export {
+  hasMore,
+  toMyRating,
+  toMyReviewItem,
+  toMyReviewPage,
+  toPlayerRatingDetail,
+  toRatedMatch,
+  toRatingDistribution,
+  toRatingPlayerDetail,
+  toReview,
+} from './rating';
+export type {
+  MyRating,
+  MyReviewItem,
+  MyReviewPage,
+  PlayerRatingDetail,
+  RatedMatch,
+  RatingDistribution,
+  RatingPlayerDetail,
+  Review,
+} from './rating';

@@ -80,8 +80,38 @@ export async function postJson<T>(
   return request('POST', url, parse, options);
 }
 
+/**
+ * PUT 요청 하나. [postJson] 과 같은 계약이고 메서드만 다르다.
+ *
+ * 평점 작성·수정이 **하나의 PUT** 이다(Dart 쪽도 같다 — 신규·수정을 구분하지
+ * 않는다). 쓰기라 캐시하지 않는다.
+ */
+export async function putJson<T>(
+  url: string,
+  parse: (json: unknown) => T,
+  options: RequestOptions & { body?: unknown } = {},
+): Promise<Result<T>> {
+  return request('PUT', url, parse, options);
+}
+
+/**
+ * DELETE 요청 하나.
+ *
+ * **본문 없는 204 가 정상 응답이다.** `request` 는 204 를 `noData` 실패로
+ * 분류하므로(본문을 기대하는 GET 기준), 삭제는 그것을 성공으로 되돌린다 —
+ * 호출부가 "지웠는데 실패로 보이는" 분기를 쓰지 않게 한다.
+ */
+export async function deleteJson(
+  url: string,
+  options: RequestOptions = {},
+): Promise<Result<void>> {
+  const res = await request<void>('DELETE', url, () => undefined, options);
+  if (!res.ok && res.failure.kind === 'noData') return ok(undefined);
+  return res;
+}
+
 async function request<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   url: string,
   parse: (json: unknown) => T,
   options: RequestOptions & { body?: unknown } = {},

@@ -1525,3 +1525,381 @@ body {
   font-weight: 400;
   line-height: 1.45;
 }
+
+/* ── 내 리뷰/평점 ─────────────────────────────────────────
+ * 수치는 Flutter `features/my_review/presentation/` 과 맞춘다 —
+ * 누적 바 높이 45/패딩 20·10, 날짜 헤더 14/w500, 카드 패딩 20/10. */
+
+.review-count {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  box-sizing: border-box;
+  height: calc(45 * var(--scale));
+  padding: calc(10 * var(--scale)) calc(20 * var(--scale));
+  background: var(--color-nar-dark600);
+}
+
+.review-count__label {
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+  font-weight: 600;
+  line-height: calc(25 / 14);
+}
+
+/* 숫자만 그라데이션 — Dart 의 `ShaderMask` 자리다.
+   `background-clip: text` 는 글자 모양으로 배경을 자른다. */
+.review-count__value {
+  background: var(--gradient-nar-bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: calc(14 * var(--scale));
+  font-weight: 500;
+  line-height: calc(25 / 14);
+}
+
+.review-date {
+  margin: 0;
+  padding: calc(10 * var(--scale)) calc(20 * var(--scale));
+  background: var(--color-nar-bg-secondary);
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+  font-weight: 500;
+  line-height: calc(17 / 14);
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--scale));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-card,
+.player-review {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(8 * var(--scale));
+  padding: calc(10 * var(--scale)) calc(20 * var(--scale));
+  background: var(--color-nar-dark600);
+}
+
+.review-card__meta {
+  display: flex;
+  gap: calc(5 * var(--scale));
+  margin: 0;
+  color: var(--color-nar-text2);
+  font-size: calc(14 * var(--scale));
+  font-weight: 500;
+  line-height: calc(17 / 14);
+}
+
+.review-card__author {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--scale));
+  width: 100%;
+}
+
+.review-card__avatar {
+  flex: 0 0 auto;
+  width: calc(37 * var(--scale));
+  height: calc(37 * var(--scale));
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 프로필이 없을 때의 기본 실루엣. 자산을 더 받지 않으려고 인라인 SVG 다. */
+.review-card__avatar--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--color-nar-dark200);
+  color: var(--color-nar-dark600);
+}
+
+.review-card__avatar--empty svg {
+  width: 100%;
+  height: 100%;
+}
+
+.review-card__nickname {
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.review-card__badge {
+  flex: 0 0 auto;
+  width: calc(21 * var(--scale));
+  height: calc(21 * var(--scale));
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.review-card__badge--empty {
+  background: var(--color-nar-dark200);
+}
+
+/* 시각은 오른쪽 끝 — Dart 의 `Spacer()` 자리다. */
+.review-card__time {
+  margin-left: auto;
+  color: var(--color-nar-text2);
+  font-size: calc(11 * var(--scale));
+  line-height: 1.45;
+}
+
+.review-card__comment {
+  margin: 0;
+  color: var(--color-nar-text);
+  font-size: calc(14 * var(--scale));
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.review-card__actions {
+  display: flex;
+  align-items: center;
+  gap: calc(40 * var(--scale));
+  width: 100%;
+  margin-top: calc(8 * var(--scale));
+}
+
+/* 두 버튼이 폭을 반반 쓴다(Dart 의 `Expanded` 둘). */
+.review-card__view,
+.review-card__delete {
+  flex: 1 1 0;
+  /* `<a>` 라 전역 링크 밑줄이 따라온다. 버튼 모양에는 밑줄이 없다. */
+  text-decoration: none;
+}
+
+.review-card__error {
+  margin: 0;
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+}
+
+/* ── 선수 평점 상세 ───────────────────────────────────────
+ * 수치는 Flutter `features/player_rating/presentation/` 과 맞춘다 —
+ * 평균 32/w500, 별 20, 바 높이 4 · radius 5, 점수 폭 10, 퍼센트 폭 28. */
+
+.player-rating__head {
+  padding: calc(20 * var(--scale)) calc(20 * var(--scale)) 0;
+}
+
+.player-rating__name {
+  margin: 0;
+  color: var(--color-nar-text);
+  font-size: calc(20 * var(--scale));
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.player-rating__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8 * var(--scale));
+  margin: calc(6 * var(--scale)) 0 0;
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+  line-height: 1.45;
+}
+
+.rating-dist {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(14 * var(--scale));
+  padding: calc(20 * var(--scale));
+}
+
+.rating-dist__summary {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  /* 시안 폭 116 을 넘지 않는다. */
+  max-width: calc(116 * var(--scale));
+}
+
+.rating-dist__average {
+  color: var(--color-nar-text);
+  font-size: calc(32 * var(--scale));
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.rating-dist__count {
+  margin-top: calc(4 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(12 * var(--scale));
+  line-height: 1.45;
+}
+
+.rating-dist__rows {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: calc(4 * var(--scale));
+  /* flex 자식이 내용 폭 아래로 줄지 않는 기본값을 푼다 — 안 풀면
+     퍼센트 칸이 밀려 바가 트랙 밖으로 나간다. */
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rating-dist__row {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  height: calc(16 * var(--scale));
+}
+
+.rating-dist__score {
+  flex: 0 0 auto;
+  width: calc(10 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(11 * var(--scale));
+  font-weight: 600;
+  text-align: center;
+}
+
+.rating-dist__track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(4 * var(--scale));
+  border-radius: calc(5 * var(--scale));
+  background: var(--color-nar-line2);
+}
+
+.rating-dist__fill {
+  display: block;
+  height: 100%;
+  border-radius: calc(5 * var(--scale));
+  background: var(--color-nar-yellow6);
+}
+
+.rating-dist__percent {
+  flex: 0 0 auto;
+  width: calc(28 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(11 * var(--scale));
+  text-align: right;
+}
+
+/* ── 평점 작성 ────────────────────────────────────────────── */
+
+.rating-sheet__actions {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--scale));
+  padding: 0 calc(20 * var(--scale)) calc(16 * var(--scale));
+}
+
+.rating-sheet__closed,
+.rating-sheet__error {
+  margin: 0;
+  padding: 0 calc(20 * var(--scale)) calc(12 * var(--scale));
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+}
+
+/* 바텀시트 — Dart 는 `showModalBottomSheet` 다. 아래에 붙고 상단만 둥글다. */
+.rating-sheet {
+  position: fixed;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.rating-sheet__card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(20 * var(--scale));
+  border-radius: calc(10 * var(--scale)) calc(10 * var(--scale)) 0 0;
+  background: var(--color-nar-dark800);
+}
+
+.rating-sheet__player {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--scale));
+  margin: 0 0 calc(16 * var(--scale));
+  color: var(--color-nar-text);
+  font-size: calc(16 * var(--scale));
+  font-weight: 600;
+}
+
+.rating-sheet__pos {
+  color: var(--color-nar-text2);
+  font-size: calc(13 * var(--scale));
+  font-weight: 400;
+}
+
+.rating-sheet__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(90 * var(--scale));
+  margin-top: calc(16 * var(--scale));
+  padding: calc(12 * var(--scale));
+  border: 0;
+  border-radius: calc(10 * var(--scale));
+  background: var(--color-nar-dark600);
+  color: var(--color-nar-text);
+  font-family: Pretendard, system-ui, sans-serif;
+  font-size: calc(14 * var(--scale));
+  line-height: 1.45;
+  resize: none;
+}
+
+.rating-sheet__counter {
+  margin: calc(6 * var(--scale)) 0 0;
+  color: var(--color-nar-text);
+  font-size: calc(12 * var(--scale));
+  text-align: right;
+}
+
+.rating-sheet__counter span {
+  color: var(--color-nar-text2);
+}
+
+.rating-sheet__buttons {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--scale));
+  margin-top: calc(16 * var(--scale));
+}
+
+.rating-sheet__buttons .wd-cbtn--primary {
+  flex: 1 1 auto;
+}
+
+/* 별점 입력 — 보이는 별 위에 range 를 투명하게 겹친다.
+   키보드·스크린리더 조작을 공짜로 얻으면서 모양은 별을 쓴다. */
+.star-input {
+  position: relative;
+  display: inline-flex;
+}
+
+.star-input__range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}

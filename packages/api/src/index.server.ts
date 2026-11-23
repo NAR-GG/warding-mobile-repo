@@ -44,3 +44,9 @@ export {
   fetchMyPosts,
   fetchScraps,
 } from './my-activity/index.server';
+export {
+  deleteMyRating,
+  fetchMyRatings,
+  fetchPlayerRatingDetail,
+  saveMyRating,
+} from './rating/index.server';

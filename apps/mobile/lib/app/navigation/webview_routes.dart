@@ -95,6 +95,27 @@ const noticeRoute = WebRoute(path: '/notice/:id', stage: BridgeStage.a);
 /// 브리지를 쓰지 않는다 — 그래서 뒤로가기만 위임하는 Stage A 다.
 const adGuideRoute = WebRoute(path: '/ad-guide', stage: BridgeStage.a);
 
+/// 마이페이지 '내 리뷰/평점'. 내가 작성한 평가 목록이다.
+///
+/// 항목의 '리뷰보기' 가 선수 평점으로 가는데 **그것도 웹이라 브리지를
+/// 거치지 않는다** — 네이티브는 `PlayerRatingScreen` 에 인자를 8개 넘겨야
+/// 했는데, 웹은 URL 두 조각이면 상세가 나머지를 스스로 받는다.
+///
+/// 삭제가 있지만 웹이 서버 액션으로 처리한다. 뒤로가기만 위임하므로
+/// Stage A 다.
+const myReviewRoute = WebRoute(path: '/my-review', stage: BridgeStage.a);
+
+/// 선수 평점 상세. 내 평점 목록의 '리뷰보기' 에서 들어온다.
+///
+/// **비회원 조회가 열려 있다**(실측 2026-11-23, HTTP 200). 작성·삭제는
+/// 로그인이 필요한데, **웹에 로그인 화면이 없어**(카카오·네이버 SDK 가
+/// 네이티브에 있다) 그 한 건만 `navigate('login')` 으로 네이티브를 부른다.
+/// 그래서 Stage A 다.
+const playerRatingRoute = WebRoute(
+  path: '/rating/:gameId/:participantId',
+  stage: BridgeStage.a,
+);
+
 /// 전환된 화면 전체. 배포 파이프라인의 브리지 계약 가드가 읽는 목록이다.
 const webviewRoutes = <WebRoute>[
   communityListRoute,
@@ -105,4 +126,6 @@ const webviewRoutes = <WebRoute>[
   noticeListRoute,
   noticeRoute,
   adGuideRoute,
+  myReviewRoute,
+  playerRatingRoute,
 ];
